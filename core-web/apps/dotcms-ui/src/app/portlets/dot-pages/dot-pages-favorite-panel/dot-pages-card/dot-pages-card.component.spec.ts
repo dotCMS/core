@@ -11,10 +11,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     DotIconModule,
     DotMessagePipe,
-    DotPagesFavoritePageEmptySkeletonComponent
+    DotPagesFavoritePageEmptySkeletonComponent,
+    DotSafeHtmlPipe
 } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
 
@@ -35,7 +35,7 @@ describe('DotPagesCardComponent', () => {
                 DotIconModule,
                 DotPagesFavoritePageEmptySkeletonComponent,
                 TooltipModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 ButtonModule,
                 DotMessagePipe
             ],

@@ -3,9 +3,8 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotLinkComponent } from '././dot-link.component';
 
@@ -36,7 +35,7 @@ describe('DotLinkComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
-            imports: [DotPipesModule, DotMessagePipe, DotLinkComponent],
+            imports: [DotSafeHtmlPipe, DotMessagePipe, DotLinkComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
     }));

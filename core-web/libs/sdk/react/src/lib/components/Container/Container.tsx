@@ -1,36 +1,8 @@
 import { useContext } from 'react';
 
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
-
 import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
-
-const FAKE_CONTENLET = {
-    identifier: 'TEMP_EMPTY_CONTENTLET',
-    title: 'TEMP_EMPTY_CONTENTLET',
-    contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
-    inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
-    widgetTitle: 'TEMP_EMPTY_CONTENTLET'
-};
-
-function EmptyContainer() {
-    return (
-        <div
-            data-testid="empty-container"
-            style={{
-                width: '100%',
-                backgroundColor: '#ECF0FD',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                color: '#030E32',
-                height: '10rem'
-            }}>
-            This container is empty.
-        </div>
-    );
-}
 
 function NoContent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;
@@ -41,81 +13,54 @@ export interface ContainerProps {
 }
 
 export function Container({ containerRef }: ContainerProps) {
+    const { isInsideEditor } = useContext(PageContext) as PageProviderContext;
+
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, components, isInsideEditor } = useContext<PageProviderContext | null>(
+    const { containers, components } = useContext<PageProviderContext | null>(
         PageContext
     ) as PageProviderContext;
 
-    const { acceptTypes, contentlets, maxContentlets, path } = getContainersData(
+    const { acceptTypes, contentlets, maxContentlets, variantId, path } = getContainersData(
         containers,
         containerRef
     );
-
-    const updatedContentlets =
-        contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
 
     const container = {
         acceptTypes,
         identifier: path ?? identifier,
         maxContentlets,
+        variantId,
         uuid
     };
 
-    const containerPayload = {
-        container
-    };
+    const containerStyles = contentlets.length
+        ? undefined
+        : {
+              width: '100%',
+              backgroundColor: '#ECF0FD',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: '#030E32',
+              height: '10rem'
+          };
 
-    function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
-        let target = e.target as HTMLElement;
-
-        if (target.dataset.dot !== 'contentlet') {
-            target = target.closest('[data-dot="contentlet"]') as HTMLElement;
-        }
-
-        if (!target) {
-            return;
-        }
-
-        const { x, y, width, height } = target.getBoundingClientRect();
-
-        const contentletPayload = JSON.parse(target.dataset.content ?? '{}');
-
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-            payload: {
-                x,
-                y,
-                width,
-                height,
-                payload: contentletPayload
-            }
-        });
-    }
-
-    const renderContentlets = updatedContentlets.map((contentlet) => {
-        const ContentTypeComponent = components[contentlet.contentType] || NoContent;
-
-        const Component =
-            contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
-                ? EmptyContainer
-                : ContentTypeComponent;
-
-        const contentletPayload = {
-            container,
-            contentlet: {
-                identifier: contentlet.identifier,
-                title: contentlet.widgetTitle || contentlet.title,
-                inode: contentlet.inode
-            }
-        };
+    const ContainerChildren = contentlets.map((contentlet) => {
+        const Component = components[contentlet.contentType] || NoContent;
 
         return isInsideEditor ? (
             <div
-                onPointerEnter={onPointerEnterHandler}
-                data-dot="contentlet"
-                data-content={JSON.stringify(contentletPayload)}
+                data-testid="dot-contentlet"
+                data-dot-object="contentlet"
+                data-dot-identifier={contentlet.identifier}
+                data-dot-basetype={contentlet.baseType}
+                data-dot-title={contentlet.widgetTitle || contentlet.title}
+                data-dot-inode={contentlet.inode}
+                data-dot-type={contentlet.contentType}
+                data-dot-container={JSON.stringify(container)}
+                data-dot-on-number-of-pages={contentlet.onNumberOfPages}
                 key={contentlet.identifier}>
                 <Component {...contentlet} />
             </div>
@@ -125,11 +70,18 @@ export function Container({ containerRef }: ContainerProps) {
     });
 
     return isInsideEditor ? (
-        <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
-            {renderContentlets}
+        <div
+            data-testid="dot-container"
+            data-dot-object="container"
+            data-dot-accept-types={acceptTypes}
+            data-dot-identifier={path ?? identifier}
+            data-max-contentlets={maxContentlets}
+            data-dot-uuid={uuid}
+            style={containerStyles}>
+            {ContainerChildren.length ? ContainerChildren : 'This container is empty.'}
         </div>
     ) : (
         // eslint-disable-next-line react/jsx-no-useless-fragment
-        <>{renderContentlets}</>
+        <>{ContainerChildren}</>
     );
 }

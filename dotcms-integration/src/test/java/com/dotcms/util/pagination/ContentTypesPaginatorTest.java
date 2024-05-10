@@ -2,12 +2,9 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.datagen.RoleDataGen;
-import com.dotcms.datagen.UserDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -18,23 +15,11 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.startup.runonce.Task04210CreateDefaultLanguageVariable;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.liferay.util.StringPool.COMMA;
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -43,8 +28,22 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static com.dotcms.util.CollectionsUtils.map;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import static com.liferay.util.StringPool.COMMA;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * This Integration Test verifies that the {@link ContentTypesPaginator} class performs as expected.
+ *
+ * @author Will Ezell
+ * @since Jun 14th, 2018
+ */
 @RunWith(DataProviderRunner.class)
 public class ContentTypesPaginatorTest {
 
@@ -84,10 +83,20 @@ public class ContentTypesPaginatorTest {
         assertTrue(UtilMethods.isSet(result));
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario: </b>Retrieve all Content Types of Base File Asset Type, ordered
+     *     by name.</li>
+     *     <li><b>Expected Result: </b>There must be at least one match for the File Asset
+     *     Content Type.</li>
+     * </ul>
+     */
     @Test
     public void test_getItems_WhenFilterEqualsToBaseType_ReturnsAllChildrenContentTypes() {
-        final Map<String, Object> extraParams = map(ContentTypesPaginator.TYPE_PARAMETER_NAME,
-                list(BaseContentType.FILEASSET.toString()));
+        final Map<String, Object> extraParams = Map.of(ContentTypesPaginator.TYPE_PARAMETER_NAME,
+                BaseContentType.FILEASSET.toString());
         final ContentTypesPaginator paginator = new ContentTypesPaginator();
         final PaginatedArrayList<Map<String, Object>> result = paginator
                 .getItems(user, null, -1, 0, "name", OrderDirection.ASC, extraParams);
@@ -98,9 +107,18 @@ public class ContentTypesPaginatorTest {
                 .equals(BaseContentType.FILEASSET.name())));
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario: </b>Retrieve all Content Types of Base Persona Type, ordered
+     *     by name.</li>
+     *     <li><b>Expected Result: </b>All the results must be of type Persona.</li>
+     * </ul>
+     */
     @Test
     public void test_getItems_WhenFilterEqualsToBaseType_ReturnsAllRelatedContentTypes() {
-        final Map<String, Object> extraParams = map(ContentTypesPaginator.TYPE_PARAMETER_NAME, list(BaseContentType.PERSONA.toString()));
+        final Map<String, Object> extraParams = Map.of(ContentTypesPaginator.TYPE_PARAMETER_NAME, BaseContentType.PERSONA.toString());
         final ContentTypesPaginator paginator = new ContentTypesPaginator();
         final PaginatedArrayList<Map<String, Object>> result = paginator
                 .getItems(user, null, -1, 0, "name", OrderDirection.ASC, extraParams);
@@ -315,7 +333,7 @@ public class ContentTypesPaginatorTest {
         final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
         final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
         final Map<String, Object> extraParams =
-                CollectionsUtils.map(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+                Map.of(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
         final ContentTypesPaginator paginator = new ContentTypesPaginator();
         // Offset and Limit are automatically adjusted by the PaginationUtil class. So, set them up as the class would
         // Get the result page #2, so set this to 3

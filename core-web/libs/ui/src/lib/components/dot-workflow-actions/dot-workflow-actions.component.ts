@@ -35,8 +35,8 @@ const InplaceButtonSizePrimeNg: Record<ButtonSize, string> = {
 })
 export class DotWorkflowActionsComponent implements OnChanges {
     @Input({ required: true }) actions: DotCMSWorkflowAction[];
-    @Input() loading: boolean = false;
-    @Input() groupAction: boolean = false;
+    @Input() loading = false;
+    @Input() groupAction = false;
     @Input() size: ButtonSize = 'normal';
     @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
 

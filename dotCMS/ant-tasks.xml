@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+
+<project name="dotcms.org" default="build" basedir="." xmlns:ac="antlib:net.sf.antcontrib">
+    <target name="build">
+        <echo>This should be run from the maven-antrun plugin</echo>
+    </target>
+
+    <target name="pre-integration">
+        <!-- run cleanup -->
+        <ac:if>
+            <isset property="cleanup"/>
+            <then>
+                <antcall target="cleanup-test-folders"/>
+            </then>
+        </ac:if>
+
+        <antcall target="create-test-folder" inheritAll="true" inheritRefs="true">
+        </antcall>
+    </target>
+
+    <target name="create-test-folder">
+        <property name="context.path" value="${tomcat.run.data.folder}"/>
+        <echo>Creating data folders for contex  ${context} in ${context.path}</echo>
+        <mkdir dir="${context.path}/${test.temp.folder}"/>
+        <mkdir dir="${context.path}/${test.assets.folder}"/>
+        <mkdir dir="${context.path}/${test.dynamic.folder}"/>
+        <mkdir dir="${context.path}/${test.felix.cache.folder}"/>
+        <mkdir dir="${context.path}/${test.felix.load.folder}"/>
+        <mkdir dir="${context.path}/${test.felix.undeployed.folder}"/>
+        <mkdir dir="${context.path}/${test.felix.system.cache.folder}"/>
+        <mkdir dir="${context.path}/${test.felix.load.folder}"/>
+        <mkdir dir="${context.path}/${test.felix.system.undeployed.folder}"/>
+        <mkdir dir="${context.path}/${test.logs.folder}"/>
+        <mkdir dir="${context.path}/${test.working.folder}"/>
+
+        <!-- get LICENSE_KEY environment variable -->
+        <property environment="env"/>
+        <mkdir dir="${context.path}/${test.dynamic.folder}/license" />
+
+        <!-- Move this functionality into core code -->
+        <ac:if>
+            <isset property="env.DOT_DOTCMS_LICENSE"/>
+            <then>
+                <echo>Writing license.dat to ${context.path}/${test.dynamic.folder}/license/license.dat</echo>
+                <echo file="${context.path}/${test.dynamic.folder}/license/license.dat" append="false" message="${env.DOT_DOTCMS_LICENSE}"/>
+            </then>
+            <else>
+                <ac:if>
+                    <available file="${user.home}/.dotcms/license/license.zip"/>
+                    <then>
+                        <copy todir="${context.path}/${test.assets.folder}">
+                            <fileset dir="${user.home}/.dotcms/license" includes="license.zip" />
+                        </copy>
+                    </then>
+                </ac:if>
+            </else>
+        </ac:if>
+    </target>
+
+    <target name="cleanup-test-folders">
+        <delete dir="${testdata.dir}" includeemptydirs="true"/>
+    </target>
+
+</project>

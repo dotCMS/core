@@ -1,5 +1,6 @@
 package com.dotcms.rest.config;
 
+import com.dotcms.ai.rest.*;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rendering.js.JsResource;
 import com.dotcms.rest.AuditPublishingResource;
@@ -37,6 +38,7 @@ import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
+import com.dotcms.rest.api.v1.content.ContentReportResource;
 import com.dotcms.rest.api.v1.content.ContentResource;
 import com.dotcms.rest.api.v1.content.ContentVersionResource;
 import com.dotcms.rest.api.v1.content.ResourceLinkResource;
@@ -154,7 +156,8 @@ import java.util.concurrent.ConcurrentHashMap;
 				@Tag(name = "Content Delivery"),
 				@Tag(name = "Bundle"),
 				@Tag(name = "Navigation"),
-				@Tag(name = "Experiment")
+				@Tag(name = "Experiment"),
+				@Tag(name = "Content Report")
 		}
 )
 public class DotRestApplication extends Application {
@@ -175,6 +178,7 @@ public class DotRestApplication extends Application {
 			.add(WidgetResource.class)
 			.add(CMSConfigResource.class)
 			.add(OSGIResource.class)
+			.add(com.dotcms.rest.api.v1.osgi.OSGIResource.class)
 			.add(com.dotcms.rest.UserResource.class)
 			.add(ClusterResource.class)
 			.add(EnvironmentResource.class)
@@ -262,6 +266,12 @@ public class DotRestApplication extends Application {
 			.add(StorageResource.class)
 			.add(com.dotcms.rest.api.v2.tags.TagResource.class)
 			.add(AnnouncementsResource.class)
+			.add(CompletionsResource.class)
+			.add(EmbeddingsResource.class)
+			.add(ImageResource.class)
+			.add(SearchResource.class)
+			.add(TextResource.class)
+			.add(ContentReportResource.class)
 			.build();
 
 	private static final Set<Class<?>> PROVIDER_CLASSES = ImmutableSet.<Class<?>>builder()

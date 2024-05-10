@@ -1,4 +1,5 @@
 import { UntypedFormGroup } from '@angular/forms';
+
 import { DotCMSContentTypeField } from './dot-content-types.model';
 
 export interface DotDynamicFieldComponent {

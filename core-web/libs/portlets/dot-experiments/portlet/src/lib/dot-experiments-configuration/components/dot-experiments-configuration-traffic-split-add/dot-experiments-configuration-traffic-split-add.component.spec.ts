@@ -16,13 +16,16 @@ import { InputNumber, InputNumberModule } from 'primeng/inputnumber';
 import { RadioButton, RadioButtonModule } from 'primeng/radiobutton';
 import { Sidebar } from 'primeng/sidebar';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_NAME,
     ExperimentSteps,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,

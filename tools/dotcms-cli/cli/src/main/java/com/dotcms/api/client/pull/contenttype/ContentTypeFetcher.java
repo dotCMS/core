@@ -27,7 +27,7 @@ public class ContentTypeFetcher implements ContentFetcher<ContentType>, Serializ
 
     @ActivateRequestContext
     @Override
-    public List<ContentType> fetch(Map<String, Object> customOptions) {
+    public List<ContentType> fetch(boolean failFast, Map<String, Object> customOptions) {
 
         // Fetching the all the existing content types
         List<ContentType> allContentTypes = new ArrayList<>();
@@ -47,12 +47,13 @@ public class ContentTypeFetcher implements ContentFetcher<ContentType>, Serializ
         var task = new HttpRequestTask(this, executor);
         task.setTaskParams(allContentTypes);
 
-        return task.compute();
+        return task.compute().join();
     }
 
     @ActivateRequestContext
     @Override
-    public ContentType fetchByKey(String contentTypeIdOrVarName, Map<String, Object> customOptions)
+    public ContentType fetchByKey(String contentTypeIdOrVarName, boolean failFast,
+            Map<String, Object> customOptions)
             throws NotFoundException {
 
         final var contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);

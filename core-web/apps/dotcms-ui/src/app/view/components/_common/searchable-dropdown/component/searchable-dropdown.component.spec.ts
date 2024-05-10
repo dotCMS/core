@@ -15,9 +15,8 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 
@@ -108,7 +107,7 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
@@ -478,7 +477,7 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]

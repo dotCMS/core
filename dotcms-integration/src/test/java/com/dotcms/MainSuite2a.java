@@ -11,6 +11,7 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.util.PushedAssetUtilTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
@@ -200,7 +201,8 @@ import org.junit.runners.Suite.SuiteClasses;
         IdentityProviderConfigurationFactoryTest.class,
         EMAWebInterceptorTest.class,
         GoogleTranslationServiceIntegrationTest.class,
-        Task240131UpdateLanguageVariableContentTypeTest.class
+        Task240131UpdateLanguageVariableContentTypeTest.class,
+        PushedAssetUtilTest.class
 })
 
 public class MainSuite2a {

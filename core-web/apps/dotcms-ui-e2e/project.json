@@ -22,6 +22,6 @@
             "outputs": ["{options.outputFile}"]
         }
     },
-    "tags": [],
+    "tags": ["skip:test", "skip:lint"],
     "implicitDependencies": ["dotcms-ui"]
 }

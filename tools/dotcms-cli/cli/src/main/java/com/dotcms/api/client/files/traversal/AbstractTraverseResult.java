@@ -4,6 +4,7 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.common.LocalPathStructure;
 import com.dotcms.model.annotation.ValueType;
 import java.util.List;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
@@ -15,8 +16,8 @@ import org.immutables.value.Value;
 public interface AbstractTraverseResult {
 
     List<Exception> exceptions();
-    LocalPathStructure localPaths();
-    TreeNode treeNode();
+    Optional<TreeNode> treeNode();
 
+    LocalPathStructure localPaths();
 
 }

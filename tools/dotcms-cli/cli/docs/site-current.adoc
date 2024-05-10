@@ -19,7 +19,7 @@ site-current - *Use this command to get the current Site.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site current* [*-h*]
+*site current* [*-h*] [*-tk*=_<token>_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -40,6 +40,9 @@ site-current - *Use this command to get the current Site.*
 
 *-h*, *--help*::
   Display this help message.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

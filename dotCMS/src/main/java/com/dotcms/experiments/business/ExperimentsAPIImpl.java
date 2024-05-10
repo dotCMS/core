@@ -839,6 +839,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     .withScheduling(endedScheduling);
             final Experiment saved = save(ended, user);
 
+            archivedAllVariants(saved);
+
             cacheRunningExperiments();
 
             SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been ended by User" +
@@ -849,6 +851,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final String message = "You don't have permission to end the Experiment Id: " + experimentId;
             Logger.error(this, message + "\n" + e.getMessage());
             throw new DotSecurityException(message, e);
+        }
+    }
+
+    private void archivedAllVariants(Experiment saved) throws DotDataException {
+        for (ExperimentVariant variant : saved.trafficProportion().variants()) {
+
+            if (!variant.id().equals(DEFAULT_VARIANT.name())) {
+                variantAPI.archive(variant.id());
+            }
         }
     }
 
@@ -1114,6 +1125,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
+    public List<Experiment> getRunningExperiments(final Host host) throws DotDataException {
+        return getRunningExperiments().stream().filter(experiment -> {
+            try {
+                final HTMLPageAsset  htmlPageAsset = getHtmlPageAsset(experiment);
+                return host.getIdentifier().equals(htmlPageAsset.getHost());
+            } catch (DotStateException | DotDataException e) {
+                return false;
+            }
+
+        }).collect(Collectors.toList());
+    }
+
+    @Override
     public Optional<Rule> getRule(final Experiment experiment)
             throws DotDataException, DotSecurityException {
 
@@ -1123,9 +1147,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public boolean isAnyExperimentRunning() throws DotDataException {
+    public boolean isAnyExperimentRunning(final Host host) throws DotDataException {
         return ConfigExperimentUtil.INSTANCE.isExperimentEnabled() &&
-                !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
+                !APILocator.getExperimentsAPI().getRunningExperiments(host).isEmpty();
     }
 
     /**

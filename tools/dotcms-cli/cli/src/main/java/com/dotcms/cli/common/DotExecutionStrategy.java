@@ -1,7 +1,7 @@
 package com.dotcms.cli.common;
 
 import com.dotcms.api.client.model.ServiceManager;
-import com.dotcms.cli.command.InitCommand;
+import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.arc.Arc;
 import java.io.IOException;
@@ -59,16 +59,23 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             final String format = String.format("Executing command: %s", command);
             LOGGER.info(format);
 
-           final String parentCommand = commandsChain.firstSubcommand().map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+            // If the dotCMS URL and token are set, we can proceed with the command execution, we
+            // can bypass the configuration check as we have everything we need for a remote call
+            if (isRemoteURLSet(commandsChain, parseResult.commandSpec().commandLine())) {
+                return underlyingStrategy.execute(parseResult);
+            }
 
-            if (!InitCommand.NAME.equals(parentCommand)){
+            final String parentCommand = commandsChain.firstSubcommand()
+                    .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+
+            if (!ConfigCommand.NAME.equals(parentCommand)){
                 final ServiceManager manager = getServiceManager();
                 try {
                     final List<ServiceBean> services = manager.services();
                     if (services.isEmpty()) {
                         throw new ExecutionException(
                                 parseResult.commandSpec().commandLine(),
-                                "No dotCMS configured instances were found. Please run 'init' to initialize the CLI.");
+                                "No dotCMS configured instances were found. Please run '"+ConfigCommand.NAME+"' to setup an instance to use CLI.");
                     }
                 } catch (IOException e) {
                     throw new ExecutionException(parseResult.commandSpec().commandLine(),
@@ -78,6 +85,29 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         }
 
         return underlyingStrategy.execute(parseResult);
+    }
+
+    /**
+     * Checks if the remote URL is set in the CommandsChain object. If the remote URL and token are
+     * both set, it returns true. If the remote URL is set but the token is not set, it throws a
+     * ParameterException. If the remote URL is not set, it returns false.
+     *
+     * @param commandsChain the CommandsChain object to check
+     * @param commandLine   the CommandLine object for error handling
+     * @return true if the remote URL and token are both set, false otherwise
+     * @throws ParameterException if the remote URL is set but the token is not set
+     */
+    private boolean isRemoteURLSet(final CommandsChain commandsChain,
+            final CommandLine commandLine) {
+
+        if (commandsChain.isRemoteURLSet() && commandsChain.isTokenSet()) {
+            return true;
+        } else if (commandsChain.isRemoteURLSet() && !commandsChain.isTokenSet()) {
+            throw new ParameterException(commandLine,
+                    "The token is required when the dotCMS URL is set.");
+        }
+
+        return false;
     }
 
     /**

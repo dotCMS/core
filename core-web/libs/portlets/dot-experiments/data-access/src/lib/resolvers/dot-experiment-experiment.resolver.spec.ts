@@ -8,10 +8,8 @@ import { of } from 'rxjs';
 
 import { ActivatedRouteSnapshot } from '@angular/router';
 
-import {
-    DotExperimentExperimentResolver,
-    DotExperimentsService
-} from '@dotcms/portlets/dot-experiments/data-access';
+import { DotExperimentsService } from '@dotcms/data-access';
+import { DotExperimentExperimentResolver } from '@dotcms/portlets/dot-experiments/data-access';
 import { getExperimentMock } from '@dotcms/utils-testing';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);

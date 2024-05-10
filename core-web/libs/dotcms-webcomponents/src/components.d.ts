@@ -348,8 +348,8 @@ export namespace Components {
     }
     interface DotContentletThumbnail {
         "alt": string;
+        "backgroundImage": boolean;
         "contentlet": DotContentletItem;
-        "cover": boolean;
         "fieldVariable": string;
         "height": string;
         "iconSize": string;
@@ -2005,8 +2005,8 @@ declare namespace LocalJSX {
     }
     interface DotContentletThumbnail {
         "alt"?: string;
+        "backgroundImage"?: boolean;
         "contentlet"?: DotContentletItem;
-        "cover"?: boolean;
         "fieldVariable"?: string;
         "height"?: string;
         "iconSize"?: string;

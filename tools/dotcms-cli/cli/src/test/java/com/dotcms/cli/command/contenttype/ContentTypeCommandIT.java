@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -320,12 +321,13 @@ class ContentTypeCommandIT extends CommandTest {
                     "--non-interactive");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName:"));
+            Assertions.assertTrue(output.startsWith("variable:"));
         }
     }
 
     /**
-     * Test Filter options
+     * Given scenario: We want to filter the content types by name
+     * Expected result: The output should contain only the content types that match the filter
      */
     @Test
     void Test_Command_Content_Filter_Option() {
@@ -337,8 +339,134 @@ class ContentTypeCommandIT extends CommandTest {
                     "--name", "FileAsset", "--page", "0", "--pageSize", "10");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName:"));
+            Assertions.assertTrue(output.startsWith("variable: [FileAsset]"));
         }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name
+     * Expected result: The output should come back ordered by varName and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Ascending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                     "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "ASC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name
+     * Expected result: The output should come back ordered by varName and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Descending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to order the content types by modDate
+     * Expected result: The output should come back ordered by modDate and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Filter_Order_By_modDate_Descending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "modDate", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("modDate",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings));
+        }
+    }
+
+
+    /**
+     * Given scenario: We want to order the content types by modDate
+     * Expected result: The output should come back ordered by modDate and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Filter_Order_By_modDate_Ascending() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "modDate", "--direction", "ASC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("modDate",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings));
+        }
+    }
+
+    /**
+     * Function to verify if a list of strings is sorted in ascending order (case-insensitive)
+     * @param list  the list of strings
+     * @return true if the list is sorted in ascending order, false otherwise
+     */
+    public static boolean isSortedAsc(final List<String> list) {
+        for (int i = 0; i < list.size() - 1; i++) {
+            if (String.CASE_INSENSITIVE_ORDER.compare(list.get(i), list.get(i + 1)) > 0) {
+                System.out.println("i: "+list.get(i) + " i+1: "+list.get(i+1));
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Function to verify if a list of strings is sorted in descending order (case-insensitive)
+     * @param list  the list of strings
+     * @return true if the list is sorted in descending order, false otherwise
+     */
+    public static boolean isSortedDesc(final List<String> list) {
+        for (int i = 0; i < list.size() - 1; i++) {
+            if (String.CASE_INSENSITIVE_ORDER.compare(list.get(i), list.get(i + 1)) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Extracts the rows from the output text by the field name
+     * @param fieldName the field name to extract
+     * @param inputText the input text
+     * @return the list of rows
+     */
+    private static List<String> extractRowsByFieldName(final String fieldName, final String inputText) {
+        List<String> varNames = new ArrayList<>();
+        Pattern pattern = Pattern.compile(String.format("%s:\\s*\\[([^\\]]+)\\]",fieldName));
+        Matcher matcher = pattern.matcher(inputText);
+        while (matcher.find()) {
+            varNames.add(matcher.group(1).replaceAll("[^a-zA-Z0-9]", ""));
+        }
+        return varNames;
     }
 
     /**
@@ -905,5 +1033,25 @@ class ContentTypeCommandIT extends CommandTest {
             deleteTempDirectory(tempFolder);
         }
     }
+
+    /**
+     * Test Find by name authenticated with token
+     * Given scenario: We want to find a content type by name using a token
+     * Expected result: The content type should be found and returned
+     */
+    @Test
+    void Test_Command_Content_Find_Authenticated_With_Token() {
+        final String token = requestToken();
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME, "--name", "FileAsset", "--token", token);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.startsWith("variable:"));
+        }
+    }
+
 
 }

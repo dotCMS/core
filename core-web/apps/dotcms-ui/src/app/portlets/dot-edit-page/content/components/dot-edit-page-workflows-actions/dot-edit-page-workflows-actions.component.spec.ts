@@ -17,19 +17,19 @@ import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotFormatDateService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
+    DotWizardService,
     DotWorkflowActionsFireService,
+    DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
     DotWorkflowService,
-    DotGlobalMessageService,
-    DotIframeService,
-    DotWizardService,
-    DotWorkflowEventHandlerService,
-    PushPublishService,
-    DotFormatDateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -49,9 +49,9 @@ import {
     LoginServiceMock,
     MockDotMessageService,
     mockDotPage,
+    MockPushPublishService,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
-import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
 
 import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-actions.component';
 

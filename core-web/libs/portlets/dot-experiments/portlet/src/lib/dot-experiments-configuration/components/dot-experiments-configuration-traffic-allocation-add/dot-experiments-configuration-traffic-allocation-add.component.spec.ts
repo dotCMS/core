@@ -16,9 +16,12 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Sidebar } from 'primeng/sidebar';
 import { Slider, SliderModule } from 'primeng/slider';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { ExperimentSteps } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,

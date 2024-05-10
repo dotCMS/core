@@ -11,7 +11,7 @@ volumes:
 
 services:
     elasticsearch-test:
-        image: ${ES_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:7.11.2}
+        image: ${ES_IMAGE:-opensearchproject/opensearch:1.3.6}
         environment:
             - cluster.name=elastic-cluster
             - discovery.type=single-node
@@ -23,6 +23,7 @@ services:
             - http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
             - http.cors.allow-credentials=true
             - 'ES_JAVA_OPTS=-Xmx1G'
+            - plugins.security.disabled=true
         ulimits:
             memlock:
                 soft: -1

@@ -4,15 +4,14 @@ import { FormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotPaletteInputFilterComponent } from './dot-palette-input-filter.component';
 
 @NgModule({
     imports: [
         CommonModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotIconModule,
         FormsModule,
         InputTextModule,

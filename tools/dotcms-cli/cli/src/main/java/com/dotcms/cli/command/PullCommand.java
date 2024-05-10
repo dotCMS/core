@@ -22,7 +22,7 @@ import picocli.CommandLine;
         name = PullCommand.NAME,
         header = "@|bold,blue dotCMS global pull|@",
         description = {
-                " This command pull Sites, Content Types, Languages and Files to the server.",
+                " This command pull Sites, Content Types, Languages and Files from the server.",
                 "" // empty string here so we can have a new line
         }
 )

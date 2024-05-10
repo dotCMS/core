@@ -19,7 +19,8 @@ content-type-remove - *Use this command to remove Content-types.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*content-type remove* [*-h*] [*--non-interactive*] _<idOrVar>_
+*content-type remove* [*-h*] [*--non-interactive*] [*--dotcms-url*=_<remoteURL>_]
+                    [*-tk*=_<token>_] _<idOrVar>_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -33,6 +34,12 @@ content-type-remove - *Use this command to remove Content-types.*
 
 // tag::picocli-generated-man-section-options[]
 == Options
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
 
 *-h*, *--help*::
   Display this help message.

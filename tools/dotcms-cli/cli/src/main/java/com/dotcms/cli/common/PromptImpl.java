@@ -93,6 +93,29 @@ public class PromptImpl implements Prompt {
     }
 
     /**
+     * Reads a password from the user.
+     *
+     * @param prompt The prompt message displayed to the user.
+     * @param args   Additional format arguments for the prompt message.
+     * @return The password entered by the user as a char[].
+     */
+    public char[] readPassword(String prompt, String... args) {
+        try {
+            Optional<Console> console = Optional.ofNullable(System.console());
+            var response = console
+                    .map(c -> c.readPassword(withColor(prompt), args))
+                    .orElse(null);
+            if (response == null || response.length == 0) {
+                return new char[0];
+            }
+            return response;
+        } catch (Exception ignore) {
+            return new char[0];
+        }
+    }
+
+
+    /**
      * Add color to the text
      * @param text The text to colorize
      * @return The colorized text

@@ -1,14 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -41,6 +33,10 @@ import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import org.apache.commons.lang.RandomStringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,11 +47,13 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.constraints.AssertTrue;
-import javax.ws.rs.core.Response;
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Assert;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public abstract class WorkflowTestUtil {
 
@@ -442,9 +440,9 @@ public abstract class WorkflowTestUtil {
                     .setProperty("title", "content_2")
                     .nextPersisted();
             TestDataUtils.assertEmptyQueue();
-            return map(
-                    workflowScheme_1, map(contentType_1, list(contentlet_1)),
-                    workflowScheme_2, map(contentType_2, list(contentlet_2))
+            return Map.of(
+                    workflowScheme_1, Map.of(contentType_1, list(contentlet_1)),
+                    workflowScheme_2, Map.of(contentType_2, list(contentlet_2))
             );
         } finally {
             Config.setProperty("AUTO_ASSIGN_WORKFLOW", savedAutoAssign);

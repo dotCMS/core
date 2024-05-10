@@ -1,4 +1,4 @@
-name: Build by Context
+name: Build Base Image
 on:
   workflow_dispatch:
     inputs:
@@ -11,15 +11,17 @@ on:
         default: 'SNAPSHOT'
       multi_arch:
         description: 'Multi-arch flag, true: linux/amd64,linux/arm64 or false: linux/amd64'
+        type: boolean
         required: false
-        default: 'false'
+        default: true
       push:
         description: 'Push flag'
+        type: boolean
         required: false
-        default: 'true'
+        default: true
 jobs:
   build_image:
-    name: Build docker image
+    name: Build Docker Base Image
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout core

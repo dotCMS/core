@@ -1,8 +1,8 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotStringTemplateOutletDirective } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/dot-string-template-outlet.directive';
 
 import { DotExperimentsDetailsTableComponent } from './dot-experiments-details-table.component';
 

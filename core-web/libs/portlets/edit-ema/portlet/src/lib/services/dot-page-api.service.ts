@@ -7,6 +7,8 @@ import { catchError, map, pluck } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
 import {
+    DEFAULT_VARIANT_ID,
+    DotCMSContentlet,
     DotLanguage,
     DotLayout,
     DotPageContainerStructure,
@@ -15,6 +17,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { SavePagePayload } from '../shared/models';
+import { createPageApiUrlWithQueryParams } from '../utils';
 
 export interface DotPageApiResponse {
     page: {
@@ -23,8 +26,13 @@ export interface DotPageApiResponse {
         inode: string;
         canEdit: boolean;
         canRead: boolean;
+        canLock?: boolean;
+        locked?: boolean;
+        lockedBy?: string;
+        lockedByName?: string;
         pageURI: string;
         rendered?: string;
+        contentType: string;
     };
     site: Site;
     viewAs: {
@@ -34,12 +42,16 @@ export interface DotPageApiResponse {
     layout: DotLayout;
     template: DotTemplate;
     containers: DotPageContainerStructure;
+    urlContentMap?: DotCMSContentlet;
 }
 
 export interface DotPageApiParams {
     url: string;
     language_id: string;
     'com.dotmarketing.persona.id': string;
+    variantName?: string;
+    experimentId?: string;
+    mode?: string;
 }
 
 export interface GetPersonasParams {
@@ -76,7 +88,15 @@ export class DotPageApiService {
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
         const pageType = params.clientHost ? 'json' : 'render';
-        const apiUrl = `/api/v1/page/${pageType}/${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
+
+        const pageApiUrl = createPageApiUrlWithQueryParams(url, {
+            language_id: params.language_id,
+            'com.dotmarketing.persona.id': params['com.dotmarketing.persona.id'],
+            variantName: params.variantName,
+            experimentId: params.experimentId
+        });
+
+        const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;
 
         return this.http
             .get<{
@@ -92,9 +112,11 @@ export class DotPageApiService {
      * @return {*}  {Observable<unknown>}
      * @memberof DotPageApiService
      */
-    save({ pageContainers, pageId }: SavePagePayload): Observable<unknown> {
+    save({ pageContainers, pageId, params }: SavePagePayload): Observable<unknown> {
+        const variantName = params.variantName ?? DEFAULT_VARIANT_ID;
+
         return this.http
-            .post(`/api/v1/page/${pageId}/content`, pageContainers)
+            .post(`/api/v1/page/${pageId}/content?variantName=${variantName}`, pageContainers)
             .pipe(catchError(() => EMPTY));
     }
 
@@ -155,5 +177,12 @@ export class DotPageApiService {
         }
 
         return apiUrl + queryParams.toString();
+    }
+
+    saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
+        return this.http.put(
+            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
+            { contentlet }
+        );
     }
 }

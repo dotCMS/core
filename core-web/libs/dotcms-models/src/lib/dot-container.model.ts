@@ -67,6 +67,6 @@ export interface DotPageContainerStructure {
     [key: string]: {
         container: DotContainer;
         containerStructures?: DotContainerStructure[];
-        contentlets?: { [key: string]: DotCMSContentlet };
+        contentlets?: { [key: string]: DotCMSContentlet[] };
     };
 }

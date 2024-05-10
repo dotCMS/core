@@ -19,8 +19,8 @@ files-ls - *dotCMS Files ls*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*files ls* [*-h*] [*-ee*] [*-ea*=_patterns_] [*-ef*=_patterns_] [*-ia*=_patterns_] [*-if*=_patterns_]
-         _path_
+*files ls* [*-h*] [*-ee*] [*--dotcms-url*=_<remoteURL>_] [*-ea*=_patterns_] [*-ef*=_patterns_]
+         [*-ia*=_patterns_] [*-if*=_patterns_] [*-tk*=_<token>_] _path_
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -34,6 +34,9 @@ files-ls - *dotCMS Files ls*
 
 // tag::picocli-generated-man-section-options[]
 == Options
+
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
 
 *-ea, --excludeAsset*=_patterns_::
   Exclude assets matching the given glob patterns. Multiple patterns can be specified, separated by commas.
@@ -52,6 +55,9 @@ files-ls - *dotCMS Files ls*
 
 *-if, --includeFolder*=_patterns_::
   Include directories matching the given glob patterns. Multiple patterns can be specified, separated by commas.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 

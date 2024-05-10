@@ -69,8 +69,6 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - uses: ./.github/actions/cleanup-runner
-
       - name: Cleanup
         uses: ./.github/actions/cleanup-runner
 

@@ -93,6 +93,7 @@ public class VelocityServlet extends HttpServlet {
         }
 
         final String referer = request.getHeader("referer");
+
         return referer != null && referer.contains("/dotAdmin");
     }
 

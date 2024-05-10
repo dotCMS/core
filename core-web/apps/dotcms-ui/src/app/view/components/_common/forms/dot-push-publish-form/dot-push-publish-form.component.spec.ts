@@ -17,7 +17,6 @@ import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 import { PushPublishEnvSelectorComponent } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
     DotAlertConfirmService,
@@ -30,7 +29,12 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
-import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotDialogModule,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotcmsConfigServiceMock,
@@ -39,7 +43,6 @@ import {
     MockDotRouterService,
     mockDotTimeZones
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
 
@@ -144,7 +147,7 @@ xdescribe('DotPushPublishFormComponent', () => {
                 DropdownModule,
                 DotFieldValidationMessageComponent,
                 SelectButtonModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 HttpClientTestingModule
             ]

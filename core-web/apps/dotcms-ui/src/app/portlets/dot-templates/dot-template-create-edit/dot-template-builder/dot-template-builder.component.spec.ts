@@ -28,7 +28,7 @@ import {
     DotPropertiesService,
     DotRouterService
 } from '@dotcms/data-access';
-import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
+import { DotLayout, DotTemplate, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
@@ -51,7 +51,7 @@ import {
 })
 class TemplateBuilderMockComponent {
     @Input() layout: DotLayout;
-    @Input() themeId: string;
+    @Input() template: Partial<DotTemplate>;
     @Output() templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter();
 }
 
@@ -244,10 +244,8 @@ describe('DotTemplateBuilderComponent', () => {
             const builder = de.query(By.css('dot-edit-layout-designer'));
 
             builder.triggerEventHandler('save', EMPTY_TEMPLATE_DESIGN);
-            builder.triggerEventHandler('updateTemplate', EMPTY_TEMPLATE_DESIGN);
 
             expect(component.save.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
-            expect(component.updateTemplate.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
         });
 
         it('should emit save event from dot-edit-layout-designer automatically on template updates', () => {
@@ -282,18 +280,23 @@ describe('DotTemplateBuilderComponent', () => {
 
         it('should set the themeId @Input correctly', () => {
             const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
-            expect(templateBuilder.componentInstance.themeId).toBe('123');
+            expect(templateBuilder.componentInstance.template.themeId).toBe('123');
         });
 
-        it('should emit events from new-template-builder when the layout is changed', () => {
+        it('should trigger onTemplateItemChange new-template-builder when the layout is changed', () => {
             const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
             const template = {
                 layout: EMPTY_TEMPLATE_DESIGN.layout,
-                themeId: '123'
-            } as DotTemplateDesigner;
+                theme: '123',
+                friendlyName: 'test',
+                identifier: '123',
+                title: 'test'
+            } as DotTemplateItem;
+
+            spyOn(component, 'onTemplateItemChange');
 
             templateBuilder.triggerEventHandler('templateChange', template);
-            expect(component.updateTemplate.emit).toHaveBeenCalled();
+            expect(component.onTemplateItemChange).toHaveBeenCalledWith(template);
         });
 
         it('should add style classes if new template builder feature flag is on', () => {

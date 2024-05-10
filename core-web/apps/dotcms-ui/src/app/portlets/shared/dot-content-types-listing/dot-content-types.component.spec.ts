@@ -20,12 +20,12 @@ import {
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
+    DotFormatDateService,
     DotHttpErrorHandled,
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
-    PushPublishService,
-    DotFormatDateService
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -39,7 +39,8 @@ import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/d
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
-    MockDotMessageService
+    MockDotMessageService,
+    MockPushPublishService
 } from '@dotcms/utils-testing';
 import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
 
@@ -82,22 +83,6 @@ class MockDotBaseTypeSelectorComponent {
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
         return observableOf(true);
-    }
-}
-
-@Injectable()
-export class MockPushPublishService {
-    getEnvironments() {
-        return observableOf([
-            {
-                id: '123',
-                name: 'Environment 1'
-            },
-            {
-                id: '456',
-                name: 'Environment 2'
-            }
-        ]);
     }
 }
 

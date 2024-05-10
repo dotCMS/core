@@ -9,5 +9,5 @@
             "executor": "@nx/eslint:lint"
         }
     },
-    "tags": []
+    "tags": ["skip:test", "skip:lint"]
 }

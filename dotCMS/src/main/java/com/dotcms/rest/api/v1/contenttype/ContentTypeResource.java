@@ -38,7 +38,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
@@ -216,8 +215,27 @@ public class ContentTypeResource implements Serializable {
 		}
 	}
 
+	/**
+	 * Copies a Content Type -- along with the new information specified for it -- as well as the
+	 * references to the Workflow Schemes that the original type is using.
+	 *
+	 * @param contentTypeAPI      The {@link ContentTypeAPI} instance to use to save the new
+	 *                            Content Type.
+	 * @param type                The original {@link ContentType} to copy.
+	 * @param copyContentTypeForm The {@link CopyContentTypeForm} containing the new information
+	 *                            for the copied type, such as, the new name, new icon, and new
+	 *                            Velocity Variable Name.
+	 * @param user                The {@link User} executing this action.
+	 *
+	 * @return An {@link ImmutableMap} containing the data from the new Content Type, its Workflow
+	 * Schemes and system action mappings.
+	 *
+	 * @throws DotDataException     An error occurred when saving the new information.
+	 * @throws DotSecurityException The specified User doesn't have the required permissions to
+	 *                              perform this action.
+	 */
 	@WrapInTransaction
-	private ImmutableMap<Object, Object> copyContentTypeAndDependencies (final ContentTypeAPI contentTypeAPI, final ContentType type,
+	private ImmutableMap<Object, Object> copyContentTypeAndDependencies(final ContentTypeAPI contentTypeAPI, final ContentType type,
 																		 final CopyContentTypeForm copyContentTypeForm, final User user)
 			throws DotDataException, DotSecurityException {
 
@@ -226,26 +244,13 @@ public class ContentTypeResource implements Serializable {
 				.newVariable(copyContentTypeForm.getVariable());
 
 		setHostAndFolderAsIdentifer(copyContentTypeForm.getFolder(), copyContentTypeForm.getHost(), user, builder);
-		final ContentType contentTypeSaved = contentTypeAPI.copyFrom(builder.build());
-
-		// saving the workflow information
-		final List<WorkflowScheme> workflowSchemes = this.workflowHelper.findSchemesByContentType(type.id(), user);
-		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = this.workflowHelper.findSystemActionsByContentType(type, user);
-
-		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowSchemes.stream().map(WorkflowScheme::getId).collect(Collectors.toSet()));
-		for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping : systemActionWorkflowActionMappings) {
-
-			this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
-					.systemAction(systemActionWorkflowActionMapping.getSystemAction())
-					.actionId(systemActionWorkflowActionMapping.getWorkflowAction().getId())
-					.contentTypeVariable(contentTypeSaved.variable()).build(), user);
-		}
+		final ContentType contentTypeSaved = contentTypeAPI.copyFromAndDependencies(builder.build());
 
 		return ImmutableMap.builder()
 				.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(contentTypeSaved.variable())).mapObject())
 				.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
 				.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user).stream()
-						.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)))
+						.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
 				.build();
 	}
 
@@ -737,34 +742,36 @@ public class ContentTypeResource implements Serializable {
 		return response;
 	} // getTypes.
 
-
-
 	/**
-	 * Return a list of {@link ContentType}, entity response syntax:.
+	 * Returns a list of {@link ContentType} objects based on the filtering criteria. This is how
+	 * you can call this endpoint:
+	 * <pre>{@code
+	 * GET http://localhost:8080/api/v1/contenttype?sites=48190c8c-42c4-46af-8d1a-0cd5db894797,SYSTEM_HOST,&per_page=40&&orderby=variabledirection=DESC
+	 * }</pre>
+	 * <p>If you want results composed of 10 items per page and you want the third page, and you
+	 * don't have the Site's Identifier, you can call this URL:</p>
+	 * <pre>{@code
+	 * GET http://localhost:8080/api/v1/contenttype?sites=demo.dotcms.com&page=3&per_page=10
+	 * }</pre>
 	 *
-	 * <code>
-	 *  {
-	 *      contentTypes: array of ContentType
-	 *      total: total number of content types
-	 *  }
-	 * <code/>
+	 * @param httpRequest  The current instance of the {@link HttpServletRequest}.
+	 * @param httpResponse The current instance of the {@link HttpServletResponse}.
+	 * @param filter       Filtering parameter used to pass down the Content Types name, Velocity
+	 *                     Variable Name, or Inode. You can pass down part of the characters.
+	 * @param page         The selected results page, for pagination purposes.
+	 * @param perPage      The number of results to return per page, for pagination purposes.
+	 * @param orderByParam The column name that will be used to sort the paginated results. For
+	 *                     reference, please check
+	 *                     {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}.
+	 * @param direction    The direction of the sorting. It can be either "ASC" or "DESC".
+	 * @param type         The Velocity variable name of the Content Type  to retrieve.
+	 * @param siteId       The identifier of the Site where the requested Content Types live.
+	 * @param sites        A comma-separated list of Site identifiers or Site Keys where the
+	 *                     requested Content Types live.
 	 *
-	 * Url sintax: contenttype?query=query-string&limit=n-limit&offset=n-offset&orderby=fieldname-order_direction
+	 * @return A JSON response with the paginated list of Content Types.
 	 *
-	 * where:
-	 *
-	 * <ul>
-	 *     <li>filter: just return ContentTypes who content this pattern</li>
-	 *     <li>n-limit: limit of items to return</li>
-	 *     <li>n-offset: offset</li>
-	 *     <li>fieldname: field to order by</li>
-	 *     <li>order_direction: asc for upward order and desc for downward order</li>
-	 * </ul>
-	 *
-	 * Url example: v1/contenttype?query=New%20L&limit=4&offset=5&orderby=name-asc
-	 *
-	 * @param httpRequest
-	 * @return
+	 * @throws DotDataException An error occurred when retrieving information from the database.
 	 */
 	@GET
 	@JSONP
@@ -773,47 +780,46 @@ public class ContentTypeResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getContentTypes(@Context final HttpServletRequest httpRequest,
 										  @Context final HttpServletResponse httpResponse,
-										  @QueryParam(PaginationUtil.FILTER)   final String filter,
+										  @QueryParam(PaginationUtil.FILTER) final String filter,
 										  @QueryParam(PaginationUtil.PAGE) final int page,
 										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderbyParam,
+										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderByParam,
 										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
-										  @QueryParam("type") String types,
-										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) final String hostId) throws DotDataException {
+										  @QueryParam("type") String type,
+										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) final String siteId,
+										  @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) final String sites) throws DotDataException {
 
-		final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
-		Response response;
-		final String orderBy = getOrderByRealName(orderbyParam);
-		final User user = initData.getUser();
-
+		final User user = new WebResource.InitBuilder(this.webResource)
+				.requestAndResponse(httpRequest, httpResponse)
+				.rejectWhenNoUser(true)
+				.init().getUser();
+		final String orderBy = this.getOrderByRealName(orderByParam);
 		try {
-
 			final Map<String, Object> extraParams = new HashMap<>();
-			if(null!=types) {
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME,
-						Arrays.asList(types.split(",")));
+			if (null != type) {
+				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, type);
 			}
-
-			if(null!=hostId){
-				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,hostId);
+			if (null != siteId) {
+				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
 			}
-
-
+			if (UtilMethods.isSet(sites)) {
+				extraParams.put(ContentTypesPaginator.SITES_PARAMETER_NAME,
+						Arrays.asList(sites.split(COMMA)));
+			}
 			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-
-			response = paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+			return paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
 					OrderDirection.valueOf(direction), extraParams);
-		} catch (IllegalArgumentException e) {
-			throw new DotDataException(e.getMessage());
-		} catch (Exception e) {
+		} catch (final IllegalArgumentException e) {
+			throw new DotDataException(String.format("An error occurred when listing Content Types: " +
+					"%s", ExceptionUtil.getErrorMessage(e)));
+		} catch (final Exception e) {
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
 				throw new ForbiddenException(e);
 			}
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-			Logger.error(this, e.getMessage(), e);
+			Logger.error(this, String.format("An error occurred when listing Content Types: " +
+					"%s", ExceptionUtil.getErrorMessage(e)), e);
+			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-
-		return response;
 	}
 
 	private String getOrderByRealName(final String orderbyParam) {
@@ -836,6 +842,7 @@ public class ContentTypeResource implements Serializable {
 	 *
 	 * @return The form parameter or the specified default value.
 	 */
+	@SuppressWarnings("unchecked")
 	private <T> T getFilterValue(final FilteredContentTypesForm form, final String param, T defaultValue) {
 		if (null == form || null == form.getFilter() || form.getFilter().isEmpty()) {
 			return defaultValue;

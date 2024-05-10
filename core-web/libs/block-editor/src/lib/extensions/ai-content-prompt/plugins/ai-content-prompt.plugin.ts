@@ -1,35 +1,22 @@
-import { Node } from 'prosemirror-model';
-import { EditorState, Plugin, PluginKey, TextSelection, Transaction } from 'prosemirror-state';
+import { Node, DOMSerializer } from 'prosemirror-model';
+import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
-import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
-
-import { filter, skip, takeUntil, tap } from 'rxjs/operators';
+import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
-
-import { findNodeByType, replaceNodeWithContent } from '../../../shared';
-import { NodeTypes } from '../../bubble-menu/models';
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
-import {
-    AI_CONTENT_PROMPT_PLUGIN_KEY,
-    DOT_AI_TEXT_CONTENT_KEY
-} from '../ai-content-prompt.extension';
-import { AiContentPromptState, AiContentPromptStore } from '../store/ai-content-prompt.store';
-import { TIPPY_OPTIONS } from '../utils';
+import { AI_CONTENT_PROMPT_PLUGIN_KEY } from '../ai-content-prompt.extension';
+import { AiContentPromptStore } from '../store/ai-content-prompt.store';
 
 interface AIContentPromptProps {
     pluginKey: PluginKey;
     editor: Editor;
     element: HTMLElement;
-    tippyOptions: Partial<Props>;
     component: ComponentRef<AIContentPromptComponent>;
 }
 
@@ -60,29 +47,19 @@ export class AIContentPromptView {
 
     public view: EditorView;
 
-    public tippy: Instance | undefined;
-
-    public tippyOptions: Partial<Props>;
-
     public pluginKey: PluginKey;
 
     public component: ComponentRef<AIContentPromptComponent>;
 
     private componentStore: AiContentPromptStore;
 
-    private storeSate: AiContentPromptState;
-
     private destroy$ = new Subject<boolean>();
 
-    private boundClickHandler = this.handleClick.bind(this);
-
     constructor(props: AIContentPromptViewProps) {
-        const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
+        const { editor, element, view, pluginKey, component } = props;
         this.editor = editor;
         this.element = element;
         this.view = view;
-
-        this.tippyOptions = tippyOptions;
 
         this.element.remove();
         this.pluginKey = pluginKey;
@@ -91,92 +68,28 @@ export class AIContentPromptView {
         this.componentStore = this.component.injector.get(AiContentPromptStore);
 
         /**
-         * Subscription to insert the AI Node and open the AI Content Actions.
+         * Subscription to insert the text Content once accepted in the Dialog.
+         * Fired from the AI Content Actions plugin.
          */
-        this.componentStore.content$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((content) => !!content)
-            )
+        this.componentStore.selectedContent$
+            .pipe(takeUntil(this.destroy$), skip(1))
             .subscribe((content) => {
-                this.editor
-                    .chain()
-                    .closeAIPrompt()
-                    .insertAINode(content)
-                    .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
-                    .run();
-            });
-
-        /**
-         * Subscription to insert the text Content once accepted the generated content.
-         * Fired from the AI Content Actions plugin.
-         */
-        this.componentStore.vm$
-            .pipe(
-                takeUntil(this.destroy$),
-                tap((state) => (this.storeSate = state)),
-                filter((state) => state.acceptContent)
-            )
-            .subscribe((state) => {
-                const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
-                replaceNodeWithContent(this.editor, nodeInformation, state.content);
-
-                this.componentStore.setAcceptContent(false);
-            });
-
-        /**
-         * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
-         * template in ai-content-prompt.component.html
-         */
-
-        this.componentStore.status$.pipe(skip(1), takeUntil(this.destroy$)).subscribe((status) => {
-            if (status === ComponentStatus.INIT) {
-                this.tippy?.hide();
-            } else if (status === ComponentStatus.LOADING) {
-                this.editor.commands.setLoadingAIContentNode(true);
-            }
-        });
-
-        /**
-         * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
-         */
-        this.componentStore.errorMsg$
-            .pipe(
-                filter((hasError) => !!hasError),
-                takeUntil(this.destroy$)
-            )
-            .subscribe((error) => {
-                this.component.injector.get(ConfirmationService).confirm({
-                    key: 'ai-text-prompt-msg',
-                    message: this.component.injector.get(DotMessageService).get(error),
-                    header: 'Error',
-                    rejectVisible: false,
-                    acceptVisible: false
+                this.editor.commands.insertContent(this.parseTextToParagraphs(content), {
+                    parseOptions: { preserveWhitespace: false }
                 });
-                this.tippy?.hide();
             });
 
         /**
-         * Subscription to delete AI_CONTENT node.
-         * Fired from the AI Content Actions plugin.
+         * Subscription to update the editor state, when close the AI Content Prompt Dialog.
          */
-        this.componentStore.deleteContent$
+        this.componentStore.showDialog$
             .pipe(
                 skip(1),
                 takeUntil(this.destroy$),
-                filter((deleteContent) => deleteContent)
+                filter((value) => !value)
             )
             .subscribe(() => {
-                const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
-
-                if (nodeInformation) {
-                    this.editor.commands.deleteRange({
-                        from: nodeInformation.from,
-                        to: nodeInformation.to
-                    });
-                }
-
-                this.componentStore.setDeleteContent(false);
+                this.editor.commands.closeAIPrompt();
             });
     }
 
@@ -186,111 +99,37 @@ export class AIContentPromptView {
             ? this.pluginKey?.getState(prevState)
             : { aIContentPromptOpen: false };
 
-        if (next?.aIContentPromptOpen === prev?.aIContentPromptOpen) {
-            return;
+        if (next?.aIContentPromptOpen && prev?.aIContentPromptOpen === false) {
+            this.componentStore.showDialog();
         }
-
-        next.aIContentPromptOpen
-            ? this.show()
-            : this.hide(
-                  this.storeSate.status === ComponentStatus.IDLE ||
-                      this.storeSate.status === ComponentStatus.LOADED
-              );
-    }
-
-    createTooltip() {
-        const { element: editorElement } = this.editor.options;
-        const editorIsAttached = !!editorElement.parentElement;
-
-        if (!editorIsAttached) {
-            return;
-        }
-
-        //The following 4 lines are to attach tippy to where the cursor is when opening.
-        // Get the current editor selection.
-        const { selection } = this.editor.state;
-        if (selection instanceof TextSelection) {
-            // Use `domAtPos` to get the DOM information at the cursor position
-            const { pos } = selection.$cursor;
-            const domAtPos = this.editor.view.domAtPos(pos);
-            const clientTarget = domAtPos.node as Element;
-
-            this.tippy = tippy(editorElement, {
-                ...TIPPY_OPTIONS,
-                ...this.tippyOptions,
-                content: this.element,
-                getReferenceClientRect: clientTarget.getBoundingClientRect.bind(clientTarget),
-                onHide: () => {
-                    this.editor.commands.closeAIPrompt();
-                },
-                onShow: (instance) => {
-                    const popperElement = instance.popper as HTMLElement;
-                    popperElement.style.width = '100%';
-                    // override the top position set by popper. so the prompt is on top of the +. not below it.
-                    setTimeout(() => {
-                        popperElement.style.marginTop = '-40px'; // Use marginTop instead of top
-                    }, 0);
-                }
-            });
-        }
-    }
-
-    show() {
-        this.createTooltip();
-        this.manageClickListener(true);
-        this.editor.setEditable(false);
-        this.tippy?.show();
-        this.componentStore.setStatus(ComponentStatus.IDLE);
-    }
-
-    /**
-     * Hide the tooltip but ignore store update  if open is false already
-     * this happens when the event comes from ai-content-prompt.component.html escape keyup event.
-     *
-     * @param notifyStore
-     */
-    hide(notifyStore = true) {
-        this.tippy?.hide();
-        this.editor.setEditable(true);
-
-        this.editor.view.focus();
-        if (notifyStore) {
-            this.componentStore.setStatus(ComponentStatus.INIT);
-        }
-
-        this.manageClickListener(false);
     }
 
     destroy() {
-        this.tippy?.destroy();
         this.destroy$.next(true);
         this.destroy$.complete();
-        this.manageClickListener(false);
     }
 
     /**
-     * Handles the click event on the editor's DOM. If the AI content prompt is open or loaded.
-     * and not in a loading state, this function hides the associated Tippy tooltip.
-     */
-    handleClick(): void {
-        if (
-            this.storeSate.status === ComponentStatus.IDLE ||
-            this.storeSate.status === ComponentStatus.LOADED
-        ) {
-            this.tippy.hide();
-        }
-    }
-
-    /**
-     * Manages the click event listener on the editor's DOM based on the specified condition.
-     * If `addListener` is `true`, the click event listener is added; otherwise, it is removed.
+     * This function takes a string of text and converts it into HTML paragraphs.
+     * It splits the input text by line breaks and wraps each line in a <p> tag.
+     * The resulting HTML string is then returned.
      *
-     * @param addListener - A boolean indicating whether to add or remove the click event listener.
+     * based on clipboardTextParser.
+     * https://github.com/ProseMirror/prosemirror-view/blob/1.33.4/src/clipboard.ts#L43
+     *
+     * @param {string} text - The input text to be converted into HTML paragraphs.
+     * @returns {string} - The resulting HTML string with text wrapped in <p> tags.
      */
-    manageClickListener(addListener: boolean): void {
-        addListener
-            ? this.editor.view.dom.addEventListener('click', this.boundClickHandler)
-            : this.editor.view.dom.removeEventListener('click', this.boundClickHandler);
+    parseTextToParagraphs(text: string): string {
+        const { schema } = this.view.state;
+        const serializer = DOMSerializer.fromSchema(schema);
+        const dom = document.createElement('div');
+        text.split(/(?:\r\n?|\n)+/).forEach((block) => {
+            const p = dom?.appendChild(document.createElement('p'));
+            if (block) p.appendChild(serializer.serializeNode(schema.text(block)));
+        });
+
+        return dom.innerHTML;
     }
 }
 

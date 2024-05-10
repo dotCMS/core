@@ -16,6 +16,7 @@ import { Inplace } from 'primeng/inplace';
 import { Tooltip } from 'primeng/tooltip';
 
 import {
+    DotExperimentsService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotSessionStorageService
@@ -27,7 +28,6 @@ import {
     DotPageMode,
     ExperimentSteps
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,

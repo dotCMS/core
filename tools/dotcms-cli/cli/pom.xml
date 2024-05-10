@@ -5,14 +5,14 @@
     <parent>
         <artifactId>dotcms-cli-parent</artifactId>
         <groupId>com.dotcms</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
     <artifactId>dotcms-cli</artifactId>
     <packaging>jar</packaging>
 
     <properties>
+        <maven.deploy.skip>false</maven.deploy.skip>
         <executable-suffix/>
         <distribution.directory>${project.build.directory}/distributions</distribution.directory>
         <picocli.codegen.version>4.6.3</picocli.codegen.version>
@@ -42,13 +42,13 @@
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-api-data-model</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-api-data-model</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -202,6 +202,7 @@
                     <mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
                     <arguments>
                         <argument>--outdir=${project.basedir}/docs</argument>
+                        <argument>com.dotcms.cli.command.ConfigCommand</argument>
                         <argument>com.dotcms.cli.command.InstanceCommand</argument>
                         <argument>com.dotcms.cli.command.LoginCommand</argument>
                         <argument>com.dotcms.cli.command.PushCommand</argument>
@@ -303,6 +304,51 @@
             <properties>
                 <quarkus.package.type>native</quarkus.package.type>
                 <quarkus.native.additional-build-args>-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
+            </properties>
+        </profile>
+        <profile>
+            <id>uber-jar</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>${quarkus.platform.group-id}</groupId>
+                        <artifactId>quarkus-maven-plugin</artifactId>
+                        <version>${quarkus.platform.version}</version>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>build</goal>
+                                    <goal>generate-code</goal>
+                                    <goal>generate-code-tests</goal>
+                                </goals>
+                                <configuration>
+                                    <systemProperties>
+                                        <testcontainers.docker.image>${testcontainers.docker.image}</testcontainers.docker.image>
+                                    </systemProperties>
+                                    <manifestEntries>
+                                        <Implementation-URL>${project.url}</Implementation-URL>
+                                        <Java-Vendor>${java.vendor}</Java-Vendor>
+                                        <Java-Version>${java.version}</Java-Version>
+                                        <Os-Arch>${os.arch}</Os-Arch>
+                                        <Os-Name>${os.name}</Os-Name>
+                                        <Os-Version>${os.version}</Os-Version>
+                                        <Scm-Connection>${project.scm.connection}</Scm-Connection>
+                                        <Scm-Url>${project.scm.url}</Scm-Url>
+                                        <Scm-Revision>${buildNumber}</Scm-Revision>
+                                        <!--suppress UnresolvedMavenProperty-->
+                                        <Scm-Build>${scmBranch}</Scm-Build>
+                                        <Implementation-Build>${buildNumber}</Implementation-Build>
+                                        <Implementation-Timestamp>${timestamp}</Implementation-Timestamp>
+                                    </manifestEntries>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <properties>
+                <quarkus.package.type>uber-jar</quarkus.package.type>
             </properties>
         </profile>
     </profiles>

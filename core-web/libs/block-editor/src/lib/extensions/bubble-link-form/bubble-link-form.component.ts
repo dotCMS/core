@@ -12,12 +12,13 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 
 import { debounceTime, take } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotLanguagesService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 
 import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
 
-import { Languages, SuggestionsCommandProps } from '../../shared';
-import { DotLanguageService, SuggestionsService } from '../../shared/services';
+import { SuggestionsCommandProps } from '../../shared';
+import { SuggestionsService } from '../../shared/services';
 import { DEFAULT_LANG_ID } from '../bubble-menu/models';
 import { isValidURL } from '../bubble-menu/utils';
 
@@ -48,7 +49,7 @@ export class BubbleLinkFormComponent implements OnInit {
     };
 
     private minChars = 3;
-    private dotLangs: Languages;
+    private dotLangs: { [key: string]: DotLanguage } = {};
 
     loading = false;
     form: FormGroup;
@@ -87,7 +88,7 @@ export class BubbleLinkFormComponent implements OnInit {
     constructor(
         private fb: FormBuilder,
         private suggestionsService: SuggestionsService,
-        private dotLanguageService: DotLanguageService
+        private dotLanguagesService: DotLanguagesService
     ) {}
 
     ngOnInit() {
@@ -110,10 +111,12 @@ export class BubbleLinkFormComponent implements OnInit {
                 this.setNodeProps.emit({ link: this.currentLink, blank })
             );
 
-        this.dotLanguageService
-            .getLanguages()
+        this.dotLanguagesService
+            .get()
             .pipe(take(1))
-            .subscribe((dotLang) => (this.dotLangs = dotLang));
+            .subscribe((dotLang) => {
+                dotLang.forEach((lang) => (this.dotLangs[lang.id] = lang));
+            });
     }
 
     /**

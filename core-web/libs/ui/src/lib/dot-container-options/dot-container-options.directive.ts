@@ -70,7 +70,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
     }
 
     private fetchContainerOptions(
-        filter: string = ''
+        filter = ''
     ): Observable<DotDropdownGroupSelectOption<DotContainer>[]> {
         return this.dotContainersService.getFiltered(filter, this.maxOptions, true).pipe(
             map((containerEntities) => {

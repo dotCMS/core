@@ -18,7 +18,8 @@ import {
     DotPropertiesService,
     DotRouterService,
     DotSessionStorageService,
-    DotGlobalMessageService
+    DotGlobalMessageService,
+    DotPageStateService
 } from '@dotcms/data-access';
 import { DotCMSResponse, HttpCode, ResponseView } from '@dotcms/dotcms-js';
 import { DotLayout, DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
@@ -104,6 +105,12 @@ describe('DotEditLayoutComponent', () => {
                 DotSessionStorageService,
                 DotEditLayoutService,
                 DotRouterService,
+                {
+                    provide: DotPageStateService,
+                    useValue: {
+                        state$: of(PAGE_STATE)
+                    }
+                },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
@@ -355,13 +362,6 @@ describe('DotEditLayoutComponent', () => {
             );
 
             expect(component).toBeTruthy();
-        });
-
-        it('should set the themeId @Input correctly', () => {
-            const templateBuilder = fixture.debugElement.query(
-                By.css('[data-testId="new-template-builder"]')
-            );
-            expect(templateBuilder.componentInstance.themeId).toBe(PAGE_STATE.template.theme);
         });
 
         it('should emit events from new-template-builder when the layout is changed', () => {

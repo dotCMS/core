@@ -9,9 +9,8 @@ import { By } from '@angular/platform-browser';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPaletteContentTypeComponent } from './dot-palette-content-type.component';
 
@@ -62,8 +61,7 @@ export const contentTypeDataMock = [
         <dot-palette-content-type
             [items]="items"
             [loading]="loading"
-            [viewContentlet]="viewContentlet"
-        ></dot-palette-content-type>
+            [viewContentlet]="viewContentlet"></dot-palette-content-type>
     `
 })
 class TestHostComponent {
@@ -89,7 +87,7 @@ describe('DotPaletteContentTypeComponent', () => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent, DotPaletteContentTypeComponent],
             imports: [
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotIconModule,
                 DotFilterPipeModule,

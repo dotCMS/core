@@ -1,5 +1,6 @@
 import { describe } from '@jest/globals';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -30,6 +31,7 @@ import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-conten
 import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-tag-field/dot-edit-content-tag-field.component';
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
+import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
@@ -122,6 +124,10 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         component: DotEditContentKeyValueComponent,
         declarations: [MockComponent(DotKeyValueComponent)],
         providers: [mockProvider(DotMessageDisplayService)]
+    },
+    [FIELD_TYPES.WYSIWYG]: {
+        component: DotEditContentWYSIWYGFieldComponent,
+        declarations: [MockComponent(EditorComponent)]
     }
 };
 

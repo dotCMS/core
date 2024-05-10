@@ -80,6 +80,23 @@ describe('DotEmaDialogStoreService', () => {
         });
     });
 
+    it('should initialize with edit iframe properties', (done) => {
+        spectator.service.editUrlContentMapContentlet({
+            inode: '123',
+            title: 'test'
+        });
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state).toEqual({
+                url: EDIT_CONTENTLET_URL + '123&isURLMap=true',
+                status: DialogStatus.LOADING,
+                header: 'test',
+                type: 'content'
+            });
+            done();
+        });
+    });
+
     it('should initialize with addA iframe properties', (done) => {
         spectator.service.addContentlet({
             containerId: '1234',
@@ -118,7 +135,8 @@ describe('DotEmaDialogStoreService', () => {
     it('should initialize with create iframe properties', (done) => {
         spectator.service.createContentlet({
             contentType: 'test',
-            url: 'some/really/long/url'
+            url: 'some/really/long/url',
+            payload: PAYLOAD_MOCK
         });
 
         spectator.service.dialogState$.subscribe((state) => {
@@ -127,7 +145,7 @@ describe('DotEmaDialogStoreService', () => {
                 status: DialogStatus.LOADING,
                 header: 'Create test',
                 type: 'content',
-                payload: undefined
+                payload: PAYLOAD_MOCK
             });
             done();
         });
@@ -136,7 +154,8 @@ describe('DotEmaDialogStoreService', () => {
     it('should update dialog state', (done) => {
         spectator.service.createContentlet({
             url: 'some/really/long/url',
-            contentType: 'Blog Posts'
+            contentType: 'Blog Posts',
+            payload: PAYLOAD_MOCK
         });
 
         spectator.service.dialogState$.subscribe((state) => {
@@ -144,6 +163,7 @@ describe('DotEmaDialogStoreService', () => {
             expect(state.status).toBe(DialogStatus.LOADING);
             expect(state.url).toBe('some/really/long/url');
             expect(state.type).toBe('content');
+            expect(state.payload).toEqual(PAYLOAD_MOCK);
             done();
         });
     });
@@ -170,5 +190,36 @@ describe('DotEmaDialogStoreService', () => {
         });
 
         expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost');
+    });
+
+    it('should initialize with loading iframe properties', (done) => {
+        spectator.service.loadingIframe('test');
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state).toEqual({
+                url: '',
+                status: DialogStatus.LOADING,
+                header: 'test',
+                type: 'content'
+            });
+            done();
+        });
+    });
+
+    it('should update the state to show dialog with a specific URL', (done) => {
+        spectator.service.openDialogOnURL({
+            url: 'https://demo.dotcms.com/jsp.jsp',
+            title: 'test'
+        });
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state).toEqual({
+                url: 'https://demo.dotcms.com/jsp.jsp',
+                status: DialogStatus.LOADING,
+                header: 'test',
+                type: 'content'
+            });
+            done();
+        });
     });
 });

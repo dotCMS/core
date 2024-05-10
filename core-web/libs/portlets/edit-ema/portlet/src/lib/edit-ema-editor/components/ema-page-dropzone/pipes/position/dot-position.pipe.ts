@@ -7,11 +7,11 @@ import { EmaPageDropzoneItem } from '../../types';
     standalone: true
 })
 export class DotPositionPipe implements PipeTransform {
-    transform(item: EmaPageDropzoneItem): Record<string, string> {
+    transform(item: EmaPageDropzoneItem, isError = false): Record<string, string> {
         return {
             position: 'absolute',
-            left: `${item.x}px`,
-            top: `${item.y}px`,
+            left: `${isError ? '0' : item.x}px`,
+            top: `${isError ? '0' : item.y}px`,
             width: `${item.width}px`,
             height: `${item.height}px`
         };

@@ -1,7 +1,5 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 
-import { OverlayPanel } from 'primeng/overlaypanel';
-
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
@@ -10,6 +8,7 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { INotification } from '@models/notifications';
 
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/dot-toolbar-announcements.component';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -20,7 +19,7 @@ import { IframeOverlayService } from '../../../_common/iframe/service/iframe-ove
 export class DotToolbarNotificationsComponent implements OnInit {
     @ViewChild(DotDropdownComponent, { static: true }) dropdown: DotDropdownComponent;
 
-    @ViewChild('toolbarAnnouncements', { static: true }) toolbarAnnouncements: OverlayPanel;
+    @ViewChild('toolbarAnnouncements') toolbarAnnouncements: DotToolbarAnnouncementsComponent;
     existsMoreToLoad = false;
     notifications: INotification[] = [];
     notificationsUnreadCount = 0;
@@ -133,10 +132,10 @@ export class DotToolbarNotificationsComponent implements OnInit {
             });
     }
 
-    onActiveAnnouncements(): void {
+    onActiveAnnouncements(event: CustomEvent): void {
         this.activeAnnouncements = true;
+        this.toolbarAnnouncements.toggleDialog(event);
     }
-
     markAnnocumentsAsRead(): void {
         this.activeAnnouncements = false;
         this.announcementsStore.markAnnouncementsAsRead();

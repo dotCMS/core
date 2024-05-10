@@ -20,7 +20,7 @@ import { DotPropertiesService } from '@dotcms/data-access';
  */
 @Injectable()
 export class DotFeatureFlagResolver
-    implements Resolve<Observable<Record<string, boolean>> | Observable<boolean>>
+    implements Resolve<Observable<Record<string, boolean | string>> | Observable<boolean | string>>
 {
     constructor(private readonly dotConfigurationService: DotPropertiesService) {}
 

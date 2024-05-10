@@ -24,13 +24,12 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     MockDotMessageService,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
@@ -124,7 +123,7 @@ describe('DotAppsConfigurationComponent', () => {
                 DotAppsImportExportDialogModule,
                 DotAppsConfigurationListModule,
                 HttpClientTestingModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 MarkdownModule.forRoot()
             ],

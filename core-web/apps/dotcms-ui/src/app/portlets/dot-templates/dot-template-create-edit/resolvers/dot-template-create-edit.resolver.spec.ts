@@ -15,7 +15,7 @@ const templateMock: DotTemplate = {
     anonymous: false,
     friendlyName: 'Published template',
     identifier: '123Published',
-    inode: '1AreSD',
+    inode: 'inode123',
     name: 'Published template',
     type: 'type',
     versionType: 'type',

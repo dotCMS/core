@@ -1371,4 +1371,87 @@ public class UserAPITest extends IntegrationTestBase {
 		assertEquals(userMapNoEmail.get("emailAddress"), StringPool.BLANK);
 		assertEquals(userMapNoEmail.get("gravitar"), StringPool.BLANK);
 	}
+
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: A new user is saved
+	 * ExpectedResult: The new user is persisted successfully
+	 *
+	 */
+	@Test
+	public void test_saveNewUser_withFirstName() throws DotDataException, DotSecurityException {
+		String firstname = "Test User";
+		final User newUser = new UserDataGen().firstName(firstname).nextPersisted();
+
+        assertEquals("Test User", newUser.getFirstName());
+
+	}
+
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: A new user creation with user first name being created exceeding maximum characters allowed
+	 * ExpectedResult: The new user creation should throw an error
+	 *
+	 */
+	@Test
+	public void test_saveNewUser_withFirstNameExceeding() throws DotSecurityException {
+        String firstName ="xzYWuASxGQZemNRBdEjouKEUOZvOoERBFgCxJHuqQAvpjywvZuARWRThKTONozXwBXUOkXnwhzbTtovqFBxYNzNQDJxfhecGTRfOAAA";
+		final User newUser = new UserDataGen().firstName("test").nextPersisted();
+
+		try {
+			newUser.setFirstName(firstName);
+			// Call the save method with the user object
+			userAPI.save(newUser, APILocator.systemUser(), false, false);
+			fail("Expected DotDataException to be thrown");
+		} catch (DotDataException e) {
+			// Verify that the exception message matches the expected message
+			assertEquals("Length of First Name provided exceeds the maximum limit 100", e.getMessage());
+		}
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: A new user creation with user lastname being created exceeding maximum characters allowed
+	 * ExpectedResult: The new user creation should throw an error
+	 *
+	 */
+	@Test
+	public void test_saveNewUser_withLastNameExceeding() throws  DotSecurityException {
+		String lastName ="xzYWuASxGQZemNRBdEjouKEUOZvOoERBFgCxJHuqQAvpjywvZuARWRThKTONozXwBXUOkXnwhzbTtovqFBxYNzNQDJxfhecGTRfOAAA";
+		final User newUser = new UserDataGen().firstName("test").nextPersisted();
+
+		try {
+			newUser.setLastName(lastName);
+			// Call the save method with the user object
+			userAPI.save(newUser, APILocator.systemUser(), false, false);
+			fail("Expected DotDataException to be thrown");
+		} catch (DotDataException e) {
+			// Verify that the exception message matches the expected message
+			assertEquals("Length of Last Name provided exceeds the maximum limit 100", e.getMessage());
+		}
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: A new user creation with user email being created exceeding maximum characters allowed
+	 * ExpectedResult: The new user creation should throw an error
+	 *
+	 */
+	@Test
+	public void test_saveNewUser_withEmailNameExceeding() throws  DotSecurityException {
+		String email ="xzYWuASxGQZemNRBdEjouKEUOZvOoERBFgCxJHuqQAvpjywvZuARWRThKTONozXwBXUOkXnwhzbTtovqFBxYNzNQDJxfhecGTRf@dotcms.com";
+		final User newUser = new UserDataGen().firstName("test").nextPersisted();
+
+		try {
+			newUser.setEmailAddress(email);
+			// Call the save method with the user object
+			userAPI.save(newUser, APILocator.systemUser(), false, false);
+			fail("Expected DotDataException to be thrown");
+		} catch (DotDataException e) {
+			// Verify that the exception message matches the expected message
+			assertEquals("Length of Email Address provided exceeds the maximum limit 100", e.getMessage());
+		}
+	}
 }

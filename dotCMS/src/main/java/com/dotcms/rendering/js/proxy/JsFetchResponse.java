@@ -55,7 +55,7 @@ public class JsFetchResponse implements Serializable, JsProxyObject<CircuitBreak
     @HostAccess.Export
     public ProxyHashMap getJson() {
 
-        final Map json = new JSONObject(this.getBody());
+        final JSONObject json = new JSONObject(this.getBody());
         return ProxyHashMap.from(json);
     }
 

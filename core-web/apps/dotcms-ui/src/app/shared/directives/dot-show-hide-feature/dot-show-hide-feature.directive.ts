@@ -52,6 +52,8 @@ export class DotShowHideFeatureDirective implements OnInit {
         this._alternateTemplateRef = alternateTemplateRef;
     }
 
+    @Input() dotShowOnNotFound: boolean;
+
     get alternateTemplateRef(): TemplateRef<Component> {
         return this._alternateTemplateRef;
     }

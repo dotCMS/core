@@ -1,7 +1,5 @@
 import { Content, JSONContent } from '@tiptap/core';
 
-import { AI_IMAGE_PLACEHOLDER_PROPERTY, NodeTypes } from '../../extensions';
-
 interface BlockMap {
     [key: string]: boolean;
 }
@@ -94,44 +92,6 @@ export const purifyNodeTree = (content: JSONContent[], blocksMap: BlockMap): JSO
     }
 
     return allowedContent;
-};
-
-/**
- * Removes the loading nodes from the provided JSONContent array recursively.
- * This is needed because the AI placeholder content are part of the editor,
- * but they are not really valid content.
- *
- * @param {JSONContent[]} content - An array of JSONContent objects representing the content with loading nodes.
- * @return {JSONContent[]} The content array with loading nodes removed.
- */
-export const removeLoadingNodes = (content: JSONContent[]): JSONContent[] => {
-    if (!content?.length) {
-        return content;
-    }
-
-    const nodesToRemove = [NodeTypes.AI_CONTENT, NodeTypes.LOADER];
-    const allowedContent = [];
-
-    for (const i in content) {
-        const node = content[i];
-
-        if (
-            node &&
-            !nodesToRemove.includes(node?.type as NodeTypes) &&
-            !isAIPlaceholderImage(node)
-        ) {
-            allowedContent.push({
-                ...node,
-                content: removeLoadingNodes(node.content)
-            });
-        }
-    }
-
-    return allowedContent;
-};
-
-const isAIPlaceholderImage = (node: JSONContent): boolean => {
-    return node.type === NodeTypes.DOT_IMAGE && node.attrs?.data?.[AI_IMAGE_PLACEHOLDER_PROPERTY];
 };
 
 /**

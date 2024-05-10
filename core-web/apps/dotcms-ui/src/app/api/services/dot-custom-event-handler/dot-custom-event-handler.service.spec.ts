@@ -71,10 +71,7 @@ describe('DotCustomEventHandlerService', () => {
     let dotContentTypeService: DotContentTypeService;
     let router: Router;
 
-    const createFeatureFlagResponse = (
-        enabled: string = 'NOT_FOUND',
-        contentType: string = '*'
-    ) => ({
+    const createFeatureFlagResponse = (enabled = 'NOT_FOUND', contentType = '*') => ({
         [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled,
         [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE]: contentType
     });

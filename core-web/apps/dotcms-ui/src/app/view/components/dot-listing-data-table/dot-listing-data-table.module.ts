@@ -14,9 +14,9 @@ import {
     DotIconModule,
     DotMessagePipe,
     DotRelativeDatePipe,
+    DotSafeHtmlPipe,
     DotStringFormatPipe
 } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ActionHeaderModule } from './action-header/action-header.module';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
@@ -36,7 +36,7 @@ import { DotActionMenuButtonModule } from '../_common/dot-action-menu-button/dot
         DotActionMenuButtonModule,
         DotIconModule,
         RouterModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         CheckboxModule,
         ContextMenuModule,
         DotMessagePipe,

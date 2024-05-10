@@ -2,44 +2,31 @@ package com.dotmarketing.business;
 
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
-import com.dotcms.rest.ContentHelper;
-import com.dotcms.rest.MapToContentletPopulator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.DuplicateUserEmailAddressException;
-import com.liferay.portal.DuplicateUserIdException;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.ReservedUserEmailAddressException;
-import com.liferay.portal.ReservedUserIdException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.UserEmailAddressException;
-import com.liferay.portal.UserFirstNameException;
-import com.liferay.portal.UserIdException;
-import com.liferay.portal.UserIdValidator;
-import com.liferay.portal.UserLastNameException;
-import com.liferay.portal.UserPasswordException;
-import com.liferay.portal.ejb.UserLocalManagerImpl;
+import com.liferay.portal.*;
 import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
-import com.liferay.portlet.admin.ejb.AdminConfigManagerUtil;
-import com.liferay.portlet.admin.model.UserConfig;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.InstancePool;
 import com.liferay.util.Time;
 import com.liferay.util.Validator;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Date;
 import java.util.Locale;
-import org.apache.commons.lang3.StringUtils;
 
 public class UserHelper {
 
     private final UserAPI userAPI;
+    public static final int MAX_FIELD_LENGTH = 100;
 
     private static class SingletonHolder {
         private static final UserHelper INSTANCE = new UserHelper();
@@ -200,4 +187,32 @@ public class UserHelper {
         }
     }
 
+    public static void validateMaximumLength(final String firstName, final String lastName, final String email) throws DotDataException {
+        if (UtilMethods.exceedsMaxLength(firstName, MAX_FIELD_LENGTH)) {
+            throw new DotDataException("Length of First Name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
+        }
+        if (UtilMethods.exceedsMaxLength(lastName, MAX_FIELD_LENGTH)) {
+            throw new DotDataException("Length of Last Name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
+        }
+        if (UtilMethods.exceedsMaxLength(email, MAX_FIELD_LENGTH)) {
+            throw new DotDataException("Length of Email Address provided exceeds the maximum limit "+ MAX_FIELD_LENGTH);
+        }
+    }
+
+    public static void validateMaximumLength(final String firstName, final String lastName, final String email,
+                                             final String middleName, final String nickName, final String birthday) throws DotDataException {
+
+        validateMaximumLength(firstName, lastName, email); // Call the existing method
+
+        // Validate the additional fields
+        if (UtilMethods.exceedsMaxLength(middleName, MAX_FIELD_LENGTH)) {
+            throw new DotDataException("Length of Middle Name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
+        }
+        if (UtilMethods.exceedsMaxLength(nickName, MAX_FIELD_LENGTH)) {
+            throw new DotDataException("Length of Nick Name provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
+        }
+        if (UtilMethods.exceedsMaxLength(birthday, MAX_FIELD_LENGTH)) {
+            throw new DotDataException("Length of Birthday provided exceeds the maximum limit " + MAX_FIELD_LENGTH);
+        }
+    }
 }

@@ -1,0 +1,55 @@
+name: PR Check
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  # Cancel any in-progress runs for the same branch/PR to prevent delays from changes during build
+  # On master and other branches run will set as pending.  Any new builds requested will replace the pending build
+  cancel-in-progress: true
+jobs:
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/reusable-initialize.yml
+    with:
+      incremental: true
+  build:
+    name: PR Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/reusable-ci-build.yml
+    permissions:
+      contents: read
+      packages: write
+  test:
+    name: PR Test
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/reusable-ci-test.yml
+    with:
+      jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
+      integration: ${{ needs.initialize.outputs.backend == 'true' }}
+      postman: ${{ needs.initialize.outputs.backend == 'true' }}
+      frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
+      cli: ${{ needs.initialize.outputs.cli == 'true' }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+  sonar:
+    name: PR SonarQube
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/reusable-sonarqube.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ sonar,test ]
+    uses: ./.github/workflows/reusable-finalize.yml
+    with:
+      needsData: ${{ toJson(needs) }}

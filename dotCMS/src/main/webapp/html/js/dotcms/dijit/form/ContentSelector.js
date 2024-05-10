@@ -54,6 +54,8 @@ dojo.require('dijit.form.Button');
 dojo.require('dijit.layout.BorderContainer');
 
 var isNg = new URLSearchParams(document.location.search).get('ng');
+// This variable maps to the values declared in Field.FieldType.HOST_OR_FOLDER
+const HOST_OR_FOLDER = "host or folder"
 
 dojo.declare(
     'dotcms.dijit.form.ContentSelector',
@@ -305,13 +307,31 @@ dojo.declare(
             }
         },
 
+        _getSiteFolderFieldDefaultHTML: function (){
+            const defaultSiteFolderField = {
+                "fieldContentlet": "system_field",
+                "fieldFieldType": HOST_OR_FOLDER,
+                "fieldName": "Site or Folder",
+                "fieldValues": "",
+                "fieldVelocityVarName": "siteOrFolder",
+            }
+
+            var htmlstr = "<dl class='vertical'>";
+            htmlstr += '<dt><label>' + this._fieldName(defaultSiteFolderField) + '</label></dt>';
+            htmlstr += '<dd>' + this._renderSearchField(defaultSiteFolderField) + '</dd>';
+            htmlstr += '</dl>';
+
+            return htmlstr;
+        },
+
         _fillFields: function (data) {
             this.currentStructureFields = data;
             this.search_fields_table.innerHTML = '';
+            this.site_folder_field_pop.innerHTML = '';
             var htmlstr = "<dl class='vertical'>";
             for (var i = 0; i < data.length; i++) {
                 var type = data[i]['fieldFieldType'];
-                if (type == 'category' || type == 'hidden') {
+                if (type == 'category' || type == 'hidden' || type == HOST_OR_FOLDER) {
                     continue;
                 }
                 htmlstr +=
@@ -319,8 +339,13 @@ dojo.declare(
                 htmlstr += '<dd>' + this._renderSearchField(data[i]) + '</dd>';
             }
             htmlstr += '</dl>';
+
+            const siteFolderFieldHtml = this._getSiteFolderFieldDefaultHTML();
+            dojo.place(siteFolderFieldHtml, this.site_folder_field_pop);
             dojo.place(htmlstr, this.search_fields_table);
+
             dojo.parser.parse(this.search_fields_table);
+            dojo.parser.parse(this.site_folder_field_pop);
             eval(this.setDotFieldTypeStr);
         },
 

@@ -141,15 +141,22 @@ export const isValidJson = (value: string): boolean => {
  * @param {DotCMSContentTypeFieldVariable[]} fieldVariables - The array of field variables to be parsed.
  * @return {T} - The parsed object with key-value pairs.
  */
-export const getFieldVariablesParsed = <T extends Record<string, string>>(
+export const getFieldVariablesParsed = <T extends Record<string, string | boolean>>(
     fieldVariables: DotCMSContentTypeFieldVariable[]
 ): T => {
     if (!fieldVariables) {
         return {} as T;
     }
 
-    const result: Record<string, string> = {};
+    const result = {};
     fieldVariables.forEach(({ key, value }) => {
+        // If the value is a boolean string, convert it to a boolean
+        if (value === 'true' || value === 'false') {
+            result[key] = value === 'true';
+
+            return;
+        }
+
         result[key] = value;
     });
 
@@ -164,9 +171,9 @@ export const getFieldVariablesParsed = <T extends Record<string, string>>(
  *       not valid JSON, an empty object will be returned.
  */
 export const stringToJson = (value: string) => {
-    if (value && isValidJson(value)) {
-        return JSON.parse(value);
+    if (!value) {
+        return {};
     }
 
-    return {};
+    return isValidJson(value) ? JSON.parse(value) : {};
 };

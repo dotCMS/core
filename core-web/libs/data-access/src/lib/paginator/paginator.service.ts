@@ -329,7 +329,7 @@ export class PaginatorService {
      * @return {*}  {string}
      * @memberof PaginatorService
      */
-    private sanitizeQueryParams(url: string = '', params: Map<string, unknown>): string {
+    private sanitizeQueryParams(url = '', params: Map<string, unknown>): string {
         const urlArr = url?.split('?');
         const baseUrl = urlArr[0];
         const queryParams = urlArr[1];

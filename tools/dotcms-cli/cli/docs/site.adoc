@@ -76,9 +76,6 @@ xref:site-archive.adoc[*archive*]::
 xref:site-unarchive.adoc[*unarchive*]::
   *Use this command to unarchive a site.*
 
-xref:site-current.adoc[*current*]::
-  *Use this command to get the current Site.*
-
 // end::picocli-generated-man-section-commands[]
 
 // tag::picocli-generated-man-section-exit-status[]

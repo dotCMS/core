@@ -64,6 +64,11 @@
             "library": {
                 "unitTestRunner": "jest"
             }
+        },
+        "@nx/react": {
+            "library": {
+                "unitTestRunner": "jest"
+            }
         }
     },
     "$schema": "./node_modules/nx/schemas/nx-schema.json",
@@ -102,6 +107,20 @@
                     "codeCoverage": true
                 }
             }
+        },
+        "@nx/eslint:lint": {
+            "inputs": ["default", "{workspaceRoot}/.eslintrc.json"],
+            "cache": true
+        },
+        "@nx/rollup:rollup": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        },
+        "@nx/vite:build": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
         }
     },
     "namedInputs": {
@@ -123,10 +142,26 @@
             "!{projectRoot}/.eslintrc.json",
             "!{projectRoot}/.storybook/**/*",
             "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
-            "!{projectRoot}/.storybook/**/*",
-            "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
             "!{projectRoot}/tsconfig.storybook.json",
             "!{projectRoot}/src/test-setup.[jt]s"
         ]
-    }
+    },
+    "plugins": [
+        {
+            "plugin": "@nx/eslint/plugin",
+            "options": {
+                "targetName": "lint"
+            }
+        },
+        {
+            "plugin": "@nx/vite/plugin",
+            "options": {
+                "buildTargetName": "build",
+                "previewTargetName": "preview",
+                "testTargetName": "test",
+                "serveTargetName": "serve",
+                "serveStaticTargetName": "serve-static"
+            }
+        }
+    ]
 }

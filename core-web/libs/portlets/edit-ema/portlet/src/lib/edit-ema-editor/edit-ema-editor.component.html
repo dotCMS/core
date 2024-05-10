@@ -1,102 +1,46 @@
 <ng-container *ngIf="editorState$ | async as es">
-    <dot-device-selector-seo
-        #deviceSelector
-        [apiLink]="es.iframeURL"
-        [hideMediaTiles]="true"
-        (selected)="updateCurrentDevice($event)"
-        appendTo="body"
-        data-testId="dot-device-selector"></dot-device-selector-seo>
-    <dot-edit-ema-toolbar>
-        <ng-container left>
-            <p-button
-                *ngIf="!currentDevice"
-                [label]="'editpage.toolbar.preview.page' | dm"
-                (onClick)="deviceSelector.openMenu($event)"
-                icon="pi pi-desktop"
-                styleClass="p-button-text p-button-sm"
-                data-testId="ema-preview" />
-            <p-button
-                *ngIf="currentDevice"
-                [label]="'editema.editor.preview.back-to-edit' | dm"
-                (onClick)="updateCurrentDevice()"
-                icon="pi pi-arrow-left"
-                styleClass="p-button-text p-button-sm"
-                data-testId="ema-back-to-edit" />
-
-            <dot-ema-bookmarks [url]="es.favoritePageURL" />
-            <p-button
-                [cdkCopyToClipboard]="es.iframeURL"
-                [label]="'editpage.header.copy' | dm"
-                (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                icon="pi pi-copy"
-                styleClass="p-button-text p-button-sm"
-                data-testId="ema-copy-url" />
-            <a
-                class="p-button-sm p-button-text"
-                [href]="es.apiURL"
-                [title]="es.apiURL"
-                pButton
-                target="_blank"
-                data-testId="ema-api-link"
-                icon="pi pi-link"
-                label="API">
-            </a>
-        </ng-container>
-        <ng-container right>
-            <dot-edit-ema-language-selector
-                [language]="es.editor.viewAs.language"
-                (selected)="onLanguageSelected($event)"
-                data-testId="language-selector" />
-            <dot-edit-ema-persona-selector
-                #personaSelector
-                [pageId]="es.editor.page.identifier"
-                [value]="es.editor.viewAs.persona"
-                (selected)="onPersonaSelected($event)"
-                (despersonalize)="onDespersonalize($event)"
-                data-testId="persona-selector" />
-            <dot-edit-ema-workflow-actions
-                [inode]="es.editor.page.inode"
-                (newPage)="handleNewPage($event)" />
-        </ng-container>
-    </dot-edit-ema-toolbar>
-    <div
-        class="editor-banner"
-        *ngIf="currentDevice || !es.editor.page.canEdit"
-        data-testId="editor-banner">
-        <dot-ema-device-display
-            *ngIf="!!currentDevice"
-            [currentDevice]="currentDevice"
-            data-testId="device-display" />
-        <div class="editor-banner--message" *ngIf="!es.editor.page.canEdit">
-            <i class="pi pi-exclamation-circle"></i>
-            {{ 'editema.dont.have.edit.permission' | dm }}
-        </div>
-    </div>
+    <dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
+    <dot-results-seo-tool
+        *ngIf="es.editorData.mode === editorMode.SOCIAL_MEDIA && ogTags() && ogTagsResults$"
+        [seoMedia]="es.editorData.socialMedia"
+        [seoOGTags]="ogTags()"
+        [seoOGTagsResults]="ogTagsResults$"
+        data-testId="results-seo-tool"></dot-results-seo-tool>
     <div
         class="editor-content"
         [ngClass]="{
-            'editor-content--device': !!currentDevice,
-            'editor-content--expanded': !es.editor.page.canEdit
+            'editor-content--device': es.editorData.mode === editorMode.DEVICE,
+            'editor-content--expanded':
+                !es.editor.page.canEdit ||
+                !es.editorData.canEditVariant ||
+                es.editorData.page.isLocked,
+            'editor-content--hidden': es.editorData.mode === editorMode.SOCIAL_MEDIA
         }"
         data-testId="editor-content">
         <div
             class="iframe-wrapper"
             [ngClass]="{
-                'iframe-wrapper--device': !!currentDevice,
+                'iframe-wrapper--device': es.editorData.mode === editorMode.DEVICE,
             }"
             [ngStyle]="{
-                width: !!currentDevice ? currentDevice.cssWidth + 'px' : '100%',
-                height: !!currentDevice ? currentDevice.cssHeight + 'px' : '100%'
+                width:
+                    es.editorData.mode === editorMode.DEVICE
+                        ? es.editorData.device.cssWidth + 'px'
+                        : '100%',
+                height:
+                    es.editorData.mode === editorMode.DEVICE
+                        ? es.editorData.device.cssHeight + 'px'
+                        : '100%'
             }">
             <iframe
                 #iframe
-                [src]="(es.clientHost ? es.iframeURL : '') | safeUrl"
+                [src]="es.iframeURL | safeUrl"
                 [title]="host"
                 [ngStyle]="{
-                    pointerEvents: this.rows.length ? 'none' : 'auto',
+                    pointerEvents: es.state === editorState.DRAGGING ? 'none' : 'auto',
                     opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
-                (load)="onIframePageLoad(es)"
+                (load)="onIframePageLoad(es.editorData.mode)"
                 data-testId="iframe"
                 width="100%"
                 height="100%"></iframe>
@@ -108,50 +52,44 @@
                 mode="indeterminate"></p-progressBar>
 
             <dot-ema-contentlet-tools
-                *ngIf="
-                    !rows.length &&
-                    !!contentlet &&
-                    !currentDevice &&
-                    es.editor.page.canEdit &&
-                    es.state === editorState.LOADED
-                "
-                [contentlet]="contentlet"
-                (edit)="dialog.editContentlet($event)"
+                *ngIf="es.showContentletTools"
+                [hide]="es.state === editorState.DRAGGING"
+                [contentletArea]="es.contentletArea"
+                (edit)="handleEditContentlet($event)"
+                (editVTL)="handleEditVTL($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="dialog.addWidget($event)"
                 (addForm)="dialog.addForm($event)"
                 (addContent)="dialog.addContentlet($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
-                *ngIf="
-                    !!rows.length && !!dragItem && !currentDevice && es.state === editorState.LOADED
-                "
-                [rows]="rows"
-                [item]="dragItem"
-                (place)="onPlaceItem($event)"
+                *ngIf="es.showDropzone"
+                [containers]="es.bounds"
+                [dragItem]="es.dragItem"
                 data-testId="dropzone" />
         </div>
     </div>
 
     <dot-edit-ema-palette
-        *ngIf="es.isEnterpriseLicense && !currentDevice && es.editor.page.canEdit"
+        *ngIf="es.showPalette"
         [languageId]="es.editor.viewAs.language.id"
         [containers]="es.editor.containers"
-        (dragStart)="onDragStart($event)"
-        (dragEnd)="onDragEnd($event)"
         data-testId="palette" />
+
+    @if(es.editorData.canEditVariant && (es.editorData.mode === editorMode.EDIT ||
+    es.editorData.mode === editorMode.EDIT_VARIANT)) {
+    <dot-edit-ema-dialog
+        #dialog
+        (action)="onCustomEvent($event)"
+        (reloadFromDialog)="reloadFromDialog()"
+        data-testId="ema-dialog"></dot-edit-ema-dialog>
+    <p-confirmDialog
+        [style]="{
+            width: '400px'
+        }"
+        rejectIcon="hidden"
+        acceptIcon="hidden"
+        rejectButtonStyleClass="p-button-outlined"
+        data-testId="confirm-dialog"></p-confirmDialog>
+    }
 </ng-container>
-<dot-edit-ema-dialog
-    #dialog
-    *ngIf="!currentDevice"
-    (action)="onCustomEvent($event)"
-    data-testId="ema-dialog"></dot-edit-ema-dialog>
-<p-confirmDialog
-    *ngIf="!currentDevice"
-    [style]="{
-        width: '400px'
-    }"
-    rejectIcon="hidden"
-    acceptIcon="hidden"
-    rejectButtonStyleClass="p-button-outlined"
-    data-testId="confirm-dialog"></p-confirmDialog>

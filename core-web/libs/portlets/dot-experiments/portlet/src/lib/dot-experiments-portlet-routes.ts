@@ -2,10 +2,7 @@ import { Routes } from '@angular/router';
 
 import { ExperimentsConfigProperties } from '@dotcms/dotcms-models';
 import { DotExperimentsConfigResolver } from '@dotcms/portlets/dot-experiments/data-access';
-import {
-    DotEnterpriseLicenseResolver,
-    DotPushPublishEnvironmentsResolver
-} from '@portlets/shared/resolvers';
+import { DotEnterpriseLicenseResolver, DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
 
 import { DotExperimentsAnalyticAppMisconfigurationComponent } from './dot-experiments-analytic-app-misconfiguration/dot-experiments-analytic-app-misconfiguration.component';
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration/dot-experiments-configuration.component';
@@ -29,7 +26,6 @@ export const DotExperimentsPortletRoutes: Routes = [
         },
 
         canActivateChild: [AnalyticsAppGuard],
-
         children: [
             {
                 path: '',
@@ -56,5 +52,10 @@ export const DotExperimentsPortletRoutes: Routes = [
                 component: DotExperimentsReportsComponent
             }
         ]
+    },
+    {
+        path: '**',
+        redirectTo: 'analytic-app-misconfiguration',
+        pathMatch: 'full'
     }
 ];

@@ -1,9 +1,5 @@
 package com.dotcms.experiments.business.web;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
-
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.ExperimentUrlPatternCalculator;
@@ -12,6 +8,7 @@ import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -19,21 +16,27 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.util.StringPool;
+import net.bytebuddy.utility.RandomString;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
-
 import java.util.Collections;
-
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import net.bytebuddy.utility.RandomString;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
 
 
 /**
@@ -47,21 +50,53 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             final HttpServletResponse response, final List<String> idsToExclude)
             throws DotDataException, DotSecurityException {
 
+        final Host currentHost = getCurrentHost(request).orElseThrow();
+
         final List<Experiment> experimentsRunning = APILocator.getExperimentsAPI()
-                .getRunningExperiments();
+                .getRunningExperiments(currentHost);
+
+        final List<String> experimentsRunningId = experimentsRunning.stream()
+                .map(experiment -> experiment.id().get())
+                .collect(Collectors.toList());
+
         final List<Experiment> experimentFiltered = UtilMethods.isSet(idsToExclude) ?
                 experimentsRunning.stream()
                     .filter(experiment -> !idsToExclude.contains(experiment.id().get()))
                     .collect(Collectors.toList()) : experimentsRunning;
 
-        final List<Experiment> experiments = pickExperiments(experimentFiltered, request, response);
-        final List<SelectedExperiment> selectedExperiments = !experiments.isEmpty() ?
-                getSelectedExperimentsResult(experiments)
-                : getNoneExperimentListResult();
+        final List<String> excludedExperimentIdsEnded = idsToExclude != null ? idsToExclude.stream()
+                .filter(experimentId -> !experimentsRunningId.contains(experimentId))
+                .collect(Collectors.toList()) : Collections.emptyList();
 
-        return new SelectedExperiments(selectedExperiments,
-                experimentFiltered.stream().map(experiment -> experiment.id().get()).collect(Collectors.toList()),
-                UtilMethods.isSet(idsToExclude) ? new ArrayList(idsToExclude) : Collections.EMPTY_LIST);
+        if (experimentFiltered.isEmpty()) {
+            return new SelectedExperiments.Builder()
+                    .experiments(Collections.emptyList())
+                    .included(Collections.emptyList())
+                    .excluded(UtilMethods.isSet(idsToExclude) ? new ArrayList<>(idsToExclude) : Collections.emptyList())
+                    .excludedExperimentIdsEnded(excludedExperimentIdsEnded)
+                    .build();
+        }
+
+        final List<Experiment> experimentsSelected = pickExperiments(experimentFiltered, request, response);
+
+        final List<SelectedExperiment> selectedExperiments = !experimentsSelected.isEmpty() ?
+                getSelectedExperimentsResult(experimentsSelected) : getNoneExperimentListResult();
+
+        return new SelectedExperiments.Builder()
+                .experiments(selectedExperiments)
+                .included(experimentFiltered.stream().map(experiment -> experiment.id().get()).collect(Collectors.toList()))
+                .excluded(UtilMethods.isSet(idsToExclude) ? new ArrayList(idsToExclude) : Collections.EMPTY_LIST)
+                .excludedExperimentIdsEnded(excludedExperimentIdsEnded)
+                .build();
+    }
+
+    private static Optional<Host> getCurrentHost(HttpServletRequest request)  {
+        try {
+            return Optional.ofNullable(WebAPILocator.getHostWebAPI().getCurrentHost(request));
+        } catch (DotDataException| DotSecurityException| PortalException| SystemException e) {
+            return Optional.empty();
+        }
+
     }
 
     private List<SelectedExperiment> getSelectedExperimentsResult(final List<Experiment> experiments) {
@@ -145,7 +180,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             throw new DotRuntimeException(e);
         }
     }
-
+    
     private List<Experiment> pickExperiments(final List<Experiment> runningExperiments,
             final HttpServletRequest request, final HttpServletResponse response)
             throws DotDataException, DotSecurityException {
@@ -213,9 +248,11 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     getFileContentFromResourceContext("experiment/html/experiment_head.html"),
                     host, request);
 
+            final Host currentHost = getCurrentHost(request).orElseThrow();
+
             final String shouldBeInExperimentCalled =  replaceIntoJsCode(
                     getFileContentFromResourceContext("experiment/js/init_script.js"),
-                    APILocator.getExperimentsAPI().getRunningExperiments());
+                    APILocator.getExperimentsAPI().getRunningExperiments(currentHost));
 
             return jsJitsuCode + "\n<SCRIPT>" + shouldBeInExperimentCalled + "</SCRIPT>";
         } catch (IOException | DotDataException e) {
@@ -229,7 +266,8 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .map(experiment -> "'" + experiment.id().get() + "'")
                     .collect(Collectors.joining(","));
 
-            final Map<String, String> subStringToReplace = map(
+            final Map<String, String> subStringToReplace = new HashMap<>();
+            subStringToReplace.put(
                     "${running_experiments_list}", runningExperimentsId
             );
 
@@ -239,10 +277,9 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
     private String replaceIntoHTMLCode(final String htmlCode, final Host host,
             final HttpServletRequest request) {
 
-        final Map<String, String> subStringToReplace = map(
-                "${jitsu_key}", ConfigExperimentUtil.INSTANCE.getAnalyticsKey(host),
-                "${site}", getLocalServerName(request)
-        );
+        final Map<String, String> subStringToReplace = new HashMap<>();
+        subStringToReplace.put("${jitsu_key}", ConfigExperimentUtil.INSTANCE.getAnalyticsKey(host));
+        subStringToReplace.put("${site}", getLocalServerName(request));
 
         return replace(htmlCode, subStringToReplace);
     }
@@ -296,10 +333,14 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
      */
     @Override
     public Optional<String> getCode(final Host host, final HttpServletRequest request) {
-        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+        final PageMode pageMode = PageMode.get(request);
+
+        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled() && pageMode == PageMode.LIVE) {
 
             try {
-                final String code = APILocator.getExperimentsAPI().isAnyExperimentRunning() ?
+                final Host currentHost = getCurrentHost(request).orElseThrow();
+
+                final String code = APILocator.getExperimentsAPI().isAnyExperimentRunning(currentHost) ?
                         getJSCode(host, request) : getNotExperimentRunningJSCode();
                 return Optional.of(code);
             } catch (DotDataException e) {

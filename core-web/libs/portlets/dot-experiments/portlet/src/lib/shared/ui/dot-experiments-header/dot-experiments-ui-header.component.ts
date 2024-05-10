@@ -20,8 +20,7 @@ import {
     ExperimentsStatusIcons,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 @Component({
     standalone: true,
@@ -35,7 +34,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DatePipe,
         TitleCasePipe,
         DotIconModule,
-        DotPipesModule,
+        DotSafeHtmlPipe,
         DotMessagePipe,
         SkeletonModule,
         ButtonModule,

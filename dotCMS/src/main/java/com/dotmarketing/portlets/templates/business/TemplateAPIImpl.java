@@ -8,15 +8,31 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.system.event.local.model.Subscriber;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.SiteCreatedEvent;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.BaseWebAssetAPI;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.business.Theme;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.*;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.factories.PublishFactory;
-import com.dotmarketing.factories.TreeFactory;
-import com.dotmarketing.factories.WebAssetFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.factories.*;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -31,7 +47,13 @@ import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
@@ -42,10 +64,23 @@ import org.apache.commons.io.IOUtils;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+/**
+ * This implementation of the {@link TemplateAPI} class provides the business logic to manage
+ * information related to Templates in dotCMS.
+ * <p>Templates are layouts available to users when building new HTML, xHTML or XML pages. Each
+ * Template includes one or more Containers, which act as server-side includes. The Containers
+ * placed in the Template define the areas on a Page that "permissioned" users will be able to
+ * contribute content to, and how that content will be displayed. Templates provide a page layout,
+ * and link the Containers to the page.</p>
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, DotInitializer {
 
 	private static final String LAYOUT_FILE_NAME     = "com/dotmarketing/portlets/templates/business/layout.json";
@@ -54,10 +89,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	private final  IdentifierAPI    identifierAPI          = APILocator.getIdentifierAPI();
 	private final  TemplateFactory  templateFactory        = FactoryLocator.getTemplateFactory();
 	private final  ContainerAPI     containerAPI           = APILocator.getContainerAPI();
-	private final  Lazy<VersionableAPI> versionableAPI     = Lazy.of(()->APILocator.getVersionableAPI());
-	private final  Lazy<HTMLPageAssetAPI> htmlPageAssetAPI = Lazy.of(()->APILocator.getHTMLPageAssetAPI());
+	private final  Lazy<VersionableAPI> versionableAPI     = Lazy.of(APILocator::getVersionableAPI);
+	private final  Lazy<HTMLPageAssetAPI> htmlPageAssetAPI = Lazy.of(APILocator::getHTMLPageAssetAPI);
 	private final  HostAPI          hostAPI                = APILocator.getHostAPI();
-	private final  Lazy<Template>   systemTemplate         = Lazy.of(() -> new SystemTemplate());
+	private final  Lazy<Template>   systemTemplate         = Lazy.of(SystemTemplate::new);
+
+	private final transient MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+
 
 	@Override
 	public Template systemTemplate() {
@@ -547,25 +585,30 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
 
-		//Check Edit Permissions over Template
-		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
-			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
-			throw new DotSecurityException("User does not have Permissions to Edit the Template");
+		// Check Edit Permissions over Template
+		if (!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)) {
+			final String errorMsg = String.format("User '%s' does not have permission to delete Template " +
+					"'%s' [ %s ]", user.getUserId(), template.getName(), template.getInode());
+			Logger.error(this, errorMsg);
+			throw new DotSecurityException(errorMsg);
 		}
 
-		//Check that the template is archived
-		if(!isArchived(template)) {
-			Logger.error(this,"The template: " + template.getIdentifier() + " must be archived before it can be deleted");
-			throw new DotStateException("Template must be archived before it can be deleted");
+		// Check that the template is archived
+		if (!isArchived(template)) {
+			final String errorMsg = String.format("Template '%s' [ %s ] must be archived before it can be deleted",
+					template.getName(), template.getInode());
+			Logger.error(this, errorMsg);
+			throw new DotStateException(errorMsg);
 		}
 
-		//Check that template do not have dependencies (pages referencing the template),
-		// use system user b/c user executing the delete could no have access to all pages
+		// Check that template does not have pages referencing it
+		// use system user b/c the user executing this method might not have access to all pages
 		final Map<String,String> checkDependencies = checkPageDependencies(template,APILocator.systemUser(),false);
-		if(checkDependencies!= null && !checkDependencies.isEmpty()){
-			Logger.error(this, "The Template: " + template.getName() + " can not be deleted. "
-					+ "Because it has pages referencing to it: " + checkDependencies);
-			throw new DotDataValidationException("Template still has pages referencing to it: " + checkDependencies);
+		if (checkDependencies != null && !checkDependencies.isEmpty()) {
+			final String errorMsg = String.format("Template '%s' [ %s ] cannot be deleted because it still has pages referencing it: " +
+							"%s", template.getName(), template.getInode(), checkDependencies);
+			Logger.error(this, errorMsg);
+			throw new DotDataValidationException(errorMsg);
 		}
 
 		deleteTemplate(template);
@@ -1205,6 +1248,252 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	@WrapInTransaction
 	public List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException {
 		return FactoryLocator.getTemplateFactory().getPages(templateId);
+	}
+
+	/**
+	 * Default implementation for {@link TemplateAPI#saveAndUpdateLayout(Template, TemplateLayout, Host, User, boolean)}
+	 *
+	 * @param template
+	 * @param layout
+	 * @param site
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Override
+	public Template saveAndUpdateLayout(final Template template, final TemplateLayout layout, final Host site,
+										final User user, final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+
+		final Template templateFromDB = UtilMethods.isSet(template.getIdentifier()) ?
+				APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(), user, false)
+				: null;
+
+		if (templateFromDB != null) {
+			final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+			LayoutChanges changes = getChange(templateLayoutFromDB, layout);
+
+			final List<String> pageIds = APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles)
+					.stream()
+					.map(Contentlet::getIdentifier)
+					.collect(Collectors.toList());
+
+			multiTreeAPI.updateMultiTrees(changes, pageIds);
+		}
+
+		template.setDrawedBody(reOrder(layout));
+		template.setDrawed(true);
+
+		return saveTemplate(template, site, user, respectFrontendRoles);
+	}
+
+	/**
+	 * Recalculate the UUID for the layout, it means if the layout is something like
+	 *
+	 * <code>
+	 * Row 1:
+	 * 	Column 1:
+	 * 		Container A UUID = 2
+	 * 	Column 2:
+	 * 		Container A UUID = -1
+	 * Row 2:
+	 * 	Column1:
+	 * 	   Container A UUID= 1
+	 * </code>
+	 * The UUID are not in the right sequential order so this method is going to return the follow:
+	 *
+	 * <code>
+	 * Row 1:
+	 * 	Column 1:
+	 * 		Container A UUID = 1
+	 * 	Column 2:
+	 * 		Container A UUID = 2
+	 * Row 2:
+	 * 	Column1:
+	 * 	   Container A UUID= 3
+	 * </code>
+	 *
+	 * @param layout
+	 * @return
+	 */
+	private TemplateLayout reOrder(final TemplateLayout layout) {
+		final List<ContainerUUID> containers = getContainers(layout);
+
+		final Map<String,Integer> uuidByContainer = new HashMap<>();
+
+		containers.stream().forEach(containerUUID -> {
+			Integer maxUUID = uuidByContainer.get(containerUUID.getIdentifier());
+
+			if (maxUUID == null) {
+				maxUUID = 1;
+			} else {
+				maxUUID++;
+			}
+
+			uuidByContainer.put(containerUUID.getIdentifier(), maxUUID);
+
+			containerUUID.setUuid(maxUUID.toString());
+		});
+
+		return layout;
+	}
+
+	/**
+	 * Return all the changes between the OldLayout and the newLayout.
+	 *
+	 * To match the Container Instance between the two layouts it used the Container's ID and the Container UUID,
+	 * so if a Container that had the same ID and UUID are in a different position on the two Layout then it means that
+	 * the Container was moved.
+	 *
+	 * If a new Container instances is add on the newLayout then the UUID is -1, it means this instances does not exist
+	 * on the oldLayout.
+	 *
+	 *
+	 * for example if we have
+	 *
+	 * oldLayout:
+	 * <code>
+	 * Row 1:
+	 * 	Column 1:
+	 * 		Container A UUID = 1
+	 * 	Column 2:
+	 * 		Container A UUID = 2
+	 * Row 2:
+	 * 	Column1:
+	 * 	   Container A UUID= 3
+	 * </code>
+	 *
+	 * And newLayout is
+	 *
+	 * <code>
+	 * Row 1:
+	 *   Column 1:
+	 *     Container A UUID = -1
+	 * Row 2:
+	 * 	Column1:
+	 * 	   Container A UUID= 3
+	 * Row 3:
+	 * 	Column 1:
+	 * 		Container A UUID = 1
+	 * </code>
+	 * A -1 UUID means that this is a new Container, with the 2 layouts of the example this method is going to return:
+	 *
+	 * <code>
+	 * Row 1:
+	 *   Column 1:
+	 *     Container A OLD_UUID = -1 (IS NEW) NEW_UUID = 1
+	 * Row 2:
+	 * 	Column1:
+	 * 	   Container A OLD_UUID = 3  NEW_UUID = 2 (WAS MOVED)
+	 * Row 3:
+	 * 	Column 1:
+	 * 		Container OLD_UUID = 1  NEW_UUID = 3 (WAS MOVED)
+	 *
+	 * 	finally:
+	 *
+	 * 	Container OLD_UUID = 2  (WAS DELETED)
+	 * </code>
+	 * @param oldLayout
+	 * @param newLayout
+	 * @return
+	 */
+	private LayoutChanges getChange(final TemplateLayout oldLayout, final TemplateLayout newLayout) {
+		final LayoutChanges.Builder builder = new LayoutChanges.Builder();
+
+		final List<ContainerUUID> newContainers = getContainers(newLayout);
+
+		addMoveAndNewChanges(newContainers, builder);
+		addRemoveChanges(oldLayout, newContainers, builder);
+
+		return builder.build();
+	}
+
+	/**
+	 * Add Move/Include changes inside the LayoutChanges.Builder, following these rules:
+	 *
+	 * - The ContainersUUID must be in sequential order. If not:
+	 * If the UUID of the Container is -1, a new included change is added to the LayoutChange.Builder.
+	 * The oldUUID is the UUID that should be according to its order in newContainers.
+	 *
+	 * If the UUID is not in the right order, a new move change is added to the LayoutChange.Builder.
+	 * The oldUUID is the UUID that has the ContainerUUID, and the newUUID is the UUID that should be according to its order in newContainers.
+	 *
+	 * @param newContainers
+	 * @param builder
+	 */
+	private static void addMoveAndNewChanges(List<ContainerUUID> newContainers, LayoutChanges.Builder builder) {
+		final Map<String,Integer> uuidByContainer = new HashMap<>();
+
+		newContainers.stream().forEach(newContainer -> {
+			Integer maxUUID = uuidByContainer.get(newContainer.getIdentifier());
+
+			if (maxUUID == null) {
+				maxUUID = 1;
+			} else {
+				maxUUID++;
+			}
+
+			uuidByContainer.put(newContainer.getIdentifier(), maxUUID);
+
+			if (newContainer.getUUID().equals(ContainerUUID.UUID_DEFAULT_VALUE)) {
+				builder.include(newContainer.getIdentifier(), String.valueOf(maxUUID));
+			} else if (!newContainer.getUUID().equals(maxUUID.toString())) {
+				builder.change(newContainer.getIdentifier(), newContainer.getUUID(), String.valueOf(maxUUID));
+			}
+		});
+	}
+
+	/**
+	 * Add Removed changes inside the LayoutChanges.Builder, following these rules:
+	 *
+	 * - The ContainersUUID must be in sequential order. If not:
+	 * If the sequential order has a blank spot then, a new removed change is added to the LayoutChange.Builder.
+	 * The oldUUID is the UUID that should be according to its order in newContainers.
+	 *
+	 * @param newContainers
+	 * @param builder
+	 */
+	private static void addRemoveChanges(TemplateLayout oldLayout, List<ContainerUUID> newContainers,
+										 LayoutChanges.Builder builder) {
+		final List<ContainerUUID> oldContainers = getContainers(oldLayout);
+
+		oldContainers.stream().forEach(oldContainer -> {
+			Optional<ContainerUUID> newContainer = newContainers.stream()
+					.filter(containerUUID -> containerUUID.getIdentifier().equals(oldContainer.getIdentifier()))
+					.filter(containerUUID -> containerUUID.getUUID().equals(oldContainer.getUUID()))
+					.findFirst();
+
+			if (!newContainer.isPresent()) {
+				builder.remove(oldContainer.getIdentifier(), oldContainer.getUUID());
+			}
+		});
+	}
+
+	/**
+	 * Get all the {@link ContainerUUID} from the {@link TemplateLayout}
+	 * @param layout
+	 * @return
+	 */
+	private static List<ContainerUUID> getContainers(TemplateLayout layout) {
+
+		if (!UtilMethods.isSet(layout)) {
+			return Collections.emptyList();
+		}
+
+		final List<ContainerUUID> bodyContainers = layout.getBody().getRows().stream()
+				.flatMap(row -> row.getColumns().stream())
+				.flatMap(column -> column.getContainers().stream())
+				.collect(Collectors.toList());
+
+		final Sidebar sidebar = layout.getSidebar();
+
+		final List<ContainerUUID> sidebarContainers = sidebar != null ? sidebar.getContainers() : Collections.emptyList();
+
+		return Stream.concat(bodyContainers.stream(), sidebarContainers.stream())
+				.collect(Collectors.toList());
 	}
 
 	private Template findTemplateByPath (final String path,final String hostId, final User user, final boolean respectFrontendRoles, final boolean showLive) throws DotDataException, DotSecurityException {

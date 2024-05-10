@@ -6,6 +6,7 @@ import {
     HostListener,
     Input,
     OnChanges,
+    OnInit,
     Output,
     SimpleChanges
 } from '@angular/core';
@@ -27,7 +28,7 @@ import {
     styleUrls: ['./dot-dropdown.component.scss'],
     templateUrl: 'dot-dropdown.component.html'
 })
-export class DotDropdownComponent implements OnChanges {
+export class DotDropdownComponent implements OnChanges, OnInit {
     @Input()
     disabled = false;
 
@@ -37,8 +38,7 @@ export class DotDropdownComponent implements OnChanges {
     @Input()
     title = null;
 
-    @Input()
-    position: string;
+    @Input() position: 'left' | 'right' = 'left';
 
     @Input()
     inverted = false;
@@ -53,8 +53,13 @@ export class DotDropdownComponent implements OnChanges {
     shutdown = new EventEmitter<never>();
 
     show = false;
+    positionStyle = {};
 
     constructor(private elementRef: ElementRef) {}
+
+    ngOnInit() {
+        this.positionStyle[this.position] = '0';
+    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.disabled && this.icon) {

@@ -5,8 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotPaletteInputFilterComponent } from './dot-palette-input-filter.component';
 
@@ -27,7 +26,7 @@ describe('DotPaletteInputFilterComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotPaletteInputFilterComponent, MockDotIconComponent],
-            imports: [DotPipesModule, DotMessagePipe, HttpClientTestingModule, FormsModule],
+            imports: [DotSafeHtmlPipe, DotMessagePipe, HttpClientTestingModule, FormsModule],
             providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }]
         });
 

@@ -23,5 +23,6 @@ export enum FIELD_TYPES {
     BINARY = 'Binary',
     CUSTOM_FIELD = 'Custom-Field',
     JSON = 'JSON-Field',
-    KEY_VALUE = 'Key-Value'
+    KEY_VALUE = 'Key-Value',
+    WYSIWYG = 'WYSIWYG'
 }

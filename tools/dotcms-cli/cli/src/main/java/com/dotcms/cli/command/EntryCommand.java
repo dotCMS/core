@@ -8,6 +8,7 @@ import com.dotcms.cli.command.language.LanguageCommand;
 import com.dotcms.cli.command.site.SiteCommand;
 import com.dotcms.cli.common.DotExceptionHandler;
 import com.dotcms.cli.common.DotExecutionStrategy;
+import com.dotcms.cli.common.DotExitCodeExceptionMapper;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.VersionProvider;
 import com.dotcms.cli.exception.ExceptionHandlerImpl;
@@ -20,10 +21,8 @@ import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
-import picocli.CommandLine.ParameterException;
 
 @TopCommand
 @CommandLine.Command(
@@ -36,7 +35,7 @@ import picocli.CommandLine.ParameterException;
         header = "dotCMS dotCLI",
         subcommands = {
                 //-- Miscellaneous stuff
-                InitCommand.class,
+                ConfigCommand.class,
                 InstanceCommand.class,
                 StatusCommand.class,
                 LoginCommand.class,
@@ -55,7 +54,7 @@ import picocli.CommandLine.ParameterException;
 )
 public class EntryCommand implements DotCommand{
 
-    public static final String NAME = "@|bold,magenta dotCLI|@";
+    public static final String NAME = "dotCLI";
 
     // Declared here, so we have an instance available via Arc container on the Customized CommandLine
     @Inject
@@ -143,14 +142,7 @@ class CustomConfigurationUtil {
         cmdLine.setCaseInsensitiveEnumValuesAllowed(true)
                 .setExecutionStrategy(new DotExecutionStrategy(new CommandLine.RunLast()))
                 .setExecutionExceptionHandler(new DotExceptionHandler())
-                .setExitCodeExceptionMapper(t -> {
-                    // customize exit code
-                    // We usually throw an IllegalArgumentException to denote that an invalid param has been passed
-                    if (t instanceof ParameterException || t instanceof IllegalArgumentException) {
-                        return ExitCode.USAGE;
-                    }
-                    return ExitCode.SOFTWARE;
-                });
+                .setExitCodeExceptionMapper(new DotExitCodeExceptionMapper());
     }
 
     /**

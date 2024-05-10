@@ -22,6 +22,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -36,6 +37,9 @@ import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
+import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactory;
+import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -46,6 +50,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.util.Date;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -72,12 +77,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * This class will test operations related with interacting with hosts: Deleting
- * a host, marking a host as default, etc.
+ * This class will test operations related with interacting with Sites: Deleting a site, marking a
+ * Site as default, and any other piece of information exposed by the {@link HostAPI}.
  *
  * @author Jorge Urdaneta
  * @since Sep 5, 2013
- *
  */
 public class HostAPITest extends IntegrationTestBase  {
 
@@ -151,6 +155,44 @@ public class HostAPITest extends IntegrationTestBase  {
 
         assertTrue(dc.loadObjectResults().isEmpty());
 
+    }
+
+    /**
+     * This test validates the site variables are deleted when the host is deleted
+     */
+    @Test
+    public void testDeleteSiteCleanUpSiteVariables() throws Exception {
+
+        final HostVariableFactory hostVariableFactory = FactoryLocator.getHostVariableFactory();
+        final HostVariableAPI hostVariableAPI = APILocator.getHostVariableAPI();
+
+        final User user = APILocator.getUserAPI().getSystemUser();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        // Check the current variables
+        var siteVariables = hostVariableFactory.getVariablesForHost(site.getIdentifier());
+        assertEquals(0, siteVariables.size());
+
+        // Save some variables to the site
+        hostVariableAPI.save(List.of(
+                createSiteVariable(site, user, 1),
+                createSiteVariable(site, user, 2),
+                createSiteVariable(site, user, 3),
+                createSiteVariable(site, user, 4),
+                createSiteVariable(site, user, 5)
+        ), site.getIdentifier(), user, false);
+
+        // Make sure we properly saved the site variables
+        siteVariables = hostVariableFactory.getVariablesForHost(site.getIdentifier());
+        assertEquals(5, siteVariables.size());
+
+        // Delete the site
+        archiveHost(site, user);
+        deleteHost(site, user);
+
+        // And validate that the site variables were deleted
+        siteVariables = hostVariableFactory.getVariablesForHost(site.getIdentifier());
+        assertEquals(0, siteVariables.size());
     }
 
     @Test
@@ -341,6 +383,28 @@ public class HostAPITest extends IntegrationTestBase  {
                 .search("nothing", Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
         //Validate if the search doesn't bring results
         assertTrue(hosts.size() == 0 && hosts.getTotalResults() == 0);
+    }
+
+    /**
+     * Creates a site variable.
+     *
+     * @param host  The host associated with the site variable.
+     * @param user  The user who is creating the site variable.
+     * @param index The index used to generate unique names, keys, and values for the site
+     *              variable.
+     * @return The created site variable.
+     */
+    private HostVariable createSiteVariable(Host host, User user, int index) {
+
+        var siteVariable = new HostVariable();
+        siteVariable.setHostId(host.getIdentifier());
+        siteVariable.setName(String.format("var%dName", index));
+        siteVariable.setKey(String.format("var%dKey", index));
+        siteVariable.setValue(String.format("var%dValue", index));
+        siteVariable.setLastModifierId(user.getUserId());
+        siteVariable.setLastModDate(new Date());
+
+        return siteVariable;
     }
 
     /**
@@ -1393,6 +1457,45 @@ public class HostAPITest extends IntegrationTestBase  {
         // Assertions
         assertEquals("The size difference between both Site lists MUST be 1", 1,
                 siteListWithSystemHost.size() - siteList.size());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link HostAPI#findByIdOrKey(String, User, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Find the Default Site using either its Identifier or its
+     *     Key.</li>
+     *     <li><b>Expected Result: </b>The Site API must be able to find the specified Site using
+     *     either the Identifier or the Site Key.</li>
+     * </ul>
+     */
+    @Test
+    public void findSiteByIdOrKey() throws DotDataException, DotSecurityException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final HostAPI siteAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+        final Host defaultSite = siteAPI.findDefaultHost(systemUser, false);
+        final String defaultSiteId = defaultSite.getIdentifier();
+        final String defaultSiteKey = defaultSite.getHostname();
+
+        // ╔════════════════════════╗
+        // ║  Generating Test data  ║
+        // ╚════════════════════════╝
+        final Optional<Host> siteById = siteAPI.findByIdOrKey(defaultSiteKey, systemUser, false);
+        final Optional<Host> siteByKey = siteAPI.findByIdOrKey(defaultSiteId, systemUser, false);
+
+        // ╔══════════════╗
+        // ║  Assertions  ║
+        // ╚══════════════╝
+        assertTrue("The Site by ID was NOT found!", siteById.isPresent());
+        assertTrue("The Site by Key was NOT found!", siteByKey.isPresent());
+        assertEquals("Site by ID and Site by Key must point to the Default Site",
+                siteById.get().getIdentifier(), siteByKey.get().getIdentifier());
+        assertEquals("Site by ID must point to the Default Site",
+                siteById.get().getIdentifier(), defaultSiteId);
+        assertEquals("Site by Key must point to the Default Site",
+                siteByKey.get().getIdentifier(), defaultSiteId);
     }
 
 }

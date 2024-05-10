@@ -114,7 +114,10 @@ describe('TemplateBuilderComponent', () => {
                     width: 'Mobile',
                     title: 'Test Title'
                 },
-                themeId: '123',
+                template: {
+                    identifier: '111',
+                    themeId: '123'
+                },
                 containerMap: CONTAINER_MAP_MOCK
             }
         });
@@ -130,6 +133,26 @@ describe('TemplateBuilderComponent', () => {
         // Store init is called on init
         const changeMock = jest.spyOn(spectator.component.templateChange, 'emit');
         expect(changeMock).not.toHaveBeenCalled();
+    });
+
+    it("should call updateOldRows from the store when the layout changes and it's not the first time", () => {
+        const updateOldRowsMock = jest.spyOn(store, 'updateOldRows');
+        const templateUpdateMock = jest.spyOn(spectator.component.templateChange, 'emit');
+
+        spectator.setInput('layout', {
+            body: FULL_DATA_MOCK,
+            header: true,
+            footer: true,
+            sidebar: null,
+            width: 'Mobile',
+            title: 'Test Title'
+        });
+
+        spectator.detectChanges();
+
+        expect(updateOldRowsMock).toHaveBeenCalled();
+
+        expect(templateUpdateMock).not.toHaveBeenCalled();
     });
 
     it('should have a Add Row Button', () => {

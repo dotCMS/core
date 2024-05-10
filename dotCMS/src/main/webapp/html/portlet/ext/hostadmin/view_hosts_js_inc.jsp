@@ -104,7 +104,7 @@
 
 		viewHostsReferer: '<%= referer %>',
 
-		copyHostOptions: 'copy_from_host_id:{copyFromHostId};copy_all:{copyAll};copy_templates_containers:{copyTemplatesAndContainers};copy_content_on_pages:{copyContentOnPages};copy_folders:{copyFolders};copy_content_on_host:{copyContentOnHost};copy_links:{copyLinks};copy_host_variables:{copyHostVariables};copy_tag_storage:{copyTagStorage}',
+		copyHostOptions: 'copy_from_host_id:{copyFromHostId};copy_all:{copyAll};copy_templates_containers:{copyTemplatesAndContainers};copy_content_on_pages:{copyContentOnPages};copy_folders:{copyFolders};copy_content_on_host:{copyContentOnHost};copy_content_types:{copyContentTypes};copy_links:{copyLinks};copy_host_variables:{copyHostVariables};copy_tag_storage:{copyTagStorage}',
 
 		newHostURL: '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">\
 							<portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" />\
@@ -324,6 +324,7 @@
 						copyContentOnPages: dijit.byId('copyContentOnPages').attr('value'),
 						copyFolders: dijit.byId('copyFolders').attr('value'),
 						copyContentOnHost: dijit.byId('copyContentOnHost').attr('value'),
+						copyContentTypes: dijit.byId('copyContentTypes').attr('value'),
 						copyLinks: dijit.byId('copyLinks').attr('value'),
 						copyHostVariables: dijit.byId('copyHostVariables').attr('value'),
 						copyTagStorage: document.getElementById('copyTagStorage').value

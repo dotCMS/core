@@ -43,6 +43,15 @@ public class Portlet extends PortletModel {
 
   }
 
+  public Portlet(String portletId, String groupId, String portletClass, Map<String, String> initParams) {
+    super(portletId, groupId, "dotcms.org", null, false, null, true);
+    this.portletId = portletId;
+    this.initParams = initParams;
+    this.portletClass = portletClass;
+    this.portletSource=initParams.getOrDefault("portletSource", "xml");
+
+  }
+
   @Deprecated
   public Portlet(Portlet oldPort) {
     this(oldPort.getPortletId(), oldPort.getGroupId(), oldPort.getCompanyId(), oldPort.getStrutsPath(), oldPort.getPortletClass(), null,

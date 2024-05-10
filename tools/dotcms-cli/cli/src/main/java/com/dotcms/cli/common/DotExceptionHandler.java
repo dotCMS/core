@@ -32,7 +32,7 @@ public class DotExceptionHandler implements IExecutionExceptionHandler {
         if (object instanceof DotCommand) {
             final DotCommand command = (DotCommand) object;
             final OutputOptionMixin output = command.getOutput();
-            return output.handleCommandException(ex, message, isShowErrors);
+            return output.handleCommandException(ex, message, isShowErrors, true);
         } else {
             final OutputOptionMixin output = Arc.container().instance(OutputOptionMixin.class).get();
             if(null != output){

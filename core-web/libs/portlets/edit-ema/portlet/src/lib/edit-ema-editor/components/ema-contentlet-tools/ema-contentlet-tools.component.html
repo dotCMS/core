@@ -1,31 +1,53 @@
 <p-button
-    [ngStyle]="getTopButtonPosition()"
+    [ngStyle]="styles.topButton"
     (click)="setPositionFlag('before'); menu.toggle($event)"
     data-testId="add-top-button"
     icon="pi pi-plus"></p-button>
 <p-button
     *ngIf="!isContainerEmpty"
-    [ngStyle]="getBottomButtonPosition()"
+    [ngStyle]="styles.bottomButton"
     (click)="setPositionFlag('after'); menu.toggle($event)"
     data-testId="add-bottom-button"
     icon="pi pi-plus"></p-button>
-<p-menu #menu [model]="items" [popup]="true" appendTo="body"></p-menu>
+<p-menu #menu [model]="items" [popup]="true" appendTo="body" data-testId="menu-add"></p-menu>
 
-<div
-    class="actions"
-    *ngIf="!isContainerEmpty"
-    [ngStyle]="getActionPosition()"
-    data-testId="actions">
+<div class="actions" *ngIf="!isContainerEmpty" [ngStyle]="styles.actions" data-testId="actions">
+    @if (contentletArea.payload.vtlFiles?.length) {
+    <p-menu #menuVTL [model]="vtlFiles" [popup]="true" appendTo="body" />
     <p-button
-        (click)="delete.emit(contentlet.payload)"
+        (click)="menuVTL.toggle($event)"
+        data-testId="edit-vtl-button"
+        styleClass="p-button-rounded p-button-raised"
+        icon="pi pi-code" />
+    }
+
+    <p-button
+        [attr.data-item]="
+            {
+                container: contentletArea.payload.container,
+                contentlet: contentletArea.payload.contentlet,
+                move: true
+            } | json
+        "
+        (dragstart)="dragStart($event)"
+        data-type="contentlet"
+        draggable="true"
+        data-testId="drag-button"
+        styleClass="p-button-rounded p-button-raised"
+        icon="pi pi-arrows-alt" />
+    <p-button
+        (click)="delete.emit(contentletArea.payload)"
         data-testId="delete-button"
         styleClass="p-button-rounded p-button-raised delete"
         icon="pi pi-times" />
     <p-button
-        (click)="edit.emit(contentlet.payload)"
+        (click)="edit.emit(contentletArea.payload)"
         data-testId="edit-button"
         styleClass="p-button-rounded p-button-raised"
         icon="pi pi-pencil" />
 </div>
 
-<div class="bounds" [ngStyle]="getPosition()" data-testId="bounds"></div>
+<div class="bounds" [ngStyle]="styles.bounds" data-testId="bounds"></div>
+<div class="drag-image" #dragImage *ngIf="contentletArea" data-testId="drag-image">
+    {{ contentletArea.payload.contentlet.contentType }}
+</div>

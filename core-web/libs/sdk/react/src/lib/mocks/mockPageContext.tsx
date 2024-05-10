@@ -30,7 +30,8 @@ export const mockPageContext: PageProviderContext = {
             container: {
                 path: 'path/to/container',
                 identifier: 'container-1',
-                maxContentlets: 100
+                maxContentlets: 100,
+                parentPermissionable: {}
             },
             containerStructures: [
                 {
@@ -43,7 +44,9 @@ export const mockPageContext: PageProviderContext = {
                         contentType: 'content-type-1',
                         identifier: 'contentlet-1',
                         title: 'Contentlet 1',
-                        inode: 'inode-1'
+                        inode: 'inode-1',
+                        onNumberOfPages: 1,
+                        baseType: 'base-type-1'
                     }
                 ]
             }
@@ -52,7 +55,8 @@ export const mockPageContext: PageProviderContext = {
             container: {
                 path: 'path/to/container',
                 identifier: 'container-2',
-                maxContentlets: 100
+                maxContentlets: 100,
+                parentPermissionable: {}
             },
             containerStructures: [
                 {
@@ -65,7 +69,7 @@ export const mockPageContext: PageProviderContext = {
         }
     },
     page: { identifier: 'page-1', title: 'Hello Page' },
-    viewAs: { language: { id: 'en' }, persona: { keyTag: 'persona-1' } },
+    viewAs: { language: { id: 'en' }, persona: { keyTag: 'persona-1' }, variantId: 'variant-1' },
     components: {},
     isInsideEditor: false
 };

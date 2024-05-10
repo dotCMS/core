@@ -20,7 +20,7 @@ public enum ConfigExperimentUtil {
     INSTANCE;
 
     private Lazy<Boolean> isExperimentEnabled =
-            Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", false));
+            Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", true));
 
     private Lazy<Boolean> isExperimentAutoJsInjection =
             Lazy.of(() -> Config.getBooleanProperty("ENABLE_EXPERIMENTS_AUTO_JS_INJECTION", false));

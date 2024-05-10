@@ -1,18 +1,22 @@
 package com.dotcms.contenttype.business;
 
-import com.dotcms.enterprise.license.LicenseLevel;
-
-import java.util.*;
-
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * 
@@ -51,23 +55,47 @@ public interface ContentTypeAPI {
 		  "container", "template", "user", "calendarEvent");
 
   /**
-   * Deletes the given Content Type
-   * 
-   * @param st Content Type that will be deleted
-   * @throws DotSecurityException The user does not have permissions to perform this action.
-   * @throws DotDataException Error occurred when performing the action.
+   * Deletes the specified Content Type. By default, the process that actually deletes it is
+   * asynchronous, meaning that a separate thread/transaction takes care of it. You can change this
+   * behavior by updating the value of the {@link ContentTypeAPIImpl#DELETE_CONTENT_TYPE_ASYNC}
+   * property to {@code true}.
+   *
+   * @param contentType The {@link ContentType} being deleted.
+   *
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   * @throws DotDataException     An error occurred when interacting with the database.
    */
-  void delete(ContentType st) throws DotSecurityException, DotDataException;
+  void delete(final ContentType contentType) throws DotSecurityException, DotDataException;
 
   /**
-   * Find a Content Type given the inode
-   * 
-   * @param inodeOrVar Either the Inode or the Velocity var name representing the Structure to find
-   * @return Content Type Object
-   * @throws DotSecurityException The user does not have permissions to perform this action.
-   * @throws DotDataException Error occurred when performing the action.
+   * Deletes the specified Content Type. By default, the process that actually deletes it is
+   * asynchronous, meaning that a separate thread/transaction takes care of it. With this
+   * implementation, you can force dotCMS to <b>wait for the deletion process to be over before
+   * moving on</b>. Therefore, given the implications related to performance, this method must be
+   * used carefully
+   *
+   * @param contentType The {@link ContentType} being deleted.
+   *
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   * @throws DotDataException     An error occurred when interacting with the database.
    */
-  ContentType find(String inodeOrVar) throws DotSecurityException, DotDataException;
+  void deleteSync(final ContentType contentType) throws DotSecurityException, DotDataException;
+
+  /**
+   * Returns the Content Type that matches the specified Inode or Velocity Variable Name.
+   *
+   * @param inodeOrVar Either the Inode or the Velocity var name representing the Content Type to
+   *                   find.
+   *
+   * @return The {@link ContentType} that was requested.
+   *
+   * @throws DotSecurityException  The user does not have permissions to perform this action.
+   * @throws DotDataException      Error occurred when performing the action.
+   * @throws NotFoundInDbException The Content Type was not found in the database.
+   */
+  ContentType find(final String inodeOrVar) throws DotSecurityException, DotDataException;
 
   /**
    * Returns a list of Content Types based on the specified list of Velocity Variable Names. If one or more Velocity
@@ -189,6 +217,23 @@ public interface ContentTypeAPI {
   int count(String condition, BaseContentType base, String hostId) throws DotDataException;
 
   /**
+   * Counts the amount of Content Types in the DB filtered by the given condition, the Base
+   * Content Type, and the specific Sites they live in.
+   *
+   * @param condition Condition that the Content Type needs to meet.
+   * @param base      The {@link BaseContentType} that must be searched for. If you need to get all
+   *                  types, use {@link BaseContentType#ANY}.
+   * @param siteIds   The list of Site IDs or Site Keys -- aka, site names -- where the Content
+   *                  Types live in.
+   *
+   * @return The total number of Content Types that meet the search criteria and live in the
+   * specified Sites.
+   *
+   * @throws DotDataException An error occurred when retrieving information from the database.
+   */
+  int countForSites(final String condition, final BaseContentType base, final List<String> siteIds) throws DotDataException;
+
+  /**
    * Counts the amount of Content Types in the DB filtered by the given condition and the BaseContentType.
    *
    * @param condition Condition that the Content Type needs to met
@@ -250,6 +295,92 @@ public interface ContentTypeAPI {
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
   ContentType copyFrom(CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException;
+
+  /**
+   * Creates a copy of an existing Content Type and saves it to the specified Site.
+   *
+   * @param copyContentTypeBean The {@link CopyContentTypeBean} object containing the data of the
+   *                            Content Type being copied.
+   * @param destinationSite     The {@link Host} object representing the Site where the Content
+   *                            Type will be saved.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException;
+
+  /**
+   * Creates a copy of an existing Content Type and saves it to the specified Site.
+   *
+   * @param copyContentTypeBean    The {@link CopyContentTypeBean} object containing the data of
+   *                               the Content Type being copied.
+   * @param destinationSite        The {@link Host} object representing the Site where the Content
+   *                               Type will be saved.
+   * @param copyRelationshipFields If Relationship Fields must be copied as well, set this to
+   *                               {@code true}.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException;
+
+  /**
+   * Creates a copy of an existing Content Type and saves it.
+   *
+   * @param copyContentTypeBean The {@link CopyContentTypeBean} object containing the data of the
+   *                            Content Type being copied.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException;
+
+  /**
+   * Creates a copy of an existing Content Type and saves it to the specified Site. Additionally,
+   * the Workflow Schemes being used by the original Content Type will be assigned to the copied
+   * Content Type.
+   *
+   * @param copyContentTypeBean The {@link CopyContentTypeBean} object containing the data of the
+   *                            Content Type being copied.
+   * @param destinationSite     The {@link Host} object representing the Site where the Content
+   *                            Type will be saved.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite) throws DotDataException, DotSecurityException;
+
+  /**
+   * Creates a copy of an existing Content Type and saves it to the specified Site. Additionally,
+   * the Workflow Schemes being used by the original Content Type will be assigned to the copied
+   * Content Type.
+   *
+   * @param copyContentTypeBean    The {@link CopyContentTypeBean} object containing the data of
+   *                               the Content Type being copied.
+   * @param destinationSite        The {@link Host} object representing the Site where the Content
+   *                               Type will be saved.
+   * @param copyRelationshipFields If Relationship Fields must be copied as well, set this to
+   *                               {@code true}.
+   *
+   * @return The {@link ContentType} object representing the new Content Type.
+   *
+   * @throws DotDataException     An error occurred when interacting with the database.
+   * @throws DotSecurityException The User accessing this API does not have the required
+   *                              permissions to perform this action.
+   */
+  ContentType copyFromAndDependencies(final CopyContentTypeBean copyContentTypeBean, final Host destinationSite, final boolean copyRelationshipFields) throws DotDataException, DotSecurityException;
 
   /**
    * Saves a new Content Type.
@@ -334,6 +465,27 @@ public interface ContentTypeAPI {
   List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit, int offset, String hostId)
           throws DotDataException;
 
+  /**
+   * Returns a list of Content Types based on the specified list of search criteria. In
+   * particular, this method allows you to search for Content Types in a specific list of Sites
+   * only, not in all the dotCMS content repository.
+   *
+   * @param sites     The list of one or more Sites to search for Content Types. You can pass down
+   *                  their Identifiers or Site Keys.
+   * @param condition Allows you to add more conditions to the query via SQL code. It's internally
+   *                  sanitized by this Factory.
+   * @param base      The {@link BaseContentType} to search for.
+   * @param orderBy   The order-by clause, which is internally sanitized by this Factory.
+   * @param limit     The maximum number of returned items in the result set, for pagination
+   *                  purposes.
+   * @param offset    The requested page number of the result set, for pagination purposes.
+   *
+   * @return The list of {@link ContentType} objects matching the specified search criteria.
+   *
+   * @throws DotDataException An error occurred when retrieving information from the database.
+   */
+  List<ContentType> search(final List<String> sites, final String condition, final BaseContentType base, final String orderBy, final int limit, final int offset)
+          throws DotDataException;
 
   /**
    * Return the number of entries for each content types

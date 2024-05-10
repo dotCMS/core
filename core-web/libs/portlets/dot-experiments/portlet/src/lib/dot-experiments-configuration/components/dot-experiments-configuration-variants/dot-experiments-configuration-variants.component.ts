@@ -27,8 +27,12 @@ import {
     StepStatus,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import {
+    DotCopyButtonComponent,
+    DotDynamicDirective,
+    DotIconModule,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import {

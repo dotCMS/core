@@ -539,6 +539,30 @@ export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
     variable: 'KeyValue'
 };
 
+export const WYSIWYG_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
+    contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
+    dataType: 'TEXT',
+    fieldType: 'WYSIWYG',
+    fieldTypeLabel: 'WYSIWYG',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    iDate: 1698291913000,
+    id: '96909fa20a00497cd3b766b52edac0ec',
+    indexed: false,
+    listed: false,
+    modDate: 1698291913000,
+    name: 'WYSIWYG',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 1,
+    unique: false,
+    values: '<p>HELLO</p>',
+    variable: 'WYSIWYG'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -560,7 +584,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     BINARY_FIELD_MOCK,
     CUSTOM_FIELD_MOCK,
     JSON_FIELD_MOCK,
-    KEY_VALUE_MOCK
+    KEY_VALUE_MOCK,
+    WYSIWYG_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
@@ -919,7 +944,8 @@ export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
         __icon__: 'contentIcon',
         contentTypeIcon: 'event_note',
         variant: 'DEFAULT'
-    }
+    },
+    loading: false
 };
 
 /* CONTENT TYPE MOCKS */
@@ -1092,8 +1118,16 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
 };
 
 export const MockResizeObserver = class {
-    constructor() {}
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    constructor() {
+        //
+    }
+    observe() {
+        //
+    }
+    unobserve() {
+        //
+    }
+    disconnect() {
+        //
+    }
 };

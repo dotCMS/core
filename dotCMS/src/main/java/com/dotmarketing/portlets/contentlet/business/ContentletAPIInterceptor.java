@@ -2337,6 +2337,26 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public Contentlet copyContentlet(final Contentlet contentlet, final ContentType contentType,
+									 final Host site, final User user, final boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException, DotContentletStateException {
+		for (final ContentletAPIPreHook preHook : this.preHooks) {
+			final boolean preResult = preHook.copyContentlet(contentlet, contentType, site, user,
+					respectFrontendRoles);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed: " + preHook.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed: " + preHook.getClass().getName());
+			}
+		}
+		final Contentlet returnedContent = this.conAPI.copyContentlet(contentlet, contentType, site, user,
+				respectFrontendRoles);
+		for (final ContentletAPIPostHook postHook : this.postHooks) {
+			postHook.copyContentlet(contentlet, contentType, site, user, respectFrontendRoles, returnedContent);
+		}
+		return returnedContent;
+	}
+
+	@Override
 	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, folder, user, respectFrontendRoles);
@@ -2350,6 +2370,28 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.copyContentlet(contentlet, folder, user, respectFrontendRoles, c);
 		}
 		return c;
+	}
+
+	@Override
+	public Contentlet copyContentlet(final Contentlet contentlet, final ContentType contentType,
+									 final Folder folder, final User user,
+									 final boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException, DotContentletStateException {
+		for (final ContentletAPIPreHook preHook : this.preHooks) {
+			final boolean preResult = preHook.copyContentlet(contentlet, contentType, folder, user,
+					respectFrontendRoles);
+			if (!preResult) {
+				Logger.error(this, "The following Pre-Hook failed: " + preHook.getClass().getName());
+				throw new DotRuntimeException("The following Pre-Hook failed: " + preHook.getClass().getName());
+			}
+		}
+		final Contentlet returnedContent = this.conAPI.copyContentlet(contentlet, contentType,
+				folder, user, respectFrontendRoles);
+		for (final ContentletAPIPostHook postHook : this.postHooks) {
+			postHook.copyContentlet(contentlet, contentType, folder, user, respectFrontendRoles,
+					returnedContent);
+		}
+		return returnedContent;
 	}
 
 	@Override
@@ -2389,6 +2431,29 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.copyContentlet(contentletToCopy, host, folder, user, copySuffix, respectFrontendRoles, copiedContentlet);
 		}
 
+		return copiedContentlet;
+	}
+
+	@Override
+	public Contentlet copyContentlet(final Contentlet contentletToCopy,
+									 final ContentType contentType, final Host site,
+									 final Folder folder, final User user,
+									 final String copySuffix, final boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException, DotContentletStateException {
+		for (final ContentletAPIPreHook pre : this.preHooks) {
+			final boolean preResult = pre.copyContentlet(contentletToCopy, contentType, site, folder, user,
+					copySuffix, respectFrontendRoles);
+			if (!preResult) {
+				Logger.error(this, "The following Pre-Hook failed: " + pre.getClass().getName());
+				throw new DotRuntimeException("The following Pre-Hook failed: " + pre.getClass().getName());
+			}
+		}
+		final Contentlet copiedContentlet = this.conAPI.copyContentlet(contentletToCopy, contentType, site,
+				folder, user, copySuffix, respectFrontendRoles);
+		for (final ContentletAPIPostHook post : this.postHooks) {
+			post.copyContentlet(contentletToCopy, contentType, site, folder, user, copySuffix,
+					respectFrontendRoles, copiedContentlet);
+		}
 		return copiedContentlet;
 	}
 

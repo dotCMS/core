@@ -10,14 +10,13 @@ import { DotSafeUrlPipe } from '@components/_common/iframe/pipes/dot-safe-url/do
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     DotcmsEventsServiceMock,
     LoginServiceMock,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { IframeComponent } from './iframe.component';
@@ -50,7 +49,7 @@ describe('IframeComponent', () => {
             imports: [
                 RouterTestingModule,
                 DotOverlayMaskModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotSafeUrlPipe
             ],

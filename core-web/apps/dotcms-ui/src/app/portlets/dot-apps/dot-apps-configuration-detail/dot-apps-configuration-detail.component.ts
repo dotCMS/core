@@ -94,10 +94,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
         return params;
     }
 
-    private getSecrets(
-        secrets: DotAppsSecret[],
-        includeDinamicFields: boolean = false
-    ): DotAppsSecret[] {
+    private getSecrets(secrets: DotAppsSecret[], includeDinamicFields = false): DotAppsSecret[] {
         return secrets.filter((secret: DotAppsSecret) => secret.dynamic === includeDinamicFields);
     }
 

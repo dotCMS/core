@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+import * as dotcmsClient from '@dotcms/client';
+
 import { Column } from './Column';
 
 import { MockContextRender } from '../../mocks/mockPageContext';
@@ -28,6 +30,7 @@ describe('Column', () => {
 
     describe('Column is inside editor', () => {
         beforeEach(() => {
+            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(true);
             render(
                 <MockContextRender mockContext={{ isInsideEditor: true }}>
                     <Column column={mockColumnData} />
@@ -59,6 +62,7 @@ describe('Column', () => {
 
     describe('Column is not inside editor', () => {
         beforeEach(() => {
+            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
             render(
                 <MockContextRender mockContext={{ isInsideEditor: false }}>
                     <Column column={mockColumnData} />

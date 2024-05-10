@@ -27,9 +27,11 @@ import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.business.HostFactoryImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionletTest;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
+import com.dotmarketing.startup.runonce.Task240306MigrateLegacyLanguageVariablesTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -99,7 +101,9 @@ import org.junit.runners.Suite.SuiteClasses;
         HostFactoryImplTest.class,
         BundleFactoryImplTest.class,
         ExperimentUrlPatternCalculatorIntegrationTest.class,
-        JsEngineTest.class
+        JsEngineTest.class,
+        Task240306MigrateLegacyLanguageVariablesTest.class,
+        EmailActionletTest.class
 })
 
 public class MainSuite1a {

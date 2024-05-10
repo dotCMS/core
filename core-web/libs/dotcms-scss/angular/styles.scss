@@ -87,6 +87,10 @@ a {
     }
 }
 
+button {
+    font-family: $font-default;
+}
+
 /*
 
 Dragula clone and append dragged element to the body we need to have their styles globally.
@@ -114,4 +118,16 @@ code {
     padding: $spacing-0 $spacing-1;
     font-family: $font-code;
     line-break: anywhere;
+}
+
+.dot-mask {
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    pointer-events: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }

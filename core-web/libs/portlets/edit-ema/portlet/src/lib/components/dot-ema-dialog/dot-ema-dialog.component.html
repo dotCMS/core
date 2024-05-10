@@ -7,6 +7,7 @@
     [maximizable]="true"
     [modal]="true"
     (visibleChange)="resetDialog()"
+    appendTo="body"
     data-testId="dialog"
     styleClass="edit-ema-dialog">
     <ng-container [ngSwitch]="ds.type">
@@ -18,9 +19,10 @@
         <ng-container *ngSwitchCase="'content'">
             <iframe
                 #iframe
+                *ngIf="ds.url"
                 [style]="{
                     border: 'none',
-                    display: ds.status !== dialogStatus.INIT ? 'none' : 'block'
+                    height: ds.status !== dialogStatus.INIT ? '0' : null
                 }"
                 [src]="ds.url | safeUrl"
                 (load)="onIframeLoad()"
@@ -34,4 +36,21 @@
                 data-testId="spinner"></dot-spinner>
         </ng-container>
     </ng-container>
+
+    <p-dialog
+        [visible]="this.$compareData()"
+        [style]="{ height: '90vh', width: '90vw' }"
+        [header]="'Compare'"
+        [draggable]="false"
+        [resizable]="false"
+        [maximizable]="true"
+        [modal]="true"
+        [maskStyleClass]="'p-dialog-mask-transparent-nested'"
+        (visibleChange)="closeCompareDialog()"
+        appendTo="body"
+        data-testId="dialog-compare">
+        <dot-content-compare
+            [data]="$compareData()"
+            (letMeBringBack)="bringBack($event)"></dot-content-compare>
+    </p-dialog>
 </p-dialog>

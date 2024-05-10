@@ -2,10 +2,13 @@
 
 ASSETS_BACKUP_FILE=/data/assets.zip
 DB_BACKUP_FILE=/data/dotcms_db.sql.gz
+STARTER_ZIP=/data/starter.zip
 
 export JAVA_HOME=/usr/share/opensearch/jdk
 export PATH=$PATH:$JAVA_HOME/bin:/usr/local/pgsql/bin
 export ES_JAVA_OPTS=${ES_JAVA_OPTS:-"-Xmx512m"}
+export DOTCMS_CLONE_TYPE=${DOTCMS_CLONE_TYPE:-"dump"}
+export DOWNLOAD_ALL_ASSETS=${ALL_ASSETS:-"false"}
 
 
 setup_postgres () {
@@ -58,8 +61,31 @@ setup_opensearch () {
     su -c "/usr/share/opensearch/bin/opensearch 1> /dev/null" dotcms &
 }
 
+pull_dotcms_starter_zip () {
+  echo "- Pulling starter.zip file"
+    if [ ! -f "$STARTER_ZIP" ]; then
+        su -c "rm -rf $STARTER_ZIP.tmp"
+        echo "- Downloading Starter"
+        su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $STARTER_ZIP.tmp  $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadStarterWithAssets\?oldAssets=$DOWNLOAD_ALL_ASSETS" dotcms
+        if [ -s $STARTER_ZIP.tmp ]; then
+          su -c "mv $STARTER_ZIP.tmp $STARTER_ZIP"
+          export DOT_STARTER_DATA_LOAD=$STARTER_ZIP
+        else
+          su -c "rm -rf $STARTER_ZIP.tmp"
+          echo "starter download failed, please check your credentials and try again"
+          exit 1
+        fi
+    else
+      echo "- $STARTER_ZIP exists.  Not re-downloading. Delete the starter.zip file if you would like to download a fresh starter"
+    fi
+    export DOT_STARTER_DATA_LOAD=$STARTER_ZIP
+
+}
+
+
 
 pull_dotcms_backups () {
+
 
     # If these are 0 length files, delete them
     if [ ! -s $ASSETS_BACKUP_FILE ] ; then
@@ -70,12 +96,10 @@ pull_dotcms_backups () {
         rm -rf $DB_BACKUP_FILE
     fi
 
-    if [ -f "$ASSETS_BACKUP_FILE" ] && [ -f $DB_BACKUP_FILE ]; then
-
-        echo "- DB and Assets backups exist, skipping"
-        echo "- Delete $ASSETS_BACKUP_FILE and $DB_BACKUP_FILE to force a re-download"
-        return 0
+    if [ ! -s $STARTER_ZIP ] ; then
+        rm -rf $STARTER_ZIP
     fi
+
 
     if [ -z "$DOTCMS_SOURCE_ENVIRONMENT" ]; then
         echo "- No dotCMS env to clone, starting normally"
@@ -90,19 +114,34 @@ pull_dotcms_backups () {
 
     if [ -n  "$DOTCMS_API_TOKEN"  ]; then
         echo "- Using Authorization: Bearer"
-        AUTH_HEADER="Authorization: Bearer $DOTCMS_API_TOKEN"
+        export AUTH_HEADER="Authorization: Bearer $DOTCMS_API_TOKEN"
     else
         echo "- Using Authorization: Basic"
-        AUTH_HEADER="Authorization: Basic $(echo -n $DOTCMS_USERNAME_PASSWORD | base64)"
+        export AUTH_HEADER="Authorization: Basic $(echo -n $DOTCMS_USERNAME_PASSWORD | base64)"
     fi
 
     mkdir -p /data/shared/assets
     chown -R dotcms.dotcms /data/shared
 
+    if  [ "$DOTCMS_CLONE_TYPE" == "starter" ] || [ "$DOTCMS_CLONE_TYPE" == "starter.zip" ] ; then
+      pull_dotcms_starter_zip
+      return 0
+    fi
+
+    if [ -f "$ASSETS_BACKUP_FILE" ] && [ -f $DB_BACKUP_FILE ]; then
+
+        echo "- DB and Assets backups exist, skipping"
+        echo "- Delete $ASSETS_BACKUP_FILE and $DB_BACKUP_FILE to force a re-download"
+        return 0
+    fi
+
+
+
+
     if [ ! -f "$ASSETS_BACKUP_FILE" ]; then
         su -c "rm -rf $ASSETS_BACKUP_FILE.tmp"
         echo "- Downloading ASSETS"
-        su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $ASSETS_BACKUP_FILE.tmp  $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadAssets\?oldAssets=${ALL_ASSETS:-"false"} " dotcms
+        su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $ASSETS_BACKUP_FILE.tmp  $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadAssets\?oldAssets=$DOWNLOAD_ALL_ASSETS " dotcms
         if [ -s $ASSETS_BACKUP_FILE.tmp ]; then
           su -c "mv $ASSETS_BACKUP_FILE.tmp $ASSETS_BACKUP_FILE"
         else
@@ -162,7 +201,7 @@ start_dotcms () {
     echo " - DB_BASE_URL: $DB_BASE_URL"
     echo " - DOT_ES_ENDPOINTS: $DOT_ES_ENDPOINTS"
     echo " - DOT_DOTCMS_CLUSTER_ID: $DOT_DOTCMS_CLUSTER_ID"
-
+    echo " - DOT_STARTER_DATA_LOAD: $DOT_STARTER_DATA_LOAD"
     . /srv/entrypoint.sh
 }
 

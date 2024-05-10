@@ -69,10 +69,7 @@ export class DotContentTypeService {
      * @return {*}  {Observable<DotCMSContentType[]>}
      * @memberof DotContentTypeService
      */
-    filterContentTypes(
-        filter: string = '',
-        allowedTypes: string = ''
-    ): Observable<DotCMSContentType[]> {
+    filterContentTypes(filter = '', allowedTypes = ''): Observable<DotCMSContentType[]> {
         return this.coreWebService
             .requestView({
                 body: {

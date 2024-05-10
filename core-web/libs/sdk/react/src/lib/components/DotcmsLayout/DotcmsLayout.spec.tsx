@@ -6,11 +6,6 @@ import { DotcmsLayout } from './DotcmsLayout';
 
 import { mockPageContext } from '../../mocks/mockPageContext';
 
-// Mock the custom hook and components
-jest.mock('../../hooks/usePageEditor', () => ({
-    usePageEditor: jest.fn().mockReturnValue({ rowsRef: { current: [] }, isInsideEditor: true })
-}));
-
 jest.mock('../Row/Row', () => {
     const { forwardRef } = jest.requireActual('react');
 
@@ -38,7 +33,7 @@ jest.mock('../PageProvider/PageProvider', () => {
 
 describe('DotcmsLayout', () => {
     it('renders correctly with PageProvider and rows', () => {
-        render(<DotcmsLayout entity={mockPageContext} />);
+        render(<DotcmsLayout entity={{ ...mockPageContext, isInsideEditor: true }} />);
         expect(screen.getAllByTestId('mockRow').length).toBe(
             mockPageContext.layout.body.rows.length
         );

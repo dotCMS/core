@@ -40,7 +40,10 @@ import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+
+import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 
 /**
  * UserAPIImpl is an API intended to be a helper class for class to get User
@@ -192,11 +195,19 @@ public class UserAPIImpl implements UserAPI {
                     .getUserObject(companyId, false, userId, true, null, null, false, userId, null,
                             userId, null, true, null, email, defaultUser.getLocale());
         } catch (DuplicateUserEmailAddressException e) {
-            Logger.info(this, "User already exists with this email");
-            throw new DuplicateUserException(e.getMessage(), e);
+
+            final String defaultMessage = "User already exists with this email";
+            final String message = Objects.nonNull(e.getMessage())?e.getMessage():defaultMessage;
+            Logger.info(this, defaultMessage);
+
+            throw new DuplicateUserException(message, e);
         } catch (DuplicateUserIdException e) {
-            Logger.info(this, "User already exists with this ID");
-            throw new DuplicateUserException(e.getMessage(), e);
+
+            final String defaultMessage = "User already exists with this ID";
+            final String message = Objects.nonNull(e.getMessage())?e.getMessage():defaultMessage;
+            Logger.info(this, defaultMessage);
+
+            throw new DuplicateUserException(message, e);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotDataException(e.getMessage(), e);
@@ -427,6 +438,7 @@ public class UserAPIImpl implements UserAPI {
             throw new DotSecurityException(
                     "User doesn't have permission to save the user which is trying to be saved");
         }
+        validateMaximumLength(userToSave.getFirstName(),userToSave.getLastName(),userToSave.getEmailAddress());
         userFactory.save(userToSave);
         PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
                 .getManager();

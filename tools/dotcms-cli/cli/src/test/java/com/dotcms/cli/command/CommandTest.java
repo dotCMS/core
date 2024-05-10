@@ -1,6 +1,11 @@
 package com.dotcms.cli.command;
 
+import com.dotcms.api.AuthenticationAPI;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
+import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.authentication.APITokenRequest;
+import com.dotcms.model.authentication.TokenEntity;
 import com.dotcms.model.config.ServiceBean;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
@@ -15,6 +20,7 @@ import java.util.UUID;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
+import org.junit.jupiter.api.Assertions;
 import picocli.CommandLine;
 
 public abstract class CommandTest {
@@ -40,6 +46,9 @@ public abstract class CommandTest {
 
     @Inject
     ServiceManager serviceManager;
+
+    @Inject
+    RestClientFactory clientFactory;
 
     @CanIgnoreReturnValue
     protected ServiceManager resetServiceProfiles() throws IOException {
@@ -97,6 +106,23 @@ public abstract class CommandTest {
                 return FileVisitResult.CONTINUE;
             }
         });
+    }
+
+
+    /**
+     * Requests a token from the server.
+     * @return The token.
+     */
+    protected String requestToken() {
+        AuthenticationAPI authenticationAPI = clientFactory.getClient(AuthenticationAPI.class);
+        String dummyUser = "admin@dotCMS.com";
+        String dummyPassword = "admin";
+        final ResponseEntityView<TokenEntity> response = authenticationAPI.getToken(
+                APITokenRequest.builder().user(dummyUser).password(dummyPassword.toCharArray())
+                        .build());
+        Assertions.assertNotNull(response);
+        final char[] token = response.entity().token();
+        return new String(token);
     }
 
 }

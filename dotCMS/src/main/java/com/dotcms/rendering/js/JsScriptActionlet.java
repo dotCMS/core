@@ -14,13 +14,13 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import static com.dotcms.rendering.util.ActionletUtil.getRequest;
 import static com.dotcms.rendering.util.ActionletUtil.getResponse;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Js Script Actionlet allows to execute custom script in a workflow action
@@ -30,6 +30,8 @@ public class JsScriptActionlet  extends WorkFlowActionlet {
 
     private static final List<WorkflowActionletParameter> PARAMETER_LIST = createParamList();
     private boolean stop = false;
+
+
 
     private static List<WorkflowActionletParameter> createParamList () {
 
@@ -73,8 +75,8 @@ public class JsScriptActionlet  extends WorkFlowActionlet {
             final String javascriptCode = javascriptCodeParameter.getValue();
             final String resultKey      = keyParameter.getValue();
             final Object result         = engine.eval(request, response, new StringReader(javascriptCode),
-                    map("workflow", processor, "user", processor.getUser(),
-                            "contentlet", processor.getContentlet(), "content", processor.getContentlet()));
+                    new HashMap<>(Map.of("workflow", processor, "user", processor.getUser(),
+                            "contentlet", processor.getContentlet(), "content", processor.getContentlet())));
 
             this.stop = processor.abort();
             if (Objects.nonNull(result) && Objects.nonNull(resultKey)) {

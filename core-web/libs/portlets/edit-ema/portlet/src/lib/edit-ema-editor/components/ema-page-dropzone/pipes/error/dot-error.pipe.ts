@@ -2,6 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
+import { ContainerPayload, ContentletDragPayload } from '../../../../../shared/models';
 import { Container, EmaDragItem } from '../../types';
 
 interface DotErrorPipeResponse {
@@ -14,7 +15,10 @@ interface DotErrorPipeResponse {
     standalone: true
 })
 export class DotErrorPipe implements PipeTransform {
-    transform({ payload, contentlets }: Container, item: EmaDragItem): DotErrorPipeResponse {
+    transform(
+        { payload, contentlets }: Container,
+        emaDragItem: EmaDragItem | undefined
+    ): DotErrorPipeResponse {
         const { container = {} } =
             typeof payload === 'string' ? JSON.parse(payload) : payload || {};
 
@@ -22,14 +26,20 @@ export class DotErrorPipe implements PipeTransform {
 
         const contentletsLength = contentlets.length;
 
-        if (!this.isValidContentType(acceptTypes, item)) {
+        if (!this.isValidContentType(acceptTypes, emaDragItem)) {
             return {
                 message: 'edit.ema.page.dropzone.invalid.contentlet.type',
-                args: [item.contentType]
+                args: [emaDragItem.contentType]
             };
         }
 
-        if (!this.contentCanFitInContainer(container.maxContentlets, contentletsLength)) {
+        const originContainer = (emaDragItem?.draggedPayload as ContentletDragPayload)?.item
+            ?.container;
+
+        if (
+            !this.isSameTheContainer(container, originContainer) && // If it is not from the same container then we are adding a new contentlet
+            !this.contentCanFitInContainer(container.maxContentlets, contentletsLength)
+        ) {
             const message =
                 maxContentlets === 1
                     ? 'edit.ema.page.dropzone.one.max.contentlet'
@@ -47,7 +57,11 @@ export class DotErrorPipe implements PipeTransform {
         };
     }
 
-    private isValidContentType(acceptTypes: string, item: EmaDragItem): boolean {
+    private isValidContentType(acceptTypes: string, item: EmaDragItem | undefined): boolean {
+        if (!item) {
+            return false;
+        }
+
         if (item.baseType === DotCMSBaseTypesContentTypes.WIDGET) {
             return true;
         }
@@ -59,5 +73,15 @@ export class DotErrorPipe implements PipeTransform {
 
     private contentCanFitInContainer(maxContentlets: number, contentletsLength: number): boolean {
         return contentletsLength < maxContentlets;
+    }
+
+    private isSameTheContainer(
+        container?: ContainerPayload,
+        originContainer?: ContainerPayload
+    ): boolean {
+        return (
+            container?.identifier === originContainer?.identifier &&
+            container?.uuid === originContainer?.uuid
+        );
     }
 }

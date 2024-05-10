@@ -8,7 +8,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DataViewModule } from 'primeng/dataview';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import {
     DotEventsService,
     DotMessageService,
@@ -16,7 +15,7 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotDialogModule, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotThemesServiceMock,

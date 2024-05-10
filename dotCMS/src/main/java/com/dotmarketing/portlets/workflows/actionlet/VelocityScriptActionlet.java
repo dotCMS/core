@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -75,10 +76,10 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
             final String resultKey    = keyParameter.getValue();
             final Reader reader       = new StringReader(script);
             final Object result       = engine.eval(request, response, reader,
-                    CollectionsUtils.map("workflow", processor,
+                    new HashMap<>(Map.of("workflow", processor,
                             "user", processor.getUser(),
                             "contentlet", processor.getContentlet(),
-                            "content", processor.getContentlet()));
+                            "content", processor.getContentlet())));
 
             this.stop = processor.abort();
             if (null != result && null != resultKey) {

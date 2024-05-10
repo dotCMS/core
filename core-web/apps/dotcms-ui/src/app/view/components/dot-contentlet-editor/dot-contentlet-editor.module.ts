@@ -1,9 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotAddContentletComponent } from './components/dot-add-contentlet/dot-add-contentlet.component';
 import { DotContentletWrapperComponent } from './components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
@@ -19,8 +18,8 @@ import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.mo
     imports: [
         CommonModule,
         DotIframeDialogModule,
-        DotPipesModule,
         DotContentCompareModule,
+        DotSafeHtmlPipe,
         DotMessagePipe
     ],
     declarations: [

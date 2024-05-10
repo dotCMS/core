@@ -19,18 +19,22 @@ login - *Use this command to login to a dotCMS instance.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*login* [*-h*] *-p*[=_<password>_] [*-p*[=_<password>_]]... *-u*=_<user>_
+
+Usage: login
+       login [-u <user> -p <password>]
+       login [-tk <token>]
+
 
 // end::picocli-generated-man-section-synopsis[]
 
 // tag::picocli-generated-man-section-description[]
 == Description
 
- Once an instance is selected. Use this command to open a session
- Expects a user in --user -u and a password --password -p
- *Both parameters are mandatory.*
- If the password is not provided, the command will prompt for it.
- if you're not sure which instance is active, use the status command.
+This command is used to either login with a user/password combination
+or directly using a token. These options are mutually exclusive and
+only one should be provided. If none is provided, interactive mode will be used.
+Note: For security reasons, it's recommended to use interactive mode
+for entering passwords. Input through command line may be stored in console history.
 
 
 // end::picocli-generated-man-section-description[]
@@ -41,27 +45,28 @@ login - *Use this command to login to a dotCMS instance.*
 *-h*, *--help*::
   Display this help message.
 
+== 
+*Password Login Options. *
+
+
 *-p*, *--password*[=_<password>_]::
   Passphrase
 +
-The following is the recommended way to use this param 
-+
-as the password will be promoted securely
-+
-login -u=admin@dotCMS.com -p 
-+
-Both options, user and password are mandatory
-+
-and they can also be provided inline as follows:
-+
-login -u=admin@dotCMS.com -p=admin 
-+
-However, this opens a possibility for password theft
-+
-as the password will be visible in the command history.
+If not provided in command line, interactive mode will prompt for it.
 
-*-u*, *--user*=_<user>_::
-  User name
+*-u*, *--user*[=_<user>_]::
+  Username
++
+If not provided in command line, interactive mode will prompt for it.
+
+== 
+*Token login Options. *
+
+
+*-tk, --token*[=_<token>_]::
+  dotCMS Token
++
+A token can be used directly to authenticate with the dotCMS instance
 
 // end::picocli-generated-man-section-options[]
 

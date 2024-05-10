@@ -19,7 +19,8 @@ site-copy - *Use this command to copy an existing site.*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site copy* [*-ah*] [*-cn*=_copyName_] *-in*=_idOrName_ [[*-p*] [*-c*] [*-f*] [*-l*] [*-t*] [*-var*]]
+*site copy* [*-ah*] [*-cn*=_copyName_] [*--dotcms-url*=_<remoteURL>_] *-in*=_idOrName_
+          [*-tk*=_<token>_] [[*-p*] [*-c*] [*-f*] [*-l*] [*-t*] [*-var*]]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -43,11 +44,17 @@ site-copy - *Use this command to copy an existing site.*
 *-cn, --copyName*=_copyName_::
   New Site name.
 
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
 *-h*, *--help*::
   Display this help message.
 
 *-in, --idOrName*=_idOrName_::
   Site name or Id.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
 
 == 
 *Individual Copy Options. *

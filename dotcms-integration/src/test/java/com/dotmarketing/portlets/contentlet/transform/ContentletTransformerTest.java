@@ -697,6 +697,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         when(fileAsset.getUnderlyingFileName()).thenReturn(underlyingFileName);
         when(fileAsset.getWidth()).thenReturn(width);
         when(fileAsset.getHeight()).thenReturn(height);
+        when(fileAsset.isImage()).thenReturn(true);
 
         when(fileAssetAPI.fromContentlet(any(Contentlet.class))).thenReturn(fileAsset);
 
@@ -909,6 +910,32 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         Assert.assertTrue(isValidStringDateISO8601(object.get("timeField").toString()));
         Assert.assertTrue(isValidStringDateISO8601(object.get("dateField").toString()));
         Assert.assertTrue(isValidStringDateISO8601(object.get("dateTimeField").toString()));
+
+    }
+
+    /**
+     * Given Scenario: This tests that the transformer used to transform content from the DB decode colons and commas
+     * Expected Result: Colons and commas shouldn't be HTML encoded when transform them from the DB.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Transformer_content_Decode_JSON()
+            throws Exception {
+
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode())
+                .setProperty("title", "test_KeyValueFieldDecode" + System.currentTimeMillis())
+                .setProperty("keyValueField", "{\"origin\":\"https&#58;//test.com &#44; http&#58;//test2.com\"}");
+
+        final Contentlet contentlet = contentletDataGen.nextPersisted();
+
+        final Contentlet findContentlet = APILocator.getContentletAPI().find(contentlet.getInode(),APILocator.systemUser(),false);
+
+        final Map<String, Object> keyValueField = findContentlet.getKeyValueProperty("keyValueField");
+
+        Assert.assertFalse(keyValueField.get("origin").toString().contains("&#58;"));
+        Assert.assertFalse(keyValueField.get("origin").toString().contains("&#44;"));
 
     }
 

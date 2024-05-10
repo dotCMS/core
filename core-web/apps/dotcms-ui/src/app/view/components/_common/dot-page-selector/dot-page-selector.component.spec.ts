@@ -25,9 +25,8 @@ import {
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { DotPageSelectorComponent } from './dot-page-selector.component';
@@ -156,7 +155,7 @@ describe('DotPageSelectorComponent', () => {
             imports: [
                 DotDirectivesModule,
                 DotFieldHelperModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotMessagePipe,
                 AutoCompleteModule,
                 FormsModule,

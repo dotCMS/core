@@ -333,9 +333,12 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         this.dotGlobalMessageService.success(
             this.dotMessageService.get('dot.common.message.saved')
         );
+
         if (this.activatedRoute?.snapshot?.params['inode']) {
             this.dotRouterService.goToEditTemplate(template.identifier);
         }
+
+        this.dotRouterService.allowRouteDeactivation();
     }
 
     private onSaveTemplateError(err: HttpErrorResponse) {

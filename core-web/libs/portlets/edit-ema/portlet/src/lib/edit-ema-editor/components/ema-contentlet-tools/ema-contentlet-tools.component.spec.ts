@@ -1,5 +1,7 @@
 import { Spectator, byTestId, byText, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { By } from '@angular/platform-browser';
+
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 
@@ -22,14 +24,16 @@ const payload: ActionPayload = {
     contentlet: {
         identifier: 'contentlet-identifier-123',
         inode: 'contentlet-inode-123',
-        title: 'Hello World'
+        title: 'Hello World',
+        contentType: 'test'
     },
     container: {
         identifier: 'test',
         acceptTypes: 'test',
         uuid: 'test',
         maxContentlets: 1,
-        contentletsId: []
+        contentletsId: [],
+        variantId: '123'
     },
     pageId: 'test',
     position: 'after'
@@ -59,10 +63,37 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: contentletAreaMock
+                        contentletArea: contentletAreaMock
                     }
                 }))
         );
+
+        it("should have a drag image with the contentlet's contentType", () => {
+            expect(spectator.query(byTestId('drag-image'))).toHaveText('test');
+        });
+
+        it('should close menus when contentlet @input was changed', () => {
+            const spyHideMenus = jest.spyOn(spectator.component, 'hideMenus');
+
+            const hideMenu = jest.spyOn(spectator.component.menu, 'hide');
+            // Open menu
+            spectator.click('[data-testId="menu-add"]');
+
+            //Change contentlet hover
+            spectator.setInput('contentletArea', {
+                ...contentletAreaMock,
+                payload: {
+                    ...contentletAreaMock.payload,
+                    contentlet: {
+                        ...contentletAreaMock.payload.contentlet,
+                        identifier: 'new-identifier'
+                    }
+                }
+            });
+
+            expect(spyHideMenus).toHaveBeenCalled();
+            expect(hideMenu).toHaveBeenCalled();
+        });
 
         describe('events', () => {
             it('should emit delete on delete button click', () => {
@@ -75,6 +106,22 @@ describe('EmaContentletToolsComponent', () => {
                 const deleteSpy = jest.spyOn(spectator.component.edit, 'emit');
                 spectator.click('[data-testId="edit-button"]');
                 expect(deleteSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
+            });
+
+            it('should set drag image', () => {
+                const dragButton = spectator.debugElement.query(
+                    By.css('[data-testId="drag-button"]')
+                );
+
+                const dragImageSpy = jest.fn();
+
+                spectator.triggerEventHandler(dragButton, 'dragstart', {
+                    dataTransfer: {
+                        setDragImage: dragImageSpy
+                    }
+                });
+
+                expect(dragImageSpy).toHaveBeenCalled();
             });
 
             describe('top button', () => {
@@ -185,7 +232,7 @@ describe('EmaContentletToolsComponent', () => {
                 const topButton = spectator.query(byTestId('actions'));
                 expect(topButton).toHaveStyle({
                     position: 'absolute',
-                    left: '508px',
+                    left: '464px',
                     top: '80px',
                     zIndex: '1'
                 });
@@ -198,7 +245,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             width: 180
                         }
@@ -234,16 +281,23 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             width: 180,
                             payload: {
                                 contentlet: {
                                     identifier: 'TEMP_EMPTY_CONTENTLET',
                                     inode: 'Fake inode',
-                                    title: 'Fake title'
+                                    title: 'Fake title',
+                                    contentType: 'Fake content type'
                                 },
-                                container: undefined,
+                                container: {
+                                    uuid: '',
+                                    acceptTypes: '',
+                                    identifier: '',
+                                    maxContentlets: 0,
+                                    variantId: ''
+                                },
                                 language_id: '1',
                                 pageContainers: [],
                                 pageId: '1',
@@ -258,6 +312,38 @@ describe('EmaContentletToolsComponent', () => {
             expect(spectator.query(byTestId('add-top-button'))).toBeDefined();
             expect(spectator.query(byTestId('add-bottom-button'))).toBeNull();
             expect(spectator.query(byTestId('actions'))).toBeNull();
+        });
+    });
+
+    describe('VTL contentlet', () => {
+        beforeEach(
+            () =>
+                (spectator = createComponent({
+                    props: {
+                        contentletArea: {
+                            ...contentletAreaMock,
+                            payload: {
+                                ...contentletAreaMock.payload,
+                                vtlFiles: [
+                                    {
+                                        inode: '123',
+                                        name: 'test.vtl'
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }))
+        );
+
+        it('should set right position for actions', () => {
+            const topButton = spectator.query(byTestId('actions'));
+            expect(topButton).toHaveStyle({
+                position: 'absolute',
+                left: '414px',
+                top: '80px',
+                zIndex: '1'
+            });
         });
     });
 });

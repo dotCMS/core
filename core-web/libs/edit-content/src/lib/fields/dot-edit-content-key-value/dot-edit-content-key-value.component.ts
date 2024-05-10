@@ -18,9 +18,8 @@ import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
     ]
 })
 export class DotEditContentKeyValueComponent {
-    private onChange: (value: Record<string, string>) => void;
-    private onTouched: () => void = () => {};
     protected initialValue: DotKeyValue[] = [];
+    private onChange: (value: Record<string, string>) => void;
 
     updateField(value: DotKeyValue[]): void {
         const keyValue = value.reduce((acc, item) => {
@@ -44,6 +43,10 @@ export class DotEditContentKeyValueComponent {
     registerOnTouched(fn: () => void) {
         this.onTouched = fn;
     }
+
+    private onTouched: () => void = () => {
+        //
+    };
 
     private parseToDotKeyValue(data: Record<string, string>): DotKeyValue[] {
         if (!data) {

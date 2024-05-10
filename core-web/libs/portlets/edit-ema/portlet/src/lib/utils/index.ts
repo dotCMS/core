@@ -1,4 +1,10 @@
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+
+import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DEFAULT_PERSONA, EDIT_MODE } from '../shared/consts';
 import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
+
+export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
 
 /**
  * Insert a contentlet in a container
@@ -49,22 +55,36 @@ export function insertContentletInContainer(action: ActionPayload): {
  * @param {ActionPayload} action
  * @return {*}  {PageContainer[]}
  */
-export function deleteContentletFromContainer(action: ActionPayload): PageContainer[] {
+export function deleteContentletFromContainer(action: ActionPayload): {
+    pageContainers: PageContainer[];
+    contentletsId: string[];
+} {
     const { pageContainers, container, contentlet, personaTag } = action;
 
-    return pageContainers.map((currentContainer) => {
+    let contentletsId = [];
+
+    const newPageContainers = pageContainers.map((currentContainer) => {
         if (areContainersEquals(currentContainer, container)) {
+            const newContentletsId = currentContainer.contentletsId.filter(
+                (id) => id !== contentlet.identifier
+            );
+
+            contentletsId = newContentletsId;
+
             return {
                 ...currentContainer,
-                contentletsId: currentContainer.contentletsId.filter(
-                    (id) => id !== contentlet.identifier
-                ),
+                contentletsId: newContentletsId,
                 personaTag
             };
         }
 
         return currentContainer;
     });
+
+    return {
+        pageContainers: newPageContainers,
+        contentletsId
+    };
 }
 
 /**
@@ -74,7 +94,7 @@ export function deleteContentletFromContainer(action: ActionPayload): PageContai
  * @param {ContainerPayload} containerToFind
  * @return {*}  {boolean}
  */
-function areContainersEquals(
+export function areContainersEquals(
     currentContainer: PageContainer,
     containerToFind: ContainerPayload
 ): boolean {
@@ -138,12 +158,68 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
  * @param {string} url
  * @return {*}  {string}
  */
-export function sanitizeURL(url: string): string {
+export function sanitizeURL(url?: string): string {
     return url
-        .replace(/^\/|\/$/g, '') // Remove slashes from the beginning and end of the url
-        .split('/')
-        .filter((part, i) => {
-            return !i || part !== 'index'; // Filter the index from the url if it is at the last position
-        })
-        .join('/');
+        ?.replace(/(^\/)|(\/$)/g, '') // Remove slashes from the beginning and end of the url
+        .replace(/\/index$/, ''); // Remove index from the end of the url
+}
+
+/**
+ * Get the personalization for the contentlet
+ *
+ * @param {Record<string, string>} persona
+ * @return {*}
+ */
+export const getPersonalization = (persona: Record<string, string>) => {
+    if (!persona || (!persona.contentType && !persona.keyTag)) {
+        return `dot:default`;
+    }
+
+    return `dot:${persona.contentType}:${persona.keyTag}`;
+};
+
+/**
+ * Create a page api url with query params
+ *
+ * @export
+ * @param {string} url
+ * @param {Partial<DotPageApiParams>} params
+ * @return {*}  {string}
+ */
+export function createPageApiUrlWithQueryParams(
+    url: string,
+    params: Partial<DotPageApiParams>
+): string {
+    // Set default values
+    const completedParams = {
+        ...params,
+        language_id: params.language_id ?? '1',
+        'com.dotmarketing.persona.id':
+            params['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
+        variantName: params.variantName ?? DEFAULT_VARIANT_ID,
+        mode: params.mode ?? EDIT_MODE
+    };
+
+    // Filter out undefined values and url
+    Object.keys(completedParams).forEach(
+        (key) =>
+            (completedParams[key] === undefined || key === 'url') && delete completedParams[key]
+    );
+
+    const queryParams = new URLSearchParams({
+        ...completedParams
+    }).toString();
+
+    return queryParams.length ? `${url}?${queryParams}` : url;
+}
+
+/**
+ * Check if the variant is the default one
+ *
+ * @export
+ * @param {string} [variant]
+ * @return {*}  {boolean}
+ */
+export function getIsDefaultVariant(variant?: string): boolean {
+    return !variant || variant === DEFAULT_VARIANT_ID;
 }

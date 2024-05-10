@@ -1,23 +1,20 @@
 {
-  "extends": "../../../tsconfig.base.json",
-  "compilerOptions": {
-    "module": "ESNext",
-    "target": "esnext",
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
-  },
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "./tsconfig.lib.json"
+    "extends": "../../../tsconfig.base.json",
+    "compilerOptions": {
+        "jsx": "react-jsx",
+        "allowJs": false,
+        "esModuleInterop": false,
+        "allowSyntheticDefaultImports": true,
+        "strict": true
     },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ]
+    "files": [],
+    "include": ["src"],
+    "references": [
+        {
+            "path": "./tsconfig.lib.json"
+        },
+        {
+            "path": "./tsconfig.spec.json"
+        }
+    ]
 }

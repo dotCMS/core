@@ -14,12 +14,34 @@
                 "assets": ["libs/sdk/client/*.md"]
             }
         },
+        "build:js": {
+            "executor": "@nx/esbuild:esbuild",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "../dotCMS/src/main/webapp/html/js/editor-js",
+                "outputFileName": "sdk-editor",
+                "format": ["esm"],
+                "tsConfig": "libs/sdk/client/tsconfig.lib.json",
+                "project": "libs/sdk/client/package.json",
+                "entryFile": "libs/sdk/client/src/lib/editor/sdk-editor-vtl.ts",
+                "external": ["react/jsx-runtime"],
+                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
+                "compiler": "tsc",
+                "extractCss": false,
+                "minify": true
+            }
+        },
         "publish": {
             "executor": "nx:run-commands",
             "options": {
                 "command": "node tools/scripts/publish.mjs sdk-js-client {args.ver} {args.tag}"
             },
             "dependsOn": ["build"]
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/libs/sdk/client"
+            }
         },
         "lint": {
             "executor": "@nrwl/linter:eslint",

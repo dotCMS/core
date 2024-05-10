@@ -166,7 +166,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 
         factory.saveLanguage(language);
-        Logger.debug(this, "Created language: " + language);
+        Logger.info(this, "Created language: " + language);
 	}
 
     @CloseDBIfOpened

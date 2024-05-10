@@ -75,19 +75,17 @@ public abstract class ContentTypeSql {
 	public static String SELECT_QUERY_CONDITION = SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE
 			+ " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
 			+ " %s" //if we have a condition
-			+ " and host like ? "
-			+ " and structuretype>=? and structuretype<= ? "
+			+ " and (host like %s) "
+			+ " and structuretype >= ? and structuretype <= ? "
 			+ " order by %s";
 
 	public static String SELECT_INODE_ONLY_QUERY_CONDITION = SELECT_ONLY_INODE_FIELD
 			+ " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
 			+ " %s" //if we have a condition
-			+ " and host like ? "
-			+ " and structuretype>=? and structuretype<= ? "
+			+ " and (host like %s) "
+			+ " and structuretype >= ? and structuretype <= ? "
 			+  NON_MARKED_FOR_DELETION
 			+ " order by %s";
-
-
 
 	public static final String SELECT_COUNT_CONDITION = "select count(*) as test from structure, inode "
 			+ "where inode.type='structure' and inode.inode=structure.inode and "
@@ -113,4 +111,5 @@ public abstract class ContentTypeSql {
 	public static String COUNT_CONTENT_TYPES_USING_NOT_SYSTEM_WORKFLOW = "select count(distinct structure_id) from workflow_scheme_x_structure " +
 			"INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_scheme_x_structure.scheme_id " +
 			"where name != 'System Workflow'";
+
 }

@@ -2,22 +2,20 @@ import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormGroupDirective } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { PromptType } from './ai-image-prompt.models';
 import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
-import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/ai-image-prompt-input.component';
+import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
+import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gallery/ai-image-prompt-gallery.component';
 
 @Component({
     selector: 'dot-ai-image-prompt',
@@ -25,62 +23,37 @@ import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/
     templateUrl: './ai-image-prompt.component.html',
     styleUrls: ['./ai-image-prompt.component.scss'],
     imports: [
-        ButtonModule,
-        TooltipModule,
-        ReactiveFormsModule,
-        OverlayPanelModule,
         NgIf,
         DialogModule,
-        AiImagePromptInputComponent,
         AsyncPipe,
         DotMessagePipe,
-        ConfirmDialogModule
+        ButtonModule,
+        ConfirmDialogModule,
+        AiImagePromptFormComponent,
+        AiImagePromptGalleryComponent
     ],
+    providers: [FormGroupDirective, ConfirmationService],
 
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AIImagePromptComponent {
     protected readonly vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
     protected readonly ComponentStatus = ComponentStatus;
-    private confirmationService = inject(ConfirmationService);
     private dotMessageService = inject(DotMessageService);
-    private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
+    private confirmationService = inject(ConfirmationService);
+    store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
-    /**
-     * Hides the dialog.
-     * @return {void}
-     */
-    hideDialog(): void {
-        this.store.hideDialog();
-    }
-
-    /**
-     * Selects the prompt type
-     *
-     * @return {void}
-     */
-    selectType(promptType: PromptType, current: PromptType): void {
-        if (current != promptType) {
-            this.store.setPromptType(promptType);
-        }
-    }
-
-    /**
-     * Generates an image based on the provided prompt.
-     *
-     * @param {string} prompt - The text prompt used to generate the image.
-     * @return {void} - This method does not return any value.
-     */
-    generateImage(prompt: string): void {
-        this.store.generateImage(prompt);
-    }
-
-    /**
-     * Clears the error at the store on hiding the confirmation dialog.
-     *
-     * @return {void}
-     */
-    onHideConfirm(): void {
-        this.store.cleanError();
+    closeDialog(): void {
+        this.confirmationService.confirm({
+            key: 'ai-image-prompt',
+            header: this.dotMessageService.get('block-editor.extension.ai.confirmation.header'),
+            message: this.dotMessageService.get('block-editor.extension.ai.confirmation.message'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessageService.get('Discard'),
+            rejectLabel: this.dotMessageService.get('Cancel'),
+            accept: () => {
+                this.store.hideDialog();
+            }
+        });
     }
 }

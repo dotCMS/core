@@ -49,7 +49,7 @@ export class DotKeyValueTableRowComponent implements OnInit {
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
     @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
-    @Input() showHiddenField: boolean = false;
+    @Input() showHiddenField = false;
     @Input() variable: DotKeyValue;
 
     form: FormGroup;

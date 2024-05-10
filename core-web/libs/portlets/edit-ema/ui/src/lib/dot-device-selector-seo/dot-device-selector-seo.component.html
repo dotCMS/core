@@ -58,7 +58,7 @@
                 </ul>
             </div>
         </div>
-        <div class="dot-device-selector__link--container" *ngIf="hideMediaTiles">
+        <div class="dot-device-selector__link--container" *ngIf="hideSocialMedia">
             <a
                 class="dot-device-selector__link"
                 [href]="previewUrl"
@@ -71,7 +71,7 @@
     </div>
     <div
         class="dot-device-selector__column"
-        *ngIf="!hideMediaTiles"
+        *ngIf="!hideSocialMedia"
         data-testId="social-media-tiles">
         <div class="dot-device-selector__panel">
             <div class="dot-device-selector__header">

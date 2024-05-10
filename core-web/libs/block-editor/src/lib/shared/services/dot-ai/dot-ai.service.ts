@@ -7,7 +7,13 @@ import { catchError, map, pluck, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { AiPluginResponse, DotAICompletionsConfig, DotAIImageResponse } from './dot-ai.models';
+import {
+    AiPluginResponse,
+    DotAICompletionsConfig,
+    DotAIImageContent,
+    DotAIImageOrientation,
+    DotAIImageResponse
+} from './dot-ai.models';
 
 import { AI_PLUGIN_KEY } from '../../utils';
 
@@ -16,8 +22,6 @@ const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH'
 const headers = new HttpHeaders({
     'Content-Type': 'application/json'
 });
-
-type ImageSize = '1024x1024' | '1024x1792' | '1792x1024';
 
 @Injectable()
 export class DotAiService {
@@ -65,12 +69,12 @@ export class DotAiService {
      *
      * @param {string} prompt - The prompt for generating the image.
      * @param {string} size - The size of the image to be generated (default: '1024x1024').
-     * @returns {Observable<DotCMSContentlet[]>} - An observable that emits an array of DotCMSContentlet objects.
+     * @returns {Observable<DotAIImageContent[]>} - An observable that emits an array of DotCMSContentlet objects.
      */
     public generateAndPublishImage(
         prompt: string,
-        size: ImageSize = '1024x1024'
-    ): Observable<DotCMSContentlet[]> {
+        size = DotAIImageOrientation.HORIZONTAL
+    ): Observable<DotAIImageContent> {
         return this.http
             .post<DotAIImageResponse>(
                 `${API_ENDPOINT}/image/generate`,
@@ -107,8 +111,8 @@ export class DotAiService {
             );
     }
 
-    private createAndPublishContentlet(image: DotAIImageResponse): Observable<DotCMSContentlet[]> {
-        const { response, tempFileName } = image;
+    createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {
+        const { response, tempFileName } = aiResponse;
         const contentlets: Partial<DotCMSContentlet>[] = [
             {
                 baseType: 'dotAsset',
@@ -125,11 +129,23 @@ export class DotAiService {
             })
             .pipe(
                 pluck('entity', 'results'),
+                map((contentlets: DotCMSContentlet[]) => {
+                    const contentlet = Object.values(contentlets[0])[0];
+                    // under errorMessage is how the backend returns an error.
+                    if (contentlet.errorMessage) {
+                        throw new Error('Could not publish the image.');
+                    }
+
+                    return {
+                        contentlet,
+                        ...aiResponse
+                    };
+                }),
                 catchError(() =>
                     throwError(
                         'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
                     )
                 )
-            ) as Observable<DotCMSContentlet[]>;
+            ) as Observable<DotAIImageContent>;
     }
 }

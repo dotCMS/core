@@ -25,6 +25,7 @@ import {
     DotDevicesService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotPageStateService,
     DotPersonalizeService,
     DotPropertiesService
 } from '@dotcms/data-access';
@@ -38,7 +39,7 @@ import {
     DotVariantData
 } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotTabButtonsComponent } from '@dotcms/ui';
+import { DotSafeHtmlPipe, DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -51,12 +52,9 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info-seo/dot-edit-page-lock-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from './dot-edit-page-state-controller-seo.component';
-
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',
@@ -163,7 +161,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 InputSwitchModule,
                 SelectButtonModule,
                 TooltipModule,
-                DotPipesModule,
+                DotSafeHtmlPipe,
                 DotEditPageStateControllerSeoComponent,
                 DotEditPageLockInfoSeoComponent,
                 DotDeviceSelectorSeoComponent,

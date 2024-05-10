@@ -1,13 +1,18 @@
 package com.dotcms.browser;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonAPI;
-import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -37,14 +42,18 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Try;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 /**
  * Default implementation for the {@link BrowserAPI} class.
@@ -76,8 +85,6 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Returns a collection of contentlets based on specific filtering criteria specified via the
      * {@link BrowserQuery} class, such as: Parent folder, Site, archived/non-archived status, base Content Types,
      * language, among many others. After that, the resulting list is filtered based on {@code READ} permissions.
-     * <p>It's worth nothing this approach uses both a SQL query and a Lucene query to fetch results. Their results are
-     * combined in order to get a final result set.</p>
      *
      * @param browserQuery The {@link BrowserQuery} object specifying the filtering criteria.
      *
@@ -86,16 +93,14 @@ public class BrowserAPIImpl implements BrowserAPI {
     @Override
     @CloseDBIfOpened
     public List<Contentlet> getContentUnderParentFromDB(final BrowserQuery browserQuery) {
-        final Tuple3<String, String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
+        final Tuple2<String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
         final DotConnect dc = new DotConnect().setSQL(sqlQuery._1);
-        sqlQuery._3.forEach(dc::addParam);
+        sqlQuery._2.forEach(dc::addParam);
         try {
             final List<Map<String,String>> inodesMapList =  dc.loadResults();
-            final List<Contentlet> contentletList = contentletAPI.search(sqlQuery._2, -1, 0, null, browserQuery.user,
-                    false);
             final Set<String> inodes =
                     inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toSet());
-            contentletList.forEach(contentlet -> inodes.add(contentlet.getInode()));
+
             final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(new ArrayList<>(inodes));
             return permissionAPI.filterCollection(contentlets,
                     PermissionAPI.PERMISSION_READ, true, browserQuery.user);
@@ -111,27 +116,39 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     /**
      * Returns a collection of contentlets, folders, links based on diff attributes of the BrowserQuery
+     * object. The collection is filtered based on the user's permissions respecting front-end roles
      * @param browserQuery {@link BrowserQuery}
      * @return list of treeable (folders, content, links)
      * @throws DotSecurityException
      * @throws DotDataException
      */
     @Override
-    @CloseDBIfOpened
     public List<Treeable> getFolderContentList(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException {
+      return getFolderContentList(browserQuery, true);
+    }
 
-        final List<Treeable> returnList = new ArrayList<>();
+    /**
+     * Returns a collection of contentlets, folders, links based on diff attributes of the BrowserQuery
+     * @param browserQuery {@link BrowserQuery}
+     * @param respectFrontEndRoles if true, the method will respect the front end roles
+     * @return list of treeable (folders, content, links)
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Override
+    @CloseDBIfOpened
+    public List<Treeable> getFolderContentList(final BrowserQuery browserQuery, final boolean respectFrontEndRoles) throws DotSecurityException, DotDataException{
 
         final List<Contentlet> contentlets = browserQuery.showContent ? getContentUnderParentFromDB(browserQuery)
                 : Collections.emptyList();
-        returnList.addAll(contentlets);
+        final List<Treeable> returnList = new ArrayList<>(contentlets);
 
         if (browserQuery.showFolders) {
             List<Folder> folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(), false);
             if (browserQuery.showMenuItemsOnly) {
                 folders.removeIf(folder -> !folder.isShowOnMenu());
             }
-            folders.forEach(folder -> returnList.add(folder));
+            returnList.addAll(folders);
         }
 
         if (browserQuery.showLinks) {
@@ -139,10 +156,10 @@ public class BrowserAPIImpl implements BrowserAPI {
             if(browserQuery.showMenuItemsOnly){
                 links.removeIf(link -> !link.isShowOnMenu());
             }
-            links.forEach(link -> returnList.add(link));
+            returnList.addAll(links);
         }
 
-        return permissionAPI.filterCollection(returnList,PERMISSION_READ,true, browserQuery.user);
+        return permissionAPI.filterCollection(returnList, PERMISSION_READ, respectFrontEndRoles, browserQuery.user);
     }
 
     @Override
@@ -265,104 +282,197 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Generates both the SQL query and the Lucene query that will be used to search for contents under a given folder
-     * path and filtered by the criteria specified via the {@link BrowserQuery} parameter.
+     * Generates the SQL query that will be used to search for contents under a given folder path
+     * and filtered by the criteria specified via the {@link BrowserQuery} parameter.
      *
      * @param browserQuery The filtering criteria set via the {@link BrowserQuery}.
-     *
-     * @return The {@link Tuple3} object containing (1) the SQL query, (2) the Lucene query, and (3) the parameters that
+     * @return The {@link Tuple3} object containing (1) the SQL query, and (2) the parameters that
      * must be provided for the queries.
      */
-    private Tuple3<String,String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
-        final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ? "working_inode" : "live_inode";
-        final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
+    private Tuple2<String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
+
+        final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ?
+                "working_inode" : "live_inode";
+
+        final StringBuilder sqlQuery = new StringBuilder(
+                buildBaseQuery(browserQuery, workingLiveInode)
+        );
+
         final List<Object> parameters = new ArrayList<>();
-        final StringBuilder sqlQuery = new StringBuilder("select cvi." + workingLiveInode + " as inode "
-                + " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
-                + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
-                + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"+DEFAULT_VARIANT.name()+"' ");
 
-        final StringBuilder luceneQuery = UtilMethods.isSet(browserQuery.luceneQuery)
-                                                  ? new StringBuilder("+title:*" + browserQuery.luceneQuery.trim() + "* ")
-                                                  : new StringBuilder();
-
-        luceneQuery.append("+" + ESMappingConstants.VARIANT +  ":DEFAULT ");
-        luceneQuery.append(browserQuery.showWorking ? "+working:true " : "+live:true ");
-        luceneQuery.append(browserQuery.showArchived ? "+deleted:true " : "+deleted:false ");
-        if (!showAllBaseTypes) {
-            final List<String> baseTypes =
-                    browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType())).collect(Collectors.toList());
-            final List<String> baseTypesNames =
-                    browserQuery.baseTypes.stream().map(Enum::name).collect(Collectors.toList());
-            sqlQuery.append(" and struc.structuretype in (").append(String.join(" , ", baseTypes)).append(") ");
-            luceneQuery.append("+contentType:(").append(String.join(" OR ", baseTypesNames)).append(") ");
-        }
         if (browserQuery.languageId > 0) {
-            sqlQuery.append(" and cvi.lang in (").append(browserQuery.languageId);
-            luceneQuery.append("+languageId:(").append(browserQuery.languageId);
-
-            final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            if(browserQuery.showDefaultLangItems && browserQuery.languageId != defaultLang){
-                sqlQuery.append(",").append(defaultLang);
-                luceneQuery.append(" OR ").append(defaultLang).append(" ");
-            }
-
-            sqlQuery.append(")");
-            luceneQuery.append(") ");
-
-
+            appendLanguageQuery(sqlQuery, browserQuery.languageId,
+                    browserQuery.showDefaultLangItems);
         }
         if (browserQuery.site != null) {
-            sqlQuery.append(" and (id.host_inode = ?) ");
-            parameters.add(browserQuery.site.getIdentifier());
-            luceneQuery.append("+conHost:(").append(Host.SYSTEM_HOST).append(" OR ").append(browserQuery.site.getIdentifier()).append(") ");
+            appendSiteQuery(sqlQuery, browserQuery.site.getIdentifier(), parameters);
         }
         if (browserQuery.folder != null) {
-            sqlQuery.append(" and id.parent_path=? ");
-            parameters.add(browserQuery.folder.getPath());
-            luceneQuery.append("+parentPath:").append(browserQuery.folder.getPath()).append(" ");
+            appendFolderQuery(sqlQuery, browserQuery.folder.getPath(), parameters);
         }
         if (UtilMethods.isSet(browserQuery.filter)) {
-            final String filterText = browserQuery.filter.toLowerCase().trim();
-            final String[] splitter = filterText.split(" ");
-
-            sqlQuery.append(" and (");
-            for (int indx = 0; indx < splitter.length; indx++) {
-                final String token = splitter[indx];
-                if(token.equals(StringPool.BLANK)){
-                    continue;
-                }
-                sqlQuery.append(" LOWER(c.title) like ?");
-                parameters.add("%" + token + "%");
-                if (indx + 1 < splitter.length) {
-                    sqlQuery.append(" and");
-                }
-            }
-            sqlQuery.append(" OR ");
-            sqlQuery.append(getAssetNameColumn(ASSET_NAME_LIKE.toString()));
-            sqlQuery.append(" OR ");
-            sqlQuery.append(getBinaryAssetNameColumn(ASSET_NAME_LIKE.toString()));
-            sqlQuery.append(" ) ");
-            parameters.add("%" + filterText + "%");
-            parameters.add("%" + filterText + "%");
+            appendFilterQuery(sqlQuery, browserQuery.filter, parameters);
         }
-
-        if(UtilMethods.isSet(browserQuery.fileName)){
-            final String matchText = browserQuery.fileName.toLowerCase().trim();
-            sqlQuery.append(" and (");
-            sqlQuery.append(" LOWER(id.asset_name) = ?");
-            sqlQuery.append(" ) ");
-            parameters.add( matchText );
+        if (UtilMethods.isSet(browserQuery.fileName)) {
+            appendFileNameQuery(sqlQuery, browserQuery.fileName, parameters);
         }
-
         if (browserQuery.showMenuItemsOnly) {
-            sqlQuery.append(" and c.show_on_menu = ").append(DbConnectionFactory.getDBTrue());
-            luceneQuery.append(" +showOnMenu:true ");
+            appendShowOnMenuQuery(sqlQuery);
         }
         if (!browserQuery.showArchived) {
-            sqlQuery.append(" and cvi.deleted = ").append(DbConnectionFactory.getDBFalse());
+            appendExcludeArchivedQuery(sqlQuery);
         }
-        return Tuple.of(sqlQuery.toString(),luceneQuery.toString(), parameters);
+
+        return new Tuple2<>(sqlQuery.toString(), parameters);
+    }
+
+    /**
+     * Builds the base SQL query for content retrieval based on specific filtering criteria.
+     *
+     * @param browserQuery     The {@link BrowserQuery} object specifying the filtering criteria.
+     * @param workingLiveInode The identifier of the working live inode.
+     * @return The base SQL query as a {@code String}.
+     */
+    private String buildBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode) {
+
+        final StringBuilder baseQuery = new StringBuilder(
+                "select cvi." + workingLiveInode + " as inode "
+                        + " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
+                        + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
+                        + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"
+                        + DEFAULT_VARIANT.name() + "' ");
+
+        final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
+        if (!showAllBaseTypes) {
+            final List<String> baseTypes =
+                    browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType()))
+                            .collect(Collectors.toList());
+            baseQuery.append(" and struc.structuretype in (").
+                    append(String.join(" , ", baseTypes)).append(") ");
+        }
+
+        return baseQuery.toString();
+    }
+
+    /**
+     * Appends the language query to the given SQL query to filter content by language.
+     *
+     * @param sqlQuery             The StringBuilder object representing the SQL query.
+     * @param languageId           The ID of the language to filter by.
+     * @param showDefaultLangItems Whether to include default language items in the filter.
+     */
+    private void appendLanguageQuery(StringBuilder sqlQuery, long languageId,
+            boolean showDefaultLangItems) {
+
+        sqlQuery.append(" and cvi.lang in (").append(languageId);
+
+        final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        if (showDefaultLangItems && languageId != defaultLang) {
+            sqlQuery.append(",").append(defaultLang);
+        }
+        sqlQuery.append(")");
+    }
+
+    /**
+     * Appends the query to filter by site identifier to the given SQL query and adds the site
+     * identifier to the parameters list.
+     *
+     * @param sqlQuery       The StringBuilder object representing the SQL query to be appended.
+     * @param siteIdentifier The site identifier to filter by.
+     * @param parameters     The list of parameters to add the site identifier to.
+     */
+    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier,
+            List<Object> parameters) {
+
+        sqlQuery.append(" and (id.host_inode = ?) ");
+        parameters.add(siteIdentifier);
+    }
+
+    /**
+     * Appends the query to filter by a specific folder path to the given SQL query and adds the
+     * folder path to the list of parameters.
+     *
+     * @param sqlQuery   The StringBuilder object representing the SQL query to be appended.
+     * @param folderPath The folder path to filter by.
+     * @param parameters The list of parameters to add the folder path to.
+     */
+    private void appendFolderQuery(StringBuilder sqlQuery, String folderPath,
+            List<Object> parameters) {
+
+        sqlQuery.append(" and id.parent_path=? ");
+        parameters.add(folderPath);
+    }
+
+    /**
+     * Appends the query to filter by a specific text filter to the given SQL query and adds the
+     * necessary parameters for the filter.
+     *
+     * @param sqlQuery   The StringBuilder object representing the SQL query to be appended.
+     * @param filter     The filter string to match against. Case-insensitive.
+     * @param parameters The list of parameters to add the filter values to.
+     */
+    private void appendFilterQuery(StringBuilder sqlQuery, String filter,
+            List<Object> parameters) {
+
+        final String filterText = filter.toLowerCase().trim();
+        final String[] splitter = filterText.split(" ");
+
+        sqlQuery.append(" and (");
+        for (int indx = 0; indx < splitter.length; indx++) {
+            final String token = splitter[indx];
+            if (token.equals(StringPool.BLANK)) {
+                continue;
+            }
+            sqlQuery.append(" LOWER(c.title) like ?");
+            parameters.add("%" + token + "%");
+            if (indx + 1 < splitter.length) {
+                sqlQuery.append(" and");
+            }
+        }
+        sqlQuery.append(" OR ");
+        sqlQuery.append(getAssetNameColumn(ASSET_NAME_LIKE.toString()));
+        sqlQuery.append(" OR ");
+        sqlQuery.append(getBinaryAssetNameColumn(ASSET_NAME_LIKE.toString()));
+        sqlQuery.append(" ) ");
+        parameters.add("%" + filterText + "%");
+        parameters.add("%" + filterText + "%");
+    }
+
+    /**
+     * Appends the query to filter by filename to the given SQL query and adds the filename to the
+     * parameters list.
+     *
+     * @param sqlQuery   The StringBuilder object representing the SQL query to be appended.
+     * @param fileName   The filename to filter by.
+     * @param parameters The list of parameters to add the filename to.
+     */
+    private void appendFileNameQuery(StringBuilder sqlQuery, String fileName,
+            List<Object> parameters) {
+
+        final String matchText = fileName.toLowerCase().trim();
+        sqlQuery.append(" and (");
+        sqlQuery.append(" LOWER(id.asset_name) = ?");
+        sqlQuery.append(" ) ");
+        parameters.add(matchText);
+    }
+
+    /**
+     * Appends the query to filter by show_on_menu flag to the given SQL query. Adds the necessary
+     * conditions to the query based on the show_on_menu property
+     *
+     * @param sqlQuery The StringBuilder object representing the SQL query to be appended.
+     */
+    private void appendShowOnMenuQuery(StringBuilder sqlQuery) {
+        sqlQuery.append(" and c.show_on_menu = ").append(DbConnectionFactory.getDBTrue());
+    }
+
+    /**
+     * Appends the query to exclude archived content to the given SQL query.
+     *
+     * @param sqlQuery The StringBuilder object representing the SQL query to be appended.
+     */
+    private void appendExcludeArchivedQuery(StringBuilder sqlQuery) {
+        sqlQuery.append(" and cvi.deleted = ").append(DbConnectionFactory.getDBFalse());
     }
 
     /**

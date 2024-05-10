@@ -42,7 +42,6 @@ import {
 
 import {
     ActionsMenu,
-    AIContentActionsExtension,
     AIContentPromptExtension,
     AIImagePromptExtension,
     AssetUploader,
@@ -68,7 +67,6 @@ import {
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
-    removeLoadingNodes,
     RestoreDefaultDOMAttrs,
     SetDocAttrStep
 } from '../../shared';
@@ -460,8 +458,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         if (isAIPluginInstalled) {
             extensions.push(
                 AIContentPromptExtension(this.viewContainerRef),
-                AIImagePromptExtension(this.viewContainerRef),
-                AIContentActionsExtension(this.viewContainerRef)
+                AIImagePromptExtension(this.viewContainerRef)
             );
         }
 
@@ -485,19 +482,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     private setEditorJSONContent(content: Content) {
-        //TODO: remove this when the AI content is generated exclusively in popups and not in the editor directly.
-        const filterContent = removeLoadingNodes(
-            content
-                ? Array.isArray(content)
-                    ? [...content]
-                    : [...(content as JSONContent).content]
-                : []
-        );
-
         this.content =
             this.allowedBlocks?.length > 1
-                ? removeInvalidNodes(filterContent, this.allowedBlocks)
-                : filterContent;
+                ? removeInvalidNodes(content, this.allowedBlocks)
+                : content;
     }
 
     private setEditorContent(content: Content) {

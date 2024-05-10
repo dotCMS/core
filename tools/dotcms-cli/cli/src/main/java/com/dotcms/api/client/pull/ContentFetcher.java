@@ -16,7 +16,7 @@ public interface ContentFetcher<T> {
      *
      * @return The fetched list of elements.
      */
-    List<T> fetch(Map<String, Object> customOptions);
+    List<T> fetch(boolean failFast, Map<String, Object> customOptions);
 
     /**
      * Fetches a single element of type T by its key.
@@ -25,6 +25,6 @@ public interface ContentFetcher<T> {
      * @return The fetched element.
      * @throws NotFoundException If the element is not found.
      */
-    T fetchByKey(String key, Map<String, Object> customOptions) throws NotFoundException;
+    T fetchByKey(String key, boolean failFast, Map<String, Object> customOptions) throws NotFoundException;
 
 }

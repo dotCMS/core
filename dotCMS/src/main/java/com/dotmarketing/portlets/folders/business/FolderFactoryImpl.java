@@ -1,20 +1,22 @@
 package com.dotmarketing.portlets.folders.business;
-// 1212
-
-import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
-import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ASSET_NAME;
-import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ID;
-import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.system.SimpleMapAppContext;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotIdentifierStateException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.IdentifierFactory;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -42,20 +44,42 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
 
 import java.io.IOException;
-import java.util.*;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ASSET_NAME;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ID;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
+import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_REPORT;
+import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
 
 /**
+ * This class extends the {@link FolderFactory} class. It provides access to Folder information
+ * stored in the database. All CRUD operations related to Folders must be provided by this class.
  *
- * @author maria 2323
+ * @author maria
+ * @since Mar 22nd, 2012
  */
 public class FolderFactoryImpl extends FolderFactory {
 
@@ -1220,4 +1244,32 @@ public class FolderFactoryImpl extends FolderFactory {
 		folderIDs.forEach(id -> folderCache.removeFolder(Try.of(() -> find(id)).get(),
 				Try.of(() -> APILocator.getIdentifierAPI().find(id)).get()));
 	}
+
+	@Override
+	public List<Map<String, Object>> getContentReport(final String folderPath,
+													  final String siteId,
+													  final String orderBy,
+													  final String orderDirection,
+													  final int limit, final int offset) throws DotDataException {
+		final DotConnect dc = new DotConnect()
+				.setSQL(String.format(GET_CONTENT_REPORT, IdentifierFactory.ASSET_SUBTYPE,
+						orderDirection))
+				.setMaxRows(limit)
+				.setStartRow(offset)
+				.addParam(Identifier.ASSET_TYPE_CONTENTLET)
+				.addParam(folderPath + StringPool.PERCENT)
+				.addParam(siteId);
+		return dc.loadObjectResults();
+	}
+
+	@Override
+	public int getContentTypeCount(final String folderPath, final String siteId) throws DotDataException {
+		final DotConnect dc = new DotConnect()
+				.setSQL(GET_CONTENT_TYPE_COUNT)
+				.addParam(Identifier.ASSET_TYPE_CONTENTLET)
+				.addParam(folderPath + StringPool.PERCENT)
+				.addParam(siteId);
+		return ConversionUtils.toInt(dc.loadObjectResults().get(0).get("count"), -1);
+	}
+
 }

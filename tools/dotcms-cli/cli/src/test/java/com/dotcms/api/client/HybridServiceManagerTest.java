@@ -45,7 +45,7 @@ class HybridServiceManagerTest {
                 .url(new URL("http://localhost:8080"))
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token(FAKE_TOKEN).build())
+                                .tokenSupplier(() -> FAKE_TOKEN).token(FAKE_TOKEN).build())
                 .build();
 
         serviceManager.persist(serviceBean);
@@ -56,7 +56,9 @@ class HybridServiceManagerTest {
         Assertions.assertEquals(key,bean.name());
         Assertions.assertNotNull(bean.credentials());
         Assertions.assertEquals("admin", bean.credentials().user());
-        Assertions.assertNotNull(bean.credentials().token());
-        Assertions.assertEquals(new String(FAKE_TOKEN), new String(bean.credentials().token()));
+        final Optional<char[]> token = bean.credentials().loadToken();
+        Assertions.assertNotNull(token);
+        Assertions.assertTrue(token.isPresent());
+        Assertions.assertEquals(new String(FAKE_TOKEN), new String(token.get()));
     }
 }

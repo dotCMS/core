@@ -19,8 +19,9 @@ site-pull - *Retrieves sites descriptors*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site pull* [*-h*] [*-ff*] [*-fmt*=_<inputOutputFormat>_]
-          [*--retry-attempts*=_<retryAttempts>_] [*--workspace*=_<file>_] [_idOrName_]
+*site pull* [*-h*] [*-ff*] [*--dotcms-url*=_<remoteURL>_] [*-fmt*=_<inputOutputFormat>_]
+          [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [*--workspace*=_<file>_]
+          [_idOrName_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -48,6 +49,9 @@ site-pull - *Retrieves sites descriptors*
 // tag::picocli-generated-man-section-options[]
 == Options
 
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
 *-ff, --fail-fast*::
   Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
 
@@ -61,6 +65,9 @@ Supported values: JSON, YAML, YML
 
 *--retry-attempts*=_<retryAttempts>_::
   Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
 
 *--workspace*=_<file>_::
   The workspace directory.

@@ -34,6 +34,17 @@ export interface CreateFromPaletteAction {
     payload: ActionPayload;
 }
 
+interface EditContentletPayload {
+    inode: string;
+    title: string;
+}
+
+export interface CreateContentletAction {
+    url: string;
+    contentType: string;
+    payload: ActionPayload;
+}
+
 @Injectable()
 export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     constructor() {
@@ -75,19 +86,29 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     );
 
     /**
+     * This method is called when we need to open a dialog with a specific URL
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly openDialogOnURL = this.updater(
+        (state, { url, title }: { url: string; title: string }) => {
+            return {
+                ...state,
+                header: title,
+                status: DialogStatus.LOADING,
+                url,
+                type: 'content'
+            };
+        }
+    );
+
+    /**
      * This method is called when the user clicks in the + button in the jsp dialog or drag a contentType from the palette
      *
      * @memberof DotEmaDialogStore
      */
     readonly createContentlet = this.updater(
-        (
-            state,
-            {
-                url,
-                contentType,
-                payload
-            }: { url: string; contentType: string; payload?: ActionPayload }
-        ) => {
+        (state, { url, contentType, payload }: CreateContentletAction) => {
             return {
                 ...state,
                 url: url,
@@ -107,15 +128,49 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @memberof DotEmaDialogStore
      */
-    readonly editContentlet = this.updater((state, payload: { inode: string; title: string }) => {
+    readonly loadingIframe = this.updater((state, title: string) => {
         return {
             ...state,
-            header: payload.title,
+            header: title,
             status: DialogStatus.LOADING,
-            url: this.createEditContentletUrl(payload.inode),
+            url: '',
             type: 'content'
         };
     });
+
+    /**
+     * This method is called when the user clicks on the edit button
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly editContentlet = this.updater((state, { inode, title }: EditContentletPayload) => {
+        return {
+            ...state,
+            header: title,
+            status: DialogStatus.LOADING,
+            type: 'content',
+            url: this.createEditContentletUrl(inode)
+        };
+    });
+
+    /**
+     * This method is called when the user clicks on the edit URL Content Map button
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly editUrlContentMapContentlet = this.updater(
+        (state, { inode, title }: EditContentletPayload) => {
+            const url = this.createEditContentletUrl(inode) + '&isURLMap=true';
+
+            return {
+                ...state,
+                header: title,
+                status: DialogStatus.LOADING,
+                type: 'content',
+                url
+            };
+        }
+    );
 
     /**
      * This method is called when the user clicks on the [+ add] button

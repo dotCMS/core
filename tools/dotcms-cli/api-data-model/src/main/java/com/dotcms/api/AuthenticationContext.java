@@ -27,6 +27,10 @@ public interface AuthenticationContext {
      */
     void login(String user, char[] password) throws IOException;
 
+
+    void login(char[] token) throws IOException;
+
+
     /**
      * Reset eliminates the current logged-in user info
      */

@@ -42,10 +42,11 @@ public interface ContentTypeAPI {
     @Operation(
             summary = "Get a list of Content-types for a given set of params"
     )
-    ResponseEntityView<List<ContentType>> getContentTypes(@QueryParam("filter") String filter,
+    ResponseEntityView<List<ContentType>> getContentTypes(
+            @QueryParam("filter") String filter,
             @QueryParam("page") Integer page,
             @QueryParam("per_page") Integer perPage,
-            @QueryParam("orderBy") String orderBy,
+            @QueryParam("orderby") String orderBy,
             @QueryParam("direction") String direction,
             @QueryParam("type") String type,
             @QueryParam("host") String host);

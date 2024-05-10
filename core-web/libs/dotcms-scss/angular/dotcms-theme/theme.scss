@@ -1,7 +1,7 @@
 @charset "UTF-8";
 
 @use "misc";
-
+@use "components/accordion";
 @use "components/avatar";
 @use "components/badge";
 @use "components/breadcrumb";
@@ -16,6 +16,8 @@
 @use "components/divider";
 @use "components/dynamicdialog";
 @use "components/form";
+@use "components/galleria";
+@use "components/image";
 @use "components/inplace";
 @use "components/listbox";
 @use "components/menu";
@@ -33,6 +35,7 @@
 @use "components/toolbar";
 @use "components/tooltip";
 @use "components/tree";
+@use "components/table";
 
 @use "utils/validation";
 @use "utils/password";

@@ -169,4 +169,43 @@ public class UtilMethodsTest extends UnitTestBase {
 		assertFalse(UtilMethods.isEmpty(()->contentlet.getMap()));
 
 	}
+	/**
+	 * Test method {@link UtilMethods#exceedsMaxLength(CharSequence, int)}
+	 * Given scenario: The method is invoked with a valid string value and maximum length allowed
+	 * Expected result: This returns the false when the length of given string value doesn't exceed the maximum value length
+	 */
+	@Test
+	public void testStringWithinMaxLength() {
+		assertFalse(UtilMethods.exceedsMaxLength("hello", 10));
+	}
+
+	/**
+	 * Test method {@link UtilMethods#exceedsMaxLength(CharSequence, int)}
+	 * Given scenario: The method is invoked with a valid string value and maximum length allowed
+	 * Expected result: This returns the true when the length of given string value doesn't exceed the maximum value length
+	 */
+	@Test
+	public void testStringMaxLength() {
+		assertTrue(UtilMethods.exceedsMaxLength("J7uQX9vLsI6MwP8oYgqK4jVt2A0L5jXt2W4hS9bE8pZ7yM3iR1oV6nL3eZ2hK4tD9", 10));
+	}
+
+
+	static String[] goodImageNames = {"default-persona.png", "default.PnG", "testing-avif.avif",
+			"here is a tiff.tiff", "here is another tiff.tif", "another-Gif.Gif", "look a jpeg.jpeg",
+			"Guess this is a jpg.jpg", "My bigSVG.SvG"};
+
+	static String[] badImageNames = {"default-personapng", "default-PnG", "testing.pdf", "testing..pdf", "testing_pdf", "testing..pdff", "testing-avif-avf",
+			"here is a tiff", "another-Gif", "look a jpeg!", "Guess this is a jpg*", "here is a.vtl"};
+
+
+	@Test
+	public void test_isImage_method(){
+		for(String imageName:goodImageNames){
+			assertTrue(UtilMethods.isImage(imageName));
+		}
+		for(String imageName:badImageNames){
+			assertFalse(UtilMethods.isImage(imageName));
+		}
+	}
+
 }

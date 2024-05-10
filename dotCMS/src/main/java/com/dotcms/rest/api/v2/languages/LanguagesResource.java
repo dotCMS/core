@@ -242,14 +242,7 @@ public class LanguagesResource {
     }
 
     private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {
-        final Locale locale = Locale.forLanguageTag(languageTag);
-        final boolean validCountry = (isNotSet(locale.getCountry()) || Stream.of(Locale.getISOCountries()).collect(Collectors.toSet()).contains(locale.getCountry()));
-        final boolean validLang = Stream.of(Locale.getISOLanguages()).collect(Collectors.toSet()).contains(locale.getLanguage());
-        if(validLang && validCountry) {
-            return locale;
-        } else {
-           throw new DoesNotExistException(String.format(" `%s` is an invalid language tag ", languageTag));
-        }
+        return LanguageUtil.validateLanguageTag(languageTag);
     }
 
     /**

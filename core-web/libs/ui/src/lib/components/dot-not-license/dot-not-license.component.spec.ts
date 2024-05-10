@@ -18,7 +18,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 const messageServiceMock = new MockDotMessageService({
     'portlet.title': 'Enterprise Portlet',
     'request.a.trial.license': 'Request License',
-    'Contact-Us-for-more-Information': 'Contact Us',
+    'contact-us-for-more-information': 'Contact Us',
     'Learn-more-about-dotCMS-Enterprise': 'Learn More',
     'only-available-in': 'is only available in',
     'dotcms-enterprise-edition': 'otCMS Enterprise Editions',

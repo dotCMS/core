@@ -17,10 +17,9 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { catchError, take, takeUntil, tap } from 'rxjs/operators';
 
 // Services
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotDialogActions, DotFieldVariable } from '@dotcms/dotcms-models';
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
@@ -45,9 +44,6 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
 
     @Input() field: DotCMSContentTypeField;
     @Input() isVisible = false;
-
-    private destroy$: Subject<boolean> = new Subject<boolean>();
-
     public form: FormGroup;
     public settingsMap = {
         allowedBlocks: {
@@ -67,10 +63,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
         }
         */
     };
-
-    get settings() {
-        return Object.values(this.settingsMap);
-    }
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
@@ -78,6 +71,10 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
         private readonly dotMessageService: DotMessageService,
         private readonly fb: FormBuilder
     ) {}
+
+    get settings() {
+        return Object.values(this.settingsMap);
+    }
 
     ngOnInit(): void {
         this.form = this.fb.group({

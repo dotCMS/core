@@ -10,7 +10,11 @@ import { MessageService } from 'primeng/api';
 
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     BayesianNoWinnerStatus,
     BayesianStatusResponse,
@@ -28,7 +32,6 @@ import {
     SummaryLegend,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 
 import {
     getBayesianDatasets,

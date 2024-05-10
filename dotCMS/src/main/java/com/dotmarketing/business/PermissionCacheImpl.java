@@ -6,25 +6,32 @@
  */
 package com.dotmarketing.business;
 
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import java.util.List;
 
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.util.Logger;
+import java.util.Optional;
+import javax.validation.constraints.NotNull;
 
 /**
- * 
+ *
  * @author salvador & david
  * @author Carlos Rivas
  * @author Jason Tesser
  */
 public class PermissionCacheImpl extends PermissionCache {
-	
-	private DotCacheAdministrator cache;
-	
-	private String primaryGroup = "PermissionCache";
 
+	private DotCacheAdministrator cache;
+
+	private final String primaryGroup = "PermissionCache";
+	private final String shortLivedGroup = "PermissionShortLived";
 	// region's name for the cache
-    private String[] groupNames = {primaryGroup};
+    private final String[] groupNames = {primaryGroup,shortLivedGroup};
 
 	protected PermissionCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
@@ -76,7 +83,7 @@ public class PermissionCacheImpl extends PermissionCache {
 	        cache.remove(key,primaryGroup);
     	}catch (Exception e) {
 			Logger.debug(this,e.getMessage(), e);
-		} 
+		}
 
     }
     public String[] getGroups() {
@@ -86,5 +93,70 @@ public class PermissionCacheImpl extends PermissionCache {
     	return primaryGroup;
     }
 
+	@Override
+	public Optional<Boolean> doesUserHavePermission(final Permissionable permissionable,
+			@NotNull final String permissionType,
+			@NotNull final User userIn,
+			final boolean respectFrontendRoles,
+			final Contentlet nullableContent) {
 
+		if (DbConnectionFactory.inTransaction()) {
+			return Optional.empty();
+		}
+		if (UtilMethods.isEmpty(permissionable::getPermissionId) ||
+				UtilMethods.isEmpty(userIn::getUserId)
+		) {
+			return Optional.empty();
+		}
+
+		final Optional<String> key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, nullableContent);
+        return key.map(s -> (Boolean) cache.getNoThrow(s, shortLivedGroup));
+
+    }
+
+	@Override
+	public void putUserHavePermission(@NotNull final Permissionable permissionable,
+			@NotNull final String permissionType,
+			@NotNull final User userIn,
+			final boolean respectFrontendRoles,
+			final Contentlet nullableContent, boolean hasPermission)  {
+
+
+		final Optional<String> key = shortLivedKey(permissionable, permissionType, userIn, respectFrontendRoles, nullableContent);
+        key.ifPresent(s -> cache.put(s, hasPermission, shortLivedGroup));
+
+	}
+
+	/**
+	 * If no key is returned, it means that the object should not be cached.
+	 * @param permissionable
+	 * @param permissionType
+	 * @param userIn
+	 * @param respectFrontendRoles
+	 * @param nullableContent
+	 * @return
+	 */
+	private Optional<String> shortLivedKey(@NotNull final Permissionable permissionable,
+			@NotNull final String permissionType,
+			@NotNull final User userIn,
+			final boolean respectFrontendRoles,
+			final Contentlet nullableContent)  {
+
+		if (DbConnectionFactory.inTransaction() ||
+				UtilMethods.isEmpty(permissionable::getPermissionId) ||
+				UtilMethods.isEmpty(userIn::getUserId)
+		) {
+			return Optional.empty();
+		}
+
+		return Optional.of(permissionable.getPermissionId() + permissionType + userIn.getUserId() + respectFrontendRoles + (
+				nullableContent != null ? nullableContent.getIdentifier() : ""));
+
+
+	}
+
+	@Override
+	public void flushShortTermCache() {
+		cache.flushGroup(shortLivedGroup);
+	}
 }

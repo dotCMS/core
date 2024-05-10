@@ -19,7 +19,7 @@ language-find - *Get all existing languages*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*language find* [*-h*]
+*language find* [*-h*] [*--dotcms-url*=_<remoteURL>_] [*-tk*=_<token>_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -35,8 +35,14 @@ language-find - *Get all existing languages*
 // tag::picocli-generated-man-section-options[]
 == Options
 
+*--dotcms-url*=_<remoteURL>_::
+  The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
+
 *-h*, *--help*::
   Display this help message.
+
+*-tk, --token*=_<token>_::
+  A dotCMS token to use for authentication. 
 
 // end::picocli-generated-man-section-options[]
 
