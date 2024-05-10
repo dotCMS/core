@@ -15,7 +15,7 @@ import java.util.Map;
  * Encapsulates the information to create an User
  */
 @JsonDeserialize(builder = CreateUserForm.Builder.class)
-public final class CreateUserForm extends Validated  {
+public final class CreateUserForm extends Validated implements LanguageSupport  {
 
     private String userId;
     private final boolean active;

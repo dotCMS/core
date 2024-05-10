@@ -15,7 +15,7 @@ import java.util.Map;
  * Encapsulates the information to update an User
  */
 @JsonDeserialize(builder = UpdateUserForm.Builder.class)
-public final class UpdateUserForm extends Validated  {
+public final class UpdateUserForm extends Validated  implements LanguageSupport  {
 
     private String userId;
     private final boolean active;
@@ -34,14 +34,13 @@ public final class UpdateUserForm extends Validated  {
     private final String  birthday;
     private final String    languageId;
     private final String  timeZoneId;
-    private final char[] currentPassword;
-    private final char[] newPassword;
-
+    @NotNull
+    @NotBlank
+    private final char[] password;
     private final Map<String, Object> additionalInfo;
-
     private final List<String> roles;
 
-    private UpdateUserForm(UpdateUserForm.Builder builder) {
+    private UpdateUserForm(final UpdateUserForm.Builder builder) {
 
         this.active = builder.active;
         this.firstName = builder.firstName;
@@ -53,16 +52,12 @@ public final class UpdateUserForm extends Validated  {
         this.birthday = builder.birthday;
         this.languageId = builder.languageId;
         this.timeZoneId = builder.timeZoneId;
-        this.currentPassword = builder.currentPassword;
-        this.newPassword = builder.newPassword;
+        this.password = builder.password;
         this.additionalInfo = builder.additionalInfo;
         this.roles = UtilMethods.isSet(builder.roles)?builder.roles: Collections.emptyList();
         this.userId = builder.userId;
 
         checkValid();
-        if (!UtilMethods.isSet(this.newPassword) || !UtilMethods.isSet(this.currentPassword)) {
-            throw new IllegalArgumentException("Password can not be null");
-        }
     }
 
     public String getUserId() {
@@ -117,12 +112,8 @@ public final class UpdateUserForm extends Validated  {
         return roles;
     }
 
-    public char[] getCurrentPassword() {
-        return currentPassword;
-    }
-
-    public char[] getNewPassword() {
-        return newPassword;
+    public char[] getPassword() {
+        return password;
     }
 
     public static final class Builder {
@@ -137,8 +128,7 @@ public final class UpdateUserForm extends Validated  {
         @JsonProperty private String  birthday;
         @JsonProperty private String    languageId ="en-US";
         @JsonProperty private String    timeZoneId;
-        @JsonProperty private char[]    newPassword;
-        @JsonProperty private char[]    currentPassword;
+        @JsonProperty private char[]    password;
         @JsonProperty private Map<String, Object>    additionalInfo;
 
         @JsonProperty private List<String> roles;
@@ -204,13 +194,8 @@ public final class UpdateUserForm extends Validated  {
             return this;
         }
 
-        public Builder newPassword(char[] password) {
-            this.newPassword = password;
-            return this;
-        }
-
-        public Builder currentPassword(char[] password) {
-            this.currentPassword = password;
+        public Builder password(char[] password) {
+            this.password = password;
             return this;
         }
 
