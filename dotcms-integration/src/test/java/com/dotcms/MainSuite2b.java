@@ -76,6 +76,7 @@ import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
+import com.dotcms.timemachine.business.TimeMachineAPITest;
 import com.dotcms.util.content.json.PopulateContentletAsJSONUtilTest;
 import com.dotcms.variant.VariantAPITest;
 import com.dotcms.variant.VariantFactoryTest;

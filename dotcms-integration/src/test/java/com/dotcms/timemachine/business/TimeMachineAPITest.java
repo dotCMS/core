@@ -6,6 +6,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import junit.framework.TestCase;
+import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -33,92 +34,74 @@ public class TimeMachineAPITest {
     @Test
     public void removeOldTimeMachineBackupsFiles() throws IOException {
 
-        final Random random = new Random();
-
         final File tmTestingFolder = FileUtil.createTemporaryDirectory("tm_testing");
         final String timemachinePathPreviousValue = Config.getStringProperty("TIMEMACHINE_PATH", null);
 
-        final Calendar notExpireDate = Calendar.getInstance();
-        notExpireDate.add(Calendar.DATE, -45);
-
-
         try {
-            final List<File> expireFolders = new ArrayList<>();
-            final List<File> notExpireFolders = new ArrayList<>();
-
             Config.setProperty("TIMEMACHINE_PATH", tmTestingFolder.toPath().toAbsolutePath().toString());
 
-            long currentTimeMillis = System.currentTimeMillis();
-
-            for (int i = 0; i < 10; i++) {
-                final int expireDays = random.nextInt(10) + 91;
-                final Calendar expireDate = Calendar.getInstance();
-                expireDate.add(Calendar.DATE, (expireDays * -1));
-
-                final File tmExpiredFolder = new File(tmTestingFolder, "timeMachineBundle_expired_" + (currentTimeMillis + i));
-                tmExpiredFolder.mkdir();
-
-                expireFolders.add(tmExpiredFolder);
-
-                final File fileInside = new File(tmExpiredFolder, "file");
-                fileInside.createNewFile();
-
-                final File folderInside = new File(tmExpiredFolder, "folder");
-                folderInside.mkdir();
-
-                final File fileInsideFolderInside = new File(folderInside, "file");
-                fileInsideFolderInside.createNewFile();
-
-                tmExpiredFolder.setLastModified(expireDate.toInstant().toEpochMilli());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                final int days = random.nextInt(45);
-                final Calendar expireDate = Calendar.getInstance();
-                expireDate.add(Calendar.DATE, (days * -1));
-
-                final File tmExpiredFolder = new File(tmTestingFolder, "timeMachineBundle_not_expired_" + (currentTimeMillis + i));
-                tmExpiredFolder.mkdir();
-                tmExpiredFolder.setLastModified(expireDate.toInstant().toEpochMilli());
-
-                notExpireFolders.add(tmExpiredFolder);
-            }
+            final List<File> expireFolders = createFiles(tmTestingFolder, "timeMachineBundle_expired_",
+                    91, 100);
+            final List<File> notExpireFolders = createFiles(tmTestingFolder, "timeMachineBundle_not_expired_",
+                    45, 89);
 
             final List<File> removedFiles = APILocator.getTimeMachineAPI().removeOldTimeMachineBackupsFiles();
 
             assertEquals(expireFolders.size(), removedFiles.size());
-
-            final List<String> expectedExpireFilesPath = expireFolders.stream()
-                    .map(File::getAbsolutePath)
-                    .collect(Collectors.toList());
-
-            final List<String> notExpectedRemoveFiles = removedFiles.stream()
-                    .map(File::getAbsolutePath)
-                    .collect(Collectors.toList());
-
-            notExpectedRemoveFiles.removeAll(expectedExpireFilesPath);
-
-            assertTrue(notExpectedRemoveFiles.isEmpty());
+            assertTrue(removeAll(expireFolders, removedFiles).isEmpty());
 
             final File[] files = tmTestingFolder.listFiles();
-
             assertEquals(notExpireFolders.size(), files.length);
-
-            final List<String> expectedNotExpireFilesPath = notExpireFolders.stream()
-                    .map(File::getAbsolutePath)
-                    .collect(Collectors.toList());
-
-            final List<String> notExpectedNotRemoveFiles = Arrays.stream(files)
-                    .map(File::getAbsolutePath)
-                    .collect(Collectors.toList());
-
-            notExpectedNotRemoveFiles.removeAll(expectedNotExpireFilesPath);
-
-            assertTrue(notExpectedNotRemoveFiles.isEmpty());
-
+            assertTrue(removeAll(Arrays.asList(), notExpireFolders).isEmpty());
         } finally {
             Config.setProperty("TIMEMACHINE_PATH", timemachinePathPreviousValue);
         }
+    }
+
+    @NotNull
+    private static List<String> removeAll(final List<File> list1, final List<File> list2) {
+        final List<String> list1Path = list1.stream()
+                .map(File::getAbsolutePath)
+                .collect(Collectors.toList());
+
+        final List<String> list2Path = list2.stream()
+                .map(File::getAbsolutePath)
+                .collect(Collectors.toList());
+
+        list1Path.removeAll(list2Path);
+        return list1Path;
+    }
+
+    private static List<File> createFiles(final File parentFolder, final String preffix,
+                                          final int olderThanFrom, final int olderThanTo )
+            throws IOException {
+        final List<File> files = new ArrayList();
+        final Random random = new Random();
+        long currentTimeMillis = System.currentTimeMillis();
+
+        for (int i = 0; i < 10; i++) {
+            final int expireDays = random.nextInt(olderThanTo - olderThanFrom) + olderThanFrom;
+            final Calendar expireDate = Calendar.getInstance();
+            expireDate.add(Calendar.DATE, (expireDays * -1));
+
+            final File tmExpiredFolder = new File(parentFolder, preffix + (currentTimeMillis + i));
+            tmExpiredFolder.mkdir();
+
+            files.add(tmExpiredFolder);
+
+            final File fileInside = new File(tmExpiredFolder, "file");
+            fileInside.createNewFile();
+
+            final File folderInside = new File(tmExpiredFolder, "folder");
+            folderInside.mkdir();
+
+            final File fileInsideFolderInside = new File(folderInside, "file");
+            fileInsideFolderInside.createNewFile();
+
+            tmExpiredFolder.setLastModified(expireDate.toInstant().toEpochMilli());
+        }
+
+        return files;
     }
 
     /**
@@ -129,54 +112,17 @@ public class TimeMachineAPITest {
      */
     @Test
     public void notRemoveNotTimeMachineFolder() throws IOException {
-
-        final Random random = new Random();
-
         final File tmTestingFolder = FileUtil.createTemporaryDirectory("tm_testing");
         final String timemachinePathPreviousValue = Config.getStringProperty("TIMEMACHINE_PATH", null);
 
-        final Calendar notExpireDate = Calendar.getInstance();
-        notExpireDate.add(Calendar.DATE, -45);
-
         try {
-            final List<File> expireFolders = new ArrayList<>();
-
-            Config.setProperty("TIMEMACHINE_PATH", tmTestingFolder.toPath().toAbsolutePath().toString());
-
-            long currentTimeMillis = System.currentTimeMillis();
-
-            for (int i = 0; i < 10; i++) {
-                final int expireDays = random.nextInt(10) + 91;
-                final Calendar expireDate = Calendar.getInstance();
-                expireDate.add(Calendar.DATE, (expireDays * -1));
-
-                final File tmExpiredFolder = new File(tmTestingFolder,  "" + (currentTimeMillis + i));
-                tmExpiredFolder.mkdir();
-                tmExpiredFolder.setLastModified(expireDate.toInstant().toEpochMilli());
-
-                expireFolders.add(tmExpiredFolder);
-            }
-
-
+            final List<File> expireFolders = createFiles(tmTestingFolder, "", 90, 100);
             final List<File> removedFiles = APILocator.getTimeMachineAPI().removeOldTimeMachineBackupsFiles();
-
             assertTrue(removedFiles.isEmpty());
 
             final File[] files = tmTestingFolder.listFiles();
-
             assertEquals(expireFolders.size(), files.length);
-
-            final List<String> expectedNotExpireFilesPath = expireFolders.stream()
-                    .map(File::getAbsolutePath)
-                    .collect(Collectors.toList());
-
-            final List<String> notExpectedNotRemoveFiles = Arrays.stream(files)
-                    .map(File::getAbsolutePath)
-                    .collect(Collectors.toList());
-
-            notExpectedNotRemoveFiles.removeAll(expectedNotExpireFilesPath);
-
-            assertTrue(notExpectedNotRemoveFiles.isEmpty());
+            assertTrue(removeAll(Arrays.asList(), expireFolders).isEmpty());
 
         } finally {
             Config.setProperty("TIMEMACHINE_PATH", timemachinePathPreviousValue);
