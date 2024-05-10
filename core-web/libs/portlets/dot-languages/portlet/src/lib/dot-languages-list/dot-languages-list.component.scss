@@ -1,0 +1,11 @@
+@use "variables" as *;
+
+:host {
+    width: 100%;
+}
+
+.languages-list__header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: $spacing-1;
+}

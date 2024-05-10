@@ -1,5 +1,20 @@
 import { Route } from '@angular/router';
 
-import { DotLanguagesComponent } from './dot-languages/dot-languages.component';
+import { DotLanguagesListResolver } from '@dotcms/portlets/dot-languages/portlet/data-access';
 
-export const DotLanguagesRoutes: Route[] = [{ path: '', component: DotLanguagesComponent }];
+import { DotLanguagesListComponent } from './dot-languages-list/dot-languages-list.component';
+import { DotLanguagesShellComponent } from './dot-languages-shell/dot-languages-shell.component';
+
+export const DotLanguagesRoutes: Route[] = [
+    {
+        path: '',
+        component: DotLanguagesShellComponent,
+        children: [
+            {
+                path: '',
+                component: DotLanguagesListComponent,
+                resolve: { languages: DotLanguagesListResolver }
+            }
+        ]
+    }
+];

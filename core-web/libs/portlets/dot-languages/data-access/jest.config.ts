@@ -1,11 +1,11 @@
 /* eslint-disable */
 export default {
-    displayName: 'dot-languages',
+    displayName: 'data-languages-data-access',
     preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
     coverageDirectory: '../../../../../target/core-web-reports/',
-    coverageReporters: [['lcovonly', { file: 'TEST-portlet-languages.lcov' }]],
+    coverageReporters: [['lcovonly', { file: 'TEST-data-access-languages.lcov' }]],
     reporters: [
         'default',
         ['github-actions', { silent: false }],
@@ -13,7 +13,7 @@ export default {
             'jest-junit',
             {
                 outputDirectory: '../target/core-web-reports',
-                outputName: 'TEST-portlet-languages.xml'
+                outputName: 'TEST-data-access-languages.xml'
             }
         ]
     ],

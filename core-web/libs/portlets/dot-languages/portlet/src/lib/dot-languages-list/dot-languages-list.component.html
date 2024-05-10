@@ -1,0 +1,41 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <div class="languages-list__header">
+        <span class="p-input-icon-right">
+            <i class="pi pi-search"></i>
+            <input type="text" pInputText />
+        </span>
+        <button
+            [label]="'languages.add.locale' | dm"
+            pButton
+            type="button"
+            icon="pi pi-plus"></button>
+    </div>
+    <p-table [value]="vm.languages" styleClass="dotTable">
+        <ng-template pTemplate="header">
+            <tr>
+                <th scope="col" pSortableColumn="language">
+                    {{ 'languages.locale' | dm }} <p-sortIcon field="language"></p-sortIcon>
+                </th>
+                <th scope="col" pSortableColumn="language">
+                    {{ 'languages.language' | dm }} <p-sortIcon field="language"></p-sortIcon>
+                </th>
+                <th scope="col" pSortableColumn="country">
+                    {{ 'languages.country' | dm }} <p-sortIcon field="country"></p-sortIcon>
+                </th>
+                <th scope="col">{{ 'languages.variables' | dm }}</th>
+                <th scope="col">{{ 'languages.menu' | dm }}</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-language>
+            <tr>
+                <td>{{ language.language }} ({{ language.isoCode }})</td>
+                <td>{{ language.language }} - {{ language.languageCode }}</td>
+                <td>{{ language.country }} - {{ language.countryCode }}</td>
+                <td>id: {{ language.id }}</td>
+                <td>
+                    <button pButton type="button" icon="pi pi-pencil"></button>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</ng-container>
