@@ -11,7 +11,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
-import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -247,7 +246,8 @@ public class ContentTypeResource implements Serializable {
 		final ContentType contentTypeSaved = contentTypeAPI.copyFromAndDependencies(builder.build());
 
 		return ImmutableMap.builder()
-				.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(contentTypeSaved.variable())).mapObject())
+				.putAll(contentTypeHelper.contentTypeToMap(
+						contentTypeAPI.find(contentTypeSaved.variable()), user))
 				.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
 				.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user).stream()
 						.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
@@ -293,7 +293,8 @@ public class ContentTypeResource implements Serializable {
 			final List<Map<Object, Object>> savedContentTypes = new ArrayList<>();
 
 			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
-				final ContentType type = entry.contentType;
+				final ContentType type = contentTypeHelper.
+						evaluateContentTypeRequest(entry.contentType, user);
 				final Set<String> workflowsIds = new HashSet<>(entry.workflowsIds);
 
 				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
@@ -306,7 +307,7 @@ public class ContentTypeResource implements Serializable {
 							form.getSystemActions(), APILocator.getContentTypeAPI(user, true), true);
 				final ContentType contentTypeSaved = tuple2._1;
 				final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
-							.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
+						.putAll(contentTypeHelper.contentTypeToMap(contentTypeSaved, user))
 						.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
 						.put("systemActionMappings", tuple2._2.stream()
 								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
@@ -369,7 +370,8 @@ public class ContentTypeResource implements Serializable {
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
-			final ContentType contentType = form.getContentType();
+			final ContentType contentType = contentTypeHelper.
+					evaluateContentTypeRequest(form.getContentType(), user);
 			Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
 			checkNotEmpty(contentType.id(), BadRequestException.class, "Content Type 'id' attribute must be set");
 				final ContentType currentContentType = contentTypeAPI.find(idOrVar);
@@ -382,7 +384,8 @@ public class ContentTypeResource implements Serializable {
 							new HashSet<>(form.getWorkflowsIds()), form.getSystemActions(), contentTypeAPI, false);
 					final ImmutableMap.Builder<Object, Object> builderMap =
 							ImmutableMap.builder()
-							.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(tuple2._1.variable())).mapObject())
+									.putAll(contentTypeHelper.contentTypeToMap(
+											contentTypeAPI.find(tuple2._1.variable()), user))
 							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
 							.put("systemActionMappings", tuple2._2.stream()
 								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)));
@@ -638,12 +641,15 @@ public class ContentTypeResource implements Serializable {
 
 			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
 					new ContentTypeInternationalization(languageId, live, user) : null;
-            final Map<String, Object> resultMap = new HashMap<>(new JsonContentTypeTransformer(type, contentTypeInternationalization).mapObject());
-
-			resultMap.put("workflows", this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
-			resultMap.put("systemActionMappings",
-					this.workflowHelper.findSystemActionsByContentType(type, initData.getUser())
-							.stream().collect(Collectors.toMap(mapping -> mapping.getSystemAction(),mapping -> mapping)));
+			final ImmutableMap<Object, Object> resultMap = ImmutableMap.builder()
+					.putAll(contentTypeHelper.contentTypeToMap(type,
+							contentTypeInternationalization, user))
+					.put("workflows", this.workflowHelper.findSchemesByContentType(
+							type.id(), initData.getUser()))
+					.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(
+									type, initData.getUser()).stream()
+							.collect(Collectors.toMap(mapping -> mapping.getSystemAction(),
+									mapping -> mapping))).build();
 
 			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
 					Response.ok(new ResponseEntityView<>(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
