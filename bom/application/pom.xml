@@ -18,7 +18,7 @@
         <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
         <swagger.version>2.2.0</swagger.version>
         <bytebuddy.version>1.12.6</bytebuddy.version>
-        <batik.version>1.16</batik.version>
+        <batik.version>1.17</batik.version>
         <bouncy-castle.version>1.70</bouncy-castle.version>
         <awaitility.version>3.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
