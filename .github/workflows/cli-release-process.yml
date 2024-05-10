@@ -101,12 +101,13 @@ jobs:
           
           # set version in .mvn/maven.config
           echo "-Dprod=true" > .mvn/maven.config
-          echo "-Drevision=${release_version}" >> .mvn/maven.config
+          echo "-Drevision=${RELEASE_VERSION}" >> .mvn/maven.config
           echo "-Dchangelist=" >> .mvn/maven.config
           
           # Commit version changes
           git add .mvn/maven.config
-          git commit --allow-empty -a -m "🏁 Update dotCLI version to $RELEASE_VERSION"
+          git status
+          git commit --allow-empty -a -m "🏁 Publishing dotCLI release version [${RELEASE_VERSION}]"
           git push origin $AUXILIARY_BRANCH
           
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
