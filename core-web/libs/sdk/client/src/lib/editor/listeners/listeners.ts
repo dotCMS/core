@@ -5,7 +5,8 @@ import {
     findVTLData,
     findDotElement,
     getClosestContainerData,
-    getPageElementBound
+    getPageElementBound,
+    scrollIsInBottom
 } from '../utils/editor.utils';
 
 declare global {
@@ -82,7 +83,20 @@ export function listenEditorMessages() {
         }
 
         if (event.data.name === NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME) {
-            const scrollY = event.data.direction === 'up' ? -120 : 120;
+            const direction = event.data.direction;
+
+            if (
+                (window.scrollY === 0 && direction === 'up') ||
+                (scrollIsInBottom() && direction === 'down')
+            ) {
+                /**
+                 * If the iframe scroll is in the top of bottom, we dont send anything.
+                 * This to avoid the lost of scrollend event
+                 **/
+                return;
+            }
+
+            const scrollY = direction === 'up' ? -120 : 120;
             window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
         }
     };

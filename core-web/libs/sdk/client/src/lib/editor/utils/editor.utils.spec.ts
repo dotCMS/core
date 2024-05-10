@@ -1,4 +1,4 @@
-import { getContentletsBound } from './editor.utils';
+import { getContentletsBound, scrollIsInBottom } from './editor.utils';
 
 describe('getContentletsBound', () => {
     const createContentlet = ({
@@ -160,5 +160,47 @@ describe('getContentletsBound', () => {
                 })
             }
         ]);
+    });
+});
+
+describe('scrollIsInBottom', () => {
+    it('should return true when scroll position + viewport height equals document height', () => {
+        Object.defineProperty(window, 'innerHeight', {
+            writable: true,
+            configurable: true,
+            value: 500
+        });
+        Object.defineProperty(window, 'scrollY', {
+            writable: true,
+            configurable: true,
+            value: 500
+        });
+        Object.defineProperty(document.documentElement, 'scrollHeight', {
+            writable: true,
+            configurable: true,
+            value: 1000
+        });
+
+        expect(scrollIsInBottom()).toBe(true);
+    });
+
+    it('should return false when scroll position + viewport height is less than document height', () => {
+        Object.defineProperty(window, 'innerHeight', {
+            writable: true,
+            configurable: true,
+            value: 500
+        });
+        Object.defineProperty(window, 'scrollY', {
+            writable: true,
+            configurable: true,
+            value: 400
+        });
+        Object.defineProperty(document.documentElement, 'scrollHeight', {
+            writable: true,
+            configurable: true,
+            value: 1000
+        });
+
+        expect(scrollIsInBottom()).toBe(false);
     });
 });
