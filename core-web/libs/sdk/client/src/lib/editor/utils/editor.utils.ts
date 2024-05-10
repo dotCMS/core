@@ -176,7 +176,7 @@ export function findVTLData(target: HTMLElement) {
 export function scrollIsInBottom() {
     const documentHeight = document.documentElement.scrollHeight;
     const viewportHeight = window.innerHeight;
-    const scrollY = window.scrollY || window.pageYOffset;
+    const scrollY = window.scrollY;
 
     return scrollY + viewportHeight >= documentHeight;
 }
