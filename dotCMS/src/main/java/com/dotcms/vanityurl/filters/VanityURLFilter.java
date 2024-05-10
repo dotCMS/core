@@ -84,11 +84,9 @@ public class VanityURLFilter implements Filter {
           if (null != cachedVanity
                   && cachedVanity.isPresent()
                   && null != cachedVanity.get()
-                  // if it is not 404
-                 // && !VanityUrlCache.NOT_FOUND404.vanityUrlId.equals(cachedVanity.get().vanityUrlId)
                   // checks if the current destiny is not exactly the forward of the vanity
                   // we do this to avoid infinite loop
-                 && vanityApi.isSelfReferenced(cachedVanity.get(), uri)) {
+                 && !vanityApi.isSelfReferenced(cachedVanity.get(), uri)) {
 
               request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
               if(addVanityHeader) {
