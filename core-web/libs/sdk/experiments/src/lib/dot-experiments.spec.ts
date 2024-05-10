@@ -126,14 +126,18 @@ describe('DotExperiments', () => {
         it('should not call to trackPageView if you dont have experiment to track', async () => {
             const config: DotExperimentConfig = { ...configMock, trackPageView: false };
 
-            fetchMock.post(`${configMock.server}/${API_EXPERIMENTS_URL}`, {
-                status: 200,
-                body: NoExperimentsIsUserIncludedResponse,
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            });
+            fetchMock.post(
+                `${configMock.server}/${API_EXPERIMENTS_URL}`,
+                {
+                    status: 200,
+                    body: NoExperimentsIsUserIncludedResponse,
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                },
+                { overwriteRoutes: true }
+            );
 
             const instance = DotExperiments.getInstance(config);
 
