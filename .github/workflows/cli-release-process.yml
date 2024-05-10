@@ -90,7 +90,6 @@ jobs:
       # Creates an auxiliary branch for versioning updates
       - name: 'Set release version'
         id: version
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           RELEASE_VERSION=$RELEASE_VERSION
           HEAD=${{ github.ref_name }}
