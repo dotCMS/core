@@ -1227,14 +1227,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         } else if(pageContents.contains(container.getIdentifier(), ParseContainer.PARSE_CONTAINER_UUID_PREFIX + containerUUID.getUUID())) {
             return true;
         } else if (ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID())) {
-            boolean pageContenstContains = pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE)
-                    ||pageContents.contains(containerUUID.getIdentifier(),
-                    ParseContainer.PARSE_CONTAINER_UUID_PREFIX + ContainerUUID.UUID_START_VALUE) ;
+            boolean pageContenstContains = pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE);
 
             if (!pageContenstContains && container instanceof FileAssetContainer) {
-                pageContenstContains = pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE)
-                    || pageContents.contains(container.getIdentifier(),
-                        ParseContainer.PARSE_CONTAINER_UUID_PREFIX + ContainerUUID.UUID_START_VALUE);
+                pageContenstContains = pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE);
             }
 
             return pageContenstContains;
