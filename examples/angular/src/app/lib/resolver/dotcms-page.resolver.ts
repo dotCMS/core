@@ -27,8 +27,8 @@ export const DotCMSPageResolver: ResolveFn<any> = (
     }
 
     const pageRequest = client.page.get(pageProps).then((resp: any) => resp.entity);
-    const naRequest = client.nav.get(navProps).then((resp: any) => resp.entity);
+    const navRequest = client.nav.get(navProps).then((resp: any) => resp.entity);
     
-    return from(Promise.all([ pageRequest, naRequest])).pipe(map(([page, nav]) => ({ page, nav }) ))
+    return from(Promise.all([ pageRequest, navRequest])).pipe(map(([page, nav]) => ({ page, nav }) ))
   };
   

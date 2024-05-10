@@ -6,6 +6,7 @@ export const routes: Routes = [
   {
     path: '**',
     resolve: {
+      // This should be called `context`.
       context: DotCMSPageResolver,
     },
     component: DotCMSPagesComponent,

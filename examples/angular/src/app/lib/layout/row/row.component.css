@@ -1,4 +1,4 @@
-.row {
+:host {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 1rem;
