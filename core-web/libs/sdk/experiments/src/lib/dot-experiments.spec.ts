@@ -13,6 +13,7 @@ import {
     MockDataStoredIndexDBWithNew,
     MockDataStoredIndexDBWithNew15DaysLater,
     NewIsUserIncludedResponse,
+    NoExperimentsIsUserIncludedResponse,
     sessionStorageMock,
     TIME_15_DAYS_MILLISECONDS,
     TIME_5_DAYS_MILLISECONDS
@@ -105,6 +106,29 @@ describe('DotExperiments', () => {
             fetchMock.post(`${configMock.server}/${API_EXPERIMENTS_URL}`, {
                 status: 200,
                 body: IsUserIncludedResponse,
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const instance = DotExperiments.getInstance(config);
+
+            const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
+
+            expect(spyTrackPageView).not.toHaveBeenCalled();
+
+            await instance.locationChanged(LocationMock).then(() => {
+                expect(spyTrackPageView).not.toHaveBeenCalled();
+            });
+        });
+
+        it('should not call to trackPageView if you dont have experiment to track', async () => {
+            const config: DotExperimentConfig = { ...configMock, trackPageView: false };
+
+            fetchMock.post(`${configMock.server}/${API_EXPERIMENTS_URL}`, {
+                status: 200,
+                body: NoExperimentsIsUserIncludedResponse,
                 headers: {
                     Accept: 'application/json',
                     'Content-Type': 'application/json'
