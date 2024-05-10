@@ -34,8 +34,6 @@ public final class UpdateUserForm extends Validated  implements LanguageSupport 
     private final String  birthday;
     private final String    languageId;
     private final String  timeZoneId;
-    @NotNull
-    @NotBlank
     private final char[] password;
     private final Map<String, Object> additionalInfo;
     private final List<String> roles;
@@ -58,6 +56,9 @@ public final class UpdateUserForm extends Validated  implements LanguageSupport 
         this.userId = builder.userId;
 
         checkValid();
+        if (!UtilMethods.isSet(this.password)) {
+            throw new IllegalArgumentException("Password can not be null");
+        }
     }
 
     public String getUserId() {
