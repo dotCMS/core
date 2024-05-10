@@ -1,9 +1,5 @@
 package com.dotcms.vanityurl.business;
 
-
-import java.util.List;
-import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
@@ -13,6 +9,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * This API provides access to the information related to Vanity URLs in dotCMS. Vanity URLs are
@@ -25,8 +25,6 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
  * @since June 12, 2017
  */
 public interface VanityUrlAPI {
-
-    String DEFAULT_VANITY_URL_STRUCTURE_VARNAME = "Vanityurl";
 
     /**
      * Verifies that the Vanity URL as Contentlet has all the required fields. the list of mandatory fields can be
@@ -118,5 +116,13 @@ public interface VanityUrlAPI {
      * @return
      */
     List<CachedVanityUrl> findByForward(Host host, Language language, String forward, int action);
+
+    /**
+     *
+     * @param vanityUrl
+     * @param uri
+     * @return
+     */
+    boolean isSelfReferenced(final CachedVanityUrl vanityUrl, final String uri);
 
 }
