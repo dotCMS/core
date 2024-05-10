@@ -31,10 +31,7 @@ import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.TimeMachineJob;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import io.vavr.Lazy;
 
 public class TimeMachineAPIImpl implements TimeMachineAPI {
@@ -144,29 +141,13 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 
         for (File file : fileToRemove) {
             try {
-                deleteFolder(file.toPath());
+                FileUtil.deleteDir(file.toPath().toString());
             } catch (IOException e) {
                 //ignore
             }
         }
 
         return fileToRemove;
-    }
-
-    public static void deleteFolder(Path folderPath) throws IOException {
-        Files.walkFileTree(folderPath, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                Files.delete(dir);
-                return FileVisitResult.CONTINUE;
-            }
-        });
     }
 
     @Override
