@@ -103,7 +103,7 @@ public class UserResourceTest extends UnitTestBase {
             try {
 
                 UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin").surname("User Admin").email("admin@dotcms.com").build();
-                userResource.update(request, response, updateUserForm);
+                userResource.updateCurrent(request, response, updateUserForm);
                 fail ("Should throw a ValidationException");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -112,7 +112,7 @@ public class UserResourceTest extends UnitTestBase {
             try {
 
                 UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder().userId("dotcms.org.1")/*.givenName("Admin")*/.surname("User Admin").email("admin@dotcms.com").build();
-                userResource.update(request, response, updateUserForm);
+                userResource.updateCurrent(request, response, updateUserForm);
                 fail ("Should throw a ValidationException");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -121,7 +121,7 @@ public class UserResourceTest extends UnitTestBase {
             try {
 
                 UpdateCurrentUserForm updateUserForm = new UpdateCurrentUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin")/*.surname("User Admin")*/.email("admin@dotcms.com").build();
-                userResource.update(request, response, updateUserForm);
+                userResource.updateCurrent(request, response, updateUserForm);
                 fail ("Should throw a ValidationException");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -211,7 +211,7 @@ public class UserResourceTest extends UnitTestBase {
                     .currentPassword("password")
                     .build();
 
-            Response response = userResource.update(request, httpServletResponse, updateUserForm);
+            Response response = userResource.updateCurrent(request, httpServletResponse, updateUserForm);
             RestUtilTest.verifySuccessResponse(response);
 
             Map userMap = Map.class.cast(
@@ -302,7 +302,7 @@ public class UserResourceTest extends UnitTestBase {
                     .newPassword("new password")
                     .build();
 
-            Response response = userResource.update(request, httpServletResponse, updateUserForm);
+            Response response = userResource.updateCurrent(request, httpServletResponse, updateUserForm);
             RestUtilTest.verifySuccessResponse(response);
 
             Map userMap = Map.class.cast(
@@ -401,7 +401,7 @@ public class UserResourceTest extends UnitTestBase {
                     .newPassword("new password")
                     .build();
 
-            Response response = userResource.update(request, httpServletResponse, updateUserForm);
+            Response response = userResource.updateCurrent(request, httpServletResponse, updateUserForm);
             assertEquals(response.getStatus(), 400);
         } finally {
             RestUtilTest.cleanupContext();
