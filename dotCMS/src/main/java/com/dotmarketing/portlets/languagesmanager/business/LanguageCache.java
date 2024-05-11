@@ -1,12 +1,14 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotcms.languagevariable.business.LanguageVariable;
+import com.dotmarketing.exception.DotDataException;
 import java.util.List;
 
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import java.util.concurrent.Callable;
 
 /**
  * @author David
@@ -75,6 +77,16 @@ public abstract class LanguageCache implements Cachable{
      * Removes all language variables stored in cache
      */
     public abstract void clearVariables();
+
+    /**
+     * if the there are language stored in cache for the given languageId this will return them
+     *
+     * @param languageId the language id
+     * @param fetch
+     * @return
+     */
+    public abstract List<LanguageVariable> ifPresentGetOrElseFetch(final long languageId,
+            Callable<List<LanguageVariable>> fetch) throws DotDataException;
 
     /**
      * Removes the language stored under the key LANGUAGE_KEY_PREFIX + languageId

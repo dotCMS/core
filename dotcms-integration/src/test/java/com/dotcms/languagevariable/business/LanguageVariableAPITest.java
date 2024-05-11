@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -432,6 +434,81 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
                         containsIdentifier(contentlets, variable.identifier()));
             }
         });
+    }
+
+    /**
+     * Method to test {@link com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl#ifPresentGetOrElseFetch(long, Callable)} ()} method.
+     * Given scenario: We create LangVariables data specific for new languages then we play with the cache
+     * Expected Result: The fetch function should only be called when the cache is empty
+     * @throws DotDataException
+     */
+    @Test
+    public void testCachedFindVariables() throws DotDataException {
+        final LanguageCache languageCache = CacheLocator.getLanguageCache();
+        languageCache.clearVariables();
+
+        //Let's create 3 languages and 3 language variables for each language
+        final List<Language> languages = List.of(
+                new LanguageDataGen().nextPersisted(),
+                new LanguageDataGen().nextPersisted(),
+                new LanguageDataGen().nextPersisted()
+        );
+
+        List<Contentlet> contentlets = new ArrayList<>();
+        LanguageVariableDataGen languageVariableDataGen = new LanguageVariableDataGen();
+        //Contentlets are created and published
+        for (Language language : languages) {
+            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("cachedKey1").value("cachedValue1").nextPersistedAndPublish());
+            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("cachedKey2").value("cachedValue2").nextPersistedAndPublish());
+            contentlets.add(languageVariableDataGen.languageId(language.getId()).key("cachedKey3").value("cachedValue3").nextPersistedAndPublish());
+        }
+        //Select any rand language to test the cache
+        final long id = languages.stream().findAny().get().getId();
+        //Even though the contentlets are created, the cache should be empty
+        Assert.assertTrue(languageCache.getVars(id).isEmpty());
+        final List<LanguageVariable> cached = languageCache.ifPresentGetOrElseFetch(id,
+                () -> List.of(
+                        ImmutableLanguageVariable.builder().key("mockKey").value("mockValue")
+                                .identifier("mockIdentifier").build()
+                ));
+
+        //The cache should have been populated with the mock variables
+        Assert.assertFalse(cached.isEmpty());
+        Assert.assertEquals(1, cached.size());
+        Assert.assertEquals("mockKey", cached.get(0).key());
+
+        //Now let's see if the API can find all the variables
+        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+        final List<LanguageVariable> languageVariables = languageVariableAPI.findVariables(id);
+        Assert.assertEquals(1, languageVariables.size());
+
+        Assert.assertEquals("mockKey", languageVariables.get(0).key());
+
+        // now lets test the cache after calling the API
+        languageCache.clearVariables();
+        final Map<Language, List<LanguageVariable>> allVariables = languageVariableAPI.findAllVariables();
+        final AtomicBoolean fetchCalled = new AtomicBoolean(false);
+        for (final Language language : languages) {
+            final List<LanguageVariable> variables = languageCache.ifPresentGetOrElseFetch(language.getId(),
+                    () -> {
+                        fetchCalled.set(true);
+                        return List.of();
+                    });
+            // there should always be 3 variables per language and the fetch should have never been called.
+            // That because the variables are already in the cache
+            Assert.assertFalse(variables.isEmpty());
+            //test we're getting the right variables
+            Assert.assertEquals(3, variables.size());
+            //Test that the fetch was never called
+            Assert.assertFalse(fetchCalled.get());
+        }
+
+        //Finally test the cache with a language that does not exist
+        final List<LanguageVariable> nonExistingLang = languageCache.ifPresentGetOrElseFetch(0,
+                List::of);
+
+        Assert.assertTrue(nonExistingLang.isEmpty());
+
     }
 
     /**

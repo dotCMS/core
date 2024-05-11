@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotcms.languagevariable.business.LanguageVariable;
+import com.dotmarketing.exception.DotDataException;
 import java.util.List;
 
 import com.dotmarketing.business.CacheLocator;
@@ -9,6 +10,7 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -271,6 +273,43 @@ public class LanguageCacheImpl extends LanguageCache {
 		final String group = getSecondaryGroup();
 		final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 		cache.flushGroup(group);
+	}
+
+	/**
+	 * if the there are languageVariables stored in cache for the given languageId this will return them
+	 * otherwise it will fetch them from the database and store them in cache
+	 * if an empty list is returned from the fetch callable, it will still be cached which is fine
+	 * @return a list of LanguageVariables
+	 */
+	@Override
+	public List<LanguageVariable> ifPresentGetOrElseFetch(final long languageId,
+			final Callable<List<LanguageVariable>> fetch) throws DotDataException {
+		final String languageIdStr = String.valueOf(languageId);
+		final String group = getSecondaryGroup();
+		final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+		final List<LanguageVariable> result;
+		try {
+			final Object perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
+			if (perLangCache == null) {
+				result = fetch.call();
+				Logger.debug(this, "Language Variables for language with id: " + languageId + " has been fetched from the database.");
+				putVars(languageId, result);
+			} else {
+				@SuppressWarnings("unchecked") final ConcurrentMap<String, List<LanguageVariable>> langVarCache = (ConcurrentMap<String, List<LanguageVariable>>) perLangCache;
+				final List<LanguageVariable> variables = langVarCache.get(languageIdStr);
+				if (variables != null) {
+					result = variables;
+				} else {
+					result = fetch.call();
+					Logger.debug(this, "Language Variables for language with id: " + languageId + " has been fetched from the database.");
+					putVars(languageId, result);
+				}
+			}
+		} catch (Exception e) {
+			throw new DotDataException(e);
+		}
+		// even thought the object LanguageVariable is immutable, the list is not therefore we can still have cache modification issues
+		return List.copyOf(result);
 	}
 
 

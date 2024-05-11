@@ -20,9 +20,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-import java.util.LinkedHashMap;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -167,14 +165,12 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
 
     final ContentType contentType = langVarContentType.get();
     final LanguageCache languageCache = CacheLocator.getLanguageCache();
-    final List<LanguageVariable> cacheVars = languageCache.getVars(langId);
-    if (cacheVars != null && !cacheVars.isEmpty()) {
-        return cacheVars;
-    }
-    final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
-    final List<LanguageVariable> variables = factory.findVariables(contentType, langId, 0, 0, null);
-    languageCache.putVars(langId, variables);
-    return variables;
+
+    return languageCache.ifPresentGetOrElseFetch(langId, ()->{
+          //If the language is not in cache, fetch the variables from the database
+          final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
+          return factory.findVariables(contentType, langId, 0, 0, null);
+      });
   }
 
   /**
