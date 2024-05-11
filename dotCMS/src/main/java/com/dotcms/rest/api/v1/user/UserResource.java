@@ -860,10 +860,17 @@ public class UserResource implements Serializable {
 
 		final String userId = updateUserForm.getUserId();
 		boolean validatePassword = false;
+		final User userRecovery;
+		try {
 
-		final User userRecovery = this.userAPI.loadUserById
-				(updateUserForm.getUserId(), modUser, false);
-		if (null == userRecovery) {
+			userRecovery = this.userAPI.loadUserById
+					(updateUserForm.getUserId(), modUser, false);
+
+			if (null == userRecovery) {
+
+				throw new NotFoundException("The user: " + userId + " not found");
+			}
+		} catch (NoSuchUserException e) {
 
 			throw new NotFoundException("The user: " + userId + " not found");
 		}
