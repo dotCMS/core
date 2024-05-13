@@ -84,7 +84,7 @@ public class URLUtils {
 	}	
 
 	private static final Pattern regexPattern = Pattern.compile(
-			"((\\w+)://([^/\\p{Cntrl}:]+)(?::(\\d+))?)?((?:/[^/\\p{Cntrl}]+)*?:/([^/\\p{Cntrl}?#]+)?)?\\??([^#]*)?(?:#(.*))?");
+			"((\\w+)://([^/\\p{Cntrl}:]+)(?::(\\d+))?)?(((?:/[^/\\p{Cntrl}]+)*)(?:/([^/\\p{Cntrl}?#]+)?))?\\??([^#]*)?(?:#(.*))?");
 	
 	public static ParsedURL parseURL(String url) throws IllegalArgumentException {
 		
