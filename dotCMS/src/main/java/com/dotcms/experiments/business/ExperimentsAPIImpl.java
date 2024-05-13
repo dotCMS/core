@@ -1466,6 +1466,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final Experiment afterSave = save(experimentCanceled, user);
 
+        cleanRunningExperimentsCache();
+
         SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been canceled by User" +
                 " ID '%s'", afterSave.name(), afterSave.id(), user.getUserId()));
 
