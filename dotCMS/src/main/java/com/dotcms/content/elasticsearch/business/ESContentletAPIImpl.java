@@ -238,7 +238,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String CHECKIN_IN_PROGRESS = "__checkin_in_progress__";
 
     private static final String IS_NEW_CONTENT = "__IS_NEW_CONTENT__";
-    public static final String UNKNOWN = "Unknown";
 
     private final ContentletIndexAPIImpl indexAPI;
     private final ESContentFactoryImpl contentFactory;
@@ -380,7 +379,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 respectFrontendRoles)) {
             return contentlet;
         } else {
-            final String userId = (user == null) ? UNKNOWN : user.getUserId();
+            final String userId = (user == null) ? "Unknown" : user.getUserId();
             throw new DotSecurityException(
                     String.format("User '%s' does not have READ permissions on %s", userId,
                             ContentletUtil
@@ -921,7 +920,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentPushExpireDate =
                 UtilMethods.isSet(contentPushExpireDate) ? contentPushExpireDate : "N/D";
 
-        logInfo("Publishing Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
+        ActivityLogger.logInfo(getClass(), "Publishing Content",
+                "StartDate: " + contentPushPublishDate + "; "
+                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
+                        ? user.getUserId() : "Unknown")
+                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
+                        : "Unknown"), contentlet.getHost());
 
         try {
 
@@ -963,9 +967,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             Logger.debug(PublishFactory.class,
                     () -> "publishAsset: user = " + (user != null ? user.getEmailAddress()
-                            : UNKNOWN)
+                            : "Unknown")
                             + ", don't have permissions to publish: " + (contentlet != null
-                            ? contentlet.getInode() : UNKNOWN));
+                            ? contentlet.getInode() : "Unknown"));
 
             //If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
             List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
@@ -984,15 +988,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (!isCMSOwner) {
 
                     throw new DotSecurityException(
-                            "User " + (user != null ? user.getUserId() : UNKNOWN)
+                            "User " + (user != null ? user.getUserId() : "Unknown")
                                     + "does not have permission to publish contentlet with inode "
-                                    + (contentlet != null ? contentlet.getInode() : UNKNOWN));
+                                    + (contentlet != null ? contentlet.getInode() : "Unknown"));
                 }
             } else {
                 throw new DotSecurityException(
-                        "User " + (user != null ? user.getUserId() : UNKNOWN)
+                        "User " + (user != null ? user.getUserId() : "Unknown")
                                 + "does not have permission to publish contentlet with inode "
-                                + (contentlet != null ? contentlet.getInode() : UNKNOWN));
+                                + (contentlet != null ? contentlet.getInode() : "Unknown"));
             }
         }
 
@@ -1487,7 +1491,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 respectFrontendRoles)) {
             throw new DotSecurityException(
                     "Must be able to publish structure to clean all the fields with user: "
-                            + (user != null ? user.getUserId() : UNKNOWN));
+                            + (user != null ? user.getUserId() : "Unknown"));
         }
 
         com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(
@@ -1590,7 +1594,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
                 respectFrontendRoles)) {
-            throw new DotSecurityException("User " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot read Contentlet");
         }
 
@@ -1880,7 +1884,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
                 respectFrontendRoles)) {
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot read Contentlet");
         }
 
@@ -1937,7 +1941,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
                 respectFrontendRoles)) {
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot read Contentlet");
         }
         return contentFactory.getRelatedIdentifier(contentlet, relationshipType);
@@ -2654,7 +2658,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (filterContentlets.size() != contentlets.size()) {
 
             this.logContentletActivity(contentlets, "Error Destroying Content", user);
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " does not have permission to destroy some or all of the contentlets");
         }
 
@@ -2961,7 +2965,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (filteredContentlets.size() != contentlets.size()) {
 
             this.logContentletActivity(contentlets, "Error Deleting Contents.", user);
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " does not have permission to delete some or all of the contentlets");
         }
 
@@ -3182,7 +3186,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentletsVersion.addAll(contentlets);
 
         if (perCons.size() != contentlets.size()) {
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " does not have permission to delete some or all of the contentlets");
         }
         for (Contentlet con : contentlets) {
@@ -3264,7 +3268,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentletsVersion.addAll(contentlets);
 
         if (perCons.size() != contentlets.size()) {
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " does not have permission to delete some or all of the contentlets");
         }
         for (Contentlet con : contentlets) {
@@ -3308,7 +3312,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH,
                 user)) {
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " does not have permission to delete some or all of the contentlets");
         }
 
@@ -3459,7 +3463,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 respectFrontendRoles)) {
 
             throw new DotSecurityException(
-                    "User: " + (user != null ? user.getUserId() : UNKNOWN) + " does not " +
+                    "User: " + (user != null ? user.getUserId() : "Unknown") + " does not " +
                             "have permission to edit the contentlet with Identifier ["
                             + contentlet.getIdentifier() + "]");
         }
@@ -3817,7 +3821,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH,
                 user, respectFrontendRoles)) {
 
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot unpublish Contentlet");
         }
 
@@ -4155,7 +4159,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
 
                 throw new DotSecurityException(
-                        "User: " + (user != null ? user.getUserId() : UNKNOWN)
+                        "User: " + (user != null ? user.getUserId() : "Unknown")
                                 + " cannot unpublish Contentlet");
             }
 
@@ -4289,7 +4293,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user,
                 respectFrontendRoles)) {
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet with identifier " + contentlet.getIdentifier());
         }
 
@@ -4298,7 +4302,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!rels.contains(relationship)) {
             throw new DotContentletStateException(
                     "Error deleting existing relationships in contentlet: " + (contentlet != null
-                            ? contentlet.getInode() : UNKNOWN));
+                            ? contentlet.getInode() : "Unknown"));
         }
 
         List<Contentlet> cons = relationshipAPI
@@ -4636,9 +4640,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user,
                 respectFrontendRoles)) {
 
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet: " + (contentlet != null ? contentlet.getInode()
-                    : UNKNOWN));
+                    : "Unknown"));
         }
 
         //do not perform any changes on related records
@@ -4654,7 +4658,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             throw new DotContentletStateException(
                     "Error adding relationships in contentlet:  " + (contentlet != null ? contentlet
-                            .getInode() : UNKNOWN));
+                            .getInode() : "Unknown"));
         }
 
         final boolean child = !related.isHasParent();
@@ -4760,15 +4764,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         if (!permissionAPI.doesUserHavePermission(contentlet1, PermissionAPI.PERMISSION_READ, user,
                 respectFrontendRoles)) {
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot read Contentlet: " + (contentlet1 != null ? contentlet1.getInode()
-                    : UNKNOWN));
+                    : "Unknown"));
         }
         if (!permissionAPI.doesUserHavePermission(contentlet2, PermissionAPI.PERMISSION_READ, user,
                 respectFrontendRoles)) {
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot read Contentlet: " + (contentlet2 != null ? contentlet1.getInode()
-                    : UNKNOWN));
+                    : "Unknown"));
         }
         if (contentlet1.getInode().equalsIgnoreCase(contentlet2.getInode())) {
             return true;
@@ -6561,7 +6565,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void throwSecurityException(final Contentlet contentlet,
             final User user) throws DotSecurityException {
 
-        final String userName = (user != null ? user.getUserId() : UNKNOWN);
+        final String userName = (user != null ? user.getUserId() : "Unknown");
         final String message = UtilMethods.isSet(contentlet.getIdentifier()) ?
                 "User: " + userName + " doesn't have write permissions to Contentlet: "
                         + contentlet.getIdentifier() :
@@ -6858,9 +6862,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user,
                 respectFrontendRoles)) {
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet: " + (contentlet != null ? contentlet.getIdentifier()
-                    : UNKNOWN));
+                    : "Unknown"));
         }
         if (contentlet == null) {
             throw new DotContentletStateException("The contentlet was null");
@@ -6887,9 +6891,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         if (!permissionAPI.doesUserHavePermission(contentlets.get(0), PermissionAPI.PERMISSION_READ,
                 user, respectFrontendRoles)) {
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot read Contentlet: " + (identifier != null ? identifier.getId()
-                    : UNKNOWN)
+                    : "Unknown")
                     + ".So Unable to View Versions");
         }
         return contentlets;
@@ -6944,7 +6948,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!permissionAPI.doesUserHavePermission(allVersions.get(0), PermissionAPI.PERMISSION_READ,
                 user, respectFrontendRoles)) {
             throw new DotSecurityException(
-                    "User: " + (identifier != null ? identifier.getId() : UNKNOWN)
+                    "User: " + (identifier != null ? identifier.getId() : "Unknown")
                             + " cannot read Contentlet So Unable to View Versions");
         }
         return allVersions;
@@ -6962,7 +6966,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!permissionAPI.doesUserHavePermission(contentlets.get(0), PermissionAPI.PERMISSION_READ,
                 user, respectFrontendRoles)) {
             throw new DotSecurityException(
-                    "User: " + (identifier != null ? identifier.getId() : UNKNOWN)
+                    "User: " + (identifier != null ? identifier.getId() : "Unknown")
                             + " cannot read Contentlet So Unable to View Versions");
         }
         return contentlets;
@@ -6978,9 +6982,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
                 respectFrontendRoles)) {
-            Logger.error(this.getClass(), "User: " + (user != null ? user.getUserId() : UNKNOWN)
+            Logger.error(this.getClass(), "User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot read Contentlet: " + contentlet.getIdentifier());
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot read Contentlet: " + contentlet.getIdentifier());
         }
 
@@ -9789,15 +9793,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     && !APILocator.getPermissionAPI().doesUserHavePermission(
                         contentlet.getContentType(), PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
 
-                throw new DotLockException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+                throw new DotLockException("User: " + (user != null ? user.getUserId() : "Unknown")
                         + " does not have Edit Permissions to lock content: " + (contentlet != null
-                        ? contentlet.getIdentifier() : UNKNOWN));
+                        ? contentlet.getIdentifier() : "Unknown"));
             }
         } catch (DotDataException dde) {
 
-            throw new DotLockException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotLockException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " does not have Edit Permissions to lock content: " + (contentlet != null
-                    ? contentlet.getIdentifier() : UNKNOWN));
+                    ? contentlet.getIdentifier() : "Unknown"));
         }
 
         Optional<String> lockedBy = Optional.empty();
@@ -9822,9 +9826,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (!APILocator.getPermissionAPI()
                 .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user)) {
-            throw new DotLockException("User: " + (user != null ? user.getUserId() : UNKNOWN)
+            throw new DotLockException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " does not have Edit Permissions on the content: " + (contentlet != null
-                    ? contentlet.getIdentifier() : UNKNOWN));
+                    ? contentlet.getIdentifier() : "Unknown"));
         }
 
         return findContentRelationships(contentlet);
@@ -9955,11 +9959,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void logContentletActivity(final Contentlet contentlet,
             final String description, final User user) {
 
-        String contentPushPublishDate = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
-        String contentPushExpireDate = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
-        contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate) ? contentPushPublishDate : "N/A";
-        contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate) ? contentPushExpireDate : "N/A";
-        logInfo(description,contentlet,user,contentPushPublishDate,contentPushExpireDate);
+        String contentPushPublishDate = contentlet
+                .getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
+        String contentPushPublishTime = contentlet
+                .getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME);
+        String contentPushExpireDate = contentlet
+                .getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
+        String contentPushExpireTime = contentlet
+                .getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME);
+        contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate) ? contentPushPublishDate
+                : "N/A";
+        contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime) ? contentPushPublishTime
+                : "N/A";
+        contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate) ? contentPushExpireDate
+                : "N/A";
+        contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime) ? contentPushExpireTime
+                : "N/A";
+        ActivityLogger.logInfo(getClass(), description,
+                "StartDate: "
+                        + contentPushPublishDate
+                        + "; "
+                        + "EndDate: "
+                        + contentPushExpireDate
+                        + "; User:"
+                        + (user != null ? user.getUserId() : "Unknown")
+                        + "; ContentIdentifier: "
+                        + (contentlet != null ? contentlet.getIdentifier()
+                        : "Unknown"), contentlet.getHost());
     }
 
     /**
@@ -10187,9 +10213,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         ActivityLogger.logInfo(getClass(), action,
                 "StartDate: " + contentPushPublishDate + "; "
                         + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : UNKNOWN)
+                        ? user.getUserId() : "Unknown")
                         + "; ContentIdentifier: " + (contentlet != null
-                        ? contentlet.getIdentifier() : UNKNOWN), contentlet != null ? contentlet.getHost() : UNKNOWN);
+                        ? contentlet.getIdentifier() : "Unknown"), contentlet != null ? contentlet.getHost() : "Unknown");
     }
 
 }
