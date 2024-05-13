@@ -13,8 +13,8 @@ import { COMPONENTS } from '../utils';
   selector: 'dotcms-pages',
   standalone: true,
   imports: [DotcmsLayoutComponent, HeaderComponent, NavigationComponent, FooterComponent],
-  templateUrl: './dotcms-pages.component.html',
-  styleUrl: './dotcms-pages.component.css'
+  templateUrl: './pages.component.html',
+  styleUrl: './pages.component.css'
 })
 export class DotCMSPagesComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
