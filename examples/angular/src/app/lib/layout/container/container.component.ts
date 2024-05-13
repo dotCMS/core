@@ -52,7 +52,7 @@ export class ContainerComponent implements OnInit {
   protected componentsMap!: Record<string, ComponentItem>;
 
   ngOnInit() {
-    const { containers } = this.route.snapshot.data['context'].page;
+    const { containers } = this.route.snapshot.data['context'].pageAsset;
     const { contentlets } = getContainersData(containers, this.container);
     this.componentsMap = this.dotCMSPageService.componentMap;
     this.contentlets = contentlets;

@@ -1,16 +1,18 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [
-    CommonModule,
-  ],
-  template: `<header>header works!</header>`,
+  template: `
+    <header class="flex items-center justify-between p-4 bg-purple-500">
+      <div class="flex items-center">
+        <h2 class="text-3xl font-bold text-white">
+          <a routerLink="/">TravelLux</a>
+        </h2>
+      </div>
+      <ng-content></ng-content>
+    </header>
+  `,
   styleUrl: './header.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HeaderComponent {
-  @Input() navItems: any[] = [];
-}
+export class HeaderComponent {}

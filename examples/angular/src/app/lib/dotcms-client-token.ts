@@ -9,7 +9,7 @@ export const DOTCMS_CLIENT_TOKEN = new InjectionToken<any>('DOTCMS_CLIENT');
  * @param {*} config
  * @return {*} 
  */
-export const dotcmsClientProvider = (config: any) => {
+export const provideDotCMSClient = (config: any) => {
   return {
     provide: DOTCMS_CLIENT_TOKEN,
     useValue: {

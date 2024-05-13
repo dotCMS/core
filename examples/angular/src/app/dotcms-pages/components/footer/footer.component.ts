@@ -4,10 +4,8 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 @Component({
   selector: 'app-footer',
   standalone: true,
-  imports: [
-    CommonModule,
-  ],
-  template: `<footer>footer works!</footer>`,
+  imports: [],
+  template: `<footer class="p-4 text-white bg-purple-500">Footer</footer>`,
   styleUrl: './footer.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

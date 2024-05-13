@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { DotCMSContentlet } from '../../models';
 
 /**
  * This is part of the React SDK. We should let user have their own callback component
@@ -10,10 +11,10 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
   imports: [
     CommonModule,
   ],
-  template: `<h4>No Component</h4>`,
+  template: `<div data-testid="no-component">No Component for {{contentlet.contentType}}</div>`,
   styleUrl: './no-component.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NoComponentComponent {
-  @Input() contentlet: any;
+  @Input() contentlet!: DotCMSContentlet;
 }

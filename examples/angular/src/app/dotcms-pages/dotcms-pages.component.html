@@ -1,13 +1,16 @@
-@if (context()?.page; as page) {
+@if (context()?.pageAsset; as pageAsset) {
+<div class="flex flex-col min-h-screen gap-6 bg-lime-50">
 
-
-    @if(page.layout.header) {
-        <app-header [navItems]="context()?.nav.children" />
+    @if(pageAsset.layout.header) {
+        <app-header>
+            <app-navigation [items]="context()?.nav.children" />
+        </app-header>
     }
-
-    <dotcms-layout [entity]="page" [components]="components()" />
-
-    @if(page.layout.footer) {
+    
+    <dotcms-layout [entity]="pageAsset" [components]="components()" />
+    
+    @if(pageAsset.layout.footer) {
         <app-footer />
     }
+</div>
 }

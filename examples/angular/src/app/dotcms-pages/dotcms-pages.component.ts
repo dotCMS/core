@@ -1,16 +1,18 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { DotcmsLayoutComponent } from '../lib/layout/dotcms-layout/dotcms-layout.component';
+
 import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
+import { NavigationComponent } from './components/navigation/navigation.component';
 
-import { DotcmsLayoutComponent } from '../lib/layout/dotcms-layout/dotcms-layout.component';
 import { COMPONENTS } from '../utils';
 
 @Component({
   selector: 'dotcms-pages',
   standalone: true,
-  imports: [DotcmsLayoutComponent, HeaderComponent, FooterComponent],
+  imports: [DotcmsLayoutComponent, HeaderComponent, NavigationComponent, FooterComponent],
   templateUrl: './dotcms-pages.component.html',
   styleUrl: './dotcms-pages.component.css'
 })
@@ -20,7 +22,11 @@ export class DotCMSPagesComponent implements OnInit {
   protected readonly components = signal<any>(COMPONENTS);
 
   ngOnInit() {
-    this.context.set(this.route.snapshot.data['context']);
-    console.log(this.context());
+    
+    // Get the context data from the route
+    this.route.data.subscribe(data => {
+      this.context.set(data['context']);
+    });
+
   }
 }

@@ -40,7 +40,7 @@ export const DotCMSPageResolver: ResolveFn<Observable<{
 
     const pageRequest  = client.page.get(pageProps).then(({entity }: { entity: DotCMSPageAsset}) => entity);
     const navRequest = client.nav.get(navProps).then(({ entity }: { entity: DotCMSNavigationItem}) => entity);
-    
+
     return from(Promise.all([ pageRequest, navRequest])).pipe(map(([pageAsset, nav]) => ({ pageAsset, nav }) ))
 };
   
