@@ -2,7 +2,6 @@ package com.dotmarketing.util;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,16 +11,21 @@ import java.util.regex.Pattern;
 
 public class URLUtils {
 
+	private URLUtils() {
+		throw new IllegalStateException("Utility class");
+	}
+
 	public static class ParsedURL {
 		
 		private String protocol;
 		private String host;
 		private int port;
-		private String URI;
+		private String uri;
 		private String path;
 		private String resource;
 		private String queryString;
 		private Map<String, String[]> parameters;
+		private String fragment;
 		
 		public String getProtocol() {
 			return protocol;
@@ -66,15 +70,21 @@ public class URLUtils {
 			this.parameters = parameters;
 		}
 		public void setURI(String uRI) {
-			URI = uRI;
+			uri = uRI;
 		}
 		public String getURI() {
-			return URI;
+			return uri;
 		}
-
+		public String getFragment() {
+			return fragment;
+		}
+		public void setFragment(String fragment) {
+			this.fragment = fragment;
+		}
 	}	
 
-	private static Pattern regexPattern = Pattern.compile("((\\w+)://([^/\\p{Cntrl}:]+)(?::([0-9]+))?)?(((?:/[^/\\p{Cntrl}]+)*)(?:/([^/\\p{Cntrl}?]+)?))?\\??(.*)?");
+	private static final Pattern regexPattern = Pattern.compile(
+			"((\\w+)://([^/\\p{Cntrl}:]+)(?::(\\d+))?)?(((?:/[^/\\p{Cntrl}]+)*)(?:/([^/\\p{Cntrl}?#]+)?))?\\??([^#]*)?(?:#(.*))?");
 	
 	public static ParsedURL parseURL(String url) throws IllegalArgumentException {
 		
@@ -91,6 +101,7 @@ public class URLUtils {
 		parsedUrl.setPath(matcher.group(6));
 		parsedUrl.setResource(matcher.group(7));
 		parsedUrl.setQueryString(matcher.group(8));
+		parsedUrl.setFragment(matcher.group(9));
 
 		Map<String, List<String>> parameters = new HashMap<>();
 		String[] queryStringSplitted = parsedUrl.queryString.split("&");
@@ -124,9 +135,5 @@ public class URLUtils {
 		parsedUrl.setParameters(parametersToRet);
 		
 		return parsedUrl;
-	}
-
-	public static String addSlashIfNeeded (final String uri) {
-		return (uri.length() > 0 && '/' == uri.charAt(0)) ? uri : ("/" + uri);
 	}
 }
