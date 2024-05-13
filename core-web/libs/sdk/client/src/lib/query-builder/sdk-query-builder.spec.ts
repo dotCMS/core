@@ -74,34 +74,37 @@ describe('QueryBuilder', () => {
     });
 
     it('should return a query with all possible combinations', () => {
-        const query = queryBuilder
-            .field('contentType')
-            .term('Blog')
-            .or()
-            .term('Activity')
+        const blogOrActivity = queryBuilder.field('contentType').term('Blog').or().term('Activity');
+
+        const customIdSiteOrCoolSite = blogOrActivity
             .field('conhost')
             .term('48190c8c-42c4-46af-8d1a-0cd5db894797')
             .or()
-            .term('cool-site')
+            .term('cool-site');
+
+        const englishAndSpanish = customIdSiteOrCoolSite
             .field('languageId')
             .term('1')
             .and()
-            .term('2')
-            .field('deleted')
-            .term('false')
-            .field('working')
-            .term('true')
-            .field('variant')
-            .term('default')
+            .term('2');
+
+        const notDeleted = englishAndSpanish.field('deleted').term('false');
+
+        const currentlyWorking = notDeleted.field('working').term('true');
+
+        const defaultVariant = currentlyWorking.field('variant').term('default');
+
+        const snowboardOutsideSwissAlps = defaultVariant
             .field('title')
             .term('Snowboard')
             .excludeField('summary')
-            .term('Swiss Alps')
-            .field('authors')
-            .term('John Doe')
-            .not()
-            .term('Jane Doe')
-            .build();
+            .term('Swiss Alps');
+
+        const writtenByJohnDoe = snowboardOutsideSwissAlps.field('authors').term('John Doe');
+
+        const withoutJaneDoeHelp = writtenByJohnDoe.not().term('Jane Doe');
+
+        const query = withoutJaneDoeHelp.build();
 
         expect(query).toBe(
             '+contentType:Blog OR Activity +conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 OR cool-site +languageId:1 AND 2 +deleted:false +working:true +variant:default +title:Snowboard -summary:"Swiss Alps" +authors:"John Doe" NOT "Jane Doe"'
