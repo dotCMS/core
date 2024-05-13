@@ -68,7 +68,7 @@ runs:
     - name: 'Maven settings.xml setup'
       uses: whelk-io/maven-settings-xml-action@v22
       with:
-        servers: '[{ "id": "dotcms-libs", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }, { "id": "dotcms-libs-snapshot", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }]'
+        servers: '[{ "id": "dotcms-libs-local", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }, { "id": "dotcms-libs-snapshot-local", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }]'
 
     # Artifact deployment in the Artifactory excluding 'dotcms-integration' and 'dotcms-postman'
     - name: 'Deploy Artifacts'

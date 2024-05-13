@@ -13,6 +13,7 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LanguageVariableDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -25,6 +26,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.SystemProperties;
@@ -388,6 +390,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
     @Test
     public void findLanguageVariablesThenUnpublishTest() throws DotDataException, DotSecurityException {
 
+        removeAll();
         final LanguageCache languageCache = CacheLocator.getLanguageCache();
         languageCache.clearVariables();
         final List<LanguageVariable> vars = languageCache.getVars(1);
@@ -519,5 +522,34 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
      */
     boolean containsIdentifier(final List<Contentlet> variables, final String identifier) {
         return variables.stream().anyMatch(variable -> variable.getIdentifier().equals(identifier));
+    }
+
+    /**
+     * Method to cleanup the language variables
+     */
+    public static void removeAll() {
+        final User user = APILocator.systemUser();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+        final Map<Language, List<LanguageVariable>> allVariables = languageVariableAPI.findAllVariables();
+        allVariables.entrySet().stream().flatMap(entry -> entry.getValue().stream())
+                .forEach(languageVariable -> {
+                    try {
+                        final List<Contentlet> allVersions = contentletAPI.findAllVersions(new Identifier(languageVariable.identifier()), user, false);
+                        allVersions.forEach(cont -> {
+                            try {
+                                contentletAPI.unpublish(cont, user, false);
+                                contentletAPI.archive(cont, user, false);
+                                contentletAPI.delete(cont, user, false);
+                            } catch (DotDataException | DotSecurityException e) {
+                                Logger.error(LanguageVariableAPITest.class, e.getMessage(), e);
+                            }
+                        });
+                    } catch (DotDataException | DotSecurityException e) {
+                        Logger.error(LanguageVariableAPITest.class, e.getMessage(), e);
+                    }
+                });
+        final LanguageCache languageCache = CacheLocator.getLanguageCache();
+        languageCache.clearVariables();
     }
 }

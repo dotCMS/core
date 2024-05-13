@@ -24,6 +24,7 @@ public class LanguageCacheImpl extends LanguageCache {
 	static final String DEFAULT_LANGUAGE = "DEFAULT_LANGUAGE";
 
 	private static final String  LANG_VARIABLES_CACHE = "LanguageVariablesCache";
+	public static final String LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID = "Language Variables for language with id: ";
 
 	public static Language LANG_404 = new Language(-1,
 			LANG_404_STR, LANG_404_STR, LANG_404_STR,
@@ -263,7 +264,7 @@ public class LanguageCacheImpl extends LanguageCache {
 		final ConcurrentMap<String,List<LanguageVariable>> langVarCache = (ConcurrentMap<String,List<LanguageVariable>>) perLangCache;
 		final String languageIdStr = String.valueOf(languageId);
 		langVarCache.remove(languageIdStr);
-		Logger.debug(this, "Language Variables for language with id: " + languageId + " have been removed from cache.");
+		Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " have been removed from cache.");
 	}
 
 	/**
@@ -292,7 +293,7 @@ public class LanguageCacheImpl extends LanguageCache {
 			final Object perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
 			if (perLangCache == null) {
 				result = fetch.call();
-				Logger.debug(this, "Language Variables for language with id: " + languageId + " has been fetched from the database.");
+				Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " has been fetched from the database.");
 				putVars(languageId, result);
 			} else {
 				@SuppressWarnings("unchecked") final ConcurrentMap<String, List<LanguageVariable>> langVarCache = (ConcurrentMap<String, List<LanguageVariable>>) perLangCache;
@@ -301,7 +302,7 @@ public class LanguageCacheImpl extends LanguageCache {
 					result = variables;
 				} else {
 					result = fetch.call();
-					Logger.debug(this, "Language Variables for language with id: " + languageId + " has been fetched from the database.");
+					Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " has been fetched from the database.");
 					putVars(languageId, result);
 				}
 			}

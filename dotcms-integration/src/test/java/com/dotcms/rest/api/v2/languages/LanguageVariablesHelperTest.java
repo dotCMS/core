@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v2.languages;
 
 
+import static com.dotcms.languagevariable.business.LanguageVariableAPITest.removeAll;
+
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LanguageVariableDataGen;
 import com.dotcms.languagevariable.business.LanguageVariable;
@@ -50,7 +52,7 @@ public class LanguageVariablesHelperTest {
 
         final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
 
-        cleanup();
+        removeAll();
         Assert.assertEquals(0, languageVariableAPI.countVariablesByKey());
 
         final List<Language> languages = List.of(
@@ -62,11 +64,15 @@ public class LanguageVariablesHelperTest {
         LanguageVariableDataGen languageVariableDataGen = new LanguageVariableDataGen();
         //Contentlets are created and published
         for (Language language : languages) {
-            languageVariableDataGen.languageId(language.getId()).key("key1").value("value1").nextPersistedAndPublish();
-            languageVariableDataGen.languageId(language.getId()).key("key2").value("value2").nextPersistedAndPublish();
-            languageVariableDataGen.languageId(language.getId()).key("key3").value("value3").nextPersistedAndPublish();
+            languageVariableDataGen.languageId(language.getId()).key("key1").value("value1")
+                    .nextPersistedAndPublish();
+            languageVariableDataGen.languageId(language.getId()).key("key2").value("value2")
+                    .nextPersistedAndPublish();
+            languageVariableDataGen.languageId(language.getId()).key("key3").value("value3")
+                    .nextPersistedAndPublish();
         }
-        Assert.assertEquals("Count should match the number of unique keys ",3, languageVariableAPI.countVariablesByKey());
+        Assert.assertEquals("Count should match the number of unique keys ", 3,
+                languageVariableAPI.countVariablesByKey());
         final List<String> languageTags = languages.stream().map(Language::getIsoCode)
                 .collect(Collectors.toList());
 
@@ -74,14 +80,14 @@ public class LanguageVariablesHelperTest {
         final LanguageVariablePageView view = helper.view(
                 new PaginationContext(null, 0, 10, null, null), false);
 
-        Assert.assertEquals("Total languages does not match ", view.total(),  3);
+        Assert.assertEquals("Total languages does not match ",  3, view.total());
         final LinkedHashMap<String, Map<String, LanguageVariableView>> variables = view.variables();
         //Validate order of the keys
 
         final AtomicInteger count = new AtomicInteger(1);
         variables.forEach((key, langVarMap) -> {
             //Validate the order of the keys we have to have key1, key2, key3
-            Assert.assertEquals("key"+ count.getAndIncrement(), key);
+            Assert.assertEquals("key" + count.getAndIncrement(), key);
             //At least we should have a value for each language
             Assert.assertEquals("The inner map has to have at least 3", 3, langVarMap.size());
             //Each one of those keys should have a value for each language
@@ -90,33 +96,6 @@ public class LanguageVariablesHelperTest {
             });
         });
 
-    }
-
-    /**
-     * cleanup the language variables
-     */
-    void cleanup() {
-        final User user = APILocator.systemUser();
-        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-        final Map<Language, List<LanguageVariable>> allVariables = languageVariableAPI.findAllVariables();
-        allVariables.entrySet().stream().flatMap(entry -> entry.getValue().stream())
-        .forEach(languageVariable -> {
-            try {
-                final List<Contentlet> allVersions = contentletAPI.findAllVersions(new Identifier(languageVariable.identifier()), user, false);
-                allVersions.forEach(cont -> {
-                    try {
-                        contentletAPI.unpublish(cont, user, false);
-                        contentletAPI.archive(cont, user, false);
-                        contentletAPI.delete(cont, user, false);
-                    } catch (DotDataException | DotSecurityException e) {
-                        Logger.error(this, e.getMessage(), e);
-                    }
-                });
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.error(this, e.getMessage(), e);
-            }
-        });
     }
 
 }
