@@ -21,7 +21,7 @@ import { DotCMSContentlet } from '../../../lib/models';
       </h2>
       <p class="mb-4 text-xl text-shadow">{{ contentlet['caption'] }}</p>
       <a
-        class="p-4 text-xl transition duration-300 bg-purple-500 rounded hover:bg-purple-600"
+        class="p-4 text-xl transition duration-300 bg-red-400 rounded hover:bg-purple-600"
         [routerLink]="contentlet['link']"
       >
         {{ contentlet['buttonText'] }}

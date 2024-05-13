@@ -25,7 +25,7 @@ import { RouterLink } from '@angular/router';
     <div class="px-6 pt-4 pb-2">
       <a
         [routerLink]="'/activities/' + contentlet.urlTitle || '#'"
-        class="inline-block px-4 py-2 font-bold text-white bg-purple-500 rounded-full hover:bg-purple-700"
+        class="inline-block px-4 py-2 font-bold text-white bg-red-400 rounded-full hover:bg-purple-700"
       >
         Link to detail →
       </a>

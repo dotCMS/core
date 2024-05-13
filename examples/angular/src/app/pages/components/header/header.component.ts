@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   selector: 'app-header',
   standalone: true,
   template: `
-    <header class="flex items-center justify-between p-4 bg-purple-500">
+    <header class="flex items-center justify-between p-4 bg-red-400">
       <div class="flex items-center">
         <h2 class="text-3xl font-bold text-white">
           <a routerLink="/">TravelLux</a>
