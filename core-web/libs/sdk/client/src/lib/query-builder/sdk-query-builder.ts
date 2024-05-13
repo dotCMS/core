@@ -1,17 +1,13 @@
-import { buildField, santizeQuery } from './utils';
+import { buildField } from './utils';
 
 export class QueryBuilder {
-    protected _query = '';
+    #query = '';
 
     field(field: string) {
-        return buildField(this._query, field);
+        return buildField(this.#query, field);
     }
 
     excludeField(field: string) {
-        return buildField(this._query, field, true);
-    }
-
-    build() {
-        return santizeQuery(this._query);
+        return buildField(this.#query, field, true);
     }
 }
