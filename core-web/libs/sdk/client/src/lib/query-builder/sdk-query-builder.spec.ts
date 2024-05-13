@@ -46,6 +46,17 @@ describe('QueryBuilder', () => {
         expect(queryForBlogsAndArticles).toBe('+contentType:Blog AND Article');
     });
 
+    it("should return a query with a 'NOT' operand", () => {
+        const queryForBlogsNotArticles = queryBuilder
+            .field('summary')
+            .term('Skiing trip')
+            .not()
+            .term('Swiss Alps')
+            .build();
+
+        expect(queryForBlogsNotArticles).toBe('+summary:"Skiing trip" NOT "Swiss Alps"');
+    });
+
     it('should return a query with an exclusion field', () => {
         const queryForBlogsNotArticles = queryBuilder
             .field('contentType')
@@ -84,12 +95,16 @@ describe('QueryBuilder', () => {
             .term('default')
             .field('title')
             .term('Snowboard')
-            .excludeField('title')
-            .term('Skiing')
+            .excludeField('summary')
+            .term('Swiss Alps')
+            .field('authors')
+            .term('John Doe')
+            .not()
+            .term('Jane Doe')
             .build();
 
         expect(query).toBe(
-            '+contentType:Blog OR Activity +conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 OR cool-site +languageId:1 AND 2 +deleted:false +working:true +variant:default +title:Snowboard -title:Skiing'
+            '+contentType:Blog OR Activity +conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 OR cool-site +languageId:1 AND 2 +deleted:false +working:true +variant:default +title:Snowboard -summary:"Swiss Alps" +authors:"John Doe" NOT "Jane Doe"'
         );
     });
 });

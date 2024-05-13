@@ -1,4 +1,4 @@
-import { buildField, buildOperand, santizeQuery } from '..';
+import { OPERAND, buildField, buildNotOperand, buildOperand, santizeQuery } from '..';
 
 // After a Term we can start building another Field or concat an operand
 export class Term {
@@ -17,11 +17,15 @@ export class Term {
     }
 
     or() {
-        return buildOperand(this.#query, 'OR');
+        return buildOperand(this.#query, OPERAND.OR);
     }
 
     and() {
-        return buildOperand(this.#query, 'AND');
+        return buildOperand(this.#query, OPERAND.AND);
+    }
+
+    not() {
+        return buildNotOperand(this.#query);
     }
 
     build() {

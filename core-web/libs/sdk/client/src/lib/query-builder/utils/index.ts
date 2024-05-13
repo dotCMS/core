@@ -1,6 +1,13 @@
 import { Field } from './lucene-syntax/Field';
+import { NotOperand } from './lucene-syntax/NotOperand';
 import { Operand } from './lucene-syntax/Operand';
 import { Term } from './lucene-syntax/Term';
+
+export enum OPERAND {
+    OR = 'OR',
+    AND = 'AND',
+    NOT = 'NOT'
+}
 
 export function santizeQuery(str: string): string {
     return str.replace(/\s{2,}/g, ' ').trim();
@@ -22,8 +29,14 @@ export function buildField(query: string, field: string, exclude = false): Field
     return new Field(newQuery);
 }
 
-export function buildOperand(query: string, operand: string): Operand {
+export function buildOperand(query: string, operand: OPERAND): Operand {
     const newQuery = query + ` ${operand} `;
 
     return new Operand(newQuery);
+}
+
+export function buildNotOperand(query: string): NotOperand {
+    const newQuery = query + ` ${OPERAND.NOT} `;
+
+    return new NotOperand(newQuery);
 }
