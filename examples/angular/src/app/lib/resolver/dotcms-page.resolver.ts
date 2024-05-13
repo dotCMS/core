@@ -1,13 +1,25 @@
 import { inject } from "@angular/core";
 import { ActivatedRouteSnapshot, ResolveFn, RouterStateSnapshot } from "@angular/router";
-import { from, map } from "rxjs";
+import { Observable, from, map } from "rxjs";
 import { DOTCMS_CLIENT_TOKEN } from "../dotcms-client-token";
 
-export const DotCMSPageResolver: ResolveFn<any> = (
+import { DotCMSNavigationItem, DotCMSPageAsset } from "../models";
+
+/**
+ * This resolver is used to fetch the page and navigation data from dotCMS.
+ *
+ * @param {ActivatedRouteSnapshot} route
+ * @param {RouterStateSnapshot} _state
+ * @return {*} 
+ */
+export const DotCMSPageResolver: ResolveFn<Observable<{
+  pageAsset: DotCMSPageAsset,
+  nav: DotCMSNavigationItem
+}>> = (
     route: ActivatedRouteSnapshot,
-    _state: RouterStateSnapshot,
   ) => {
-    const client = inject(DOTCMS_CLIENT_TOKEN);
+    // Get the Service
+    const client = inject(DOTCMS_CLIENT_TOKEN); 
 
     const url = route.url.map(segment => segment.path).join('/');
     const queryParams = route.queryParams;
@@ -26,9 +38,9 @@ export const DotCMSPageResolver: ResolveFn<any> = (
       languageId: queryParams['language_id'],
     }
 
-    const pageRequest = client.page.get(pageProps).then((resp: any) => resp.entity);
-    const navRequest = client.nav.get(navProps).then((resp: any) => resp.entity);
+    const pageRequest  = client.page.get(pageProps).then(({entity }: { entity: DotCMSPageAsset}) => entity);
+    const navRequest = client.nav.get(navProps).then(({ entity }: { entity: DotCMSNavigationItem}) => entity);
     
-    return from(Promise.all([ pageRequest, navRequest])).pipe(map(([page, nav]) => ({ page, nav }) ))
-  };
+    return from(Promise.all([ pageRequest, navRequest])).pipe(map(([pageAsset, nav]) => ({ pageAsset, nav }) ))
+};
   

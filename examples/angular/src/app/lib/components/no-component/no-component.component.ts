@@ -1,6 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
+/**
+ * This is part of the React SDK. We should let user have their own callback component
+ */
 @Component({
   selector: 'app-no-component',
   standalone: true,

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input, OnInit } from '
 
 import { ContainerComponent } from '../container/container.component';
 import { getPositionStyleClasses } from '../../utils';
+import { DotPageAssetLayoutColumn } from '../../models';
 
 @Component({
   selector: 'dotcms-column',
@@ -16,7 +17,7 @@ import { getPositionStyleClasses } from '../../utils';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ColumnComponent implements OnInit {
-  @Input() column: any;
+  @Input() column!: DotPageAssetLayoutColumn;
   @HostBinding('class') containerClasses: string = '';
   
     ngOnInit() {

@@ -15,6 +15,7 @@ import {
   DotcmsPageService,
 } from '../../services/dotcms-page/dotcms-page.service';
 import { NoComponentComponent } from '../../components/no-component/no-component.component';
+import { DotCMSContentlet } from '../../models';
 
 @Component({
   selector: 'dotcms-container',
@@ -26,7 +27,7 @@ import { NoComponentComponent } from '../../components/no-component/no-component
             <div data-testid="dot-contentlet" data-dot-object="contentlet">
             <ng-container
                 *ngComponentOutlet="
-                (componentsMap[contentlet?.contentType]?.component | async) ||
+                (componentsMap[contentlet.contentType]?.component | async) ||
                     NoComponentComponent;
                 inputs: { contentlet }
                 "
@@ -47,7 +48,7 @@ export class ContainerComponent implements OnInit {
   private readonly dotCMSPageService: DotcmsPageService = inject(DotcmsPageService);
   protected readonly NoComponentComponent = NoComponentComponent;
 
-  protected contentlets: any[] = [];
+  protected contentlets: DotCMSContentlet[] = [];
   protected componentsMap!: Record<string, ComponentItem>;
 
   ngOnInit() {

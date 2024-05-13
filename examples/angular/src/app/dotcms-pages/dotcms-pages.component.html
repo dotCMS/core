@@ -1,0 +1,13 @@
+@if (context()?.page; as page) {
+
+
+    @if(page.layout.header) {
+        <app-header [navItems]="context()?.nav.children" />
+    }
+
+    <dotcms-layout [entity]="page" [components]="components()" />
+
+    @if(page.layout.footer) {
+        <app-footer />
+    }
+}

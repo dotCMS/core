@@ -15,5 +15,6 @@ const DOTCMS_CLIENT_CONFIG = {
 }
 
 export const appConfig: ApplicationConfig = {
+  // TODO: provideDotCMSClient
   providers: [provideRouter(routes), dotcmsClientProvider(DOTCMS_CLIENT_CONFIG)]
 };

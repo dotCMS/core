@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { ColumnComponent } from '../column/column.component';
+import { DotPageAssetLayoutRow } from '../../models';
 
 @Component({
   selector: 'dotcms-row',
@@ -13,5 +14,5 @@ import { ColumnComponent } from '../column/column.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RowComponent {
-  @Input() row: any;
+  @Input() row!: DotPageAssetLayoutRow;
 }
