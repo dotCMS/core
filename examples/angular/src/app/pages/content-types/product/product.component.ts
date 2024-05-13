@@ -14,6 +14,13 @@ import { RouterLink } from '@angular/router';
   imports: [RouterLink],
   template: `        <div class="overflow-hidden bg-white rounded shadow-lg">
   <div class="p-4">
+  <img
+                    class="w-full"
+                    [src]="contentlet.image + '?language_id=' + contentlet.languageId"
+                    width="100"
+                    height="100"
+                    alt="Product Image"
+                />
   </div>
   <div class="px-6 py-4 bg-slate-100">
       <div class="mb-2 text-xl font-bold">{{contentlet.title}}</div>

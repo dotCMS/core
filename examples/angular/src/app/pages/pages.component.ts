@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotcmsLayoutComponent } from '../lib/layout/dotcms-layout/dotcms-layout.component';
@@ -18,13 +19,15 @@ import { COMPONENTS } from '../utils';
 })
 export class DotCMSPagesComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+
   protected readonly context = signal<any>(null);
   protected readonly components = signal<any>(COMPONENTS);
 
   ngOnInit() {
     
     // Get the context data from the route
-    this.route.data.subscribe(data => {
+    this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.context.set(data['context']);
     });
 

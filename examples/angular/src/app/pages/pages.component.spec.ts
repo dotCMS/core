@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DotCMSPagesComponent } from './dotcms-pages.component';
+import { DotCMSPagesComponent } from './pages.component';
 
 describe('DotCMSPagesComponent', () => {
   beforeEach(async () => {

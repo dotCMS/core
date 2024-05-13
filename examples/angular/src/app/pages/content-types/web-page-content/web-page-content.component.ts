@@ -8,7 +8,9 @@ import { DotCMSContentlet } from '../../../lib/models';
   imports: [
     CommonModule,
   ],
-  template: `<p>web-page-content works!</p>`,
+  template: `<h1 class="text-xl font-bold">{{contentlet.title}}</h1>
+  <div [innerHTML]="contentlet.body" ></div>
+  `,
   styleUrl: './web-page-content.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

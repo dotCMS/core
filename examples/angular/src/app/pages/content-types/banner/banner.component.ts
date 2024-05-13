@@ -6,20 +6,28 @@ import { DotCMSContentlet } from '../../../lib/models';
 @Component({
   selector: 'app-banner',
   standalone: true,
-  imports: [
-    RouterLink
-  ],
-  template: `<div class="relative w-full p-4 bg-gray-200 h-96">
-  <div class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white">
-      <h2 class="mb-2 text-6xl font-bold text-shadow">{{contentlet.title}}</h2>
-      <p class="mb-4 text-xl text-shadow">{{contentlet['caption']}}</p>
+  imports: [RouterLink],
+  template: `<div class="relative w-full bg-gray-200 h-96 flex justify-center items-center overflow-hidden">
+    <img
+      class="object-cover w-full"
+      [src]="contentlet.image + '?language_id' + contentlet.languageId"
+      [alt]="contentlet.title"
+    />
+    <div
+      class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white"
+    >
+      <h2 class="mb-2 text-6xl font-bold text-shadow">
+        {{ contentlet.title }}
+      </h2>
+      <p class="mb-4 text-xl text-shadow">{{ contentlet['caption'] }}</p>
       <a
-          class="p-4 text-xl transition duration-300 bg-purple-500 rounded hover:bg-purple-600"
-          [routerLink]="contentlet['link']">
-          {{contentlet['buttonText']}}
+        class="p-4 text-xl transition duration-300 bg-purple-500 rounded hover:bg-purple-600"
+        [routerLink]="contentlet['link']"
+      >
+        {{ contentlet['buttonText'] }}
       </a>
-  </div>
-</div>`,
+    </div>
+  </div>`,
   styleUrl: './banner.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
