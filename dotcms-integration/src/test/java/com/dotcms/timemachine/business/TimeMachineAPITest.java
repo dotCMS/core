@@ -52,7 +52,7 @@ public class TimeMachineAPITest {
 
             final File[] files = tmTestingFolder.listFiles();
             assertEquals(notExpireFolders.size(), files.length);
-            assertTrue(removeAll(Arrays.asList(), notExpireFolders).isEmpty());
+            assertTrue(removeAll(Arrays.asList(files), notExpireFolders).isEmpty());
         } finally {
             Config.setProperty("TIMEMACHINE_PATH", timemachinePathPreviousValue);
         }
@@ -122,7 +122,7 @@ public class TimeMachineAPITest {
 
             final File[] files = tmTestingFolder.listFiles();
             assertEquals(expireFolders.size(), files.length);
-            assertTrue(removeAll(Arrays.asList(), expireFolders).isEmpty());
+            assertTrue(removeAll(Arrays.asList(files), expireFolders).isEmpty());
 
         } finally {
             Config.setProperty("TIMEMACHINE_PATH", timemachinePathPreviousValue);

@@ -224,7 +224,8 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
             try {
                 FileUtil.deleteDir(file.toPath().toString());
             } catch (IOException e) {
-                //ignore
+                final String message = "The Time Machine folder cannot be removed:" + e.getMessage();
+                Logger.error(this.getClass(), message, e);
             }
         }
 
