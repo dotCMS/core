@@ -73,7 +73,7 @@ describe('QueryBuilder', () => {
         );
     });
 
-    it('should return a query with multiple operands and terms', () => {
+    it('should return a query with all possible combinations', () => {
         const query = queryBuilder
             .field('contentType')
             .term('Blog')
