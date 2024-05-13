@@ -1,14 +1,11 @@
 package com.dotcms.ai.viewtool;
 
-<<<<<<< HEAD
 import com.dotcms.ai.api.EmbeddingsAPI;
-=======
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
->>>>>>> 47bca48bb1 ( #27959-embeddings: adding integration tests for EmbeddingsTool and refactoring direct calls from Runner and Resource classes to rather use EmbeddingsAPI calls annotated with trasnaction annotations.)
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
