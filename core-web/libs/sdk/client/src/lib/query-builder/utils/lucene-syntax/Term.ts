@@ -1,4 +1,12 @@
-import { OPERAND, buildField, buildNotOperand, buildOperand, buildRawTerm, santizeQuery } from '..';
+import {
+    OPERAND,
+    buildExcludeField,
+    buildField,
+    buildNotOperand,
+    buildOperand,
+    buildRawTerm,
+    santizeQuery
+} from '..';
 
 // After a Term we can start building another Field or concat an operand
 export class Term {
@@ -9,7 +17,7 @@ export class Term {
     }
 
     excludeField(field: string) {
-        return buildField(this.#query, field, true);
+        return buildExcludeField(this.#query, field);
     }
 
     field(field: string) {

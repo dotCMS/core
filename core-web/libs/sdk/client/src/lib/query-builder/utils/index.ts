@@ -29,8 +29,14 @@ export function buildRawTerm(query: string, raw: string): Term {
     return new Term(santizeQuery(newQuery));
 }
 
-export function buildField(query: string, field: string, exclude = false): Field {
-    const newQuery = query + (exclude ? ` -${field}:` : ` +${field}:`);
+export function buildField(query: string, field: string): Field {
+    const newQuery = query + ` +${field}:`;
+
+    return new Field(newQuery);
+}
+
+export function buildExcludeField(query: string, field: string): Field {
+    const newQuery = query + ` -${field}:`;
 
     return new Field(newQuery);
 }

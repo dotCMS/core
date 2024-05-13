@@ -1,4 +1,4 @@
-import { buildField, buildTerm } from '..';
+import { buildExcludeField, buildField, buildTerm } from '..';
 
 // The operands can only return fields or terms. They can't return other operands.
 export class Operand {
@@ -9,7 +9,7 @@ export class Operand {
     }
 
     excludeField(field: string) {
-        return buildField(this.#query, field, true);
+        return buildExcludeField(this.#query, field);
     }
 
     field(field: string) {
