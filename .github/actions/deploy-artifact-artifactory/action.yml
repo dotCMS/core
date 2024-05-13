@@ -68,11 +68,11 @@ runs:
     - name: 'Maven settings.xml setup'
       uses: whelk-io/maven-settings-xml-action@v22
       with:
-        servers: '[{ "id": "dotcms-libs", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }, { "id": "dotcms-libs-snapshot", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }]'
+        servers: '[{ "id": "dotcms-libs-local", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }, { "id": "dotcms-libs-snapshot-local", "username": "${{ inputs.artifactory-repo-username }}", "password": "${{ inputs.artifactory-repo-password }}" }]'
 
     # Artifact deployment in the Artifactory excluding 'dotcms-integration' and 'dotcms-postman'
     - name: 'Deploy Artifacts'
       run: |
         JVM_TEST_MAVEN_OPTS="-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-        eval ./mvnw -ntp deploy -Dprod=true -DskipTests=true -DskipITs=true $JVM_TEST_MAVEN_OPTS -pl \!:dotcms-integration,\!:dotcms-postman
+        eval ./mvnw -ntp deploy -Dprod=true -DskipTests=true -DskipITs=true $JVM_TEST_MAVEN_OPTS
       shell: bash

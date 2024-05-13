@@ -127,7 +127,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
                     .stream()
                     .filter(e -> contentType.equalsIgnoreCase(e.getKey()))
                     .forEach(e ->
-                            EmbeddingsAPI.impl().generateEmbeddingsforContent(contentlet, e.getValue(), indexName)
+                            EmbeddingsAPI.impl().generateEmbeddingsForContent(contentlet, e.getValue(), indexName)
                     );
         }
     }

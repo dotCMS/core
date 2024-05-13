@@ -22,10 +22,7 @@ import java.util.Optional;
 
 public class VelocityContextFactory {
 
-    private VelocityContextFactory() {
-
-    }
-
+    private VelocityContextFactory() {}
 
     public static Context getMockContext(Contentlet contentlet) {
         return getMockContext(contentlet, APILocator.systemUser());

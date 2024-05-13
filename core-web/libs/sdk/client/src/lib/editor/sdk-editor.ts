@@ -66,3 +66,20 @@ export function destroyEditor() {
         }
     });
 }
+
+/**
+ * Adds a class to empty contentlets.
+ *
+ * @export
+ */
+export function addClassToEmptyContentlets() {
+    const contentlets = document.querySelectorAll('[data-dot-object="contentlet"]');
+
+    contentlets.forEach((contentlet) => {
+        if (contentlet.clientHeight) {
+            return;
+        }
+
+        contentlet.classList.add('empty-contentlet');
+    });
+}

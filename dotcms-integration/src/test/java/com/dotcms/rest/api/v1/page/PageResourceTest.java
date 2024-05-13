@@ -154,6 +154,7 @@ public class PageResourceTest {
         when(webResource.init(nullable(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class), any(Boolean.class), nullable(String.class))).thenReturn(initDataObject);
         when(webResource.init(any(HttpServletRequest.class), any(HttpServletResponse.class), any(Boolean.class))).thenReturn(initDataObject);
         when(webResource.init(false, request, true)).thenReturn(initDataObject);
+        when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
         this.pageResourceWithHelper = new PageResource(PageResourceHelper.getInstance(), webResource, htmlPageAssetRenderedAPI, this.esapi);

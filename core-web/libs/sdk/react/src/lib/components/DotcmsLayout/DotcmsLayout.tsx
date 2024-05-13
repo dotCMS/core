@@ -3,6 +3,7 @@ import { DotCMSPageEditorConfig } from '@dotcms/client';
 import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
 import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
+
 /**
  * `DotcmsPageProps` is a type that defines the properties for the `DotcmsLayout` component.
  * It includes a readonly `entity` property that represents the context for a DotCMS page.

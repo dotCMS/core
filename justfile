@@ -30,7 +30,7 @@ build:
 
 # Builds the project without running tests, skip using docker or creating image
 build-no-docker:
-    ./mvnw -DskipTests clean install -Dxd=true
+    ./mvnw -DskipTests clean install -Ddocker.skip
 
 # Builds the project and runs the default test suite
 build-test:

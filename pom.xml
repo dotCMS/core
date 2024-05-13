@@ -4,13 +4,12 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
         <relativePath>parent</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>dotcms-root</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <description>DotCMS</description>
     <modules>
@@ -23,7 +22,6 @@
         <module>nodejs-parent</module>
         <module>core-web</module>
         <module>osgi-base</module>
-        <module>plugins-core</module>
         <module>build-parent</module>
         <module>dotCMS</module>
         <module>tools/dotcms-cli</module>
@@ -42,16 +40,6 @@
             <id>dotcms-libs</id>
             <url>https://repo.dotcms.com/artifactory/libs-release</url>
         </repository>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
-        </repository>
     </repositories>
     <distributionManagement>
         <site>
@@ -59,17 +47,15 @@
             <url>file://${project.build.directory}/staging</url>
         </site>
         <repository>
-            <id>dotcms-libs</id>
+            <id>dotcms-libs-local</id>
             <name>DotCMS libs Release</name>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
+            <url>https://repo.dotcms.com/artifactory/libs-release-local</url>
         </repository>
-        <!--
         <snapshotRepository>
-            <id>dotcms-libs-snapshot</id>
+            <id>dotcms-libs-snapshot-local</id>
             <name>DotCMS libs Snapshots</name>
             <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
         </snapshotRepository>
-        -->
     </distributionManagement>
 
     <reporting>

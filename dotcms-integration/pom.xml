@@ -4,13 +4,11 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-build-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
     <packaging>jar</packaging>
     <artifactId>dotcms-integration</artifactId>
-
-    <version>1.0.0-SNAPSHOT</version>
     <properties>
         <license.use>true</license.use>
         <servlet.port>8080</servlet.port>
@@ -65,8 +63,8 @@
         <test.db.host>localhost</test.db.host>
         <!--suppress UnresolvedMavenProperty -->
         <test.db.db>dotcms${surefire.forkNumber}</test.db.db>
-        <db.port>9207</db.port>
-        <es.port>5437</es.port>
+        <db.port>5437</db.port>
+        <es.port>9207</es.port>
         <test.db.port>${db.port}</test.db.port>
         <test.db.url>jdbc:postgresql://${test.db.host}:${test.db.port}/${test.db.db}?autosave=conservative</test.db.url>
         <!--suppress UnresolvedMavenProperty -->
@@ -516,28 +514,6 @@
         </profile>
 
     </profiles>
-    <repositories>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>dotcms-libs-snapshot</id>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
+
 
 </project>

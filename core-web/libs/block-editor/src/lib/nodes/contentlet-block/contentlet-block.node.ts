@@ -1,4 +1,4 @@
-import { DOMOutputSpec, ParseRule } from 'prosemirror-model';
+import { DOMOutputSpec, TagParseRule } from 'prosemirror-model';
 
 import { Injector } from '@angular/core';
 
@@ -34,7 +34,7 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
             };
         },
 
-        parseHTML(): ParseRule[] {
+        parseHTML(): readonly TagParseRule[] {
             return [{ tag: 'dotcms-contentlet-block' }];
         },
 

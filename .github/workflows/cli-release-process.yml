@@ -90,7 +90,6 @@ jobs:
       # Creates an auxiliary branch for versioning updates
       - name: 'Set release version'
         id: version
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           RELEASE_VERSION=$RELEASE_VERSION
           HEAD=${{ github.ref_name }}
@@ -99,11 +98,15 @@ jobs:
           AUXILIARY_BRANCH=version-update-${RELEASE_VERSION}-${{ github.run_id }}
           git checkout -b $AUXILIARY_BRANCH
           
-          # Update version in pom.xml
-          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
+          # set version in .mvn/maven.config
+          echo "-Dprod=true" > .mvn/maven.config
+          echo "-Drevision=${RELEASE_VERSION}" >> .mvn/maven.config
+          echo "-Dchangelist=" >> .mvn/maven.config
           
           # Commit version changes
-          git commit --allow-empty -a -m "Update dotCLI version to $RELEASE_VERSION"
+          git add .mvn/maven.config
+          git status
+          git commit --allow-empty -a -m "🏁 Publishing dotCLI release version [${RELEASE_VERSION}]"
           git push origin $AUXILIARY_BRANCH
           
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"

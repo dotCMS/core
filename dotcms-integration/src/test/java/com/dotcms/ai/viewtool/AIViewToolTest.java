@@ -18,7 +18,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -68,7 +67,7 @@ public class AIViewToolTest {
 
     @Before
     public void setup() {
-        user =  new UserDataGen().nextPersisted();
+        user = new UserDataGen().nextPersisted();
         aiViewTool = prepareAIViewTool(mock(ViewContext.class));
     }
 
@@ -79,7 +78,7 @@ public class AIViewToolTest {
      * Then the response should contain a text about Club Atletico Boca Juniors
      */
     @Test
-    public void test_generateText_fromStringPrompt() throws IOException {
+    public void test_generateText_fromStringPrompt() {
         // given
         final String prompt = "Short text about Club Atletico Boca Juniors";
         // when
@@ -95,7 +94,7 @@ public class AIViewToolTest {
      * Then the response should contain a text about Theory of Chaos
      */
     @Test
-    public void test_generateText_fromMapPrompt() throws IOException {
+    public void test_generateText_fromMapPrompt() {
         // given
         final Map<String, Object> prompt = Map.of("prompt", "Short text about Theory of Chaos");
         // when
@@ -182,30 +181,30 @@ public class AIViewToolTest {
 
     private static AppConfig prepareConfig() {
         return new AppConfig(
-                Map.of(
-                        AppKeys.API_URL.key,
-                        Secret.builder()
-                                .withType(Type.STRING)
-                                .withValue(String.format(API_URL, wireMockServer.port()).toCharArray())
-                                .build(),
+            Map.of(
+                AppKeys.API_URL.key,
+                Secret.builder()
+                    .withType(Type.STRING)
+                    .withValue(String.format(API_URL, wireMockServer.port()).toCharArray())
+                    .build(),
 
-                        AppKeys.API_IMAGE_URL.key,
-                        Secret.builder()
-                                .withType(Type.STRING)
-                                .withValue(String.format(API_IMAGE_URL, wireMockServer.port()).toCharArray())
-                                .build(),
+                AppKeys.API_IMAGE_URL.key,
+                Secret.builder()
+                    .withType(Type.STRING)
+                    .withValue(String.format(API_IMAGE_URL, wireMockServer.port()).toCharArray())
+                    .build(),
 
-                        AppKeys.API_KEY.key,
-                        Secret.builder().withType(Type.STRING).withValue(API_KEY.toCharArray()).build(),
+                AppKeys.API_KEY.key,
+                Secret.builder().withType(Type.STRING).withValue(API_KEY.toCharArray()).build(),
 
-                        AppKeys.MODEL.key,
-                        Secret.builder().withType(Type.STRING).withValue(MODEL.toCharArray()).build(),
+                AppKeys.MODEL.key,
+                Secret.builder().withType(Type.STRING).withValue(MODEL.toCharArray()).build(),
 
-                        AppKeys.IMAGE_MODEL.key,
-                        Secret.builder().withType(Type.STRING).withValue(IMAGE_MODEL.toCharArray()).build(),
+                AppKeys.IMAGE_MODEL.key,
+                Secret.builder().withType(Type.STRING).withValue(IMAGE_MODEL.toCharArray()).build(),
 
-                        AppKeys.IMAGE_SIZE.key,
-                        Secret.builder().withType(Type.SELECT).withValue(IMAGE_SIZE.toCharArray()).build()));
+                AppKeys.IMAGE_SIZE.key,
+                Secret.builder().withType(Type.SELECT).withValue(IMAGE_SIZE.toCharArray()).build()));
     }
 
     private static WireMockServer prepareWireMock() {

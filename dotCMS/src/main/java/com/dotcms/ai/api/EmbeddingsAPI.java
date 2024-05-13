@@ -13,8 +13,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * The EmbeddingsAPI interface provides methods for managing and interacting with embeddings.
+ * Embeddings are used to convert text into a form that can be processed by machine learning algorithms.
+ * This interface provides methods for generating, deleting, and searching embeddings.
+ * It also provides methods for managing the embeddings table.
+ *
+ * Implementations of this interface should provide specific functionality for these operations.
+ */
 public interface EmbeddingsAPI {
-
 
     static EmbeddingsAPI impl(Host host) {
         return new EmbeddingsAPIImpl(host);
@@ -40,7 +47,7 @@ public interface EmbeddingsAPI {
      * @param index
      * @return
      */
-    boolean generateEmbeddingsforContent(Contentlet contentlet, List<Field> fields, String index);
+    boolean generateEmbeddingsForContent(Contentlet contentlet, List<Field> fields, String index);
 
     /**
      * this method takes a contentlet and a velocity template, generates a velocity context that includes the
@@ -51,7 +58,7 @@ public interface EmbeddingsAPI {
      * @param indexName
      * @return
      */
-    boolean generateEmbeddingsforContent(@NotNull Contentlet contentlet, String velocityTemplate, String indexName);
+    boolean generateEmbeddingsForContent(@NotNull Contentlet contentlet, String velocityTemplate, String indexName);
 
     /**
      * this method takes a lucene query and
@@ -69,7 +76,6 @@ public interface EmbeddingsAPI {
      * @return
      */
     int deleteEmbedding(EmbeddingsDTO dto);
-
 
     /**
      * This method takes comma or line separated string of content types and optionally fields and returns
@@ -134,12 +140,39 @@ public interface EmbeddingsAPI {
     void initEmbeddingsTable();
 
     /**
-     * Takes a string and returns the embeddings value for the string
+     * this method takes a snippet of content and will try to see if we have already generated embeddings for it.
+     * It checks the cache first, and returns if it finds it there.  Then it checks the db to see if we have already
+     * saved this chunk of content before.  If we have, we reuse those same embeddings rather than making a
+     * remote request $$$ to OpenAI for new Embeddings
      *
      * @param content
-     * @return
+     * @return Tuple(Count of Tokens Input, List of Embeddings Output)
      */
     Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(String content);
 
+    /**
+     * Checks if the embeddings for the given inode, indexName, and extractedText already exist in the database.
+     *
+     * @param inode the inode of the contentlet.
+     * @param indexName the name of the index where the embeddings are stored.
+     * @param extractedText the text that was extracted from the contentlet and used to generate the embeddings.
+     * @return true if the embeddings exist, false otherwise.
+     */
+    boolean embeddingExists(final String inode, final String indexName, final String extractedText);
+
+    /**
+     * Saves the provided embeddings to the database.
+     *
+     * @param embeddings the EmbeddingsDTO object containing the embeddings to be saved.
+     */
+    void saveEmbeddings(final EmbeddingsDTO embeddings);
+
+    /**
+     * Deletes the embeddings from the database that match the provided EmbeddingsDTO.
+     *
+     * @param dto the EmbeddingsDTO object containing the embeddings to be deleted.
+     * @return the number of embeddings deleted from the database.
+     */
+    int deleteEmbeddings(final EmbeddingsDTO dto);
 
 }
