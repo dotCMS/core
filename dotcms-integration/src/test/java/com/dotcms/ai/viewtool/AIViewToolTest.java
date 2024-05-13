@@ -68,7 +68,8 @@ public class AIViewToolTest {
     @Before
     public void setup() {
         user = new UserDataGen().nextPersisted();
-        aiViewTool = prepareAIViewTool(mock(ViewContext.class));
+        aiViewTool = prepareAIViewTool();
+        aiViewTool.init(mock(ViewContext.class));
     }
 
     /**
@@ -165,8 +166,8 @@ public class AIViewToolTest {
         return new File(response.getString("tempFile")).exists();
     }
 
-    private AIViewTool prepareAIViewTool(final ViewContext viewContext) {
-        return new AIViewTool(viewContext) {
+    private AIViewTool prepareAIViewTool() {
+        return new AIViewTool() {
             @Override
             User user() {
                 return user;
