@@ -43,6 +43,7 @@ export interface DotCMSContainer {
     new: boolean;
     acceptTypes: string;
     contentlets: DotCMSContentlet[];
+    parentPermissionable: DotCMSSiteParentPermissionable;
 }
 
 export interface DotCMSContentlet {
@@ -325,6 +326,7 @@ interface DotCMSSiteParentPermissionable {
     permissionType: string;
     inode: string;
     childrenPermissionable?: any;
+    variantId?: string;
 }
 
 interface DotCMSSiteStructure {

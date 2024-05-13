@@ -1,3 +1,5 @@
+import { DotCMSContainer, DotCMSPageAssetContainer } from "../models";
+
 const endClassMap: Record<number, string> = {
   1: 'col-end-1',
   2: 'col-end-2',
@@ -29,7 +31,7 @@ const startClassMap: Record<number, string> = {
   12: 'col-start-12',
 };
 
-export const getContainersData = (containers: any, containerRef: any) => {
+export const getContainersData = (containers: DotCMSPageAssetContainer, containerRef: DotCMSContainer) => {
   const { identifier, uuid } = containerRef;
 
   const { containerStructures, container } = containers[identifier];
@@ -38,8 +40,8 @@ export const getContainersData = (containers: any, containerRef: any) => {
   const { variantId } = container?.parentPermissionable || {};
 
   // Get accepts types of content types for this container
-  const acceptTypes = containerStructures
-    .map((structure: any) => structure.contentTypeVar)
+  const acceptTypes: string = containerStructures
+    .map((structure) => structure.contentTypeVar)
     .join(',');
 
   // Get the contentlets for "this" container
