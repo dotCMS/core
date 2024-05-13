@@ -133,7 +133,7 @@ public interface LanguageVariableAPI {
 
     /**
      * Returns all the Language Variables in the system.
-     *
+     * useful for cache building.
      * @return List of Language Variables.
      */
     Map<Language, List<LanguageVariable>> findAllVariables() ;
