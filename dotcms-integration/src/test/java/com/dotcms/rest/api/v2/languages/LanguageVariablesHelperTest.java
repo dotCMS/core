@@ -80,7 +80,7 @@ public class LanguageVariablesHelperTest {
         final LanguageVariablePageView view = helper.view(
                 new PaginationContext(null, 0, 10, null, null), false);
 
-        Assert.assertEquals("Total languages does not match ", view.total(), 3);
+        Assert.assertEquals("Total languages does not match ",  3, view.total());
         final LinkedHashMap<String, Map<String, LanguageVariableView>> variables = view.variables();
         //Validate order of the keys
 
