@@ -70,6 +70,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.Date;
@@ -92,6 +93,9 @@ import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 @Path("/v1/users")
 public class UserResource implements Serializable {
 
+	public static final String USER_ID = "userID";
+	public static final String USER_MSG = "User ";
+	public static final String USER_WITH_USER_ID_MSG = "User with userId '";
 	private final WebResource webResource;
 	private final UserAPI userAPI;
 	private final HostAPI siteAPI;
@@ -210,7 +214,7 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response updateCurrent(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,
-								 final UpdateCurrentUserForm updateUserForm) throws Exception {
+								 final UpdateCurrentUserForm updateUserForm) throws DotDataException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -244,7 +248,7 @@ public class UserResource implements Serializable {
 				userMap = userToUpdated.toMap();
 			}
 
-			response = Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
+			response = Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
 					"reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
 		} catch (final UserFirstNameException e) {
 
@@ -706,11 +710,11 @@ public class UserResource implements Serializable {
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
 
-			return Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
+			return Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 
-		throw new ForbiddenException("User " + modUser.getUserId() + " does not have permissions to create users");
+		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to create users");
 	} // create.
 
 	@WrapInTransaction
@@ -760,7 +764,7 @@ public class UserResource implements Serializable {
 				createUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
 
 		this.userAPI.save(user, modUser, false);
-		Logger.debug(this,  ()-> "User with userId '" + userId + "' and email '" +
+		Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 				createUserForm.getEmail() + "' has been created.");
 
 		for (final String roleKey : roleKeys) {
@@ -826,7 +830,7 @@ public class UserResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response udpate(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
-								 final UpdateUserForm createUserForm) throws Exception {
+								 final UpdateUserForm createUserForm) throws DotDataException, IncorrectPasswordException, SystemException, DotSecurityException, ParseException, PortalException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -846,17 +850,17 @@ public class UserResource implements Serializable {
 			final User userToUpdated = this.updateUser(
 					modUser, httpServletRequest, createUserForm);
 
-			return Response.ok(new ResponseEntityView<>(Map.of("userID", userToUpdated.getUserId(),
+			return Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(),
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 
-		throw new ForbiddenException("User " + modUser.getUserId() + " does not have permissions to update users");
+		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 	} // create.
 
 	@WrapInTransaction
 	private User updateUser(final User modUser, final HttpServletRequest request,
 							final UpdateUserForm updateUserForm) throws DotDataException, DotSecurityException,
-			ParseException, IncorrectPasswordException, SystemException, PortalException {
+			ParseException, SystemException, PortalException {
 
 		final String userId = updateUserForm.getUserId();
 		boolean validatePassword = false;
@@ -919,7 +923,7 @@ public class UserResource implements Serializable {
 
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
-			Logger.debug(this,  ()-> "User with userId '" + userId + "' and email '" +
+			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
 			final List<String> roleKeys = UtilMethods.isSet(updateUserForm.getRoles())?
@@ -930,12 +934,12 @@ public class UserResource implements Serializable {
 				UserHelper.getInstance().addRole(userToSave, roleKey, false	, false);
 			}
 
-			Logger.debug(this,  ()-> "User with userId '" + userId + "' and email '" +
+			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' , the roles have been updated.");
 
 		} else {
 
-			throw new ForbiddenException("User " + modUser.getUserId() + " does not have permissions to update users");
+			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 		}
 
 		return userToSave;
