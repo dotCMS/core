@@ -23,6 +23,12 @@ export function buildTerm(query: string, term: string): Term {
     return new Term(newQuery);
 }
 
+export function buildRawTerm(query: string, raw: string): Term {
+    const newQuery = query + ` ${raw}`;
+
+    return new Term(santizeQuery(newQuery));
+}
+
 export function buildField(query: string, field: string, exclude = false): Field {
     const newQuery = query + (exclude ? ` -${field}:` : ` +${field}:`);
 

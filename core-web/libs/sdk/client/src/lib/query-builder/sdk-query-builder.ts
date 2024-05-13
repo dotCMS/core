@@ -1,4 +1,4 @@
-import { buildField } from './utils';
+import { buildField, buildRawTerm } from './utils';
 
 export class QueryBuilder {
     #query = '';
@@ -9,5 +9,9 @@ export class QueryBuilder {
 
     excludeField(field: string) {
         return buildField(this.#query, field, true);
+    }
+
+    raw(query: string) {
+        return buildRawTerm(this.#query, query);
     }
 }

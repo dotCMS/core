@@ -47,30 +47,53 @@ describe('QueryBuilder', () => {
     });
 
     it("should return a query with a 'NOT' operand", () => {
-        const queryForBlogsNotArticles = queryBuilder
+        const queryForSkiingTripsNotInSwissAlps = queryBuilder
             .field('summary')
             .term('Skiing trip')
             .not()
             .term('Swiss Alps')
             .build();
 
-        expect(queryForBlogsNotArticles).toBe('+summary:"Skiing trip" NOT "Swiss Alps"');
+        expect(queryForSkiingTripsNotInSwissAlps).toBe('+summary:"Skiing trip" NOT "Swiss Alps"');
     });
 
     it('should return a query with an exclusion field', () => {
-        const queryForBlogsNotArticles = queryBuilder
+        const queryForFootballBlogsWithoutMessi = queryBuilder
             .field('contentType')
             .term('Blog')
             .field('title')
-            .term('my title')
-            .and()
-            .excludeField('title')
-            .term('his title')
+            .term('Football')
+            .excludeField('summary')
+            .term('Lionel Messi')
             .build();
 
-        expect(queryForBlogsNotArticles).toBe(
-            '+contentType:Blog +title:"my title" AND -title:"his title"'
+        expect(queryForFootballBlogsWithoutMessi).toBe(
+            '+contentType:Blog +title:Football -summary:"Lionel Messi"'
         );
+    });
+
+    it('should build a raw query from the query builder', () => {
+        const queryForBlogs = queryBuilder
+            .raw('+summary:Snowboard')
+            .not()
+            .term('Swiss Alps')
+            .field('contentType')
+            .term('Blog')
+            .build();
+
+        expect(queryForBlogs).toBe('+summary:Snowboard NOT "Swiss Alps" +contentType:Blog');
+    });
+
+    it('should return a query with a raw query appended', () => {
+        const queryForBlogs = queryBuilder
+            .field('contentType')
+            .term('Blog')
+            .raw('+summary:Snowboard')
+            .not()
+            .term('Swiss Alps')
+            .build();
+
+        expect(queryForBlogs).toBe('+contentType:Blog +summary:Snowboard NOT "Swiss Alps"');
     });
 
     it('should return a query with all possible combinations', () => {
