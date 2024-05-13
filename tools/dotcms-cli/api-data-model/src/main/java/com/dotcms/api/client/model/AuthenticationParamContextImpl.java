@@ -16,7 +16,7 @@ public class AuthenticationParamContextImpl implements AuthenticationParam {
 
     @Override
     public void setToken(final char[] token) {
-        this.token = Arrays.copyOf(token, token.length);
+            this.token = Arrays.copyOf(token, token.length);
     }
 
     public Optional<char[]> getToken() {
@@ -24,6 +24,11 @@ public class AuthenticationParamContextImpl implements AuthenticationParam {
             return Optional.empty();
         }
         return Optional.of(token);
+    }
+
+    @Override
+    public void reset() {
+        token = null;
     }
 
 }

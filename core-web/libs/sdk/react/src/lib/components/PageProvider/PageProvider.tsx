@@ -26,6 +26,7 @@ export interface ContainerData {
                 title: string;
                 inode: string;
                 onNumberOfPages: number;
+                baseType: string;
                 widgetTitle?: string;
             }[];
         };
@@ -76,8 +77,12 @@ export interface PageProviderContext {
         persona: {
             keyTag: string;
         };
+        // variant requested
+        variantId: string;
     };
     isInsideEditor: boolean;
+    // If the page is part of an experiment, this will be the experiment id
+    runningExperimentId?: string;
 }
 
 /**

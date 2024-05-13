@@ -15,7 +15,7 @@
             }
         },
         "build:js": {
-            "executor": "@nrwl/rollup:rollup",
+            "executor": "@nx/esbuild:esbuild",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "../dotCMS/src/main/webapp/html/js/editor-js",
@@ -26,8 +26,9 @@
                 "entryFile": "libs/sdk/client/src/lib/editor/sdk-editor-vtl.ts",
                 "external": ["react/jsx-runtime"],
                 "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
-                "compiler": "swc",
-                "extractCss": false
+                "compiler": "tsc",
+                "extractCss": false,
+                "minify": true
             }
         },
         "publish": {
@@ -36,6 +37,11 @@
                 "command": "node tools/scripts/publish.mjs sdk-js-client {args.ver} {args.tag}"
             },
             "dependsOn": ["build"]
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/libs/sdk/client"
+            }
         },
         "lint": {
             "executor": "@nrwl/linter:eslint",

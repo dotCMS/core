@@ -7,9 +7,7 @@ import {
     HostBinding,
     Input,
     OnChanges,
-    OnInit,
     Output,
-    SimpleChange,
     SimpleChanges,
     ViewChild,
     inject
@@ -28,6 +26,9 @@ const BUTTON_WIDTH = 40;
 const BUTTON_HEIGHT = 40;
 const ACTIONS_CONTAINER_HEIGHT = 40;
 
+const ACTIONS_CONTAINER_WIDTH_WITH_VTL = 178;
+const INITIAL_ACTIONS_CONTAINER_WIDTH = 128;
+
 @Component({
     selector: 'dot-ema-contentlet-tools',
     standalone: true,
@@ -36,7 +37,7 @@ const ACTIONS_CONTAINER_HEIGHT = 40;
     styleUrls: ['./ema-contentlet-tools.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EmaContentletToolsComponent implements OnInit, OnChanges {
+export class EmaContentletToolsComponent implements OnChanges {
     @ViewChild('menu') menu: Menu;
     @ViewChild('menuVTL') menuVTL: Menu;
     @ViewChild('dragImage') dragImage: ElementRef;
@@ -44,7 +45,7 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
 
     private buttonPosition: 'after' | 'before' = 'after';
 
-    @Input() contentlet: ContentletArea;
+    @Input() contentletArea: ContentletArea;
     @HostBinding('class.hide') @Input() hide = false;
     @Output() addContent = new EventEmitter<ActionPayload>();
     @Output() addForm = new EventEmitter<ActionPayload>();
@@ -53,15 +54,12 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
     @Output() editVTL = new EventEmitter<VTLFile>();
     @Output() delete = new EventEmitter<ActionPayload>();
 
-    @Output() moveStart = new EventEmitter<ActionPayload>();
-    @Output() moveStop = new EventEmitter<DragEvent>();
-
     items: MenuItem[] = [
         {
             label: this.dotMessageService.get('content'),
             command: () => {
                 this.addContent.emit({
-                    ...this.contentlet.payload,
+                    ...this.contentletArea.payload,
                     position: this.buttonPosition
                 });
             }
@@ -70,7 +68,7 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
             label: this.dotMessageService.get('Widget'),
             command: () => {
                 this.addWidget.emit({
-                    ...this.contentlet.payload,
+                    ...this.contentletArea.payload,
                     position: this.buttonPosition
                 });
             }
@@ -79,7 +77,7 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
             label: this.dotMessageService.get('form'),
             command: () => {
                 this.addForm.emit({
-                    ...this.contentlet.payload,
+                    ...this.contentletArea.payload,
                     position: this.buttonPosition
                 });
             }
@@ -88,21 +86,29 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
 
     vtlFiles: MenuItem[] = [];
 
-    ACTIONS_CONTAINER_WIDTH: number; // Now is dynamic based on the page type (Headless - VTL)
+    ACTIONS_CONTAINER_WIDTH = INITIAL_ACTIONS_CONTAINER_WIDTH; // Now is dynamic based on the page type (Headless - VTL)
 
-    ngOnInit() {
-        this.setVtlFiles();
-        this.ACTIONS_CONTAINER_WIDTH = this.contentlet.payload.vtlFiles ? 178 : 128;
-    }
+    protected styles: Record<string, { [klass: string]: unknown }> = {};
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!changes.contentlet) {
+        if (!changes.contentletArea) {
             return;
         }
 
-        if (this.hasContentletOrContainerChanged(changes.contentlet)) {
-            this.hideMenus();
-        }
+        this.hideMenus(); // We need to hide the menu if the contentlet changes
+        this.setVtlFiles(); // Set the VTL files for the component
+
+        this.ACTIONS_CONTAINER_WIDTH = this.contentletArea.payload.vtlFiles
+            ? ACTIONS_CONTAINER_WIDTH_WITH_VTL
+            : INITIAL_ACTIONS_CONTAINER_WIDTH; // Set the width of the actions container
+
+        // If the contentlet changed, we need to update the styles
+        this.styles = {
+            bounds: this.getBoundsPosition(),
+            topButton: this.getTopButtonPosition(),
+            bottomButton: this.getBottomButtonPosition(),
+            actions: this.getActionPosition()
+        };
     }
 
     /**
@@ -111,7 +117,7 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
      * @memberof EmaContentletToolsComponent
      */
     setVtlFiles() {
-        this.vtlFiles = this.contentlet.payload.vtlFiles?.map((file) => ({
+        this.vtlFiles = this.contentletArea.payload.vtlFiles?.map((file) => ({
             label: file.name,
             command: () => {
                 this.editVTL.emit(file);
@@ -119,14 +125,8 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
         }));
     }
 
-    dragStart(event: DragEvent, payload: ActionPayload): void {
+    dragStart(event: DragEvent): void {
         event.dataTransfer.setDragImage(this.dragImage.nativeElement, 0, 0);
-
-        this.moveStart.emit(payload);
-    }
-
-    dragEnd(event: DragEvent): void {
-        this.moveStop.emit(event);
     }
 
     /**
@@ -145,12 +145,12 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
      * @return {*}  {Record<string, string>}
      * @memberof EmaContentletToolsComponent
      */
-    getPosition(): Record<string, string> {
+    private getBoundsPosition(): Record<string, string> {
         return {
-            left: `${this.contentlet.x}px`,
-            top: `${this.contentlet.y}px`,
-            width: `${this.contentlet.width}px`,
-            height: `${this.contentlet.height}px`
+            left: `${this.contentletArea.x}px`,
+            top: `${this.contentletArea.y}px`,
+            width: `${this.contentletArea.width}px`,
+            height: `${this.contentletArea.height}px`
         };
     }
 
@@ -160,14 +160,17 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
      * @return {*}  {Record<string, string>}
      * @memberof EmaContentletToolsComponent
      */
-    getTopButtonPosition(): Record<string, string> {
-        const contentletCenterX = this.contentlet.x + this.contentlet.width / 2;
+    private getTopButtonPosition(): Record<string, string> {
+        const contentletCenterX = this.contentletArea.x + this.contentletArea.width / 2;
         const buttonLeft = contentletCenterX - BUTTON_WIDTH / 2;
-        const buttonTop = this.contentlet.y - BUTTON_HEIGHT / 2;
+        const buttonTop = this.contentletArea.y - BUTTON_HEIGHT / 2;
 
         return {
             position: 'absolute',
-            left: this.contentlet.width < 250 ? `${this.contentlet.x + 8}px` : `${buttonLeft}px`,
+            left:
+                this.contentletArea.width < 250
+                    ? `${this.contentletArea.x + 8}px`
+                    : `${buttonLeft}px`,
             top: `${buttonTop}px`,
             zIndex: '1'
         };
@@ -179,10 +182,10 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
      * @return {*}  {Record<string, string>}
      * @memberof EmaContentletToolsComponent
      */
-    getBottomButtonPosition(): Record<string, string> {
-        const contentletCenterX = this.contentlet.x + this.contentlet.width / 2;
+    private getBottomButtonPosition(): Record<string, string> {
+        const contentletCenterX = this.contentletArea.x + this.contentletArea.width / 2;
         const buttonLeft = contentletCenterX - BUTTON_WIDTH / 2;
-        const buttonTop = this.contentlet.y + this.contentlet.height - BUTTON_HEIGHT / 2;
+        const buttonTop = this.contentletArea.y + this.contentletArea.height - BUTTON_HEIGHT / 2;
 
         return {
             position: 'absolute',
@@ -198,10 +201,10 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
      * @return {*}  {Record<string, string>}
      * @memberof EmaContentletToolsComponent
      */
-    getActionPosition(): Record<string, string> {
-        const contentletCenterX = this.contentlet.x + this.contentlet.width;
+    private getActionPosition(): Record<string, string> {
+        const contentletCenterX = this.contentletArea.x + this.contentletArea.width;
         const left = contentletCenterX - this.ACTIONS_CONTAINER_WIDTH - 8;
-        const top = this.contentlet.y - ACTIONS_CONTAINER_HEIGHT / 2;
+        const top = this.contentletArea.y - ACTIONS_CONTAINER_HEIGHT / 2;
 
         return {
             position: 'absolute',
@@ -209,27 +212,6 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
             top: `${top}px`,
             zIndex: '1'
         };
-    }
-
-    /**
-     * Check if Contentlet or Container are changed
-     *
-     * @private
-     * @param {SimpleChange} contentletChange
-     * @return {*}  {boolean}
-     * @memberof EmaContentletToolsComponent
-     */
-    private hasContentletOrContainerChanged(contentletChange: SimpleChange): boolean {
-        const currentValue = contentletChange.currentValue?.payload;
-        const previousValue = contentletChange.previousValue?.payload;
-
-        const hasContentletIdentifierChanged =
-            currentValue?.contentlet.identifier !== previousValue?.contentlet.identifier;
-        const hasUUIDChanged = currentValue?.container.uuid !== previousValue?.container.uuid;
-        const hasContainerIdentifierChanged =
-            currentValue?.container.identifier !== previousValue?.container.identifier;
-
-        return hasContentletIdentifierChanged || hasUUIDChanged || hasContainerIdentifierChanged;
     }
 
     /**
@@ -250,6 +232,6 @@ export class EmaContentletToolsComponent implements OnInit, OnChanges {
      * @memberof EmaContentletToolsComponent
      */
     get isContainerEmpty(): boolean {
-        return this.contentlet.payload.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET';
+        return this.contentletArea.payload.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET';
     }
 }

@@ -915,18 +915,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             throws DotDataException, DotSecurityException {
 
         if (UtilMethods.isSet(assets)) {
-            assets.stream().forEach(asset -> {
-                try {
-                    final TryToAddResult tryToAddResult = tryToAdd(pusheableAsset, asset, reason);
-
-                    if (TryToAddResult.Result.INCLUDE == tryToAddResult.result ||
-                            ManifestReason.EXCLUDE_BY_FILTER != tryToAddResult.excludeReason) {
-                        dependencyProcessor.addAsset(asset, pusheableAsset);
-                    }
-                } catch (AssetExcludeException e) {
-                    dependencyProcessor.addAsset(asset, pusheableAsset);
-                }
-            });
+            assets.stream().forEach(asset -> tryToAddAndProcessDependencies(pusheableAsset, asset, reason));
         }
     }
 
@@ -976,14 +965,25 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             try {
                 final TryToAddResult tryToAddResult = tryToAdd(pusheableAsset, asset, reason);
 
-                if (TryToAddResult.Result.INCLUDE == tryToAddResult.result ||
-                        ManifestReason.EXCLUDE_BY_FILTER != tryToAddResult.excludeReason) {
+                if (shouldIncludeDependency(tryToAddResult)) {
                     dependencyProcessor.addAsset(asset, pusheableAsset);
                 }
             } catch (AssetExcludeException e) {
                 dependencyProcessor.addAsset(asset, pusheableAsset);
             }
         }
+    }
+
+    /**
+     * return true if for this {@link TryToAddResult} we still must add the Dependency.
+     *
+     * @param tryToAddResult
+     * @return
+     */
+    private static boolean shouldIncludeDependency(final TryToAddResult tryToAddResult) {
+        return TryToAddResult.Result.INCLUDE == tryToAddResult.result ||
+                (ManifestReason.EXCLUDE_BY_FILTER != tryToAddResult.excludeReason &&
+                ManifestReason.EXCLUDE_SYSTEM_OBJECT != tryToAddResult.excludeReason);
     }
 
     /**
