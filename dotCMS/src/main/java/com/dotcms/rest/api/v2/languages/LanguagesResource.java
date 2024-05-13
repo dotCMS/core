@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v2.languages;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.localizationEnhancements;
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.isLocalizationEnhancementsEnabled;
 import static com.dotmarketing.util.WebKeys.CONTENT_SELECTED_LANGUAGE;
 import static com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE;
 import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
@@ -376,7 +376,7 @@ public class LanguagesResource {
         final User user = initData.getUser();
 
         final Locale currentLocale=resolveAdminLocale(language);
-
+        
         //Messages in the properties file
         //These are the resources that are in the properties file added by developers to dotCMS so will always need this
         final Map<?,?> mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(currentLocale);
@@ -387,7 +387,7 @@ public class LanguagesResource {
         if(UtilMethods.isSet(language1)) {
 
             final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-            if(Boolean.TRUE.equals(localizationEnhancements.get())) {
+            if(isLocalizationEnhancementsEnabled()) {
                 final Language matchingLang = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
                 // Enhanced Language Vars
                 final List<LanguageVariable> variables = languageVariableAPI.findVariables(matchingLang.getId());

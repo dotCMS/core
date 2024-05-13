@@ -17,7 +17,7 @@
 
 package com.liferay.portal.struts;
 
-import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.localizationEnhancements;
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.isLocalizationEnhancementsEnabled;
 
 import com.dotcms.languagevariable.business.LanguageVariable;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -182,7 +182,7 @@ public class MultiMessageResources extends PropertyMessageResources {
 
         if (name.contains("cms_language")) {
 
-            if(Boolean.TRUE.equals(localizationEnhancements.get())){
+            if(isLocalizationEnhancementsEnabled()){
 
                 final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
                 final long languageId = LanguageUtil.getLanguageId(localeKey, false);
