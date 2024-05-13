@@ -5,6 +5,7 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MetadataCacheImpl implements MetadataCache {
@@ -49,7 +50,9 @@ public class MetadataCacheImpl implements MetadataCache {
     @Override
     @SuppressWarnings("unchecked")
     public Map<String, Serializable> getMetadataMap(final String key) {
-        return (Map<String, Serializable>)cache.getNoThrow(key, metadataGroup);
+        Map<String, Serializable> cachedMap = (Map<String, Serializable>)cache.getNoThrow(key, metadataGroup);
+        // The cache is shared and if returning the cachedMap directly, the contents could be modified by the caller impacting other threads
+        return cachedMap != null ? new HashMap<>(cachedMap) : null;
     }
 
     public void removeMetadata(final String key) {

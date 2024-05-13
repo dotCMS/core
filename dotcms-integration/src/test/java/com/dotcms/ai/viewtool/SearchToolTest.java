@@ -1,10 +1,21 @@
 package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.api.EmbeddingsAPI;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.json.JSONObject;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.Before;
@@ -110,6 +121,41 @@ public class SearchToolTest {
         assertFalse(result.isEmpty());
         assertEquals(query, result.getString("query"));
         assertFalse(result.getJSONArray("dotCMSResults").isEmpty());
+    }
+
+    /**
+     * Feature: Related Content Search
+     * Scenario: User retrieves related content for a specific Contentlet and index name
+     * Given a user has a specific Contentlet and index name
+     * When the user retrieves related content using the Contentlet and index name
+     * Then the system should return the search results related to the Contentlet from the specified index
+     */
+    @Test
+    public void test_related() {
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+        ContentletDataGen.publish(htmlPageAsset);
+        final Field field = new FieldDataGen()
+                .type(TextField.class)
+                .indexed(true)
+                .unique(true)
+                .next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(field)
+                .detailPage(htmlPageAsset.getIdentifier())
+                .urlMapPattern("/test with blank space/{" + field.variable() + "}")
+                .nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty(field.variable(), "Testing_1")
+                .nextPersisted();
+        ContentletDataGen.publish(contentlet);
+
+        final String query = "Elaborate about the 'Tour de France'";
+        EmbeddingsDTODataGen.persistEmbeddings(query, null, "default");
+
+        final JSONObject result = (JSONObject) searchTool.related(contentlet, "default");
+        assertNotNull(result);
     }
 
     private SearchTool prepareSearchTool(final ViewContext viewContext) {
