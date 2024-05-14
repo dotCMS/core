@@ -6,22 +6,17 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+
 
 public class PruneTimeMachineBackupJobTest {
 
