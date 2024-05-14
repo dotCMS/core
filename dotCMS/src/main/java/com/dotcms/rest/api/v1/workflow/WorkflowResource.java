@@ -70,6 +70,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -142,6 +143,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionService;
@@ -1613,15 +1615,14 @@ public class WorkflowResource {
 
         //Empty collection implies removal, so only when a value is present we must pass the collection
         categories.ifPresent(formBuilder::categories);
-
+        final Contentlet basicContentlet = fireCommandOpt.isPresent()?
+                fireCommandOpt.get().fire(contentlet, this.needSave(fireActionForm), formBuilder.build()):
+                this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build());
+        final Contentlet hydratedContentlet = Objects.nonNull(basicContentlet)?
+                new DotTransformerBuilder().contentResourceOptions(false)
+                    .content(basicContentlet).build().hydrate().get(0): basicContentlet;
         return Response.ok(
-                new ResponseEntityView(
-                        this.workflowHelper.contentletToMap(
-                                fireCommandOpt.isPresent()?
-                                        fireCommandOpt.get().fire(contentlet,
-                                                this.needSave(fireActionForm), formBuilder.build()):
-                                        this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build()))
-                )
+                new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
         ).build(); // 200
     }
 

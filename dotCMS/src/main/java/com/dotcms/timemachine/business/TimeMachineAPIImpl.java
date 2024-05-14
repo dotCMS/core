@@ -2,6 +2,8 @@ package com.dotcms.timemachine.business;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -10,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotcms.publishing.PublishStatus;
@@ -23,11 +26,14 @@ import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.TimeMachineJob;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
+import io.vavr.Lazy;
 
 public class TimeMachineAPIImpl implements TimeMachineAPI {
+
+    public Lazy<Long> PRUNE_TIMEMACHINE_OLDER_THAN_DAYS = Lazy.of(
+            () -> Config.getLongProperty("PRUNE_TIMEMACHINE_OLDER_THAN_DAYS", 90)
+    );
 
     @Override
     public List<PublishStatus> startTimeMachine(final List<Host> hosts,
@@ -195,6 +201,35 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 
 			return lang > 0;
 		}
+    }
+
+    @Override
+    public List<File> removeOldTimeMachineBackupsFiles() {
+        long now = Instant.now().toEpochMilli();
+        final List<File> fileToRemove = new ArrayList<>();
+        final File timeMachinePath = new File(ConfigUtils.getTimeMachinePath());
+
+        for ( File file : timeMachinePath.listFiles()) {
+            if ( file.isDirectory() && file.getName().startsWith("timeMachineBundle_")) {
+
+                long lastModifiedDays = TimeUnit.MILLISECONDS.toDays(now - file.lastModified());
+
+                if (lastModifiedDays > PRUNE_TIMEMACHINE_OLDER_THAN_DAYS.get()) {
+                    fileToRemove.add(file);
+                }
+            }
+        }
+
+        for (File file : fileToRemove) {
+            try {
+                FileUtil.deleteDir(file.toPath().toString());
+            } catch (IOException e) {
+                final String message = "The Time Machine folder cannot be removed:" + e.getMessage();
+                Logger.error(this.getClass(), message, e);
+            }
+        }
+
+        return fileToRemove;
     }
 
 }

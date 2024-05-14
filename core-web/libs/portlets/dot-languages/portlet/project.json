@@ -1,0 +1,17 @@
+{
+    "name": "dot-languages",
+    "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/portlets/dot-languages/portlet/src",
+    "prefix": "lib",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:languages"],
+    "projectType": "library",
+    "targets": {
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/portlets/dot-languages/portlet/jest.config.ts"
+            }
+        }
+    }
+}
