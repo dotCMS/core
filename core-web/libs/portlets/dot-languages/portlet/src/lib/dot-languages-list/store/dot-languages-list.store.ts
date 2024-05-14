@@ -4,6 +4,9 @@ import { Injectable } from '@angular/core';
 
 import { ComponentStatus, DotActionMenuItem, DotLanguage } from '@dotcms/dotcms-models';
 
+/**
+ * Interface for language row data
+ */
 export interface DotLanguageRow {
     locale: string;
     language: string;
@@ -43,6 +46,9 @@ export class DotLanguagesListStore extends ComponentStore<DotLanguagesListState>
         super({ status: ComponentStatus.IDLE, languages: [] });
     }
 
+    /**
+     * Private function to process the languages into the format needed for the state
+     */
     private processLanguages(languages: DotLanguage[]): DotLanguageRow[] {
         return languages.map((language) => ({
             locale: `${language.language} (${language.isoCode})`,

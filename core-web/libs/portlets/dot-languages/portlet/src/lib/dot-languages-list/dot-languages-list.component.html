@@ -36,7 +36,9 @@
         </ng-template>
         <ng-template pTemplate="body" let-language>
             <tr>
-                <td [ngClass]="{ 'tag-padding': language.defaultLanguage }">
+                <td
+                    [ngClass]="{ 'tag-padding': language.defaultLanguage }"
+                    data-testId="locale-cell">
                     {{ language.locale }}
                     <p-tag
                         class="sm p-tag-success"
