@@ -26,6 +26,9 @@
 }
 
 $dot-table-cell-padding: 0.625rem $spacing-1;
+$dot-table-cell-with-tag-padding: $spacing-1;
+$dot-table-header-cell-height: 1.5rem;
+$dot-table-cell-height: 1.25rem;
 
 .dotTable {
     &.p-datatable {
@@ -59,6 +62,7 @@ $dot-table-cell-padding: 0.625rem $spacing-1;
             text-align: left;
             transition: none;
             text-wrap: nowrap;
+            line-height: $dot-table-header-cell-height;
 
             &:has(p-tableHeaderCheckbox) {
                 width: 40px;
@@ -111,6 +115,8 @@ $dot-table-cell-padding: 0.625rem $spacing-1;
             }
 
             &.p-highlight {
+                color: $color-palette-primary-500;
+
                 .p-sortable-column-icon {
                     color: $color-palette-primary-500;
                 }
@@ -139,6 +145,7 @@ $dot-table-cell-padding: 0.625rem $spacing-1;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 max-width: 0;
+                line-height: $dot-table-cell-height;
 
                 span {
                     @include dot-table-tooltip;
@@ -147,6 +154,10 @@ $dot-table-cell-padding: 0.625rem $spacing-1;
                 &:first-child:has(p-tableCheckbox) + td,
                 &:first-child:not(:has(p-tableCheckbox)) {
                     padding: $dot-table-cell-padding;
+
+                    &.tag-padding {
+                        padding: $dot-table-cell-with-tag-padding;
+                    }
                 }
 
                 &:first-child {

@@ -24,9 +24,9 @@ import {
     DotContentState,
     CONTAINER_SOURCE,
     DotMessageSeverity,
-    DotMessageType
+    DotMessageType,
+    DotActionMenuItem
 } from '@dotcms/dotcms-models';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
 
 @Component({

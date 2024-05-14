@@ -2,15 +2,24 @@ import { ComponentStore } from '@ngrx/component-store';
 
 import { Injectable } from '@angular/core';
 
-import { ComponentStatus, DotLanguage } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotActionMenuItem, DotLanguage } from '@dotcms/dotcms-models';
+
+export interface DotLanguageRow {
+    locale: string;
+    language: string;
+    country: string;
+    variables: string;
+    defaultLanguage: boolean | undefined;
+    actions: DotActionMenuItem[];
+}
 
 export interface DotLanguagesListState {
     status: ComponentStatus;
-    languages: DotLanguage[];
+    languages: DotLanguageRow[];
 }
 
 export interface DotLanguagesListViewModel {
-    languages: DotLanguage[];
+    languages: DotLanguageRow[];
 }
 
 @Injectable()
@@ -19,7 +28,7 @@ export class DotLanguagesListStore extends ComponentStore<DotLanguagesListState>
     readonly setLanguages = this.updater(
         (state: DotLanguagesListState, languages: DotLanguage[]) => ({
             ...state,
-            languages
+            languages: this.processLanguages(languages)
         })
     );
 
@@ -32,5 +41,35 @@ export class DotLanguagesListStore extends ComponentStore<DotLanguagesListState>
 
     constructor() {
         super({ status: ComponentStatus.IDLE, languages: [] });
+    }
+
+    private processLanguages(languages: DotLanguage[]): DotLanguageRow[] {
+        return languages.map((language) => ({
+            locale: `${language.language} (${language.isoCode})`,
+            language: `${language.language} - ${language.languageCode}`,
+            country: `${language.country} - ${language.countryCode}`,
+            variables: 'TBD',
+            defaultLanguage: language.defaultLanguage,
+            actions: [
+                {
+                    menuItem: {
+                        label: 'Edit',
+                        command: () => {
+                            //TODO: Implement
+                        }
+                    },
+                    shouldShow: () => true
+                },
+                {
+                    menuItem: {
+                        label: 'Delete',
+                        command: () => {
+                            //TODO: Implement
+                        }
+                    },
+                    shouldShow: () => true
+                }
+            ]
+        }));
     }
 }

@@ -1,11 +1,35 @@
 @use "variables" as *;
 
 :host {
-    width: 100%;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+
+    ::ng-deep {
+        p-table {
+            flex-grow: 1;
+
+            .no-padding {
+                padding: 0.5rem;
+            }
+
+            .dotTable.p-datatable.p-component {
+                height: 100%;
+
+                .p-datatable-wrapper {
+                    height: 100%;
+                }
+            }
+        }
+    }
 }
 
 .languages-list__header {
     display: flex;
     justify-content: space-between;
     margin-bottom: $spacing-1;
+}
+
+.languages-list__search {
+    width: 405px;
 }

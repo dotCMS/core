@@ -1,8 +1,7 @@
 <dot-menu
     *ngIf="actions.length > 1 && filteredActions.length"
     [icon]="icon"
-    [model]="filteredActions"
-></dot-menu>
+    [model]="filteredActions"></dot-menu>
 
 <p-button
     *ngIf="actions.length === 1 && filteredActions.length === 1"
@@ -10,6 +9,5 @@
     [pTooltip]="filteredActions[0].label"
     (click)="filteredActions[0].command($event)"
     styleClass="p-button-sm p-button-rounded p-button-text"
-    data-testid="dot-action-tooltip-button"
->
+    data-testid="dot-action-tooltip-button">
 </p-button>

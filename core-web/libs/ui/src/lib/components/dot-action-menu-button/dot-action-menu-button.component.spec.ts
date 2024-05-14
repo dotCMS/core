@@ -6,8 +6,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotActionMenuItem } from '@dotcms/dotcms-models';
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 import { DotActionMenuButtonComponent } from './dot-action-menu-button.component';
 

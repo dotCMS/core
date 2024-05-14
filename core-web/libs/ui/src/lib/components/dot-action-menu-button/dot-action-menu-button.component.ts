@@ -1,8 +1,12 @@
 import { Component, Input, OnInit } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
+import { DotActionMenuItem } from '@dotcms/dotcms-models';
+
+import { DotMenuComponent } from '../dot-menu/dot-menu.component';
 
 /**
  * The DotActionMenuButtonComponent is a configurable button with
@@ -13,7 +17,9 @@ import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-men
 @Component({
     selector: 'dot-action-menu-button',
     styleUrls: ['./dot-action-menu-button.component.scss'],
-    templateUrl: 'dot-action-menu-button.component.html'
+    templateUrl: 'dot-action-menu-button.component.html',
+    imports: [DotMenuComponent, ButtonModule, TooltipModule],
+    standalone: true
 })
 export class DotActionMenuButtonComponent implements OnInit {
     filteredActions: MenuItem[] = [];

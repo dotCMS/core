@@ -4,8 +4,7 @@
     [icon]="icon || ''"
     (click)="toggle($event)"
     styleClass="p-button-sm p-button-rounded"
-    data-testid="dot-menu-button"
-></p-button>
+    data-testid="dot-menu-button"></p-button>
 
 <ng-template #noFloat>
     <p-button
@@ -13,8 +12,7 @@
         [icon]="icon || ''"
         (click)="toggle($event)"
         styleClass="p-button-sm p-button-rounded p-button-text"
-        data-testid="dot-menu-button"
-    ></p-button>
+        data-testid="dot-menu-button"></p-button>
 </ng-template>
 
 <p-menu #menu [popup]="true" [model]="model" appendTo="body"></p-menu>

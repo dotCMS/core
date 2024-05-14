@@ -21,6 +21,7 @@ import {
 import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
+    DotActionMenuItem,
     DotBulkFailItem,
     DotContentState,
     DotMessageSeverity,
@@ -29,7 +30,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 
 @Component({
     selector: 'dot-template-list',
