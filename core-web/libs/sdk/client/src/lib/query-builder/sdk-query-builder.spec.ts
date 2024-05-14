@@ -96,6 +96,25 @@ describe('QueryBuilder', () => {
         expect(queryForBlogs).toBe('+contentType:Blog +summary:Snowboard NOT "Swiss Alps"');
     });
 
+    it('should return a query with a raw query created with a queryBuilder appended and a term', () => {
+        const anotherQueryBuilder = new QueryBuilder();
+
+        const snowboardInCanada = anotherQueryBuilder
+            .field('summary')
+            .term('Snowboard')
+            .field('country')
+            .term('Canada')
+            .build();
+
+        const queryForBlogs = queryBuilder
+            .field('contentType')
+            .term('Blog')
+            .raw(snowboardInCanada)
+            .build();
+
+        expect(queryForBlogs).toBe('+contentType:Blog +summary:Snowboard +country:Canada');
+    });
+
     it('should return a query with all possible combinations', () => {
         const blogOrActivity = queryBuilder.field('contentType').term('Blog').or().term('Activity');
 

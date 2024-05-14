@@ -39,7 +39,8 @@ export class QueryBuilder {
 
     /**
      * This method allows to pass a raw query string to the query builder.
-     * This raw query should end in a Lucene Term. This method is useful when you want to append a complex query to the query builder.
+     * This raw query should end in a Lucene Term.
+     * This method is useful when you want to append a complex query or an already written query to the query builder.
      *
      * Ex: "+myField: value AND (someOtherValue OR anotherValue)"
      *
