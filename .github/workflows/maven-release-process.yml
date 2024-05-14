@@ -113,7 +113,7 @@ jobs:
           
           # set version in .mvn/maven.config
           echo "-Dprod=true" > .mvn/maven.config
-          echo "-Drelease=${release_version}" >> .mvn/maven.config
+          echo "-Drevision=${release_version}" >> .mvn/maven.config
           echo "-Dchangelist=" >> .mvn/maven.config
           
           git add .mvn/maven.config
@@ -273,8 +273,7 @@ jobs:
       - name: maven-settings-xml-action
         uses: whelk-io/maven-settings-xml-action@v20
         with:
-          repositories: '[{ "id": "dotcms-libs", "name": "DotCMS libs Release", "url": "https://repo.dotcms.com/artifactory/libs-release" }]'
-          servers: '[{ "id": "dotcms-libs", "username": "${{ secrets.EE_REPO_USERNAME }}", "password": "${{ secrets.EE_REPO_PASSWORD }}" }]'
+          servers: '[{ "id": "dotcms-libs-local", "username": "${{ secrets.EE_REPO_USERNAME }}", "password": "${{ secrets.EE_REPO_PASSWORD }}" }]'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1

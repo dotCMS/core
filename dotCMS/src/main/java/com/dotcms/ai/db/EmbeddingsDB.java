@@ -24,7 +24,7 @@ import static com.dotcms.ai.db.EmbeddingsDTO.ALL_INDICES;
 
 /**
  * The EmbeddingsDB class provides methods for managing and interacting with embeddings in the database.
- * It uses the PGVector extension for PostgreSQL to store and query embeddings.
+ * It uses the PGVector extension for PostgresSQL to store and query embeddings.
  * This class provides methods for initializing the database table and extension, saving embeddings, searching embeddings, and deleting embeddings.
  */
 public class EmbeddingsDB {

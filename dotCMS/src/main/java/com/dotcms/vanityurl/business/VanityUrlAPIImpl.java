@@ -1,27 +1,15 @@
 package com.dotcms.vanityurl.business;
 
-import java.net.URISyntaxException;
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletResponse;
-
-import com.dotmarketing.util.URLUtils;
-import org.apache.http.HttpStatus;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.regex.MatcherTimeoutFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
-import com.dotcms.regex.MatcherTimeoutFactory;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.vanityurl.util.VanityUrlUtil;
@@ -41,11 +29,22 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.URLUtils;
 import com.dotmarketing.util.UtilMethods;
-
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
+
+import javax.servlet.http.HttpServletResponse;
+import java.net.URISyntaxException;
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -442,6 +441,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     }
                 }
             }
+            if (UtilMethods.isSet(urlToEncode.getFragment())) {
+                uriBuilder.setFragment(urlToEncode.getFragment());
+            }
             return uriBuilder.build().toASCIIString();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
@@ -459,5 +461,10 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public boolean isSelfReferenced(final CachedVanityUrl cachedVanityUrl, final String uri) {
+        return null != cachedVanityUrl && null != cachedVanityUrl.forwardTo
+                && cachedVanityUrl.forwardTo.equals(uri);
+    }
 
 }

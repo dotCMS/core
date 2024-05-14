@@ -316,8 +316,9 @@ public class ExperimentsResource {
     }
 
     /**
-     * Cancels the future execution of a Scheduled {@link Experiment}. The Experiment needs to be in
-     * {@link Status#SCHEDULED} status to be able to cancel it.
+     * Cancels the future execution of a Scheduled {@link Experiment} or the current execution of a Running
+     * {@link Experiment}. The Experiment needs to be either in
+     * {@link Status#SCHEDULED} or {@link Status#RUNNING} status to be able to cancel it.
      */
 
     @POST

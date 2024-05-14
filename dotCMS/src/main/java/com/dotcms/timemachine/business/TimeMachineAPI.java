@@ -1,5 +1,6 @@
 package com.dotcms.timemachine.business;
 
+import java.io.File;
 import java.util.Date;
 import java.util.List;
 
@@ -25,5 +26,13 @@ public interface TimeMachineAPI {
     void setQuartzJobConfig(String cronExp, List<Host> hosts, boolean allhost, List<Language> langs, boolean incremental);
 
     void removeQuartzJob() throws DotRuntimeException;
+
+    /**
+     * Prunes all Time Machine backup folders that are older than the value specified
+     * in the PRUNE_TIMEMACHINE_OLDER_THAN_DAYS configuration property.
+     *
+     * @return A List containing all the files that were deleted.
+     */
+    List<File> removeOldTimeMachineBackupsFiles();
 	
 }
