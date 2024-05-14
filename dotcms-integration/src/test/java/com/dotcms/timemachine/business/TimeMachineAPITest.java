@@ -128,24 +128,4 @@ public class TimeMachineAPITest {
             Config.setProperty("TIMEMACHINE_PATH", timemachinePathPreviousValue);
         }
     }
-
-    /**
-     * Method to test: {@link TimeMachineAPIImpl#setQuartzJobConfig(String, List, boolean, List, boolean)}
-     * When: Called this method and any of this job are running: {@link com.dotmarketing.quartz.job.TimeMachineJob} and {@link com.dotmarketing.quartz.job.PruneTimeMachineBackupJob}
-     * Should: start both
-     */
-    @Test
-    public void startTimeMachineJob(){
-
-    }
-
-    /**
-     * Method to test: {@link TimeMachineAPIImpl#setQuartzJobConfig(String, List, boolean, List, boolean)}
-     * When: Called this method and the {@link com.dotmarketing.quartz.job.PruneTimeMachineBackupJob} is already running
-     * Should: Restart just the {@link com.dotmarketing.quartz.job.TimeMachineJob}
-     */
-    @Test
-    public void startTimeMachineJobWhenPruneJobIsAlreadyRunning(){
-
-    }
 }
