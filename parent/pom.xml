@@ -1125,48 +1125,6 @@
         <system>GitHub</system>
         <url>https://github.com/dotCMS/core/issues/</url>
     </issueManagement>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release/</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
-        </pluginRepository>
-        <pluginRepository>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>dotcms-libs-snapshot</id>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
-        </pluginRepository>
-        <pluginRepository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
-        </pluginRepository>
-    </pluginRepositories>
 
     <profiles>
         <profile>
@@ -1664,14 +1622,53 @@
             </build>
         </profile>
     </profiles>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>dotcms-libs</id>
+            <url>https://repo.dotcms.com/artifactory/libs-release</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>dotcms-libs-snapshot-local</id>
+            <name>IDotCMS libs Snapshots</name>
+            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>dotcms-libs</id>
+            <url>https://repo.dotcms.com/artifactory/libs-release</url>
+        </pluginRepository>
+        <pluginRepository>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>dotcms-libs-snapshot</id>
+            <url>https://repo.dotcms.com/artifactory/libs-snapshot</url>
+        </pluginRepository>
+    </pluginRepositories>
     <distributionManagement>
         <repository>
-            <id>dotcms-libs</id>
+            <id>dotcms-libs-local</id>
             <name>DotCMS libs Release</name>
             <url>https://repo.dotcms.com/artifactory/libs-release-local</url>
         </repository>
         <snapshotRepository>
-            <id>dotcms-libs-snapshot</id>
+            <id>dotcms-libs-snapshot-local</id>
             <name>IDotCMS libs Snapshots</name>
             <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
         </snapshotRepository>
