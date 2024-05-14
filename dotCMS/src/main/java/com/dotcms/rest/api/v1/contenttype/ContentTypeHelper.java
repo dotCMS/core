@@ -36,8 +36,8 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class ContentTypeHelper implements Serializable {
 
-    private static String DETAIL_PAGE = "detailPage";
-    private static String DETAIL_PAGE_PATH = "detailPagePath";
+    private static final String DETAIL_PAGE = "detailPage";
+    private static final String DETAIL_PAGE_PATH = "detailPagePath";
 
     private static class SingletonHolder {
         private static final ContentTypeHelper INSTANCE = new ContentTypeHelper();

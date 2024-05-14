@@ -92,6 +92,10 @@ import static com.liferay.util.StringPool.COMMA;
 @Path("/v1/contenttype")
 @Tag(name = "Content Type")
 public class ContentTypeResource implements Serializable {
+
+	private static final String MAP_KEY_WORKFLOWS = "workflows";
+	private static final String MAP_KEY_SYSTEM_ACTION_MAPPINGS = "systemActionMappings";
+
 	private final WebResource 		webResource;
 	private final ContentTypeHelper contentTypeHelper;
 	private final PaginationUtil 	paginationUtil;
@@ -248,8 +252,11 @@ public class ContentTypeResource implements Serializable {
 		return ImmutableMap.builder()
 				.putAll(contentTypeHelper.contentTypeToMap(
 						contentTypeAPI.find(contentTypeSaved.variable()), user))
-				.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
-				.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user).stream()
+				.put(MAP_KEY_WORKFLOWS,
+						this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
+				.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
+						this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user)
+								.stream()
 						.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
 				.build();
 	}
@@ -308,8 +315,10 @@ public class ContentTypeResource implements Serializable {
 				final ContentType contentTypeSaved = tuple2._1;
 				final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
 						.putAll(contentTypeHelper.contentTypeToMap(contentTypeSaved, user))
-						.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
-						.put("systemActionMappings", tuple2._2.stream()
+						.put(MAP_KEY_WORKFLOWS,
+								this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(),
+										initData.getUser()))
+						.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS, tuple2._2.stream()
 								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
 						.build();
 				savedContentTypes.add(responseMap);
@@ -386,8 +395,10 @@ public class ContentTypeResource implements Serializable {
 							ImmutableMap.builder()
 									.putAll(contentTypeHelper.contentTypeToMap(
 											contentTypeAPI.find(tuple2._1.variable()), user))
-							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
-							.put("systemActionMappings", tuple2._2.stream()
+									.put(MAP_KEY_WORKFLOWS,
+											this.workflowHelper.findSchemesByContentType(
+													contentType.id(), initData.getUser()))
+									.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS, tuple2._2.stream()
 								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)));
 				return Response.ok(new ResponseEntityView<>(builderMap.build())).build();
 				}
@@ -644,9 +655,10 @@ public class ContentTypeResource implements Serializable {
 			final ImmutableMap<Object, Object> resultMap = ImmutableMap.builder()
 					.putAll(contentTypeHelper.contentTypeToMap(type,
 							contentTypeInternationalization, user))
-					.put("workflows", this.workflowHelper.findSchemesByContentType(
+					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
 							type.id(), initData.getUser()))
-					.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(
+					.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
+							this.workflowHelper.findSystemActionsByContentType(
 									type, initData.getUser()).stream()
 							.collect(Collectors.toMap(mapping -> mapping.getSystemAction(),
 									mapping -> mapping))).build();
