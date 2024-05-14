@@ -693,7 +693,7 @@ public class UserResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response create(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
-								 final CreateUserForm createUserForm) throws Exception {
+								 final UserForm createUserForm) throws Exception {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requestAndResponse(httpServletRequest, httpServletResponse)
@@ -719,7 +719,7 @@ public class UserResource implements Serializable {
 
 	@WrapInTransaction
 	protected User createNewUser(final User modUser,
-								 final CreateUserForm createUserForm)
+								 final UserForm createUserForm)
 			throws DotDataException, DotSecurityException, ParseException {
 
 		final String userId = UtilMethods.isSet(createUserForm.getUserId())?
@@ -830,7 +830,7 @@ public class UserResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response udpate(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
-								 final UpdateUserForm createUserForm) throws DotDataException, IncorrectPasswordException, SystemException, DotSecurityException, ParseException, PortalException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+								 final UserForm createUserForm) throws DotDataException, IncorrectPasswordException, SystemException, DotSecurityException, ParseException, PortalException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -859,7 +859,7 @@ public class UserResource implements Serializable {
 
 	@WrapInTransaction
 	private User updateUser(final User modUser, final HttpServletRequest request,
-							final UpdateUserForm updateUserForm) throws DotDataException, DotSecurityException,
+							final UserForm updateUserForm) throws DotDataException, DotSecurityException,
 			ParseException, SystemException, PortalException {
 
 		final String userId = updateUserForm.getUserId();
