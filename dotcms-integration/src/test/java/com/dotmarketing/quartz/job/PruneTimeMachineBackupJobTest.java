@@ -16,10 +16,7 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
-
-
 public class PruneTimeMachineBackupJobTest {
-
     final PruneTimeMachineBackupJob pruneTimeMachineJob = new PruneTimeMachineBackupJob();
 
     @BeforeClass
