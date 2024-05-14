@@ -417,6 +417,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     event.clientX > iframeRect.left && event.clientX < iframeRect.right;
 
                 if (!isInsideIframe) {
+                    this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+
                     return;
                 }
 
