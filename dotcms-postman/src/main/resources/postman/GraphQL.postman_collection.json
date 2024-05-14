@@ -672,6 +672,59 @@
 					"response": []
 				},
 				{
+					"name": "PublishDestinationsCostaRicaPageJustInCase",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier=bec7b960-a8bf-4f14-a22b-0d94caf217f0",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "bec7b960-a8bf-4f14-a22b-0d94caf217f0"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "RenderDestinationsCostaRicaPage",
 					"event": [
 						{
@@ -812,59 +865,6 @@
 					"response": []
 				},
 				{
-					"name": "PublishDestinationsCostaRicaPageJustInCase",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier=bec7b960-a8bf-4f14-a22b-0d94caf217f0",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							],
-							"query": [
-								{
-									"key": "identifier",
-									"value": "bec7b960-a8bf-4f14-a22b-0d94caf217f0"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "GivenRequestByURI_ShouldReturnExpectedPage",
 					"event": [
 						{
@@ -964,7 +964,6 @@
 							{
 								"key": "User-Agent",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
-								"type": "text",
 								"uuid": "f2495614-0e5f-4992-86d2-5ee735738fe5"
 							}
 						],
