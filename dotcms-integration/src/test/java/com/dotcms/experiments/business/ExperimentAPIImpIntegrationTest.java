@@ -477,9 +477,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
 
         if (runningExperimentsCached != null) {
-
             assertEquals(experimentIds.size(), runningExperimentsCached.size());
-
             runningExperimentsCached.forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
         } else {
             assertTrue(experimentIds == null || experimentIds.isEmpty());
