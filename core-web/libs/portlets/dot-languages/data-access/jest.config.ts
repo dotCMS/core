@@ -5,18 +5,6 @@ export default {
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
     coverageDirectory: '../../../../../target/core-web-reports/',
-    coverageReporters: [['lcovonly', { file: 'TEST-data-access-languages.lcov' }]],
-    reporters: [
-        'default',
-        ['github-actions', { silent: false }],
-        [
-            'jest-junit',
-            {
-                outputDirectory: '../target/core-web-reports',
-                outputName: 'TEST-data-access-languages.xml'
-            }
-        ]
-    ],
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
