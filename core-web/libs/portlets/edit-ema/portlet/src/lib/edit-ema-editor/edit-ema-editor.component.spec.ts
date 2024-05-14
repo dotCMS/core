@@ -2655,16 +2655,13 @@ describe('EditEmaEditorComponent', () => {
                     expect(scrollingStateSpy).toHaveBeenCalled();
                 });
 
-                it('should dont emit postMessage or changestate scroll when drag outside iframe', () => {
+                it('should reset state to dragging when drag outside iframe', () => {
                     const dragOver = new Event('dragover');
 
                     Object.defineProperty(dragOver, 'clientY', { value: 200, enumerable: true });
                     Object.defineProperty(dragOver, 'clientX', { value: 90, enumerable: true });
 
-                    const postMessageSpy = jest.spyOn(
-                        spectator.component.iframe.nativeElement.contentWindow,
-                        'postMessage'
-                    );
+                    const updateEditorState = jest.spyOn(store, 'updateEditorState');
 
                     jest.spyOn(
                         spectator.component.iframe.nativeElement,
@@ -2678,7 +2675,7 @@ describe('EditEmaEditorComponent', () => {
 
                     window.dispatchEvent(dragOver);
                     spectator.detectChanges();
-                    expect(postMessageSpy).not.toHaveBeenCalled();
+                    expect(updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
                 });
 
                 it('should change state to dragging when drag outsite scroll trigger area', () => {
