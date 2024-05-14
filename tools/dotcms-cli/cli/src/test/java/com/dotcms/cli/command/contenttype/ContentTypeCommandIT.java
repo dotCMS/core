@@ -1004,10 +1004,10 @@ class ContentTypeCommandIT extends CommandTest {
             }
 
             byVarName = contentTypeAPI.getContentType(newContentType4.variable(), 1L, false);
-            Assertions.assertEquals(newContentType4, byVarName.entity().variable());
+            Assertions.assertEquals(newContentType4.variable(), byVarName.entity().variable());
 
             byVarName = contentTypeAPI.getContentType(newContentType5.variable(), 1L, false);
-            Assertions.assertEquals(newContentType5, byVarName.entity().variable());
+            Assertions.assertEquals(newContentType5.variable(), byVarName.entity().variable());
 
         } finally {
             deleteTempDirectory(tempFolder);
