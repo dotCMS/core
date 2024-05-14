@@ -17,8 +17,13 @@ describe('ActionMenuButtonComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotActionMenuButtonComponent],
-            imports: [ButtonModule, TooltipModule, DotMenuComponent, BrowserAnimationsModule]
+            imports: [
+                ButtonModule,
+                TooltipModule,
+                DotMenuComponent,
+                BrowserAnimationsModule,
+                DotActionMenuButtonComponent
+            ]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotActionMenuButtonComponent);

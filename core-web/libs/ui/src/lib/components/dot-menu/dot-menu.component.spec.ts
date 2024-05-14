@@ -7,7 +7,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { DotMenuComponent } from './dot-menu.component';
+import { DotMenuComponent } from '@dotcms/ui';
 
 describe('DotMenuComponent', () => {
     let component: DotMenuComponent;
@@ -32,8 +32,13 @@ describe('DotMenuComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotMenuComponent],
-            imports: [CommonModule, ButtonModule, MenuModule, NoopAnimationsModule]
+            imports: [
+                CommonModule,
+                ButtonModule,
+                MenuModule,
+                NoopAnimationsModule,
+                DotMenuComponent
+            ]
         }).compileComponents();
     });
 
