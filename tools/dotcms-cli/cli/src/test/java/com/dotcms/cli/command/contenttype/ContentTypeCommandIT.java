@@ -793,6 +793,98 @@ class ContentTypeCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: Pushing a content type with a detail page with an invalid site
+     *
+     * @throws IOException if there is an error reading the JSON content type file
+     */
+    @Test
+    void Test_Push_Content_Type_With_Detail_Page_With_Invalid_Site() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            // Creating a content type file descriptor
+            var detailPageURL = String.format(
+                    "//%s%s",
+                    "not-existing-site.com",
+                    "/not-existing-page"
+            );
+            contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace,
+                    detailPageURL, "/{name}");
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.SOFTWARE, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Pushing a content type with a detail page with an invalid page
+     *
+     * @throws IOException if there is an error reading the JSON content type file
+     */
+    @Test
+    void Test_Push_Content_Type_With_Detail_Page_With_Invalid_Page() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+
+            // Creating a site
+            final var newSiteResult = sitesTestHelper.createSiteOnServer();
+            // Creating a content type file descriptor
+            var detailPageURL = String.format(
+                    "//%s%s",
+                    newSiteResult.siteName(),
+                    "/not-existing-page"
+            );
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace,
+                    detailPageURL, "/{name}");
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(ExitCode.SOFTWARE, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
      * This tests will test the functionality of the content type push command when pushing a
      * folder, checking the content types are properly add, updated and removed on the remote
      * server.

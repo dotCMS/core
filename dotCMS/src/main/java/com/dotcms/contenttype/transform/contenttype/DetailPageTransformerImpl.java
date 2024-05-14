@@ -42,6 +42,11 @@ public class DetailPageTransformerImpl implements DetailPageTransformer {
 
             final Host site = APILocator.getHostAPI()
                     .findByName(detailPageURI.getRawAuthority(), user, false);
+            if (null == site) {
+                throw new IllegalArgumentException(
+                        String.format("Site [%s] in detail page URL [%s] not found.",
+                                detailPageURI.getRawAuthority(), detailPage));
+            }
 
             if (null == detailPageURI.getRawPath()) {
                 throw new IllegalArgumentException(
