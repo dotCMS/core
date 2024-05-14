@@ -1,5 +1,5 @@
 {
-    "name": "data-languages-data-access",
+    "name": "portlets-dot-languages-data-access",
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/dot-languages/data-access/src",
     "prefix": "lib",

@@ -1,6 +1,5 @@
 import { Spectator, createComponentFactory, byTestId } from '@ngneat/spectator/jest';
 import { provideComponentStore } from '@ngrx/component-store';
-import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
@@ -18,12 +17,7 @@ describe('DotLanguagesListComponent', () => {
     const createComponent = createComponentFactory({
         component: DotLanguagesListComponent,
         componentProviders: [provideComponentStore(DotLanguagesListStore)],
-        declarations: [
-            MockComponent(DotActionMenuButtonComponent),
-            TableModule,
-            ButtonModule,
-            InputTextModule
-        ]
+        declarations: [DotActionMenuButtonComponent, TableModule, ButtonModule, InputTextModule]
     });
 
     const mockLanguages: DotLanguageRow[] = [

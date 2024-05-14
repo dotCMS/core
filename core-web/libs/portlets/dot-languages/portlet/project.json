@@ -1,5 +1,5 @@
 {
-    "name": "dot-languages",
+    "name": "portlets-dot-languages-portlet",
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/dot-languages/portlet/src",
     "prefix": "dot",

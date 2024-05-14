@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-    displayName: 'dot-languages',
+    displayName: 'portlets-dot-languages-portlet',
     preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
