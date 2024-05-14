@@ -781,7 +781,14 @@
 		}
 	],
 	"auth": {
-		"type": "inherit"
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
 	},
 	"event": [
 		{
