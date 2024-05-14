@@ -67,7 +67,7 @@ public class ExperimentsCacheTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsCacheImpl#removeList()}
+     * Method to test: {@link ExperimentsCacheImpl#removeList(String)}
      * When: Remove a Experiment from cache
      * Should: get Null when call {@link ExperimentsCacheImpl#getList(String)}
      */
@@ -81,7 +81,7 @@ public class ExperimentsCacheTest extends IntegrationTestBase {
             .putList(ExperimentsCache.CACHED_EXPERIMENTS_KEY, List.of(experiment1, experiment2));
         checkFromCacheNotNull(2);
 
-        CacheLocator.getExperimentsCache().removeList();
+        CacheLocator.getExperimentsCache().removeList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
         checkFromCacheNull();
     }
 
