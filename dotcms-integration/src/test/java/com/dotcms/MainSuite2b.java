@@ -105,6 +105,7 @@ import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
+import com.dotmarketing.quartz.job.PruneTimeMachineBackupJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorDataTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
@@ -341,7 +342,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240112AddMetadataColumnToStructureTableTest.class,
         AIViewToolTest.class,
         SearchToolTest.class,
-        TimeMachineAPITest.class
+        TimeMachineAPITest.class,
+        PruneTimeMachineBackupJobTest.class
 })
 
 public class MainSuite2b {
