@@ -87,9 +87,11 @@ public class ContentTypeHelper implements Serializable {
         var pageDetailIdentifierOptional = new DetailPageTransformerImpl(
                 contentType, user).uriToId();
         if (pageDetailIdentifierOptional.isPresent()) {
-            return ContentTypeBuilder.builder(contentType).
+            final var updatedContentType = ContentTypeBuilder.builder(contentType).
                     detailPage(pageDetailIdentifierOptional.get())
                     .build();
+            updatedContentType.constructWithFields(contentType.fields());
+            return updatedContentType;
         }
 
         return contentType;
