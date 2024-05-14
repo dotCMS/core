@@ -13,6 +13,7 @@ import com.dotcms.ai.util.OpenAIThreadPool;
 import com.dotcms.ai.util.VelocityContextFactory;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -306,15 +307,6 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         EmbeddingsDB.impl.get().initVectorDbTable();
     }
 
-    /**
-     * this method takes a snippet of content and will try to see if we have already generated embeddings for it.
-     * It checks the cache first, and returns if it finds it there.  Then it checks the db to see if we have already
-     * saved this chunk of content before.  If we have, we reuse those same embeddings rather than making a
-     * remote request $$$ to OpenAI for new Embeddings
-     *
-     * @param content
-     * @return Tuple(Count of Tokens Input, List of Embeddings Output)
-     */
     @WrapInTransaction
     @Override
     public Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(@NotNull final String content) {
@@ -351,10 +343,22 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         return openAiEmbeddings;
     }
 
+    @CloseDBIfOpened
+    @Override
+    public boolean embeddingExists(final String inode, final String indexName, final String extractedText) {
+        return EmbeddingsDB.impl.get().embeddingExists(inode, indexName, extractedText);
+    }
+
     @WrapInTransaction
     @Override
     public void saveEmbeddings(final EmbeddingsDTO embeddings) {
         EmbeddingsDB.impl.get().saveEmbeddings(embeddings);
+    }
+
+    @WrapInTransaction
+    @Override
+    public int deleteEmbeddings(final EmbeddingsDTO dto) {
+        return EmbeddingsDB.impl.get().deleteEmbeddings(dto);
     }
 
     private JSONObject dtoToContentJson(final EmbeddingsDTO dto, final User user) {
@@ -406,8 +410,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                 "post",
                 getAPIKey(),
                 json);
-        final JSONObject response = new JSONObject(responseString);
-        final JSONObject data = (JSONObject) response.getJSONArray("data").get(0);
+        final JSONObject data = (JSONObject) new JSONObject(responseString).getJSONArray("data").get(0);
 
         return (List<Float>) data.getJSONArray("embedding").stream().map(val -> {
             double x = (double) val;
