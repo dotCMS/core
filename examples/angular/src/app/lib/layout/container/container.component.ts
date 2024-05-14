@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   Input,
-  OnInit,
+  OnChanges,
   computed,
   inject,
   signal,
@@ -28,7 +28,7 @@ interface DotContainer {
     variantId?: string,
 }
 
-const CONTAINER_EDIT_MODE_STYLES = {
+const EMPTY_CONTAINER_EDIT_MODE_STYLES = {
   width: '100%',
   backgroundColor: '#ECF0FD',
   display: 'flex',
@@ -46,13 +46,13 @@ const CONTAINER_EDIT_MODE_STYLES = {
   styleUrl: './container.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ContainerComponent implements OnInit {
+export class ContainerComponent implements OnChanges {
   @Input({ required: true }) container!: DotCMSContainer;
 
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
   private readonly dotCMSPageService: DotcmsPageService = inject(DotcmsPageService);
   protected readonly NoComponentComponent = NoComponentComponent;
-  protected readonly containerStyles: Record<string, string> = CONTAINER_EDIT_MODE_STYLES;
+  protected readonly emptyContainerStyles: Record<string, string> = EMPTY_CONTAINER_EDIT_MODE_STYLES;
   protected readonly isInsideEditor = isInsideEditor();
 
   protected contentlets: DotCMSContentlet[] = [];
@@ -60,7 +60,7 @@ export class ContainerComponent implements OnInit {
   protected dotContainer = signal<DotContainer | null>(null);
   protected dotContainerAsString = computed(() => JSON.stringify(this.dotContainer()));
 
-  ngOnInit() {
+  ngOnChanges() {
     const { containers } = this.route.snapshot.data['context'].pageAsset;
     const { acceptTypes, maxContentlets, variantId, path, contentlets } = getContainersData(containers, this.container);
     const { identifier, uuid } = this.container;

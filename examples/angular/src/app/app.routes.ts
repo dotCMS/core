@@ -10,5 +10,6 @@ export const routes: Routes = [
       context: DotCMSPageResolver,
     },
     component: DotCMSPagesComponent,
+    runGuardsAndResolvers: 'always' // Run the resolver on every navigation. Even if the URL hasn't changed.
   },
 ];

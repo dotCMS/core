@@ -7,7 +7,7 @@
         [attr.data-dot-identifier]="dotContainer()?.identifier"
         [attr.data-max-contentlets]="dotContainer()?.maxContentlets"
         [attr.data-dot-uuid]="dotContainer()?.uuid"
-        [style]="contentlets.length ? containerStyles : null">
+        [style]="contentlets.length ? null : emptyContainerStyles">
 
     @if(contentlets.length){
         @for (contentlet of contentlets; track $index) {
@@ -19,7 +19,7 @@
                 [attr.data-dot-title]="contentlet['widgetTitle'] || contentlet.title"
                 [attr.data-dot-inode]="contentlet.inode"
                 [attr.data-dot-type]="contentlet.contentType"
-                [attr.data-dot-container]="dotContainerAsString"
+                [attr.data-dot-container]="dotContainerAsString()"
                 [attr.data-dot-on-number-of-pages]="contentlet['onNumberOfPages']">
                     <ng-container
                         *ngComponentOutlet="(componentsMap[contentlet.contentType]?.component | async) || NoComponentComponent;

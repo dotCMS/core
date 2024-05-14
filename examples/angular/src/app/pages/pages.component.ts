@@ -8,7 +8,7 @@ import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { NavigationComponent } from './components/navigation/navigation.component';
 
-import { COMPONENTS } from '../utils';
+import { DYNAMIC_COMPONENTS } from '../utils';
 
 @Component({
   selector: 'dotcms-pages',
@@ -22,10 +22,9 @@ export class DotCMSPagesComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly context = signal<any>(null);
-  protected readonly components = signal<any>(COMPONENTS);
+  protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
 
   ngOnInit() {
-    
     // Get the context data from the route
     this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.context.set(data['context']);

@@ -1,4 +1,7 @@
-export const COMPONENTS: Record<string, any> = {
+// COMPONENT_MODULE_MAP
+// DYNAMIC_IMPORT
+
+export const DYNAMIC_COMPONENTS: Record<string, any> = {
   Activity: {
     // TODO: Discuss with the team if we should use the `import` function here.
     component: import('../pages/content-types/activity/activity.component').then(c => c.ActivityComponent),

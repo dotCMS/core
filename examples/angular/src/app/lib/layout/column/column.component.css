@@ -1,7 +1,3 @@
-:host {
-  display: block;
-}
-
 :host.col-start-1 {
   grid-column-start: 1;
 }
