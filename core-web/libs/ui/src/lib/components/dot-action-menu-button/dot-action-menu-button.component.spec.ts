@@ -7,11 +7,8 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionMenuItem } from '@dotcms/dotcms-models';
+import { DotActionMenuButtonComponent, DotMenuComponent } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
-
-import { DotActionMenuButtonComponent } from './dot-action-menu-button.component';
-
-import { DotMenuModule } from '../dot-menu/dot-menu.module';
 
 describe('ActionMenuButtonComponent', () => {
     let comp: DotActionMenuButtonComponent;
@@ -21,7 +18,7 @@ describe('ActionMenuButtonComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotActionMenuButtonComponent],
-            imports: [ButtonModule, TooltipModule, DotMenuModule, BrowserAnimationsModule]
+            imports: [ButtonModule, TooltipModule, DotMenuComponent, BrowserAnimationsModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotActionMenuButtonComponent);
