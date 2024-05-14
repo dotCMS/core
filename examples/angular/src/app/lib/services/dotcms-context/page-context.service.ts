@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 
 import { isInsideEditor } from '@dotcms/client';
 
-import { DotCMSPageAsset } from '../../models';
+import { DotCMSPageAsset, DynamicComponentEntity } from '../../models';
 
 export interface ComponentItem {
   component: Promise<any>;
@@ -19,16 +19,20 @@ export interface DotCMSPageContext extends DotCMSPageAsset {
 })
 export class PageContextService {
 
-  private componentsMap!: Record<string, ComponentItem>;
+  private componentsMap!: Record<string, DynamicComponentEntity> ;
   private pageContext = new BehaviorSubject<DotCMSPageContext | null>(null);
   readonly pageContext$ = this.pageContext.asObservable() as Observable<DotCMSPageContext>;
 
-  set componentMap(components: Record<string, ComponentItem>) {
-    this.componentsMap = components;
+  get pageContextValue(): DotCMSPageContext {
+    return this.pageContext.value as DotCMSPageContext;
   }
 
-  get componentMap(): Record<string, ComponentItem> {
+  getComponentMap(): Record<string, DynamicComponentEntity> {
     return this.componentsMap;
+  }
+
+  setComponentMap(components: Record<string, DynamicComponentEntity> ) {
+    this.componentsMap = components;
   }
 
   /**

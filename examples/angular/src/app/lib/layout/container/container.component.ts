@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   Input,
   OnChanges,
   computed,
@@ -9,17 +8,14 @@ import {
   signal,
 } from '@angular/core';
 import { AsyncPipe, NgComponentOutlet } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
 
 import { getContainersData } from '../../utils';
 import {
-  ComponentItem,
-  DotCMSPageContext,
   PageContextService,
 } from '../../services/dotcms-context/page-context.service';
 import { NoComponentComponent } from '../../components/no-component/no-component.component';
-import { DotCMSContainer, DotCMSContentlet } from '../../models';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DotCMSContainer, DotCMSContentlet, DynamicComponentEntity } from '../../models';
+
 interface DotContainer {
   acceptTypes: string;
   identifier: string;
@@ -47,42 +43,35 @@ const EMPTY_CONTAINER_EDIT_MODE_STYLES = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContainerComponent implements OnChanges {
-  @Input({ required: true }) container!: DotCMSContainer;
+    @Input({ required: true }) container!: DotCMSContainer;
 
-  private readonly pageContextService: PageContextService =
-    inject(PageContextService);
-  private readonly destroyRef = inject(DestroyRef);
-  protected readonly emptyContainerStyles: Record<string, string> =
-    EMPTY_CONTAINER_EDIT_MODE_STYLES;
-  protected readonly NoComponentComponent = NoComponentComponent;
-  protected readonly isInsideEditor = signal<boolean>(false);
+    private readonly pageContextService: PageContextService = inject(PageContextService);
+    protected readonly emptyContainerStyles: Record<string, string> = EMPTY_CONTAINER_EDIT_MODE_STYLES;
+    protected readonly NoComponentComponent = NoComponentComponent;
+    protected readonly isInsideEditor = signal<boolean>(false);
 
-  protected componentsMap!: Record<string, ComponentItem>;
-  protected contentlets = signal<DotCMSContentlet[]>([]);
-  protected dotContainer = signal<DotContainer | null>(null);
-  protected dotContainerAsString = computed(() =>
-    JSON.stringify(this.dotContainer())
-  );
+    protected componentsMap!: Record<string, DynamicComponentEntity>;
+    protected contentlets = signal<DotCMSContentlet[]>([]);
+    protected dotContainer = signal<DotContainer | null>(null);
+    protected dotContainerAsString = computed(() =>
+        JSON.stringify(this.dotContainer())
+    );
 
-  ngOnChanges() {
-    this.pageContextService.pageContext$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ containers, isInsideEditor }: DotCMSPageContext) => {
-        const { acceptTypes, maxContentlets, variantId, path, contentlets } =
-          getContainersData(containers, this.container);
+    ngOnChanges() {
+        const { containers, isInsideEditor } = this.pageContextService.pageContextValue;
+        const { acceptTypes, maxContentlets, variantId, path, contentlets } = getContainersData(containers, this.container);
         const { identifier, uuid } = this.container;
 
-        this.componentsMap = this.pageContextService.componentMap;
+        this.componentsMap = this.pageContextService.getComponentMap();
 
         this.isInsideEditor.set(isInsideEditor);
         this.contentlets.set(contentlets);
         this.dotContainer.set({
-          identifier: path ?? identifier,
-          acceptTypes,
-          maxContentlets,
-          variantId,
-          uuid,
+            identifier: path ?? identifier,
+            acceptTypes,
+            maxContentlets,
+            variantId,
+            uuid,
         });
-      });
-  }
+    }
 }

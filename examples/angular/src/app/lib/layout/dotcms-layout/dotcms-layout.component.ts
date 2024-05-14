@@ -9,10 +9,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { RowComponent } from '../row/row.component';
 import {
-  ComponentItem,
   PageContextService,
 } from '../../services/dotcms-context/page-context.service';
-import { DotCMSPageAsset } from '../../models';
+import { DotCMSPageAsset, DynamicComponentEntity } from '../../models';
 import { initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
 
 @Component({
@@ -27,14 +26,14 @@ import { initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
 })
 export class DotcmsLayoutComponent implements OnInit {
   @Input({ required: true }) entity!: DotCMSPageAsset;
-  @Input({ required: true }) components!: Record<string, ComponentItem>;
+  @Input({ required: true }) components!: Record<string, DynamicComponentEntity>;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly pageContextService = inject(PageContextService);
 
   ngOnInit() {
-    this.pageContextService.componentMap = this.components;
+    this.pageContextService.setComponentMap(this.components);
 
     this.route.url.subscribe((urlSegments) => {
       if (isInsideEditor()) {

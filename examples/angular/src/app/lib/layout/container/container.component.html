@@ -7,9 +7,9 @@
         [attr.data-dot-identifier]="dotContainer()?.identifier"
         [attr.data-max-contentlets]="dotContainer()?.maxContentlets"
         [attr.data-dot-uuid]="dotContainer()?.uuid"
-        [style]="contentlets.length ? null : emptyContainerStyles">
+        [style]="contentlets().length ? null : emptyContainerStyles">
 
-    @if(contentlets.length){
+    @if(contentlets().length){
         @for (contentlet of contentlets(); track $index) {
             <div
                 data-testid="dot-contentlet"
@@ -22,8 +22,7 @@
                 [attr.data-dot-container]="dotContainerAsString()"
                 [attr.data-dot-on-number-of-pages]="contentlet['onNumberOfPages']">
                     <ng-container
-                        *ngComponentOutlet="(componentsMap[contentlet.contentType]?.component | async) || NoComponentComponent;
-                        ngModule: undefined, inputs: { contentlet }"
+                        *ngComponentOutlet="(componentsMap[contentlet.contentType] | async) || NoComponentComponent; inputs: { contentlet }"
                      ></ng-container>
             </div>
         }
@@ -35,7 +34,7 @@
 } @else {
     @for (contentlet of contentlets(); track $index) {
         <ng-container
-            *ngComponentOutlet=" (componentsMap[contentlet.contentType]?.component | async) || NoComponentComponent;
+            *ngComponentOutlet=" (componentsMap[contentlet.contentType] | async) || NoComponentComponent;
             inputs: { contentlet }"
         ></ng-container>
     }
