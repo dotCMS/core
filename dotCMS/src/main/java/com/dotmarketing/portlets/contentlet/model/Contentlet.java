@@ -12,6 +12,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.storage.FileMetadataAPI;
@@ -1755,6 +1756,17 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean isKeyValue() throws DotDataException, DotSecurityException {
         return getContentType().baseType() == BaseContentType.KEY_VALUE;
     }
+
+	/**
+	 * Determines whether this object belongs to a Language Variable Content Type or not.
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public boolean isLanguageVariable() throws DotDataException, DotSecurityException {
+		return isKeyValue() && LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME.equals(getContentType().variable());
+	}
+
 	@JsonIgnore
 	private ContentletAPI getContentletAPI() {
 		if(contentletAPI==null) {
