@@ -4,6 +4,7 @@ backend: &backend
   - 'build-parent/**'
   - 'core-web/pom.xml'
   - 'dotCMS/src/main/webapp/html/**/!(*.{css,js})'
+  - 'dotcms-postman/**'
   - 'dotCMS/!(src/main/webapp/html/)**'
   - 'dotcms-integration/**'
   - 'independent-projects/**'
