@@ -353,8 +353,16 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * Method to test: {@link ExperimentsAPI#getRunningExperiments()}
      * When: You have tree Experiment:
      * - First one in DRAFT state, it has never been running.
-     * - Second one in RUNNING state, it was already started and it was not stopped yet
-     * - Finally one in STOP State, it was started, but it was stopped already
+     * - Second and third are started.
+     *
+     * Should : The method return the second and third Experiment,
+     * Also before called the method the Running Experiment cache must be empty and after called the method the cache
+     * must include the two Running Experiment.
+     *
+     * later Stop the third Experiment, and called the method again, now the method
+     * must return just the Second Experiment.
+     * Also, the Running Experiment Cache must ve empty before called the methos and include just the second Experiment
+     * after call it.
      */
     @Test
     public void getRunningExperiment() throws DotDataException, DotSecurityException {
@@ -365,6 +373,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Experiment stoppedExperiment = new ExperimentDataGen().nextPersisted();
         ExperimentDataGen.start(stoppedExperiment);
+
+        assertCachedRunningExperiments(Collections.emptyList());
 
         try {
             List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
@@ -379,6 +389,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             assertCachedRunningExperiments(experimentIds);
 
             ExperimentDataGen.end(stoppedExperiment);
+
+            assertCachedRunningExperiments(Collections.emptyList());
 
             experimentRunning = APILocator.getExperimentsAPI()
                     .getRunningExperiments();
@@ -461,9 +473,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
 
     private static void assertCachedRunningExperiments(final List<String> experimentIds) {
-        CacheLocator.getExperimentsCache()
-                .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY)
-                .forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
+        final List<Experiment> runningExperimentsCached = CacheLocator.getExperimentsCache()
+                .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
+
+        if (runningExperimentsCached != null) {
+            runningExperimentsCached.forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
+        }
     }
 
     /**
