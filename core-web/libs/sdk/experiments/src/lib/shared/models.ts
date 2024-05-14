@@ -145,7 +145,20 @@ export interface AssignedExperiments {
      * The ids of the experiments included in the assignment.
      */
     includedExperimentIds: string[];
+
+    /**
+     * The ids of the experiments that are excluded in the request and have ended.
+     */
+    excludedExperimentIdsEnded: string[];
 }
+
+/**
+ * Represents the response from the backend when fetching an experiment and the excludedExperimentIdsEnded.
+ */
+export type FetchExperiments = Pick<
+    AssignedExperiments,
+    'excludedExperimentIdsEnded' | 'experiments'
+>;
 
 /**
  * Represents the response from backend holding information about running experiments and variant assignment.
