@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DotcmsPageService } from './dotcms-page.service';
+import { PageContextService } from './page-context.service';
 
-describe('DotcmsPageService', () => {
-  let service: DotcmsPageService;
+describe('DotcmsContextService', () => {
+  let service: PageContextService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(DotcmsPageService);
+    service = TestBed.inject(PageContextService);
   });
 
   it('should be created', () => {

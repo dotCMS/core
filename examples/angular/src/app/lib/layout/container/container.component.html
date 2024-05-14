@@ -1,5 +1,5 @@
 
-@if (isInsideEditor) {
+@if (isInsideEditor()) {
     <div
         data-testid="dot-container"
         data-dot-object="container"
@@ -10,7 +10,7 @@
         [style]="contentlets.length ? null : emptyContainerStyles">
 
     @if(contentlets.length){
-        @for (contentlet of contentlets; track $index) {
+        @for (contentlet of contentlets(); track $index) {
             <div
                 data-testid="dot-contentlet"
                 data-dot-object="contentlet"
@@ -23,7 +23,7 @@
                 [attr.data-dot-on-number-of-pages]="contentlet['onNumberOfPages']">
                     <ng-container
                         *ngComponentOutlet="(componentsMap[contentlet.contentType]?.component | async) || NoComponentComponent;
-                        inputs: { contentlet }"
+                        ngModule: undefined, inputs: { contentlet }"
                      ></ng-container>
             </div>
         }
@@ -33,7 +33,7 @@
     }
 </div>
 } @else {
-    @for (contentlet of contentlets; track $index) {
+    @for (contentlet of contentlets(); track $index) {
         <ng-container
             *ngComponentOutlet=" (componentsMap[contentlet.contentType]?.component | async) || NoComponentComponent;
             inputs: { contentlet }"

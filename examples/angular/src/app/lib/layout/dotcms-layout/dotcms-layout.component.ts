@@ -10,8 +10,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { RowComponent } from '../row/row.component';
 import {
   ComponentItem,
-  DotcmsPageService,
-} from '../../services/dotcms-page/dotcms-page.service';
+  PageContextService,
+} from '../../services/dotcms-context/page-context.service';
 import { DotCMSPageAsset } from '../../models';
 import { initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
 
@@ -19,7 +19,6 @@ import { initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
   selector: 'dotcms-layout',
   standalone: true,
   imports: [RowComponent],
-  providers: [DotcmsPageService],
   template: `@for(row of entity.layout.body.rows; track $index) {
     <dotcms-row [row]="row" />
     }`,
@@ -32,10 +31,10 @@ export class DotcmsLayoutComponent implements OnInit {
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly dotCMSPageService = inject(DotcmsPageService);
+  private readonly pageContextService = inject(PageContextService);
 
   ngOnInit() {
-    this.dotCMSPageService.componentMap = this.components;
+    this.pageContextService.componentMap = this.components;
 
     this.route.url.subscribe((urlSegments) => {
       if (isInsideEditor()) {
