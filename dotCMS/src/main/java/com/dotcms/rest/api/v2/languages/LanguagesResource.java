@@ -383,11 +383,11 @@ public class LanguagesResource {
 
         final Map<Object,Object> result = new TreeMap<>(mapPropertiesFile);
 
-        final Language language1 = APILocator.getLanguageAPI().getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
+        final Language language1 = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
         if(UtilMethods.isSet(language1)) {
 
             final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-            if(isLocalizationEnhancementsEnabled()) {
+            if(languageAPI.isLocalizationEnhancementsEnabled()) {
                 final Language matchingLang = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
                 // Enhanced Language Vars
                 final List<LanguageVariable> variables = languageVariableAPI.findVariables(matchingLang.getId());
@@ -396,7 +396,7 @@ public class LanguagesResource {
                 result.putAll(map);
             } else {
                 //Language Keys
-                final Map mapLanguageKeys = APILocator.getLanguageAPI()
+                final Map mapLanguageKeys = languageAPI
                         .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
                                 Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 

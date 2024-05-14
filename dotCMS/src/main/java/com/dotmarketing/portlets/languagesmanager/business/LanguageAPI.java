@@ -32,10 +32,10 @@ import com.liferay.portal.model.User;
  */
 public interface LanguageAPI {
 
-	 Lazy<Boolean> localizationEnhancementsEnabled = Lazy.of(
+	Lazy<Boolean> localizationEnhancementsEnabled = Lazy.of(
 			() -> Config.getBooleanProperty("LOCALIZATION_ENHANCEMENTS_ENABLED", true));
 
-	static boolean isLocalizationEnhancementsEnabled() { return localizationEnhancementsEnabled.get(); }
+	boolean isLocalizationEnhancementsEnabled();
 
     /**
      * 

@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BooleanSupplier;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -51,14 +53,23 @@ import org.apache.velocity.tools.view.context.ViewContext;
  */
 public class LanguageAPIImpl implements LanguageAPI {
 
-
-    private final static LanguageKeyComparator LANGUAGE_KEY_COMPARATOR = new LanguageKeyComparator();
+	private static final LanguageKeyComparator LANGUAGE_KEY_COMPARATOR = new LanguageKeyComparator();
 
 	private HttpServletRequest request; // todo: this should be decouple from the api
 	private LanguageFactory factory;
 	private LanguageVariableAPI languageVariableAPI;
 	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-	
+
+	private BooleanSupplier localizationEnhancementsEnabledOverride;
+
+	public LanguageAPIImpl(
+			LanguageFactory factory,
+			LanguageVariableAPI languageVariableAPI,
+			BooleanSupplier localizationEnhancementsEnabledOverride) {
+		this.factory = factory;
+		this.languageVariableAPI = languageVariableAPI;
+		this.localizationEnhancementsEnabledOverride = localizationEnhancementsEnabledOverride;
+	}
 	/**
 	 * Inits the service with the user {@link ViewContext}
 	 * @param obj
@@ -68,12 +79,30 @@ public class LanguageAPIImpl implements LanguageAPI {
 		this.request = context.getRequest(); // todo: this is just getting it for the user, so instead of getting the request should get the user.
 	}
 
+	@Override
+	public boolean isLocalizationEnhancementsEnabled() {
+		if(localizationEnhancementsEnabledOverride != null) {
+			return localizationEnhancementsEnabledOverride.getAsBoolean();
+		}
+		return localizationEnhancementsEnabled.get();
+	}
+
 	/**
 	 * Creates a new instance of the {@link LanguageAPI}.
 	 */
 	public LanguageAPIImpl() {
-		factory = FactoryLocator.getLanguageFactory();
+		this(FactoryLocator.getLanguageFactory(), APILocator.getLanguageVariableAPI(), null);
 	}
+
+	/**
+	 * Creates a new instance of the {@link LanguageAPI}.
+	 * @param localizationEnhancementsEnabledOverride
+	 */
+	@VisibleForTesting
+	public LanguageAPIImpl(BooleanSupplier localizationEnhancementsEnabledOverride) {
+		this(FactoryLocator.getLanguageFactory(), APILocator.getLanguageVariableAPI(), localizationEnhancementsEnabledOverride);
+	}
+
 
 	@Override
     @WrapInTransaction

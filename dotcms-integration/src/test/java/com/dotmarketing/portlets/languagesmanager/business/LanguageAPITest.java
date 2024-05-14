@@ -21,6 +21,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -181,7 +182,6 @@ public class LanguageAPITest {
    */
   @Test
   public void getStringsAsMap_returnMap() throws Exception {
-    
     final String uniq = UUIDGenerator.shorty();
     final String BAD_KEY = "KEY-DOES-NOT-EXIST";
     final String CONTENTLET_KEY = "key-exists-as-contentlet" + uniq;
@@ -194,6 +194,7 @@ public class LanguageAPITest {
     Mockito.doReturn(APILocator.systemUser()).when(lapi).getUser();
     final ContentType langKeyType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Languagevariable");
 
+	//Create a contentlet with the key
     Contentlet con = new ContentletDataGen(langKeyType.id())
         .setProperty("key", CONTENTLET_KEY)
         .setProperty("value", CONTENTLET_KEY + "works")
@@ -202,11 +203,9 @@ public class LanguageAPITest {
     APILocator.getContentletAPI().publish(con, APILocator.systemUser(), false);
     
     
-    // Add Languague Variable to local properties
+    // Add Lang Variable to local properties. This shouldn't work if the localization enhancement is enabled. Cause this is legacy deprecated code
     lapi.saveLanguageKeys(language, ImmutableMap.of(PROPERTYFILE_KEY, PROPERTYFILE_KEY + "works"), new HashMap<>(), ImmutableSet.of());
-    
 
-    
     final List<String> keys = ImmutableList.of(BAD_KEY, CONTENTLET_KEY,PROPERTYFILE_KEY,SYSTEM_PROPERTYFILE_KEY );
     final Locale locale = language.asLocale();
     

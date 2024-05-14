@@ -35,6 +35,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.StringUtil;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -180,9 +181,10 @@ public class MultiMessageResources extends PropertyMessageResources {
 
     private void _loadProps(String name, String localeKey) {
 
+        final LanguageAPI langAPI = APILocator.getLanguageAPI();
         if (name.contains("cms_language")) {
 
-            if(isLocalizationEnhancementsEnabled()){
+            if(langAPI.isLocalizationEnhancementsEnabled()){
 
                 final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
                 final long languageId = LanguageUtil.getLanguageId(localeKey, false);
@@ -197,7 +199,7 @@ public class MultiMessageResources extends PropertyMessageResources {
                 }
 
             } else{
-                LanguageAPI langAPI = APILocator.getLanguageAPI();
+
                 List<LanguageKey> keys;
                 if (localeKey.split("_").length > 1) {
                     keys = langAPI.getLanguageKeys(localeKey.split("_")[0], localeKey.split("_")[1]);
@@ -229,67 +231,8 @@ public class MultiMessageResources extends PropertyMessageResources {
                 url = _servletContext.getResource("/WEB-INF/" + name);
 
                 if (url != null) {
-                    try (InputStream is = url.openStream(); BufferedReader buffy = new BufferedReader(
-                            new InputStreamReader(is));) {
-                        String line = null;
-
-                        while ((line = buffy.readLine()) != null) {
-                            if (UtilMethods.isSet(line) && line.indexOf("=") > -1 && !line.startsWith("#")) {
-                                String[] arr = line.split("=", 2);
-                                if (arr.length > 1) {
-                                    String key = arr[0].trim();
-                                    String val = arr[1].trim();
-                                    if (val.indexOf("\\u") > -1) {
-
-                                        if (val.indexOf("\\u") > -1) {
-
-                                            StringBuffer buffer = new StringBuffer(val.length());
-                                            boolean precedingBackslash = false;
-                                            for (int i = 0; i < val.length(); i++) {
-                                                char c = val.charAt(i);
-                                                if (precedingBackslash) {
-                                                    switch (c) {
-                                                        case 'f':
-                                                            c = '\f';
-                                                            break;
-                                                        case 'n':
-                                                            c = '\n';
-                                                            break;
-                                                        case 'r':
-                                                            c = '\r';
-                                                            break;
-                                                        case 't':
-                                                            c = '\t';
-                                                            break;
-                                                        case 'u':
-                                                            String hex = val.substring(i + 1, i + 5);
-                                                            c = (char) Integer.parseInt(hex, 16);
-                                                            i += 4;
-                                                    }
-                                                    precedingBackslash = false;
-                                                } else {
-                                                    precedingBackslash = (c == '\\');
-                                                }
-                                                if (!precedingBackslash) {
-                                                    buffer.append(c);
-                                                }
-                                            }
-                                            val = buffer.toString();
-                                        }
-
-
-                                    }
-                                    if (props.containsKey(key)) {
-                                        Logger.warn(this.getClass(), String.format(
-                                                "Duplicate resource property definition (key=was ==> is now): %s=%s ==> %s",
-                                                key, props.get(key), val));
-                                    }
-                                    props.put(key, val);
-                                }
-
-                            }
-
-                        }
+                    try (InputStream is = url.openStream(); BufferedReader buffy = new BufferedReader(new InputStreamReader(is))) {
+                        buildProps(props, buffy);
                     }
                 }
             } catch (Exception e) {
@@ -307,6 +250,64 @@ public class MultiMessageResources extends PropertyMessageResources {
                     String key = (String) names.nextElement();
 
                     messages.put(messageKey(localeKey, key), props.getProperty(key));
+                }
+            }
+        }
+    }
+
+    private void buildProps(Properties props, BufferedReader buffy) throws IOException {
+        String line = null;
+
+        while ((line = buffy.readLine()) != null) {
+            if (UtilMethods.isSet(line) && line.contains("=") && !line.startsWith("#")) {
+                String[] arr = line.split("=", 2);
+                if (arr.length > 1) {
+                    String key = arr[0].trim();
+                    String val = arr[1].trim();
+                    if (val.contains("\\u")) {
+
+                        if (val.contains("\\u")) {
+
+                            StringBuffer buffer = new StringBuffer(val.length());
+                            boolean precedingBackslash = false;
+                            for (int i = 0; i < val.length(); i++) {
+                                char c = val.charAt(i);
+                                if (precedingBackslash) {
+                                    switch (c) {
+                                        case 'f':
+                                            c = '\f';
+                                            break;
+                                        case 'n':
+                                            c = '\n';
+                                            break;
+                                        case 'r':
+                                            c = '\r';
+                                            break;
+                                        case 't':
+                                            c = '\t';
+                                            break;
+                                        case 'u':
+                                            String hex = val.substring(i + 1, i + 5);
+                                            c = (char) Integer.parseInt(hex, 16);
+                                            i += 4;
+                                    }
+                                    precedingBackslash = false;
+                                } else {
+                                    precedingBackslash = (c == '\\');
+                                }
+                                if (!precedingBackslash) {
+                                    buffer.append(c);
+                                }
+                            }
+                            val = buffer.toString();
+                        }
+                    }
+                    if (props.containsKey(key)) {
+                        Logger.warn(this.getClass(), String.format(
+                                "Duplicate resource property definition (key=was ==> is now): %s=%s ==> %s",
+                                key, props.get(key), val));
+                    }
+                    props.put(key, val);
                 }
             }
         }
