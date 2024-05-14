@@ -1,5 +1,6 @@
 import { fromEvent as observableFromEvent } from 'rxjs';
 
+import { NgIf } from '@angular/common';
 import { Component, Input, ViewChild } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -18,7 +19,7 @@ import { skip, take } from 'rxjs/operators';
     selector: 'dot-menu',
     templateUrl: './dot-menu.component.html',
     styleUrls: ['./dot-menu.component.scss'],
-    imports: [ButtonModule, MenuModule],
+    imports: [ButtonModule, MenuModule, NgIf],
     standalone: true
 })
 export class DotMenuComponent {
