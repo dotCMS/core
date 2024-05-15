@@ -10,6 +10,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -22,6 +23,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -96,8 +98,7 @@ public class CompletionsToolTest implements AiTest {
         EmbeddingsDTODataGen.persistEmbeddings(query, null, "default", 1);
 
         final JSONObject result = (JSONObject) completionsTool.summarize(query);
-        assertNotNull(result);
-        assertFalse(result.containsKey("error"));
+        assertAll(result);
     }
 
     /**
@@ -115,8 +116,7 @@ public class CompletionsToolTest implements AiTest {
         final String prompt = String.format("{\"model\":\"gpt-3.5-turbo-16k\",\"messages\":[{\"role\":\"user\",\"content\":\"%s?\"},{\"role\":\"system\",\"content\":\"You are a helpful assistant with a descriptive writing style.\"}]}", query);
 
         final JSONObject result = (JSONObject) completionsTool.raw(prompt);
-        assertNotNull(result);
-        assertFalse(result.containsKey("error"));
+        assertResult(result);
     }
 
     /**
@@ -139,8 +139,7 @@ public class CompletionsToolTest implements AiTest {
         json.put("model", "gpt-3.5-turbo-16k");
 
         final JSONObject result = (JSONObject) completionsTool.raw(json);
-        assertNotNull(result);
-        assertFalse(result.containsKey("error"));
+        assertResult(result);
     }
 
     /**
@@ -160,8 +159,7 @@ public class CompletionsToolTest implements AiTest {
                 .put(new JSONObject().put("role", "system").put("content", "You are a helpful assistant with a descriptive writing style")));
 
         final JSONObject result = (JSONObject) completionsTool.raw(map);
-        assertNotNull(result);
-        assertFalse(result.containsKey("error"));
+        assertResult(result);
     }
 
     private CompletionsTool prepareCompletionsTool(final ViewContext viewContext) {
@@ -176,6 +174,34 @@ public class CompletionsToolTest implements AiTest {
                 return config;
             }
         };
+    }
+
+    private static void assertResult(final JSONObject result) {
+        assertNotNull(result);
+        assertFalse(result.containsKey("error"));
+    }
+
+    private static void assertResponse(final JSONObject result) {
+        assertNotNull(result.getString("openAiResponse"));
+        final JSONObject openAiResponse = result.getJSONObject("openAiResponse");
+        assertTrue(StringUtils.isNotBlank(openAiResponse.getString("id")));
+        assertTrue(StringUtils.isNotBlank(openAiResponse.getString("object")));
+        assertTrue(openAiResponse.getInt("created") > 0);
+        assertEquals("gpt-3.5-turbo-16k-0613", openAiResponse.getString("model"));
+        assertFalse(openAiResponse.getJSONArray("choices").isEmpty());
+        final JSONObject choice = openAiResponse.getJSONArray("choices").getJSONObject(0);
+        assertTrue(choice.containsKey("message"));
+        final JSONObject message = choice.getJSONObject("message");
+        assertTrue(StringUtils.isNotBlank(message.getString("content")));
+        assertNotNull(openAiResponse.getJSONObject("usage"));
+        assertFalse(openAiResponse.getJSONObject("usage").isEmpty());
+        assertNotNull(openAiResponse.getJSONObject("headers"));
+        assertFalse(openAiResponse.getJSONObject("headers").isEmpty());
+    }
+
+    private static void assertAll(final JSONObject result) {
+        assertResult(result);
+        assertResponse(result);
     }
 
 }
