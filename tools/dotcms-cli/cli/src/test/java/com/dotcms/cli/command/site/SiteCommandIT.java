@@ -8,6 +8,7 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.cli.command.CommandTest;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.cli.common.SitesTestHelperService;
+import com.dotcms.cli.common.SitesTestHelperService.SiteDescriptorCreationResult;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
@@ -1102,21 +1103,13 @@ class SiteCommandIT extends CommandTest {
                         result.path().toFile(),
                         SiteView.class
                 );
-                Assertions.assertEquals(result.siteName(), site1.siteName());
-                Assertions.assertEquals(1, site1.languageId());
-                Assertions.assertNotNull(site1.identifier());
-                Assertions.assertFalse(site1.identifier().isBlank());
-                Assertions.assertEquals(Boolean.FALSE, site1.isArchived());
+                validateSiteDescriptor(result, site1, false);
 
                 var site2 = this.mapperService.map(
                         result1.path().toFile(),
                         SiteView.class
                 );
-                Assertions.assertEquals(result1.siteName(), site2.siteName());
-                Assertions.assertEquals(1, site2.languageId());
-                Assertions.assertNotNull(site2.identifier());
-                Assertions.assertFalse(site2.identifier().isBlank());
-                Assertions.assertEquals(Boolean.FALSE, site1.isArchived());
+                validateSiteDescriptor(result1, site2, false);
 
                 // ╔══════════════════════════════╗
                 // ║  Marking a site as archived  ║
@@ -1145,11 +1138,7 @@ class SiteCommandIT extends CommandTest {
                         result1.path().toFile(),
                         SiteView.class
                 );
-                Assertions.assertEquals(result1.siteName(), site2.siteName());
-                Assertions.assertEquals(1, site2.languageId());
-                Assertions.assertNotNull(site2.identifier());
-                Assertions.assertFalse(site2.identifier().isBlank());
-                Assertions.assertEquals(Boolean.TRUE, site2.isArchived());
+                validateSiteDescriptor(result1, site2, true);
 
                 // Requesting the site from the server to make sure the data matches between the
                 // server and the local file
@@ -1884,6 +1873,23 @@ class SiteCommandIT extends CommandTest {
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("name:"));
         }
+    }
+
+    /**
+     * Validate the site descriptor by comparing it with the result of site descriptor creation.
+     *
+     * @param result   The site descriptor creation result.
+     * @param site     The site view to be validated.
+     * @param archived A boolean indicating if the site is archived or not.
+     */
+    private void validateSiteDescriptor(final SiteDescriptorCreationResult result,
+            final SiteView site, final boolean archived) {
+
+        Assertions.assertEquals(result.siteName(), site.siteName());
+        Assertions.assertEquals(1, site.languageId());
+        Assertions.assertNotNull(site.identifier());
+        Assertions.assertFalse(site.identifier().isBlank());
+        Assertions.assertEquals(archived, site.isArchived());
     }
 
     /**
