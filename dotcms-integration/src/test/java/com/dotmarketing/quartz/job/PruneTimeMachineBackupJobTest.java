@@ -63,10 +63,10 @@ public class PruneTimeMachineBackupJobTest {
         try {
             Config.setProperty("TIMEMACHINE_PATH", tmTestingFolder.toPath().toAbsolutePath().toString());
 
-            final String expireFolderName = "timeMachineBundle_" + System.currentTimeMillis() + "_1";
+            final String expireFolderName = "tm_" + System.currentTimeMillis() + "_1";
             final File expireFolder = createTimeMachineFolder(tmTestingFolder, expireFolderName, 95);
 
-            final String noExpireFolderName = "timeMachineBundle_" + System.currentTimeMillis() + "_2";
+            final String noExpireFolderName = "tm_" + System.currentTimeMillis() + "_2";
             final File noExpireFolder = createTimeMachineFolder(tmTestingFolder, noExpireFolderName, 45);
 
             assertFileSystem(tmTestingFolder, noExpireFolderName, expireFolderName);
@@ -108,10 +108,10 @@ public class PruneTimeMachineBackupJobTest {
         try {
             Config.setProperty("TIMEMACHINE_PATH", tmTestingFolder.toPath().toAbsolutePath().toString());
 
-            final String expireFolderName_1 = "timeMachineBundle_" + System.currentTimeMillis() + "_1";
+            final String expireFolderName_1 = "tm_" + System.currentTimeMillis() + "_1";
             final File expireFolder_1 = createTimeMachineFolder(tmTestingFolder, expireFolderName_1, 95);
 
-            final String expireFolderName_2 = "timeMachineBundle_" + System.currentTimeMillis() + "_2";
+            final String expireFolderName_2 = "tm_" + System.currentTimeMillis() + "_2";
             final File expireFolder_2 = createTimeMachineFolder(tmTestingFolder, expireFolderName_2, 97);
 
             assertFileSystem(tmTestingFolder, expireFolderName_1, expireFolderName_2);
@@ -145,10 +145,10 @@ public class PruneTimeMachineBackupJobTest {
         try {
             Config.setProperty("TIMEMACHINE_PATH", tmTestingFolder.toPath().toAbsolutePath().toString());
 
-            final String noExpireFolderName_1 = "timeMachineBundle_" + System.currentTimeMillis() + "_1";
+            final String noExpireFolderName_1 = "tm_" + System.currentTimeMillis() + "_1";
             final File noExpireFolder_1 = createTimeMachineFolder(tmTestingFolder, noExpireFolderName_1, 55);
 
-            final String noExpireFolderName_2 = "timeMachineBundle_" + System.currentTimeMillis() + "_2";
+            final String noExpireFolderName_2 = "tm_" + System.currentTimeMillis() + "_2";
             final File noExpireFolder_2 = createTimeMachineFolder(tmTestingFolder, noExpireFolderName_2, 45);
 
             assertFileSystem(tmTestingFolder, noExpireFolderName_1, noExpireFolderName_2);
