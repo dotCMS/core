@@ -2735,11 +2735,6 @@ describe('EditEmaEditorComponent', () => {
                         jest.useFakeTimers(); // Mock the timers
                         spectator.detectChanges();
 
-                        // We need to force the editor state to loading for this test
-                        // because first we get the pageapi of "1" person
-                        // and then we get the pageapi of "3" person
-                        store.updateEditorState(EDITOR_STATE.LOADING);
-
                         store.load({
                             url: 'index',
                             language_id: '3',
