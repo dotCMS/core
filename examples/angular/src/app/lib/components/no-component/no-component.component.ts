@@ -3,7 +3,8 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { DotCMSContentlet } from '../../models';
 
 /**
- * This is part of the React SDK. We should let user have their own callback component
+ * This is part of the Angular SDK.
+ * This is a component for the `NoComponentComponent` component.
  */
 @Component({
   selector: 'app-no-component',

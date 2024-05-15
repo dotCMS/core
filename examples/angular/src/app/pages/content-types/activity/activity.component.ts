@@ -1,6 +1,7 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+
+import { DotCMSContentlet } from '../../../lib/models';
 
 @Component({
   selector: 'app-activity',
@@ -20,11 +21,11 @@ import { RouterLink } from '@angular/router';
     }
     <div class="px-6 py-4">
       <p class="mb-2 text-xl font-bold">{{ contentlet.title }}</p>
-      <p class="text-base line-clamp-3">{{ contentlet.description }}</p>
+      <p class="text-base line-clamp-3">{{ contentlet['description'] }}</p>
     </div>
     <div class="px-6 pt-4 pb-2">
       <a
-        [routerLink]="'/activities/' + contentlet.urlTitle || '#'"
+        [routerLink]="'/activities/' + contentlet['urlTitle'] || '#'"
         class="inline-block px-4 py-2 font-bold text-white bg-red-400 rounded-full hover:bg-purple-700"
       >
         Link to detail →
@@ -35,5 +36,5 @@ import { RouterLink } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ActivityComponent {
-  @Input() contentlet: any;
+  @Input() contentlet!: DotCMSContentlet;
 }
