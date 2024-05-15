@@ -452,7 +452,7 @@ describe('EditEmaStore', () => {
                         state: EDITOR_STATE.IDLE,
                         code: undefined,
                         isVTL: false,
-                        changedFromLoading: true
+                        shouldReload: true
                     });
                     done();
                 });
@@ -619,7 +619,8 @@ describe('EditEmaStore', () => {
                                 isLocked: false,
                                 lockedByUser: ''
                             }
-                        }
+                        },
+                        shouldReload: true
                     });
                     done();
                 });
@@ -659,8 +660,10 @@ describe('EditEmaStore', () => {
                                 canLock: true,
                                 isLocked: false,
                                 lockedByUser: ''
-                            }
-                        }
+                            },
+                            variantId: undefined
+                        },
+                        shouldReload: true
                     });
                     expect(spyGetPage).toHaveBeenCalledWith(params);
                     expect(spyWhenReloaded).toHaveBeenCalled();
@@ -1073,7 +1076,7 @@ describe('EditEmaStore', () => {
                         state: EDITOR_STATE.IDLE,
                         code: '<html><body><h1>Hello, World!</h1></body></html>',
                         isVTL: true,
-                        changedFromLoading: true
+                        shouldReload: true
                     });
                     done();
                 });
@@ -1148,7 +1151,8 @@ describe('EditEmaStore', () => {
                                 lockedByUser: ''
                             },
                             variantId: undefined
-                        }
+                        },
+                        shouldReload: true
                     });
                     done();
                 });

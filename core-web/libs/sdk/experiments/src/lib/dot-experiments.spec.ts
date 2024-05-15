@@ -5,6 +5,7 @@ import fetchMock from 'fetch-mock';
 import { DotExperiments } from './dot-experiments';
 import { API_EXPERIMENTS_URL, EXPERIMENT_QUERY_PARAM_KEY } from './shared/constants';
 import {
+    After15DaysIsUserIncludedResponse,
     IsUserIncludedResponse,
     LocationMock,
     MOCK_CURRENT_TIMESTAMP,
@@ -219,7 +220,7 @@ describe('DotExperiments', () => {
                 // get the experiments stored in the indexDB
                 const experiments = instance.experiments;
 
-                expect(experiments.length).toBe(2);
+                expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDBWithNew);
                 expect(spyTrackPageView).toBeCalledTimes(2);
             });
@@ -228,7 +229,7 @@ describe('DotExperiments', () => {
                 `${configMock.server}/${API_EXPERIMENTS_URL}`,
                 {
                     status: 200,
-                    body: [],
+                    body: After15DaysIsUserIncludedResponse,
                     headers: {
                         Accept: 'application/json',
                         'Content-Type': 'application/json'
