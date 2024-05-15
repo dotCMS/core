@@ -7,7 +7,9 @@
         </app-header>
     }
     
-    <dotcms-layout [entity]="pageAsset" [components]="components()" />
+    <main class="container flex flex-col gap-8 m-auto">
+        <dotcms-layout [entity]="pageAsset" [components]="components()" />
+    </main>
     
     @if(pageAsset.layout.footer) {
         <app-footer />

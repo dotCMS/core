@@ -1,8 +1,7 @@
 import { inject } from '@angular/core';
 import {
   ActivatedRouteSnapshot,
-  ResolveFn,
-  RouterStateSnapshot,
+  ResolveFn
 } from '@angular/router';
 import { Observable, from, map, tap } from 'rxjs';
 
@@ -45,12 +44,12 @@ export const DotCMSPageResolver: ResolveFn<
     languageId: queryParams['language_id'],
   };
 
-  const pageRequest = client.page
-    .get(pageProps)
-    .then(({ entity }: { entity: DotCMSPageAsset }) => entity);
-  const navRequest = client.nav
-    .get(navProps)
-    .then(({ entity }: { entity: DotCMSNavigationItem }) => entity);
+  const pageRequest = (client.page
+    .get(pageProps) as Promise<{ entity: DotCMSPageAsset }>)
+    .then(({ entity }) => entity);
+  const navRequest = (client.nav
+    .get(navProps) as Promise<{ entity: DotCMSNavigationItem }>)
+    .then(({ entity }) => entity);
 
   return from(Promise.all([pageRequest, navRequest])).pipe(
     map(([pageAsset, nav]) => ({ pageAsset, nav })),
