@@ -641,8 +641,15 @@ public class ContentTypeResource implements Serializable {
 			Logger.debug(this, ()-> "Getting the Type: " + idOrVar);
 
 			final ContentType type = tapi.find(idOrVar);
+			if (null == type) {
+				// Humoring sonarlint, this block should never be reached as the find method will
+				// throw an exception if the type is not found.
+				throw new NotFoundInDbException(
+						String.format("Content Type with ID or var name '%s' was not found", idOrVar
+						));
+			}
 
-			if(null != session && null != type){
+			if (null != session) {
 				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
 			}
 
