@@ -888,7 +888,7 @@
 									"    var jsonData = pm.response.json();",
 									"    var page = jsonData.data.page;",
 									"    ",
-									"    if (pge && page != undefined) {",
+									"    if (page && page != undefined) {",
 									"    pm.expect(page[\"archived\"], 'FAILED:[archived]').equal(false);",
 									"    pm.expect(page[\"baseType\"]).equal(\"HTMLPAGE\");",
 									"    pm.expect(page[\"cachettl\"]).equal(\"0\");",
