@@ -37,17 +37,17 @@ export const DotCMSPageResolver: ResolveFn<
         path: '/',
         depth: 2,
         languageId: queryParams['language_id'],
-  };
+    };
 
-  const pageRequest = client.page.get(pageProps) as Promise<{ entity: DotCMSPageAsset }>;
-  const navRequest = client.nav.get(navProps) as Promise<{ entity: DotCMSNavigationItem }>;
+    const pageRequest = client.page.get(pageProps) as Promise<{ entity: DotCMSPageAsset }>;
+    const navRequest = client.nav.get(navProps) as Promise<{ entity: DotCMSNavigationItem }>;
 
-  const [pageResponse, navResponse] = await Promise.all([pageRequest, navRequest]);
+    const [pageResponse, navResponse] = await Promise.all([pageRequest, navRequest]);
 
-  const pageAsset = pageResponse.entity;
-  const nav = navResponse.entity;
+    const pageAsset = pageResponse.entity;
+    const nav = navResponse.entity;
 
-  pageContextService.setContext(pageAsset);
+    pageContextService.setContext(pageAsset);
 
-  return { pageAsset, nav };
+    return { pageAsset, nav };
 };
