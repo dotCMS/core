@@ -1,9 +1,5 @@
 import { inject } from '@angular/core';
-import {
-  ActivatedRouteSnapshot,
-  ResolveFn
-} from '@angular/router';
-import { Observable, from, map, tap } from 'rxjs';
+import { ActivatedRouteSnapshot, ResolveFn } from '@angular/router';
 
 import { DOTCMS_CLIENT_TOKEN } from '../dotcms-client-token';
 import { DotCMSNavigationItem, DotCMSPageAsset } from '../models';
@@ -17,42 +13,41 @@ import { PageContextService } from '../services/dotcms-context/page-context.serv
  * @return {*}
  */
 export const DotCMSPageResolver: ResolveFn<
-  Observable<{
-    pageAsset: DotCMSPageAsset;
-    nav: DotCMSNavigationItem;
-  }>
-> = (route: ActivatedRouteSnapshot) => {
-  // Get the Service
-  const client = inject(DOTCMS_CLIENT_TOKEN);
-  const pageContextService = inject(PageContextService);
+    Promise<{
+        pageAsset: DotCMSPageAsset;
+        nav: DotCMSNavigationItem;
+    }>
+> = async (route: ActivatedRouteSnapshot) => {
+    const client = inject(DOTCMS_CLIENT_TOKEN);
+    const pageContextService = inject(PageContextService);
 
-  const url = route.url.map((segment) => segment.path).join('/');
-  const queryParams = route.queryParams;
+    const url = route.url.map((segment) => segment.path).join('/');
+    const queryParams = route.queryParams;
 
-  const pageProps = {
-    path: url || 'index',
-    language_id: queryParams['language_id'],
-    mode: queryParams['mode'],
-    variantName: queryParams['variantName'],
-    'com.dotmarketing.persona.id':
-      queryParams['com.dotmarketing.persona.id'] || '',
+    const pageProps = {
+        path: url || 'index',
+        language_id: queryParams['language_id'],
+        mode: queryParams['mode'],
+        variantName: queryParams['variantName'],
+        'com.dotmarketing.persona.id':
+        queryParams['com.dotmarketing.persona.id'] || '',
+    };
+
+    const navProps = {
+        path: '/',
+        depth: 2,
+        languageId: queryParams['language_id'],
   };
 
-  const navProps = {
-    path: '/',
-    depth: 2,
-    languageId: queryParams['language_id'],
-  };
+  const pageRequest = client.page.get(pageProps) as Promise<{ entity: DotCMSPageAsset }>;
+  const navRequest = client.nav.get(navProps) as Promise<{ entity: DotCMSNavigationItem }>;
 
-  const pageRequest = (client.page
-    .get(pageProps) as Promise<{ entity: DotCMSPageAsset }>)
-    .then(({ entity }) => entity);
-  const navRequest = (client.nav
-    .get(navProps) as Promise<{ entity: DotCMSNavigationItem }>)
-    .then(({ entity }) => entity);
+  const [pageResponse, navResponse] = await Promise.all([pageRequest, navRequest]);
 
-  return from(Promise.all([pageRequest, navRequest])).pipe(
-    map(([pageAsset, nav]) => ({ pageAsset, nav })),
-    tap(({ pageAsset }) => pageContextService.setContext(pageAsset))
-  );
+  const pageAsset = pageResponse.entity;
+  const nav = navResponse.entity;
+
+  pageContextService.setContext(pageAsset);
+
+  return { pageAsset, nav };
 };
