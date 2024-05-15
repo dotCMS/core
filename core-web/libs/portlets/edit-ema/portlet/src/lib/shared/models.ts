@@ -114,6 +114,7 @@ export interface EditEmaState {
     editorData: EditorData;
     currentExperiment?: DotExperiment;
     dragItem?: EmaDragItem;
+    shouldReload: boolean;
 }
 
 export interface MessageInfo {
