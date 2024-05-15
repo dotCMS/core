@@ -88,6 +88,7 @@ jobs:
 
       # The artifacts are uploaded to Artifactory using the 'deploy-artifact-artifactory' action.
       - name: CLI Deploy
+        continue-on-error: true
         id: cli_deploy
         uses: ./.github/actions/deploy-artifact-artifactory
         with:

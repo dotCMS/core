@@ -144,7 +144,7 @@ public class PruneTimeMachineBackupJobTest {
 
         try {
             Config.setProperty("TIMEMACHINE_PATH", tmTestingFolder.toPath().toAbsolutePath().toString());
-
+            
             final String noExpireFolderName_1 = "tm_" + System.currentTimeMillis() + "_1";
             final File noExpireFolder_1 = createTimeMachineFolder(tmTestingFolder, noExpireFolderName_1, 55);
 
