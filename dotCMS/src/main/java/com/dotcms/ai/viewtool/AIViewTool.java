@@ -24,21 +24,17 @@ import java.util.function.Function;
  */
 public class AIViewTool implements ViewTool {
 
-    private final ViewContext context;
-    private final AppConfig config;
-    private final OpenAIChatService chatService;
-    private final OpenAIImageService imageService;
+    private ViewContext context;
+    private AppConfig config;
+    private OpenAIChatService chatService;
+    private OpenAIImageService imageService;
 
-    public AIViewTool(final Object obj) {
+    @Override
+    public void init(final Object obj) {
         context = (ViewContext) obj;
         config = config();
         chatService = chatService();
         imageService = imageService();
-    }
-
-    @Override
-    public void init(final Object obj) {
-        /* unneeded because of constructor */
     }
 
     /**

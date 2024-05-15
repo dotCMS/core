@@ -3,10 +3,15 @@ package com.dotcms.rest.api.v1.user;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.*;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
+import com.dotcms.rest.api.v1.site.ResponseSiteVariablesEntityView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -14,29 +19,66 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.UserFirstNameException;
+import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.*;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 
@@ -51,6 +93,9 @@ import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 @Path("/v1/users")
 public class UserResource implements Serializable {
 
+	public static final String USER_ID = "userID";
+	public static final String USER_MSG = "User ";
+	public static final String USER_WITH_USER_ID_MSG = "User with userId '";
 	private final WebResource webResource;
 	private final UserAPI userAPI;
 	private final HostAPI siteAPI;
@@ -149,7 +194,7 @@ public class UserResource implements Serializable {
 	 *
 	 * @param httpServletRequest  The current {@link HttpServletRequest} instance.
 	 * @param httpServletResponse The current {@link HttpServletResponse} instance.
-	 * @param updateUserForm      The {@link UpdateUserForm} containing the User's information.
+	 * @param updateUserForm      The {@link UpdateCurrentUserForm} containing the User's information.
 	 *
 	 * @return The JSON response with the result of the User update process.
 	 *
@@ -168,8 +213,8 @@ public class UserResource implements Serializable {
 	@Path("/current")
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response update(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,
-								 final UpdateUserForm updateUserForm) throws Exception {
+	public final Response updateCurrent(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,
+								 final UpdateCurrentUserForm updateUserForm) throws DotDataException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -203,7 +248,7 @@ public class UserResource implements Serializable {
 				userMap = userToUpdated.toMap();
 			}
 
-			response = Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
+			response = Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
 					"reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
 		} catch (final UserFirstNameException e) {
 
@@ -648,7 +693,7 @@ public class UserResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response create(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
-								 final CreateUserForm createUserForm) throws Exception {
+								 final UserForm createUserForm) throws Exception {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requestAndResponse(httpServletRequest, httpServletResponse)
@@ -665,16 +710,16 @@ public class UserResource implements Serializable {
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
 
-			return Response.ok(new ResponseEntityView(Map.of("userID", userToUpdated.getUserId(),
+			return Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 
-		throw new ForbiddenException("User " + modUser.getUserId() + " does not have permissions to create users");
+		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to create users");
 	} // create.
 
 	@WrapInTransaction
 	protected User createNewUser(final User modUser,
-								 final CreateUserForm createUserForm)
+								 final UserForm createUserForm)
 			throws DotDataException, DotSecurityException, ParseException {
 
 		final String userId = UtilMethods.isSet(createUserForm.getUserId())?
@@ -719,7 +764,7 @@ public class UserResource implements Serializable {
 				createUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
 
 		this.userAPI.save(user, modUser, false);
-		Logger.debug(this,  ()-> "User with userId '" + userId + "' and email '" +
+		Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 				createUserForm.getEmail() + "' has been created.");
 
 		for (final String roleKey : roleKeys) {
@@ -730,7 +775,7 @@ public class UserResource implements Serializable {
 		return user;
 	}
 
-	private static void processLanguage(final CreateUserForm createUserForm, final User user) {
+	private static void processLanguage(final LanguageSupport createUserForm, final User user) {
 
 		String languageTag = createUserForm.getLanguageId();
 		if (UtilMethods.isSet(languageTag) && languageTag.contains("_")) {
@@ -742,4 +787,161 @@ public class UserResource implements Serializable {
 	}
 
 
+	/**
+	 * Update an existing user.
+	 *
+	 * Only Admin User or have access to Users and Roles Portlets can update an existing user
+	 *
+	 * @param httpServletRequest
+	 * @param userForm
+	 * @return User Updated
+	 * @throws Exception
+	 */
+	@Operation(summary = "Update an existing user.",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseSiteVariablesEntityView.class)),
+							description = "If success returns a map with the user + user id."),
+					@ApiResponse(
+							responseCode = "403",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseSiteVariablesEntityView.class)),
+							description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
+					@ApiResponse(
+							responseCode = "404",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseSiteVariablesEntityView.class)),
+							description = "If the user to update does not exist"),
+					@ApiResponse(
+							responseCode = "400",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseSiteVariablesEntityView.class)),
+							description = "If the user information is not valid"),
+			})
+	@PUT
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response udpate(@Context final HttpServletRequest httpServletRequest,
+								 @Context final HttpServletResponse httpServletResponse,
+								 final UserForm createUserForm) throws DotDataException, IncorrectPasswordException, SystemException, DotSecurityException, ParseException, PortalException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+
+		final User modUser = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.requestAndResponse(httpServletRequest, httpServletResponse)
+				.rejectWhenNoUser(true)
+				.init().getUser();
+
+		final boolean isRoleAdministrator = modUser.isAdmin() ||
+				(
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+				);
+
+		if (isRoleAdministrator) {
+
+			final User userToUpdated = this.updateUser(
+					modUser, httpServletRequest, createUserForm);
+
+			return Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(),
+					"user", userToUpdated.toMap()))).build(); // 200
+		}
+
+		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
+	} // create.
+
+	@WrapInTransaction
+	private User updateUser(final User modUser, final HttpServletRequest request,
+							final UserForm updateUserForm) throws DotDataException, DotSecurityException,
+			ParseException, SystemException, PortalException {
+
+		final String userId = updateUserForm.getUserId();
+		boolean validatePassword = false;
+		final User userRecovery;
+		try {
+
+			userRecovery = this.userAPI.loadUserById
+					(updateUserForm.getUserId(), modUser, false);
+
+			if (null == userRecovery) {
+
+				throw new NotFoundException("The user: " + userId + " not found");
+			}
+		} catch (NoSuchUserException e) {
+
+			throw new NotFoundException("The user: " + userId + " not found");
+		}
+
+		final User userToSave = (User)userRecovery.clone();
+
+		validateMaximumLength(updateUserForm.getFirstName(),updateUserForm.getLastName(),updateUserForm.getEmail(),
+				updateUserForm.getMiddleName(),updateUserForm.getNickName(),updateUserForm.getBirthday());
+
+		userToSave.setFirstName(updateUserForm.getFirstName());
+
+		if (UtilMethods.isSet(updateUserForm.getLastName())) {
+			userToSave.setLastName(updateUserForm.getLastName());
+		}
+
+		if (UtilMethods.isSet(updateUserForm.getBirthday())) {
+			userToSave.setBirthday(DateUtil.parseISO(updateUserForm.getBirthday()));
+		}
+
+		if (UtilMethods.isSet(updateUserForm.getMiddleName())) {
+			userToSave.setMiddleName(updateUserForm.getMiddleName());
+		}
+
+		processLanguage(updateUserForm, userToSave);
+
+		if (UtilMethods.isSet(updateUserForm.getNickName())) {
+			userToSave.setNickName(updateUserForm.getNickName());
+		}
+
+		if (UtilMethods.isSet(updateUserForm.getTimeZoneId())) {
+			userToSave.setTimeZoneId(updateUserForm.getTimeZoneId());
+		}
+
+		userToSave.setMale(updateUserForm.isMale());
+
+		if (UtilMethods.isSet(updateUserForm.getAdditionalInfo())) {
+			userToSave.setAdditionalInfo(updateUserForm.getAdditionalInfo());
+		}
+
+		// Password has changed, so it has to be validated
+		userToSave.setPassword(new String(updateUserForm.getPassword()));
+
+		if (APILocator.getPermissionAPI().doesUserHavePermission
+				(APILocator.getUserProxyAPI().getUserProxy(userToSave, modUser, false),
+						PermissionAPI.PERMISSION_EDIT, modUser, false)) {
+
+			this.userAPI.save(userToSave, modUser, validatePassword,
+					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
+			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
+					updateUserForm.getEmail() + "' has been updated.");
+
+			final List<String> roleKeys = UtilMethods.isSet(updateUserForm.getRoles())?
+					updateUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
+
+			for (final String roleKey : roleKeys) {
+
+				UserHelper.getInstance().addRole(userToSave, roleKey, false	, false);
+			}
+
+			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
+					updateUserForm.getEmail() + "' , the roles have been updated.");
+
+		} else {
+
+			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
+		}
+
+		return userToSave;
+	}
 }
