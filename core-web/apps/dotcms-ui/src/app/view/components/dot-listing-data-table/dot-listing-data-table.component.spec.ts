@@ -133,7 +133,6 @@ describe('DotListingDataTableComponent', () => {
                 ActionHeaderComponent,
                 DotActionButtonComponent,
                 DotListingDataTableComponent,
-                DotActionMenuButtonComponent,
                 TestHostComponent,
                 EmptyMockComponent
             ],
@@ -144,6 +143,7 @@ describe('DotListingDataTableComponent', () => {
                     { path: 'test', component: DotListingDataTableComponent }
                 ]),
                 MenuModule,
+                DotActionMenuButtonComponent,
                 DotMenuComponent,
                 DotIconModule,
                 DotRelativeDatePipe,
