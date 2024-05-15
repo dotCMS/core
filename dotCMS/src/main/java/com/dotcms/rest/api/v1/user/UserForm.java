@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Encapsulates the information to create an User
+ * Encapsulates the information to create/update an User
  */
-@JsonDeserialize(builder = CreateUserForm.Builder.class)
-public final class CreateUserForm extends Validated  {
+@JsonDeserialize(builder = UserForm.Builder.class)
+public final class UserForm extends Validated implements LanguageSupport  {
 
     private String userId;
     private final boolean active;
@@ -40,7 +40,7 @@ public final class CreateUserForm extends Validated  {
 
     private final List<String> roles;
 
-    private CreateUserForm(CreateUserForm.Builder builder) {
+    private UserForm(UserForm.Builder builder) {
 
         this.active = builder.active;
         this.firstName = builder.firstName;
@@ -207,8 +207,8 @@ public final class CreateUserForm extends Validated  {
             return this;
         }
 
-        public CreateUserForm build() {
-            return new CreateUserForm(this);
+        public UserForm build() {
+            return new UserForm(this);
         }
     }
 }
