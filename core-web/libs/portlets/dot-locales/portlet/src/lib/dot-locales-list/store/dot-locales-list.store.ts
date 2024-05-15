@@ -7,7 +7,7 @@ import { ComponentStatus, DotActionMenuItem, DotLanguage } from '@dotcms/dotcms-
 /**
  * Interface for language row data
  */
-export interface DotLanguageRow {
+export interface DotLocaleRow {
     locale: string;
     language: string;
     country: string;
@@ -16,40 +16,38 @@ export interface DotLanguageRow {
     actions: DotActionMenuItem[];
 }
 
-export interface DotLanguagesListState {
+export interface DotLocalesListState {
     status: ComponentStatus;
-    languages: DotLanguageRow[];
+    locales: DotLocaleRow[];
 }
 
-export interface DotLanguagesListViewModel {
-    languages: DotLanguageRow[];
+export interface DotLocaleListViewModel {
+    locales: DotLocaleRow[];
 }
 
 @Injectable()
-export class DotLanguagesListStore extends ComponentStore<DotLanguagesListState> {
+export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
     // Updaters
-    readonly setLanguages = this.updater(
-        (state: DotLanguagesListState, languages: DotLanguage[]) => ({
-            ...state,
-            languages: this.processLanguages(languages)
-        })
-    );
+    readonly setLocales = this.updater((state: DotLocalesListState, languages: DotLanguage[]) => ({
+        ...state,
+        locales: this.processLanguages(languages)
+    }));
 
     readonly vm$ = this.select(
         this.state$,
-        ({ languages }): DotLanguagesListViewModel => ({
-            languages
+        ({ locales }): DotLocaleListViewModel => ({
+            locales
         })
     );
 
     constructor() {
-        super({ status: ComponentStatus.IDLE, languages: [] });
+        super({ status: ComponentStatus.IDLE, locales: [] });
     }
 
     /**
      * Private function to process the languages into the format needed for the state
      */
-    private processLanguages(languages: DotLanguage[]): DotLanguageRow[] {
+    private processLanguages(languages: DotLanguage[]): DotLocaleRow[] {
         return languages.map((language) => ({
             locale: `${language.language} (${language.isoCode})`,
             language: `${language.language} - ${language.languageCode}`,

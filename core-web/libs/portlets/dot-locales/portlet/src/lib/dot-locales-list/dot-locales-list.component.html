@@ -1,55 +1,53 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <div class="languages-list__header">
+    <div class="locales-list__header">
         <span class="p-input-icon-right">
             <i class="pi pi-search"></i>
             <input
-                class="languages-list__search"
+                class="locales-list__search"
                 (input)="dt.filterGlobal($event.target.value, 'contains')"
                 type="text"
                 pInputText />
         </span>
         <button
-            [label]="'languages.add.locale' | dm"
+            [label]="'locales.add.locale' | dm"
             pButton
             type="button"
             icon="pi pi-plus"></button>
     </div>
     <p-table
         #dt
-        [value]="vm.languages"
+        [value]="vm.locales"
         [globalFilterFields]="['locale', 'language', 'country']"
         styleClass="dotTable">
         <ng-template pTemplate="header">
             <tr>
                 <th scope="col" pSortableColumn="locale">
-                    {{ 'languages.locale' | dm }} <p-sortIcon field="locale"></p-sortIcon>
+                    {{ 'locales.locale' | dm }} <p-sortIcon field="locale"></p-sortIcon>
                 </th>
                 <th scope="col" pSortableColumn="language">
-                    {{ 'languages.language' | dm }} <p-sortIcon field="language"></p-sortIcon>
+                    {{ 'locales.language' | dm }} <p-sortIcon field="language"></p-sortIcon>
                 </th>
                 <th scope="col" pSortableColumn="country">
-                    {{ 'languages.country' | dm }} <p-sortIcon field="country"></p-sortIcon>
+                    {{ 'locales.country' | dm }} <p-sortIcon field="country"></p-sortIcon>
                 </th>
-                <th scope="col">{{ 'languages.variables' | dm }}</th>
-                <th scope="col" style="width: 40px">{{ 'languages.menu' | dm }}</th>
+                <th scope="col">{{ 'locales.variables' | dm }}</th>
+                <th scope="col" style="width: 40px">{{ 'locales.menu' | dm }}</th>
             </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-language>
+        <ng-template pTemplate="body" let-locale>
             <tr>
-                <td
-                    [ngClass]="{ 'tag-padding': language.defaultLanguage }"
-                    data-testId="locale-cell">
-                    {{ language.locale }}
+                <td [ngClass]="{ 'tag-padding': locale.defaultLanguage }" data-testId="locale-cell">
+                    {{ locale.locale }}
                     <p-tag
                         class="sm p-tag-success"
-                        *ngIf="language.defaultLanguage"
+                        *ngIf="locale.defaultLanguage"
                         [value]="'Default' | dm" />
                 </td>
-                <td>{{ language.language }}</td>
-                <td>{{ language.country }}</td>
-                <td>{{ language.variables }}</td>
+                <td>{{ locale.language }}</td>
+                <td>{{ locale.country }}</td>
+                <td>{{ locale.variables }}</td>
                 <td>
-                    <dot-action-menu-button [actions]="language.actions"></dot-action-menu-button>
+                    <dot-action-menu-button [actions]="locale.actions"></dot-action-menu-button>
                 </td>
             </tr>
         </ng-template>

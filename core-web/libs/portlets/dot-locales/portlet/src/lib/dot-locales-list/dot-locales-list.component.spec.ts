@@ -15,15 +15,15 @@ import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotActionMenuButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotLanguagesListComponent } from './dot-languages-list.component';
-import { DotLanguagesListStore } from './store/dot-languages-list.store';
+import { DotLocalesListComponent } from './dot-locales-list.component';
+import { DotLocalesListStore } from './store/dot-locales-list.store';
 
 const messageServiceMock = new MockDotMessageService({
-    'languages.locale': 'Locale'
+    'locale.locale': 'Locale'
 });
 
-describe('DotLanguagesListComponent', () => {
-    let spectator: Spectator<DotLanguagesListComponent>;
+describe('DotLocalesListComponent', () => {
+    let spectator: Spectator<DotLocalesListComponent>;
 
     const endPointLanguages: DotLanguage[] = [
         {
@@ -47,8 +47,8 @@ describe('DotLanguagesListComponent', () => {
     ];
 
     const createComponent = createComponentFactory({
-        component: DotLanguagesListComponent,
-        componentProviders: [provideComponentStore(DotLanguagesListStore)],
+        component: DotLocalesListComponent,
+        componentProviders: [provideComponentStore(DotLocalesListStore)],
         imports: [
             CommonModule,
             InputTextModule,
@@ -69,7 +69,7 @@ describe('DotLanguagesListComponent', () => {
                 useValue: {
                     snapshot: {
                         data: {
-                            languages: endPointLanguages
+                            locales: endPointLanguages
                         }
                     }
                 }
@@ -79,23 +79,19 @@ describe('DotLanguagesListComponent', () => {
 
     beforeEach(() => (spectator = createComponent()));
 
-    it('should display languages when vm$ emits', () => {
+    it('should display locales when vm$ emits', () => {
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('locale-cell'))).toHaveText('English (en-US)');
     });
 
-    it('should display default language tag for default languages', () => {
-        //   spectator.component.vm$ = of({ languages: mockLanguages });
-
+    it('should display default locale tag', () => {
         spectator.detectChanges();
 
         expect(spectator.query('.p-tag-success')).toHaveText('Default');
     });
 
-    it('should display action menu for each language', () => {
-        //spectator.component.vm$ = of({ languages: mockLanguages });
-
+    it('should display action menu for each locale', () => {
         spectator.detectChanges();
 
         expect(spectator.query(DotActionMenuButtonComponent)?.actions?.length).toEqual(2);

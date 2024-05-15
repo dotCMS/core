@@ -2,20 +2,16 @@ import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
 import { RouterOutlet } from '@angular/router';
 
-import { DotLanguagesShellComponent } from './dot-languages-shell.component';
+import { DotLocalesShellComponent } from './dot-locales-shell.component';
 
-describe('DotLanguagesShellComponent', () => {
-    let spectator: Spectator<DotLanguagesShellComponent>;
+describe('DotLocalesShellComponent', () => {
+    let spectator: Spectator<DotLocalesShellComponent>;
     const createComponent = createComponentFactory({
-        component: DotLanguagesShellComponent,
+        component: DotLocalesShellComponent,
         imports: [RouterOutlet]
     });
 
     beforeEach(() => (spectator = createComponent()));
-
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
-    });
 
     it('should have RouterOutlet', () => {
         const routerOutletElement = spectator.query(RouterOutlet);

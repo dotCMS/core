@@ -11,10 +11,10 @@ import { TagModule } from 'primeng/tag';
 
 import { DotActionMenuButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { DotLanguagesListStore, DotLanguagesListViewModel } from './store/dot-languages-list.store';
+import { DotLocaleListViewModel, DotLocalesListStore } from './store/dot-locales-list.store';
 
 @Component({
-    selector: 'dot-languages-list',
+    selector: 'dot-locales-list',
     standalone: true,
     imports: [
         CommonModule,
@@ -25,20 +25,20 @@ import { DotLanguagesListStore, DotLanguagesListViewModel } from './store/dot-la
         DotActionMenuButtonComponent,
         TagModule
     ],
-    templateUrl: './dot-languages-list.component.html',
-    styleUrl: './dot-languages-list.component.scss',
-    providers: [DotLanguagesListStore],
+    templateUrl: './dot-locales-list.component.html',
+    styleUrl: './dot-locales-list.component.scss',
+    providers: [DotLocalesListStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotLanguagesListComponent implements OnInit {
-    vm$: Observable<DotLanguagesListViewModel> = this.dotLanguagesListStore.vm$;
+export class DotLocalesListComponent implements OnInit {
+    vm$: Observable<DotLocaleListViewModel> = this.dotLocalesListStore.vm$;
 
     constructor(
         private readonly route: ActivatedRoute,
-        private readonly dotLanguagesListStore: DotLanguagesListStore
+        private readonly dotLocalesListStore: DotLocalesListStore
     ) {}
 
     ngOnInit() {
-        this.dotLanguagesListStore.setLanguages(this.route.snapshot.data['languages']);
+        this.dotLocalesListStore.setLocales(this.route.snapshot.data['locales']);
     }
 }

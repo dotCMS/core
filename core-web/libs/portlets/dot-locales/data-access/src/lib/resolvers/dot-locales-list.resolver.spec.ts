@@ -6,7 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 
-import { DotLanguagesListResolver } from './dot-languages-list.resolver';
+import { DotLocalesListResolver } from './dot-locales-list.resolver';
 
 const mockLanguages: DotLanguage[] = [
     {
@@ -29,7 +29,7 @@ const mockLanguages: DotLanguage[] = [
     }
 ];
 
-describe('DotLanguagesListResolver', () => {
+describe('DotLocalesListResolver', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
@@ -45,7 +45,7 @@ describe('DotLanguagesListResolver', () => {
 
     it('should resolve languages list', (done) => {
         const result = runInInjectionContext(TestBed.inject(EnvironmentInjector), () =>
-            DotLanguagesListResolver(null, null)
+            DotLocalesListResolver(null, null)
         );
 
         (result as Observable<DotLanguage[]>).subscribe((languages) => {

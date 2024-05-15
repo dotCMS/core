@@ -6,7 +6,7 @@ import { ActivatedRouteSnapshot, ResolveFn, RouterStateSnapshot } from '@angular
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 
-export const DotLanguagesListResolver: ResolveFn<DotLanguage[]> = (
+export const DotLocalesListResolver: ResolveFn<DotLanguage[]> = (
     _route: ActivatedRouteSnapshot,
     _state: RouterStateSnapshot
 ): Observable<DotLanguage[]> => {
