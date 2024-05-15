@@ -86,15 +86,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
@@ -730,6 +722,24 @@ public class DependencyBundlerTest {
         final Map<String, List<ManifestItem>>  contentletWithImageExcludes =  map(FILTER_EXCLUDE_REASON,
                 list(host, contentTypeWithImageField, imageFileAsset, language), EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder));
 
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        final ContentType systemHostContentType = new ContentTypeDataGen().host(systemHost).nextPersisted();
+
+        final Contentlet systemHostContentlet_1 = new ContentletDataGen(systemHostContentType.id())
+                .languageId(language.getId())
+                .host(systemHost)
+                .nextPersisted();
+
+        final Contentlet systemHostContentlet_2 = new ContentletDataGen(systemHostContentType.id())
+                .languageId(language.getId())
+                .host(systemHost)
+                .nextPersisted();
+
+        final Map<ManifestItem, Collection<ManifestItem>> systemHostContentletInclude = Map.of(
+                systemHostContentlet_1, list(systemHostContentType, language),
+                systemHostContentType, list(systemWorkflowScheme)
+        );
+
         return list(
                 new TestData(contentlet, contentletInclude, excludeSystemFolder, filterDescriptorAllDependencies, "Contentlet with filterDescriptorAllDependencies"),
                 new TestData(contentlet, map(),
@@ -772,6 +782,10 @@ public class DependencyBundlerTest {
                 new TestData(contentletWithImage, contentletWithImageIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Contentlet with Image and filterDescriptorAllDependencies"),
                 new TestData(contentletWithImage, map(), contentletWithImageExcludes, filterDescriptorNotDependencies, "Contentlet with Image and filterDescriptorNotDependencies"),
                 new TestData(contentletWithImage, contentletWithImageIncludes, excludeSystemFolder, filterDescriptorNotRelationship, "Contentlet with Image and filterDescriptorNotRelationship"),
+                new TestData(contentletWithImage, Collections.emptyMap(), contentletWithImageExcludes, filterDescriptorNotDependenciesRelationship, "Contentlet with Image and filterDescriptorNotDependenciesRelationship"),
+                new TestData(systemHostContentlet_1, systemHostContentletInclude,
+                        Map.of(EXCLUDE_SYSTEM_FOLDER_HOST, list(systemHost)), filterDescriptorAllDependencies,
+                        "Contentlet In System Host"),
                 new TestData(contentletWithImage, map(), contentletWithImageExcludes, filterDescriptorNotDependenciesRelationship, "Contentlet with Image and filterDescriptorNotDependenciesRelationship")
         );
     }
@@ -1141,6 +1155,19 @@ public class DependencyBundlerTest {
                 contentType, list(systemWorkflowScheme)
         );
 
+        final Container systemContainer = APILocator.getContainerAPI().systemContainer();
+
+        final TemplateLayout systemContainerTemplateLayout = new TemplateLayoutDataGen()
+                .withContainer(systemContainer)
+                .next();
+
+        final Host systemTemplateHost = new SiteDataGen().nextPersisted();
+
+        final Template templateSystemContainer = new TemplateDataGen()
+                .host(systemTemplateHost)
+                .drawedBody(systemContainerTemplateLayout)
+                .nextPersisted();
+
         return list(
                 new TestData(advancedTemplateWithoutContainer, map(advancedTemplateWithoutContainer, list(host)),
                         map(), filterDescriptorAllDependencies, "Advanced Template without Container and filterDescriptorAllDependencies"),
@@ -1166,6 +1193,10 @@ public class DependencyBundlerTest {
                         filterDescriptorNotDependencies, "Template with Template Layout and filterDescriptorNotDependencies"),
                 new TestData(templateWithTemplateLayout, templateWithTemplateLayoutIncludes, excludeSystemFolder,
                         filterDescriptorNotRelationship, "Template with Template Layout and filterDescriptorNotRelationship"),
+                new TestData(templateWithTemplateLayout, Collections.emptyMap(),  Map.of(FILTER_EXCLUDE_REASON, list(host, container_1, container_2)),
+                        filterDescriptorNotDependenciesRelationship, "Template with Template Layout and filterDescriptorNotDependenciesRelationship"),
+                new TestData(templateSystemContainer, Map.of(templateSystemContainer, list(systemTemplateHost)),
+                        Map.of(EXCLUDE_SYSTEM_FOLDER_HOST, list(systemContainer)), filterDescriptorAllDependencies, "Template with System_Container"),
                 new TestData(templateWithTemplateLayout, map(),  map(FILTER_EXCLUDE_REASON, list(host, container_1, container_2)),
                         filterDescriptorNotDependenciesRelationship, "Template with Template Layout and filterDescriptorNotDependenciesRelationship")
         );
@@ -1845,8 +1876,6 @@ public class DependencyBundlerTest {
             bundler.generate(bundleOutput, status);
         }
 
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
-
         final Collection<Object> dependencies = new HashSet<>();
 
         if (modDateTestData.operation == Operation.PUBLISH) {
@@ -1973,8 +2002,6 @@ public class DependencyBundlerTest {
             bundler.generate(bundleOutput, status);
         }
 
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
-
         final Collection<Object> dependencies = new HashSet<>();
 
         if (modDateTestData.operation == Operation.PUBLISH) {
@@ -2048,8 +2075,6 @@ public class DependencyBundlerTest {
             bundler.generate(bundleOutput, status);
         }
 
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
-
         final Collection<Object> dependencies = new HashSet<>();
 
         if (modDateTestData.operation == Operation.PUBLISH) {
@@ -2120,8 +2145,6 @@ public class DependencyBundlerTest {
             bundler.setConfig(config);
             bundler.generate(bundleOutput, status);
         }
-
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
         final Collection<Object> dependencies = new HashSet<>();
 
@@ -2212,8 +2235,6 @@ public class DependencyBundlerTest {
             bundler.setConfig(config);
             bundler.generate(bundleOutput, status);
         }
-
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
         final ContentType pageContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find(htmlPageAsset.getStructureInode());

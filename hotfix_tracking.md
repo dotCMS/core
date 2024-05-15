@@ -239,3 +239,5 @@ This maintenance release includes the following code fixes:
 188. https://github.com/dotCMS/core/issues/24698 : Cannot push publish to S3 buckets in the us-east-2 region #24698
 
 **Release-23.01.17**
+
+189. https://github.com/dotCMS/core/issues/28173 : System objects should not be push published #28173
