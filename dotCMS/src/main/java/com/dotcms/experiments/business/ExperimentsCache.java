@@ -48,8 +48,7 @@ public interface ExperimentsCache extends Cachable {
     /**
      * Remove a list of {@link Experiment} from cache identified by the provided name.
      *
-     * @return
      */
-    void removeList();
+    void removeList(final String key);
 
 }
