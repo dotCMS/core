@@ -1959,7 +1959,7 @@ public class WorkflowResource {
                     offset, null,
                     initDataObject.getUser(), mode.respectAnonPerms);
 
-            final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(fireActionForm.getContentletFormData(),
+            final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(Objects.isNull(fireActionForm.getContentletFormData())?Map.of():fireActionForm.getContentletFormData(),
                     contentletSearches.size()> 10? IndexPolicy.DEFER: IndexPolicy.WAIT_FOR, request);
 
             for (final ContentletSearch contentletSearch : contentletSearches) {
