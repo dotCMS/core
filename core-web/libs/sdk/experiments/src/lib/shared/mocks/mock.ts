@@ -1,5 +1,3 @@
-import { store } from 'next/dist/build/output/store';
-
 import { Experiment, ExperimentEvent, IsUserIncludedApiResponse } from '../models';
 
 /**
@@ -13,6 +11,7 @@ import { Experiment, ExperimentEvent, IsUserIncludedApiResponse } from '../model
 export const IsUserIncludedResponse: IsUserIncludedApiResponse = {
     entity: {
         excludedExperimentIds: [],
+        excludedExperimentIdsEnded: [],
         experiments: [
             {
                 id: '11111-11111-11111-11111-11111',
@@ -44,6 +43,7 @@ export const IsUserIncludedResponse: IsUserIncludedApiResponse = {
 export const NewIsUserIncludedResponse: IsUserIncludedApiResponse = {
     entity: {
         excludedExperimentIds: ['11111-11111-11111-11111-11111'],
+        excludedExperimentIdsEnded: ['11111-11111-11111-11111-11111'],
         experiments: [
             {
                 id: '222222-222222-222222-222222-222222',
@@ -66,6 +66,18 @@ export const NewIsUserIncludedResponse: IsUserIncludedApiResponse = {
             }
         ],
         includedExperimentIds: ['222222-222222-222222-222222-222222']
+    },
+    errors: [],
+    i18nMessagesMap: {},
+    messages: []
+};
+
+export const After15DaysIsUserIncludedResponse: IsUserIncludedApiResponse = {
+    entity: {
+        excludedExperimentIds: ['222222-222222-222222-222222-222222'],
+        excludedExperimentIdsEnded: [],
+        experiments: [],
+        includedExperimentIds: []
     },
     errors: [],
     i18nMessagesMap: {},
@@ -106,11 +118,8 @@ export const MockDataStoredIndexDBNew: Experiment[] = [
     }
 ];
 
-// Final data to be stored in IndexedDB of 1 old experiment and 1 new experiment
-export const MockDataStoredIndexDBWithNew: Experiment[] = [
-    ...MockDataStoredIndexDBNew,
-    ...MockDataStoredIndexDB
-];
+// Final data to be stored in IndexedDB only the last, the first will be removed by was ended from `excludedExperimentIdsEnded`
+export const MockDataStoredIndexDBWithNew: Experiment[] = [...MockDataStoredIndexDBNew];
 
 // Mock Store after 15 days
 export const MockDataStoredIndexDBWithNew15DaysLater: Experiment[] = [...MockDataStoredIndexDBNew];
@@ -163,6 +172,8 @@ export const LocationMock: Location = {
     },
     ancestorOrigins: {} as DOMStringList
 };
+
+const store: { [key: string]: string } = {};
 
 export const sessionStorageMock = {
     getItem: function (key: string): string | null {
