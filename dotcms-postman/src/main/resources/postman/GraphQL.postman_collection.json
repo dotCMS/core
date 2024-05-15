@@ -846,7 +846,6 @@
 							{
 								"key": "User-Agent",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
-								"type": "text",
 								"uuid": "eb95691e-bba7-4524-8c8f-02ea9d6141e9"
 							}
 						],
