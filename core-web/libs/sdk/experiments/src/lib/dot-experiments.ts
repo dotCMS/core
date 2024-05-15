@@ -10,7 +10,13 @@ import {
     EXPERIMENT_QUERY_PARAM_KEY,
     PAGE_VIEW_EVENT_NAME
 } from './shared/constants';
-import { DotExperimentConfig, Experiment, Variant } from './shared/models';
+import {
+    AssignedExperiments,
+    DotExperimentConfig,
+    Experiment,
+    FetchExperiments,
+    Variant
+} from './shared/models';
 import {
     getExperimentsIds,
     parseData,
@@ -423,7 +429,9 @@ export class DotExperiments {
      * @returns {Promise<AssignedExperiments>} - The entity object returned from the server.
      * @throws {Error} - If an HTTP error occurs or an error occurs during the fetch request.
      */
-    private async getExperimentsFromServer(): Promise<Experiment[]> {
+    private async getExperimentsFromServer(): Promise<
+        Pick<AssignedExperiments, 'excludedExperimentIdsEnded' | 'experiments'>
+    > {
         this.logger.group('Fetch Experiments');
         this.logger.time('Fetch Time');
 
@@ -449,13 +457,16 @@ export class DotExperiments {
 
             const responseJson = await response.json();
 
-            const experiments = responseJson?.entity?.experiments;
+            const experiments = responseJson?.entity?.experiments ?? [];
+
+            const excludedExperimentIdsEnded =
+                responseJson?.entity?.excludedExperimentIdsEnded ?? [];
 
             this.logger.log(`Experiment data get successfully `);
 
             this.persistenceHandler.setFlagExperimentAlreadyChecked();
 
-            return experiments ?? [];
+            return { experiments, excludedExperimentIdsEnded };
         } catch (error) {
             this.logger.error(
                 `An error occurred while trying to fetch the experiments: ${
@@ -486,7 +497,10 @@ export class DotExperiments {
      */
     private async verifyExperimentData(): Promise<void> {
         try {
-            let fetchedExperiments: Experiment[] | undefined = undefined;
+            let fetchedExperiments: FetchExperiments = {
+                excludedExperimentIdsEnded: [],
+                experiments: []
+            };
 
             const storedExperiments: Experiment[] = this.experimentsAssigned
                 ? this.experimentsAssigned
