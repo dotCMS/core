@@ -220,8 +220,6 @@ public interface ExperimentsAPI {
     ExperimentResults getResults(Experiment experiment, User user)
             throws DotDataException, DotSecurityException;
 
-    List<Experiment> cacheRunningExperiments() throws DotDataException;
-
     /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s
      * <p>
