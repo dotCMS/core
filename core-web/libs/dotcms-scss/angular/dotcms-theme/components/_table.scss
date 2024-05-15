@@ -26,7 +26,9 @@
 }
 
 $dot-table-cell-padding: 0.625rem $spacing-1;
+$dot-table-cell-padding-first-child: 0.625rem $spacing-1 $spacing-1 $spacing-3;
 $dot-table-cell-with-tag-padding: $spacing-1;
+$dot-table-cell-with-tag-padding-first-child: $spacing-1 $spacing-1 $spacing-1 $spacing-3;
 $dot-table-header-cell-height: 1.5rem;
 $dot-table-cell-height: 1.25rem;
 
@@ -151,12 +153,19 @@ $dot-table-cell-height: 1.25rem;
                     @include dot-table-tooltip;
                 }
 
-                &:first-child:has(p-tableCheckbox) + td,
-                &:first-child:not(:has(p-tableCheckbox)) {
+                &:first-child:has(p-tableCheckbox) + td {
                     padding: $dot-table-cell-padding;
 
                     &.tag-padding {
                         padding: $dot-table-cell-with-tag-padding;
+                    }
+                }
+
+                &:first-child:not(:has(p-tableCheckbox)) {
+                    padding: $dot-table-cell-padding-first-child;
+
+                    &.tag-padding {
+                        padding: $dot-table-cell-with-tag-padding-first-child;
                     }
                 }
 
