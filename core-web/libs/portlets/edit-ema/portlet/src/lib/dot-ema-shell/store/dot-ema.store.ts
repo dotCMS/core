@@ -6,17 +6,7 @@ import { Injectable } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
-import {
-    catchError,
-    map,
-    pairwise,
-    shareReplay,
-    startWith,
-    switchMap,
-    take,
-    tap,
-    filter
-} from 'rxjs/operators';
+import { catchError, map, shareReplay, switchMap, take, tap, filter } from 'rxjs/operators';
 
 import {
     DotContentletLockerService,
@@ -210,27 +200,20 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly editorMode$ = this.select((state) => state.editorData.mode);
     readonly editorData$ = this.select((state) => state.editorData);
     readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
+    readonly shouldReload$ = this.select((state) => state.shouldReload);
 
     readonly contentState$ = this.select(
         this.code$,
+        this.shouldReload$,
         this.stateLoad$,
         this.clientHost$,
-        (code, state, clientHost) => ({
-            state,
+        (code, shouldReload, state, clientHost) => ({
             code,
+            shouldReload,
+            state,
             isVTL: !clientHost
         })
-    ).pipe(
-        startWith({ state: EDITOR_STATE.LOADING, code: '', isVTL: false }),
-        pairwise(),
-        filter(([_prev, curr]) => curr?.state === EDITOR_STATE.IDLE),
-        map(([prev, curr]) => ({
-            changedFromLoading: prev.state === EDITOR_STATE.LOADING,
-            isVTL: curr.isVTL,
-            code: curr.code,
-            state: curr.state
-        }))
-    );
+    ).pipe(filter(({ state }) => state === EDITOR_STATE.IDLE));
 
     readonly vtlIframePage$ = this.select(
         this.pageRendered$,
@@ -438,7 +421,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                     canLock: pageData.page.canLock,
                                                     lockedByUser: pageData.page.lockedByName
                                                 }
-                                            }
+                                            },
+                                            shouldReload: true
                                         });
                                     },
                                     error: ({ status }: HttpErrorResponse) => {
@@ -463,7 +447,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 return this.dotPageApiService.get(params).pipe(
                     tapResponse({
                         next: (editor) => {
-                            this.patchState({ editor, editorState: EDITOR_STATE.IDLE });
+                            this.patchState({
+                                editor,
+                                editorState: EDITOR_STATE.IDLE,
+                                shouldReload: true
+                            });
                         },
                         error: ({ status }: HttpErrorResponse) =>
                             this.createEmptyState({ canEdit: false, canRead: false }, status),
@@ -495,7 +483,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     this.patchState((state) => ({
                                         ...state,
                                         editor: pageData,
-                                        editorState: EDITOR_STATE.IDLE
+                                        editorState: EDITOR_STATE.IDLE,
+                                        shouldReload: true
                                     }));
 
                                     payload.whenSaved?.();
@@ -555,7 +544,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     editorData: {
                                         ...state.editorData,
                                         mode: EDITOR_MODE.EDIT
-                                    }
+                                    },
+                                    shouldReload: true
                                 }));
                             },
                             (e) => {
@@ -626,7 +616,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     this.patchState((state) => ({
                                         ...state,
                                         editor: pageData,
-                                        editorState: EDITOR_STATE.IDLE
+                                        editorState: EDITOR_STATE.IDLE,
+                                        shouldReload: true
                                     }));
 
                                     response.whenSaved?.();
@@ -660,7 +651,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                         isLocked: false
                                     },
                                     mode: EDITOR_MODE.EDIT
-                                }
+                                },
+                                shouldReload: true
                             }));
                         },
                         error: () => {
@@ -827,6 +819,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     }));
 
+    readonly setShouldReload = this.updater((state, shouldReload: boolean) => ({
+        ...state,
+        shouldReload
+    }));
+
     /**
      * Create the url to add a page to favorites
      *
@@ -917,7 +914,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             editorState: EDITOR_STATE.IDLE,
             editorData: {
                 mode: EDITOR_MODE.EDIT
-            }
+            },
+            shouldReload: false
         });
     }
 

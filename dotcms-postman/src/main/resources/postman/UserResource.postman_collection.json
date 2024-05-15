@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "6d92db58-27ae-454c-81ac-b0898d981c53",
+		"_postman_id": "ed475436-c760-4988-b584-39d75e4cd648",
 		"name": "UserResource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "28800751"
+		"_exporter_id": "781456"
+
 	},
 	"item": [
 		{
@@ -89,7 +90,8 @@
 									"    pm.expect(jsonData.entity.user[\"languageId\"]).to.eql(\"fr_FR\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -133,26 +135,28 @@
 						}
 					},
 					"response": []
-				}
-			]
-		},
-		{
-			"name": "ValidateFiledsLimit",
-			"item": [
+				},
 				{
-					"name": "First Name Limit",
+					"name": "UpdateFrenchUserNotFound",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
+									"pm.test(\"User do not exist\", function () {",
+									"    pm.response.to.have.status(404);",
 									"",
-									"pm.test(\"Clear error message\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Length of First Name provided exceeds the maximum limit 100\");",
 									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -160,11 +164,26 @@
 						}
 					],
 					"request": {
-						"method": "POST",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"MaxtLengtOnName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"lastName\":\"Spanish\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"raw": "{\n    \"userId\":\"userid-do-not-exist\",\n    \"active\":true,\n    \"firstName\":\"FrenchUser2\",\n    \"middleName\":\"S\",\n    \"lastName\":\"French2\",\n    \"nickName\":\"French2\",\n    \"email\":\"french@dotcms.com\",\n    \"male\":true,\n    \"languageId\":\"fr_FR\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -172,12 +191,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/users",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",
@@ -188,18 +205,15 @@
 					"response": []
 				},
 				{
-					"name": "Middle Name Limit",
+					"name": "UpdateUserFrenchBadBody",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
+									"pm.test(\"User bad request\", function () {",
 									"    pm.response.to.have.status(400);",
-									"});",
 									"",
-									"pm.test(\"Clear error message\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Length of Middle Name provided exceeds the maximum limit 100\");",
 									"});"
 								],
 								"type": "text/javascript",
@@ -208,11 +222,26 @@
 						}
 					],
 					"request": {
-						"method": "POST",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"MaxtLengtOnMiddleName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"lastName\":\"test1\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"raw": "{\n    \"userId\":\"userid-french-12345678\",\n    \"active\":true,\n    \"middleName\":\"S\",\n    \"lastName\":\"French\",\n    \"nickName\":\"French\",\n    \"email\":\"french@dotcms.com\",\n    \"male\":true,\n    \"languageId\":\"fr_FR\",\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -220,12 +249,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/users",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",
@@ -236,18 +263,20 @@
 					"response": []
 				},
 				{
-					"name": "Last Name Limit",
+					"name": "UpdateUserFrenchBadBody Copy",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
+									"pm.test(\"User FE update sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
 									"",
-									"pm.test(\"Clear error message\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Length of Last Name provided exceeds the maximum limit 100\");",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"FrenchUser2\");",
+									"    pm.expect(jsonData.entity.user[\"languageId\"]).to.eql(\"fr_FR\");",
 									"});"
 								],
 								"type": "text/javascript",
@@ -256,59 +285,26 @@
 						}
 					],
 					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"lastName\":\"MaxtLengtOnLastName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
 								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
-							"path": [
-								"api",
-								"v1",
-								"users"
 							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Nick Name Limit",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"pm.test(\"Clear error message\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Length of Nick Name provided exceeds the maximum limit 100\");",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
+						},
+						"method": "PUT",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"test1\",\n    \"lastName\":\"test1\",\n    \"nickName\":\"MaxtLengtOnNickName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"raw": "{\n    \"userId\":\"userid-french-12345678\",\n    \"active\":true,\n    \"firstName\":\"FrenchUser2\",\n    \"middleName\":\"S\",\n    \"lastName\":\"French2\",\n    \"nickName\":\"French2\",\n    \"email\":\"french@dotcms.com\",\n    \"male\":true,\n    \"languageId\":\"fr_FR\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -316,108 +312,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/users",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8080",
-							"path": [
-								"api",
-								"v1",
-								"users"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Birthday Limit",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"pm.test(\"Clear error message\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Length of Birthday provided exceeds the maximum limit 100\");",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"test1\",\n    \"lastName\":\"test1\",\n    \"nickName\":\"test1\",\n    \"birthday\":\"MaxtLengtOnBirthday-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
-							"path": [
-								"api",
-								"v1",
-								"users"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Email Max Characters Limit",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"pm.test(\"Clear error message\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Length of Email Address provided exceeds the maximum limit 100\");",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"Name1\",\n    \"lastName\":\"Last1\",\n    \"email\":\"MaxtLengtOnEmail-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",

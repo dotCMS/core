@@ -5,6 +5,7 @@ import fetchMock from 'fetch-mock';
 import { DotExperiments } from './dot-experiments';
 import { API_EXPERIMENTS_URL, EXPERIMENT_QUERY_PARAM_KEY } from './shared/constants';
 import {
+    After15DaysIsUserIncludedResponse,
     IsUserIncludedResponse,
     LocationMock,
     MOCK_CURRENT_TIMESTAMP,
@@ -12,6 +13,7 @@ import {
     MockDataStoredIndexDBWithNew,
     MockDataStoredIndexDBWithNew15DaysLater,
     NewIsUserIncludedResponse,
+    NoExperimentsIsUserIncludedResponse,
     sessionStorageMock,
     TIME_15_DAYS_MILLISECONDS,
     TIME_5_DAYS_MILLISECONDS
@@ -109,6 +111,33 @@ describe('DotExperiments', () => {
                     'Content-Type': 'application/json'
                 }
             });
+
+            const instance = DotExperiments.getInstance(config);
+
+            const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
+
+            expect(spyTrackPageView).not.toHaveBeenCalled();
+
+            await instance.locationChanged(LocationMock).then(() => {
+                expect(spyTrackPageView).not.toHaveBeenCalled();
+            });
+        });
+
+        it('should not call to trackPageView if you dont have experiment to track', async () => {
+            const config: DotExperimentConfig = { ...configMock, trackPageView: false };
+
+            fetchMock.post(
+                `${configMock.server}/${API_EXPERIMENTS_URL}`,
+                {
+                    status: 200,
+                    body: NoExperimentsIsUserIncludedResponse,
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                },
+                { overwriteRoutes: true }
+            );
 
             const instance = DotExperiments.getInstance(config);
 
@@ -219,7 +248,7 @@ describe('DotExperiments', () => {
                 // get the experiments stored in the indexDB
                 const experiments = instance.experiments;
 
-                expect(experiments.length).toBe(2);
+                expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDBWithNew);
                 expect(spyTrackPageView).toBeCalledTimes(2);
             });
@@ -228,7 +257,7 @@ describe('DotExperiments', () => {
                 `${configMock.server}/${API_EXPERIMENTS_URL}`,
                 {
                     status: 200,
-                    body: [],
+                    body: After15DaysIsUserIncludedResponse,
                     headers: {
                         Accept: 'application/json',
                         'Content-Type': 'application/json'
