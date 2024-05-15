@@ -237,3 +237,5 @@ This maintenance release includes the following code fixes:
 186. https://github.com/dotCMS/core/issues/27361 : CSV Content import cannot process host or folder information #27361
 187. https://github.com/dotCMS/core/issues/25903 : Key/Value field escaping colon and comma characters to HTML encoded version. #25903
 188. https://github.com/dotCMS/core/issues/24698 : Cannot push publish to S3 buckets in the us-east-2 region #24698
+
+**Release-23.01.17**
