@@ -160,7 +160,7 @@ public class PageResource {
      * Here's an example of how this method works:
      * <pre>
      * Format:
-     * http://localhost:8080/api/v1/page/json/{page-url}
+     * http://localhost:8080/api/v1/page/json/{page-url-or-vanity-url}
      * <br/>
      * Example:
      * http://localhost:8080/api/v1/page/json/about-us/locations/index
@@ -224,7 +224,7 @@ public class PageResource {
      * Here's an example of how this method works:
      * <pre>
      * Format:
-     * http://localhost:8080/api/v1/page/render/{page-url}?mode={mode}&com.dotmarketing.persona.id={personaId}&language_id={languageId}&device_inode={deviceInode}
+     * http://localhost:8080/api/v1/page/render/{page-url-or-vanity-url}?mode={mode}&com.dotmarketing.persona.id={personaId}&language_id={languageId}&device_inode={deviceInode}
      * <br/>
      * Example:
      * http://localhost:8080/api/v1/page/render/about-us/locations/index?language_id=1
