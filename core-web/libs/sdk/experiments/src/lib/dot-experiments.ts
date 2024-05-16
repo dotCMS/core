@@ -360,14 +360,22 @@ export class DotExperiments {
      */
     private shouldTrackPageView(): boolean {
         if (!this.config.trackPageView) {
+            this.logger.log(
+                `No send pageView. Tracking disabled. Config: ${this.config.trackPageView}.`
+            );
+
+            return false;
+        }
+
+        if (this.experimentsAssigned.length === 0) {
+            this.logger.log(`No send pageView. No experiments to track.`);
+
             return false;
         }
 
         // If the previous location is the same as the current location, we don't need to track the page view
         if (this.prevLocation === this.currentLocation.href) {
-            this.logger.log(
-                `No shouldTrackPageView, preview location is the same as current location.`
-            );
+            this.logger.log(`No send pageView. Same location.`);
 
             return false;
         }
@@ -465,6 +473,7 @@ export class DotExperiments {
             this.logger.log(`Experiment data get successfully `);
 
             this.persistenceHandler.setFlagExperimentAlreadyChecked();
+            this.persistenceHandler.setFetchExpiredTime();
 
             return { experiments, excludedExperimentIdsEnded };
         } catch (error) {
@@ -509,8 +518,6 @@ export class DotExperiments {
             // Checks whether fetching experiment data from the server is necessary.
             if (this.shouldFetchNewData()) {
                 fetchedExperiments = await this.getExperimentsFromServer();
-                this.persistenceHandler.setFlagExperimentAlreadyChecked();
-                this.persistenceHandler.setFetchExpiredTime();
             }
 
             const dataToPersist: Experiment[] = parseData(fetchedExperiments, storedExperiments);
@@ -658,12 +665,16 @@ export class DotExperiments {
             return true;
         }
 
-        if (!this.experimentsAssigned) {
+        if (!this.experimentsAssigned || this.experimentsAssigned.length === 0) {
+            this.logger.log(`No experiments assigned to the client, fetch data from Analytics`);
+
             return true;
         }
 
         if (!isDataCreateValid()) {
-            this.logger.log(`Persistence not valid, fetch data from Analytics`);
+            this.logger.log(
+                `The validity period of the persistence has passed, fetch data from Analytics`
+            );
 
             return true;
         }

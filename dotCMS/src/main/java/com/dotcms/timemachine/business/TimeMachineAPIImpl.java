@@ -1,6 +1,7 @@
 package com.dotcms.timemachine.business;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.time.Instant;
@@ -32,13 +33,12 @@ import com.dotmarketing.util.*;
 import io.vavr.Lazy;
 
 public class TimeMachineAPIImpl implements TimeMachineAPI {
-
     private static final Lazy<String> PRUNE_TIME_MACHINE_SCHEDULE = Lazy.of(() -> Config.getStringProperty(
             "PRUNE_TIME_MACHINE_SCHEDULE", "0 0 0 ? * SUN *"));
     private static final FilenameFilter TIME_MACHINE_FOLDER_FILTER = new TimeMachineFolderFilter();
     public static final String TM_BUNDLE_PREFFIX = "tm_";
 
-    private static final Lazy<Long> PRUNE_TIMEMACHINE_OLDER_THAN_DAYS = Lazy.of(
+    public Lazy<Long> PRUNE_TIMEMACHINE_OLDER_THAN_DAYS = Lazy.of(
             () -> Config.getLongProperty("PRUNE_TIMEMACHINE_OLDER_THAN_DAYS", 90)
     );
 
