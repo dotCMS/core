@@ -1,6 +1,8 @@
 package com.dotcms;
 
 import com.dotcms.ai.viewtool.AIViewToolTest;
+import com.dotcms.ai.viewtool.CompletionsToolTest;
+import com.dotcms.ai.viewtool.EmbeddingsToolTest;
 import com.dotcms.ai.viewtool.SearchToolTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
@@ -342,6 +344,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240112AddMetadataColumnToStructureTableTest.class,
         AIViewToolTest.class,
         SearchToolTest.class,
+        EmbeddingsToolTest.class,
+        CompletionsToolTest.class,
         TimeMachineAPITest.class,
         PruneTimeMachineBackupJobTest.class
 })
