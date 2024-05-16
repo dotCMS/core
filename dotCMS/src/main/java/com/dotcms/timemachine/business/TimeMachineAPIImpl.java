@@ -1,7 +1,6 @@
 package com.dotcms.timemachine.business;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.time.Instant;
@@ -18,7 +17,6 @@ import java.util.stream.Collectors;
 
 import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotcms.publishing.PublishStatus;
-import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -38,7 +36,7 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
     private static final FilenameFilter TIME_MACHINE_FOLDER_FILTER = new TimeMachineFolderFilter();
     public static final String TM_BUNDLE_PREFFIX = "tm_";
 
-    public Lazy<Long> PRUNE_TIMEMACHINE_OLDER_THAN_DAYS = Lazy.of(
+    public static final Lazy<Long> PRUNE_TIMEMACHINE_OLDER_THAN_DAYS = Lazy.of(
             () -> Config.getLongProperty("PRUNE_TIMEMACHINE_OLDER_THAN_DAYS", 90)
     );
 
