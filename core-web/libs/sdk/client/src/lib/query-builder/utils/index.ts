@@ -22,7 +22,7 @@ export enum OPERAND {
  * @param {string} str
  * @return {*}  {string}
  */
-export function santizeQuery(str: string): string {
+export function sanitizeQuery(str: string): string {
     return str.replace(/\s{2,}/g, ' ').trim();
 }
 
@@ -65,7 +65,7 @@ export function buildTerm(query: string, term: string): Term {
 export function buildRawTerm(query: string, raw: string): Term {
     const newQuery = query + ` ${raw}`;
 
-    return new Term(santizeQuery(newQuery));
+    return new Term(sanitizeQuery(newQuery));
 }
 
 /**

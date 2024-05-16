@@ -9,7 +9,7 @@ import {
     buildNotOperand,
     buildOperand,
     buildRawTerm,
-    santizeQuery
+    sanitizeQuery
 } from '..';
 
 /**
@@ -112,6 +112,6 @@ export class Term {
      * @memberof Term
      */
     build(): string {
-        return santizeQuery(this.#query);
+        return sanitizeQuery(this.#query);
     }
 }
