@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.languagesmanager.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotcms.languagevariable.business.LanguageVariable;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -28,7 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +39,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.BooleanSupplier;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -53,23 +53,14 @@ import org.apache.velocity.tools.view.context.ViewContext;
  */
 public class LanguageAPIImpl implements LanguageAPI {
 
-	private static final LanguageKeyComparator LANGUAGE_KEY_COMPARATOR = new LanguageKeyComparator();
+
+    private final static LanguageKeyComparator LANGUAGE_KEY_COMPARATOR = new LanguageKeyComparator();
 
 	private HttpServletRequest request; // todo: this should be decouple from the api
 	private LanguageFactory factory;
 	private LanguageVariableAPI languageVariableAPI;
 	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
-	private BooleanSupplier localizationEnhancementsEnabledOverride;
-
-	public LanguageAPIImpl(
-			LanguageFactory factory,
-			LanguageVariableAPI languageVariableAPI,
-			BooleanSupplier localizationEnhancementsEnabledOverride) {
-		this.factory = factory;
-		this.languageVariableAPI = languageVariableAPI;
-		this.localizationEnhancementsEnabledOverride = localizationEnhancementsEnabledOverride;
-	}
 	/**
 	 * Inits the service with the user {@link ViewContext}
 	 * @param obj
@@ -79,30 +70,12 @@ public class LanguageAPIImpl implements LanguageAPI {
 		this.request = context.getRequest(); // todo: this is just getting it for the user, so instead of getting the request should get the user.
 	}
 
-	@Override
-	public boolean isLocalizationEnhancementsEnabled() {
-		if(localizationEnhancementsEnabledOverride != null) {
-			return localizationEnhancementsEnabledOverride.getAsBoolean();
-		}
-		return localizationEnhancementsEnabled.get();
-	}
-
 	/**
 	 * Creates a new instance of the {@link LanguageAPI}.
 	 */
 	public LanguageAPIImpl() {
-		this(FactoryLocator.getLanguageFactory(), APILocator.getLanguageVariableAPI(), null);
+		factory = FactoryLocator.getLanguageFactory();
 	}
-
-	/**
-	 * Creates a new instance of the {@link LanguageAPI}.
-	 * @param localizationEnhancementsEnabledOverride
-	 */
-	@VisibleForTesting
-	public LanguageAPIImpl(BooleanSupplier localizationEnhancementsEnabledOverride) {
-		this(FactoryLocator.getLanguageFactory(), APILocator.getLanguageVariableAPI(), localizationEnhancementsEnabledOverride);
-	}
-
 
 	@Override
     @WrapInTransaction
@@ -317,18 +290,22 @@ public class LanguageAPIImpl implements LanguageAPI {
   @CloseDBIfOpened
   @Override
   public Map<String, String> getStringsAsMap(final Locale locale, final Collection<String> keys) {
+	final LanguageVariableAPI langVarsAPI = getLanguageVariableAPI();
     final Map<String, String> messagesMap = new HashMap<>();
 
     if (null != keys) {
       final Language lang = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
       keys.forEach(messageKey -> {
-
-          String message = (lang != null) 
-              ? getStringKey(lang, messageKey)
-              : getStringFromPropertiesFile(locale, messageKey) ;
-          message = (message == null) ? messageKey : message;
-          messagesMap.put(messageKey, message);
-
+		  final Optional<LanguageVariable> variable = Try.of(()->langVarsAPI.findVariable(lang.getId(), messageKey)).getOrElse(Optional.empty());
+		  if(variable.isPresent()){
+			  messagesMap.put(messageKey, variable.get().value());
+		  } else {
+			  String message = (lang != null)
+					  ? getStringKey(lang, messageKey)
+					  : getStringFromPropertiesFile(locale, messageKey);
+			  message = (message == null) ? messageKey : message;
+			  messagesMap.put(messageKey, message);
+		  }
       });
     }
 
@@ -338,15 +315,29 @@ public class LanguageAPIImpl implements LanguageAPI {
 	@CloseDBIfOpened
 	@Override
     public String getStringKey ( final Language lang, final String key ) {
+		final LanguageVariableAPI langVarsAPI = getLanguageVariableAPI();
 
-        final User user = getUser();
+		final Optional<LanguageVariable> variable = Try.of(()->langVarsAPI.findVariable(lang.getId(), key)).getOrElse(Optional.empty());
+		if(variable.isPresent()){
+			return variable.get().value();
+		}
+
+		final User user = getUser();
         // First, look it up using the new Language Variable API
-        final String value = getLanguageVariableAPI().getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user);
+        final String value = langVarsAPI.getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user);
         // If not found, retrieve value from legacy Language Variables or the appropriate
         final String countryCode = null == lang.getCountryCode()?"":lang.getCountryCode();
         return (UtilMethods.isNotSet(value) || value.equals(key)) ? this.getStringFromPropertiesFile(new Locale( lang.getLanguageCode(), countryCode ), key) : value;
     }
 
+	/**
+	 * This method internally uses MultiLanguageResourceBundle to get the value of the key.
+	 * if the enhancedLanguageVariables is enabled, it will use the LanguageVariableAPI to get the value of the key.
+	 * Therefore, it won't necessarily load the value from the properties file. And we should probably rename this method to getStringKeyFromLanguageVariable
+	 * @param locale
+	 * @param key
+	 * @return
+	 */
     private String getStringFromPropertiesFile (final Locale locale, final String key) {
         String value = null;
         try {

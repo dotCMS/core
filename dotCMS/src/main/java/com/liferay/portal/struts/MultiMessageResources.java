@@ -156,7 +156,8 @@ public class MultiMessageResources extends PropertyMessageResources {
         _servletContext = servletContext;
     }
 
-    protected void loadLocale(String localeKey) {
+    @Override
+    protected synchronized void loadLocale(String localeKey) {
 
         synchronized (locales) {
             if (locales.get(localeKey) != null) {
@@ -166,151 +167,196 @@ public class MultiMessageResources extends PropertyMessageResources {
             locales.put(localeKey, localeKey);
         }
 
-        String[] names = StringUtil.split(config.replace('.', '/'));
+        // Load the properties files for the specified locale
+        final String[] names = StringUtil.split(config.replace('.', '/'));
 
-        for (int i = 0; i < names.length; i++) {
-            String name = names[i];
+        for (String name : names) {
             if (localeKey.length() > 0) {
                 name += "_" + localeKey;
             }
             name += ".properties";
-
-            _loadProps(name, localeKey);
+            internalLoadProps(name, localeKey);
         }
-    }
 
-    private void _loadProps(String name, String localeKey) {
-
-        final LanguageAPI langAPI = APILocator.getLanguageAPI();
-        if (name.contains("cms_language")) {
-
-            if(langAPI.isLocalizationEnhancementsEnabled()){
-
-                final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-                final long languageId = LanguageUtil.getLanguageId(localeKey, false);
-                final List<LanguageVariable> vars = Try.of(()->languageVariableAPI.findVariables(languageId)).getOrElse(List.of());
-                if (vars.isEmpty()){
+        // Load the language variables if the localization enhancements are enabled
+        if (isLocalizationEnhancementsEnabled()) {
+            final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+            final long languageId = LanguageUtil.getLanguageId(localeKey, false);
+            if (languageId > 0) {
+                final List<LanguageVariable> variables = Try.of(
+                        () -> languageVariableAPI.findVariables(languageId)).getOrElse(List.of());
+                if (variables.isEmpty()) {
                     return;
                 }
                 synchronized (messages) {
-                    for (LanguageVariable var : vars) {
-                        messages.put(messageKey(localeKey, var.key()), var.value());
-                    }
-                }
-
-            } else{
-
-                List<LanguageKey> keys;
-                if (localeKey.split("_").length > 1) {
-                    keys = langAPI.getLanguageKeys(localeKey.split("_")[0], localeKey.split("_")[1]);
-                } else {
-                    keys = langAPI.getLanguageKeys(localeKey.split("_")[0]);
-                }
-
-                if (keys.size() < 1) {
-                    return;
-                }
-
-                synchronized (messages) {
-                    Iterator<LanguageKey> names = keys.iterator();
-
-                    while (names.hasNext()) {
-                        LanguageKey langkey = (LanguageKey) names.next();
-                        String key = langkey.getKey();
-                        messages.put(messageKey(localeKey, key), langkey.getValue());
+                    for (LanguageVariable variable : variables) {
+                        messages.put(messageKey(localeKey, variable.key()), variable.value());
                     }
                 }
             }
+        }
 
+    }
+
+    /**
+     * Load the properties file
+     * @param name the name of the properties file
+     * @param localeKey the locale key
+     */
+    private void internalLoadProps(String name, String localeKey) {
+        //These are user provided properties, and we should only look at them if the localization enhancements are disabled
+        if (name.contains("cms_language") && !isLocalizationEnhancementsEnabled()) {
+            loadUserProvidedKeys(localeKey);
         } else {
-            Properties props = new Properties();
+            // These source base properties are not user provided, we always want to load them
+            loadSystemProperties(name, localeKey);
+        }
+    }
 
-            try {
-                URL url = null;
-
-                url = _servletContext.getResource("/WEB-INF/" + name);
-
-                if (url != null) {
-                    try (InputStream is = url.openStream(); BufferedReader buffy = new BufferedReader(new InputStreamReader(is))) {
-                        buildProps(props, buffy);
-                    }
+    /**
+     * Load the system properties meaning all property files provided in our source base that end up living in the WEB-INF directory
+     * @param name the name of the properties file
+     * @param localeKey the locale key
+     */
+    private void loadSystemProperties(String name, String localeKey) {
+        final Properties props = new Properties();
+        try {
+            final URL url = _servletContext.getResource("/WEB-INF/" + name);
+            if (url != null) {
+                try (InputStream is = url.openStream(); BufferedReader buffy = new BufferedReader(new InputStreamReader(is))) {
+                    parseProps(props, buffy);
                 }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
             }
+        } catch (Exception e) {
+            Logger.error(this, "Error loading system properties", e);
+        }
 
-            if (props.size() < 1) {
-                return;
-            }
+        if (props.isEmpty()) {
+            return;
+        }
 
-            synchronized (messages) {
-                Enumeration names = props.keys();
+        synchronized (messages) {
+            Enumeration names = props.keys();
 
-                while (names.hasMoreElements()) {
-                    String key = (String) names.nextElement();
+            while (names.hasMoreElements()) {
+                String key = (String) names.nextElement();
 
-                    messages.put(messageKey(localeKey, key), props.getProperty(key));
-                }
+                messages.put(messageKey(localeKey, key), props.getProperty(key));
             }
         }
     }
 
-    private void buildProps(Properties props, BufferedReader buffy) throws IOException {
-        String line = null;
+    /**
+     * Load user provided keys from the database
+     * @param localeKey the locale key
+     * @param langAPI the language API
+     */
+    private void loadUserProvidedKeys(String localeKey) {
+        final LanguageAPI langAPI = APILocator.getLanguageAPI();
+        List<LanguageKey> keys;
+        if (localeKey.split("_").length > 1) {
+            keys = langAPI.getLanguageKeys(localeKey.split("_")[0], localeKey.split("_")[1]);
+        } else {
+            keys = langAPI.getLanguageKeys(localeKey.split("_")[0]);
+        }
 
+        if (keys.isEmpty()) {
+            return;
+        }
+
+        synchronized (messages) {
+            Iterator<LanguageKey> names = keys.iterator();
+
+            while (names.hasNext()) {
+                LanguageKey langKey = names.next();
+                String key = langKey.getKey();
+                messages.put(messageKey(localeKey, key), langKey.getValue());
+            }
+        }
+    }
+
+    /**
+     * Parses the properties from the given buffered reader and puts them into the given properties object.
+     * @param props the properties object
+     * @param buffy the buffered reader
+     * @throws IOException if an error occurs
+     */
+    private void parseProps(Properties props, BufferedReader buffy) throws IOException {
+        String line = null;
         while ((line = buffy.readLine()) != null) {
             if (UtilMethods.isSet(line) && line.contains("=") && !line.startsWith("#")) {
-                String[] arr = line.split("=", 2);
+                final String[] arr = line.split("=", 2);
                 if (arr.length > 1) {
                     String key = arr[0].trim();
                     String val = arr[1].trim();
                     if (val.contains("\\u")) {
-
-                        if (val.contains("\\u")) {
-
-                            StringBuffer buffer = new StringBuffer(val.length());
-                            boolean precedingBackslash = false;
-                            for (int i = 0; i < val.length(); i++) {
-                                char c = val.charAt(i);
-                                if (precedingBackslash) {
-                                    switch (c) {
-                                        case 'f':
-                                            c = '\f';
-                                            break;
-                                        case 'n':
-                                            c = '\n';
-                                            break;
-                                        case 'r':
-                                            c = '\r';
-                                            break;
-                                        case 't':
-                                            c = '\t';
-                                            break;
-                                        case 'u':
-                                            String hex = val.substring(i + 1, i + 5);
-                                            c = (char) Integer.parseInt(hex, 16);
-                                            i += 4;
-                                    }
-                                    precedingBackslash = false;
-                                } else {
-                                    precedingBackslash = (c == '\\');
-                                }
-                                if (!precedingBackslash) {
-                                    buffer.append(c);
-                                }
-                            }
-                            val = buffer.toString();
-                        }
+                        val = parseVal(val);
                     }
-                    if (props.containsKey(key)) {
-                        Logger.warn(this.getClass(), String.format(
-                                "Duplicate resource property definition (key=was ==> is now): %s=%s ==> %s",
-                                key, props.get(key), val));
-                    }
-                    props.put(key, val);
+                    putOrUpdate(props, key, val);
                 }
             }
         }
+    }
+
+    /**
+     * Parses the given value and returns the parsed value.
+     * @param val the value
+     * @return the parsed value
+     */
+    private static String parseVal(String val) {
+        StringBuilder buffer = new StringBuilder(val.length());
+        boolean precedingBackslash = false;
+        for (int i = 0; i < val.length(); i++) {
+            char c = val.charAt(i);
+            if (precedingBackslash) {
+                switch (c) {
+                    case 'f':
+                        c = '\f';
+                        break;
+                    case 'n':
+                        c = '\n';
+                        break;
+                    case 'r':
+                        c = '\r';
+                        break;
+                    case 't':
+                        c = '\t';
+                        break;
+                    case 'u':
+                        String hex = val.substring(i + 1, i + 5);
+                        c = (char) Integer.parseInt(hex, 16);
+                        i += 4;
+                        break;
+                    default:
+                        break;
+                }
+                precedingBackslash = false;
+            } else {
+                precedingBackslash = (c == '\\');
+            }
+            if (!precedingBackslash) {
+                buffer.append(c);
+            }
+        }
+        val = buffer.toString();
+        return val;
+    }
+
+    /**
+     * Puts or updates a property in the given properties object.
+     * @param props the properties object
+     * @param key the key
+     * @param val the value
+     */
+    private void putOrUpdate(final Properties props, final String key, final String val) {
+        props.compute(key, (k, existingVal) -> {
+            if (existingVal != null) {
+                Logger.warn(this.getClass(), String.format(
+                        "Duplicate resource property definition (key=was ==> is now): %s=%s ==> %s",
+                        key, existingVal, val));
+            }
+            return val;
+        });
     }
 
     public synchronized void reload() {

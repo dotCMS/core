@@ -1,7 +1,12 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import java.util.Collection;
 import java.util.List;
@@ -9,12 +14,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
-import com.liferay.portal.model.User;
 
 /**
  * Provides access to information related to the different languages that can be added to the
@@ -32,10 +31,18 @@ import com.liferay.portal.model.User;
  */
 public interface LanguageAPI {
 
+	String LOCALIZATION_ENHANCEMENTS_ENABLED = "LOCALIZATION_ENHANCEMENTS_ENABLED";
 	Lazy<Boolean> localizationEnhancementsEnabled = Lazy.of(
-			() -> Config.getBooleanProperty("LOCALIZATION_ENHANCEMENTS_ENABLED", true));
+			() -> Config.getBooleanProperty(LOCALIZATION_ENHANCEMENTS_ENABLED, true));
 
-	boolean isLocalizationEnhancementsEnabled();
+	static boolean isLocalizationEnhancementsEnabled() {
+		//this system property is used to enable/disable the localization enhancements from any integration context
+		// since the Config class is wrapped within a Lazy object and once it is loaded it is not possible to change the value
+		final String enabled = System.getProperty(
+				LOCALIZATION_ENHANCEMENTS_ENABLED);
+
+		return enabled != null ? Boolean.parseBoolean(enabled) : localizationEnhancementsEnabled.get();
+	}
 
     /**
      * 

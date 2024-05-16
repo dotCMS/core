@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.languagesmanager.business;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.LOCALIZATION_ENHANCEMENTS_ENABLED;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -11,6 +12,7 @@ import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.LanguageVariableDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -21,7 +23,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -182,46 +183,91 @@ public class LanguageAPITest {
    */
   @Test
   public void getStringsAsMap_returnMap() throws Exception {
-    final String uniq = UUIDGenerator.shorty();
-    final String BAD_KEY = "KEY-DOES-NOT-EXIST";
-    final String CONTENTLET_KEY = "key-exists-as-contentlet" + uniq;
-    final String PROPERTYFILE_KEY = "key-exists-in-properties" + uniq;
-    final String SYSTEM_PROPERTYFILE_KEY = "contenttypes.action.cancel";
-    final LanguageAPIImpl languageAPi = new LanguageAPIImpl();
-    
-    final Language language  = new LanguageDataGen().nextPersisted();
-    final LanguageAPIImpl lapi = Mockito.spy(languageAPi);
-    Mockito.doReturn(APILocator.systemUser()).when(lapi).getUser();
-    final ContentType langKeyType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Languagevariable");
+	System.setProperty(LOCALIZATION_ENHANCEMENTS_ENABLED, "false");
+	try {
+		final String uniq = UUIDGenerator.shorty();
+		final String BAD_KEY = "KEY-DOES-NOT-EXIST";
+		final String CONTENTLET_KEY = "key-exists-as-contentlet" + uniq;
+		final String PROPERTYFILE_KEY = "key-exists-in-properties" + uniq;
+		final String SYSTEM_PROPERTYFILE_KEY = "contenttypes.action.cancel";
+		final LanguageAPIImpl languageAPi = new LanguageAPIImpl();
 
-	//Create a contentlet with the key
-    Contentlet con = new ContentletDataGen(langKeyType.id())
-        .setProperty("key", CONTENTLET_KEY)
-        .setProperty("value", CONTENTLET_KEY + "works")
-        .languageId(language.getId())
-        .nextPersisted();
-    APILocator.getContentletAPI().publish(con, APILocator.systemUser(), false);
-    
-    
-    // Add Lang Variable to local properties. This shouldn't work if the localization enhancement is enabled. Cause this is legacy deprecated code
-    lapi.saveLanguageKeys(language, ImmutableMap.of(PROPERTYFILE_KEY, PROPERTYFILE_KEY + "works"), new HashMap<>(), ImmutableSet.of());
+		final Language language = new LanguageDataGen().nextPersisted();
+		final LanguageAPIImpl lapi = Mockito.spy(languageAPi);
+		Mockito.doReturn(APILocator.systemUser()).when(lapi).getUser();
+		final ContentType langKeyType = APILocator.getContentTypeAPI(APILocator.systemUser())
+				.find("Languagevariable");
 
-    final List<String> keys = ImmutableList.of(BAD_KEY, CONTENTLET_KEY,PROPERTYFILE_KEY,SYSTEM_PROPERTYFILE_KEY );
-    final Locale locale = language.asLocale();
-    
-    final Map<String, String> translatedMap = lapi.getStringsAsMap(locale, keys);
-    
-    // If key does not exist, we just return the key as the value
-    assertEquals(translatedMap.get(BAD_KEY), BAD_KEY);
-    
-    // We should check content based keys - languagevariables - before .properties files
-    assertEquals(CONTENTLET_KEY+"works", translatedMap.get(CONTENTLET_KEY));
-    
-    // then we should check properties files based on the locale
-    assertEquals(PROPERTYFILE_KEY+"works",translatedMap.get(PROPERTYFILE_KEY));
-    
-    
-    assertEquals(LanguageUtil.get( new Locale("en", "us"), SYSTEM_PROPERTYFILE_KEY ), translatedMap.get(SYSTEM_PROPERTYFILE_KEY) );
+		//Create a contentlet with the key
+		Contentlet con = new ContentletDataGen(langKeyType.id())
+				.setProperty("key", CONTENTLET_KEY)
+				.setProperty("value", CONTENTLET_KEY + "works")
+				.languageId(language.getId())
+				.nextPersisted();
+		//in new version we won't need to publish the langVar to see it
+		APILocator.getContentletAPI().publish(con, APILocator.systemUser(), false);
+
+		// Add Lang Variable to local properties. This shouldn't work if the localization enhancement is enabled. Cause this is legacy deprecated code
+		lapi.saveLanguageKeys(language,
+				ImmutableMap.of(PROPERTYFILE_KEY, PROPERTYFILE_KEY + "works"), new HashMap<>(),
+				ImmutableSet.of());
+
+		final List<String> keys = ImmutableList.of(BAD_KEY, CONTENTLET_KEY, PROPERTYFILE_KEY,
+				SYSTEM_PROPERTYFILE_KEY);
+		final Locale locale = language.asLocale();
+
+		final Map<String, String> translatedMap = lapi.getStringsAsMap(locale, keys);
+
+		// If key does not exist, we just return the key as the value
+		assertEquals(translatedMap.get(BAD_KEY), BAD_KEY);
+
+		// We should check content based keys - languagevariables - before .properties files
+		assertEquals(CONTENTLET_KEY + "works", translatedMap.get(CONTENTLET_KEY));
+
+		// then we should check properties files based on the locale
+		assertEquals(PROPERTYFILE_KEY + "works", translatedMap.get(PROPERTYFILE_KEY));
+
+		assertEquals(LanguageUtil.get(new Locale("en", "us"), SYSTEM_PROPERTYFILE_KEY),
+				translatedMap.get(SYSTEM_PROPERTYFILE_KEY));
+	} finally {
+	   System.clearProperty(LOCALIZATION_ENHANCEMENTS_ENABLED);
+	}
+  }
+
+  @Test
+  public void getStringsAsEnhancementsEnabled() throws Exception {
+	  System.setProperty(LOCALIZATION_ENHANCEMENTS_ENABLED, "true");
+	  try {
+
+		  final Language lang = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+		  final String key = "com.dotcoms.cat";
+		  final String translation = "kato";
+		  final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+
+		  final Map<String, String> beforeMap = languageAPI.getStringsAsMap(lang.asLocale(), List.of(key));
+		  // If key does not exist, we just return the key as the value
+		  Assert.assertEquals(key, beforeMap.get(key));
+		  final String stringKeyBefore = languageAPI.getStringKey(lang, key);
+		  Assert.assertEquals(key, stringKeyBefore);
+
+		  //Now let's create a language variable with the key and translation
+		  //We're NOT going to use the nextPersistedAndPublish here since we want to make sure that
+		  //even if the contentlet is not published, the language variable still makes it into cache
+		  new LanguageVariableDataGen().languageId(lang.getId()).key(key).value(translation).nextPersisted();
+
+		  final Map<String, String> afterMap = languageAPI.getStringsAsMap(lang.asLocale(), List.of(key));
+		  // This time around we should get the translated value.
+		  Assert.assertEquals(translation, afterMap.get(key));
+
+		  final String stringKeyAfter = languageAPI.getStringKey(lang, key);
+		  // This time around we should get the translated value.
+		  Assert.assertEquals(translation, stringKeyAfter);
+
+
+	  } finally {
+		  System.clearProperty(LOCALIZATION_ENHANCEMENTS_ENABLED);
+	  }
+
   }
 
 	@DataProvider

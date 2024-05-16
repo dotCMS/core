@@ -3,6 +3,7 @@ package com.dotcms.languagevariable.business;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * LanguageVariableFactory is the Data Access Object (DAO) for LanguageVariable

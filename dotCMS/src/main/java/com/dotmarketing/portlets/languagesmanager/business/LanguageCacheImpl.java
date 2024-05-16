@@ -1,18 +1,22 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotcms.languagevariable.business.LanguageVariable;
-import com.dotmarketing.exception.DotDataException;
-import java.util.List;
-
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * @author David
@@ -261,7 +265,7 @@ public class LanguageCacheImpl extends LanguageCache {
 			return;
 		}
 		@SuppressWarnings("unchecked")
-		final ConcurrentMap<String,List<LanguageVariable>> langVarCache = (ConcurrentMap<String,List<LanguageVariable>>) perLangCache;
+		final ConcurrentMap<String,Map<String,LanguageVariable>> langVarCache = (ConcurrentMap<String,Map<String,LanguageVariable>>) perLangCache;
 		final String languageIdStr = String.valueOf(languageId);
 		langVarCache.remove(languageIdStr);
 		Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " have been removed from cache.");
@@ -284,7 +288,7 @@ public class LanguageCacheImpl extends LanguageCache {
 	 */
 	@Override
 	public List<LanguageVariable> ifPresentGetOrElseFetch(final long languageId,
-			final Callable<List<LanguageVariable>> fetch) throws DotDataException {
+			final Callable<List<LanguageVariable>> fetchFunction) throws DotDataException {
 		final String languageIdStr = String.valueOf(languageId);
 		final String group = getSecondaryGroup();
 		final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
@@ -292,16 +296,16 @@ public class LanguageCacheImpl extends LanguageCache {
 		try {
 			final Object perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
 			if (perLangCache == null) {
-				result = fetch.call();
+				result = fetchFunction.call();
 				Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " has been fetched from the database.");
 				putVars(languageId, result);
 			} else {
-				@SuppressWarnings("unchecked") final ConcurrentMap<String, List<LanguageVariable>> langVarCache = (ConcurrentMap<String, List<LanguageVariable>>) perLangCache;
-				final List<LanguageVariable> variables = langVarCache.get(languageIdStr);
+				@SuppressWarnings("unchecked") final ConcurrentMap<String, Map<String,LanguageVariable>> langVarCache = (ConcurrentMap<String, Map<String,LanguageVariable>>) perLangCache;
+				final  Map<String,LanguageVariable> variables = langVarCache.get(languageIdStr);
 				if (variables != null) {
-					result = variables;
+					result = List.copyOf(variables.values());
 				} else {
-					result = fetch.call();
+					result = fetchFunction.call();
 					Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " has been fetched from the database.");
 					putVars(languageId, result);
 				}
@@ -327,15 +331,19 @@ public class LanguageCacheImpl extends LanguageCache {
 		Object perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
 		if (perLangCache == null) {
 			// A map of LanguageVariables is stored per language
-			cache.put(LANG_VARIABLES_CACHE, new ConcurrentHashMap<String,List<LanguageVariable>>(), group);
+			cache.put(LANG_VARIABLES_CACHE, new ConcurrentHashMap<String, Map<String,LanguageVariable>>(), group);
 			perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
 		}
 		@SuppressWarnings("unchecked")
-		final ConcurrentMap<String,List<LanguageVariable>> langVarCache = (ConcurrentMap<String,List<LanguageVariable>>) perLangCache;
+		final ConcurrentMap<String,Map<String,LanguageVariable>> langVarCache = (ConcurrentMap<String,Map<String,LanguageVariable>>) perLangCache;
 		//Now we use the crafted (specific) key to store the list of LanguageVariables
 		//So that if we want to invalidate only the list of LanguageVariables for a specific language it is possible
-		langVarCache.put(languageIdStr, vars);
+		langVarCache.put(languageIdStr, vars.stream().collect(Collectors.toMap(LanguageVariable::key, o -> o, mergeFunction())));
 		cache.put(languageIdStr, langVarCache, group);
+	}
+
+	private static BinaryOperator<LanguageVariable> mergeFunction() {
+		return (languageVariable, languageVariable2) -> languageVariable;
 	}
 
 	/**
@@ -353,13 +361,74 @@ public class LanguageCacheImpl extends LanguageCache {
 			return List.of();
 		}
 		@SuppressWarnings("unchecked")
-		final ConcurrentMap<String,List<LanguageVariable>> langVarCache = (ConcurrentMap<String,List<LanguageVariable>>) perLangCache;
+		final ConcurrentMap<String,Map<String,LanguageVariable>> langVarCache = (ConcurrentMap<String,Map<String,LanguageVariable>>) perLangCache;
 		//Now we use the crafted (specific) key to access the list of LanguageVariables
-		final List<LanguageVariable> variables = langVarCache.get(languageIdStr);
+		final Map<String,LanguageVariable> variables = langVarCache.get(languageIdStr);
 		if (variables == null) {
 			return List.of();
 		}
-		return variables;
+	    return 	List.copyOf(variables.values());
 	}
+
+	/**
+	 * This method is used to retrieve a LanguageVariable from cache
+	 * @param languageId the language id
+	 * @param key the key of the LanguageVariable
+	 * @return a LanguageVariable
+	 */
+	public Optional<LanguageVariable> getVar(final long languageId, final String key){
+		final String group = getSecondaryGroup();
+		final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+		final String languageIdStr = String.valueOf(languageId);
+		final Object perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
+		if (perLangCache == null) {
+			return Optional.empty();
+		}
+        @SuppressWarnings("unchecked")
+		final ConcurrentMap<String,Map<String,LanguageVariable>> langVarCache = (ConcurrentMap<String,Map<String,LanguageVariable>>) perLangCache;
+		final Map<String, LanguageVariable> variableMap = langVarCache.get(languageIdStr);
+		if (variableMap == null) {
+			return Optional.empty();
+		}
+		return Optional.ofNullable(variableMap.get(key));
+	}
+
+
+	/**
+	 * This method is used to retrieve a LanguageVariable from cache
+	 * @param languageId the language id
+	 * @param key  the key
+	 * @param fetchFunction the fetch function
+	 * @return a LanguageVariable
+	 * @throws DotDataException
+	 */
+
+	public Optional<LanguageVariable> ifPresentGetOrElseFetch(final long languageId, final String key,
+			final Callable<List<LanguageVariable>> fetchFunction) throws DotDataException {
+		final String group = getSecondaryGroup();
+		final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+		try {
+			final Object perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
+			@SuppressWarnings("unchecked")
+			final ConcurrentMap<String, Map<String, LanguageVariable>> langVarCache = (ConcurrentMap<String, Map<String, LanguageVariable>>) perLangCache;
+			if (langVarCache == null) {
+				List<LanguageVariable> result = fetchFunction.call();
+				Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " has been fetched from the database.");
+				putVars(languageId, result);
+			} else {
+				final String languageIdStr = String.valueOf(languageId);
+				final Map<String, LanguageVariable> variableMap = langVarCache.get(languageIdStr);
+				if (variableMap == null || variableMap.get(key) == null) {
+					List<LanguageVariable> result = fetchFunction.call();
+					Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " has been fetched from the database.");
+					putVars(languageId, result);
+				}
+			}
+			return getVar(languageId, key);
+		} catch (Exception e) {
+			throw new DotDataException(e);
+		}
+	}
+
 
 }

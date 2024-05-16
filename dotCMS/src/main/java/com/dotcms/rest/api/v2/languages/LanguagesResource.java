@@ -387,7 +387,7 @@ public class LanguagesResource {
         if(UtilMethods.isSet(language1)) {
 
             final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-            if(languageAPI.isLocalizationEnhancementsEnabled()) {
+            if(isLocalizationEnhancementsEnabled()) {
                 final Language matchingLang = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
                 // Enhanced Language Vars
                 final List<LanguageVariable> variables = languageVariableAPI.findVariables(matchingLang.getId());
