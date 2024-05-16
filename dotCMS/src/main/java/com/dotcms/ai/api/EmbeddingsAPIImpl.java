@@ -3,7 +3,7 @@ package com.dotcms.ai.api;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.ai.db.EmbeddingsDB;
+import com.dotcms.ai.db.EmbeddingsFactory;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.db.EmbeddingsDTO.Builder;
 import com.dotcms.ai.util.ContentToStringUtil;
@@ -126,7 +126,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     @Override
     @WrapInTransaction
     public int deleteEmbedding(@NotNull final EmbeddingsDTO dto) {
-        return EmbeddingsDB.impl.get().deleteEmbeddings(dto);
+        return EmbeddingsFactory.impl.get().deleteEmbeddings(dto);
     }
 
     @WrapInTransaction
@@ -279,7 +279,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         final List<Float> queryEmbeddings = pullOrGenerateEmbeddings(searcher.query)._2;
         final EmbeddingsDTO newSearcher = EmbeddingsDTO.copy(searcher).withEmbeddings(queryEmbeddings).build();
 
-        return EmbeddingsDB.impl.get().searchEmbeddings(newSearcher);
+        return EmbeddingsFactory.impl.get().searchEmbeddings(newSearcher);
     }
 
     @Override
@@ -287,24 +287,23 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         final List<Float> queryEmbeddings = pullOrGenerateEmbeddings(searcher.query)._2;
         final EmbeddingsDTO newSearcher = EmbeddingsDTO.copy(searcher).withEmbeddings(queryEmbeddings).build();
 
-        return EmbeddingsDB.impl.get().countEmbeddings(newSearcher);
+        return EmbeddingsFactory.impl.get().countEmbeddings(newSearcher);
     }
 
     @Override
     public Map<String, Map<String, Object>> countEmbeddingsByIndex() {
-        return EmbeddingsDB.impl.get().countEmbeddingsByIndex();
+        return EmbeddingsFactory.impl.get().countEmbeddingsByIndex();
     }
 
     @Override
     public void dropEmbeddingsTable() {
-        EmbeddingsDB.impl.get().dropVectorDbTable();
+        EmbeddingsFactory.impl.get().dropVectorDbTable();
     }
 
     @Override
     @WrapInTransaction
     public void initEmbeddingsTable() {
-        EmbeddingsDB.impl.get().initVectorExtension();
-        EmbeddingsDB.impl.get().initVectorDbTable();
+        EmbeddingsFactory.impl.get();
     }
 
     @WrapInTransaction
@@ -327,7 +326,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         }
 
         final Tuple3<String, Integer, List<Float>> dbEmbeddings =
-                EmbeddingsDB.impl.get().searchExistingEmbeddings(content);
+                EmbeddingsFactory.impl.get().searchExistingEmbeddings(content);
         if (dbEmbeddings != null && !dbEmbeddings._3.isEmpty()) {
             if (!CACHE.equalsIgnoreCase(dbEmbeddings._1)) {
                 saveEmbeddingsForCache(content, Tuple.of(dbEmbeddings._2, dbEmbeddings._3));
@@ -346,19 +345,19 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     @CloseDBIfOpened
     @Override
     public boolean embeddingExists(final String inode, final String indexName, final String extractedText) {
-        return EmbeddingsDB.impl.get().embeddingExists(inode, indexName, extractedText);
+        return EmbeddingsFactory.impl.get().embeddingExists(inode, indexName, extractedText);
     }
 
     @WrapInTransaction
     @Override
     public void saveEmbeddings(final EmbeddingsDTO embeddings) {
-        EmbeddingsDB.impl.get().saveEmbeddings(embeddings);
+        EmbeddingsFactory.impl.get().saveEmbeddings(embeddings);
     }
 
     @WrapInTransaction
     @Override
     public int deleteEmbeddings(final EmbeddingsDTO dto) {
-        return EmbeddingsDB.impl.get().deleteEmbeddings(dto);
+        return EmbeddingsFactory.impl.get().deleteEmbeddings(dto);
     }
 
     private JSONObject dtoToContentJson(final EmbeddingsDTO dto, final User user) {

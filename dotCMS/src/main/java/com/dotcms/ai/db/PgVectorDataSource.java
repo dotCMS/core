@@ -17,8 +17,7 @@ class PgVectorDataSource {
     /**
      * returns the configured datasource
      */
-    public static final Lazy<DataSource> datasource = Lazy.of(() -> resolveDataSource());
-
+    public static final Lazy<DataSource> datasource = Lazy.of(PgVectorDataSource::resolveDataSource);
 
     /**
      * Checks if a specific AI datasource is provided, if not, returns the standard dotCMS datasource
@@ -29,9 +28,8 @@ class PgVectorDataSource {
         if (UtilMethods.isEmpty(Config.getStringProperty("AI_DB_BASE_URL", null))) {
             return DbConnectionFactory.getDataSource();
         }
+
         return internalDatasource();
-
-
     }
 
     /**
@@ -40,10 +38,10 @@ class PgVectorDataSource {
      * @return
      */
     private static DataSource internalDatasource() {
-        String userName = Config.getStringProperty("AI_DB_USERNAME");
-        String password = Config.getStringProperty("AI_DB_PASSWORD");
-        String dbUrl = Config.getStringProperty("AI_DB_BASE_URL");
-        int maxConnections = Config.getIntProperty("AI_DB_MAX_TOTAL", 50);
+        final String userName = Config.getStringProperty("AI_DB_USERNAME");
+        final String password = Config.getStringProperty("AI_DB_PASSWORD");
+        final String dbUrl = Config.getStringProperty("AI_DB_BASE_URL");
+        final int maxConnections = Config.getIntProperty("AI_DB_MAX_TOTAL", 50);
 
         final HikariConfig config = new HikariConfig();
         config.setUsername(userName);
@@ -51,9 +49,6 @@ class PgVectorDataSource {
         config.setJdbcUrl(dbUrl);
         config.setMaximumPoolSize(maxConnections);
         return new HikariDataSource(config);
-
-
     }
-
 
 }
