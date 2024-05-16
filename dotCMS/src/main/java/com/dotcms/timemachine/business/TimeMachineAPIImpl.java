@@ -1,7 +1,6 @@
 package com.dotcms.timemachine.business;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.time.Instant;
@@ -27,16 +26,19 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
+import com.dotmarketing.quartz.job.PruneTimeMachineBackupJob;
 import com.dotmarketing.quartz.job.TimeMachineJob;
 import com.dotmarketing.util.*;
 import io.vavr.Lazy;
 
 public class TimeMachineAPIImpl implements TimeMachineAPI {
 
+    private static final Lazy<String> PRUNE_TIME_MACHINE_SCHEDULE = Lazy.of(() -> Config.getStringProperty(
+            "PRUNE_TIME_MACHINE_SCHEDULE", "0 0 0 ? * SUN *"));
     private static final FilenameFilter TIME_MACHINE_FOLDER_FILTER = new TimeMachineFolderFilter();
     public static final String TM_BUNDLE_PREFFIX = "tm_";
 
-    public Lazy<Long> PRUNE_TIMEMACHINE_OLDER_THAN_DAYS = Lazy.of(
+    private static final Lazy<Long> PRUNE_TIMEMACHINE_OLDER_THAN_DAYS = Lazy.of(
             () -> Config.getLongProperty("PRUNE_TIMEMACHINE_OLDER_THAN_DAYS", 90)
     );
 
@@ -131,7 +133,8 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 	            return null;
 	        }
 	        else {
-	            return sched.get(0);
+	            return sched.stream().filter(task -> "timemachine".equals(task.getJobName()))
+                        .findFirst().orElse(null);
 	        }
 	    }
 	    catch(Exception ex) {
@@ -166,6 +169,17 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
         }
     }
 
+    /**
+     * Start the {@link TimeMachineJob}, if it is already running the restart it with the new values.
+     *
+     * Also Start the {@link PruneTimeMachineBackupJob} is it is not running already
+     *
+     * @param cronExp
+     * @param hosts
+     * @param allhost
+     * @param langs
+     * @param incremental
+     */
     @Override
     public void setQuartzJobConfig(String cronExp, List<Host> hosts, boolean allhost, List<Language> langs, boolean incremental) {
         Map<String,Object> config=new HashMap<>();
@@ -175,10 +189,12 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
         config.put("allhosts", allhost);
         config.put("incremental", incremental);
         ScheduledTask task=getQuartzJob();
+
         if(task!=null) {
             // delete the old one
             removeQuartzJob();
         }
+
         // create it
         task = new CronScheduledTask("timemachine", "timemachine", "Time Machine", 
                 TimeMachineJob.class.getName(), new Date(), null, 1, config, cronExp);
@@ -187,8 +203,29 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+
+        runPruneTimeMachineJo();
     }
 
+    /**
+     * Start the PruneTimeMachineBackupJob. If it's already running, restart it.
+     * By default, the Job's Cron Expression is set to '0 0 0 ? * SUN *', which means every Sunday at midnight.
+     * However, you can override this default by using the config property PRUNE_TIMEMACHINE_SCHEDULE.
+     */
+    private void runPruneTimeMachineJo() {
+        Map<String,Object> config = new HashMap<>();
+        config.put("JOB_NAME", "prune-timemachine");
+
+        ScheduledTask task = new CronScheduledTask("prune-timemachine", "timemachine",
+                "Time Machine Prune Job", PruneTimeMachineBackupJob.class.getName(), new Date(),
+                null, 1, config, PRUNE_TIME_MACHINE_SCHEDULE.get());
+
+        try {
+            QuartzUtils.scheduleTask(task);
+        } catch (Exception ex) {
+            throw new DotRuntimeException(ex);
+        }
+    }
 
     private class TimeMachineFileNameFilter implements FilenameFilter{
     	

@@ -11,15 +11,18 @@ import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.quartz.CronScheduledTask;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.AccessTokenRenewJob;
-import com.dotmarketing.quartz.job.TestJobExecutor;
+import com.dotmarketing.quartz.job.PruneTimeMachineBackupJob;
 import com.dotmarketing.quartz.job.TimeMachineJob;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
+import io.vavr.API;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.quartz.*;
-import org.quartz.spi.TriggerFiredBundle;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,8 +32,7 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_JOB;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class TimeMachineAPITest {
 
@@ -196,6 +198,128 @@ public class TimeMachineAPITest {
             assertEquals(3, availableTimeMachineFolder_4.size());
         } finally {
             Config.setProperty("TIMEMACHINE_PATH", timemachinePathPreviousValue);
+        }
+    }
+
+    /**
+     * Method to test: {@link TimeMachineAPIImpl#setQuartzJobConfig(String, List, boolean, List, boolean)}
+     * When: Called this method and any of this job are not running: {@link com.dotmarketing.quartz.job.TimeMachineJob} and
+     * {@link com.dotmarketing.quartz.job.PruneTimeMachineBackupJob}
+     * Should: start both
+     */
+    @Test
+    public void startTimeMachineJob() throws SchedulerException {
+        try {
+            final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+            final Host host = new SiteDataGen().nextPersisted();
+            final Template template = new TemplateDataGen().host(host).nextPersisted();
+            final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                    .languageId(defaultLanguage.getId())
+                    .nextPersisted();
+
+            assertTrue(QuartzUtils.getScheduledTasks("timemachine").isEmpty());
+
+            final List<Host> hosts = list(host);
+            final List<Language> langs = list(defaultLanguage);
+
+            APILocator.getTimeMachineAPI().setQuartzJobConfig("0 0 0 ? * * *", hosts, false,
+                    langs, false);
+
+            assertJobsRunnings(hosts, langs, "0 0 0 ? * * *", "0 0 0 ? * SUN *");
+        } finally {
+            removeJobs();
+        }
+    }
+
+    /**
+     * Stop and remove the jobs: {@link TimeMachineJob} and {@link PruneTimeMachineBackupJob}
+     */
+    private void removeJobs() throws SchedulerException {
+        QuartzUtils.pauseJob("timemachine","timemachine");
+        QuartzUtils.removeTaskRuntimeValues("timemachine","timemachine");
+        QuartzUtils.removeJob("timemachine","timemachine");
+
+        QuartzUtils.pauseJob("prune-timemachine","timemachine");
+        QuartzUtils.removeTaskRuntimeValues("prune-timemachine","timemachine");
+        QuartzUtils.removeJob("prune-timemachine","timemachine");
+    }
+
+    /**
+     * Check if {@link TimeMachineJob} and {@link PruneTimeMachineBackupJob} are running
+     * @param hosts
+     * @param langs
+     */
+    private static void assertJobsRunnings(final List<Host> hosts, final List<Language> langs, final String tmJonCron,
+                                           final String pruneTMCron) throws SchedulerException {
+        final List<ScheduledTask> taskList = QuartzUtils.getScheduledTasks("timemachine");
+
+        assertEquals(2, taskList.size());
+
+        for (final ScheduledTask scheduledTask : taskList) {
+            if (scheduledTask.getJobName().equals("timemachine")) {
+                assertEquals("timemachine", scheduledTask.getJobName());
+                assertEquals("timemachine", scheduledTask.getJobGroup());
+                assertEquals("Time Machine", scheduledTask.getJobDescription());
+                assertEquals(TimeMachineJob.class.getName(), scheduledTask.getJavaClassName());
+                assertEquals(tmJonCron, ((CronScheduledTask) scheduledTask).getCronExpression());
+
+                final Map<String, Object> jobProperties = scheduledTask.getProperties();
+
+                assertEquals(jobProperties.get("CRON_EXPRESSION"), tmJonCron);
+                assertEquals(jobProperties.get("hosts"), hosts);
+                assertEquals(jobProperties.get("langs"), langs);
+                assertEquals(false, jobProperties.get("allhosts"));
+                assertEquals(false, jobProperties.get("incremental"));
+            } else if (scheduledTask.getJobName().equals("prune-timemachine")) {
+                assertEquals("prune-timemachine", scheduledTask.getJobName());
+                assertEquals("timemachine", scheduledTask.getJobGroup());
+                assertEquals("Time Machine Prune Job", scheduledTask.getJobDescription());
+                assertEquals(PruneTimeMachineBackupJob.class.getName(), scheduledTask.getJavaClassName());
+                assertEquals(pruneTMCron, ((CronScheduledTask) scheduledTask).getCronExpression());
+
+                final Map<String, Object> jobProperties = scheduledTask.getProperties();
+
+                assertEquals("prune-timemachine", jobProperties.get("JOB_NAME").toString());
+            } else {
+                throw new AssertionError("Not expected Task called " + scheduledTask.getJobName());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link TimeMachineAPIImpl#startTimeMachine(List, List, boolean)}
+     * When: Called this method and the {@link com.dotmarketing.quartz.job.PruneTimeMachineBackupJob} is already running
+     * Should: Restart just the {@link com.dotmarketing.quartz.job.TimeMachineJob}
+     */
+    @Test
+    public void startTimeMachineJobWhenPruneJobIsAlreadyRunning() throws SchedulerException {
+        try {
+            final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+            final Host host = new SiteDataGen().nextPersisted();
+            final Template template = new TemplateDataGen().host(host).nextPersisted();
+            final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                    .languageId(defaultLanguage.getId())
+                    .nextPersisted();
+
+            assertTrue(QuartzUtils.getScheduledTasks("timemachine").isEmpty());
+
+            final List<Host> hosts = list(host);
+            final List<Language> langs = list(defaultLanguage);
+
+            APILocator.getTimeMachineAPI().setQuartzJobConfig("0 0 0 ? * * *", hosts, false,
+                    langs, false);
+
+            APILocator.getTimeMachineAPI().removeQuartzJob();
+
+            assertFalse(QuartzUtils.getScheduledTask("prune-timemachine", "timemachine").isEmpty());
+            assertTrue(QuartzUtils.getScheduledTask("timemachine", "timemachine").isEmpty());
+
+            APILocator.getTimeMachineAPI().setQuartzJobConfig("0 0 1 ? * * *", hosts, false,
+                    langs, false);
+
+            assertJobsRunnings(hosts, langs, "0 0 1 ? * * *", "0 0 0 ? * SUN *");
+        } finally {
+            removeJobs();
         }
     }
 }
