@@ -25,8 +25,11 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
+import { DotActionMenuItem } from '@dotcms/dotcms-models';
 import {
+    DotActionMenuButtonComponent,
     DotIconModule,
+    DotMenuComponent,
     DotMessagePipe,
     DotRelativeDatePipe,
     DotSafeHtmlPipe,
@@ -35,14 +38,11 @@ import {
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
-import { DotActionMenuButtonComponent } from '../_common/dot-action-menu-button/dot-action-menu-button.component';
-import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
 
 @Component({
     selector: 'dot-empty-state',
@@ -133,7 +133,6 @@ describe('DotListingDataTableComponent', () => {
                 ActionHeaderComponent,
                 DotActionButtonComponent,
                 DotListingDataTableComponent,
-                DotActionMenuButtonComponent,
                 TestHostComponent,
                 EmptyMockComponent
             ],
@@ -144,7 +143,8 @@ describe('DotListingDataTableComponent', () => {
                     { path: 'test', component: DotListingDataTableComponent }
                 ]),
                 MenuModule,
-                DotMenuModule,
+                DotActionMenuButtonComponent,
+                DotMenuComponent,
                 DotIconModule,
                 DotRelativeDatePipe,
                 HttpClientTestingModule,
