@@ -188,9 +188,10 @@ public class MultiMessageResources extends PropertyMessageResources {
                 if (variables.isEmpty()) {
                     return;
                 }
+                Logger.debug(this, "Loading language variables for locale: " + localeKey);
                 synchronized (messages) {
                     for (LanguageVariable variable : variables) {
-                        messages.put(messageKey(localeKey, variable.key()), variable.value());
+                        putOrUpdate(messages, messageKey(localeKey, variable.key()), variable.value());
                     }
                 }
             }
@@ -281,7 +282,7 @@ public class MultiMessageResources extends PropertyMessageResources {
      * @param buffy the buffered reader
      * @throws IOException if an error occurs
      */
-    private void parseProps(Properties props, BufferedReader buffy) throws IOException {
+    private void parseProps(Map<Object,Object> props, BufferedReader buffy) throws IOException {
         String line = null;
         while ((line = buffy.readLine()) != null) {
             if (UtilMethods.isSet(line) && line.contains("=") && !line.startsWith("#")) {
@@ -348,7 +349,7 @@ public class MultiMessageResources extends PropertyMessageResources {
      * @param key the key
      * @param val the value
      */
-    private void putOrUpdate(final Properties props, final String key, final String val) {
+    private void putOrUpdate(final Map<Object,Object> props, final String key, final String val) {
         props.compute(key, (k, existingVal) -> {
             if (existingVal != null) {
                 Logger.warn(this.getClass(), String.format(
