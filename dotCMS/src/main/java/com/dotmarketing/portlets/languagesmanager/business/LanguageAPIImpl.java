@@ -225,7 +225,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 
     @CloseDBIfOpened
 	@Override
-	@Deprecated(since = "14.05", forRemoval = true)
+	@Deprecated(since = "24.05", forRemoval = true)
 	public List<LanguageKey> getLanguageKeys(final Language lang) {
 		final String langCode = lang.getLanguageCode();
         final String countryCode = lang.getCountryCode();
@@ -239,7 +239,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 	@Override
     @WrapInTransaction
-	@Deprecated(since = "14.05", forRemoval = true)
+	@Deprecated(since = "24.05", forRemoval = true)
 	public void createLanguageFiles(final Language lang) {
 
         this.factory.createLanguageFiles(lang);
@@ -248,7 +248,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 	@WrapInTransaction
 	@Override
-	@Deprecated(since = "14.05", forRemoval = true)
+	@Deprecated(since = "24.05", forRemoval = true)
 	public void saveLanguageKeys(final Language lang, final Map<String, String> generalKeysIncoming,
                                  final Map<String, String> specificKeys, final Set<String> toDeleteKeys) throws DotDataException {
 

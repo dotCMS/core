@@ -234,7 +234,13 @@ public class LanguageAPITest {
 	}
   }
 
-  @Test
+
+	/**
+	 * This is basically the same test as above but with the localization enhancements enabled
+	 * if no key is found the key itself is returned, otherwise the value is returned
+	 * @throws Exception if an error occurs
+	 */
+	@Test
   public void getStringsAsEnhancementsEnabled() throws Exception {
 	  System.setProperty(LOCALIZATION_ENHANCEMENTS_ENABLED, "true");
 	  try {
