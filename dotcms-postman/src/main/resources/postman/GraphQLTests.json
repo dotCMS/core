@@ -5231,7 +5231,7 @@
 									"    pm.expect(imageFieldJson.fileAsset.mime).to.eql(\"image/jpeg\");",
 									"    ",
 									"    // metaData",
-									"    pm.expect(imageFieldJson.metaData.length).to.eql(12);",
+									"    pm.expect(imageFieldJson.metaData.length).to.eql(13);",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"fileSize\", \"5494\"), 'FAILED:[fileSize]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"length\", \"5494\"), 'FAILED:[length]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"width\", \"139\"), 'FAILED:[width]').to.be.true;",
@@ -5241,6 +5241,9 @@
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"sha256\", \"d6b09b7a7d42e6a84e455e7257faf32c4351aa9bb491ceb939f7f3443c2150ae\"), 'FAILED:[sha256]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"title\", \"tommylee18005.jpeg\"), 'FAILED:[title]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"isImage\", \"true\"), 'FAILED:[isImage]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"editableAsText\", \"false\"), 'FAILED:[editableAsText]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"name\", \"tommylee18005.jpeg\"), 'FAILED:[name]').to.be.true;",
+									"    pm.expect(imageFieldJson.metaData.version).to.be.not.null;",
 									"    pm.expect(imageFieldJson.metaData.modDate).to.be.not.null;    ",
 									"});",
 									"",
@@ -5287,7 +5290,8 @@
 									"}",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],

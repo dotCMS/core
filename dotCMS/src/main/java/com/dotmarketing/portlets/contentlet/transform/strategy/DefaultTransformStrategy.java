@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -182,7 +183,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             contentletProperties.put(OWNER_NAME_KEY, null != owner ? owner.getFullName() : NOT_APPLICABLE);
         }
         final Identifier identifier = toolBox.identifierAPI.find(contentlet.getIdentifier());
-        if (!identifier.getAssetType().equals(IdentifierAPI.IDENT404)) {
+        if (null != identifier && UtilMethods.isSet(identifier.getId()) && !IdentifierAPI.IDENT404.equals(identifier.getAssetType())) {
             contentletProperties.put(CREATION_DATE_KEY, identifier.getCreateDate());
         }
         if (contentlet.isLive()) {
