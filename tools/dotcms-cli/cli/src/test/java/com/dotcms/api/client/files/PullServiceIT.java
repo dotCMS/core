@@ -23,19 +23,16 @@ import com.dotcms.api.client.pull.file.FileTraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.FilesTestHelperService;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.SitesTestHelperService;
 import com.dotcms.cli.exception.ForceSilentExitException;
 import com.dotcms.common.WorkspaceManager;
-import com.dotcms.model.asset.AssetVersionsView;
-import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.pull.PullOptions;
 import io.quarkus.security.UnauthorizedException;
-import io.quarkus.test.Mock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,7 +42,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -77,6 +73,9 @@ class PullServiceIT {
 
     @Inject
     FilesTestHelperService filesTestHelper;
+
+    @Inject
+    SitesTestHelperService sitesTestHelper;
 
     @Inject
     WorkspaceManager workspaceManager;
@@ -740,7 +739,7 @@ class PullServiceIT {
         try {
 
             // Creating a site, for this test we don't need to create any content
-            final var testSiteName = filesTestHelper.createSite();
+            final var testSiteName = sitesTestHelper.createSiteOnServer().siteName();
 
             final var folderPath = String.format("//%s", testSiteName);
 
