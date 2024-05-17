@@ -236,7 +236,7 @@ public class MultiMessageResources extends PropertyMessageResources {
         }
 
         synchronized (messages) {
-            Enumeration names = props.keys();
+            final Enumeration<?> names = props.keys();
 
             while (names.hasMoreElements()) {
                 String key = (String) names.nextElement();

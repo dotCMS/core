@@ -8,7 +8,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +28,7 @@ public class LanguageCacheImpl extends LanguageCache {
 
 	private static final String  LANG_VARIABLES_CACHE = "LanguageVariablesCache";
 	public static final String LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID = "Language Variables for language with id: ";
+	public static final String HAS_BEEN_FETCHED_FROM_THE_DATABASE = " has been fetched from the database.";
 
 	public static Language LANG_404 = new Language(-1,
 			LANG_404_STR, LANG_404_STR, LANG_404_STR,
@@ -297,7 +297,7 @@ public class LanguageCacheImpl extends LanguageCache {
 			final Object perLangCache = cache.getNoThrow(LANG_VARIABLES_CACHE, group);
 			if (perLangCache == null) {
 				result = fetchFunction.call();
-				Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " has been fetched from the database.");
+				Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + HAS_BEEN_FETCHED_FROM_THE_DATABASE);
 				putVars(languageId, result);
 			} else {
 				@SuppressWarnings("unchecked") final ConcurrentMap<String, Map<String,LanguageVariable>> langVarCache = (ConcurrentMap<String, Map<String,LanguageVariable>>) perLangCache;
@@ -306,7 +306,7 @@ public class LanguageCacheImpl extends LanguageCache {
 					result = List.copyOf(variables.values());
 				} else {
 					result = fetchFunction.call();
-					Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " has been fetched from the database.");
+					Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + HAS_BEEN_FETCHED_FROM_THE_DATABASE);
 					putVars(languageId, result);
 				}
 			}
@@ -413,14 +413,14 @@ public class LanguageCacheImpl extends LanguageCache {
 			final ConcurrentMap<String, Map<String, LanguageVariable>> langVarCache = (ConcurrentMap<String, Map<String, LanguageVariable>>) perLangCache;
 			if (langVarCache == null) {
 				List<LanguageVariable> result = fetchFunction.call();
-				Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " has been fetched from the database.");
+				Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + HAS_BEEN_FETCHED_FROM_THE_DATABASE);
 				putVars(languageId, result);
 			} else {
 				final String languageIdStr = String.valueOf(languageId);
 				final Map<String, LanguageVariable> variableMap = langVarCache.get(languageIdStr);
 				if (variableMap == null || variableMap.get(key) == null) {
 					List<LanguageVariable> result = fetchFunction.call();
-					Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + " has been fetched from the database.");
+					Logger.debug(this, LANGUAGE_VARIABLES_FOR_LANGUAGE_WITH_ID + languageId + HAS_BEEN_FETCHED_FROM_THE_DATABASE);
 					putVars(languageId, result);
 				}
 			}

@@ -42,6 +42,7 @@ import java.util.TreeSet;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.isLocalizationEnhancementsEnabled;
 
 /**
  * Implementation class for the {@link LanguageAPI}.
@@ -296,10 +297,18 @@ public class LanguageAPIImpl implements LanguageAPI {
     if (null != keys) {
       final Language lang = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
       keys.forEach(messageKey -> {
-		  final Optional<LanguageVariable> variable = Try.of(()->langVarsAPI.findVariable(lang.getId(), messageKey)).getOrElse(Optional.empty());
-		  if(variable.isPresent()){
-			  messagesMap.put(messageKey, variable.get().value());
-		  } else {
+		  Optional<LanguageVariable> variable = Optional.empty();
+		  if(isLocalizationEnhancementsEnabled()) {
+			 variable = Try.of(
+							 () -> langVarsAPI.findVariable(lang.getId(), messageKey))
+					 .getOrElse(Optional.empty());
+			  variable.ifPresent(
+					  languageVariable -> messagesMap.put(messageKey, languageVariable.value()));
+		 }
+		 // final code should always use first the LanguageVariableAPI to get the value of the key if not found then use the code below
+		  if (variable.isEmpty()) {
+			  //This code is still valid even if we decide to use the LanguageVariableAPI to get the value of the key
+			  //The code below will still look for the key in the system properties
 			  String message = (lang != null)
 					  ? getStringKey(lang, messageKey)
 					  : getStringFromPropertiesFile(locale, messageKey);
@@ -317,11 +326,15 @@ public class LanguageAPIImpl implements LanguageAPI {
     public String getStringKey ( final Language lang, final String key ) {
 		final LanguageVariableAPI langVarsAPI = getLanguageVariableAPI();
 
-		final Optional<LanguageVariable> variable = Try.of(()->langVarsAPI.findVariable(lang.getId(), key)).getOrElse(Optional.empty());
-		if(variable.isPresent()){
-			return variable.get().value();
+		//Once we're ready to roll out the new Language Variables, we should remove this check
+		if (isLocalizationEnhancementsEnabled()) {
+			final Optional<LanguageVariable> variable = Try.of(
+					() -> langVarsAPI.findVariable(lang.getId(), key)).getOrElse(Optional.empty());
+			if (variable.isPresent()) {
+				return variable.get().value();
+			}
 		}
-
+        //This code will still be valid even if we decide to use the LanguageVariableAPI to get the value of the key
 		final User user = getUser();
         // First, look it up using the new Language Variable API
         final String value = langVarsAPI.getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user);

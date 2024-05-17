@@ -396,7 +396,7 @@ public class LanguagesResource {
                 result.putAll(map);
             } else {
                 //Language Keys
-                final Map mapLanguageKeys = languageAPI
+                final Map <?,?> mapLanguageKeys = languageAPI
                         .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
                                 Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 

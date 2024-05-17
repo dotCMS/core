@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Implementation class for the {@link LanguageVariableFactory}.
@@ -73,31 +72,22 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
     @Override
     public List<LanguageVariableExt> findVariablesForPagination(ContentType contentType, int offset,
             int limit, String orderBy) throws DotDataException {
-        // START-NOSCAN
         String select = "select contentlet.contentlet_as_json->'fields'->'key'->'value' as key, \n"
                 + "          contentlet.contentlet_as_json->'fields'->'value'->'value' as value, \n"
                 + "          contentlet.identifier,\n"
                 + "          contentlet.language_id\n"
                 + "     from contentlet  \n"
-                + "     inner join ( \n"
-                + "      select distinct c.identifier \n"
-                + "       from contentlet c, contentlet_version_info vi, inode i \n"
-                + "      where \n"
+                + "      inner join ( \n"
+                + "     select distinct c.identifier, vi.lang \n"
+                + "       from contentlet c, contentlet_version_info vi \n"
+                + "     where \n"
                 + "       c.structure_inode = '"+contentType.inode()+"' \n"
                 + "       and vi.identifier = c.identifier \n"
                 + "       and ( vi.working_inode = c.inode or vi.live_inode = c.inode ) \n"
-                + "       and c.inode = i.inode  \n"
                 + "       and vi.deleted = 'false' \n"
                 + "        order by c.identifier \n"
                 + "        offset "+offset+" limit "+limit+"  \n"
-                + "    ) con_ident on contentlet.identifier = con_ident.identifier \n"
-                + "     inner join ( \n"
-                + "       select cvi.* from contentlet_version_info cvi  \n"
-                + "     ) cc on ( cc.working_inode = contentlet.inode or cc.live_inode = contentlet.inode ) \n"
-                + "     join (\n"
-                + "      select i.* from inode i \n"
-                + "     ) inode on inode.inode = contentlet.inode \n";
-        // END-NOSCAN
+                + "    ) con_ident on contentlet.identifier = con_ident.identifier and contentlet.language_id = con_ident.lang \n";
         final String sanitizedSort = SQLUtil.sanitizeSortBy(orderBy);
         if (!sanitizedSort.isEmpty()) {
             select += ORDER_BY + sanitizedSort;
@@ -131,27 +121,18 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
     @Override
     public int countVariablesByKey(ContentType contentType) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
-        // START-NOSCAN
         final String select = "select count( distinct( contentlet.contentlet_as_json->'fields'->'key'->'value' )) as x \n"
                 + "     from contentlet  \n"
                 + "     inner join ( \n"
-                + "      select distinct c.identifier \n"
-                + "       from contentlet c, contentlet_version_info vi, inode i \n"
+                + "      select distinct c.identifier, vi.lang \n"
+                + "       from contentlet c, contentlet_version_info vi \n"
                 + "      where \n"
                 + "       c.structure_inode = '"+contentType.inode()+"' \n"
                 + "       and vi.identifier = c.identifier \n"
                 + "       and ( vi.working_inode = c.inode or vi.live_inode = c.inode ) \n"
-                + "       and c.inode = i.inode  \n"
                 + "       and vi.deleted = 'false' \n"
                 + "        order by c.identifier       \n"
-                + "    ) con_ident on contentlet.identifier = con_ident.identifier \n"
-                + "     inner join ( \n"
-                + "       select cvi.* from contentlet_version_info cvi  \n"
-                + "     ) cc on ( cc.working_inode = contentlet.inode or cc.live_inode = contentlet.inode ) \n"
-                + "     join (\n"
-                + "      select i.* from inode i \n"
-                + "     ) inode on inode.inode = contentlet.inode";
-        // END-NOSCAN
+                + "    ) con_ident on contentlet.identifier = con_ident.identifier and contentlet.language_id = con_ident.lang \n";
         dotConnect.setSQL(select);
         return dotConnect.getInt("x");
     }
