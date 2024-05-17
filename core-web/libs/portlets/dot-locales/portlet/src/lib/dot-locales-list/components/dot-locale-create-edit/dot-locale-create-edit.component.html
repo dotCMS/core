@@ -1,0 +1,32 @@
+<form class="p-fluid" [formGroup]="form" (ngSubmit)="handleSubmit()">
+    <div class="field">
+        <label for="language">{{ 'Language' }}</label>
+        <p-dropdown
+            id="language"
+            [options]="data.languages"
+            [placeholder]="'Select form list or type'"
+            formControlName="language"></p-dropdown>
+    </div>
+    <div class="field">
+        <label for="country">{{ 'Country' }}</label>
+        <p-dropdown
+            id="country"
+            [options]="data.countries"
+            [placeholder]="'Select form list or type'"
+            formControlName="language"></p-dropdown>
+    </div>
+    <div class="field">
+        <label for="localeId">{{ 'Locale Id' }}</label>
+        <input id="localeId" formControlName="localeId" pInputText type="text" />
+    </div>
+
+    <div class="field">
+        <label for="languageId">{{ 'Language Id' }}</label>
+        <input id="languageId" formControlName="languageId" pInputText type="text" />
+    </div>
+
+    <div class="flex gap-3 justify-content-end">
+        <button [label]="'Cancel'" pButton type="button"></button>
+        <button [label]="'Add Language'" pButton type="submit"></button>
+    </div>
+</form>

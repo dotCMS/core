@@ -40,4 +40,24 @@ export class DotLanguagesService {
             .get(`/api/v1/page/${pageIdentifier}/languages`)
             .pipe(pluck('entity'));
     }
+
+    /**
+     * Add a new language to the system.
+     *
+     * @param {{
+     *         languageCode: string;
+     *         countryCode: string;
+     *         language: string;
+     *         country: string;
+     *     }} language - The language to be added.
+     * @return {Observable<DotLanguage>} An observable of the language added.
+     */
+    add(language: {
+        languageCode: string;
+        countryCode: string;
+        language: string;
+        country: string;
+    }): Observable<DotLanguage> {
+        return this.httpClient.post('/api/v2/languages', language).pipe(pluck('entity'));
+    }
 }

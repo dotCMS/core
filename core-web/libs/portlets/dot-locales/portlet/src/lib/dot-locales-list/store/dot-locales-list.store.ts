@@ -1,8 +1,18 @@
 import { ComponentStore } from '@ngrx/component-store';
 
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { map, switchMap } from 'rxjs/operators';
+
+import { DotLanguagesService } from '@dotcms/data-access';
 import { ComponentStatus, DotActionMenuItem, DotLanguage } from '@dotcms/dotcms-models';
+
+import {
+    DotLocaleCreateEditComponent,
+    DotLocaleCreateEditData
+} from '../components/dot-locale-create-edit/dot-locale-create-edit.component';
 
 /**
  * Interface for language row data
@@ -27,6 +37,9 @@ export interface DotLocaleListViewModel {
 
 @Injectable()
 export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
+    private readonly dialogService = inject(DialogService);
+    private readonly languageService = inject(DotLanguagesService);
+
     // Updaters
     readonly setLocales = this.updater((state: DotLocalesListState, languages: DotLanguage[]) => ({
         ...state,
@@ -39,6 +52,38 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             locales
         })
     );
+
+    //Effects
+    readonly loadDialog = this.effect<string | null>((_languageId$) => {
+        return _languageId$.pipe(
+            map((languageId) =>
+                this.dialogService.open(DotLocaleCreateEditComponent, {
+                    header: languageId ? 'Edit Locale' : 'Add Locale',
+                    width: '31rem',
+                    data: {
+                        languages: ['Spanish', 'English'],
+                        countries: ['Spain', 'USA'],
+                        languageId
+                    }
+                })
+            )
+        );
+    });
+
+    readonly addLocale = this.effect<DotLocaleCreateEditData>((data$) => {
+        return data$.pipe(
+            switchMap(() =>
+                this.languageService.add({
+                    languageCode: 'cc',
+                    language: 'cc',
+                    countryCode: 'cc',
+                    country: 'cc'
+                })
+            ),
+            switchMap(() => this.languageService.get()),
+            map((languages) => this.setLocales(languages))
+        );
+    });
 
     constructor() {
         super({ status: ComponentStatus.IDLE, locales: [] });

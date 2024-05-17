@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -27,18 +28,16 @@ import { DotLocaleListViewModel, DotLocalesListStore } from './store/dot-locales
     ],
     templateUrl: './dot-locales-list.component.html',
     styleUrl: './dot-locales-list.component.scss',
-    providers: [DotLocalesListStore],
+    providers: [DotLocalesListStore, DialogService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLocalesListComponent implements OnInit {
-    vm$: Observable<DotLocaleListViewModel> = this.dotLocalesListStore.vm$;
+    private readonly route = inject(ActivatedRoute);
+    store = inject(DotLocalesListStore);
 
-    constructor(
-        private readonly route: ActivatedRoute,
-        private readonly dotLocalesListStore: DotLocalesListStore
-    ) {}
+    vm$: Observable<DotLocaleListViewModel> = this.store.vm$;
 
     ngOnInit() {
-        this.dotLocalesListStore.setLocales(this.route.snapshot.data['locales']);
+        this.store.setLocales(this.route.snapshot.data['locales']);
     }
 }
