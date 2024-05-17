@@ -12722,7 +12722,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"console.log(\"Running test\")",
 									"",
 									"pm.test(\"No errors\", function () {",
 									"    ",
