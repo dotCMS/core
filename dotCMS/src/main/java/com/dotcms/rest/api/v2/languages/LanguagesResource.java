@@ -392,7 +392,12 @@ public class LanguagesResource {
                 // Enhanced Language Vars
                 final List<LanguageVariable> variables = languageVariableAPI.findVariables(matchingLang.getId());
                 final Map<?,?> map = variables.stream().collect(
-                        Collectors.toMap(LanguageVariable::key, LanguageVariable::value));
+                        Collectors.toMap(LanguageVariable::key, LanguageVariable::value, (value1,value2) ->{
+                            //Merge function is always a good idea to have.
+                            //There can be cases on which the "unique" constraint of the key is lifted allowing for duplicates
+                            Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
+                            return value1;
+                        }));
                 result.putAll(map);
             } else {
                 //Language Keys
