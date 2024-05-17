@@ -71,6 +71,7 @@
         "@material/mwc-menu": "^0.20.0",
         "@ngrx/component-store": "17.0.1",
         "@nx/angular": "18.0.4",
+        "@storybook/builder-webpack5": "^8.1.1",
         "@swc/helpers": "~0.5.2",
         "@tarekraafat/autocomplete.js": "^10.2.6",
         "@tinymce/tinymce-angular": "^7.0.0",
@@ -130,10 +131,11 @@
         "tinymce": "^6.8.3",
         "tslib": "^2.3.0",
         "uuid": "^9.0.0",
+        "webpack-dev-middleware": "^6.1.2",
         "zone.js": "0.14.2"
     },
     "devDependencies": {
-        "@angular-devkit/build-angular": "17.1.0",
+        "@angular-devkit/build-angular": "^17.3.7",
         "@angular-devkit/schematics": "17.1.0",
         "@angular-eslint/eslint-plugin": "17.0.1",
         "@angular-eslint/eslint-plugin-template": "17.0.1",
