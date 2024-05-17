@@ -5,8 +5,11 @@ import com.dotmarketing.exception.DotRuntimeException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+/**
+ * Enum representing different models of OpenAI.
+ * Each enum value contains the model name, tokens per minute, API per minute, maximum tokens, and a flag indicating if it's a completion model.
+ */
 public enum OpenAIModel {
-
 
     GPT_3_5_TURBO("gpt-3.5-turbo", 3000, 3500, 4096, true),
     GPT_3_5_TURBO_16k("gpt-3.5-turbo-16k", 180000, 3500, 16384, true),
@@ -23,7 +26,11 @@ public enum OpenAIModel {
     public final String modelName;
     public final boolean completionModel;
 
-    OpenAIModel(String modelName, int tokensPerMinute, int apiPerMinute, int maxTokens, boolean completionModel) {
+    OpenAIModel(final String modelName,
+                final int tokensPerMinute,
+                final int apiPerMinute,
+                final int maxTokens,
+                final boolean completionModel) {
         this.modelName = modelName;
         this.tokensPerMinute = tokensPerMinute;
         this.apiPerMinute = apiPerMinute;
@@ -31,22 +38,39 @@ public enum OpenAIModel {
         this.completionModel = completionModel;
     }
 
-    public static OpenAIModel resolveModel(String modelIn) {
-        String modelOut = modelIn.replace("-", "_").replace(".", "_").toUpperCase().trim();
-        for (OpenAIModel openAiModel : OpenAIModel.values()) {
+    /**
+     * Resolves the model based on the input string.
+     *
+     * @param modelIn The input string representing the model.
+     * @return The corresponding OpenAIModel.
+     * @throws DotRuntimeException If the input string does not correspond to any OpenAIModel.
+     */
+    public static OpenAIModel resolveModel(final String modelIn) {
+        final String modelOut = modelIn.replace("-", "_").replace(".", "_").toUpperCase().trim();
+        for (final OpenAIModel openAiModel : OpenAIModel.values()) {
             if (openAiModel.modelName.equalsIgnoreCase(modelIn) || openAiModel.name().equalsIgnoreCase(modelOut)) {
                 return openAiModel;
             }
         }
+
         throw new DotRuntimeException(
                 "Unable to parse model:'" + modelIn + "'.  Only " + supportedModels() + " are supported ");
     }
 
+    /**
+     * Returns a string representing the supported models.
+     *
+     * @return A string representing the supported models.
+     */
     private static String supportedModels() {
-        return String.join(", ",
-                Arrays.asList(OpenAIModel.values()).stream().map(o -> o.modelName).collect(Collectors.toList()));
+        return Arrays.stream(OpenAIModel.values()).map(o -> o.modelName).collect(Collectors.joining(", "));
     }
 
+    /**
+     * Returns the minimum interval between calls for the model.
+     *
+     * @return The minimum interval between calls for the model.
+     */
     public long minIntervalBetweenCalls() {
         return 60000 / apiPerMinute;
     }

@@ -18,19 +18,21 @@ import { MenuModule } from 'primeng/menu';
 import { PaginatorModule } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
 
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotActionMenuButtonComponent,
+    DotMenuComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCategoriesListComponent } from './dot-categories-list.component';
-
-import { DotMenuModule } from '../../../view/components/_common/dot-menu/dot-menu.module';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -87,7 +89,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             imports: [
                 SharedModule,
                 MenuModule,
-                DotMenuModule,
+                DotMenuComponent,
                 HttpClientTestingModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
@@ -99,8 +101,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 PaginatorModule,
                 InplaceModule,
                 InputNumberModule,
-                DotActionMenuButtonModule,
-
+                DotActionMenuButtonComponent,
                 CheckboxModule,
                 DotEmptyStateModule
             ],

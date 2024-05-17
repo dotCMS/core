@@ -84,6 +84,18 @@ export const After15DaysIsUserIncludedResponse: IsUserIncludedApiResponse = {
     messages: []
 };
 
+export const NoExperimentsIsUserIncludedResponse: IsUserIncludedApiResponse = {
+    entity: {
+        excludedExperimentIds: [],
+        excludedExperimentIdsEnded: [],
+        experiments: [],
+        includedExperimentIds: []
+    },
+    errors: [],
+    i18nMessagesMap: {},
+    messages: []
+};
+
 export const MOCK_CURRENT_TIMESTAMP = 1704096000000;
 
 export const TIME_15_DAYS_MILLISECONDS = 1296000 * 1000;
