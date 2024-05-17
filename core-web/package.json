@@ -145,7 +145,7 @@
         "@angular/language-service": "17.1.0",
         "@babel/core": "^7.12.9",
         "@babel/preset-react": "^7.14.5",
-        "@compodoc/compodoc": "^1.1.11",
+        "@compodoc/compodoc": "^1.1.24",
         "@materia-ui/ngx-monaco-editor": "^6.0.0",
         "@mdx-js/react": "^2.1.2",
         "@ngneat/spectator": "^15.0.1",
@@ -275,6 +275,9 @@
         "vite-plugin-dts": "~2.3.0",
         "webpack": "^5.64.0",
         "webpack-bundle-analyzer": "^4.5.0"
+    },
+    "resolutions": {
+        "pdfjs-dist": "^4.2.67"
     },
     "nx": {
         "includedScripts": []
