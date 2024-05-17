@@ -137,7 +137,7 @@ public interface LanguageAPI {
 	 * @param lang
 	 * @return
 	 */
-	@Deprecated(since = 24.05", forRemoval = true)
+	@Deprecated(since = "24.05", forRemoval = true)
 	public List<LanguageKey> getLanguageKeys(Language lang);
 
 	/**
