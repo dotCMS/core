@@ -1,5 +1,24 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INDEX_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.NO_METADATA;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
+import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
+import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -63,12 +82,6 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-import org.elasticsearch.action.search.SearchResponse;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Matchers;
-
 import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -76,30 +89,18 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.elasticsearch.action.search.SearchResponse;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INDEX_DOTRAW_METADATA_FIELDS;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.NO_METADATA;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
-import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
-import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
-import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.mockito.ArgumentMatchers;
 
 /**
  * @author nollymar
@@ -326,9 +327,9 @@ public class ESMappingAPITest {
         final VersionableAPI versionableAPI = mock(VersionableAPIImpl.class);
         final ContentletVersionInfo versionInfo = mock(ContentletVersionInfo.class);
         when(versionableAPI.getContentletVersionInfo(
-                Matchers.any(String.class),
-                Matchers.any(Long.class),
-                Matchers.any(String.class)))
+                ArgumentMatchers.any(String.class),
+                ArgumentMatchers.any(Long.class),
+                ArgumentMatchers.any(String.class)))
                 .thenReturn(Optional.of(versionInfo));
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
@@ -382,9 +383,9 @@ public class ESMappingAPITest {
         final ContentletVersionInfo versionInfo = mock(ContentletVersionInfo.class);
         when(versionableAPI
                 .getContentletVersionInfo(
-                        Matchers.any(String.class),
-                        Matchers.any(Long.class),
-                        Matchers.any(String.class)))
+                        ArgumentMatchers.any(String.class),
+                        ArgumentMatchers.any(Long.class),
+                        ArgumentMatchers.any(String.class)))
                 .thenReturn(Optional.of(versionInfo));
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
@@ -552,7 +553,7 @@ public class ESMappingAPITest {
         FileUtil.write(binary1, anyContent);
         final File binary2 = new File(ESMappingAPITest.class.getClassLoader().getResource("images/test.jpg").getFile());
 
-        Assert.assertTrue(binary2.exists());
+        assertTrue(binary2.exists());
 
         contentlet.setBinary(binaryField1, binary1);
         contentlet.setBinary(binaryField2, binary2);
@@ -605,14 +606,14 @@ public class ESMappingAPITest {
                     .collect(Collectors.toSet());
 
             final Map<String, Object> contentletMap = esMappingAPI.toMap(multipleBinariesContent);
-            Assert.assertNotNull(contentletMap);
+            assertNotNull(contentletMap);
             //We get the list of metadata dot-raw keys
             final List<String> dotRawMetaList = contentletMap.keySet().stream()
                     .filter(s -> s.startsWith("metadata") && s.endsWith("dotraw"))
                     .collect(Collectors.toList());
 
             //Test that with the dotRaw fields generated are part of the list of inclusions
-            Assert.assertTrue(includedDotRawFields.containsAll(dotRawMetaList));
+            assertTrue(includedDotRawFields.containsAll(dotRawMetaList));
 
             final Contentlet fileAssetContent = getFileAssetContent(true, 1L, TestFile.PDF);
             final Map<String, Object> contentletMapCustomInclude = esMappingAPI
@@ -858,7 +859,7 @@ public class ESMappingAPITest {
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             final Contentlet parentContentlet = contentletAPI
                     .checkin(parentDataGen.languageId(language.getId()).next(),
-                            Map.of(relationship, CollectionsUtils.list(childContentlet)),
+                            Map.of(relationship, list(childContentlet)),
                             null, user, false);
 
             esMappingAPI.loadRelationshipFields(childContentlet, esMap, new StringWriter());
@@ -870,7 +871,7 @@ public class ESMappingAPITest {
             final StringWriter catchAll = new StringWriter();
             esMappingAPI.loadRelationshipFields(parentContentlet, esMap, catchAll);
 
-            final List<String> expectedResults = CollectionsUtils.list(childContentlet.getIdentifier());
+            final List<String> expectedResults = list(childContentlet.getIdentifier());
 
             validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults,
                     catchAll.toString());
@@ -1045,7 +1046,7 @@ public class ESMappingAPITest {
                 + "}", queryString);
 
         final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
-        Assert.assertFalse(searchResults.isEmpty());
+        assertFalse(searchResults.isEmpty());
         for (final Object searchResult : searchResults) {
             final Contentlet contentlet = (Contentlet) searchResult;
             final Map<String, Object> map = (Map<String, Object>)contentlet.getMap().get("myKeyValueField");
@@ -1128,7 +1129,7 @@ public class ESMappingAPITest {
     public void Test_Create_FileAsset_With_Metadata_KeyValue_Then_Query()
             throws DotDataException, DotSecurityException {
 
-        final Contentlet imageLikeContent = TestDataUtils.getFileAssetContent(true, 1L, TestFile.JPG);
+        final Contentlet imageLikeContent = getFileAssetContent(true, 1L, TestFile.JPG);
         final ContentType contentType = imageLikeContent.getContentType();
         String contentTypeName = contentType.variable();
         final Optional<Field> optionalField = contentType.fields(KeyValueField.class).stream().findFirst();
