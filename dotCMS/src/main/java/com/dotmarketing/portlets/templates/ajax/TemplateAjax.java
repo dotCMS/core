@@ -33,6 +33,7 @@ import java.util.*;
 /**
  * @author David
  */
+//NOSONAR
 public class TemplateAjax {
 
 	UserWebAPI userWebAPI;
