@@ -1,5 +1,17 @@
 package com.dotcms.rest.api.v1.site;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.mapAll;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.InitDataObject;
@@ -37,17 +49,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.mapAll;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.notNull;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * {@link SiteResource} test
@@ -86,7 +87,7 @@ public class SiteResourceTest extends UnitTestBase {
         Config.CONTEXT = context;
         try {
             when(initDataObject.getUser()).thenReturn(user);
-            when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
+            when(webResource.init((WebResource.InitBuilder)any())).thenReturn(initDataObject);
             when(initDataObject.getUser()).thenReturn(user);
             when(paginationUtil.getPage(request, user, "filter",1, count,
                     Map.of("archive", false, "live", false, "system", false))).thenReturn(responseExpected);
@@ -196,7 +197,7 @@ public class SiteResourceTest extends UnitTestBase {
             Map<String, Object> sessionAttributes = new HashMap<>(Map.of(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock"));
 
             when(initDataObject.getUser()).thenReturn(user);
-            when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
+            when(webResource.init((WebResource.InitBuilder)any())).thenReturn(initDataObject);
             when(hostAPI.find("48190c8c-42c4-46af-8d1a-0cd5db894798", user, Boolean.TRUE)).thenReturn(host);
             when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
             when(request.getSession()).thenReturn(session);
@@ -213,7 +214,7 @@ public class SiteResourceTest extends UnitTestBase {
                 }
             }).when(session).setAttribute(
                     anyString(),
-                    anyObject()
+                    any()
             );
 
             doAnswer(new Answer<Void>() {
@@ -280,7 +281,7 @@ public class SiteResourceTest extends UnitTestBase {
                     .thenReturn(currentSite.getIdentifier());
 
             final InitDataObject initDataObject = mock(InitDataObject.class);
-            when(webResource.init((WebResource.InitBuilder) anyObject())).thenReturn(
+            when(webResource.init((WebResource.InitBuilder) any())).thenReturn(
                     initDataObject);
             when(initDataObject.getUser()).thenReturn(user);
 

@@ -17,12 +17,12 @@
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
         <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
         <swagger.version>2.2.0</swagger.version>
-        <bytebuddy.version>1.12.6</bytebuddy.version>
+        <bytebuddy.version>1.14.12</bytebuddy.version>
         <batik.version>1.17</batik.version>
         <bouncy-castle.version>1.70</bouncy-castle.version>
         <awaitility.version>3.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
-        <glowroot.version>0.13.1</glowroot.version>
+        <glowroot.version>0.14.1</glowroot.version>
         <jackson.version>2.16.1</jackson.version>
         <jersey.version>2.22.1</jersey.version>
         <graalvm.version>22.3.3</graalvm.version>
@@ -772,7 +772,7 @@
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>2.2.220</version>
+                <version>2.2.224</version>
             </dependency>
 
             <dependency>
@@ -1474,6 +1474,21 @@
             </dependency>
 
             <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>5.10.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>5.10.2</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
                 <version>${awaitility.version}</version>
@@ -1486,19 +1501,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>2.28.2</version>
-            </dependency>
-            <dependency>
-                <!-- Deprecated need to remove replace with core mockito-->
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito2</artifactId>
-                <version>2.0.9</version>
-            </dependency>
-            <dependency>
-                <!-- Deprecated need to remove replace with core mockito-->
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4</artifactId>
-                <version>2.0.9</version>
+                <version>5.11.0</version>
             </dependency>
 
             <dependency>
