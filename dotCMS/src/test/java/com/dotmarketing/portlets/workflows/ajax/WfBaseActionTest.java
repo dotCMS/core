@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
 import com.liferay.portal.model.User;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -33,7 +32,6 @@ public class WfBaseActionTest {
      * @throws IOException
      */
     @Test
-    @Ignore("Mockito update broke this test, need to fix it")
     public void TestAllowedCommands() throws NoSuchMethodException, ServletException, IOException {
 
         final User user = mock(User.class);
@@ -41,7 +39,7 @@ public class WfBaseActionTest {
             final WfBaseAction action = mock(clazz);
             when(action.getUser()).thenReturn(user);
             when( action.getAllowedCommands()).thenCallRealMethod();
-            when( action.getMethod(anyString(),any())).thenCallRealMethod();
+            when( action.getMethod(anyString(),any(),any())).thenCallRealMethod();
             doCallRealMethod().when(action).service(any(HttpServletRequest.class),any(HttpServletResponse.class));
 
             final List<String> commands = new ArrayList<>(action.getAllowedCommands());
@@ -59,7 +57,7 @@ public class WfBaseActionTest {
                 });
                 System.out.println(" Command ::  "+ command  + "  on  class " + action  );
                 action.service(request, response);
-                verify(action, atLeastOnce()).getMethod(anyString(),any());
+                verify(action, atLeastOnce()).getMethod(anyString(),any(),any());
             }
         }
     }
@@ -78,7 +76,7 @@ public class WfBaseActionTest {
             final WfBaseAction action = mock(clazz);
             when(action.getUser()).thenReturn(user);
             when( action.getAllowedCommands()).thenCallRealMethod();
-            when( action.getMethod(anyString(),any())).thenCallRealMethod();
+            when( action.getMethod(anyString(),eq(new Class[] { HttpServletRequest.class, HttpServletResponse.class }))).thenCallRealMethod();
             doCallRealMethod().when(action).service(any(HttpServletRequest.class),any(HttpServletResponse.class));
 
                 final String command = "forbiddenMethod";
@@ -108,7 +106,6 @@ public class WfBaseActionTest {
      * @throws IOException
      */
     @Test
-    @Ignore("Mockito update broke this test, need to fix it")
     public void TestOnNullCallTheDefaultCommand() throws NoSuchMethodException, ServletException, IOException {
 
         final User user = mock(User.class);
@@ -116,7 +113,7 @@ public class WfBaseActionTest {
             final WfBaseAction action = mock(clazz);
             when(action.getUser()).thenReturn(user);
             when( action.getAllowedCommands()).thenCallRealMethod();
-            when( action.getMethod(anyString(),any())).thenCallRealMethod();
+            when( action.getMethod(anyString(),any(),any())).thenCallRealMethod();
             doCallRealMethod().when(action).service(any(HttpServletRequest.class),any(HttpServletResponse.class));
 
             final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
@@ -126,7 +123,7 @@ public class WfBaseActionTest {
                 return null;
             });
             action.service(request, response);
-            verify(action, atLeastOnce()).getMethod(eq("action"),any());
+            verify(action, atLeastOnce()).getMethod(eq("action"),any(),any());
 
         }
     }

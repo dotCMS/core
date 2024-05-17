@@ -37,13 +37,14 @@ abstract class WfBaseAction extends AjaxAction {
 
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String cmd = request.getParameter("cmd");
+		if (cmd == null) cmd = "action";
 		java.lang.reflect.Method meth = null;
 		Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
 		Object arglist[] = new Object[] { request, response };
 		try {
-			if (getUser() == null ) {
-				response.sendError(401);
-				return;
+            if (getUser() == null) {
+                response.sendError(401);
+                return;
 			}
 
 		  if(getAllowedCommands().contains(cmd)) {
@@ -86,6 +87,7 @@ abstract class WfBaseAction extends AjaxAction {
 	 */
 	@VisibleForTesting
 	Method getMethod(String method,  Class<?>... parameterTypes ) throws NoSuchMethodException {
+		Logger.debug(this, "Trying to run method:" + method + " with parameters:" + parameterTypes);
 		return this.getClass().getMethod(method, parameterTypes);
 	}
 
