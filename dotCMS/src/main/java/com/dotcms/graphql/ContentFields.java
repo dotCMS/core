@@ -90,7 +90,7 @@ public final class ContentFields {
                 GraphQLArgument.newArgument().name("render").defaultValue(false)
                         .type(GraphQLBoolean).build()));
         contentFields.put(PUBLISH_DATE_KEY, new TypeFetcher(GraphQLString, PropertyDataFetcher
-                .fetching((Function<Contentlet, String>) (contentlet) ->
+                .fetching((Function<Contentlet, String>) contentlet ->
                         UtilMethods.isSet(contentlet.getStringProperty("publishDate"))
                                 ? contentlet.getStringProperty("publishDate")
                                 : "")));
