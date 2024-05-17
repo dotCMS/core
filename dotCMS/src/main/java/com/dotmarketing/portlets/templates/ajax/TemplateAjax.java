@@ -33,14 +33,13 @@ import java.util.*;
 /**
  * @author David
  */
-//NOSONAR
 public class TemplateAjax {
 
 	UserWebAPI userWebAPI;
 	TemplateAPI templateAPI;
 	HostAPI hostAPI;
 
-	public TemplateAjax () {
+	public TemplateAjax () { //NOSONAR
 		templateAPI = APILocator.getTemplateAPI();
 		userWebAPI = WebAPILocator.getUserWebAPI();
 		hostAPI = APILocator.getHostAPI();
