@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "611b379f-e7c5-4732-8b92-2d34993515d4",
+		"_postman_id": "7d417544-c1a3-4b9c-a227-0869ee7c27df",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -256,411 +256,1159 @@
 			"name": "Page API",
 			"item": [
 				{
-					"name": "pre_ImportBundleWithContext",
-					"event": [
+					"name": "Init And Test Data Import",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
-									"    var jsonData = pm.response.json();",
-									"    console.log(jsonData);",
-									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
-									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
+							"name": "pre_ImportBundleWithContext",
+							"event": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
 								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/GraphQL/assets.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n* A piece of content with a tag field without any tags selected"
 							},
-							{
-								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/GraphQL/assets.tar.gz"
-								}
-							]
+							"response": []
 						},
-						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"bundle",
-								"sync"
-							],
-							"query": [
+						{
+							"name": "pre_ImportBundleWithPersonas",
+							"event": [
 								{
-									"key": "AUTH_TOKEN",
-									"value": "",
-									"disabled": true
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"personas.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
 								}
-							]
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/GraphQL/personas.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n* Imports personas"
+							},
+							"response": []
 						},
-						"description": "Imports a Bundle that includes:\n* A piece of content with a tag field without any tags selected"
-					},
-					"response": []
+						{
+							"name": "pre_ImportBundleWithDemoHost",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"demo.dotcms.com.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n* Imports demo.dotcms.com"
+							},
+							"response": []
+						},
+						{
+							"name": "pre_ImportBundleWithTestPage",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"test-page-graphql-render.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/GraphQL/test-page-graphql-render.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n\n*   pp-test page with all the dependencies. pp-test page was created on a demo.dotcms.com site"
+							},
+							"response": []
+						},
+						{
+							"name": "Switch site to 'demo.dotcms.com'",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 \", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"",
+											"",
+											"pm.test(\"Valid response\", function () {",
+											"    var jsonData = pm.response.json();",
+											"",
+											"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"switch",
+										"48190c8c-42c4-46af-8d1a-0cd5db894797"
+									]
+								}
+							},
+							"response": []
+						}
+					]
 				},
 				{
-					"name": "pre_ImportBundleWithPersonas",
-					"event": [
+					"name": "Checking Content Audit Attributes",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
-									"    var jsonData = pm.response.json();",
-									"    console.log(jsonData);",
-									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"personas.tar.gz\");",
-									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
+							"name": "Page API",
+							"item": [
+								{
+									"name": "Retrieving HTML Page Data",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Checking that audit properties are present\", function () {",
+													"    var entity = pm.response.json().data.page;",
+													"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+													"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+													"    pm.expect(entity.owner.firstName).to.not.equal(undefined, \"The 'owner.firstName' attribute must be present\");",
+													"    pm.expect(entity.owner.lastName).to.not.equal(undefined, \"The 'owner.lastName' attribute must be present\");",
+													"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+													"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+													"    pm.expect(entity.modUser.firstName).to.not.equal(undefined, \"The 'modUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.modUser.lastName).to.not.equal(undefined, \"The 'modUser.lastName' attribute must be present\");",
+													"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+													"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+													"    pm.expect(entity.publishUser.firstName).to.not.equal(undefined, \"The 'publishUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.publishUser.lastName).to.not.equal(undefined, \"The 'publishUser.lastName' attribute must be present\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "query PageAPI {\n  page(url: \"/pp-test\") {\n    title\n    creationDate\n    owner {\n      firstName\n      lastName\n      userId\n      email\n    }\n    modDate\n    modUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n    publishDate\n    publishUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Page Render",
+							"item": [
+								{
+									"name": "Retrieving HTML Page Data",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Checking that audit properties are present\", function () {",
+													"    var entity = pm.response.json().data.page;",
+													"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+													"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+													"    pm.expect(entity.owner.firstName).to.not.equal(undefined, \"The 'owner.firstName' attribute must be present\");",
+													"    pm.expect(entity.owner.lastName).to.not.equal(undefined, \"The 'owner.lastName' attribute must be present\");",
+													"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+													"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+													"    pm.expect(entity.modUser.firstName).to.not.equal(undefined, \"The 'modUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.modUser.lastName).to.not.equal(undefined, \"The 'modUser.lastName' attribute must be present\");",
+													"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+													"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+													"    pm.expect(entity.publishUser.firstName).to.not.equal(undefined, \"The 'publishUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.publishUser.lastName).to.not.equal(undefined, \"The 'publishUser.lastName' attribute must be present\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "query PageRender {\n  page(url: \"/pp-test\") {\n    title\n    creationDate\n    owner {\n      firstName\n      lastName\n      userId\n      email\n    }\n    modDate\n    modUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n    publishDate\n    publishUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Container Rendered",
+							"item": [
+								{
+									"name": "Retrieving Test Generic Content Data",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Checking that audit properties are present\", function () {",
+													"    var entity = pm.response.json().data.page;",
+													"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+													"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+													"    pm.expect(entity.owner.firstName).to.not.equal(undefined, \"The 'owner.firstName' attribute must be present\");",
+													"    pm.expect(entity.owner.lastName).to.not.equal(undefined, \"The 'owner.lastName' attribute must be present\");",
+													"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+													"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+													"    pm.expect(entity.modUser.firstName).to.not.equal(undefined, \"The 'modUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.modUser.lastName).to.not.equal(undefined, \"The 'modUser.lastName' attribute must be present\");",
+													"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+													"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+													"    pm.expect(entity.publishUser.firstName).to.not.equal(undefined, \"The 'publishUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.publishUser.lastName).to.not.equal(undefined, \"The 'publishUser.lastName' attribute must be present\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "query PageRender {\n  page(url: \"/pp-test\") {\n    title\n    creationDate\n    owner {\n      firstName\n      lastName\n      userId\n      email\n    }\n    modDate\n    modUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n    publishDate\n    publishUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Retrieving HTML Page Data",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Checking that audit properties are present\", function () {",
+													"    var entity = pm.response.json().data.page;",
+													"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+													"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+													"    pm.expect(entity.owner.firstName).to.not.equal(undefined, \"The 'owner.firstName' attribute must be present\");",
+													"    pm.expect(entity.owner.lastName).to.not.equal(undefined, \"The 'owner.lastName' attribute must be present\");",
+													"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+													"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+													"    pm.expect(entity.modUser.firstName).to.not.equal(undefined, \"The 'modUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.modUser.lastName).to.not.equal(undefined, \"The 'modUser.lastName' attribute must be present\");",
+													"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+													"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+													"    pm.expect(entity.publishUser.firstName).to.not.equal(undefined, \"The 'publishUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.publishUser.lastName).to.not.equal(undefined, \"The 'publishUser.lastName' attribute must be present\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "query PageRender {\n  page(url: \"/pp-test\") {\n    title\n    creationDate\n    owner {\n      firstName\n      lastName\n      userId\n      email\n    }\n    modDate\n    modUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n    publishDate\n    publishUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Content API",
+							"item": [
+								{
+									"name": "Creating Test Generic Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test content created successfully\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"title\": \"Test Generic Content for GraphQL Tests\",\n            \"contentHost\": \"demo.dotcms.com\",\n            \"body\": \"This is my Test Generic Content for GraphQL Tests\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Retrieving Test Generic Content Data",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Checking that audit properties are present\", function () {",
+													"    var entity = pm.response.json().data.webPageContentCollection[0];",
+													"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+													"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+													"    pm.expect(entity.owner.firstName).to.not.equal(undefined, \"The 'owner.firstName' attribute must be present\");",
+													"    pm.expect(entity.owner.lastName).to.not.equal(undefined, \"The 'owner.lastName' attribute must be present\");",
+													"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+													"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+													"    pm.expect(entity.modUser.firstName).to.not.equal(undefined, \"The 'modUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.modUser.lastName).to.not.equal(undefined, \"The 'modUser.lastName' attribute must be present\");",
+													"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+													"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+													"    pm.expect(entity.publishUser.firstName).to.not.equal(undefined, \"The 'publishUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.publishUser.lastName).to.not.equal(undefined, \"The 'publishUser.lastName' attribute must be present\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "query ContentAPI {\n  webPageContentCollection(\n    query: \"+title:Test Generic Content for GraphQL Tests\"\n    limit: 10\n    offset: 0\n    sortBy: \"score\"\n  ) {\n    title\n    creationDate\n    owner {\n      firstName\n      lastName\n      userId\n      email\n    }\n    modDate\n    modUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n    publishDate\n    publishUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Search",
+							"item": [
+								{
+									"name": "Creating Test Generic Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test content created successfully\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"title\": \"Test Generic Content for GraphQL Tests 2\",\n            \"contentHost\": \"demo.dotcms.com\",\n            \"body\": \"This is my Test Generic Content for GraphQL Tests 2\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Retrieving Test Generic Content Data",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Checking that audit properties are present\", function () {",
+													"    var entity = pm.response.json().data.search[0];",
+													"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+													"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+													"    pm.expect(entity.owner.firstName).to.not.equal(undefined, \"The 'owner.firstName' attribute must be present\");",
+													"    pm.expect(entity.owner.lastName).to.not.equal(undefined, \"The 'owner.lastName' attribute must be present\");",
+													"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+													"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+													"    pm.expect(entity.modUser.firstName).to.not.equal(undefined, \"The 'modUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.modUser.lastName).to.not.equal(undefined, \"The 'modUser.lastName' attribute must be present\");",
+													"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+													"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+													"    pm.expect(entity.publishUser.firstName).to.not.equal(undefined, \"The 'publishUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.publishUser.lastName).to.not.equal(undefined, \"The 'publishUser.lastName' attribute must be present\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  search(query: \"+contentType:webPageContent +title:Test Generic Content for GraphQL Tests\", limit: 10) {\n    title\n    creationDate\n    modDate\n    modUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n    owner {\n      firstName\n      lastName\n      userId\n      email\n    }\n    publishDate\n    publishUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Relationship Query",
+							"item": [
+								{
+									"name": "Retrieving Related Content Data",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Checking that audit properties are present\", function () {",
+													"    var entity = pm.response.json().data.destinationCollection[0];",
+													"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+													"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+													"    pm.expect(entity.owner.firstName).to.not.equal(undefined, \"The 'owner.firstName' attribute must be present\");",
+													"    pm.expect(entity.owner.lastName).to.not.equal(undefined, \"The 'owner.lastName' attribute must be present\");",
+													"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+													"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+													"    pm.expect(entity.modUser.firstName).to.not.equal(undefined, \"The 'modUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.modUser.lastName).to.not.equal(undefined, \"The 'modUser.lastName' attribute must be present\");",
+													"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+													"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+													"    pm.expect(entity.publishUser.firstName).to.not.equal(undefined, \"The 'publishUser.firstName' attribute must be present\");",
+													"    pm.expect(entity.publishUser.lastName).to.not.equal(undefined, \"The 'publishUser.lastName' attribute must be present\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "query relationshipQuery {\n  destinationCollection(\n    limit: 10,\n    offset: 0,\n    sortBy: \"score\"\n  ){\n    title\n    creationDate\n    modDate\n    modUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n    owner {\n      firstName\n      lastName\n      userId\n      email\n    }\n    publishDate\n    publishUser {\n      firstName\n      lastName\n      userId\n      email\n    }\n    activities{\n      title\n      urlTitle\n      image{\n         idPath\n      }\n    }\n  } \n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								}
+							]
 						}
 					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
-							},
-							{
-								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/GraphQL/personas.tar.gz"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"bundle",
-								"sync"
-							],
-							"query": [
-								{
-									"key": "AUTH_TOKEN",
-									"value": "",
-									"disabled": true
-								}
-							]
-						},
-						"description": "Imports a Bundle that includes:\n* Imports personas"
-					},
-					"response": []
-				},
-				{
-					"name": "pre_ImportBundleWithDemoHost",
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
 						{
 							"listen": "test",
 							"script": {
+								"type": "text/javascript",
+								"packages": {},
 								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
-									"    var jsonData = pm.response.json();",
-									"    console.log(jsonData);",
-									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"demo.dotcms.com.tar.gz\");",
-									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
-							},
-							{
-								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"bundle",
-								"sync"
-							],
-							"query": [
-								{
-									"key": "AUTH_TOKEN",
-									"value": "",
-									"disabled": true
-								}
-							]
-						},
-						"description": "Imports a Bundle that includes:\n* Imports demo.dotcms.com"
-					},
-					"response": []
-				},
-				{
-					"name": "pre_ImportBundleWithTestPage",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
-									"    var jsonData = pm.response.json();",
-									"    console.log(jsonData);",
-									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"test-page-graphql-render.tar.gz\");",
-									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
-							},
-							{
-								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/GraphQL/test-page-graphql-render.tar.gz"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"bundle",
-								"sync"
-							],
-							"query": [
-								{
-									"key": "sync",
-									"value": "true"
-								},
-								{
-									"key": "AUTH_TOKEN",
-									"value": "",
-									"disabled": true
-								}
-							]
-						},
-						"description": "Imports a Bundle that includes:\n\n*   pp-test page with all the dependencies. pp-test page was created on a demo.dotcms.com site"
-					},
-					"response": []
-				},
-				{
-					"name": "Switch site to 'demo.dotcms.com'",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    var jsonData = pm.response.json();",
-									"",
-									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
-									"});"
-								],
-								"type": "text/javascript"
+									""
+								]
 							}
 						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"site",
-								"switch",
-								"48190c8c-42c4-46af-8d1a-0cd5db894797"
-							]
-						}
-					},
-					"response": []
+					]
 				},
 				{
 					"name": "RenderDestinationsCostaRicaPage",
@@ -774,8 +1522,7 @@
 						"header": [
 							{
 								"key": "User-Agent",
-								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
-								"type": "text"
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
 						"url": {
@@ -903,8 +1650,7 @@
 						"header": [
 							{
 								"key": "User-Agent",
-								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
-								"type": "text"
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
 						"body": {
@@ -1008,8 +1754,7 @@
 						"header": [
 							{
 								"key": "User-Agent",
-								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
-								"type": "text"
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
 						"body": {
@@ -1120,8 +1865,7 @@
 						"header": [
 							{
 								"key": "User-Agent",
-								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
-								"type": "text"
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
 						"body": {
@@ -1276,13 +2020,11 @@
 							{
 								"key": "Cookie",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
-								"type": "text",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
-								"type": "text"
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
 						"body": {
@@ -1360,13 +2102,11 @@
 							{
 								"key": "Cookie",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
-								"type": "text",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
-								"type": "text"
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
 						"body": {
@@ -1431,12 +2171,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -1451,16 +2189,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -1538,13 +2279,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -1610,12 +2349,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -1630,16 +2367,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -1745,13 +2485,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -1866,13 +2604,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -1941,13 +2677,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -2062,13 +2796,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -2176,13 +2908,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -2296,13 +3026,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -2371,12 +3099,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -2391,16 +3117,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -2527,13 +3256,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -2599,12 +3326,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -2619,16 +3344,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -2689,13 +3417,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -2771,13 +3497,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -2844,12 +3568,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -2864,16 +3586,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -2936,13 +3661,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -3014,12 +3737,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -3034,16 +3755,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3096,12 +3820,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -3116,16 +3838,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3178,12 +3903,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -3198,16 +3921,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3260,12 +3986,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -3280,16 +4004,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3342,12 +4069,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -3362,16 +4087,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3424,12 +4152,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -3444,16 +4170,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3506,12 +4235,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -3526,16 +4253,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -3961,8 +4691,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -4023,8 +4751,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -4065,9 +4791,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -4202,8 +4926,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -4268,8 +4990,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -4317,8 +5037,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -4391,8 +5109,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -4456,8 +5172,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -4517,7 +5231,7 @@
 									"    pm.expect(imageFieldJson.fileAsset.mime).to.eql(\"image/jpeg\");",
 									"    ",
 									"    // metaData",
-									"    pm.expect(imageFieldJson.metaData.length).to.eql(13, \"Returned Metadata attributes is \" + imageFieldJson.metaData.length);",
+									"    pm.expect(imageFieldJson.metaData.length).to.eql(12);",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"fileSize\", \"5494\"), 'FAILED:[fileSize]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"length\", \"5494\"), 'FAILED:[length]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"width\", \"139\"), 'FAILED:[width]').to.be.true;",
@@ -4642,12 +5356,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -4662,16 +5374,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -4840,8 +5555,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -4902,8 +5615,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -4960,8 +5671,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -5002,8 +5711,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -5060,8 +5767,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -5201,8 +5906,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -5309,12 +6012,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -5329,16 +6030,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -5391,12 +6095,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -5411,16 +6113,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -5532,12 +6237,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -5552,16 +6255,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -5672,8 +6378,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -5818,12 +6522,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -5838,16 +6540,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -5958,12 +6663,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -5978,16 +6681,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -6099,12 +6805,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -6119,16 +6823,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -6456,13 +7163,11 @@
 						"header": [
 							{
 								"key": "Cookie",
-								"type": "text",
 								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
 								"disabled": true
 							},
 							{
 								"key": "User-Agent",
-								"type": "text",
 								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
 							}
 						],
@@ -6537,12 +7242,10 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"type": "text",
 										"value": "application/octet-stream"
 									},
 									{
 										"key": "Content-Disposition",
-										"type": "text",
 										"value": "attachment"
 									}
 								],
@@ -6557,16 +7260,19 @@
 									]
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/bundle/sync",
+									"raw": "{{serverURL}}/api/bundle?sync=true",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
-										"bundle",
-										"sync"
+										"bundle"
 									],
 									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
 										{
 											"key": "AUTH_TOKEN",
 											"value": "",
@@ -6679,12 +7385,10 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"type": "text",
 										"value": "application/octet-stream"
 									},
 									{
 										"key": "Content-Disposition",
-										"type": "text",
 										"value": "attachment"
 									}
 								],
@@ -6699,16 +7403,19 @@
 									]
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/bundle/sync",
+									"raw": "{{serverURL}}/api/bundle?sync=true",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
-										"bundle",
-										"sync"
+										"bundle"
 									],
 									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
 										{
 											"key": "AUTH_TOKEN",
 											"value": "",
@@ -6817,8 +7524,6 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"type": "text",
 												"value": "application/json"
 											}
 										],
@@ -6864,9 +7569,7 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"value": "application/json",
-												"type": "text"
+												"value": "application/json"
 											}
 										],
 										"body": {
@@ -6975,9 +7678,7 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"value": "application/json",
-												"type": "text"
+												"value": "application/json"
 											}
 										],
 										"body": {
@@ -7224,9 +7925,7 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"value": "application/json",
-												"type": "text"
+												"value": "application/json"
 											}
 										],
 										"body": {
@@ -7353,8 +8052,6 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"type": "text",
 												"value": "application/json"
 											}
 										],
@@ -7400,9 +8097,7 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"value": "application/json",
-												"type": "text"
+												"value": "application/json"
 											}
 										],
 										"body": {
@@ -7461,8 +8156,7 @@
 										"header": [
 											{
 												"key": "dotcachettl",
-												"value": "30",
-												"type": "text"
+												"value": "30"
 											}
 										],
 										"body": {
@@ -7511,9 +8205,7 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"value": "application/json",
-												"type": "text"
+												"value": "application/json"
 											}
 										],
 										"body": {
@@ -7572,8 +8264,7 @@
 										"header": [
 											{
 												"key": "dotcachettl",
-												"value": "0",
-												"type": "text"
+												"value": "0"
 											}
 										],
 										"body": {
@@ -7662,8 +8353,7 @@
 										"header": [
 											{
 												"key": "dotcachettl",
-												"value": "-1",
-												"type": "text"
+												"value": "-1"
 											}
 										],
 										"body": {
@@ -7710,8 +8400,7 @@
 										"header": [
 											{
 												"key": "dotcachettl",
-												"value": "30",
-												"type": "text"
+												"value": "30"
 											}
 										],
 										"body": {
@@ -7760,9 +8449,7 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"value": "application/json",
-												"type": "text"
+												"value": "application/json"
 											}
 										],
 										"body": {
@@ -7897,8 +8584,6 @@
 												"header": [
 													{
 														"key": "Content-Type",
-														"name": "Content-Type",
-														"type": "text",
 														"value": "application/json"
 													}
 												],
@@ -7944,9 +8629,7 @@
 												"header": [
 													{
 														"key": "Content-Type",
-														"name": "Content-Type",
-														"value": "application/json",
-														"type": "text"
+														"value": "application/json"
 													}
 												],
 												"body": {
@@ -8059,9 +8742,7 @@
 												"header": [
 													{
 														"key": "Content-Type",
-														"name": "Content-Type",
-														"value": "application/json",
-														"type": "text"
+														"value": "application/json"
 													}
 												],
 												"body": {
@@ -8329,8 +9010,6 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"type": "text",
 												"value": "application/json"
 											}
 										],
@@ -8376,9 +9055,7 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"value": "application/json",
-												"type": "text"
+												"value": "application/json"
 											}
 										],
 										"body": {
@@ -8438,13 +9115,11 @@
 										"header": [
 											{
 												"key": "dotcachettl",
-												"value": "30",
-												"type": "text"
+												"value": "30"
 											},
 											{
 												"key": "dotcachekey",
-												"value": "mykeyRH",
-												"type": "text"
+												"value": "mykeyRH"
 											}
 										],
 										"body": {
@@ -8493,9 +9168,7 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"value": "application/json",
-												"type": "text"
+												"value": "application/json"
 											}
 										],
 										"body": {
@@ -8596,8 +9269,7 @@
 										"header": [
 											{
 												"key": "dotcachekey",
-												"value": "mykeyRH",
-												"type": "text"
+												"value": "mykeyRH"
 											}
 										],
 										"body": {
@@ -8644,13 +9316,11 @@
 										"header": [
 											{
 												"key": "dotcachettl",
-												"value": "-1",
-												"type": "text"
+												"value": "-1"
 											},
 											{
 												"key": "dotcachekey",
-												"value": "mykeyRH",
-												"type": "text"
+												"value": "mykeyRH"
 											}
 										],
 										"body": {
@@ -8697,8 +9367,7 @@
 										"header": [
 											{
 												"key": "dotcachekey",
-												"value": "mykeyRH",
-												"type": "text"
+												"value": "mykeyRH"
 											}
 										],
 										"body": {
@@ -8767,8 +9436,6 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"type": "text",
 												"value": "application/json"
 											}
 										],
@@ -8814,9 +9481,7 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"value": "application/json",
-												"type": "text"
+												"value": "application/json"
 											}
 										],
 										"body": {
@@ -8925,9 +9590,7 @@
 										"header": [
 											{
 												"key": "Content-Type",
-												"name": "Content-Type",
-												"value": "application/json",
-												"type": "text"
+												"value": "application/json"
 											}
 										],
 										"body": {
@@ -9652,12 +10315,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -9672,16 +10333,19 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
 							],
 							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
 								{
 									"key": "AUTH_TOKEN",
 									"value": "",
@@ -9793,8 +10457,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -9842,8 +10504,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
