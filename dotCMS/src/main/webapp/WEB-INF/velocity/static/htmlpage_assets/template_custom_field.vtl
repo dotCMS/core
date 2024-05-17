@@ -13,7 +13,8 @@ function templateChanged() {
     }
     else if(value) {
         dojo.byId("template").value=value;
-        TemplateAjax.fetchTemplateImage(value, dojo.hitch(getTemplateCallBack));
+        const response = fetch("/api/v1/templates/" + value + "/image");
+        getTemplateCallBack(response);
     }
 }
 
@@ -63,7 +64,8 @@ dojo.ready(function(){
     
     var val  = dojo.byId("template").value;
     if (val != undefined && val != "0"){
-    	TemplateAjax.fetchTemplateImage(val, dojo.hitch(getTemplateCallBack));
+        const response = fetch("/api/v1/templates/" + val + "/image");
+        getTemplateCallBack(response);
     }
 
     var currentTemplateIdElement = dojo.byId("currentTemplateId");
@@ -75,6 +77,7 @@ dojo.ready(function(){
 
     var onTemplateFetchComplete = function(templates, currentRequest){
 
+        console.log("templates", templates);
         var normalizeKey = function (obj) {
             return obj.fullTitle.replace(new RegExp("\\("+obj.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
         }
@@ -97,7 +100,8 @@ dojo.ready(function(){
                 dojo.byId("currentTemplateId").value = value;
                 dojo.byId("template").value = value;
                 dijit.byId('templateSel').set("displayedValue", fullTitle);
-                TemplateAjax.fetchTemplateImage(value, dojo.hitch(getTemplateCallBack));
+                const response = fetch("/api/v1/templates/"+ value + "/image");
+                getTemplateCallBack(response);
             }
         }
     };

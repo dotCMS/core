@@ -12,6 +12,7 @@ import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -20,9 +21,11 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
+import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.InodeUtils;
@@ -802,4 +805,52 @@ public class TemplateResource {
                 new BulkResultView(deletedTemplatesCount,0L,failedToDelete)))
                 .build();
     }
+
+    /**
+     * Return live version {@link com.dotmarketing.portlets.templates.model.Template} based on the id
+     *
+     * @param httpRequest
+     * @param httpResponse
+     * @param templateId template identifier to get the live version.
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @GET
+    @Path("/{templateId}/image")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Map<String, Object> fetchTemplateImage(@Context final HttpServletRequest  httpRequest,
+                                                  @Context final HttpServletResponse httpResponse,
+                                                  @PathParam("templateId") final String templateId) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user     = initData.getUser();
+        final PageMode mode = PageMode.get(httpRequest);
+
+        Logger.debug(this, ()-> "Getting the image working template by id: " + templateId);
+        final Template template = this.templateAPI.findWorkingTemplate(templateId, user, mode.respectAnonPerms);
+        if (null != template && UtilMethods.isSet(template.getIdentifier())) {
+
+            final Identifier imageIdentifier = APILocator.getIdentifierAPI().find(template.getImage());
+            if (UtilMethods.isSet(imageIdentifier.getAssetType()) && imageIdentifier.getAssetType().equals("contentlet")) {
+
+                final Contentlet imageContentlet = templateAPI.getImageContentlet(template);
+                if (imageContentlet != null) {
+                    final Map<String, Object> toReturn =  new HashMap<>();
+                    toReturn.put("inode", imageContentlet.getInode());
+                    toReturn.put("name", imageContentlet.getTitle());
+                    toReturn.put("identifier", imageContentlet.getIdentifier());
+                    toReturn.put("extension", UtilMethods.getFileExtension(imageContentlet.getTitle()));
+                    return toReturn;
+                }
+            }
+        }
+
+        throw new DoesNotExistException("Working Version of the Template with Id: " + templateId + " does not exist");
+    }
 }
+
