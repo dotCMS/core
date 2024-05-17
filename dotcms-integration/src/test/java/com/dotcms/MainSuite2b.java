@@ -1,6 +1,8 @@
 package com.dotcms;
 
 import com.dotcms.ai.viewtool.AIViewToolTest;
+import com.dotcms.ai.viewtool.CompletionsToolTest;
+import com.dotcms.ai.viewtool.EmbeddingsToolTest;
 import com.dotcms.ai.viewtool.SearchToolTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
@@ -105,6 +107,7 @@ import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
+import com.dotmarketing.quartz.job.PruneTimeMachineBackupJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorDataTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
@@ -341,7 +344,10 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240112AddMetadataColumnToStructureTableTest.class,
         AIViewToolTest.class,
         SearchToolTest.class,
-        TimeMachineAPITest.class
+        EmbeddingsToolTest.class,
+        CompletionsToolTest.class,
+        TimeMachineAPITest.class,
+        PruneTimeMachineBackupJobTest.class
 })
 
 public class MainSuite2b {

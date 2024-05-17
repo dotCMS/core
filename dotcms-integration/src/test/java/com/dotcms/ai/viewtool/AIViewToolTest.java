@@ -1,12 +1,8 @@
 package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.app.AppConfig;
-import com.dotcms.ai.app.AppKeys;
 import com.dotcms.datagen.UserDataGen;
-import com.dotcms.security.apps.Secret;
-import com.dotcms.security.apps.Type;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.WireMockTestHelper;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -29,21 +25,12 @@ import static org.mockito.Mockito.mock;
 /**
  * This class tests the functionality of the AIViewTool class.
  * It uses a mock server to simulate the OpenAI API and checks the responses of the AIViewTool methods.
- *
  * The class follows the Gherkin style for test documentation, with each test method representing a scenario.
  * Each scenario is described in terms of "Given", "When", and "Then" steps.
  *
  * @author vico
  */
-public class AIViewToolTest {
-
-    private static final String API_URL = "http://localhost:%d/c";
-    private static final String API_IMAGE_URL = "http://localhost:%d/i";
-    private static final String API_KEY = "some-api-key-1a2bc3";
-    private static final String MODEL = "gpt-3.5-turbo-16k";
-    private static final String IMAGE_MODEL = "dall-e-3";
-    private static final String IMAGE_SIZE = "1024x1024";
-    private static final int PORT = 50505;
+public class AIViewToolTest implements AiTest {
 
     private static AppConfig config;
     private static WireMockServer wireMockServer;
@@ -55,12 +42,12 @@ public class AIViewToolTest {
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
         IPUtils.disabledIpPrivateSubnet(true);
-        wireMockServer = prepareWireMock();
-        config = prepareConfig();
+        wireMockServer = AiTest.prepareWireMock();
+        config = AiTest.prepareConfig(wireMockServer);
     }
 
     @AfterClass
-    public static void tearDown() {
+    public static void afterClass() {
         wireMockServer.stop();
         IPUtils.disabledIpPrivateSubnet(false);
     }
@@ -68,7 +55,8 @@ public class AIViewToolTest {
     @Before
     public void setup() {
         user = new UserDataGen().nextPersisted();
-        aiViewTool = prepareAIViewTool(mock(ViewContext.class));
+        aiViewTool = prepareAIViewTool();
+        aiViewTool.init(mock(ViewContext.class));
     }
 
     /**
@@ -84,7 +72,7 @@ public class AIViewToolTest {
         // when
         final JSONObject response = aiViewTool.generateText(prompt);
         // then
-        assertChatResponse(response, "Club Atletico Boca Juniors");
+        assertTextResponse(response, "Club Atletico Boca Juniors");
     }
 
     /**
@@ -100,7 +88,7 @@ public class AIViewToolTest {
         // when
         final JSONObject response = aiViewTool.generateText(prompt);
         // then
-        assertChatResponse(
+        assertTextResponse(
                 response,
                 "The Theory of Chaos is a scientific concept that suggests the universe is inherently unpredictable");
     }
@@ -137,7 +125,7 @@ public class AIViewToolTest {
         assertImageResponse(response, prompt.get("prompt").toString(), "dalailama");
     }
 
-    private void assertChatResponse(final JSONObject response, final String containedText) {
+    private void assertTextResponse(final JSONObject response, final String containedText) {
         assertNotNull(response);
         assertTrue(response.containsKey("choices"));
         assertFalse(response.getJSONArray("choices").isEmpty());
@@ -165,8 +153,8 @@ public class AIViewToolTest {
         return new File(response.getString("tempFile")).exists();
     }
 
-    private AIViewTool prepareAIViewTool(final ViewContext viewContext) {
-        return new AIViewTool(viewContext) {
+    private AIViewTool prepareAIViewTool() {
+        return new AIViewTool() {
             @Override
             User user() {
                 return user;
@@ -177,41 +165,6 @@ public class AIViewToolTest {
                 return config;
             }
         };
-    }
-
-    private static AppConfig prepareConfig() {
-        return new AppConfig(
-            Map.of(
-                AppKeys.API_URL.key,
-                Secret.builder()
-                    .withType(Type.STRING)
-                    .withValue(String.format(API_URL, wireMockServer.port()).toCharArray())
-                    .build(),
-
-                AppKeys.API_IMAGE_URL.key,
-                Secret.builder()
-                    .withType(Type.STRING)
-                    .withValue(String.format(API_IMAGE_URL, wireMockServer.port()).toCharArray())
-                    .build(),
-
-                AppKeys.API_KEY.key,
-                Secret.builder().withType(Type.STRING).withValue(API_KEY.toCharArray()).build(),
-
-                AppKeys.MODEL.key,
-                Secret.builder().withType(Type.STRING).withValue(MODEL.toCharArray()).build(),
-
-                AppKeys.IMAGE_MODEL.key,
-                Secret.builder().withType(Type.STRING).withValue(IMAGE_MODEL.toCharArray()).build(),
-
-                AppKeys.IMAGE_SIZE.key,
-                Secret.builder().withType(Type.SELECT).withValue(IMAGE_SIZE.toCharArray()).build()));
-    }
-
-    private static WireMockServer prepareWireMock() {
-        final WireMockServer wireMockServer = WireMockTestHelper.wireMockServer(PORT);
-        wireMockServer.start();
-
-        return wireMockServer;
     }
 
 }
