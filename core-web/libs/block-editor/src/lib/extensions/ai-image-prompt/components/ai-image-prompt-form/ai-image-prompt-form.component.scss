@@ -50,9 +50,14 @@ form {
     flex-direction: column;
     position: relative;
 
+    .p-inputtext.p-inputtextarea {
+        padding: $spacing-1 $spacing-5 $spacing-1 $spacing-1;
+        min-height: $spacing-8;
+    }
+
     dot-copy-button {
         position: absolute;
-        right: $spacing-1;
+        right: $spacing-3;
         bottom: $spacing-0;
     }
 }
