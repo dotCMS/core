@@ -89,7 +89,7 @@ public class ContentTypeHelper implements Serializable {
 
         // Evaluate the id of the content type
         var foundId = resolveContentTypeId(contentType, user, isNew);
-        if (!foundId.equals(contentType.id())) {
+        if (foundId != null && !foundId.equals(contentType.id())) {
             updatedContentTypeBuilder = setContentTypeId(
                     contentType,
                     updatedContentTypeBuilder,
