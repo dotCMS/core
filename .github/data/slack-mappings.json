@@ -8,7 +8,7 @@
     "slack_id": "U0125JCDSSE"
   },
   {
-    "github_user": "freddyucv",
+    "github_user": "freddyDOTCMS",
     "slack_id": "U5A5K7S6P"
   },
   {
@@ -20,24 +20,12 @@
     "slack_id": "U6YCPDC1Z"
   },
   {
-    "github_user": "alfredo-dotcms",
-    "slack_id": "U9KG4PN4E"
-  },
-  {
     "github_user": "bryanboza",
     "slack_id": "U028VTVU8"
   },
   {
     "github_user": "cobbg",
     "slack_id": "U018GD00WLQ"
-  },
-  {
-    "github_user": "hmoreras",
-    "slack_id": "U6YCPDC1Z"
-  },
-  {
-    "github_user": "hmoreras",
-    "slack_id": "U6YCPDC1Z"
   },
   {
     "github_user": "hmoreras",
@@ -55,10 +43,7 @@
     "github_user": "fmontes",
     "slack_id": "U028Y2YH0"
   },
-  {
-    "github_user": "hmoreras",
-    "slack_id": "U6YCPDC1Z"
-  },
+
   {
     "github_user": "jcastro-dotcms",
     "slack_id": "U02KL4E40"
@@ -102,5 +87,73 @@
   {
     "github_user": "eng",
     "slack_id": "C028Z3R2D"
+  },
+  {
+    "github_user": "dcolina",
+    "slack_id": "U04SKNT3W7L"
+  },
+  {
+    "github_user": "prestonso",
+    "slack_id": "U06LK2W2ZUM"
+  },
+  {
+    "github_user": "jgambarios",
+    "slack_id": "D04SH7PU16Z"
+  },
+  {
+    "github_user": "fishsmith",
+    "slack_id": "U0291KRPT"
+  },
+  {
+    "github_user": "dsolistorres",
+    "slack_id": "UCF6CLC6L"
+  },
+  {
+    "github_user": "nicobytes",
+    "slack_id": "U073TM46XM5"
+  },
+  {
+    "github_user": "mbiuki",
+    "slack_id": "U044U7TMRRT"
+  },
+  {
+    "github_user": "sfreudenthaler",
+    "slack_id": "D06L2NWEF8R"
+  },
+  {
+    "github_user": "zJaaal",
+    "slack_id": "U04SXLQMLKT"
+  },
+  {
+    "github_user": "jdcmsd",
+    "slack_id": "U037GSNKA6T"
+  },
+  {
+    "github_user": "waqasakramdot",
+    "slack_id": "U03869ZH2DA"
+  },
+  {
+    "github_user": "damen-dotcms",
+    "slack_id": "U045LKZSC8Y"
+  },
+  {
+    "github_user": "rashik1144",
+    "slack_id": "U04UP78B6BS"
+  },
+  {
+    "github_user": "josemejias11",
+    "slack_id": "U03RU9U23RQ"
+  },
+  {
+    "github_user": "dcolina",
+    "slack_id": "U04SKNT3W7L"
+  },
+  {
+    "github_user": "melissarojas-dotcms",
+    "slack_id": "U047MRAKREJ"
+  },
+  {
+    "github_user": "KevinDavilaDotCMS",
+    "slack_id": "U05R06D9YSX"
   }
 ]
