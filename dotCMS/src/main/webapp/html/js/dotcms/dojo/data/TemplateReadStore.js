@@ -120,17 +120,7 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 
 		if(keywordArgs.onItem) {
 
-			let entities = templatesEntity.entity;
-			let templatesArray = [];
-			entities.forEach(template => {
-
-				templatesArray.push({
-					hostName:'',
-					hostId:'',
-					fullTitle:   template.title,
-					htmlTitle:  "<div>" + template.title + "</div>"
-				});
-			});
+			let templatesArray = templatesEntity.entity;
 
 			console.log('templatesArray', templatesArray);
 			dojo.forEach(templatesArray, function (template) {
