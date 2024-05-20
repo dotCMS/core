@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e5a39255-b6a9-4ab9-bde9-9e581b2c9fbc",
+		"_postman_id": "1c702c12-31df-460a-9eb1-b3b2decefbac",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -79,7 +79,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "52c56f10-e66a-4730-9a84-4ba1ad1fa643"
 							}
 						],
 						"body": {
@@ -154,7 +155,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "96f8e493-40de-4f49-a325-403926b9c556"
 							}
 						],
 						"body": {
@@ -227,7 +229,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "c8a125c5-37ff-479d-8fc5-3a46e1d119e5"
 							}
 						],
 						"body": {
@@ -329,7 +332,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "b2d30c56-1536-4e76-84e6-8431636991e4"
 							}
 						],
 						"body": {
@@ -446,7 +450,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "1330d327-d733-432d-8334-fcd28ab494f7"
 							}
 						],
 						"body": {
@@ -523,7 +528,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "9661f8ac-71f8-4ef0-937e-ec05b260b746"
 							}
 						],
 						"body": {
@@ -596,7 +602,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "3bbc7943-2493-444f-b1a2-c0967547a0e4"
 							}
 						],
 						"body": {
@@ -669,7 +676,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "8f6ea605-b685-4c50-b0c0-91f53b1133dd"
 							}
 						],
 						"body": {
@@ -739,7 +747,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "e05a3110-d6f6-4476-ae3e-b9da16b8db35"
 							}
 						],
 						"body": {
@@ -848,7 +857,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "a32c0ba0-2e75-4c1b-9a07-0114e9a2eaad"
 							}
 						],
 						"body": {
@@ -925,7 +935,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "b6467e23-916c-42f1-b004-c197dc560620"
 							}
 						],
 						"body": {
@@ -998,7 +1009,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "1187ffba-cfde-4008-b791-1688f558afd5"
 							}
 						],
 						"body": {
@@ -1071,7 +1083,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "f1a0899b-9147-4e9d-9f99-768ee84d9bcb"
 							}
 						],
 						"body": {
@@ -1144,7 +1157,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "c8298506-c313-4c95-a52a-5b9d456519af"
 							}
 						],
 						"body": {
@@ -1213,7 +1227,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "ab8c1aa1-1049-4610-9da8-d33ddf7559fb"
 							}
 						],
 						"body": {
@@ -2254,7 +2269,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "a79cc3da-4cc5-4ae2-839f-22122484480d"
 							}
 						],
 						"body": {
@@ -4838,7 +4854,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "5f89e66f-7b06-4938-bab3-396badb77d03"
 							}
 						],
 						"body": {
@@ -4911,7 +4928,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "3d395130-455b-4e90-9ad3-9f611a7920dd"
 							}
 						],
 						"body": {
@@ -4984,7 +5002,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "322d3944-7598-48d2-8467-fab657fcd70f"
 							}
 						],
 						"body": {
@@ -5059,7 +5078,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "126beabf-b356-4ee8-8f00-1edfa449a7c6"
 							}
 						],
 						"body": {
@@ -5130,7 +5150,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "4a1a8de7-c5aa-4503-9f4b-03b5ccbea841"
 							}
 						],
 						"body": {
@@ -5249,7 +5270,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "2d3c21be-ad52-42cf-8354-0fc15ed98e3b"
 							}
 						],
 						"body": {
@@ -5324,7 +5346,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "6643189d-7990-486b-9276-38c9f7c51fe8"
 							}
 						],
 						"body": {
@@ -5399,7 +5422,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "1b7de025-8122-4965-9a8a-5a9d22b54dcf"
 							}
 						],
 						"body": {
@@ -5474,7 +5498,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "046069d3-99eb-45ef-bd70-bf575b3b5add"
 							}
 						],
 						"body": {
@@ -5549,7 +5574,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "d56f5524-320f-40aa-8ac3-4d867f70ac2b"
 							}
 						],
 						"body": {
@@ -5622,7 +5648,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "81d49c8d-4f67-4833-ba19-8cb902c0021f"
 							}
 						],
 						"body": {
@@ -5711,7 +5738,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "c6be0c75-8d63-43d7-b385-f0b3ca6ed06d"
 							}
 						],
 						"body": {
@@ -5785,7 +5813,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "cbfd6052-9212-4ac2-9002-d7492c8419d5"
 							}
 						],
 						"body": {
@@ -5859,7 +5888,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "c9963fb5-8b7f-4019-95e0-1456ee948b46"
 							}
 						],
 						"body": {
@@ -5929,7 +5959,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "52fb04d3-e2d2-4d2a-9686-f6c2af304f2a"
 							}
 						],
 						"body": {
@@ -6003,7 +6034,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "59e07a41-59ea-4323-9ac4-3a9bf2f14e47"
 							}
 						],
 						"body": {
@@ -6074,7 +6106,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "07f21eb0-c3ef-4d09-9e34-284e6bb9114e"
 							}
 						],
 						"body": {
@@ -6397,7 +6430,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "2afa8a5b-a168-4e31-b827-660fb1c12a5f"
 							}
 						],
 						"body": {
@@ -6471,7 +6505,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "20c7500f-93a2-4df1-bd4c-d65c566d74fc"
 							}
 						],
 						"body": {
@@ -6545,7 +6580,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "4609275b-9659-4cbe-906c-612fecbdd340"
 							}
 						],
 						"body": {
@@ -6619,7 +6655,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "a02f88a5-81d8-4057-8287-5b05fdfb27b2"
 							}
 						],
 						"body": {
@@ -6690,7 +6727,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "b38d2525-b9bf-4ed1-8eb9-1376938f9e6e"
 							}
 						],
 						"body": {
@@ -7084,7 +7122,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "97de15f6-9f2b-48fc-8c17-e0bead49bc25"
 							}
 						],
 						"body": {
@@ -7158,7 +7197,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "3a2f8cdf-4a62-4400-949a-1ee82047a37d"
 							}
 						],
 						"body": {
@@ -7232,7 +7272,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "d9b878a8-368f-4a4c-93fd-804e2b613346"
 							}
 						],
 						"body": {
@@ -7306,7 +7347,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "abc3bc1c-d9a2-4dd8-aef6-6335b140dc90"
 							}
 						],
 						"body": {
@@ -7377,7 +7419,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "975e3cc7-9158-45b2-9e44-15c2dc9b0a32"
 							}
 						],
 						"body": {
@@ -7475,7 +7518,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "980b5d19-eca0-4172-bc00-c9c9fd9f90a5"
 							}
 						],
 						"body": {
@@ -7552,7 +7596,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "7657047b-08bc-4a70-8dcb-fa9bc4e4853e"
 							}
 						],
 						"body": {
@@ -7629,7 +7674,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "c9ce7445-4064-47ae-b92c-537c71c3baca"
 							}
 						],
 						"body": {
@@ -7706,7 +7752,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "b7f3ded4-c45a-4ece-95c5-47275d905dd6"
 							}
 						],
 						"body": {
@@ -7783,7 +7830,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "007ba97c-7c0f-4a88-b8ea-17d7756d5e62"
 							}
 						],
 						"body": {
@@ -7860,7 +7908,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "c2da72c8-4e1c-4324-b6a9-42ab51077c60"
 							}
 						],
 						"body": {
@@ -7934,7 +7983,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "cbba1e41-1199-4894-8c0d-100557b7d378"
 							}
 						],
 						"body": {
@@ -8027,9 +8077,8 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
-										"value": "application/json"
+										"value": "application/json",
+										"uuid": "5d3c2893-df72-4803-95da-0c3e8c755548"
 									}
 								],
 								"body": {
@@ -8090,9 +8139,8 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
 										"value": "application/json",
-										"type": "text"
+										"uuid": "e69e8f14-9981-4d68-97df-75e03bf8a13d"
 									}
 								],
 								"body": {
@@ -8348,7 +8396,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "593b894c-df89-4673-bd1e-44eff9c35656"
 							}
 						],
 						"body": {
@@ -8423,7 +8472,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "978a5849-d3f0-4051-9d0e-b66c3ef62bfb"
 							}
 						],
 						"body": {
@@ -8499,7 +8549,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "ba81be2a-4b90-42b4-b17c-266c5738b94d"
 							}
 						],
 						"body": {
@@ -8574,7 +8625,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "2bae79bd-d647-4484-8fb4-835761bc5ce4"
 							}
 						],
 						"body": {
@@ -8649,7 +8701,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "4b653026-d489-447c-80f1-0c8a5503f785"
 							}
 						],
 						"body": {
@@ -8730,7 +8783,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "d30c1ecf-6755-4428-9588-4d45eb928c67"
 							}
 						],
 						"body": {
@@ -8801,7 +8855,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "1ae2de0c-a230-4c8d-8a2a-d64f481710a3"
 							}
 						],
 						"body": {
@@ -8880,7 +8935,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "353b983a-3d26-49ca-ad63-b9034d6e83bd"
 							}
 						],
 						"body": {
@@ -9017,7 +9073,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "6576222d-3668-443a-a36c-81f424968064"
 							}
 						],
 						"body": {
@@ -9087,7 +9144,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "287ba7bd-7a31-465a-99d6-05ee5f5e1138"
 							}
 						],
 						"body": {
@@ -9163,7 +9221,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "0c8b098b-a360-4f0b-888d-e90612890304"
 							}
 						],
 						"body": {
@@ -9240,7 +9299,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "a857b76d-39e9-4a16-a98f-adcd4f74775d"
 							}
 						],
 						"body": {
@@ -9315,7 +9375,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "48b77c31-2113-453a-83cd-3dfb8c2bddc7"
 							}
 						],
 						"body": {
@@ -9396,7 +9457,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "ccbf2e67-c525-41b5-b505-fb09e32fed1e"
 							}
 						],
 						"body": {
@@ -9468,7 +9530,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "544973aa-a81b-4ba9-bb7d-845aeed25928"
 							}
 						],
 						"body": {
@@ -9547,7 +9610,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "7a416c1d-d8b6-42c6-8106-7e01b4fbc4fc"
 							}
 						],
 						"body": {
@@ -9737,7 +9801,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "6b56f928-6360-4e93-8e4c-7722e1f2910e"
 							}
 						],
 						"body": {
@@ -9818,7 +9883,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "00864b39-c7d6-4999-b97d-11f29d0d986f"
 							}
 						],
 						"body": {
@@ -9899,7 +9965,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "36248344-4180-4e5a-a3d6-9a6a48f93a44"
 							}
 						],
 						"body": {
@@ -9979,7 +10046,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "0a196bcf-37e2-4e41-8a94-02953df65796"
 							}
 						],
 						"body": {
@@ -10060,7 +10128,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "2efc54ce-7e5d-4c1d-a4b2-d4af572800e2"
 							}
 						],
 						"body": {
@@ -10425,7 +10494,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "45d1dd50-0c44-403d-b501-effcbbed8b95"
 							}
 						],
 						"body": {
@@ -10790,7 +10860,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "ad1bb966-1e5d-43b9-83d8-de6122864ec5"
 							}
 						],
 						"body": {
@@ -10867,7 +10938,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "84cd1be9-8956-49ff-9692-92b4b9ac10ce"
 							}
 						],
 						"body": {
@@ -11014,7 +11086,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "5d2c3e74-2bd9-4e1c-9574-dff3f1a964b3"
 							}
 						],
 						"body": {
@@ -11091,7 +11164,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "b57008fb-226f-4265-ae84-20b6bfe70562"
 							}
 						],
 						"body": {
@@ -11455,7 +11529,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "bb5f05d5-cbf4-4fdc-8688-a0a9790ea826"
 							}
 						],
 						"body": {
@@ -11532,7 +11607,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "03044d8f-8193-4494-ab63-bb1739e57352"
 							}
 						],
 						"body": {
@@ -11751,7 +11827,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "0b1bca15-118e-4a87-9d27-294bcf104618"
 							}
 						],
 						"body": {
@@ -11961,7 +12038,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "ca45b7f2-f294-4d92-b5a4-a40008685d19"
 							}
 						],
 						"body": {
@@ -12034,7 +12112,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "b82cad69-0d4b-42bd-8a84-440f5550ae77"
 							}
 						],
 						"body": {
@@ -12187,9 +12266,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
 								"value": "application/json",
-								"type": "text"
+								"uuid": "c6fc7fd2-276c-4d85-9a4b-b8e49ad4432b"
 							}
 						],
 						"body": {
@@ -12255,9 +12333,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
 								"value": "application/json",
-								"type": "text"
+								"uuid": "38322d53-996f-4cf0-b586-1b7c88cdb248"
 							}
 						],
 						"body": {
@@ -12420,9 +12497,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
 								"value": "application/json",
-								"type": "text"
+								"uuid": "2594bc6b-aac6-4dac-bb25-c029acd3ba3f"
 							}
 						],
 						"body": {
@@ -12500,9 +12576,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "21bfd85b-a1e0-4e73-9eb2-d5a857fa97ac"
 							}
 						],
 						"body": {
@@ -12582,9 +12657,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "ab57d6b6-fd17-44c6-993c-321fd4912afd"
 							}
 						],
 						"body": {
@@ -12648,7 +12722,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"console.log(\"Running test\")",
 									"",
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -13045,6 +13118,76 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "PublishMergeWithoutContentNode",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n    \"query\":\"+contentType:webPageContent AND title:\\\"Test Merge Content\\\"\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -13284,14 +13427,13 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
 								"value": "application/json",
-								"type": "text"
+								"uuid": "56505a1a-221a-4978-8c21-9efa50273a55"
 							},
 							{
 								"key": "Origin",
 								"value": "{{serverURL}}",
-								"type": "text"
+								"uuid": "e75d76e1-5986-4235-b9f2-a50ac6498cfc"
 							}
 						],
 						"body": {
@@ -13622,7 +13764,8 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"uuid": "607c649d-5dbf-46bf-b32d-675dbebe7a7e"
 									}
 								],
 								"body": {
@@ -13750,7 +13893,8 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"uuid": "a5aa8dd1-f5eb-4970-b831-223c0a13c9d2"
 									}
 								],
 								"body": {
@@ -13948,7 +14092,8 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"uuid": "e0cf94bc-4828-4f2f-8214-b30bb28d67e1"
 									}
 								],
 								"body": {
@@ -14026,7 +14171,8 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"value": "application/json"
+										"value": "application/json",
+										"uuid": "16b615c5-c83f-4761-91ff-f58cde76d1f9"
 									}
 								],
 								"body": {
@@ -15309,13 +15455,13 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
-								"value": "application/octet-stream"
+								"value": "application/octet-stream",
+								"uuid": "3f0a28f5-d168-4603-93a6-8cb219426b11"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
-								"value": "attachment"
+								"value": "attachment",
+								"uuid": "9d2b14d1-ea03-4bce-b70b-83daf5295ca0"
 							}
 						],
 						"body": {
@@ -15407,7 +15553,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "4418fb87-8b79-4f8a-a8d2-7ddbc82553c6"
 							}
 						],
 						"body": {
@@ -15840,9 +15987,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "6a3f7438-2b44-4894-8d75-4c06811f618f"
 							}
 						],
 						"body": {
@@ -15922,9 +16068,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "05e329dd-93fb-4f9a-a78e-b06e31803401"
 							}
 						],
 						"body": {
@@ -15995,7 +16140,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "1421fb61-dda8-4dff-8384-51770f7e4901"
 							}
 						],
 						"body": {
@@ -16077,7 +16223,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "70625f07-cb0f-4062-9d3f-a5cfbb934875"
 							}
 						],
 						"body": {
@@ -16160,7 +16307,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "195c873c-03a4-4adb-a7f8-9fff5dc4d0b6"
 							}
 						],
 						"body": {
@@ -16374,9 +16522,8 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
-										"value": "application/json"
+										"value": "application/json",
+										"uuid": "3fc588ce-2fda-4dfe-822b-bfcef7f983ee"
 									}
 								],
 								"body": {
@@ -16432,9 +16579,8 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
 										"value": "application/json",
-										"type": "text"
+										"uuid": "242d2242-d255-4827-a87a-033fea8cf8ab"
 									}
 								],
 								"body": {
@@ -16565,9 +16711,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
+								"value": "application/json",
+								"uuid": "0a078346-47c7-40b1-8e08-0f35787e0ff6"
 							}
 						],
 						"body": {
@@ -16625,9 +16770,8 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
 								"value": "application/json",
-								"type": "text"
+								"uuid": "30010ed0-b088-4f6a-ac28-d0868f57caa0"
 							}
 						],
 						"body": {
