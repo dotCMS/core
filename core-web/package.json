@@ -181,7 +181,6 @@
         "@storybook/preview-api": "^7.6.3",
         "@storybook/theming": "^7.6.3",
         "@svgr/rollup": "^6.1.2",
-        "@swc-node/register": "1.8.0",
         "@testing-library/jest-dom": "^6.1.6",
         "@testing-library/react": "^14.0.0",
         "@testing-library/react-hooks": "^8.0.1",
