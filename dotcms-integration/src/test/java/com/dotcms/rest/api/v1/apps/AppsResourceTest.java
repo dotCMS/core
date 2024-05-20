@@ -9,7 +9,7 @@ import static junit.framework.TestCase.fail;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

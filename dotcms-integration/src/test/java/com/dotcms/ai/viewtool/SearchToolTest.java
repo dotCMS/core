@@ -1,6 +1,5 @@
 package com.dotcms.ai.viewtool;
 
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -23,7 +22,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -49,8 +47,6 @@ public class SearchToolTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        EmbeddingsAPI.impl().initEmbeddingsTable();
-        Thread.sleep(5000);
     }
 
     @Before
