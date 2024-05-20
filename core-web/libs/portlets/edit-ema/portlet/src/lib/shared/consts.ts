@@ -187,7 +187,7 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
             languageCode: '1',
             country: 'United States'
         },
-
+        variantId: 'DEFAULT',
         persona: {
             ...DEFAULT_PERSONA
         }
