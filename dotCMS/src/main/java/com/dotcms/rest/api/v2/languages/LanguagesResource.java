@@ -40,9 +40,10 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -124,7 +125,7 @@ public class LanguagesResource {
             throw new DoesNotExistException("The language id = " + languageId + " does not exists");
         }
 
-        return Response.ok(new ResponseEntityView(new LanguageView(language))).build();
+        return Response.ok(new ResponseEntityView<>(new LanguageView(language, ()->isDefault(language)))).build();
     }
 
     @GET
@@ -136,7 +137,7 @@ public class LanguagesResource {
      */
     public Response list(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("contentInode") final String contentInode,
-             @QueryParam("langVars") final boolean renderLangVars
+             @QueryParam("countLangVars") final boolean countLangVars
     )
             throws DotDataException, DotSecurityException {
 
@@ -148,7 +149,7 @@ public class LanguagesResource {
         final List<Language> languages = contentInode != null ?
                 languageAPI.getAvailableContentLanguages(contentInode, user) :
                 languageAPI.getLanguages();
-        if (renderLangVars){
+        if (countLangVars){
             //We calculate the total number of language variables once as this value is the same for all languages
             final int total = languageVariableAPI.countVariablesByKey();
             return Response.ok(
@@ -164,6 +165,11 @@ public class LanguagesResource {
                 .build();
     }
 
+    @VisibleForTesting
+    boolean isDefault(final Language language){
+        return language.getId() == languageAPI.getDefaultLanguage().getId();
+    }
+
     /**
      * Returns a {@link LanguageView} with the total number of language variables and the number of language variables
      * @param language {@link Language}
@@ -171,11 +177,11 @@ public class LanguagesResource {
      */
    LanguageView withLangVarCounts(final Language language, final int total){
        final int langCount = languageVariableAPI.countVariablesByKey(language.getId());
-       return new LanguageView(language, ()->ImmutableLangVarsCount.builder().total(total).count(langCount).build());
+       return new LanguageView(language, ()->isDefault(language), ()->ImmutableLangVarsCount.builder().total(total).count(langCount).build());
     }
 
     public Function<Language, LanguageView> instanceLanguageView() {
-        return LanguageView::new;
+       return language -> new LanguageView(language, ()->isDefault(language));
     }
 
     /**
@@ -216,10 +222,11 @@ public class LanguagesResource {
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = validateLanguageExists(languageForm);
         if(null != language && language != LanguageCacheImpl.LANG_404){
-            return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
+            return Response.ok(new ResponseEntityView<>(language, List.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
+        final Language savedOrUpdateLanguage = saveOrUpdateLanguage(null, languageForm);
         return Response.ok(new ResponseEntityView<>(
-                new LanguageView(saveOrUpdateLanguage(null, languageForm))
+                new LanguageView(savedOrUpdateLanguage,()->isDefault(savedOrUpdateLanguage) )
         )).build(); // 200
     }
 
@@ -244,10 +251,11 @@ public class LanguagesResource {
 
         final Language language = validateLanguageExists(languageForm);
         if(null != language && language != LanguageCacheImpl.LANG_404){
-           return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
+           return Response.ok(new ResponseEntityView<>(language, List.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
+        final Language saveOrUpdateLanguage = saveOrUpdateLanguage(null, languageForm);
         return Response.ok(new ResponseEntityView<>(
-                new LanguageView(saveOrUpdateLanguage(null, languageForm))
+                new LanguageView(saveOrUpdateLanguage,()->isDefault(saveOrUpdateLanguage))
         )).build(); // 200
     }
 
@@ -274,7 +282,7 @@ public class LanguagesResource {
            return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(new ResponseEntityView<>(new LanguageView(language))).build();
+        return Response.ok(new ResponseEntityView<>(new LanguageView(language,()->isDefault(language) ))).build();
     }
 
     private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {
@@ -312,7 +320,7 @@ public class LanguagesResource {
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = saveOrUpdateLanguage(languageId, languageForm);
         return Response.ok(new ResponseEntityView<>(
-                new LanguageView(language)
+                new LanguageView(language, ()->isDefault(language))
         )).build(); // 200
     }
 
@@ -337,7 +345,7 @@ public class LanguagesResource {
         DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         final Language language = languageAPI.getLanguage(languageId);
         languageAPI.deleteLanguage(language);
-        return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
     }
 
     @POST
@@ -420,7 +428,6 @@ public class LanguagesResource {
         final Language language1 = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
         if(UtilMethods.isSet(language1)) {
 
-            final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
             if(isLocalizationEnhancementsEnabled()) {
                 final Language matchingLang = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
                 // Enhanced Language Vars
@@ -572,7 +579,38 @@ public class LanguagesResource {
         httpServletRequest.getSession().removeAttribute(HTMLPAGE_LANGUAGE);
         httpServletRequest.getSession().removeAttribute(CONTENT_SELECTED_LANGUAGE);
         return Response.ok(new ResponseEntityView<>(
-                new LanguageView(newDefault)
+                new LanguageView(newDefault, ()->isDefault(newDefault))
         )).build(); // 200
     }
+
+    @GET
+    @Path("/iso")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getIsoLanguagesAndCountries (
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response)  {
+
+        new WebResource.InitBuilder(request, response)
+                .requiredAnonAccess(AnonymousAccess.READ)
+                .rejectWhenNoUser(false).init();
+
+        final List<Map<String, String>> languages = Arrays.stream(Locale.getISOLanguages())
+                .map(code -> Map.of("code", code, "name", new Locale(code).getDisplayLanguage()))
+                .sorted(Comparator.comparing(o -> o.get("name")))
+                .collect(Collectors.toList());
+
+        final List<Map<String, String>> countries = Arrays.stream(Locale.getISOCountries())
+                .map(code -> Map.of("code", code, "name", new Locale("", code).getDisplayCountry()))
+                .sorted(Comparator.comparing(o -> o.get("name")))
+                .collect(Collectors.toList());
+
+        return Response.ok(new ResponseEntityView<>(Map.of(
+                 "languages", languages,
+                 "countries", countries)
+               )
+        ).build();
+    }
+
 }
