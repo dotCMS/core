@@ -102,37 +102,50 @@ public class LanguageVariableFactoryTest {
 
     /**
      * Methods to test {@link LanguageVariableFactoryImpl#countVariablesByKey(ContentType)} and {@link LanguageVariableFactoryImpl#countVariablesByKey(ContentType, long).
-     * Given scenario: There are 3 languages and 3 language variables for each language.
+     * Given scenario: This is a simple excercise to count the number of language variables with a specific key.
+     * We test the count for all languages and for each language.
+     * Expected Result: The factory should return the correct count of language variables.
      */
     @Test
     public void simpleLanguageCountTest() throws DotDataException {
 
         final LanguageVariableFactory factory = new LanguageVariableFactoryImpl();
-        final int allVarsCountBefore = factory.countVariablesByKey(LanguageVariableDataGen.langVarContentType.get());
-        Assert.assertTrue( allVarsCountBefore >= 0);
+        final int allVarsCountBefore = factory.countVariablesByKey(
+                LanguageVariableDataGen.langVarContentType.get());
+        Assert.assertTrue(allVarsCountBefore >= 0);
 
         final Language language1 = new LanguageDataGen().nextPersisted();
-        new LanguageVariableDataGen().languageId(language1.getId()).key("key1").value("value1").nextPersistedAndPublish();
+        new LanguageVariableDataGen().languageId(language1.getId())
+                .key("key1" + System.currentTimeMillis()).value("value1").nextPersistedAndPublish();
 
         final Language language2 = new LanguageDataGen().nextPersisted();
-        new LanguageVariableDataGen().languageId(language2.getId()).key("key1").value("value1").nextPersistedAndPublish();
-        new LanguageVariableDataGen().languageId(language2.getId()).key("key2").value("value2").nextPersistedAndPublish();
+        new LanguageVariableDataGen().languageId(language2.getId())
+                .key("key1" + System.currentTimeMillis()).value("value1").nextPersistedAndPublish();
+        new LanguageVariableDataGen().languageId(language2.getId())
+                .key("key2" + System.currentTimeMillis()).value("value2").nextPersistedAndPublish();
 
         final Language language3 = new LanguageDataGen().nextPersisted();
-        new LanguageVariableDataGen().languageId(language3.getId()).key("key1").value("value1").nextPersistedAndPublish();
-        new LanguageVariableDataGen().languageId(language3.getId()).key("key2").value("value2").nextPersistedAndPublish();
-        new LanguageVariableDataGen().languageId(language3.getId()).key("key3").value("value3").nextPersistedAndPublish();
+        new LanguageVariableDataGen().languageId(language3.getId())
+                .key("key1" + System.currentTimeMillis()).value("value1").nextPersistedAndPublish();
+        new LanguageVariableDataGen().languageId(language3.getId())
+                .key("key2" + System.currentTimeMillis()).value("value2").nextPersistedAndPublish();
+        new LanguageVariableDataGen().languageId(language3.getId())
+                .key("key3" + System.currentTimeMillis()).value("value3").nextPersistedAndPublish();
 
-        final int allVarsCountAfter = factory.countVariablesByKey(LanguageVariableDataGen.langVarContentType.get());
-        Assert.assertEquals(6, allVarsCountAfter - allVarsCountBefore);
+        final int allVarsCountAfter = factory.countVariablesByKey(
+                LanguageVariableDataGen.langVarContentType.get());
+        Assert.assertEquals(allVarsCountBefore + 6, allVarsCountAfter);
 
-        final int lang1Count = factory.countVariablesByKey(LanguageVariableDataGen.langVarContentType.get(),language1.getId());
+        final int lang1Count = factory.countVariablesByKey(
+                LanguageVariableDataGen.langVarContentType.get(), language1.getId());
         Assert.assertEquals(1, lang1Count);
 
-        final int lang2Count = factory.countVariablesByKey(LanguageVariableDataGen.langVarContentType.get(),language2.getId());
+        final int lang2Count = factory.countVariablesByKey(
+                LanguageVariableDataGen.langVarContentType.get(), language2.getId());
         Assert.assertEquals(2, lang2Count);
 
-        final int lang3Count = factory.countVariablesByKey(LanguageVariableDataGen.langVarContentType.get(),language3.getId());
+        final int lang3Count = factory.countVariablesByKey(
+                LanguageVariableDataGen.langVarContentType.get(), language3.getId());
         Assert.assertEquals(3, lang3Count);
 
     }

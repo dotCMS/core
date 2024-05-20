@@ -3,6 +3,7 @@ package v2.languages;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -33,6 +34,7 @@ public class LanguagesResourceTest {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final WebResource webResource = mock(WebResource.class);
         final LanguageAPI languageAPI = mock(LanguageAPI.class);
+        final LanguageVariableAPI languageVariableAPI = mock(LanguageVariableAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
         final List<Language> languages = CollectionsUtils.list(mock(Language.class));
@@ -42,11 +44,11 @@ public class LanguagesResourceTest {
         when(languageAPI.getLanguages()).thenReturn(languages);
         final LanguageView languageView = mock(LanguageView.class);
 
-        final LanguagesResource languagesResource = spy(new LanguagesResource(languageAPI, webResource));
+        final LanguagesResource languagesResource = spy(new LanguagesResource(languageAPI, languageVariableAPI, webResource));
         Mockito.doReturn((Function<Language, LanguageView>) language -> languageView)
                 .when(languagesResource)
                 .instanceLanguageView();
-        final Response response = languagesResource.list(request, httpServletResponse, null);
+        final Response response = languagesResource.list(request, httpServletResponse, null, false);
 
         assertEquals(languages.size(), ((List) ((ResponseEntityView) response.getEntity()).getEntity()).size());
     }
@@ -57,6 +59,7 @@ public class LanguagesResourceTest {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final WebResource webResource = mock(WebResource.class);
         final LanguageAPI languageAPI = mock(LanguageAPI.class);
+        final LanguageVariableAPI languageVariableAPI = mock(LanguageVariableAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
         final List<Language> languages = CollectionsUtils.list(mock(Language.class));
@@ -66,12 +69,12 @@ public class LanguagesResourceTest {
         when(webResource.init(request, httpServletResponse,true)).thenReturn(initDataObject);
         when(languageAPI.getAvailableContentLanguages("2", user)).thenReturn(languages);
 
-        final LanguagesResource languagesResource = spy(new LanguagesResource(languageAPI, webResource));
+        final LanguagesResource languagesResource = spy(new LanguagesResource(languageAPI, languageVariableAPI, webResource));
         Mockito.doReturn((Function<Language, LanguageView>) language -> languageView)
                 .when(languagesResource)
                 .instanceLanguageView();
 
-        final Response response = languagesResource.list(request, httpServletResponse, "2");
+        final Response response = languagesResource.list(request, httpServletResponse, "2", false);
 
         assertEquals(languages.size(), ((List) ((ResponseEntityView) response.getEntity()).getEntity()).size());
     }
@@ -82,6 +85,7 @@ public class LanguagesResourceTest {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final WebResource webResource = mock(WebResource.class);
         final LanguageAPI languageAPI = mock(LanguageAPI.class);
+        final LanguageVariableAPI languageVariableAPI = mock(LanguageVariableAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
         final DotDataException exception = mock(DotDataException.class);
@@ -90,9 +94,9 @@ public class LanguagesResourceTest {
         when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
         when(languageAPI.getAvailableContentLanguages("2", user)).thenThrow(exception);
 
-        final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
+        final LanguagesResource languagesResource = new LanguagesResource(languageAPI, languageVariableAPI, webResource);
 
-        languagesResource.list(request, httpServletResponse, "2");
+        languagesResource.list(request, httpServletResponse, "2", false);
     }
 
     @Test(expected = DotSecurityException.class)
@@ -101,6 +105,7 @@ public class LanguagesResourceTest {
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final WebResource webResource = mock(WebResource.class);
         final LanguageAPI languageAPI = mock(LanguageAPI.class);
+        final LanguageVariableAPI languageVariableAPI = mock(LanguageVariableAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
         final DotSecurityException exception = mock(DotSecurityException.class);
@@ -109,8 +114,8 @@ public class LanguagesResourceTest {
         when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
         when(languageAPI.getAvailableContentLanguages("2", user)).thenThrow(exception);
 
-        final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
+        final LanguagesResource languagesResource = new LanguagesResource(languageAPI, languageVariableAPI, webResource);
 
-        languagesResource.list(request, httpServletResponse, "2");
+        languagesResource.list(request, httpServletResponse, "2", false);
     }
 }

@@ -40,6 +40,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,19 +76,26 @@ import org.glassfish.jersey.server.JSONP;
 public class LanguagesResource {
 
     private final LanguageAPI languageAPI;
+
+    private final LanguageVariableAPI languageVariableAPI;
+
     private final WebResource webResource;
     private final com.dotcms.rest.api.v1.languages.LanguagesResource oldLanguagesResource;
 
     public LanguagesResource() {
         this(APILocator.getLanguageAPI(),
-                new WebResource(new ApiProvider()));
+             APILocator.getLanguageVariableAPI(),
+             new WebResource(new ApiProvider())
+        );
     }
 
     @VisibleForTesting
     public LanguagesResource(final LanguageAPI languageAPI,
-                                final WebResource webResource) {
+                             final LanguageVariableAPI languageVariableAPI,
+                             final WebResource webResource) {
 
         this.languageAPI  = languageAPI;
+        this.languageVariableAPI = languageVariableAPI;
         this.webResource  = webResource;
         this.oldLanguagesResource = new com.dotcms.rest.api.v1.languages.LanguagesResource(languageAPI, webResource, I18NUtil.INSTANCE);
     }
@@ -124,9 +132,12 @@ public class LanguagesResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     /**
-     * return a array with all the languages
+     * return an array with all the languages
      */
-    public Response  list(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @QueryParam("contentInode") final String contentInode)
+    public Response list(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+            @QueryParam("contentInode") final String contentInode,
+             @QueryParam("langVars") final boolean renderLangVars
+    )
             throws DotDataException, DotSecurityException {
 
         Logger.debug(this, () -> String.format("listing languages %s", request.getRequestURI()));
@@ -137,7 +148,15 @@ public class LanguagesResource {
         final List<Language> languages = contentInode != null ?
                 languageAPI.getAvailableContentLanguages(contentInode, user) :
                 languageAPI.getLanguages();
-
+        if (renderLangVars){
+            //We calculate the total number of language variables once as this value is the same for all languages
+            final int total = languageVariableAPI.countVariablesByKey();
+            return Response.ok(
+                    new ResponseEntityView<>(languages.stream()
+                            .map(language -> withLangVarCounts(language, total))
+                            .collect(Collectors.toList())))
+                    .build();
+        }
         return Response.ok(
                 new ResponseEntityView<>(languages.stream()
                         .map(instanceLanguageView())
@@ -145,10 +164,25 @@ public class LanguagesResource {
                 .build();
     }
 
+    /**
+     * Returns a {@link LanguageView} with the total number of language variables and the number of language variables
+     * @param language {@link Language}
+     * @return {@link LanguageView}
+     */
+   LanguageView withLangVarCounts(final Language language, final int total){
+       final int langCount = languageVariableAPI.countVariablesByKey(language.getId());
+       return new LanguageView(language, ()->ImmutableLangVarsCount.builder().total(total).count(langCount).build());
+    }
+
     public Function<Language, LanguageView> instanceLanguageView() {
         return LanguageView::new;
     }
 
+    /**
+     * Validates if the language exists in the system
+     * @param languageForm LanguageForm
+     * @return Language
+     */
     private Language validateLanguageExists(final LanguageForm languageForm) {
         DotPreconditions.checkArgument(UtilMethods.isSet(languageForm.getLanguageCode())
                         || UtilMethods.isSet(languageForm.getIsoCode()),
