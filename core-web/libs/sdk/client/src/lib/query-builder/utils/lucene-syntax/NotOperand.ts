@@ -1,6 +1,6 @@
-import { Term } from './Term';
+import { Equals } from './Equals';
 
-import { buildTerm } from '..';
+import { buildEquals } from '..';
 
 /**
  * 'NotOperand' Is a Typescript class that provides the ability to use the NOT operand in the lucene query string.
@@ -21,10 +21,10 @@ export class NotOperand {
      * Ex: myValue or "My value"
      *
      * @param {string} term - The term that should be included in the search.
-     * @return {*}  {Term} - An instance of a Lucene Term.
+     * @return {*}  {Equals} - An instance of Equals.
      * @memberof NotOperand
      */
-    term(term: string): Term {
-        return buildTerm(this.#query, term);
+    equals(term: string): Equals {
+        return buildEquals(this.#query, term);
     }
 }

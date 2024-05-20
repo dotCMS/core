@@ -1,7 +1,7 @@
+import { Equals } from './Equals';
 import { Field } from './Field';
-import { Term } from './Term';
 
-import { buildExcludeField, buildField, buildTerm } from '..';
+import { buildExcludeField, buildField, buildEquals } from '..';
 
 /**
  * 'Operand' Is a Typescript class that provides the ability to use operands in the lucene query string.}
@@ -49,10 +49,10 @@ export class Operand {
      * Ex: myValue or "My value"
      *
      * @param {string} term - The term that should be included in the search.
-     * @return {*}  {Term} - An instance of a Lucene Term.
+     * @return {*}  {Equals} - An instance of Equals.
      * @memberof Operand
      */
-    term(term: string): Term {
-        return buildTerm(this.#query, term);
+    equals(term: string): Equals {
+        return buildEquals(this.#query, term);
     }
 }

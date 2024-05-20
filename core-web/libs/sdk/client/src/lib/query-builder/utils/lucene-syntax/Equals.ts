@@ -8,20 +8,20 @@ import {
     buildField,
     buildNotOperand,
     buildOperand,
-    buildRawTerm,
+    buildRawEquals,
     sanitizeQuery
 } from '..';
 
 /**
- * 'Term' Is a Typescript class that provides the ability to use terms in the lucene query string.
+ * 'Equal' Is a Typescript class that provides the ability to use terms in the lucene query string.
  * A term is a value used to search for a specific value in a document. It can be a word or a phrase.
  *
  * Ex: myValue or "My Value"
  *
  * @export
- * @class Term
+ * @class Equal
  */
-export class Term {
+export class Equals {
     #query = '';
 
     constructor(private query: string) {
@@ -35,7 +35,7 @@ export class Term {
      *
      * @param {string} field - The field that should be excluded in the search.
      * @return {*}  {Field} - An instance of a Lucene Field. A field is a key used to search for a specific value in a document.
-     * @memberof Term
+     * @memberof Equal
      */
     excludeField(field: string): Field {
         return buildExcludeField(this.#query, field);
@@ -48,7 +48,7 @@ export class Term {
      *
      * @param {string} field - The field that should be included in the search.
      * @return {*}  {Field} - An instance of a Lucene Field. A field is a key used to search for a specific value in a document.
-     * @memberof Term
+     * @memberof Equal
      */
     field(field: string): Field {
         return buildField(this.#query, field);
@@ -60,7 +60,7 @@ export class Term {
      * Ex: "OR"
      *
      * @return {*}  {Operand} - An instance of a Lucene Operand. An operand is a logical operator used to combine terms or phrases in a query.
-     * @memberof Term
+     * @memberof Equal
      */
     or(): Operand {
         return buildOperand(this.#query, OPERAND.OR);
@@ -72,7 +72,7 @@ export class Term {
      * Ex: "AND"
      *
      * @return {*}  {Operand} - An instance of a Lucene Operand. An operand is a logical operator used to combine terms or phrases in a query.
-     * @memberof Term
+     * @memberof Equal
      */
     and(): Operand {
         return buildOperand(this.#query, OPERAND.AND);
@@ -84,7 +84,7 @@ export class Term {
      * Ex: "NOT"
      *
      * @return {*}  {NotOperand} - An instance of a Lucene Not Operand. A not operand is a logical operator used to exclude terms or phrases in a query.
-     * @memberof Term
+     * @memberof Equal
      */
     not(): NotOperand {
         return buildNotOperand(this.#query);
@@ -92,24 +92,24 @@ export class Term {
 
     /**
      * This method allows to pass a raw query string to the query builder.
-     * This raw query should end in a Lucene Term.
+     * This raw query should end in a Lucene Equal.
      * This method is useful when you want to append a complex query or an already written query to the query builder.
      *
      * Ex: "+myField: value AND (someOtherValue OR anotherValue)"
      *
      * @param {string} query - A raw query string.
-     * @return {*}  {Term} - An instance of a Lucene Term. A term is a value used to search for a specific value in a document.
+     * @return {*}  {Equal} - An instance of a Lucene Equal. A term is a value used to search for a specific value in a document.
      * @memberof QueryBuilder
      */
-    raw(query: string): Term {
-        return buildRawTerm(this.#query, query);
+    raw(query: string): Equals {
+        return buildRawEquals(this.#query, query);
     }
 
     /**
      * This method returns the final query string.
      *
      * @return {*}  {string} - The final query string.
-     * @memberof Term
+     * @memberof Equal
      */
     build(): string {
         return sanitizeQuery(this.#query);

@@ -8,7 +8,7 @@ describe('QueryBuilder', () => {
     });
 
     it('should return a query with a simple term', () => {
-        const queryForBlogs = queryBuilder.field('contentType').term('Blog').build();
+        const queryForBlogs = queryBuilder.field('contentType').equals('Blog').build();
 
         expect(queryForBlogs).toBe('+contentType:Blog');
     });
@@ -16,9 +16,9 @@ describe('QueryBuilder', () => {
     it('should return a query with multiple fields with a simple term ', () => {
         const queryForBlogsInSuperCoolSite = queryBuilder
             .field('contentType')
-            .term('Blog')
+            .equals('Blog')
             .field('conhost')
-            .term('my-super-cool-site')
+            .equals('my-super-cool-site')
             .build();
 
         expect(queryForBlogsInSuperCoolSite).toBe('+contentType:Blog +conhost:my-super-cool-site');
@@ -27,9 +27,9 @@ describe('QueryBuilder', () => {
     it("should return a query with an 'OR' operand", () => {
         const queryForBlogsOrArticles = queryBuilder
             .field('contentType')
-            .term('Blog')
+            .equals('Blog')
             .or()
-            .term('Article')
+            .equals('Article')
             .build();
 
         expect(queryForBlogsOrArticles).toBe('+contentType:Blog OR Article');
@@ -38,9 +38,9 @@ describe('QueryBuilder', () => {
     it("should return a query with an 'AND' operand", () => {
         const queryForBlogsAndArticles = queryBuilder
             .field('contentType')
-            .term('Blog')
+            .equals('Blog')
             .and()
-            .term('Article')
+            .equals('Article')
             .build();
 
         expect(queryForBlogsAndArticles).toBe('+contentType:Blog AND Article');
@@ -49,9 +49,9 @@ describe('QueryBuilder', () => {
     it("should return a query with a 'NOT' operand", () => {
         const queryForSkiingTripsNotInSwissAlps = queryBuilder
             .field('summary')
-            .term('Skiing trip')
+            .equals('Skiing trip')
             .not()
-            .term('Swiss Alps')
+            .equals('Swiss Alps')
             .build();
 
         expect(queryForSkiingTripsNotInSwissAlps).toBe('+summary:"Skiing trip" NOT "Swiss Alps"');
@@ -60,11 +60,11 @@ describe('QueryBuilder', () => {
     it('should return a query with an exclusion field', () => {
         const queryForFootballBlogsWithoutMessi = queryBuilder
             .field('contentType')
-            .term('Blog')
+            .equals('Blog')
             .field('title')
-            .term('Football')
+            .equals('Football')
             .excludeField('summary')
-            .term('Lionel Messi')
+            .equals('Lionel Messi')
             .build();
 
         expect(queryForFootballBlogsWithoutMessi).toBe(
@@ -76,9 +76,9 @@ describe('QueryBuilder', () => {
         const queryForBlogs = queryBuilder
             .raw('+summary:Snowboard')
             .not()
-            .term('Swiss Alps')
+            .equals('Swiss Alps')
             .field('contentType')
-            .term('Blog')
+            .equals('Blog')
             .build();
 
         expect(queryForBlogs).toBe('+summary:Snowboard NOT "Swiss Alps" +contentType:Blog');
@@ -87,10 +87,10 @@ describe('QueryBuilder', () => {
     it('should return a query with a raw query appended', () => {
         const queryForBlogs = queryBuilder
             .field('contentType')
-            .term('Blog')
+            .equals('Blog')
             .raw('+summary:Snowboard')
             .not()
-            .term('Swiss Alps')
+            .equals('Swiss Alps')
             .build();
 
         expect(queryForBlogs).toBe('+contentType:Blog +summary:Snowboard NOT "Swiss Alps"');
@@ -101,14 +101,14 @@ describe('QueryBuilder', () => {
 
         const snowboardInCanada = anotherQueryBuilder
             .field('summary')
-            .term('Snowboard')
+            .equals('Snowboard')
             .field('country')
-            .term('Canada')
+            .equals('Canada')
             .build();
 
         const queryForBlogs = queryBuilder
             .field('contentType')
-            .term('Blog')
+            .equals('Blog')
             .raw(snowboardInCanada)
             .build();
 
@@ -116,35 +116,39 @@ describe('QueryBuilder', () => {
     });
 
     it('should return a query with all possible combinations', () => {
-        const blogOrActivity = queryBuilder.field('contentType').term('Blog').or().term('Activity');
+        const blogOrActivity = queryBuilder
+            .field('contentType')
+            .equals('Blog')
+            .or()
+            .equals('Activity');
 
         const customIdSiteOrCoolSite = blogOrActivity
             .field('conhost')
-            .term('48190c8c-42c4-46af-8d1a-0cd5db894797')
+            .equals('48190c8c-42c4-46af-8d1a-0cd5db894797')
             .or()
-            .term('cool-site');
+            .equals('cool-site');
 
         const englishAndSpanish = customIdSiteOrCoolSite
             .field('languageId')
-            .term('1')
+            .equals('1')
             .and()
-            .term('2');
+            .equals('2');
 
-        const notDeleted = englishAndSpanish.field('deleted').term('false');
+        const notDeleted = englishAndSpanish.field('deleted').equals('false');
 
-        const currentlyWorking = notDeleted.field('working').term('true');
+        const currentlyWorking = notDeleted.field('working').equals('true');
 
-        const defaultVariant = currentlyWorking.field('variant').term('default');
+        const defaultVariant = currentlyWorking.field('variant').equals('default');
 
         const snowboardOutsideSwissAlps = defaultVariant
             .field('title')
-            .term('Snowboard')
+            .equals('Snowboard')
             .excludeField('summary')
-            .term('Swiss Alps');
+            .equals('Swiss Alps');
 
-        const writtenByJohnDoe = snowboardOutsideSwissAlps.field('authors').term('John Doe');
+        const writtenByJohnDoe = snowboardOutsideSwissAlps.field('authors').equals('John Doe');
 
-        const withoutJaneDoeHelp = writtenByJohnDoe.not().term('Jane Doe');
+        const withoutJaneDoeHelp = writtenByJohnDoe.not().equals('Jane Doe');
 
         const query = withoutJaneDoeHelp.build();
 

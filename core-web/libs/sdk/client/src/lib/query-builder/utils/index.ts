@@ -1,7 +1,7 @@
+import { Equals } from './lucene-syntax/Equals';
 import { Field } from './lucene-syntax/Field';
 import { NotOperand } from './lucene-syntax/NotOperand';
 import { Operand } from './lucene-syntax/Operand';
-import { Term } from './lucene-syntax/Term';
 
 /**
  * Enum for common Operands
@@ -45,12 +45,12 @@ export function sanitizePhrases(term: string): string {
  * @export
  * @param {string} query
  * @param {string} term
- * @return {*}  {Term}
+ * @return {*}  {Equals}
  */
-export function buildTerm(query: string, term: string): Term {
+export function buildEquals(query: string, term: string): Equals {
     const newQuery = query + sanitizePhrases(term);
 
-    return new Term(newQuery);
+    return new Equals(newQuery);
 }
 
 /**
@@ -60,12 +60,12 @@ export function buildTerm(query: string, term: string): Term {
  * @export
  * @param {string} query
  * @param {string} raw
- * @return {*}  {Term}
+ * @return {*}  {Equals}
  */
-export function buildRawTerm(query: string, raw: string): Term {
+export function buildRawEquals(query: string, raw: string): Equals {
     const newQuery = query + ` ${raw}`;
 
-    return new Term(sanitizeQuery(newQuery));
+    return new Equals(sanitizeQuery(newQuery));
 }
 
 /**
