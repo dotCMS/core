@@ -2,11 +2,12 @@ import { ComponentStore } from '@ngrx/component-store';
 
 import { inject, Injectable } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { map, switchMap } from 'rxjs/operators';
 
-import { DotLanguagesService } from '@dotcms/data-access';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotActionMenuItem, DotLanguage } from '@dotcms/dotcms-models';
 
 import {
@@ -39,6 +40,8 @@ export interface DotLocaleListViewModel {
 export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
     private readonly dialogService = inject(DialogService);
     private readonly languageService = inject(DotLanguagesService);
+    private readonly messageService = inject(DotMessageService);
+    private readonly confirmationService = inject(ConfirmationService);
 
     // Updaters
     readonly setLocales = this.updater((state: DotLocalesListState, languages: DotLanguage[]) => ({
@@ -54,11 +57,13 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
     );
 
     //Effects
-    readonly loadDialog = this.effect<string | null>((_languageId$) => {
+    readonly loadDialog = this.effect<number | null>((_languageId$) => {
         return _languageId$.pipe(
             map((languageId) =>
                 this.dialogService.open(DotLocaleCreateEditComponent, {
-                    header: languageId ? 'Edit Locale' : 'Add Locale',
+                    header: this.messageService.get(
+                        languageId ? 'locales.edit.locale' : 'locales.add.locale'
+                    ),
                     width: '31rem',
                     data: {
                         languages: ['Spanish', 'English'],
@@ -72,14 +77,30 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
 
     readonly addLocale = this.effect<DotLocaleCreateEditData>((data$) => {
         return data$.pipe(
-            switchMap(() =>
+            switchMap((data) =>
                 this.languageService.add({
-                    languageCode: 'cc',
-                    language: 'cc',
-                    countryCode: 'cc',
-                    country: 'cc'
+                    languageCode: data.languageCode,
+                    language: data.language,
+                    countryCode: data.countryCode,
+                    country: data.country
                 })
             ),
+            switchMap(() => this.languageService.get()),
+            map((languages) => this.setLocales(languages))
+        );
+    });
+
+    readonly makeDefaultLocale = this.effect<number>((languageId$) => {
+        return languageId$.pipe(
+            switchMap((languageId) => this.languageService.makeDefault(languageId)),
+            switchMap(() => this.languageService.get()),
+            map((languages) => this.setLocales(languages))
+        );
+    });
+
+    readonly deleteLocale = this.effect<number>((languageId$) => {
+        return languageId$.pipe(
+            switchMap((languageId) => this.languageService.delete(languageId)),
             switchMap(() => this.languageService.get()),
             map((languages) => this.setLocales(languages))
         );
@@ -102,21 +123,28 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             actions: [
                 {
                     menuItem: {
-                        label: 'Edit',
+                        label: this.messageService.get('locales.edit'),
                         command: () => {
-                            //TODO: Implement
+                            this.loadDialog(language.id);
                         }
-                    },
-                    shouldShow: () => true
+                    }
                 },
                 {
                     menuItem: {
-                        label: 'Delete',
+                        label: this.messageService.get('locales.make.default'),
                         command: () => {
-                            //TODO: Implement
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         }
                     },
-                    shouldShow: () => true
+                    shouldShow: () => !language.defaultLanguage
+                },
+                {
+                    menuItem: {
+                        label: this.messageService.get('locales.delete'),
+                        command: () => {
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        }
+                    }
                 }
             ]
         }));

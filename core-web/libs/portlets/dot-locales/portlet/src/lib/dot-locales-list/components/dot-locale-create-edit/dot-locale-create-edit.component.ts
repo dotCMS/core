@@ -6,6 +6,8 @@ import { DropdownModule } from 'primeng/dropdown';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { DotLocalesListStore } from '../../store/dot-locales-list.store';
 
 export interface DotLocaleCreateEditData {
@@ -21,7 +23,7 @@ export interface DotLocaleCreateEditData {
 @Component({
     selector: 'dot-dot-locale-create-edit',
     standalone: true,
-    imports: [DropdownModule, ReactiveFormsModule, InputTextModule, ButtonModule],
+    imports: [DropdownModule, ReactiveFormsModule, InputTextModule, ButtonModule, DotMessagePipe],
     templateUrl: './dot-locale-create-edit.component.html',
     styleUrl: './dot-locale-create-edit.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -47,10 +49,8 @@ export class DotLocaleCreateEditComponent implements OnInit {
     }
 
     handleSubmit(): void {
-        //    if (this.form.valid) {
         this.store.addLocale(this.form.value);
         this.ref.close();
-        // }
     }
 
     private initForm(): void {
@@ -58,9 +58,7 @@ export class DotLocaleCreateEditComponent implements OnInit {
             language: new FormControl(this.data.id ? this.data.language : '', {
                 validators: [Validators.required]
             }),
-            country: new FormControl(this.data.id ? this.data.country : '', {
-                validators: [Validators.required]
-            }),
+            country: new FormControl(this.data.id ? this.data.country : ''),
             localeId: new FormControl(this.data.id ? this.data.countryCode : '', {
                 validators: [Validators.required]
             }),

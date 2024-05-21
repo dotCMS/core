@@ -1,22 +1,27 @@
 <form class="p-fluid" [formGroup]="form" (ngSubmit)="handleSubmit()">
     <div class="field">
-        <label for="language">{{ 'Language' }}</label>
+        <label class="p-label-input-required" for="language">{{ 'locales.language' | dm }}</label>
         <p-dropdown
             id="language"
             [options]="data.languages"
-            [placeholder]="'Select form list or type'"
-            formControlName="language"></p-dropdown>
+            [placeholder]="'locales.language.input.placeholder' | dm"
+            formControlName="language">
+        </p-dropdown>
+        <span class="p-field-hint">{{ 'locales.language.hint' | dm }}</span>
     </div>
     <div class="field">
-        <label for="country">{{ 'Country' }}</label>
+        <label for="country">{{ 'locales.country' | dm }}</label>
         <p-dropdown
             id="country"
             [options]="data.countries"
-            [placeholder]="'Select form list or type'"
-            formControlName="language"></p-dropdown>
+            [placeholder]="'locales.language.input.placeholder' | dm"
+            formControlName="language">
+        </p-dropdown>
+        <span class="p-field-hint">{{ 'locales.country.hint' | dm }}</span>
     </div>
+
     <div class="field">
-        <label for="localeId">{{ 'Locale Id' }}</label>
+        <label class="p-label-input-required" for="localeId">{{ 'Locale Id' }}</label>
         <input id="localeId" formControlName="localeId" pInputText type="text" />
     </div>
 
@@ -25,8 +30,14 @@
         <input id="languageId" formControlName="languageId" pInputText type="text" />
     </div>
 
-    <div class="flex gap-3 justify-content-end">
-        <button [label]="'Cancel'" pButton type="button"></button>
-        <button [label]="'Add Language'" pButton type="submit"></button>
+    <div class="flex gap-2 justify-content-end">
+        <button class="p-button-text" [label]="'Cancel' | dm" pButton type="button"></button>
+        <button
+            [label]="
+                form.get('languageId').value ? 'locales.edit.locale' : ('locales.add.locale' | dm)
+            "
+            [disabled]="!form.valid"
+            pButton
+            type="submit"></button>
     </div>
 </form>
