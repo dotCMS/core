@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "fec7e83b-7dfc-4ec1-bcca-b4af2cc0072a",
+		"_postman_id": "553f0974-ec29-4c85-9d73-57478a3f39bc",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -6598,6 +6598,126 @@
 				}
 			],
 			"description": "These requests are aimed to test the REST Endpoint that takes a Page ID, returns all Languages in the current instance and, for each of them, includes an additional attribute that indicates whether such a page is available in that specific language or not."
+		},
+		{
+			"name": "Checking JSON Attributes",
+			"item": [
+				{
+					"name": "Checking Page Audit Attributes",
+					"item": [
+						{
+							"name": "Retrieving HTML Page Data",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Checking that audit properties are present\", function () {",
+											"    var entity = pm.response.json().entity.page;",
+											"    ",
+											"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+											"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+											"    pm.expect(entity.ownerName).to.not.equal(undefined, \"The 'ownerName' attribute must be present\");",
+											"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+											"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+											"    pm.expect(entity.modUserName).to.not.equal(undefined, \"The 'modUserName' attribute must be present\");",
+											"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+											"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+											"    pm.expect(entity.publishUserName).to.not.equal(undefined, \"The 'publishUserName' attribute must be present\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"json",
+										"destinations",
+										"costa-rica"
+									]
+								},
+								"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
 		},
 		{
 			"name": "Put Create Page With CacheTTL 100",
