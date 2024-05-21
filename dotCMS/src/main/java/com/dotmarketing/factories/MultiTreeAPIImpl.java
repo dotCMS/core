@@ -58,6 +58,8 @@ import java.sql.SQLException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+
 
 /**
  * This class provides utility routines to interact with the Multi-Tree structures in the system. A
@@ -947,8 +949,14 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
-    private void refreshPageInCache(final String pageIdentifier) {
-        CacheLocator.getMultiTreeCache().getVariantsInCache(pageIdentifier).stream()
+    private void refreshPageInCache(final String pageIdentifier) throws DotDataException {
+
+        final Contentlet pageAsContent = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(pageIdentifier, DEFAULT_VARIANT.name(), true);
+
+        APILocator.getExperimentsAPI().listActive(pageAsContent.getHost()).stream()
+                .flatMap(experiment -> experiment.trafficProportion().variants().stream())
+                .map(experimentVariant -> experimentVariant.id())
                 .forEach(variantName -> {
                     try {
                         refreshPageInCacheInner(pageIdentifier, variantName);
