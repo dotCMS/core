@@ -82,7 +82,7 @@ public class LanguageVariablesHelper {
             //for easy access of LanguageVariable by languageId
             final Map<Long, LanguageVariable> byLangIdMap = variables.stream()
                     .collect(
-                            Collectors.toMap(LanguageVariableExt::languageId, Function.identity()));
+                            Collectors.toMap(LanguageVariableExt::languageId, Function.identity(), (v1, v2) -> v1));
             //if no value for the key, we create a new map
             if (v == null) {
                 v = new LinkedHashMap<>(languages.size());
