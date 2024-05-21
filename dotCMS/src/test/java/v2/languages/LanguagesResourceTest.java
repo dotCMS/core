@@ -175,11 +175,9 @@ public class LanguagesResourceTest {
      * Test that the language resource returns the language and country list
      * Given scenario: Simply call the language resource
      * Expected result: The language and country list We test that a few counties and languages are returned
-     * @throws DotDataException
-     * @throws DotSecurityException
      */
     @Test
-    public void testISO() throws DotDataException, DotSecurityException {
+    public void testISO() {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final WebResource webResource = mock(WebResource.class);
@@ -188,7 +186,6 @@ public class LanguagesResourceTest {
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(request, httpServletResponse,true)).thenReturn(initDataObject);
 
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, languageVariableAPI, webResource);
         final Response response = languagesResource.getIsoLanguagesAndCountries(

@@ -592,10 +592,6 @@ public class LanguagesResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response)  {
 
-        new WebResource.InitBuilder(request, response)
-                .requiredAnonAccess(AnonymousAccess.READ)
-                .rejectWhenNoUser(false).init();
-
         final List<Map<String, String>> languages = Arrays.stream(Locale.getISOLanguages())
                 .map(code -> Map.of("code", code, "name", new Locale(code).getDisplayLanguage()))
                 .sorted(Comparator.comparing(o -> o.get("name")))
