@@ -241,3 +241,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.17**
 
 189. https://github.com/dotCMS/core/issues/28173 : System objects should not be push published #28173
+190. https://github.com/dotCMS/core/issues/27928 : Investigate why endpoint_ids in the table publishing_pushed_assets are null #27928

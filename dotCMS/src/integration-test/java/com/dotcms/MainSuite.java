@@ -49,6 +49,7 @@ import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
+import com.dotcms.publisher.util.PushedAssetUtilTest;
 import com.dotcms.publishing.BundlerUtilTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
@@ -582,7 +583,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
         Task230701AddHashIndicesToWorkflowTablesTest.class,
         Task231109AddPublishDateToContentletVersionInfoTest.class,
-        Task240102AlterVarcharLengthOfRelationTypeTest.class
+        Task240102AlterVarcharLengthOfRelationTypeTest.class,
+        PushedAssetUtilTest.class
 
 })
 public class MainSuite {
