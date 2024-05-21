@@ -20,7 +20,6 @@ export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.management/javax.managemen
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/sun.nio.cs=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/sun.util.calendar=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/sun.util.locale=ALL-UNNAMED"
-export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/sun.net.dns=ALL-UNNAMED"
 
 
 
