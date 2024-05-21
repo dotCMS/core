@@ -38,7 +38,8 @@ env:
   DOCKER_IMAGE: dotcms/dotcms_test
   DOCKER_TAG: run-${{ inputs.artifact-run-id || github.run_id }}
   ARTIFACT_RUN_ID: ${{ inputs.artifact-run-id || github.run_id }}
-
+  JAVA_VERSION: 21
+  JAVA_DISTRO: temurin
 jobs:
   #
   # Run all JVM Unit Tests in parallel with other tests
@@ -53,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ { name: "11", java-version: 11, distribution: 'temurin', maven_args: "" } ]
+        java: [ { name: "21", java-version: 21, distribution: 'temurin', maven_args: "" } ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ matrix.java.name }}
@@ -108,7 +109,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        java: [ { name: "11", java-version: 11, distribution: 'temurin', maven_args: "" } ]
+        java: [ { name: "21", java-version: 21, distribution: 'temurin', maven_args: "" } ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ matrix.java.name }}
@@ -182,10 +183,10 @@ jobs:
       MAVEN_OPTS: -Xmx2048m
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 11
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: 11
+          java-version: 21
           distribution: 'temurin'
       - name: Get Date
         id: get-date
@@ -253,7 +254,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ { name: "11", java-version: 11, distribution: 'temurin', maven_args: "" } ]
+        java: [ { name: "21", java-version: 21, distribution: 'temurin', maven_args: "" } ]
         suites:
           - { name: "MainSuite 1a", pathName: "mainsuite1a", maven_args: '-Dit.test=MainSuite1a -Dit.test.forkcount=1' }
           - { name: "MainSuite 1b", pathName: "mainsuite1b", maven_args: '-Dit.test=MainSuite1b -Dit.test.forkcount=1' }

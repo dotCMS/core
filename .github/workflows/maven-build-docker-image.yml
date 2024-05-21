@@ -50,7 +50,7 @@ jobs:
     name: Build/Push Image
     runs-on: ubuntu-latest
     env:
-      JAVA_VERSION: 11
+      JAVA_VERSION: 21
       JAVA_DISTRO: temurin
       JVM_TEST_MAVEN_OPTS: '-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
       DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build

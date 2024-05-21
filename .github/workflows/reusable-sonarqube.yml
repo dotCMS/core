@@ -11,7 +11,10 @@ on:
         required: true
       SONAR_HOST_URL:
         required: true
-
+# sonarqube only runs with Java 17+
+env:
+  JAVA_VERSION: 21
+  JAVA_DISTRO: temurin
 jobs:
   sonarqube:
     name: SonarQube Scan
@@ -25,10 +28,10 @@ jobs:
       - name: Setup master branch locally without switching current branch
         if: github.ref != 'refs/heads/master'
         run: git fetch origin master:master
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: 17
+          java-version: 21
           distribution: 'temurin'
       - name: Get Date
         id: get-date
