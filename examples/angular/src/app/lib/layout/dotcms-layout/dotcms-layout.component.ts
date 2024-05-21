@@ -26,37 +26,37 @@ import { DotCMSPageAsset, DynamicComponentEntity } from '../../models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DotcmsLayoutComponent implements OnInit {
-  @Input({ required: true }) entity!: DotCMSPageAsset;
-  @Input({ required: true }) components!: Record<
-    string,
-    DynamicComponentEntity
-  >;
+    @Input({ required: true }) entity!: DotCMSPageAsset;
+    @Input({ required: true }) components!: Record<
+        string,
+        DynamicComponentEntity
+    >;
 
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly pageContextService = inject(PageContextService);
-  private readonly destroyRef$ = inject(DestroyRef);
+    private readonly route = inject(ActivatedRoute);
+    private readonly router = inject(Router);
+    private readonly pageContextService = inject(PageContextService);
+    private readonly destroyRef$ = inject(DestroyRef);
 
-  ngOnInit() {
-    this.pageContextService.setComponentMap(this.components);
+    ngOnInit() {
+        this.pageContextService.setComponentMap(this.components);
 
-    this.route.url
-      .pipe(takeUntilDestroyed(this.destroyRef$))
-      .subscribe((urlSegments) => {
-        if (isInsideEditor()) {
-          const pathname = '/' + urlSegments.join('/');
-          const config = {
-            pathname,
-            onReload: () => {
-              // Reload the page when the user edit the page
-              this.router.navigate([pathname], {
-                onSameUrlNavigation: 'reload', // Force Angular to reload the page
-              });
-            },
-          };
-          initEditor(config);
-          updateNavigation(pathname || '/');
-        }
-      });
-  }
+        this.route.url
+            .pipe(takeUntilDestroyed(this.destroyRef$))
+            .subscribe((urlSegments) => {
+                if (isInsideEditor()) {
+                const pathname = '/' + urlSegments.join('/');
+                const config = {
+                    pathname,
+                    onReload: () => {
+                    // Reload the page when the user edit the page
+                    this.router.navigate([pathname], {
+                        onSameUrlNavigation: 'reload', // Force Angular to reload the page
+                    });
+                    },
+                };
+                initEditor(config);
+                updateNavigation(pathname || '/');
+                }
+            });
+    }
 }
