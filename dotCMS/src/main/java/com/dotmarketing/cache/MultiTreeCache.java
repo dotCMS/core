@@ -9,8 +9,14 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Table;
-import java.util.*;
-import static com.dotcms.util.CollectionsUtils.list;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Provides the data structres used for caching Multi-Tree information in dotCMS.
@@ -21,9 +27,8 @@ public class MultiTreeCache implements Cachable {
 
     private static final String LIVE_GROUP = "pageMultiTreesLive";
     private static final String WORKING_GROUP = "pageMultiTreesWorking";
-    private static final String VARIANTS_GROUP = "pageMultiTreesByVariant";
     private static final String CONTENTLET_REFERENCES_GROUP = "contentletReferences";
-    private static final String[] GROUPS = {LIVE_GROUP, WORKING_GROUP, CONTENTLET_REFERENCES_GROUP, VARIANTS_GROUP};
+    private static final String[] GROUPS = {LIVE_GROUP, WORKING_GROUP, CONTENTLET_REFERENCES_GROUP};
 
     private final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 
@@ -33,89 +38,68 @@ public class MultiTreeCache implements Cachable {
     }
 
 
-    private String getCacheKey(final String pageIdentifier, final String variantName){
-        return pageIdentifier + "_" + variantName;
-    }
-
     @SuppressWarnings("unchecked")
     public Optional<Table<String, String, Set<PersonalizedContentlet>>> getPageMultiTrees(
             final String pageIdentifier, final String variantName, final boolean live) {
-        try{
-            final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
-            final String cacheKey = getCacheKey(pageIdentifier, variantName);
+        final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
 
-            final Table<String, String, Set<PersonalizedContentlet>> allPageMultiTress =
-                    (Table<String, String, Set<PersonalizedContentlet>>) cache.get(cacheKey, group);
+        final Optional<Map<String, Table<String, String, Set<PersonalizedContentlet>>>> allPageMultiTress =
+                getMultiTreeMap(pageIdentifier, group);
 
-            return Optional.ofNullable(allPageMultiTress);
+        return allPageMultiTress.isPresent() ? Optional.ofNullable(allPageMultiTress.get().get(variantName))
+                : Optional.empty();
+    }
+
+    private Optional<Map<String, Table<String, String, Set<PersonalizedContentlet>>>> getMultiTreeMap(
+            final String pageIdentifier, final String group) {
+
+        try {
+            return Optional.ofNullable((Map<String, Table<String, String, Set<PersonalizedContentlet>>>) cache.get(
+                            pageIdentifier, group));
         } catch (final DotCacheException e) {
-            Logger.warn(this.getClass(), String.format("An error occurred when getting Multi-Tree cache data for page ID '%s': %s",
-                    pageIdentifier, e.getMessage()));
+            Logger.warn(this.getClass(), String.format("An error occurred when getting Multi-Tree cache data for page " +
+                    "ID '%s': %s", pageIdentifier, e.getMessage()));
             return Optional.empty();
         }
     }
 
-
     public void putPageMultiTrees(final String pageIdentifier, final String variantName,
             final boolean live, final Table<String, String, Set<PersonalizedContentlet>> multiTreesToPut) {
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
-        final String cacheKey = getCacheKey(pageIdentifier, variantName);
+        final Map<String, Table<String, String, Set<PersonalizedContentlet>>> multiTreeMap =
+                getMultiTreeMap(pageIdentifier, group).orElseGet(() -> new HashMap<>());
 
-        cache.put(cacheKey, multiTreesToPut, group);
-        refreshPageVariantCache(pageIdentifier, variantName);
-    }
-
-    /**
-     *
-     * @param pageIdentifier
-     * @param variantName
-     */
-    private void refreshPageVariantCache(final String pageIdentifier, final String variantName) {
-        try {
-            final String cacheKey = getCacheKey(pageIdentifier, variantName);
-            final Set<String> variants = cache.get(cacheKey, VARIANTS_GROUP) != null ?
-                    (Set<String>) cache.get(pageIdentifier, VARIANTS_GROUP) : new HashSet<>();
-
-            variants.add(variantName);
-
-            cache.remove(cacheKey, VARIANTS_GROUP);
-            cache.put(pageIdentifier, variants, VARIANTS_GROUP);
-        } catch (final DotCacheException e) {
-            Logger.warn(this.getClass(), String.format("An error occurred when getting Multi-Tree cache data for page " +
-                    "ID '%s': %s", pageIdentifier, e.getMessage()));
-        }
+        multiTreeMap.put(variantName, multiTreesToPut);
+        cache.put(pageIdentifier, multiTreeMap, group);
     }
 
 
     public void removePageMultiTrees(final String pageIdentifier, final String variantName, final boolean live) {
 
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
-        final String cacheKey = getCacheKey(pageIdentifier, variantName);
-
-        cache.remove(cacheKey, group);
+        removePageMultiTrees(pageIdentifier, variantName, group);
     }
 
     public void removePageMultiTrees(final String pageIdentifier) {
-        list(CONTENTLET_REFERENCES_GROUP, VARIANTS_GROUP).forEach(group -> cache.remove(pageIdentifier, group));
-
-        getVariantsInCache(pageIdentifier).stream().forEach(variantName ->
-                removeFromLiveAndWorking(pageIdentifier, variantName));
-
-        cache.remove(pageIdentifier, VARIANTS_GROUP);
+        Arrays.asList(getGroups()).forEach(group -> cache.remove(pageIdentifier, group));
     }
 
     public void removePageMultiTrees(final String pageIdentifier, final String variantName) {
-        list(CONTENTLET_REFERENCES_GROUP, VARIANTS_GROUP).forEach(group -> cache.remove(pageIdentifier, group));
-
-        removeFromLiveAndWorking(pageIdentifier, variantName);
-
-        cache.remove(pageIdentifier, VARIANTS_GROUP);
+        Arrays.asList(getGroups()).forEach(group -> removePageMultiTrees(pageIdentifier, variantName, group));
     }
 
-    private void removeFromLiveAndWorking(String pageIdentifier, String variantName) {
-        final String cacheKey = getCacheKey(pageIdentifier, variantName);
-        cache.remove(cacheKey, WORKING_GROUP);
-        cache.remove(cacheKey, LIVE_GROUP);
+    public void removePageMultiTrees(final String pageIdentifier, final String variantName, final String group) {
+
+        final Map<String, Table<String, String, Set<PersonalizedContentlet>>> multiTreeMap =
+                getMultiTreeMap(pageIdentifier, group).orElseGet(() -> new HashMap<>());
+
+        multiTreeMap.remove(variantName);
+
+        if (multiTreeMap.isEmpty()) {
+            cache.remove(pageIdentifier, group);
+        } else {
+            cache.put(pageIdentifier, multiTreeMap, group);
+        }
     }
 
     @Override
@@ -168,13 +152,9 @@ public class MultiTreeCache implements Cachable {
     }
 
     public Collection<String> getVariantsInCache(final String pageId) {
-        try {
-            Object variantsAsObject = cache.get(pageId, VARIANTS_GROUP);
-            return variantsAsObject == null ? Collections.emptyList() : (Collection<String>) variantsAsObject;
-        } catch (final DotCacheException e) {
-            Logger.warn(this.getClass(), String.format("An error occurred when getting Variants from cache for page " +
-                    "ID '%s': %s", pageId, e.getMessage()));
-            return Collections.emptyList();
-        }
+        return Arrays.stream(getGroups())
+                .flatMap(group -> getMultiTreeMap(pageId, group).stream())
+                .flatMap(map -> map.keySet().stream())
+                .collect(Collectors.toSet());
     }
 }
