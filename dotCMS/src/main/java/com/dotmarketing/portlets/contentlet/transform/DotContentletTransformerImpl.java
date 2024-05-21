@@ -15,6 +15,7 @@ import io.vavr.control.Try;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -132,7 +133,9 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
      */
     private Contentlet copy(final Contentlet contentlet) {
         final Contentlet newContentlet = new Contentlet();
-        newContentlet.getMap().putAll(Try.of(contentlet::getMap).getOrElse(Map.of()));
+        if (Objects.nonNull(contentlet)) {
+            newContentlet.getMap().putAll(Try.of(contentlet::getMap).getOrElse(Map.of()));
+        }
         return newContentlet;
     }
 

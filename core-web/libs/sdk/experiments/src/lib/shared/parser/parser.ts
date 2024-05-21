@@ -1,4 +1,4 @@
-import { Experiment, ExperimentParsed } from '../models';
+import { Experiment, ExperimentParsed, FetchExperiments } from '../models';
 
 /**
  * This arrow function parses a given set of assigned experiments for analytics.
@@ -83,35 +83,37 @@ export const verifyRegex = (regexToCheck: string | null, href: string): boolean 
  * There could be scenarios where none of these conditions are met, in that case, dataToStorage will be the default empty object.
  */
 export const parseData = (
-    fetchExperiments: Experiment[] | undefined,
+    fetchExperiments: FetchExperiments,
     storedExperiments: Experiment[] | undefined
 ): Experiment[] => {
     let dataToStorage: Experiment[] = {} as Experiment[];
 
+    const { excludedExperimentIdsEnded } = fetchExperiments;
+
     if (fetchExperiments && !storedExperiments) {
         // TODO: Use fetchExperiment instead fetchExperimentsNoNoneExperimentID when the endpoint dont retrieve NONE experiment
         // https://github.com/dotCMS/core/issues/27905
-        const fetchExperimentsNoNoneExperimentID: Experiment[] = fetchExperiments
-            ? fetchExperiments.filter((experiment) => experiment.id !== 'NONE')
+        const fetchExperimentsNoNoneExperimentID: Experiment[] = fetchExperiments.experiments
+            ? fetchExperiments.experiments.filter((experiment) => experiment.id !== 'NONE')
             : [];
 
         dataToStorage = addExpireTimeToExperiments(fetchExperimentsNoNoneExperimentID);
     }
 
     if (!fetchExperiments && storedExperiments) {
-        dataToStorage = getUnexpiredExperiments(storedExperiments);
+        dataToStorage = getUnexpiredExperiments(storedExperiments, excludedExperimentIdsEnded);
     }
 
     if (fetchExperiments && storedExperiments) {
         // TODO: Use fetchExperiment instead fetchExperimentsNoNoneExperimentID when the endpoint dont retrieve NONE experiment
         // https://github.com/dotCMS/core/issues/27905
-        const fetchExperimentsNoNoneExperimentID: Experiment[] = fetchExperiments
-            ? fetchExperiments.filter((experiment) => experiment.id !== 'NONE')
+        const fetchExperimentsNoNoneExperimentID: Experiment[] = fetchExperiments.experiments
+            ? fetchExperiments.experiments.filter((experiment) => experiment.id !== 'NONE')
             : [];
 
         dataToStorage = [
             ...addExpireTimeToExperiments(fetchExperimentsNoNoneExperimentID),
-            ...getUnexpiredExperiments(storedExperiments)
+            ...getUnexpiredExperiments(storedExperiments, excludedExperimentIdsEnded)
         ];
     }
 
@@ -150,14 +152,20 @@ const addExpireTimeToExperiments = (experiments: Experiment[]): Experiment[] => 
  * Returns an array of experiments that have not expired yet.
  *
  * @param {Experiment[]} experiments - An array of experiments to filter.
+ * @param excludedExperimentIdsEnded -  Array of Experiments ids that have been manually ended.
  * @returns {Experiment[]} An array of unexpired experiments.
  */
-const getUnexpiredExperiments = (experiments: Experiment[]): Experiment[] => {
+const getUnexpiredExperiments = (
+    experiments: Experiment[],
+    excludedExperimentIdsEnded: string[]
+): Experiment[] => {
     const now = Date.now();
 
     return experiments.filter((experiment) => {
         const expireTime = experiment.lookBackWindow?.expireTime;
 
-        return expireTime ? expireTime > now : false;
+        return expireTime
+            ? expireTime > now && !excludedExperimentIdsEnded.includes(experiment.id)
+            : false;
     });
 };

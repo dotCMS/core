@@ -3,7 +3,7 @@ package com.dotcms.ai.api;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.ai.db.EmbeddingsDB;
+import com.dotcms.ai.db.EmbeddingsFactory;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.db.EmbeddingsDTO.Builder;
 import com.dotcms.ai.util.ContentToStringUtil;
@@ -13,6 +13,7 @@ import com.dotcms.ai.util.OpenAIThreadPool;
 import com.dotcms.ai.util.VelocityContextFactory;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -125,7 +126,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     @Override
     @WrapInTransaction
     public int deleteEmbedding(@NotNull final EmbeddingsDTO dto) {
-        return EmbeddingsDB.impl.get().deleteEmbeddings(dto);
+        return EmbeddingsFactory.impl.get().deleteEmbeddings(dto);
     }
 
     @WrapInTransaction
@@ -278,7 +279,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         final List<Float> queryEmbeddings = pullOrGenerateEmbeddings(searcher.query)._2;
         final EmbeddingsDTO newSearcher = EmbeddingsDTO.copy(searcher).withEmbeddings(queryEmbeddings).build();
 
-        return EmbeddingsDB.impl.get().searchEmbeddings(newSearcher);
+        return EmbeddingsFactory.impl.get().searchEmbeddings(newSearcher);
     }
 
     @Override
@@ -286,35 +287,25 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         final List<Float> queryEmbeddings = pullOrGenerateEmbeddings(searcher.query)._2;
         final EmbeddingsDTO newSearcher = EmbeddingsDTO.copy(searcher).withEmbeddings(queryEmbeddings).build();
 
-        return EmbeddingsDB.impl.get().countEmbeddings(newSearcher);
+        return EmbeddingsFactory.impl.get().countEmbeddings(newSearcher);
     }
 
     @Override
     public Map<String, Map<String, Object>> countEmbeddingsByIndex() {
-        return EmbeddingsDB.impl.get().countEmbeddingsByIndex();
+        return EmbeddingsFactory.impl.get().countEmbeddingsByIndex();
     }
 
     @Override
     public void dropEmbeddingsTable() {
-        EmbeddingsDB.impl.get().dropVectorDbTable();
+        EmbeddingsFactory.impl.get().dropVectorDbTable();
     }
 
     @Override
     @WrapInTransaction
     public void initEmbeddingsTable() {
-        EmbeddingsDB.impl.get().initVectorExtension();
-        EmbeddingsDB.impl.get().initVectorDbTable();
+        EmbeddingsFactory.impl.get();
     }
 
-    /**
-     * this method takes a snippet of content and will try to see if we have already generated embeddings for it.
-     * It checks the cache first, and returns if it finds it there.  Then it checks the db to see if we have already
-     * saved this chunk of content before.  If we have, we reuse those same embeddings rather than making a
-     * remote request $$$ to OpenAI for new Embeddings
-     *
-     * @param content
-     * @return Tuple(Count of Tokens Input, List of Embeddings Output)
-     */
     @WrapInTransaction
     @Override
     public Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(@NotNull final String content) {
@@ -335,7 +326,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         }
 
         final Tuple3<String, Integer, List<Float>> dbEmbeddings =
-                EmbeddingsDB.impl.get().searchExistingEmbeddings(content);
+                EmbeddingsFactory.impl.get().searchExistingEmbeddings(content);
         if (dbEmbeddings != null && !dbEmbeddings._3.isEmpty()) {
             if (!CACHE.equalsIgnoreCase(dbEmbeddings._1)) {
                 saveEmbeddingsForCache(content, Tuple.of(dbEmbeddings._2, dbEmbeddings._3));
@@ -351,10 +342,22 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         return openAiEmbeddings;
     }
 
+    @CloseDBIfOpened
+    @Override
+    public boolean embeddingExists(final String inode, final String indexName, final String extractedText) {
+        return EmbeddingsFactory.impl.get().embeddingExists(inode, indexName, extractedText);
+    }
+
     @WrapInTransaction
     @Override
     public void saveEmbeddings(final EmbeddingsDTO embeddings) {
-        EmbeddingsDB.impl.get().saveEmbeddings(embeddings);
+        EmbeddingsFactory.impl.get().saveEmbeddings(embeddings);
+    }
+
+    @WrapInTransaction
+    @Override
+    public int deleteEmbeddings(final EmbeddingsDTO dto) {
+        return EmbeddingsFactory.impl.get().deleteEmbeddings(dto);
     }
 
     private JSONObject dtoToContentJson(final EmbeddingsDTO dto, final User user) {
@@ -406,8 +409,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                 "post",
                 getAPIKey(),
                 json);
-        final JSONObject response = new JSONObject(responseString);
-        final JSONObject data = (JSONObject) response.getJSONArray("data").get(0);
+        final JSONObject data = (JSONObject) new JSONObject(responseString).getJSONArray("data").get(0);
 
         return (List<Float>) data.getJSONArray("embedding").stream().map(val -> {
             double x = (double) val;

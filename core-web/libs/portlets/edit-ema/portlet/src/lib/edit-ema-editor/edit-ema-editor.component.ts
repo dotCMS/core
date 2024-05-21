@@ -248,7 +248,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 requestAnimationFrame(() => {
                     const win = this.iframe.nativeElement.contentWindow;
 
-                    if (mode === EDITOR_MODE.EDIT || mode === EDITOR_MODE.INLINE_EDITING) {
+                    if (
+                        mode === EDITOR_MODE.EDIT ||
+                        mode === EDITOR_MODE.EDIT_VARIANT ||
+                        mode === EDITOR_MODE.INLINE_EDITING
+                    ) {
                         this.inlineEditingService.injectInlineEdit(this.iframe);
                         fromEvent(win, 'click').subscribe((e: MouseEvent) => {
                             this.handleInlineEditing(e);
@@ -417,6 +421,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     event.clientX > iframeRect.left && event.clientX < iframeRect.right;
 
                 if (!isInsideIframe) {
+                    this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+
                     return;
                 }
 
@@ -541,13 +547,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     handleReloadContent() {
         this.store.contentState$
             .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(({ changedFromLoading, code, isVTL }) => {
+            .subscribe(({ shouldReload, code, isVTL }) => {
                 // If we are idle then we are not dragging
+
                 this.resetDragProperties();
 
-                if (!changedFromLoading) {
+                if (!shouldReload) {
                     /** We have some EDITOR_STATE values that we don't want to reload the content
-                     * Only when the state is changed from LOADING to IDLE we need to reload the content
+                     *  Only when we should realod the content we do it
                      */
                     return;
                 }
@@ -557,6 +564,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 } else {
                     this.reloadIframe();
                 }
+
+                this.store.setShouldReload(false);
             });
     }
 
@@ -801,7 +810,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param code - The code to be added to the iframe.
      * @memberof EditEmaEditorComponent
      */
-    setIframeContent(code) {
+    setIframeContent(code: string) {
         requestAnimationFrame(() => {
             const doc = this.iframe?.nativeElement.contentDocument;
 

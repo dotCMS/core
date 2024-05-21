@@ -1,13 +1,16 @@
 package com.dotcms.rest.api.v2.languages;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.dotmarketing.util.WebKeys.*;
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.isLocalizationEnhancementsEnabled;
+import static com.dotmarketing.util.WebKeys.CONTENT_SELECTED_LANGUAGE;
+import static com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE;
+import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
 
 import com.dotcms.keyvalue.model.KeyValue;
+import com.dotcms.languagevariable.business.LanguageVariable;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
@@ -16,8 +19,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.I18NForm;
-import com.dotcms.rest.api.v1.languages.LanguageTransform;
-import com.dotcms.rest.api.v1.languages.RestLanguage;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
@@ -47,11 +48,12 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -67,7 +69,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
 /**
- * Language end point
+ * Language endpoint for the v2 API
  */
 @Path("/v2/languages")
 public class LanguagesResource {
@@ -238,7 +240,7 @@ public class LanguagesResource {
            return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(new ResponseEntityView(new LanguageView(language))).build();
+        return Response.ok(new ResponseEntityView<>(new LanguageView(language))).build();
     }
 
     private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {
@@ -348,10 +350,6 @@ public class LanguagesResource {
     }
     
     
-    
-    
-    
-    
     /**
      * Gets all the Messages from the language passed.
      * If default is passed it will get the messages for the default language.
@@ -369,7 +367,7 @@ public class LanguagesResource {
     public Response getAllMessages (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("language") final String language){
+            @PathParam("language") final String language) throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(request, response)
                 .requiredAnonAccess(AnonymousAccess.READ)
@@ -380,35 +378,85 @@ public class LanguagesResource {
         final Locale currentLocale=resolveAdminLocale(language);
         
         //Messages in the properties file
-        final Map mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(currentLocale);
+        //These are the resources that are in the properties file added by developers to dotCMS so will always need this
+        final Map<?,?> mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(currentLocale);
 
-        final Map result = new TreeMap(mapPropertiesFile);
+        final Map<Object,Object> result = new TreeMap<>(mapPropertiesFile);
 
-        final Language language1 = APILocator.getLanguageAPI().getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
+        final Language language1 = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
         if(UtilMethods.isSet(language1)) {
-            //Language Keys
-            final Map mapLanguageKeys = APILocator.getLanguageAPI()
-                    .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
-                            Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 
-            result.putAll(mapLanguageKeys);
+            final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+            if(isLocalizationEnhancementsEnabled()) {
+                final Language matchingLang = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
+                // Enhanced Language Vars
+                final List<LanguageVariable> variables = languageVariableAPI.findVariables(matchingLang.getId());
+                final Map<?,?> map = variables.stream().collect(
+                        Collectors.toMap(LanguageVariable::key, LanguageVariable::value, (value1,value2) ->{
+                            //Merge function is always a good idea to have.
+                            //There can be cases on which the "unique" constraint of the key is lifted allowing for duplicates
+                            Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
+                            return value1;
+                        }));
+                result.putAll(map);
+            } else {
+                //Language Keys
+                final Map <?,?> mapLanguageKeys = languageAPI
+                        .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
+                                Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 
-            //Language Variable
-            long langId = language1.getId();
-            final Map mapLanguageVariables = Try.of(()->APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith("", langId,
-                    user, -1)).getOrElse(ArrayList::new).stream().collect(Collectors.toMap(
-                    KeyValue::getKey,KeyValue::getValue, (value1,value2) ->{
-                        Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
-                        return value1;
-                    }));
+                result.putAll(mapLanguageKeys);
 
-            result.putAll(mapLanguageVariables);
+                //Legacy Language Variable
+                long langId = language1.getId();
+                final Map mapLanguageVariables = Try.of(()->APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith("", langId,
+                        user, -1)).getOrElse(ArrayList::new).stream().collect(Collectors.toMap(
+                        KeyValue::getKey,KeyValue::getValue, (value1,value2) ->{
+                            Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
+                            return value1;
+                        }));
+                result.putAll(mapLanguageVariables);
+            }
 
         }
 
 
-        return Response.ok(new ResponseEntityView(result)).build();
+        return Response.ok(new ResponseEntityView<>(result)).build();
     }
+
+    /**
+     * Gets all the language variables in the system organized by key
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param renderNulls boolean
+     * @param paginationContext {@link PaginationContext}
+     * @return all the messages of the language
+     * @throws DotDataException if an error occurs
+     */
+    @GET
+    @Path("/variables")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getVariables(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("renderNulls") @DefaultValue("true") final boolean renderNulls,
+            @BeanParam final PaginationContext paginationContext) throws DotDataException {
+
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(true)
+                        .requiredPortlet(PortletID.LANGUAGES.toString())
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+
+        final LanguageVariablePageView view = new LanguageVariablesHelper()
+                .view(paginationContext, renderNulls);
+        return Response.ok(new ResponseEntityView<>(view)).build();
+    }
+
 
     private Language saveOrUpdateLanguage(final String languageId, final LanguageForm form)
             throws AlreadyExistException {

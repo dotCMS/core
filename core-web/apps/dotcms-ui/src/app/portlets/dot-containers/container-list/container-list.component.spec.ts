@@ -16,8 +16,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
 import { Table, TableModule } from 'primeng/table';
 
-import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { ActionHeaderModule } from '@components/dot-listing-data-table/action-header/action-header.module';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
@@ -46,7 +44,12 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';
-import { DotAddToBundleComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     DotFormatDateServiceMock,
@@ -282,7 +285,7 @@ describe('ContainerListComponent', () => {
                 CheckboxModule,
                 CommonModule,
                 ContainerListRoutingModule,
-                DotActionMenuButtonModule,
+                DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
                 DotEmptyStateModule,
                 DotMessagePipe,

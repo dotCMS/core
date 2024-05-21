@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -22,11 +23,12 @@ import java.util.Optional;
  * Represents the different parts that make up the structure of an HTML Page in the system and its
  * associated data structures. A dotCMS page is basically composed of:
  * <ul>
- * <li>The HTML Page.</li>
- * <li>Its template.</li>
- * <li>The site it's located in.</li>
- * <li>The list of containers.</li>
- * <li>Its template layout.</li>
+ *  <li>The HTML Page.</li>
+ *  <li>Its template.</li>
+ *  <li>The site it's located in.</li>
+ *  <li>The list of containers.</li>
+ *  <li>Its template layout.</li>
+ *  <li>Any other required piece of information related to the page and how it should be rendered.</li>
  * </ul>
  *
  * @author Will Ezell
@@ -54,6 +56,25 @@ public class PageView implements Serializable {
     final boolean live;
 
     final Experiment runningExperiment;
+
+    /**
+     * Creates an instance of this class with default values.
+     */
+    PageView() {
+        this.site = new Host();
+        this.template = new Template();
+        this.containers = Collections.emptyList();
+        this.htmlPageAsset = new HTMLPageAsset();
+        this.layout = null;
+        this.viewAs = new ViewAsPageStatus.Builder().build();
+        this.canCreateTemplate = false;
+        this.canEditTemplate = false;
+        this.pageUrlMapper = null;
+        this.numberContents = 0;
+        this.live = false;
+        this.urlContent = null;
+        this.runningExperiment = null;
+    }
 
     /**
      * Creates an instance of this class based on a builder.
