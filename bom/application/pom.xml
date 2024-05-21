@@ -797,7 +797,7 @@
            <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
-                <version>2.1.8</version>
+                <version>3.5.3</version>
             </dependency>
 
             <dependency>
