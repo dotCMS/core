@@ -9,8 +9,6 @@
     <artifactId>com.dotcms.tika</artifactId>
     <packaging>bundle</packaging>
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.bundle.version>5.1.8</maven.bundle.version>
         <osgi.core.version>8.0.0</osgi.core.version>

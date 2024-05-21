@@ -1,3 +1,5 @@
+echo "@java.module.args@"
+
 export CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF8"
 export CATALINA_OPTS="$CATALINA_OPTS --illegal-access=deny"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/java.lang=ALL-UNNAMED"
