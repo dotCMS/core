@@ -113,7 +113,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private static final int VARIANTS_NUMBER_MAX = 3;
     private static final List<Status> RESULTS_QUERY_VALID_STATUSES = List.of(RUNNING, ENDED);
 
-    final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
+    final ExperimentsFactory factory;
     final ExperimentsCache experimentsCache = CacheLocator.getExperimentsCache();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     final ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -136,15 +136,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @VisibleForTesting
     public ExperimentsAPIImpl(final AnalyticsHelper analyticsHelper) {
+        this(analyticsHelper, FactoryLocator.getExperimentsFactory());
+    }
+
+    @VisibleForTesting
+    public ExperimentsAPIImpl(final AnalyticsHelper analyticsHelper, final ExperimentsFactory experimentsFactory) {
         this.analyticsHelper = analyticsHelper;
 
         APILocator.getLocalSystemEventsAPI().subscribe(ContentletDeletedEvent.class,
                 (EventSubscriber<ContentletDeletedEvent>) event ->
                         checkAndDeleteExperiment(event.getContentlet(), event.getUser()));
+
+        this.factory = experimentsFactory;
     }
 
     public ExperimentsAPIImpl() {
-        this(AnalyticsHelper.get());
+        this(AnalyticsHelper.get(), FactoryLocator.getExperimentsFactory());
     }
 
     @Override
@@ -1655,5 +1662,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     contentlet.getIdentifier());
             throw new DotRuntimeException(message, e);
         }
+    }
+
+    /**
+     * Default implementation for {@link ExperimentsAPI#listActive(Host)} (Host)}
+     *
+     * @param hostIdentifier to Filter the Experiments.
+     *
+     * @return
+     * @throws DotDataException
+     */
+    public final Collection<Experiment> listActive(final String hostIdentifier) throws DotDataException {
+        return factory.listActive(hostIdentifier);
     }
 }
