@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\"Who was the first president of the United States.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "chatcmpl-9Gw6oD0Cr5QTyGKN8Sij8nDw15P12",
+      "object": "chat.completion",
+      "created": 1713823646,
+      "model": "gpt-3.5-turbo-16k-0613",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The first president of the United States was George Washington. He served as president from April 30, 1789, to March 4, 1797. Washington played a critical role in shaping the early presidency and establishing many of the traditions and precedents that would guide the office for generations to come."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 44,
+        "completion_tokens": 242,
+        "total_tokens": 286
+      },
+      "system_fingerprint": null,
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}

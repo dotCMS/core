@@ -71,6 +71,7 @@ public interface ContentletAPI {
 	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
 	 * Only use if you need to do maintenance tasks like search and replace something in every piece 
 	 * of content.  Doesn't respect permissions.
+	 *
 	 * @param offset can be 0 if no offset
 	 * @param limit can be 0 of no limit
 	 * @return List<Contentlet> list of contentlets
@@ -180,6 +181,7 @@ public interface ContentletAPI {
 	/**
 	 * Retrieves a contentlet from the Lucene index + cache first, then falls back
 	 * to the database if not found based on its identifier
+	 *
 	 * @param identifier 
 	 * @param live Retrieves the live version. If false retrieves the working version
 	 * @param languageId languageId The LanguageId of the content version we'd like to retrieve
@@ -318,6 +320,7 @@ public interface ContentletAPI {
 	 * Gets a list of Contentlets from a given parent host, retrieves the working version of content. The difference between this method and the other one
 	 * is that the user can specify which content type want to include and exclude.
 	 * NOTE: If the parameters includingContentTypes and excludingContentTypes are empty if will return all the contentlets.
+	 *
 	 * @param parentHost
 	 * @param includingContentTypes this is a list of content types that you would like to include in the results
 	 * @param excludingContentTypes this is a list of content types that you would like to exclude in the results
@@ -1793,6 +1796,7 @@ public interface ContentletAPI {
 	/**
 	 * Retrieves all versions for a contentlet identifier.
 	 * Note: This method could pull too many versions.
+	 *
 	 * @param identifier - Identifier object that belongs to a contentlet
 	 * @param bringOldVersions - boolean value which determines if old versions (non-live, non-working
 	 * 	should be brought here). @see {@link ContentletAPI#copyContentlet(Contentlet, Host, Folder, User, String, boolean)} method,

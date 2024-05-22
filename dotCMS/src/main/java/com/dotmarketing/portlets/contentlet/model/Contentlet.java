@@ -114,9 +114,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String ARCHIVED_KEY = "archived";
 	public static final String LIVE_KEY = "live";
 	public static final String WORKING_KEY = "working";
+	public static final String CREATION_DATE_KEY = "creationDate";
 	public static final String MOD_DATE_KEY = "modDate";
 	public static final String MOD_USER_KEY = "modUser";
+	public static final String MOD_USER_NAME_KEY = "modUserName";
 	public static final String OWNER_KEY = "owner";
+	public static final String OWNER_NAME_KEY = "ownerName";
+	public static final String PUBLISH_DATE_KEY = "publishDate";
+	public static final String PUBLISH_USER_KEY = "publishUser";
+	public static final String PUBLISH_USER_NAME_KEY = "publishUserName";
 	public static final String HOST_KEY = "host";
 	public static final String FOLDER_KEY = "folder";
 	public static final String SORT_ORDER_KEY = "sortOrder";

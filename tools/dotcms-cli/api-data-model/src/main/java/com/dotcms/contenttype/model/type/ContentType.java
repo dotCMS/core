@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
 import com.dotcms.contenttype.model.workflow.Workflow;
 import com.dotcms.model.views.CommonViews;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -158,6 +159,8 @@ public abstract class ContentType {
     @Nullable
     public abstract List<FieldLayoutRow> layout();
 
+    @JsonAlias("detailPagePath")
+    @JsonProperty("detailPage")
     @Nullable
     public abstract String detailPage();
 
