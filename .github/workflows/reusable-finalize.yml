@@ -8,6 +8,10 @@ on:
       needsData:
         required: true
         type: string
+    outputs:
+      aggregate_status:
+        value: ${{ jobs.prepare-report-data.outputs.aggregate_status }}
+
 jobs:
   prepare-report-data:
     name: Prepare Report Data

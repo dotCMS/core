@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "e7d6d683-f049-4c68-8712-0f2c8513bda8",
+		"_postman_id": "19eae33b-46d1-4607-83d4-d79afe27e8a0",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-e7d6d683-f049-4c68-8712-0f2c8513bda8?action=share&creator=5403727&source=collection_link"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -65,8 +64,6 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
 										"value": "application/json"
 									}
 								],
@@ -357,8 +354,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -572,12 +567,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -1628,8 +1621,7 @@
 						"header": [
 							{
 								"key": "Origin",
-								"value": "{{serverURL}}",
-								"type": "text"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -1782,8 +1774,7 @@
 						"header": [
 							{
 								"key": "Origin",
-								"value": "{{serverURL}}",
-								"type": "text"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -1867,8 +1858,7 @@
 						"header": [
 							{
 								"key": "Origin",
-								"value": "{{serverURL}}",
-								"type": "text"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -1952,8 +1942,7 @@
 						"header": [
 							{
 								"key": "Origin",
-								"value": "{{serverURL}}",
-								"type": "text"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -2050,8 +2039,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -2488,6 +2475,206 @@
 				}
 			],
 			"description": "The Auto-Save feature allows dotCMS to automatically save any changes made to a given Contentlet by the User after X amount of seconds have passed.\n\nThe new Endpoint method created for this: **`/api/v1/_draft`** , works like this:\n\n- If the User is working **on the live version of the current Contentlet** and make changes to it, the draft request will create a working version in order to auto-save any changes.\n- When a second change is made, the draft method will re-use the previously generated Inode and will overwrite it with the new changes.\n- Finally, any incoming changes will keep overwriting the previous working Inode. This way, dotCMS will overwrite one single working Inode instead of creating hundreds if not thousands of \"useless\" records for any change."
+		},
+		{
+			"name": "Checking JSON Attributes",
+			"item": [
+				{
+					"name": "Checking Content Audit Attributes",
+					"item": [
+						{
+							"name": "Creating Test Generic Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test content created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    var contentId = Object.keys(jsonData.entity.results[0]);",
+											"    pm.collectionVariables.set(\"testContentId\", jsonData.entity.results[0][contentId].identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"title\": \"Test Generic Content\",\n            \"contentHost\": \"default\",\n            \"body\": \"This is my Test Generic Content\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Retrieving Test Generic Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Checking that audit properties are present\", function () {",
+											"    var entity = pm.response.json().contentlets[0];",
+											"    ",
+											"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+											"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+											"    pm.expect(entity.ownerName).to.not.equal(undefined, \"The 'ownerName' attribute must be present\");",
+											"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+											"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+											"    pm.expect(entity.modUserName).to.not.equal(undefined, \"The 'modUserName' attribute must be present\");",
+											"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+											"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+											"    pm.expect(entity.publishUserName).to.not.equal(undefined, \"The 'publishUserName' attribute must be present\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/content/id/{{testContentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"content",
+										"id",
+										"{{testContentId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
 		},
 		{
 			"name": "invalidateSession",
@@ -3121,60 +3308,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "contentTypeId",
-			"value": ""
-		},
-		{
-			"key": "fieldId",
-			"value": ""
-		},
-		{
-			"key": "contentTypeName",
-			"value": ""
-		},
-		{
-			"key": "identifier22756",
-			"value": ""
-		},
-		{
-			"key": "fileId",
-			"value": ""
-		},
-		{
-			"key": "fileInode",
-			"value": ""
-		},
-		{
-			"key": "fileName",
-			"value": ""
-		},
-		{
-			"key": "originalTitle",
-			"value": ""
-		},
-		{
-			"key": "contentInode",
-			"value": ""
-		},
-		{
-			"key": "contentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "firstAutoSaveTitle",
-			"value": ""
-		},
-		{
-			"key": "secondAutoSaveTitle",
-			"value": ""
-		},
-		{
-			"key": "thirdAutoSaveTitle",
-			"value": ""
 		}
 	]
 }
