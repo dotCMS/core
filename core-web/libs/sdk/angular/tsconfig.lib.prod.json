@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.lib.json",
+    "compilerOptions": {
+        "declarationMap": true,// changed from false
+        // "paths": {
+        //     "@angular/*": ["../node_modules/@angular/*"]
+        // }
+    },
+    "angularCompilerOptions": {
+        "compilationMode": "partial"
+    }
+}

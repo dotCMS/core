@@ -3,7 +3,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": []
+    "types": [],
+    "paths": {
+      "@angular/*": [ "../node_modules/@angular/*" ]
+    }
   },
   "files": [
     "src/main.ts"
