@@ -807,7 +807,7 @@ public class TemplateResource {
     }
 
     /**
-     * Return live version {@link com.dotmarketing.portlets.templates.model.Template} based on the id
+     * Return the image contentlet of a template (if exists, otherwise return 404)
      *
      * @param httpRequest
      * @param httpResponse

@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 
+/**
+ * TemplateImageForm
+ */
 public class TemplateImageForm implements Serializable {
 
     @JsonProperty("templateId")
