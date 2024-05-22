@@ -43,7 +43,7 @@ public class ExperimentsFactoryImpl implements
     
     private static String ACTIVE_EXPERIMENTS_BY_HOST = "SELECT experiment.* " +
     "FROM experiment INNER JOIN identifier ON experiment.page_id = identifier.id " +
-    "WHERE status <> ? and status <> ? and host_inode = ?";
+    "WHERE status NOT IN (?, ?) and host_inode = ?";
 
     @Override
     public void save(Experiment experiment) throws DotDataException {
