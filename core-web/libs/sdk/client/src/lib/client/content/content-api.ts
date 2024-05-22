@@ -1,15 +1,15 @@
 import { GetCollection } from './methods/get-collection';
 
-import { ClientConfig } from '../sdk-js-client';
-
 export class Content {
-    #clientConfig: ClientConfig;
+    #requestOptions: Omit<RequestInit, 'body' | 'method'>;
+    #serverUrl;
 
-    constructor(clientConfig: ClientConfig) {
-        this.#clientConfig = clientConfig;
+    constructor(requestOptions: Omit<RequestInit, 'body' | 'method'>, serverUrl: string) {
+        this.#requestOptions = requestOptions;
+        this.#serverUrl = serverUrl;
     }
 
     getCollection(contentType: string) {
-        return new GetCollection(this.#clientConfig, contentType);
+        return new GetCollection(this.#requestOptions, this.#serverUrl, contentType);
     }
 }

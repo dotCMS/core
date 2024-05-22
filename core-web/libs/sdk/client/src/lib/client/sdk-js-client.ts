@@ -176,7 +176,7 @@ export class DotCmsClient {
             }
         };
 
-        this.content = new Content(this.config);
+        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
     }
 
     page = {
