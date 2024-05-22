@@ -816,20 +816,21 @@ public class TemplateResource {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @GET
-    @Path("/{templateId}/image")
+    @POST
+    @Path("/image")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Map<String, Object> fetchTemplateImage(@Context final HttpServletRequest  httpRequest,
                                                   @Context final HttpServletResponse httpResponse,
-                                                  @PathParam("templateId") final String templateId) throws DotDataException, DotSecurityException {
+                                                  final TemplateImageForm templateImageForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
         final User user     = initData.getUser();
         final PageMode mode = PageMode.get(httpRequest);
+        final String templateId = templateImageForm.getTemplateId();
 
         Logger.debug(this, ()-> "Getting the image working template by id: " + templateId);
         final Template template = this.templateAPI.findWorkingTemplate(templateId, user, mode.respectAnonPerms);
