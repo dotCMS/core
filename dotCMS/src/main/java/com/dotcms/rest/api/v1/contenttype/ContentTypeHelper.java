@@ -301,7 +301,7 @@ public class ContentTypeHelper implements Serializable {
         ContentType existingContentType = null;
 
         try {
-            if (!StringUtils.isEmpty(contentType.id())) {
+            if (StringUtils.isNotEmpty(contentType.id())) {
                 existingContentType = contentTypeAPI.find(contentType.id());
             }
         } catch (NotFoundInDbException e) {
