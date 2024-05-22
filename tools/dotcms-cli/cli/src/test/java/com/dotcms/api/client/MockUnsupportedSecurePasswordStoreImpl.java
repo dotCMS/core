@@ -1,8 +1,8 @@
 package com.dotcms.api.client;
 
-import io.quarkus.arc.Priority;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Alternative;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 
 /**
  * When running on a non-OSX system, the KeyChain is not always available, so we need to verify if our code can still survive such scenario

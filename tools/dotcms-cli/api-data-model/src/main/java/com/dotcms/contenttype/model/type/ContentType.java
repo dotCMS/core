@@ -28,7 +28,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -53,7 +53,7 @@ import org.immutables.value.Value.Default;
     "pagination"
 })
 @JsonInclude(Include.NON_DEFAULT)
-@Value.Style(passAnnotations = {JsonInclude.class})
+@Value.Style(passAnnotations = {JsonInclude.class}, jakarta = true)
 public abstract class ContentType {
 
     public static final String SYSTEM_HOST = "SYSTEM_HOST";

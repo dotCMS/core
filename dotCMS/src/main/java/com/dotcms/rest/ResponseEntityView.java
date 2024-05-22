@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class encapsulates the {@link javax.ws.rs.core.Response} object to include the expected entity and related
+ * This class encapsulates the {@link jakarta.ws.rs.core.Response} object to include the expected entity and related
  * information such as pagination parameters, errors, i18n messages, etc. for them to be returned as part of the Jersey
  * response
  *

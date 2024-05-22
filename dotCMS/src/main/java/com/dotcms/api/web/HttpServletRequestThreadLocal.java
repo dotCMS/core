@@ -4,7 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 
 /**
- * This thread local service is useful get the {@link javax.servlet.http.HttpServletRequest} set in the current thread execution
+ * This thread local service is useful get the {@link jakarta.servlet.http.HttpServletRequest} set in the current thread execution
  *
  * Note: keep in mind that the scope of the request is just in the current thread, any asynchronous task you raise inside the request main thread
  * won't have access to the request. You have to send explicitly the context to the new thread if you want to share the request.

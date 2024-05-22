@@ -15,14 +15,13 @@
         <osgi.compendium.version>7.0.0</osgi.compendium.version>
         <tika.version>2.8.0</tika.version>
         <skip.rewrite>true</skip.rewrite>
-        <tika.api.version>${project.version}</tika.api.version>
     </properties>
     <dependencies>
 
         <dependency>
             <groupId>com.dotcms.core.plugins</groupId>
             <artifactId>com.dotcms.tika-api</artifactId>
-            <version>${tika.api.version}</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

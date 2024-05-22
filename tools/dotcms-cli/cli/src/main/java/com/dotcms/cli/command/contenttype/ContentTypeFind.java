@@ -9,8 +9,8 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import java.util.List;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 

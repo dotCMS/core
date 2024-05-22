@@ -163,7 +163,7 @@
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
         <surefire.fork.count>1</surefire.fork.count>
-        <immutables.version>2.9.0</immutables.version>
+        <immutables.version>2.10.1</immutables.version>
         <docker.platforms/>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
         <docker.version.tag>${project.version}</docker.version.tag>

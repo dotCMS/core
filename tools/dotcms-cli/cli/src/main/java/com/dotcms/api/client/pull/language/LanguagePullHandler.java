@@ -5,7 +5,7 @@ import com.dotcms.api.client.util.NamingUtils;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
 import java.util.List;
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 
 @Dependent
 public class LanguagePullHandler extends GeneralPullHandler<Language> {

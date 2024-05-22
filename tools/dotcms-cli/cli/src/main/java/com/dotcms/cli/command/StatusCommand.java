@@ -13,8 +13,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 

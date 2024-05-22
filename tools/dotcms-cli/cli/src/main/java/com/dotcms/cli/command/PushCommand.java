@@ -10,9 +10,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 /**

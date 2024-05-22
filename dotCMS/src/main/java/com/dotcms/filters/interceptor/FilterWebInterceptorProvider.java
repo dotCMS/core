@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This provider is in charge of keep the instances of the {@link WebInterceptorDelegate}'s
- * associated to the {@link javax.servlet.Filter}'s
+ * associated to the {@link jakarta.servlet.Filter}'s
  * @author jsanca
  */
 // todo: make this a mbean to monitored the list of interceptor

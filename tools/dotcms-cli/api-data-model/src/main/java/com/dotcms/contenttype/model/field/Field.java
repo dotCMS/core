@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -61,7 +61,7 @@ import org.immutables.value.Value.Default;
         @Type(value = JSONField.class),
 })
 @JsonInclude(Include.NON_DEFAULT)
-@Value.Style(passAnnotations = {JsonInclude.class})
+@Value.Style(passAnnotations = {JsonInclude.class}, jakarta = true)
 public abstract class Field {
 
     @Value.Default

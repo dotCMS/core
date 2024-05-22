@@ -30,7 +30,7 @@ public interface CompanyAPI extends Serializable {
     public Company getCompany(HttpServletRequest req) throws SystemException, PortalException;
 
     /**
-     * Try to get the company id from the from the {@link javax.servlet.http.HttpSession} or {@link HttpServletRequest},
+     * Try to get the company id from the from the {@link jakarta.servlet.http.HttpSession} or {@link HttpServletRequest},
      * {@link com.liferay.portal.util.WebKeys}.COMPANY_ID.
      * @param req {@link HttpServletRequest}
      * @return String

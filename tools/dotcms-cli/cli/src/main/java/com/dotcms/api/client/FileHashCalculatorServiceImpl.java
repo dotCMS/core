@@ -9,14 +9,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 /**
  * This is a service class for calculating file hashes. It is responsible for providing a method to
  * calculate the SHA-256 hash of a given file. This class is marked as
- * {@link javax.enterprise.context.ApplicationScoped}, meaning that a single instance is shared
+ * {@link jakarta.enterprise.context.ApplicationScoped}, meaning that a single instance is shared
  * across the entire application.
  */
 @ApplicationScoped

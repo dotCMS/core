@@ -14,7 +14,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.impl.jose.JWT;
 import java.io.IOException;
 import java.net.URL;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
