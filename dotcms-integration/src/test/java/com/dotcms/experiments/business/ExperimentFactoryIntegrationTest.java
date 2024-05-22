@@ -36,7 +36,18 @@ public class ExperimentFactoryIntegrationTest {
     }
 
     /**
-     * Method to test: {@link ExperimentsFactory#listActive(Host)}
+     * Method to test: {@link ExperimentsFactory#listActive(String)}
+     * When: Create 2 host and for each Host create the follow:
+     * - Create a Page with Draft Experiment on it
+     * - Create a Page with an Ended Experiment on it
+     * - Create a Page with a Running Experiment on it
+     * - Create a Page with an Archived Experiment on it
+     * - Create a Page with a Scheduled Experiment on it
+     *
+     * and then call the method with one on this host
+     *
+     * should: return 3 Experiments, these are the DRAFT, RUNNING and Scheduled Experiment on the host
+     * that was used as parameter
      *
      */
     @Test
@@ -65,7 +76,7 @@ public class ExperimentFactoryIntegrationTest {
      * This method do:
      * - Create a Template and a Page in host
      * - Create a Page in the host and a Draft Experiment on it
-     *  - Create a Page in the host and a Ended Experiment on it
+     *  - Create a Page in the host and an Ended Experiment on it
      * - Create a Page in the host and a Running Experiment on it
      * - Create a Page in the host and an Archived Experiment on it
      * - Create a Page in the host and a Scheduled Experiment on it
