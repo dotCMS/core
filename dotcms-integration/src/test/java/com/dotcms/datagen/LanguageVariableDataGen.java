@@ -16,7 +16,7 @@ public class LanguageVariableDataGen extends ContentletDataGen {
     /**
      * Lazy loaded content type for Language Variables
      */
-    static Lazy<ContentType> langVarContentType = Lazy.of(() -> {
+    public static Lazy<ContentType> langVarContentType = Lazy.of(() -> {
         try {
             return APILocator.getContentTypeAPI(APILocator.systemUser()).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
         } catch (DotDataException | DotSecurityException e) {

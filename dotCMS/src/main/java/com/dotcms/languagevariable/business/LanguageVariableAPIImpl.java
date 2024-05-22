@@ -21,6 +21,7 @@ import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -176,6 +177,25 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
    */
   @CloseDBIfOpened
   @Override
+  public Optional<LanguageVariable> findVariable(final long languageId, final String key) throws DotDataException {
+     final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
+     final ContentType contentType = langVarContentType.get();
+     final LanguageCache languageCache = CacheLocator.getLanguageCache();
+     return languageCache.ifPresentGetOrElseFetch(languageId,  key, ()->{
+         try {
+             return factory.findVariables(contentType, languageId, 0, 0, null);
+         } catch (DotDataException e) {
+             Logger.error(this, "Error finding language variables", e);
+             return List.of();
+         }
+     });
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @CloseDBIfOpened
+  @Override
   public Map<String, List<LanguageVariableExt>> findVariablesGroupedByKey(final int offset, final int limit, final String orderBy) throws DotDataException {
 
     final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
@@ -185,12 +205,24 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
     return variables.stream().collect(Collectors.groupingBy(LanguageVariableExt::key));
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @CloseDBIfOpened
   @Override
-  public int countVariablesByKey() throws DotDataException {
+  public int countVariablesByKey() {
     final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
     final ContentType contentType = langVarContentType.get();
     return factory.countVariablesByKey(contentType);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public int countVariablesByKey(final long languageId) {
+    final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
+    final ContentType contentType = langVarContentType.get();
+    return factory.countVariablesByKey(contentType, languageId);
   }
 
   /**
