@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotcms.publishing.PublishStatus;
@@ -31,10 +32,18 @@ import com.dotmarketing.util.*;
 import io.vavr.Lazy;
 
 public class TimeMachineAPIImpl implements TimeMachineAPI {
+<<<<<<< Updated upstream
     private static final Lazy<String> PRUNE_TIME_MACHINE_SCHEDULE = Lazy.of(() -> Config.getStringProperty(
             "PRUNE_TIME_MACHINE_SCHEDULE", "0 0 0 ? * SUN *"));
     private static final FilenameFilter TIME_MACHINE_FOLDER_FILTER = new TimeMachineFolderFilter();
     public static final String TM_BUNDLE_PREFFIX = "tm_";
+=======
+
+    public static final String TIME_MACHINE_FOLDER_BUNDLE_PREFIX = "tm_";
+    public static final String BUNDLE_FOLDER_BUNDLE_PREFIX = "timeMachineBundle_";
+    private static final FilenameFilter TIME_MACHINE_FOLDER_FILTER = new TimeMachineFolderFilter(TIME_MACHINE_FOLDER_BUNDLE_PREFIX);
+    private static final FilenameFilter BUNDLE_FOLDER_FILTER = new TimeMachineFolderFilter(BUNDLE_FOLDER_BUNDLE_PREFIX);
+>>>>>>> Stashed changes
 
     public static final Lazy<Long> PRUNE_TIMEMACHINE_OLDER_THAN_DAYS = Lazy.of(
             () -> Config.getLongProperty("PRUNE_TIMEMACHINE_OLDER_THAN_DAYS", 90)
@@ -56,7 +65,7 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
                 timeMachineConfig.setUser(APILocator.getUserAPI().getSystemUser());
                 timeMachineConfig.setHosts(hosts);
                 timeMachineConfig.setLanguage(language.getId());
-                timeMachineConfig.setDestinationBundle(TM_BUNDLE_PREFFIX + currentDate.getTime());
+                timeMachineConfig.setDestinationBundle(TIME_MACHINE_FOLDER_BUNDLE_PREFIX + currentDate.getTime());
                 timeMachineConfig.setIncremental(incremental);
                 if(incremental) {
                 	timeMachineConfig.setId("timeMachineBundle_incremental_" + language.getId());
@@ -225,8 +234,13 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
         long now = Instant.now().toEpochMilli();
         final List<File> fileToRemove = new ArrayList<>();
         final File timeMachinePath = new File(ConfigUtils.getTimeMachinePath());
+        final File bundlePath = new File(ConfigUtils.getBundlePath());
 
-        for ( File file : timeMachinePath.listFiles(TIME_MACHINE_FOLDER_FILTER)) {
+        final List<File> files = Stream.concat(Arrays.stream(timeMachinePath.listFiles(TIME_MACHINE_FOLDER_FILTER)),
+                    Arrays.stream(bundlePath.listFiles(BUNDLE_FOLDER_FILTER)))
+                .collect(Collectors.toList());
+
+        for ( File file : files) {
             long lastModifiedDays = TimeUnit.MILLISECONDS.toDays(now - file.lastModified());
 
             if (lastModifiedDays > PRUNE_TIMEMACHINE_OLDER_THAN_DAYS.get()) {
@@ -256,9 +270,15 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 
     private static class TimeMachineFolderFilter implements FilenameFilter {
 
+        private String prefix;
+
+        TimeMachineFolderFilter(final String prefix){
+            this.prefix = prefix;
+        }
+
         @Override
         public boolean accept(File dir, String name) {
-            return dir.isDirectory() && name.startsWith(TM_BUNDLE_PREFFIX);
+            return dir.isDirectory() && name.startsWith(prefix);
         }
     }
 
