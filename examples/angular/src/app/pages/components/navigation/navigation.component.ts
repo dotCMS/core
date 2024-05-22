@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
-import { DotCMSNavigationItem } from '../../../lib/models';
 import { Params, Router, RouterLink } from '@angular/router';
+import { DotCMSNavigationItem } from '@dotcms/angular';
 
 @Component({
   selector: 'app-navigation',

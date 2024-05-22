@@ -1,8 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, ResolveFn } from '@angular/router';
 
-// import { DOTCMS_CLIENT_TOKEN } from '../dotcms-client-token';
-// import { DOTCMS_CLIENT_TOKEN } from '../dotcms-client-token';
+import { DOTCMS_CLIENT_TOKEN } from '../dotcms-client-token';
 import { DotCMSNavigationItem, DotCMSPageAsset } from '../models';
 import { PageContextService } from '../services/dotcms-context/page-context.service';
 
@@ -19,12 +18,7 @@ export const DotCMSPageResolver: ResolveFn<
         nav: DotCMSNavigationItem;
     }>
 > = async (route: ActivatedRouteSnapshot) => {
-    // eslint-disable-next-line no-console
-    console.log('Updated V.');
-    // const client = inject(DOTCMS_CLIENT_TOKEN);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client: any = {};
+    const client = inject(DOTCMS_CLIENT_TOKEN);
     const pageContextService = inject(PageContextService);
 
     const url = route.url.map((segment) => segment.path).join('/');

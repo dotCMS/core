@@ -5,8 +5,9 @@ import {
   Input,
   OnInit,
 } from '@angular/core';
-import { DotCMSContentlet } from '../../../lib/models';
+
 import { RouterLink } from '@angular/router';
+import { DotCMSContentlet } from '@dotcms/angular';
 
 @Component({
   selector: 'app-product',

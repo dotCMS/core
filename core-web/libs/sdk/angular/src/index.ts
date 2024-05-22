@@ -3,4 +3,3 @@ export * from './lib/dotcms-client-token';
 export * from './lib/services/dotcms-context/page-context.service';
 export * from './lib/resolver/dotcms-page.resolver';
 export * from './lib/models';
-export * from './lib/resolver/dotcms.resolver';

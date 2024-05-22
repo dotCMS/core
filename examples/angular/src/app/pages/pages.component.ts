@@ -2,13 +2,15 @@ import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotcmsLayoutComponent } from '../lib/layout/dotcms-layout/dotcms-layout.component';
+
 
 import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { NavigationComponent } from './components/navigation/navigation.component';
 
 import { DYNAMIC_COMPONENTS } from '../utils';
+
+import { DotcmsLayoutComponent } from '@dotcms/angular'
 
 @Component({
   selector: 'dotcms-pages',
