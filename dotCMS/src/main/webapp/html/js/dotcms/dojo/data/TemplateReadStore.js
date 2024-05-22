@@ -95,7 +95,16 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 		} else {
 
 			console.log("keywordArgs:",keywordArgs.query, keywordArgs.queryOptions, keywordArgs.start, keywordArgs.count, keywordArgs.sort)
-			fetch("/api/v1/templates/")
+			let url = "/api/v1/templates/?filter=" + keywordArgs.query.fullTitle.replace('*','') + "&page=" + keywordArgs.start + "&per_page=" + keywordArgs.count +
+				(keywordArgs.sort == undefined || keywordArgs.sort != ""? "": "&orderby=" + keywordArgs.sort);
+
+			if (keywordArgs.query.hostId != undefined && keywordArgs.query.hostId != "") {
+				url += "&host=" + keywordArgs.query.hostId;
+			}
+
+			console.log("url", url);
+
+			fetch(url)
 				.then((fetchResp) => fetchResp.json())
 				.then(responseEntity => {
 
