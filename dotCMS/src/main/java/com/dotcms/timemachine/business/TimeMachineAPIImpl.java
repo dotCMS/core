@@ -26,24 +26,15 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
-import com.dotmarketing.quartz.job.PruneTimeMachineBackupJob;
 import com.dotmarketing.quartz.job.TimeMachineJob;
 import com.dotmarketing.util.*;
 import io.vavr.Lazy;
 
 public class TimeMachineAPIImpl implements TimeMachineAPI {
-<<<<<<< Updated upstream
-    private static final Lazy<String> PRUNE_TIME_MACHINE_SCHEDULE = Lazy.of(() -> Config.getStringProperty(
-            "PRUNE_TIME_MACHINE_SCHEDULE", "0 0 0 ? * SUN *"));
-    private static final FilenameFilter TIME_MACHINE_FOLDER_FILTER = new TimeMachineFolderFilter();
-    public static final String TM_BUNDLE_PREFFIX = "tm_";
-=======
-
     public static final String TIME_MACHINE_FOLDER_BUNDLE_PREFIX = "tm_";
     public static final String BUNDLE_FOLDER_BUNDLE_PREFIX = "timeMachineBundle_";
     private static final FilenameFilter TIME_MACHINE_FOLDER_FILTER = new TimeMachineFolderFilter(TIME_MACHINE_FOLDER_BUNDLE_PREFIX);
     private static final FilenameFilter BUNDLE_FOLDER_FILTER = new TimeMachineFolderFilter(BUNDLE_FOLDER_BUNDLE_PREFIX);
->>>>>>> Stashed changes
 
     public static final Lazy<Long> PRUNE_TIMEMACHINE_OLDER_THAN_DAYS = Lazy.of(
             () -> Config.getLongProperty("PRUNE_TIMEMACHINE_OLDER_THAN_DAYS", 90)
@@ -68,9 +59,9 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
                 timeMachineConfig.setDestinationBundle(TIME_MACHINE_FOLDER_BUNDLE_PREFIX + currentDate.getTime());
                 timeMachineConfig.setIncremental(incremental);
                 if(incremental) {
-                	timeMachineConfig.setId("timeMachineBundle_incremental_" + language.getId());
+                	timeMachineConfig.setId(BUNDLE_FOLDER_BUNDLE_PREFIX + "incremental_" + language.getId());
                 } else {
-                	timeMachineConfig.setId("timeMachineBundle_" +currentDate.getTime() + "_" + language.getId());
+                	timeMachineConfig.setId(BUNDLE_FOLDER_BUNDLE_PREFIX + currentDate.getTime() + "_" + language.getId());
                 }
 
                 publishStatusList.add(APILocator.getPublisherAPI().publish(timeMachineConfig));

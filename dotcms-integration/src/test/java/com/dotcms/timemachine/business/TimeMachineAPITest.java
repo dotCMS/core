@@ -26,11 +26,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.Calendar;
 import java.util.stream.Collectors;
-<<<<<<< Updated upstream
-=======
+
 import java.util.stream.Stream;
 
->>>>>>> Stashed changes
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
