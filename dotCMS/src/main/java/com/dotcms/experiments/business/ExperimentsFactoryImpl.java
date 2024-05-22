@@ -41,7 +41,7 @@ public class ExperimentsFactoryImpl implements
 
     public static final String STATUS_FILTER = "SELECT * from experiment WHERE status = ?";
     
-    private static String ACTIVE_EXPERIMENTS_BY_HOST = "SELECT experiment.* " +
+    private static final String ACTIVE_EXPERIMENTS_BY_HOST = "SELECT experiment.* " +
     "FROM experiment INNER JOIN identifier ON experiment.page_id = identifier.id " +
     "WHERE status NOT IN (?, ?) and host_inode = ?";
 

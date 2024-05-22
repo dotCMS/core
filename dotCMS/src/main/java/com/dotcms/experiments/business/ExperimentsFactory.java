@@ -1,7 +1,6 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.Experiment;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 
 import java.util.Collection;
