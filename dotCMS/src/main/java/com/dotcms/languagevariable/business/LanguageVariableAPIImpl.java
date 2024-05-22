@@ -205,12 +205,24 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
     return variables.stream().collect(Collectors.groupingBy(LanguageVariableExt::key));
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @CloseDBIfOpened
   @Override
-  public int countVariablesByKey() throws DotDataException {
+  public int countVariablesByKey() {
     final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
     final ContentType contentType = langVarContentType.get();
     return factory.countVariablesByKey(contentType);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public int countVariablesByKey(final long languageId) {
+    final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
+    final ContentType contentType = langVarContentType.get();
+    return factory.countVariablesByKey(contentType, languageId);
   }
 
   /**
