@@ -357,6 +357,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.db.HibernateUtilTest.class,
         com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
         FocalPointAPITest.class,
+        PushedAssetUtilTest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
         com.dotcms.osgi.OSGIUtilTest.class,
         com.dotmarketing.fixTasks.FixTask00085FixEmptyParentPathOnIdentifierTest.class,
@@ -583,8 +584,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
         Task230701AddHashIndicesToWorkflowTablesTest.class,
         Task231109AddPublishDateToContentletVersionInfoTest.class,
-        Task240102AlterVarcharLengthOfRelationTypeTest.class,
-        PushedAssetUtilTest.class
+        Task240102AlterVarcharLengthOfRelationTypeTest.class
 
 })
 public class MainSuite {
