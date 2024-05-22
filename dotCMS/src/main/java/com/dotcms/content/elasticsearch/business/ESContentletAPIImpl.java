@@ -8034,7 +8034,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 final ContentletRelationships cr = getAllRelationships(contentlet);
                 final List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();
                 for (final ContentletRelationshipRecords crr : rr) {
-                    rels.put(crr.getRelationship(), crr.getRecords());
+                    if (crr.getRelationship().getCardinality() != RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()
+                            && crr.getRelationship().getCardinality() != RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()) {
+                        rels.put(crr.getRelationship(), crr.getRecords());
+                    }
                 }
             }
 

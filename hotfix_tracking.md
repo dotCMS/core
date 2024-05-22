@@ -244,3 +244,4 @@ This maintenance release includes the following code fixes:
 190. https://github.com/dotCMS/core/issues/27928 : Investigate why endpoint_ids in the table publishing_pushed_assets are null #27928
 191. https://github.com/dotCMS/core/issues/26660 : Fix Menu label if we are missing the translation key #26660
 192. https://github.com/dotCMS/core/issues/27531 : Google Maps does not work on the rules page #27531
+193. https://github.com/dotCMS/core/issues/26283 : Relationship throwing error when the child content is a copy of original child content #26283
