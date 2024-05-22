@@ -170,8 +170,6 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
     /**
      * Start the {@link TimeMachineJob}, if it is already running the restart it with the new values.
      *
-     * Also Start the {@link PruneTimeMachineBackupJob} is it is not running already
-     *
      * @param cronExp
      * @param hosts
      * @param allhost
@@ -202,27 +200,6 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
             throw new RuntimeException(ex);
         }
 
-        runPruneTimeMachineJo();
-    }
-
-    /**
-     * Start the PruneTimeMachineBackupJob. If it's already running, restart it.
-     * By default, the Job's Cron Expression is set to '0 0 0 ? * SUN *', which means every Sunday at midnight.
-     * However, you can override this default by using the config property PRUNE_TIMEMACHINE_SCHEDULE.
-     */
-    private void runPruneTimeMachineJo() {
-        Map<String,Object> config = new HashMap<>();
-        config.put("JOB_NAME", "prune-timemachine");
-
-        ScheduledTask task = new CronScheduledTask("prune-timemachine", "timemachine",
-                "Time Machine Prune Job", PruneTimeMachineBackupJob.class.getName(), new Date(),
-                null, 1, config, PRUNE_TIME_MACHINE_SCHEDULE.get());
-
-        try {
-            QuartzUtils.scheduleTask(task);
-        } catch (Exception ex) {
-            throw new DotRuntimeException(ex);
-        }
     }
 
     private class TimeMachineFileNameFilter implements FilenameFilter{
