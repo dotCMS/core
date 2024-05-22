@@ -12,8 +12,8 @@ import jakarta.ws.rs.NotAllowedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import org.jboss.resteasy.specimpl.BuiltResponse;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -41,7 +41,7 @@ class ExceptionHandlerTest {
      * Expected Results: whatever noisy message that comes in must make it back clean
      */
     @Test
-    @Ignore("Fix tests for Quarkus upgrade class cast BuiltResponse not returned ResponseImpl is")
+    @Disabled("Fix tests for Quarkus upgrade class cast BuiltResponse not returned ResponseImpl is")
     void Test_Handle_WebApplication_Exception() {
 
         NotFoundException noise = new NotFoundException("No pineapple Flavor today");
