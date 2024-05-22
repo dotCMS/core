@@ -1,3 +1,5 @@
+import { Content } from './content/content-api';
+
 export interface ClientConfig {
     /**
      * The URL of the dotCMS instance.
@@ -147,6 +149,8 @@ export class DotCmsClient {
     private config: ClientConfig;
     private requestOptions!: Omit<RequestInit, 'body' | 'method'>;
 
+    content: Content;
+
     constructor(
         config: ClientConfig = { dotcmsUrl: '', authToken: '', requestOptions: {}, siteId: '' }
     ) {
@@ -171,6 +175,8 @@ export class DotCmsClient {
                 ...this.config.requestOptions?.headers
             }
         };
+
+        this.content = new Content(this.config);
     }
 
     page = {
