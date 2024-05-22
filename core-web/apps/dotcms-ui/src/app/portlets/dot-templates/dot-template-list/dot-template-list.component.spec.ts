@@ -17,8 +17,6 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
@@ -51,7 +49,12 @@ import {
     DotMessageType,
     DotTemplate
 } from '@dotcms/dotcms-models';
-import { DotAddToBundleComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -468,7 +471,7 @@ describe('DotTemplateListComponent', () => {
                 MenuModule,
                 ButtonModule,
                 DotActionButtonModule,
-                DotActionMenuButtonModule,
+                DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
                 HttpClientTestingModule,
                 DynamicDialogModule,

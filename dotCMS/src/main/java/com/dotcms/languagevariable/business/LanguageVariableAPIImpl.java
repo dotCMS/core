@@ -21,6 +21,7 @@ import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -169,6 +170,25 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
           final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
           return factory.findVariables(contentType, langId, 0, 0, null);
       });
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @CloseDBIfOpened
+  @Override
+  public Optional<LanguageVariable> findVariable(final long languageId, final String key) throws DotDataException {
+     final LanguageVariableFactory factory = FactoryLocator.getLanguageVariableFactory();
+     final ContentType contentType = langVarContentType.get();
+     final LanguageCache languageCache = CacheLocator.getLanguageCache();
+     return languageCache.ifPresentGetOrElseFetch(languageId,  key, ()->{
+         try {
+             return factory.findVariables(contentType, languageId, 0, 0, null);
+         } catch (DotDataException e) {
+             Logger.error(this, "Error finding language variables", e);
+             return List.of();
+         }
+     });
   }
 
   /**

@@ -35,6 +35,9 @@ jobs:
     runs-on: ubuntu-20.04
     if: always()
     steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
       - name: Initialize
         id: initialize
         shell: bash

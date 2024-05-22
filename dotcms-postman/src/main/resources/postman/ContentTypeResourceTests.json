@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "70322b50-a863-439a-9adf-be90d8f25542",
+		"_postman_id": "91637fff-2bb0-4cb0-ab54-86bf1df33613",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "31066048"
 	},
 	"item": [
 		{
@@ -67,8 +67,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -438,8 +436,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -1235,8 +1231,6 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
 										"value": "application/json"
 									}
 								],
@@ -1317,8 +1311,6 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
 										"value": "application/json"
 									}
 								],
@@ -1404,8 +1396,6 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
 										"value": "application/json"
 									}
 								],
@@ -2967,12 +2957,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -4092,8 +4080,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -4853,6 +4839,2286 @@
 				}
 			],
 			"description": "These requests allow you to verify that dotCMS can retrieve a filtered paginated list of Content Types from a specific list of Sites only, and not from the whole repository. You can use both the Site's Identifier, or its Key -- aka, Site Name.\n\nThis suite is testing both the existing per-Site Endpoint -- flagged with **`(Legacy)`** -- and the new multi-site parameter."
+		},
+		{
+			"name": "Test detail page",
+			"item": [
+				{
+					"name": "Test update detail page with id and URI",
+					"item": [
+						{
+							"name": "Create Test Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing page data for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"pageDetailSiteId\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"pageDetailSiteName\", jsonData.entity.siteName);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"page.detail.host.com.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create test Page1",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing page id and path for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"pageDetailPageId1\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"pageDetailPageInode1\", jsonData.entity.inode);",
+											"    pm.collectionVariables.set(\"pageDetailPageURL1\", jsonData.entity.url);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"Page1 {{$timestamp}}\",\n        \"url\": \"page1-{{$timestamp}}\",\n        \"friendlyName\":\"page1-{{$timestamp}}\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"{{pageDetailSiteId}}\"\n\t}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create test Page2",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing page id and path for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"pageDetailPageId2\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"pageDetailPageInode2\", jsonData.entity.inode);",
+											"    pm.collectionVariables.set(\"pageDetailPageURL2\", jsonData.entity.url);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"Pag2 {{$timestamp}}\",\n        \"url\": \"page2-{{$timestamp}}\",\n        \"friendlyName\":\"page2-{{$timestamp}}\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"{{pageDetailSiteId}}\"\n\t}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create ContentType with page detail id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"",
+											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId1\");",
+											"    var siteName = pm.collectionVariables.get(\"pageDetailSiteName\");",
+											"    var pageURL = pm.collectionVariables.get(\"pageDetailPageURL1\");",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity[0].detailPage).to.eql(pageId);",
+											"    pm.expect(jsonData.entity[0].detailPagePath).to.eql(\"//\"+siteName+pageURL);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"sortOrder\": 3,\n    \"detailPage\": \"{{pageDetailPageId1}}\",\n    \"urlMapPattern\" : \"/{name}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"",
+											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId1\");",
+											"    var siteName = pm.collectionVariables.get(\"pageDetailSiteName\");",
+											"    var pageURL = pm.collectionVariables.get(\"pageDetailPageURL1\");",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.detailPage).to.eql(pageId);",
+											"    pm.expect(jsonData.entity.detailPagePath).to.eql(\"//\"+siteName+pageURL);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Content Type with page detail with URI",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"",
+											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId2\");",
+											"    var siteName = pm.collectionVariables.get(\"pageDetailSiteName\");",
+											"    var pageURL = pm.collectionVariables.get(\"pageDetailPageURL2\");",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.detailPage).to.eql(pageId);",
+											"    pm.expect(jsonData.entity.detailPagePath).to.eql(\"//\"+siteName+pageURL);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"sortOrder\": 3,\n    \"detailPage\": \"//{{pageDetailSiteName}}{{pageDetailPageURL2}}\",\n    \"urlMapPattern\" : \"/{name}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"",
+											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId2\");",
+											"    var siteName = pm.collectionVariables.get(\"pageDetailSiteName\");",
+											"    var pageURL = pm.collectionVariables.get(\"pageDetailPageURL2\");",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.detailPage).to.eql(pageId);",
+											"    pm.expect(jsonData.entity.detailPagePath).to.eql(\"//\"+siteName+pageURL);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Content Type with page detail id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"",
+											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId1\");",
+											"    var siteName = pm.collectionVariables.get(\"pageDetailSiteName\");",
+											"    var pageURL = pm.collectionVariables.get(\"pageDetailPageURL1\");",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.detailPage).to.eql(pageId);",
+											"    pm.expect(jsonData.entity.detailPagePath).to.eql(\"//\"+siteName+pageURL);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"sortOrder\": 3,\n    \"detailPage\": \"{{pageDetailPageId1}}\",\n    \"urlMapPattern\" : \"/{name}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"",
+											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId1\");",
+											"    var siteName = pm.collectionVariables.get(\"pageDetailSiteName\");",
+											"    var pageURL = pm.collectionVariables.get(\"pageDetailPageURL1\");",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.detailPage).to.eql(pageId);",
+											"    pm.expect(jsonData.entity.detailPagePath).to.eql(\"//\"+siteName+pageURL);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Content Type with page detail with URI Again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"",
+											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId2\");",
+											"    var siteName = pm.collectionVariables.get(\"pageDetailSiteName\");",
+											"    var pageURL = pm.collectionVariables.get(\"pageDetailPageURL2\");",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.detailPage).to.eql(pageId);",
+											"    pm.expect(jsonData.entity.detailPagePath).to.eql(\"//\"+siteName+pageURL);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"sortOrder\": 3,\n    \"detailPage\": \"//{{pageDetailSiteName}}{{pageDetailPageURL2}}\",\n    \"urlMapPattern\" : \"/{name}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"",
+											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId2\");",
+											"    var siteName = pm.collectionVariables.get(\"pageDetailSiteName\");",
+											"    var pageURL = pm.collectionVariables.get(\"pageDetailPageURL2\");",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.detailPage).to.eql(pageId);",
+											"    pm.expect(jsonData.entity.detailPagePath).to.eql(\"//\"+siteName+pageURL);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Content Type removing page detail",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).not.have.property('detailPage');",
+											"    pm.expect(jsonData).not.have.property('detailPagePath');",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"sortOrder\": 3,\n    \"urlMapPattern\" : \"/{name}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).not.have.property('detailPage');",
+											"    pm.expect(jsonData).not.have.property('detailPagePath');",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+							},
+							"response": []
+						},
+						{
+							"name": "Archive Test Page1",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test page archived successfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"No errors must be present\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "{{serverURL}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/ARCHIVE?inode={{pageDetailPageInode1}}&identifier={{pageDetailPageId1}}&indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"ARCHIVE"
+									],
+									"query": [
+										{
+											"key": "inode",
+											"value": "{{pageDetailPageInode1}}"
+										},
+										{
+											"key": "identifier",
+											"value": "{{pageDetailPageId1}}"
+										},
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Archive Test Page2",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test page archived successfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"No errors must be present\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "{{serverURL}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/ARCHIVE?inode={{pageDetailPageInode2}}&identifier={{pageDetailPageId2}}&indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"ARCHIVE"
+									],
+									"query": [
+										{
+											"key": "inode",
+											"value": "{{pageDetailPageInode2}}"
+										},
+										{
+											"key": "identifier",
+											"value": "{{pageDetailPageId2}}"
+										},
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Test Page1",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test page deleted successfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"No errors must be present\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "{{serverURL}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DELETE?inode={{pageDetailPageInode1}}&identifier={{pageDetailPageId1}}&indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"DELETE"
+									],
+									"query": [
+										{
+											"key": "inode",
+											"value": "{{pageDetailPageInode1}}"
+										},
+										{
+											"key": "identifier",
+											"value": "{{pageDetailPageId1}}"
+										},
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Test Page2",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test page deleted successfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"No errors must be present\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "{{serverURL}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DELETE?inode={{pageDetailPageInode2}}&identifier={{pageDetailPageId2}}&indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"DELETE"
+									],
+									"query": [
+										{
+											"key": "inode",
+											"value": "{{pageDetailPageInode2}}"
+										},
+										{
+											"key": "identifier",
+											"value": "{{pageDetailPageId2}}"
+										},
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+							},
+							"response": []
+						},
+						{
+							"name": "Archive Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{pageDetailSiteId}}/_archive",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{pageDetailSiteId}}",
+										"_archive"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{pageDetailSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{pageDetailSiteId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "The `detailPage` attributte supports id and URI for updates, these tests validate both cases are working as expected."
+				},
+				{
+					"name": "Test create content type with detailPage as URI",
+					"item": [
+						{
+							"name": "Create Test Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing page data for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"pageDetailSiteId\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"pageDetailSiteName\", jsonData.entity.siteName);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"page.detail.host.com.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create test Page",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing page id and path for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"pageDetailPageId1\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"pageDetailPageInode1\", jsonData.entity.inode);",
+											"    pm.collectionVariables.set(\"pageDetailPageURL1\", jsonData.entity.url);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"Page1 {{$timestamp}}\",\n        \"url\": \"page1-{{$timestamp}}\",\n        \"friendlyName\":\"page1-{{$timestamp}}\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"{{pageDetailSiteId}}\"\n\t}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create ContentType with page detail as URI",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing content type id\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"",
+											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId1\");",
+											"    var siteName = pm.collectionVariables.get(\"pageDetailSiteName\");",
+											"    var pageURL = pm.collectionVariables.get(\"pageDetailPageURL1\");",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity[0].detailPage).to.eql(pageId);",
+											"    pm.expect(jsonData.entity[0].detailPagePath).to.eql(\"//\"+siteName+pageURL);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"sortOrder\": 3,\n    \"detailPage\": \"//{{pageDetailSiteName}}{{pageDetailPageURL1}}\",\n    \"urlMapPattern\" : \"/{name}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"",
+											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId1\");",
+											"    var siteName = pm.collectionVariables.get(\"pageDetailSiteName\");",
+											"    var pageURL = pm.collectionVariables.get(\"pageDetailPageURL1\");",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.detailPage).to.eql(pageId);",
+											"    pm.expect(jsonData.entity.detailPagePath).to.eql(\"//\"+siteName+pageURL);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Content Type removing page detail",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).not.have.property('detailPage');",
+											"    pm.expect(jsonData).not.have.property('detailPagePath');",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"sortOrder\": 3,\n    \"urlMapPattern\" : \"/{name}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Check detail page\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).not.have.property('detailPage');",
+											"    pm.expect(jsonData).not.have.property('detailPagePath');",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+							},
+							"response": []
+						},
+						{
+							"name": "Archive Test Page",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test page archived successfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"No errors must be present\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "{{serverURL}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/ARCHIVE?inode={{pageDetailPageInode1}}&identifier={{pageDetailPageId1}}&indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"ARCHIVE"
+									],
+									"query": [
+										{
+											"key": "inode",
+											"value": "{{pageDetailPageInode1}}"
+										},
+										{
+											"key": "identifier",
+											"value": "{{pageDetailPageId1}}"
+										},
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Test Page",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test page deleted successfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"No errors must be present\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "{{serverURL}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DELETE?inode={{pageDetailPageInode1}}&identifier={{pageDetailPageId1}}&indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"DELETE"
+									],
+									"query": [
+										{
+											"key": "inode",
+											"value": "{{pageDetailPageInode1}}"
+										},
+										{
+											"key": "identifier",
+											"value": "{{pageDetailPageId1}}"
+										},
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								},
+								"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+							},
+							"response": []
+						},
+						{
+							"name": "Archive Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{pageDetailSiteId}}/_archive",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{pageDetailSiteId}}",
+										"_archive"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/{{pageDetailSiteId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"{{pageDetailSiteId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "The `detailPage` attributte supports id and URI for updates, these tests validate both cases are working as expected."
+				}
+			]
 		}
 	],
 	"event": [
@@ -4910,6 +7176,84 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "testDetailPagePageId1",
+			"value": ""
+		},
+		{
+			"key": "testDetailPagePageURL1",
+			"value": ""
+		},
+		{
+			"key": "testDetailPagePageId2",
+			"value": ""
+		},
+		{
+			"key": "testDetailPagePageURL2",
+			"value": ""
+		},
+		{
+			"key": "testDetailPagePageInode1",
+			"value": ""
+		},
+		{
+			"key": "testDetailPagePageInode2",
+			"value": ""
+		},
+		{
+			"key": "contentTypeID",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVAR",
+			"value": ""
+		},
+		{
+			"key": "contentTypeFieldID",
+			"value": ""
+		},
+		{
+			"key": "pageDetailSiteId",
+			"value": ""
+		},
+		{
+			"key": "pageDetailSiteName",
+			"value": ""
+		},
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "pageDetailPageId1",
+			"value": ""
+		},
+		{
+			"key": "pageDetailPageInode1",
+			"value": ""
+		},
+		{
+			"key": "pageDetailPageURL1",
+			"value": ""
+		},
+		{
+			"key": "pageDetailPageId2",
+			"value": ""
+		},
+		{
+			"key": "pageDetailPageInode2",
+			"value": ""
+		},
+		{
+			"key": "pageDetailPageURL2",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVariable",
+			"value": ""
 		}
 	]
 }
