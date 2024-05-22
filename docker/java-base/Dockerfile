@@ -1,26 +1,28 @@
 # ----------------------------------------------
-# Stage 1:  Minimal java image with sdkman + Ubuntu LTS
+# Stage 1: Minimal java image with sdkman + Ubuntu LTS
 # ----------------------------------------------
 FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu as base-builder
 
 WORKDIR /srv
 
-# Defining default Java, can be any java provided by sdkman
-ARG JAVA_VERSION="11.0.17-amzn"
-
+# Environment variables for Java and Debian frontend
 ENV JAVA_OUTPUT_DIR="/java"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="$PATH:/java/bin"
 
-# Installing basic packages 
-RUN apt update && \
-    apt upgrade -y && \
-    apt install -y --no-install-recommends zip unzip wget libtcnative-1 tzdata tini ca-certificates openssl libapr1 libpq-dev
+# Installing basic packages with security in mind
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    zip unzip wget libtcnative-1 tzdata tini ca-certificates openssl libapr1 libpq-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install curl
-RUN wget -O - https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` | install /dev/stdin /usr/bin/curl && \
-    chmod a+x /usr/bin/curl 
+# Install curl securely
+RUN wget -qO /usr/bin/curl https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` && \
+    chmod a+x /usr/bin/curl
 
+# Create a minimized Java runtime image
 RUN jlink \
     --verbose \
     --add-modules \
@@ -28,27 +30,30 @@ RUN jlink \
     --compress 2 \
     --no-header-files \
     --no-man-pages \
-    --output "$JAVA_OUTPUT_DIR" 
+    --output "$JAVA_OUTPUT_DIR"
 
-# install postgres clients, for pg_dump
+# Install PostgreSQL client and clean up
 ARG PG_BUILD_PACKAGES="postgresql-common gnupg"
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends $PG_BUILD_PACKAGES && \
+    /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
+    apt-get install -y postgresql-client-16 && \
+    apt-get purge -y $PG_BUILD_PACKAGES && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt install -y --no-install-recommends $PG_BUILD_PACKAGES \
-  && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
-  && apt install -y postgresql-client-16 \
-  && apt purge -y $PG_BUILD_PACKAGES
-
+# Ensure pg_dump is installed correctly
 RUN /usr/bin/pg_dump --version || exit 1
 
-# Cleanup
-RUN rm -rf /root/.sdkman && \
-    apt purge -y zip unzip wget msopenjdk-11 packages-microsoft-prod fontconfig-config && \
-    apt autoremove -y && \
-    apt clean && \
+# Cleanup unnecessary packages
+RUN apt-get purge -y zip unzip wget fontconfig-config && \
+    apt-get autoremove -y && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # ----------------------------------------------
-# Stage 2:  Flatten everything to 1 layer
+# Stage 2: Flatten everything to 1 layer
 # ----------------------------------------------
 FROM scratch
 COPY --from=base-builder / /
