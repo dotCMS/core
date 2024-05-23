@@ -1,11 +1,11 @@
 import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
 import { Equals } from '../../../../query-builder/utils/lucene-syntax/Equals';
 import { CONTENT_API_URL, CONTENT_TYPE_MAIN_FIELDS } from '../../const';
-import { OrderByMap } from '../../types';
+import { GetCollectionResponse, SortByArray } from '../../types';
 
 export class GetCollection {
     private _render = false;
-    private _sortBy?: OrderByMap;
+    private _sortBy?: SortByArray;
     private _limit = 10;
     private _page = 1;
     private _depth = 0;
@@ -17,9 +17,7 @@ export class GetCollection {
     private serverUrl: string;
 
     private get sort() {
-        const keys = Object.keys(this._sortBy ?? {});
-
-        return keys.map((key) => `${key} ${this._sortBy?.[key]}`).join(',');
+        return this._sortBy?.map((sort) => `${sort.field} ${sort.order}`).join(',');
     }
 
     private get offset() {
@@ -59,7 +57,7 @@ export class GetCollection {
         return this;
     }
 
-    sortBy(sortBy: OrderByMap): this {
+    sortBy(sortBy: SortByArray): this {
         this._sortBy = sortBy;
 
         return this;
@@ -101,7 +99,7 @@ export class GetCollection {
         return this;
     }
 
-    fetch(): Promise<unknown> {
+    async fetch(): Promise<GetCollectionResponse> {
         const query = this.currentQuery.build().replace(/\+([^+:]*?):/g, (match, field) => {
             return !CONTENT_TYPE_MAIN_FIELDS.includes(field) // Fields that are not contentType fields
                 ? `+${this._contentType}.${field}:` // Should have this fromat: +contentType.field:
@@ -126,9 +124,19 @@ export class GetCollection {
                 //allCategoriesInfo: This exist but we currently don't use it
             })
         }).then(
-            (response) => {
+            async (response) => {
                 if (response.ok) {
-                    return response.json();
+                    return response.json().then((data) => {
+                        const contentlets = data.entity.jsonObjectView.contentlets;
+
+                        return {
+                            contentlets,
+                            page: this._page,
+                            size: contentlets.length,
+                            total: 'Not yet implemented',
+                            sortedBy: this._sortBy
+                        };
+                    });
                 } else return response.json();
             },
 
