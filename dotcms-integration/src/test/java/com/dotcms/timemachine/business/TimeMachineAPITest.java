@@ -10,17 +10,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.quartz.CronScheduledTask;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.ScheduledTask;
-import com.dotmarketing.quartz.job.PruneTimeMachineBackupJob;
-import com.dotmarketing.quartz.job.TimeMachineJob;
+
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
+
 import com.dotmarketing.util.FileUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.quartz.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -30,7 +25,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
