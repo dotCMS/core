@@ -30,6 +30,7 @@ jobs:
     if: always()
     env:
       SOURCE_REPOSITORY: ${{ github.repository }}
+    continue-on-error: true
     steps:
       - name: Resolve User
         id: resolve-user
@@ -55,22 +56,22 @@ jobs:
           githack_core_repo_url=https://${githack_host}/${{ env.SOURCE_REPOSITORY }}
           
           branch=/${{ github.head_ref }}
-          [[ "${branch}" == '/master' ]] && branch=
-          
-          slack_mappings_file=.github/data/slack-mappings.json
-          slack_mapping_url=${githack_core_repo_url}${branch}/${slack_mappings_file}
+          slack_mappings_file=slack-mappings.json
+          slack_mappings_path=.github/data/${slack_mappings_file}
+          slack_mapping_url=${githack_core_repo_url}${branch}/${slack_mappings_path}
           
           if [[ -n "${github_user}" ]]; then
-            if [[ -f ${slack_mappings_file} ]]; then
-              json=$(curl -s ${slack_mapping_url})
-            
-              channel_id=$( \
-                jq '.[] | select(.github_user == "${github_user}")' <<< "${json}" | \
-                jq -r '.slack_id' \
-              )
-            fi
+            json=$(curl -s ${slack_mapping_url})
+          
+            channel_id=$( \
+              jq ".[] | select(.github_user == \"${github_user}\")" <<< "${json}" | \
+              jq -r '.slack_id' \
+            )
+        
+            echo "Resolved channel id [${channel_id}] from [${slack_mappings_file}]"
           
             if [[ -z "${channel_id}" ]]; then
+              echo "Channel id could not be resolved from [${slack_mappings_file}]. Attempting to resolve from Github user email."
               user_email=$( \
                 curl \
                   -u ${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }} \
@@ -81,6 +82,7 @@ jobs:
                 sed "s/\"email\"://g" | \
                 tr -d '",[:space:]' \
               )
+              echo "Resolved user email: [${user_email}]"
             
               if [[ -n "${user_email}" ]]; then
                 channel_id=$( \
@@ -95,11 +97,15 @@ jobs:
                   sed "s/\"id\"://g" | \
                   tr -d '",[:space:]' \
                 )
+          
+                echo "Resolved channel id [${channel_id}] from email [${user_email}]"
               fi
             fi
           fi
             
-          [[ -z "${channel_id}" ]] && channel_id=${{ env.DEFAULT_CHANNEL_ID }}
+          [[ -z "${channel_id}" ]] \
+            && echo "Channel id could not be resolved, defaulting to eng's [${{ env.DEFAULT_CHANNEL_ID }}]" \
+            && channel_id=${{ env.DEFAULT_CHANNEL_ID }}
           echo "channel_id=${channel_id}" >> $GITHUB_OUTPUT
           echo "channel_id=${channel_id}"
 
