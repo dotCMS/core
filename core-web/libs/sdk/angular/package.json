@@ -3,12 +3,11 @@
     "version": "0.0.1-alpha.14",
     "peerDependencies": {
         "@angular/common": "^17.1.0",
-        "@angular/core": "^17.1.0",
-        
-        "@angular/router": "^17.1.0"
+        "@angular/core": "^17.1.0", 
+        "@angular/router": "^17.1.0",
+    "@dotcms/client": "0.0.1-alpha.14",
+    "rxjs": "~6.6.3"
     },
-    "dependencies": {
-        "tslib": "^2.3.0"
-    },
+    "dependencies": {},
     "sideEffects": false
 }

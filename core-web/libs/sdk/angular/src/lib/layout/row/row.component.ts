@@ -14,5 +14,5 @@ import { ColumnComponent } from '../column/column.component';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RowComponent {
-    @Input() row!: DotPageAssetLayoutRow;
+    @Input({ required: true }) row!: DotPageAssetLayoutRow;
 }

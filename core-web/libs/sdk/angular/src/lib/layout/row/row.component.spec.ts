@@ -1,22 +1,28 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 
 import { RowComponent } from './row.component';
 
+import { DotPageAssetLayoutRow } from '../../models';
+import { EntityMock } from '../../utils/testing.utils';
+import { ColumnComponent } from '../column/column.component';
+
 describe('RowComponent', () => {
-    let component: RowComponent;
-    let fixture: ComponentFixture<RowComponent>;
-
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [RowComponent]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(RowComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    let spectator: Spectator<RowComponent>;
+    const createComponent = createComponentFactory({
+        component: RowComponent,
+        imports: [MockComponent(ColumnComponent)]
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                row: EntityMock.layout.body.rows[1] as DotPageAssetLayoutRow
+            }
+        });
+    });
+
+    it('should render two columns', () => {
+        expect(spectator.queryAll(ColumnComponent)?.length).toBe(4);
     });
 });

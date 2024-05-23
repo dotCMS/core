@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, ResolveFn } from '@angular/router';
+import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { DOTCMS_CLIENT_TOKEN } from '../dotcms-client-token';
 import { DotCMSNavigationItem, DotCMSPageAsset } from '../models';
@@ -12,12 +12,12 @@ import { PageContextService } from '../services/dotcms-context/page-context.serv
  * @param {RouterStateSnapshot} _state
  * @return {*}
  */
-export const DotCMSPageResolver: ResolveFn<
-    Promise<{
-        pageAsset: DotCMSPageAsset;
-        nav: DotCMSNavigationItem;
-    }>
-> = async (route: ActivatedRouteSnapshot) => {
+export const DotCMSPageResolver = async (
+    route: ActivatedRouteSnapshot
+): Promise<{
+    pageAsset: DotCMSPageAsset;
+    nav: DotCMSNavigationItem;
+}> => {
     const client = inject(DOTCMS_CLIENT_TOKEN);
     const pageContextService = inject(PageContextService);
 

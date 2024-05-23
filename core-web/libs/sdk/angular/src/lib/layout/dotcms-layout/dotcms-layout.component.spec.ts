@@ -1,22 +1,89 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Spectator } from '@ngneat/spectator';
+import { createRoutingFactory } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
+import { of } from 'rxjs';
 
+import { Component, Input } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+
+import * as dotcmsClient from '@dotcms/client';
+
+import { EntityMock } from './../../utils/testing.utils';
 import { DotcmsLayoutComponent } from './dotcms-layout.component';
 
+import { DotCMSContentlet, DotCMSPageAsset } from '../../models';
+import { PageContextService } from '../../services/dotcms-context/page-context.service';
+import { RowComponent } from '../row/row.component';
+
+@Component({
+    selector: 'dotcms-mock-component',
+    standalone: true,
+    template: 'Hello world'
+})
+class DotcmsSDKMockComponent {
+    @Input() contentlet!: DotCMSContentlet;
+}
+
+jest.mock('@dotcms/client', () => ({
+    isInsideEditor: jest.fn().mockReturnValue(true),
+    initEditor: jest.fn(),
+    updateNavigation: jest.fn()
+}));
+
 describe('DotcmsLayoutComponent', () => {
-    let component: DotcmsLayoutComponent;
-    let fixture: ComponentFixture<DotcmsLayoutComponent>;
+    let spectator: Spectator<DotcmsLayoutComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotcmsLayoutComponent]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(DotcmsLayoutComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    const createComponent = createRoutingFactory({
+        component: DotcmsLayoutComponent,
+        imports: [MockComponent(RowComponent)],
+        providers: [
+            { provide: ActivatedRoute, useValue: { url: of([]) } },
+            { provide: Router, useValue: {} },
+            {
+                provide: PageContextService,
+                useValue: {
+                    setComponentMap: jest.fn(),
+                    pageContextValue: {},
+                    getComponentMap: () => ({ Banner: of(DotcmsSDKMockComponent) })
+                }
+            }
+        ]
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                entity: EntityMock as unknown as DotCMSPageAsset,
+                components: {
+                    Banner: Promise.resolve(DotcmsSDKMockComponent)
+                }
+            }
+        });
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('should render rows', () => {
+        spectator.detectChanges();
+        expect(spectator.queryAll(RowComponent).length).toBe(3);
+    });
+
+    it('should save component map', () => {
+        spectator.detectChanges();
+        jest.spyOn(spectator.inject(PageContextService), 'setComponentMap');
+        expect(spectator.inject(PageContextService).setComponentMap).toHaveBeenCalled();
+    });
+
+    describe('inside editor', () => {
+        it('should call initEditor and updateNavigation from @dotcms/client', () => {
+            const initEditorSpy = jest.spyOn(dotcmsClient, 'initEditor');
+            const updateNavigationSpy = jest.spyOn(dotcmsClient, 'updateNavigation');
+
+            spectator.detectChanges();
+            expect(initEditorSpy).toHaveBeenCalled();
+            expect(updateNavigationSpy).toHaveBeenCalled();
+        });
     });
 });
