@@ -477,7 +477,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
 
         if (runningExperimentsCached != null) {
+            assertEquals(experimentIds.size(), runningExperimentsCached.size());
             runningExperimentsCached.forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
+        } else {
+            assertTrue(experimentIds == null || experimentIds.isEmpty());
         }
     }
 
@@ -3997,6 +4000,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
      * When: Try to cancel a Running Experiment
      * Should: The Experiment come back to DRAFT
+     * Also the Running Experiment Cache must be empty after cancel an Experiment
      */
     @Test
     public void cancelRunningExperiment() throws DotDataException, DotSecurityException {
@@ -4005,15 +4009,20 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
 
+        APILocator.getExperimentsAPI().getRunningExperiments();
+        assertCachedRunningExperiments(list(experiment.id().get()));
+
         try {
-            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+            final Experiment experimentAfterRunning = APILocator.getExperimentsAPI()
                     .find(experiment.id().orElseThrow(), APILocator.systemUser())
                     .orElseThrow();
 
-            assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+            assertEquals(Status.RUNNING, experimentAfterRunning.status());
 
             APILocator.getExperimentsAPI()
-                    .cancel(experimentAfterScheduled.getIdentifier(), APILocator.systemUser());
+                    .cancel(experimentAfterRunning.getIdentifier(), APILocator.systemUser());
+
+            assertCachedRunningExperiments(Collections.emptyList());
 
             final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
                     .find(experiment.id().orElseThrow(), APILocator.systemUser())
@@ -4035,6 +4044,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             }
         }
     }
+
 
     /**
      * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}

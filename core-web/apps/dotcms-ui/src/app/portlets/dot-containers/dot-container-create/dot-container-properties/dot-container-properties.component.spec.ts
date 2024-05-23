@@ -31,7 +31,6 @@ import { InplaceModule } from 'primeng/inplace';
 import { MenuModule } from 'primeng/menu';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -55,7 +54,12 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotAddToBundleComponent, DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotAutofocusDirective,
+    DotMessagePipe
+} from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -293,7 +297,7 @@ describe('DotContainerPropertiesComponent', () => {
                 MenuModule,
                 ButtonModule,
                 DotActionButtonModule,
-                DotActionMenuButtonModule,
+                DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
                 HttpClientTestingModule,
                 DynamicDialogModule,

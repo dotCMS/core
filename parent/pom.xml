@@ -652,13 +652,18 @@
                          files and hence the coverage report.
                         -->
                         <argLine>@{argLine} -Xmx1024m
+                            --illegal-access=warn
                             --add-modules java.se
                             --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
                             --add-opens java.base/java.lang=ALL-UNNAMED
                             --add-opens java.base/java.nio=ALL-UNNAMED
                             --add-opens java.base/sun.nio.ch=ALL-UNNAMED
                             --add-opens java.management/sun.management=ALL-UNNAMED
-                            --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED</argLine>
+                            --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+                            --add-opens java.base/java.util=ALL-UNNAMED
+                            --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+                        </argLine>
+
                         <trimStackTrace>false</trimStackTrace>
                     </configuration>
                 </plugin>
@@ -807,12 +812,14 @@
                         <forkCount>${surefire.fork.count}</forkCount>
                         <reuseForks>true</reuseForks>
                         <argLine>@{argLine} -Xmx1024m
+                            --illegal-access=warn
                             --add-modules java.se
                             --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
                             --add-opens java.base/java.lang=ALL-UNNAMED
                             --add-opens java.base/java.nio=ALL-UNNAMED
                             --add-opens java.base/sun.nio.ch=ALL-UNNAMED
                             --add-opens java.management/sun.management=ALL-UNNAMED
+                            --add-opens java.base/java.lang.reflect=ALL-UNNAMED
                             --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED</argLine>
                         <systemPropertyVariables/>
                         <trimStackTrace>true</trimStackTrace>
