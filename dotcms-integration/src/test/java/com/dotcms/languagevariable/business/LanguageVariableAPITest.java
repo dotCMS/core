@@ -2,8 +2,8 @@ package com.dotcms.languagevariable.business;
 
 import static com.dotcms.contenttype.model.type.KeyValueContentType.MULTILINGUABLE_FALLBACK_KEY;
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
-import static com.dotcms.integrationtestutil.content.ContentUtils.updateTestKeyValueContent;
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
+import static com.dotcms.integrationtestutil.content.ContentUtils.updateTestKeyValueContent;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -13,9 +13,9 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LanguageVariableDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -26,7 +26,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.SystemProperties;
@@ -36,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -388,9 +388,9 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void findLanguageVariablesThenUnpublishTest() throws DotDataException, DotSecurityException {
+    public void findLanguageVariablesThenUnpublishTest() throws Exception {
 
-        removeAll();
+        destroyAll();
         final LanguageCache languageCache = CacheLocator.getLanguageCache();
         languageCache.clearVariables();
         final List<LanguageVariable> vars = languageCache.getVars(1);
@@ -524,31 +524,25 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         return variables.stream().anyMatch(variable -> variable.getIdentifier().equals(identifier));
     }
 
+
     /**
-     * Method to cleanup the language variables
+     * Helper method to destroy all the contentlets created for this test
+     * @throws Exception
      */
-    public static void removeAll() {
-        final User user = APILocator.systemUser();
-        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-        final Map<Language, List<LanguageVariable>> allVariables = languageVariableAPI.findAllVariables();
-        allVariables.entrySet().stream().flatMap(entry -> entry.getValue().stream())
-                .forEach(languageVariable -> {
-                    try {
-                        final List<Contentlet> allVersions = contentletAPI.findAllVersions(new Identifier(languageVariable.identifier()), user, false);
-                        allVersions.forEach(cont -> {
-                            try {
-                                contentletAPI.unpublish(cont, user, false);
-                                contentletAPI.archive(cont, user, false);
-                                contentletAPI.delete(cont, user, false);
-                            } catch (DotDataException | DotSecurityException e) {
-                                Logger.error(LanguageVariableAPITest.class, e.getMessage(), e);
-                            }
-                        });
-                    } catch (DotDataException | DotSecurityException e) {
-                        Logger.error(LanguageVariableAPITest.class, e.getMessage(), e);
-                    }
-                });
+    public static void destroyAll() throws Exception{
+        final ContentletAPI api = APILocator.getContentletAPI();
+        final List<String> inodes = new DotConnect().setSQL(
+                        "select working_inode from "
+                                + "contentlet_version_info cvi, "
+                                + "identifier "
+                                + "where "
+                                + "identifier.id = cvi.identifier and "
+                                + "identifier.asset_subtype='persona' ")
+                .loadObjectResults().stream().map(m -> (String) m.get("Languagevariable")).collect(
+                        Collectors.toList());
+
+        final List<Contentlet> cons = api.findContentlets(inodes);
+        api.destroy(cons, APILocator.systemUser(), false);
         final LanguageCache languageCache = CacheLocator.getLanguageCache();
         languageCache.clearVariables();
     }
