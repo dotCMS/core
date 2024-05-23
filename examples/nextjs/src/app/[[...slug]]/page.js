@@ -42,9 +42,8 @@ export default async function Home({ searchParams, params }) {
 
     const data2 = await client.content
         .getCollection("Blog")
-        .query((qb) => qb.field("title").equals("Costa"))
+        .query((qb) => qb.field("title").equals("snowboard"))
         .depth(2)
-        .language(2)
         .sortBy({
             modDate: "desc",
         })
