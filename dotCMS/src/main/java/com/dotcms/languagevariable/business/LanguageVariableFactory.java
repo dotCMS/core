@@ -39,6 +39,14 @@ public interface LanguageVariableFactory {
      * @return the count
      * @throws DotDataException if an error occurs
      */
-    int countVariablesByKey(ContentType contentType) throws DotDataException;
+    int countVariablesByKey(ContentType contentType);
+
+    /**
+     * Count the number of LanguageVariables for a given ContentType and Language
+     * @param contentType the LangVariables ContentType
+     * @param languageId the Language ID
+     * @return the count
+     */
+    int countVariablesByKey(ContentType contentType, final long languageId);
 
 }

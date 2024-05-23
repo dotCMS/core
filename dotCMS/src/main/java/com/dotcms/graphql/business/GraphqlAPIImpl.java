@@ -10,6 +10,7 @@ import static graphql.schema.GraphQLObjectType.newObject;
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
+import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -129,7 +130,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             return;
         }
 
-        debouncer.debounce("invalidateGraphSchema", removeSchema , delay, TimeUnit.MILLISECONDS);;
+        debouncer.debounce("invalidateGraphSchema", removeSchema , delay, TimeUnit.MILLISECONDS);
 
 
     }
@@ -178,14 +179,14 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         // let's log if we are including dupe types
         final Map<String, GraphQLType> localTypesMap = new HashMap<>();
         graphQLTypes.forEach((type)-> {
-            if(localTypesMap.containsKey(type.getName())) {
-                Logger.warn(this, "Dupe GraphQLType detected!: " + type.getName());
+            if(localTypesMap.containsKey(TypeUtil.getName(type))) {
+                Logger.warn(this, "Dupe GraphQLType detected!: " + TypeUtil.getName(type));
                 // removing dupes based on Config property
                 if(Config.getBooleanProperty("GRAPHQL_REMOVE_DUPLICATED_TYPES", false)) {
                     return;
                 }
             }
-            localTypesMap.put(type.getName(), type);
+            localTypesMap.put(TypeUtil.getName(type), type);
         });
 
         final Set<GraphQLType> finalTypesSet = new HashSet<>(localTypesMap.values());
