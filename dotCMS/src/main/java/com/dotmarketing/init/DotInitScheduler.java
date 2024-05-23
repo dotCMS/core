@@ -325,6 +325,8 @@ public class DotInitScheduler {
 
 			addStartEndScheduledExperimentsJob(sched);
 
+			addPruneOldTimeMachineBackups(sched);
+
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
 		} catch (final SchedulerException e) {
@@ -495,6 +497,45 @@ private static void addDeleteOldSiteSearchIndicesJob (final Scheduler scheduler)
 		Logger.info(DotInitScheduler.class, e.toString());
 	}
 }
+
+	/**
+	 * This method is used to schedule or delete a Quartz job that deletes old Time Machine backups.
+	 * The job is scheduled based on a cron expression defined in the system configuration.
+	 *
+	 * @param scheduler The Quartz scheduler instance used to schedule.
+	 */
+	private static void addPruneOldTimeMachineBackups (final Scheduler scheduler) {
+		try {
+			// Define the job and trigger names and group
+			final String jobName      = "PruneTimeMachineBackupJob";
+			final String triggerName  = "trigger35";
+			final String triggerGroup = "group35";
+
+			// Check if the job is enabled in the system configuration
+			if (Config.getBooleanProperty( "ENABLE_PRUNE_OLD_TIMEMACHINE_BACKUPS_JOB", true)) {
+
+				// If the job is enabled, build the job details
+				final JobBuilder pruneOldTimeMachineJobs = new JobBuilder().setJobClass(
+								PruneTimeMachineBackupJob.class)
+						.setJobName(jobName)
+						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+						.setTriggerName(triggerName)
+						.setTriggerGroup(triggerGroup)
+						.setCronExpressionProp("PRUNE_OLD_TIMEMACHINE_BACKUPS_JOB_CRON_EXPRESSION")
+						// Set the default cron expression to run every Sunday at midnight
+						.setCronExpressionPropDefault("0 0 0 ? * SUN *")
+						.setCronMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
+				scheduleJob(pruneOldTimeMachineJobs);
+			} else {
+				// If the job is not enabled, delete it from the scheduler if it exists
+				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
+				}
+			}
+		} catch (Exception e) {
+			Logger.info(DotInitScheduler.class, e.toString());
+		}
+	}
 
    private static void addServerHeartbeatJob () {
 
