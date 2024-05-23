@@ -41,21 +41,24 @@ export default async function Home({ searchParams, params }) {
     const data = await client.page.get(requestData);
 
     const data2 = await client.content
-        .getCollection("FaqWidget")
+        .getCollection("test")
         // .draft(true)
         .depth(2)
         // .language(2)
-        .render(true)
-        .sortBy({
-            modDate: "asc",
-        })
+        // .render(true)
+        .sortBy([
+            {
+                field: "modDate",
+                order: "asc",
+            },
+        ])
         .fetch();
 
-    let data2Resolved = await data2.json();
+    let data2Resolved = await data2;
 
-    console.log("######################################");
+    console.log("----------- MARKER ------------");
 
-    console.log(data2Resolved.entity.jsonObjectView.contentlets);
+    console.log(data2Resolved);
 
     const nav = await client.nav.get({
         path: "/",
