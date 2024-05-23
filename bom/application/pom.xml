@@ -727,7 +727,7 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java</artifactId>
-                <version>13.0</version>
+                <version>17.5</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -738,13 +738,15 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java-extended-scalars</artifactId>
-                <version>1.0.1</version>
+                <version>17.1</version>
             </dependency>
             <dependency>
                 <groupId>com.graphql-java-kickstart</groupId>
                 <artifactId>graphql-java-servlet</artifactId>
-                <version>9.1.0</version>
+                <version>13.0.1</version>
             </dependency>
+
+
 
             <!--
              *****************************
