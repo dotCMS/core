@@ -41,11 +41,13 @@ export default async function Home({ searchParams, params }) {
     const data = await client.page.get(requestData);
 
     const data2 = await client.content
-        .getCollection("Blog")
-        .query((qb) => qb.field("title").equals("snowboard"))
+        .getCollection("FaqWidget")
+        // .draft(true)
         .depth(2)
+        // .language(2)
+        .render(true)
         .sortBy({
-            modDate: "desc",
+            modDate: "asc",
         })
         .fetch();
 
