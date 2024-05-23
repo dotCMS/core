@@ -579,7 +579,6 @@ public class MultiTreeCacheTest {
     public void putAndRemoveAll() throws DotDataException {
 
         final String pageId = RandomStringUtils.random(20);
-        final String hostId = RandomStringUtils.random(20);
 
         final Table<String, String, Set<PersonalizedContentlet>> multiTreesLiveDefault =  mock(Table.class);
         final Table<String, String, Set<PersonalizedContentlet>> multiTreesWorkingDefault =  mock(Table.class);
@@ -587,12 +586,6 @@ public class MultiTreeCacheTest {
         final Table<String, String, Set<PersonalizedContentlet>> multiTreesWorkingSpecificVariant =  mock(Table.class);
 
         final String specificVariantName = "Specific Variant";
-
-        final Contentlet contentlet = mock(Contentlet.class);
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-        when(contentletAPI.findContentletByIdentifierAnyLanguage(pageId, VariantAPI.DEFAULT_VARIANT.name(),
-                true)).thenReturn(contentlet);
-        when(contentlet.getHost()).thenReturn(hostId);
 
         final Experiment experiment = mock(Experiment.class);
         final TrafficProportion trafficProportion = mock(TrafficProportion.class);
@@ -612,9 +605,9 @@ public class MultiTreeCacheTest {
         when(trafficProportion.variants()).thenReturn(variants);
 
         final ExperimentsAPI experimentsAPI = mock(ExperimentsAPI.class);
-        when(experimentsAPI.listActive(hostId)).thenReturn(list(experiment));
+        when(experimentsAPI.listActive(pageId)).thenReturn(list(experiment));
 
-        final MultiTreeCache multiTreeCache = new MultiTreeCache(experimentsAPI, contentletAPI);
+        final MultiTreeCache multiTreeCache = new MultiTreeCache(experimentsAPI);
 
         final boolean present_1 = Stream.of(
                         multiTreeCache.getPageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), true),

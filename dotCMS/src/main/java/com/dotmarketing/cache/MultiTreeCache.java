@@ -2,6 +2,7 @@ package com.dotmarketing.cache;
 
 
 import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
@@ -32,16 +33,14 @@ public class MultiTreeCache implements Cachable {
 
     private final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
     private final ExperimentsAPI experimentsAPI;
-    private final ContentletAPI contentletAPI;
 
     @VisibleForTesting
-    public MultiTreeCache(final ExperimentsAPI experimentsAPI, final ContentletAPI contentletAPI){
+    public MultiTreeCache(final ExperimentsAPI experimentsAPI){
         this.experimentsAPI = experimentsAPI;
-        this.contentletAPI = contentletAPI;
     }
 
     public MultiTreeCache(){
-        this(APILocator.getExperimentsAPI(), APILocator.getContentletAPI());
+        this(APILocator.getExperimentsAPI());
     }
 
     @Override
@@ -106,9 +105,9 @@ public class MultiTreeCache implements Cachable {
      */
     private Collection<String> getVariants(final String pageIdentifier){
         try {
-            return APILocator.getExperimentsAPI().listActive(pageIdentifier).stream()
+            return experimentsAPI.listActive(pageIdentifier).stream()
                     .flatMap(experiment -> experiment.trafficProportion().variants().stream())
-                    .map(experimentVariant -> experimentVariant.id())
+                    .map(ExperimentVariant::id)
                     .collect(Collectors.toList());
         } catch (DotDataException e) {
             Logger.error(MultiTreeCache.class, e);
