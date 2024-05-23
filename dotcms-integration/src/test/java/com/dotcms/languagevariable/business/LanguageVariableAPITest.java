@@ -13,9 +13,10 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LanguageVariableDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -26,6 +27,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.SystemProperties;
@@ -35,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -390,6 +391,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
     @Test
     public void findLanguageVariablesThenUnpublishTest() throws Exception {
 
+        //destroyAll();
         destroyAll();
         final LanguageCache languageCache = CacheLocator.getLanguageCache();
         languageCache.clearVariables();
@@ -525,24 +527,26 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
     }
 
 
-    /**
-     * Helper method to destroy all the contentlets created for this test
-     * @throws Exception
-     */
-    public static void destroyAll() throws Exception{
-        final ContentletAPI api = APILocator.getContentletAPI();
-        final List<String> inodes = new DotConnect().setSQL(
-                        "select working_inode from "
-                                + "contentlet_version_info cvi, "
-                                + "identifier "
-                                + "where "
-                                + "identifier.id = cvi.identifier and "
-                                + "identifier.asset_subtype='persona' ")
-                .loadObjectResults().stream().map(m -> (String) m.get("Languagevariable")).collect(
-                        Collectors.toList());
-
-        final List<Contentlet> cons = api.findContentlets(inodes);
-        api.destroy(cons, APILocator.systemUser(), false);
+    public static void destroyAll() {
+        final User sysUser = APILocator.systemUser();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+        final Map<Language, List<LanguageVariable>> allVariables = languageVariableAPI.findAllVariables();
+        allVariables.entrySet().stream().flatMap(entry -> entry.getValue().stream())
+                .forEach(languageVariable -> {
+                    try {
+                        final List<Contentlet> allVersions = contentletAPI.findAllVersions(new Identifier(languageVariable.identifier()), sysUser, false);
+                        allVersions.forEach(cont -> {
+                            try {
+                                contentletAPI.destroy(cont, sysUser, false);
+                            } catch (DotDataException | DotStateException | DotSecurityException e) {
+                                Logger.error(LanguageVariableAPITest.class, e.getMessage(), e);
+                            }
+                        });
+                    } catch (DotDataException | DotStateException | DotSecurityException e) {
+                        Logger.error(LanguageVariableAPITest.class, e.getMessage(), e);
+                    }
+                });
         final LanguageCache languageCache = CacheLocator.getLanguageCache();
         languageCache.clearVariables();
     }
