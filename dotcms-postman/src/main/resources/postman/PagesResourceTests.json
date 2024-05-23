@@ -3272,14 +3272,16 @@
 			"name": "Whats Changed",
 			"item": [
 				{
-					"name": "Pre_importBundle",
+					"name": "pre_ImportBundle",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
 									"pm.test(\"Bundle imported\", function () {",
-									"     var jsonData = pm.response.json();",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
 									"    pm.expect(jsonData[\"bundleName\"]).to.contains(\"testWhatsChanged\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
@@ -3294,22 +3296,20 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/octet-stream",
-								"type": "text"
+								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"value": "attachment",
-								"type": "text"
+								"value": "attachment"
 							}
 						],
 						"body": {
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "",
+									"key": "file",
 									"type": "file",
-									"src": "/Users/bryanboza/Desktop/core/dotcms-postman/src/main/resources/postman/resources/testWhatsChanged-01FTGYNEP672VF4KFRFWSX3RPT.tar.gz"
+									"src": "resources/testWhatsChanged-01FTGYNEP672VF4KFRFWSX3RPT.tar.gz"
 								}
 							]
 						},
@@ -3322,8 +3322,16 @@
 								"api",
 								"bundle",
 								"sync"
+							],
+							"query": [
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
 							]
-						}
+						},
+						"description": "Imports a Bundle that includes: a page with content, the content has diff versions working and live"
 					},
 					"response": []
 				},
