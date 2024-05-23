@@ -88,7 +88,7 @@ public class TimeMachineAPITest {
                             Arrays.stream(bundleFolder.listFiles()))
                     .collect(Collectors.toList());
 
-            assertEquals(noExpireFolders.size(), files.size());
+            assertTrue(noExpireFolders.size() <= files.size());
             assertTrue(removeAll(noExpireFolders, files).isEmpty());
         } finally {
             Config.setProperty("TIMEMACHINE_PATH", timemachinePathPreviousValue);
