@@ -19,7 +19,7 @@ export class GetCollection {
     private excludedFields: string[] = [
         'contentType',
         'structurename',
-        'variantId',
+        'variant',
         'live',
         'languageId'
     ];
@@ -97,8 +97,8 @@ export class GetCollection {
         return this;
     }
 
-    variantId(variantId: string): GetCollection {
-        this._query = this.currentQuery.field('variantId').equals(variantId);
+    variant(variant: string): GetCollection {
+        this._query = this.currentQuery.field('variant').equals(variant);
 
         return this;
     }
