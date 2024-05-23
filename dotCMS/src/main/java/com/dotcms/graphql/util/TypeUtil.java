@@ -18,8 +18,11 @@ import java.util.Map;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import java.util.Map.Entry;
@@ -141,6 +144,37 @@ public class TypeUtil {
 
     public static String singularizeBaseTypeCollectionName(final String baseTypeCollectionName) {
         return singularizeCollectionName(baseTypeCollectionName).replaceAll(BASE_TYPE_SUFFIX, "");
+    }
+
+    /**
+     * Tries to resolve the name of the type
+     * IllegalArgumentException is thrown if the type is not a GraphQLNamedSchemaElement or GraphQLObjectType
+     * @param type
+     * @return
+     */
+    public static  String getName (final GraphQLType type) {
+
+        if (type instanceof GraphQLNamedSchemaElement) {
+            return GraphQLNamedSchemaElement.class.cast(type).getName();
+        }
+
+        if (type instanceof GraphQLObjectType) {
+            return GraphQLObjectType.class.cast(type).getName();
+        }
+
+        if (type instanceof GraphQLList) {
+            final GraphQLType wrappedType = GraphQLList.class.cast(type).getWrappedType();
+            if (wrappedType instanceof GraphQLNamedSchemaElement) {
+                return GraphQLNamedSchemaElement.class.cast(wrappedType).getName();
+            }
+
+            if (wrappedType instanceof GraphQLObjectType) {
+                return GraphQLObjectType.class.cast(wrappedType).getName();
+            }
+        }
+
+        final String typeName = null != type ?type.getClass().getSimpleName():"NULL";
+        throw new IllegalArgumentException("Type: " + typeName + " is not a GraphQLNamedSchemaElement or GraphQLObjectType");
     }
 
     public static class TypeFetcher {
