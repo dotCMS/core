@@ -1,16 +1,27 @@
-import { Observable } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, ResolveFn, RouterStateSnapshot } from '@angular/router';
 
-import { DotLanguagesService } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { map } from 'rxjs/operators';
 
-export const DotLocalesListResolver: ResolveFn<DotLanguage[]> = (
+import { DotLanguagesService } from '@dotcms/data-access';
+import { DotLanguage, DotLanguagesISO } from '@dotcms/dotcms-models';
+
+export interface DotLocalesListResolverData extends DotLanguagesISO {
+    locales: DotLanguage[];
+}
+
+export const DotLocalesListResolver: ResolveFn<DotLocalesListResolverData> = (
     _route: ActivatedRouteSnapshot,
     _state: RouterStateSnapshot
-): Observable<DotLanguage[]> => {
+): Observable<DotLocalesListResolverData> => {
     const languageService = inject(DotLanguagesService);
 
-    return languageService.get();
+    return forkJoin([languageService.get(), languageService.getISO()]).pipe(
+        map(([locales, iso]) => ({
+            locales,
+            ...iso
+        }))
+    );
 };

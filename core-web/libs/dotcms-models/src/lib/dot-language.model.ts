@@ -7,4 +7,10 @@ export interface DotLanguage {
     defaultLanguage?: boolean;
     translated?: boolean;
     isoCode?: string;
+    variables?: { count: number; total: number };
+}
+
+export interface DotLanguagesISO {
+    countries: { code: string; name: string }[];
+    languages: { code: string; name: string }[];
 }
