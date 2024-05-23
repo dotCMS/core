@@ -79,7 +79,7 @@ export class GetCollection {
     query(queryCallback: (qb: Equals) => Equals): GetCollection {
         this._query = queryCallback(this._defaultQuery)
             .build()
-            .replace(/\+([^:]+):/g, (match, field) => {
+            .replace(/\+([^+:]*?):/g, (match, field) => {
                 return field !== 'contentType' && field !== 'structurename' // Legacy field for contentTypes
                     ? `+${this._contentType}.${field}:`
                     : match;
