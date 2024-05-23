@@ -54,8 +54,8 @@ public class MultiTreeCacheTest {
 
     /**
      * Method to test: {@link MultiTreeCache#putPageMultiTrees(String, String, boolean, Table)} and {@link MultiTreeCache#getPageMultiTrees(String, String, boolean)}
-     * When: put a {@link MultiTree} collections with live equals true
-     * Should: be able to get this collection with live equals true
+     * When: put a {@link MultiTree} collections with live equals true and DEFAULT Variant
+     * Should: be able to get this collection with live equals true and DEFAULT Variant
      */
     @Test
     public void putAndGetLiveTrue(){
@@ -644,7 +644,7 @@ public class MultiTreeCacheTest {
     }
 
     /**
-     * Method to test: {@link MultiTreeCache#putPageMultiTrees(String, String, boolean, Table)} and {@link MultiTreeCache#getPageMultiTrees(String, String, boolean)}
+     * Method to test: {@link MultiTreeCache#getVariantsInCache(String)}
      * When: When you put MultiTress inside a Cache
      * Should:
      * - Get them with the Get method.
