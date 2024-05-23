@@ -101,3 +101,4 @@ This maintenance release includes the following code fixes:
 94. https://github.com/dotCMS/core/issues/28230 : spike(performance): test short lived permission cache #28230
 95. https://github.com/dotCMS/core/issues/28173 : System objects should not be push published #28173
 96. https://github.com/dotCMS/core/issues/27928 : Investigate why endpoint_ids in the table publishing_pushed_assets are null #27928
+97. https://github.com/dotCMS/core/issues/27531 : Google Maps does not work on the rules page #27531
