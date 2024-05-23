@@ -36,19 +36,16 @@ public interface ExperimentsFactory {
     List<Experiment> list(final ExperimentFilter filter) throws DotDataException;
 
     /**
-     * Return the collection of experiments that are running on this host. This includes all the experiments
-     * currently active on any of this host's pages.
+     * Return the collection of experiments that are active on this Page. This includes all the experiments
+     * currently active on this Page.
      */
 
     /**
-     * Return the collection of experiments that are active on this host. This includes all the experiments
-     * currently active on any of this host's pages. It means all experiments with the status DRAFT, SCHEDULED or
-     * RUNNING Experiment on this host
-     *
-     * @param hostIdentifier to Filter the Experiments.
+     * Return the collection of experiments that are RUNNING, DRAFT or SCHEDULED on the Page
+     * @param pageIdentifier to Filter the Experiments.
      *
      * @return
      * @throws DotDataException
      */
-    Collection<Experiment> listActive(final String hostIdentifier) throws DotDataException;
+    Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException;
 }

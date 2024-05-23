@@ -1665,14 +1665,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     /**
-     * Default implementation for {@link ExperimentsAPI#listActive(Host)} (Host)}
+     * Default implementation for {@link ExperimentsAPI#listActive(String)}}
      *
-     * @param hostIdentifier to Filter the Experiments.
+     * @param pageIdentifier to Filter the Experiments.
      *
      * @return
      * @throws DotDataException
      */
-    public final Collection<Experiment> listActive(final String hostIdentifier) throws DotDataException {
-        return factory.listActive(hostIdentifier);
+    public final Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException {
+        return factory.listActive(pageIdentifier);
     }
 }

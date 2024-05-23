@@ -92,15 +92,8 @@ public class MultiTreeCache implements Cachable {
     public void removePageMultiTrees(final String pageIdentifier) {
         list(CONTENTLET_REFERENCES_GROUP).forEach(group -> cache.remove(pageIdentifier, group));
 
-        try {
-            final Contentlet pageAsContent = APILocator.getContentletAPI()
-                    .findContentletByIdentifierAnyLanguage(pageIdentifier, DEFAULT_VARIANT.name(), true);
-
-            getVariants(pageAsContent.getHost()).stream().forEach(variantName ->
-                    removeFromLiveAndWorking(pageIdentifier, variantName));
-        } catch (DotDataException e) {
-            Logger.error(MultiTreeCache.class, e);
-        }
+        getVariants(pageIdentifier).stream().forEach(variantName ->
+                removeFromLiveAndWorking(pageIdentifier, variantName));
 
     }
 
@@ -108,12 +101,12 @@ public class MultiTreeCache implements Cachable {
      * Return the Variant's name of the Experiments that are RUNNING, DRAFT or SCHEDULED on the same host.
      * 'Experiment Active'
      *
-     * @param hostIdentifier
+     * @param pageIdentifier
      * @return
      */
-    private Collection<String> getVariants(final String hostIdentifier){
+    private Collection<String> getVariants(final String pageIdentifier){
         try {
-            return APILocator.getExperimentsAPI().listActive(hostIdentifier).stream()
+            return APILocator.getExperimentsAPI().listActive(pageIdentifier).stream()
                     .flatMap(experiment -> experiment.trafficProportion().variants().stream())
                     .map(experimentVariant -> experimentVariant.id())
                     .collect(Collectors.toList());

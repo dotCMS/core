@@ -259,15 +259,15 @@ public interface ExperimentsAPI {
     Optional<Experiment> getRunningExperimentPerPage(final String pageId) throws DotDataException;
 
     /**
-     * Return the collection of experiments that are active on this host. This includes all the experiments
-     * currently active on any of this host's pages. It means all experiments with the status DRAFT, SCHEDULED or
-     * RUNNING Experiment on this host
+     * Return the collection of experiments that are active on this Page. This includes all the experiments
+     * currently active on the Page. It means all experiments with the status DRAFT, SCHEDULED or
+     * RUNNING Experiment on this Page
      *
-     * @param hostIdentifier to Filter the Experiments.
+     * @param pageIdentifier to Filter the Experiments.
      *
      * @return
      * @throws DotDataException
      */
-    Collection<Experiment> listActive(final String hostIdentifier) throws DotDataException;
+    Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException;
 
 }
