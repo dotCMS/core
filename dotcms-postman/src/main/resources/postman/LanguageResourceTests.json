@@ -1,9 +1,11 @@
 {
 	"info": {
-		"_postman_id": "2e61c1dd-34ab-42f1-a0bc-fac8dc68e780",
+		"_postman_id": "05736e5c-e3a6-47b3-94e7-7b3ed372feca",
 		"name": "LanguageResource",
 		"description": "This collections is focused on the /v2/languages resource\nThis should cover Language CRUD Operations",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10041132",
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/dot~4cc47d20-3185-46cd-99c6-0febe52d5eef/collection/10041132-05736e5c-e3a6-47b3-94e7-7b3ed372feca?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
@@ -67,8 +69,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -81,6 +81,110 @@
 								"api",
 								"v2",
 								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ListLanguages Include LangVars",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"pm.test(\"languageCode returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+									"});",
+									"",
+									"pm.test(\"countryCode returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+									"});",
+									"",
+									"pm.test(\"language returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"language\");",
+									"});",
+									"",
+									"pm.test(\"country returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"country\");",
+									"});",
+									"",
+									"pm.test(\"defaultLanguage returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"defaultLanguage\");",
+									"});",
+									"",
+									"pm.test(\"No errors returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include('errors\":[]');",
+									"});",
+									"",
+									"pm.test(\"Each entity contains a 'variables' object with 'count' and 'total' fields\", function () {",
+									"    let jsonData = pm.response.json(); // Parse the JSON response",
+									"    ",
+									"    pm.expect(jsonData.entity).to.be.an(\"array\"); // Ensure 'entity' is an array",
+									"",
+									"    jsonData.entity.forEach(function (entity) {",
+									"        pm.expect(entity).to.have.property('variables'); // Check 'variables' property exists",
+									"        pm.expect(entity.variables).to.be.an('object'); // Ensure 'variables' is an object",
+									"        ",
+									"        // Check 'count' field exists and is a number",
+									"        pm.expect(entity.variables).to.have.property('count');",
+									"        pm.expect(entity.variables.count).to.be.a('number');",
+									"        pm.expect(entity.variables.count).to.be.at.least(0); // Ensure 'count' >= 0",
+									"        ",
+									"        // Check 'total' field exists and is a number",
+									"        pm.expect(entity.variables).to.have.property('total');",
+									"        pm.expect(entity.variables.total).to.be.a('number');",
+									"        pm.expect(entity.variables.total).to.be.at.least(0); // Ensure 'total' >= 0",
+									"    });",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages?countLangVars=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							],
+							"query": [
+								{
+									"key": "countLangVars",
+									"value": "true"
+								}
 							]
 						}
 					},
@@ -148,8 +252,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -202,8 +304,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -294,6 +394,112 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "List  ISO Languages And ISO Countries",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"// Verify 'entity' contains 'countries' y 'languages'",
+									"pm.test(\"'entity' contiene 'countries' y 'languages'\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity).to.have.property('countries');",
+									"    pm.expect(jsonData.entity).to.have.property('languages');",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"",
+									"// Función para buscar un país por su código",
+									"function getCountryByCode(code) {",
+									"  return jsonData.entity.countries.find(country => country.code === code);",
+									"}",
+									"",
+									"// Función para buscar un país por su nombre",
+									"function getCountryByName(name) {",
+									"  return jsonData.entity.countries.find(country => country.name.toLowerCase() === name.toLowerCase());",
+									"}",
+									"",
+									"// Función para buscar un idioma por su código",
+									"function getLanguageByCode(code) {",
+									"  return jsonData.entity.languages.find(language => language.code === code);",
+									"}",
+									"",
+									"// Función para buscar un idioma por su nombre",
+									"function getLanguageByName(name) {",
+									"  return jsonData.entity.languages.find(language => language.name.toLowerCase() === name.toLowerCase());",
+									"}",
+									"",
+									"// Tests para las funciones",
+									"pm.test(\"Test getCountryByCode\", function () {",
+									"    let country = getCountryByCode(\"AR\");",
+									"    pm.expect(country).to.deep.equal({ code: \"AR\", name: \"Argentina\" });",
+									"});",
+									"",
+									"pm.test(\"Test getCountryByName\", function () {",
+									"    let country = getCountryByName(\"Argentina\");",
+									"    pm.expect(country).to.deep.equal({ code: \"AR\", name: \"Argentina\" });",
+									"});",
+									"",
+									"pm.test(\"Test getLanguageByCode\", function () {",
+									"    let language = getLanguageByCode(\"es\");",
+									"    pm.expect(language).to.deep.equal({ code: \"es\", name: \"Spanish\" });",
+									"});",
+									"",
+									"pm.test(\"Test getLanguageByName\", function () {",
+									"    let language = getLanguageByName(\"Spanish\");",
+									"    pm.expect(language).to.deep.equal({ code: \"es\", name: \"Spanish\" });",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/iso",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"iso"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -357,9 +563,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -423,8 +627,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -490,8 +692,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -576,9 +776,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -663,9 +861,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -750,9 +946,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -850,8 +1044,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -931,9 +1123,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -1012,9 +1202,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -1080,8 +1268,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -1148,8 +1334,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -1216,9 +1400,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -1294,8 +1476,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -1366,9 +1546,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -1419,8 +1597,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -1487,8 +1663,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -1549,8 +1723,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -1592,9 +1764,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -1672,8 +1842,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -1754,8 +1922,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -2157,8 +2323,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -2217,9 +2381,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -2284,9 +2446,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -2365,8 +2525,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -2424,9 +2582,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
