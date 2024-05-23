@@ -11,6 +11,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -28,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +52,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -138,25 +141,25 @@ public class EnvironmentResource {
 	}
 
 	/**
-	 * Creates an env and his permissions
+	 * Creates an env and its permissions
 	 *
 	 * @param httpServletRequest
 	 * @throws Exception
 	 */
-	@Operation(summary = "Update an existing user.",
+	@Operation(summary = "Creates an environment",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseSiteVariablesEntityView.class)),
-							description = "If success returns a map with the user + user id."),
+							description = "If success environment information."),
 					@ApiResponse(
 							responseCode = "403",
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseSiteVariablesEntityView.class)),
-							description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
+							description = "If the user is not an admin or access to the configuration layout or does have permission, it will return a 403."),
 					@ApiResponse(
 							responseCode = "404",
 							content = @Content(mediaType = "application/json",
@@ -174,9 +177,9 @@ public class EnvironmentResource {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response udpate(@Context final HttpServletRequest httpServletRequest,
+	public final Response create(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
-								 final UserForm createUserForm) throws DotDataException, DotSecurityException {
+								 final EnvironmentForm environmentForm) throws DotDataException, DotSecurityException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -186,50 +189,88 @@ public class EnvironmentResource {
 				.init().getUser();
 
 		final boolean isRoleAdministrator = modUser.isAdmin() ||
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.CONFIGURATION.toString(), modUser);
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(
+								PortletID.CONFIGURATION.toString(), modUser);
 
 		if (isRoleAdministrator) {
-			final String environmentName = null;
 
+			final String environmentName = environmentForm.getName();
+			final Environment existingEnvironment = APILocator.getEnvironmentAPI().
+					findEnvironmentByName(environmentName);
 
-			final Environment existingEnvironment = APILocator.getEnvironmentAPI().findEnvironmentByName(environmentName);
+			if (Objects.nonNull(existingEnvironment)) {
 
-			if (Objects.isNull(existingEnvironment)) {
 				Logger.info(getClass(), "Can't save Environment. An Environment with the given name already exists. ");
-				// 404
+				throw new IllegalArgumentException("An Environment with the given name" + environmentName + " already exist.");
 			}
 
-			final String whoCanUseTmp = null;//request.getParameter("whoCanUse");
-			final String pushType = null; // request.getParameter("pushType")
+			final List<String> whoCanUseList = environmentForm.getWhoCanUse();
+			final String pushType = environmentForm.getPushType();
+
 			final Environment environment = new Environment();
 			environment.setName(environmentName);
 			environment.setPushToAll("pushToAll".equals(pushType));
 
-			List<String> whoCanUse = Arrays.asList(whoCanUseTmp.split(","));
-			List<Permission> permissions = new ArrayList<>();
+			final Map<String, Permission> permissionsMap = new HashMap<>();
 
-			for (String perm : whoCanUse) {
-				if (!UtilMethods.isSet(perm)) {
-					continue;
+			for (final String permissionKey : whoCanUseList) {
+
+				if (UtilMethods.isSet(permissionKey)) {
+
+					final Role role = resolveRole(permissionKey, modUser);
+					if (Objects.nonNull(role)) {
+
+						permissionsMap.computeIfAbsent(role.getId(), k -> new Permission(
+								environment.getId(), role.getId(), PermissionAPI.PERMISSION_USE));
+					} else {
+
+						Logger.warn(getClass(), "Role not found for key: " + permissionKey);
+					}
 				}
-
-				Role test = null;//resolveRole(perm);
-				Permission p = new Permission(environment.getId(), test.getId(), PermissionAPI.PERMISSION_USE);
-
-				boolean exists = false;
-				for (Permission curr : permissions)
-					exists = exists || curr.getRoleId().equals(p.getRoleId());
-
-				if (!exists)
-					permissions.add(p);
 			}
 
-
-			EnvironmentAPI eAPI = APILocator.getEnvironmentAPI();
-			eAPI.saveEnvironment(environment, permissions);
-
+			APILocator.getEnvironmentAPI().saveEnvironment(environment,
+					new ArrayList<>(permissionsMap.values()));
 		}
 
-		throw new ForbiddenException("The user: " + modUser.getUserId() + " does not have permissions to update users");
+		throw new ForbiddenException("The user: " + modUser.getUserId() +
+				" does not have permissions to update users");
 	} // create.
+
+	/**
+	 * Test by roleIds, roleKeys, userIds and/or user emails
+	 * @param whoCanUseToken
+	 * @return
+	 * @throws DotDataException
+	 */
+
+	private Role resolveRole(final String whoCanUseToken, final User modUser) {
+
+		Role role = Try.of(()->APILocator.getRoleAPI().loadRoleById(whoCanUseToken)).getOrNull();
+
+		if (Objects.isNull(role)) {
+
+			role = Try.of(()->APILocator.getRoleAPI().loadRoleByKey(whoCanUseToken)).getOrNull();
+		}
+
+		if (Objects.isNull(role)) {
+
+			final User user = Try.of(()->APILocator.getUserAPI().loadUserById(whoCanUseToken)).getOrNull();
+			if (Objects.nonNull(user)) {
+
+				role = user.getUserRole();
+			}
+		}
+
+		if (Objects.isNull(role)) {
+
+			final User user = Try.of(()->APILocator.getUserAPI().loadByUserByEmail(whoCanUseToken, modUser, false)).getOrNull();
+			if (Objects.nonNull(user)) {
+
+				role = user.getUserRole();
+			}
+		}
+
+		return role;
+	}
 }
