@@ -102,7 +102,7 @@ export class GetCollection {
     async fetch(): Promise<GetCollectionResponse> {
         const query = this.currentQuery.build().replace(/\+([^+:]*?):/g, (match, field) => {
             return !CONTENT_TYPE_MAIN_FIELDS.includes(field) // Fields that are not contentType fields
-                ? `+${this._contentType}.${field}:` // Should have this fromat: +contentType.field:
+                ? `+${this._contentType}.${field}:` // Should have this format: +contentTypeVar.field:
                 : match;
         });
 
