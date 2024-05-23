@@ -1,17 +1,13 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.environment.bean.Environment;
-import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.api.v1.site.ResponseSiteVariablesEntityView;
-import com.dotcms.rest.api.v1.user.UserForm;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -20,34 +16,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -55,6 +24,25 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.glassfish.jersey.server.JSONP;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 
 @Path("/environment")
@@ -142,6 +130,7 @@ public class EnvironmentResource {
 
 	/**
 	 * Creates an env and its permissions
+	 * If the permission can not be resolved will be just skipped and logged
 	 *
 	 * @param httpServletRequest
 	 * @throws Exception
@@ -152,32 +141,26 @@ public class EnvironmentResource {
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
-											ResponseSiteVariablesEntityView.class)),
+											ResponseEntityEnvironmentView.class)),
 							description = "If success environment information."),
 					@ApiResponse(
 							responseCode = "403",
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
-											ResponseSiteVariablesEntityView.class)),
+											ForbiddenException.class)),
 							description = "If the user is not an admin or access to the configuration layout or does have permission, it will return a 403."),
-					@ApiResponse(
-							responseCode = "404",
-							content = @Content(mediaType = "application/json",
-									schema = @Schema(implementation =
-											ResponseSiteVariablesEntityView.class)),
-							description = "If the user to update does not exist"),
 					@ApiResponse(
 							responseCode = "400",
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
-											ResponseSiteVariablesEntityView.class)),
-							description = "If the user information is not valid"),
+											IllegalArgumentException.class)),
+							description = "If the environment already exits"),
 			})
 	@POST
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response create(@Context final HttpServletRequest httpServletRequest,
+	public final ResponseEntityEnvironmentView create(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
 								 final EnvironmentForm environmentForm) throws DotDataException, DotSecurityException {
 
@@ -231,6 +214,8 @@ public class EnvironmentResource {
 
 			APILocator.getEnvironmentAPI().saveEnvironment(environment,
 					new ArrayList<>(permissionsMap.values()));
+
+			return new ResponseEntityEnvironmentView(environment);
 		}
 
 		throw new ForbiddenException("The user: " + modUser.getUserId() +
