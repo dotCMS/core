@@ -1,6 +1,6 @@
 import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
 import { Equals } from '../../../../query-builder/utils/lucene-syntax/Equals';
-import { CONTENT_API_URL } from '../../const';
+import { CONTENT_API_URL, CONTENT_TYPE_MAIN_FIELDS } from '../../const';
 import { OrderByMap } from '../../types';
 
 export class GetCollection {
@@ -15,14 +15,6 @@ export class GetCollection {
     private _defaultQuery: Equals;
     private requestOptions: Omit<RequestInit, 'body' | 'method'>;
     private serverUrl: string;
-
-    private excludedFields: string[] = [
-        'contentType',
-        'structurename',
-        'variant',
-        'live',
-        'languageId'
-    ];
 
     private get sort() {
         const keys = Object.keys(this._sortBy ?? {});
@@ -55,55 +47,55 @@ export class GetCollection {
         this._defaultQuery = new QueryBuilder().field('contentType').equals(this._contentType);
     }
 
-    language(language: number): GetCollection {
+    language(language: number): this {
         this._query = this.currentQuery.field('languageId').equals(language.toString());
 
         return this;
     }
 
-    render(render: boolean): GetCollection {
+    render(render: boolean): this {
         this._render = render;
 
         return this;
     }
 
-    sortBy(sortBy: OrderByMap): GetCollection {
+    sortBy(sortBy: OrderByMap): this {
         this._sortBy = sortBy;
 
         return this;
     }
 
-    limit(limit: number): GetCollection {
+    limit(limit: number): this {
         this._limit = limit;
 
         return this;
     }
 
-    page(page: number): GetCollection {
+    page(page: number): this {
         this._page = page;
 
         return this;
     }
 
-    query(queryCallback: (qb: Equals) => Equals): GetCollection {
+    query(queryCallback: (qb: Equals) => Equals): this {
         this._query = queryCallback(this._defaultQuery);
 
         return this;
     }
 
-    draft(draft: boolean): GetCollection {
+    draft(draft: boolean): this {
         this._query = this.currentQuery.field('live').equals((!draft).toString());
 
         return this;
     }
 
-    variant(variant: string): GetCollection {
+    variant(variant: string): this {
         this._query = this.currentQuery.field('variant').equals(variant);
 
         return this;
     }
 
-    depth(depth: number): GetCollection {
+    depth(depth: number): this {
         this._depth = depth;
 
         return this;
@@ -111,8 +103,8 @@ export class GetCollection {
 
     fetch(): Promise<unknown> {
         const query = this.currentQuery.build().replace(/\+([^+:]*?):/g, (match, field) => {
-            return !this.excludedFields.includes(field) // Fields that are not contentType fields
-                ? `+${this._contentType}.${field}:`
+            return !CONTENT_TYPE_MAIN_FIELDS.includes(field) // Fields that are not contentType fields
+                ? `+${this._contentType}.${field}:` // Should have this fromat: +contentType.field:
                 : match;
         });
 
@@ -124,17 +116,23 @@ export class GetCollection {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                // I have to test the variantId
-
                 query,
                 render: this._render,
                 sort: this.sort,
                 limit: this._limit,
                 offset: this.offset,
                 depth: this._depth
-                //userId: Do we want to support this?
-                //allCategoriesInfo: Do we want to support this?
+                //userId: This exist but we currently don't use it
+                //allCategoriesInfo: This exist but we currently don't use it
             })
-        });
+        }).then(
+            (response) => {
+                if (response.ok) {
+                    return response.json();
+                } else return response.json();
+            },
+
+            (error) => error
+        );
     }
 }
