@@ -4,20 +4,25 @@ import { CONTENT_API_URL } from '../../const';
 import { OrderByMap } from '../../types';
 
 export class GetCollection {
-    private _language?: number;
     private _render = false;
     private _sortBy?: OrderByMap;
     private _limit = 10;
     private _page = 1;
-    private _query?: string;
-    private _contentType: string;
-    private _draft = false;
     private _depth = 0;
-    private _variantId = 'DEFAULT';
+    private _query?: Equals;
+    private _contentType: string;
 
     private _defaultQuery: Equals;
-    #requestOptions: Omit<RequestInit, 'body' | 'method'>;
-    #serverUrl: string;
+    private requestOptions: Omit<RequestInit, 'body' | 'method'>;
+    private serverUrl: string;
+
+    private excludedFields: string[] = [
+        'contentType',
+        'structurename',
+        'variantId',
+        'live',
+        'languageId'
+    ];
 
     private get sort() {
         const keys = Object.keys(this._sortBy ?? {});
@@ -30,7 +35,11 @@ export class GetCollection {
     }
 
     private get url() {
-        return `${this.#serverUrl}${CONTENT_API_URL}`;
+        return `${this.serverUrl}${CONTENT_API_URL}`;
+    }
+
+    private get currentQuery() {
+        return this._query ?? this._defaultQuery;
     }
 
     constructor(
@@ -38,8 +47,8 @@ export class GetCollection {
         serverUrl: string,
         contentType: string
     ) {
-        this.#requestOptions = requestOptions;
-        this.#serverUrl = serverUrl;
+        this.requestOptions = requestOptions;
+        this.serverUrl = serverUrl;
 
         this._contentType = contentType;
 
@@ -47,7 +56,7 @@ export class GetCollection {
     }
 
     language(language: number): GetCollection {
-        this._language = language;
+        this._query = this.currentQuery.field('languageId').equals(language.toString());
 
         return this;
     }
@@ -77,25 +86,19 @@ export class GetCollection {
     }
 
     query(queryCallback: (qb: Equals) => Equals): GetCollection {
-        this._query = queryCallback(this._defaultQuery)
-            .build()
-            .replace(/\+([^+:]*?):/g, (match, field) => {
-                return field !== 'contentType' && field !== 'structurename' // Legacy field for contentTypes
-                    ? `+${this._contentType}.${field}:`
-                    : match;
-            });
+        this._query = queryCallback(this._defaultQuery);
 
         return this;
     }
 
     draft(draft: boolean): GetCollection {
-        this._draft = draft;
+        this._query = this.currentQuery.field('live').equals((!draft).toString());
 
         return this;
     }
 
     variantId(variantId: string): GetCollection {
-        this._variantId = variantId;
+        this._query = this.currentQuery.field('variantId').equals(variantId);
 
         return this;
     }
@@ -107,27 +110,30 @@ export class GetCollection {
     }
 
     fetch(): Promise<unknown> {
+        const query = this.currentQuery.build().replace(/\+([^+:]*?):/g, (match, field) => {
+            return !this.excludedFields.includes(field) // Fields that are not contentType fields
+                ? `+${this._contentType}.${field}:`
+                : match;
+        });
+
         return fetch(this.url, {
-            ...this.#requestOptions,
+            ...this.requestOptions,
             method: 'POST',
             headers: {
-                ...this.#requestOptions.headers,
+                ...this.requestOptions.headers,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                //userId Do we want to support this?
-                //allCategoriesInfo Do we want to support this?
+                // I have to test the variantId
 
-                // variantId: Does not exist in the API
-                // live: does not exist in the API
-
-                query: this._query ?? this._defaultQuery.build(),
-                languageId: this._language,
+                query,
                 render: this._render,
                 sort: this.sort,
                 limit: this._limit,
                 offset: this.offset,
                 depth: this._depth
+                //userId: Do we want to support this?
+                //allCategoriesInfo: Do we want to support this?
             })
         });
     }
