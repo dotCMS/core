@@ -951,19 +951,23 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private void refreshPageInCache(final String pageIdentifier) throws DotDataException {
 
-        final Contentlet pageAsContent = APILocator.getContentletAPI()
-                .findContentletByIdentifierAnyLanguage(pageIdentifier, DEFAULT_VARIANT.name(), true);
+        try {
+            final Contentlet pageAsContent = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguageAnyVariant(pageIdentifier);
 
-        APILocator.getExperimentsAPI().listActive(pageAsContent.getHost()).stream()
-                .flatMap(experiment -> experiment.trafficProportion().variants().stream())
-                .map(experimentVariant -> experimentVariant.id())
-                .forEach(variantName -> {
-                    try {
-                        refreshPageInCacheInner(pageIdentifier, variantName);
-                    } catch (DotDataException e) {
-                        Logger.error(this, e.getMessage(), e);
-                    }
-                });
+            APILocator.getExperimentsAPI().listActive(pageAsContent.getHost()).stream()
+                    .flatMap(experiment -> experiment.trafficProportion().variants().stream())
+                    .map(experimentVariant -> experimentVariant.id())
+                    .forEach(variantName -> {
+                        try {
+                            refreshPageInCacheInner(pageIdentifier, variantName);
+                        } catch (DotDataException e) {
+                            Logger.error(this, e.getMessage(), e);
+                        }
+                    });
+        } catch (DotContentletStateException e) {
+            Logger.warn(this.getClass(), e.getMessage());
+        }
     }
 
     private void refreshPageInCache(final String pageIdentifier, final String variantName) throws DotDataException {
