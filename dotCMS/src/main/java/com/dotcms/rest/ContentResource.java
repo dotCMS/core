@@ -7,19 +7,14 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.util.xstream.XStreamHandler;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import com.dotcms.util.JsonUtil;
-import com.dotmarketing.portlets.structure.model.Field.FieldType;
-import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.JsonUtil;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.FireActionForm;
@@ -42,6 +37,7 @@ import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -54,7 +50,11 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
@@ -62,6 +62,8 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -554,10 +556,9 @@ public class ContentResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("params") String params) {
-
         final InitDataObject initData = this.webResource.init
                 (params, request, response, false, null);
-        //Creating an utility response object
+        // Creating a utility response object
         final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
@@ -569,9 +570,7 @@ public class ContentResource {
         final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
         final String inode = paramsMap.get(RESTParams.INODE.getValue());
         final String respectFrontEndRolesKey = RESTParams.RESPECT_FRONT_END_ROLES.getValue().toLowerCase();
-        final boolean respectFrontendRoles = UtilMethods.isSet(paramsMap.get(respectFrontEndRolesKey))
-                ? Boolean.valueOf(paramsMap.get(respectFrontEndRolesKey))
-                : true;
+        final boolean respectFrontendRoles = !UtilMethods.isSet(paramsMap.get(respectFrontEndRolesKey)) || Boolean.parseBoolean(paramsMap.get(respectFrontEndRolesKey));
         final long language = toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
                 () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
         /* Limit and Offset Parameters Handling, if not passed, using default */
@@ -597,44 +596,37 @@ public class ContentResource {
 
         /* Fetching the content using a query if passed or an id */
         List<Contentlet> contentlets = new ArrayList<>();
-        Boolean idPassed = false;
-        Boolean inodePassed = false;
-        Boolean queryPassed = false;
+        boolean idPassed = UtilMethods.isSet(id);
+        boolean inodePassed  = UtilMethods.isSet(inode);
+        boolean queryPassed = UtilMethods.isSet(query);
         String result = null;
         Optional<Status> status = Optional.empty();
         String type = paramsMap.get(RESTParams.TYPE.getValue());
         String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
         final String tmDate = (String) request.getSession().getAttribute("tm_date");
-
         type = UtilMethods.isSet(type) ? type : "json";
-
         final String relatedOrder = UtilMethods.isSet(orderBy) ? orderBy: null;
         orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
 
         try {
-
-            if (idPassed = UtilMethods.isSet(id)) {
-
+            if (idPassed) {
                 final Contentlet contentlet = APILocator.getContentletAPI()
                         .findContentletByIdentifier(id, live, language, user, respectFrontendRoles);
-
                 if (contentlet != null){
-                    contentlets.add(this.contentHelper.hydrateContentlet(contentlet));
+                    contentlets.add(contentlet);
                 }
-
-            } else if (inodePassed = UtilMethods.isSet(inode)) {
-
+            } else if (inodePassed) {
                 final Contentlet contentlet = APILocator.getContentletAPI()
                         .find(inode, user, respectFrontendRoles);
                 if (contentlet != null){
-                    contentlets.add(this.contentHelper.hydrateContentlet(contentlet));
+                    contentlets.add(contentlet);
                 }
             } else if (UtilMethods.isSet(related)){
                 //Related identifier are expected this way: "ContentTypeVarName.FieldVarName:contentletIdentifier"
                 //In case of multiple relationships, they must be sent as a comma separated list
                 //i.e.: ContentTypeVarName1.FieldVarName1:contentletIdentifier1,ContentTypeVarName2.FieldVarName2:contentletIdentifier2
                 int i = 0;
-                for(String relationshipValue: related.split(",")){
+                for (final String relationshipValue : related.split(StringPool.COMMA)) {
                     if (i == 0) {
                         contentlets.addAll(getPullRelated(user, limit, offset, relatedOrder, tmDate,
                                 processQuery(query), relationshipValue, language, live));
@@ -648,16 +640,14 @@ public class ContentResource {
 
                     i++;
                 }
-            } else if (queryPassed = UtilMethods.isSet(query)){
+            } else if (queryPassed){
                 contentlets = ContentUtils
                         .pull(processQuery(query), offset, limit, orderBy, user, tmDate);
             }
-
-        } catch (DotSecurityException e) {
-
+        } catch (final DotSecurityException e) {
             Logger.debug(this, "Permission error: " + e.getMessage(), e);
             return ExceptionMapperUtil.createResponse(new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             if (idPassed) {
                 Logger.warnAndDebug(this.getClass(), "Can't find Content with Identifier: " + id + " " + e.getMessage(), e);
             } else if (queryPassed || UtilMethods.isSet(related)) {
@@ -677,10 +667,10 @@ public class ContentResource {
                 result = getJSON(contentlets, request, response, render, user, depth,
                         respectFrontendRoles, language, live, allCategoriesInfo);
             }
-        } catch (Exception e) {
-            Logger.warn(this, "Error converting result to XML/JSON");
+        } catch (final Exception e) {
+            Logger.warn(this, String.format("Error converting result to %s for request [ %s ]: " +
+                    "%s", type, params, ExceptionUtil.getErrorMessage(e)));
         }
-
         return responseResource.response(result, null, status);
     }
 

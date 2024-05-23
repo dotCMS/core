@@ -656,6 +656,4 @@ public class MultiTreeCacheTest {
         assertFalse(multiTreeCache.getPageMultiTrees(pageId, specificVariantName, false).isPresent());
 
     }
-
-
 }

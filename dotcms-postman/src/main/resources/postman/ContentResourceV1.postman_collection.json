@@ -1,10 +1,211 @@
 {
 	"info": {
-		"_postman_id": "a7037756-a113-4775-888b-9a96d00896bc",
+		"_postman_id": "b266d3ff-f351-46a7-b796-9f793963cedb",
 		"name": "ContentResourceV1",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727"
 	},
 	"item": [
+		{
+			"name": "Checking JSON Attributes",
+			"item": [
+				{
+					"name": "Checking Content Audit Attributes",
+					"item": [
+						{
+							"name": "Creating Test Generic Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test content created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    var contentId = Object.keys(jsonData.entity.results[0]);",
+											"    pm.collectionVariables.set(\"testContentId\", jsonData.entity.results[0][contentId].identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"title\": \"Test Generic Content\",\n            \"contentHost\": \"default\",\n            \"body\": \"This is my Test Generic Content\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Retrieving Test Generic Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Checking that audit properties are present\", function () {",
+											"    var entity = pm.response.json().entity;",
+											"    ",
+											"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+											"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+											"    pm.expect(entity.ownerName).to.not.equal(undefined, \"The 'ownerName' attribute must be present\");",
+											"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+											"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+											"    pm.expect(entity.modUserName).to.not.equal(undefined, \"The 'modUserName' attribute must be present\");",
+											"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+											"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+											"    pm.expect(entity.publishUserName).to.not.equal(undefined, \"The 'publishUserName' attribute must be present\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/{{testContentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"{{testContentId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
 		{
 			"name": "Content not exists",
 			"event": [
@@ -1429,42 +1630,26 @@
 			"response": []
 		}
 	],
-	"variable": [
+	"event": [
 		{
-			"key": "contentletIdentifier",
-			"value": ""
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		},
 		{
-			"key": "contentletInode",
-			"value": ""
-		},
-		{
-			"key": "fireActionLanguageKey",
-			"value": ""
-		},
-		{
-			"key": "parentId1",
-			"value": ""
-		},
-		{
-			"key": "parentInode1",
-			"value": ""
-		},
-		{
-			"key": "parentId2",
-			"value": ""
-		},
-		{
-			"key": "parentInode2",
-			"value": ""
-		},
-		{
-			"key": "parent1contentlets",
-			"value": ""
-		},
-		{
-			"key": "parent2contentlets",
-			"value": ""
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	]
 }
