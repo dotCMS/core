@@ -1311,7 +1311,7 @@ class ContentTypeCommandIT extends CommandTest {
             var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
             Assertions.assertTrue(byVarName.isPresent());
             Assertions.assertEquals(initialVariable, byVarName.get().variable());
-            Assertions.assertEquals(initialVariable, byVarName.get().variable());
+            Assertions.assertEquals(initialIdentifier, byVarName.get().id());
 
             // ---
             // Now validating the auto update updated the content type descriptor
@@ -1320,7 +1320,7 @@ class ContentTypeCommandIT extends CommandTest {
                     ContentType.class
             );
             Assertions.assertEquals(initialVariable, updatedContentTypeDescriptor.variable());
-            Assertions.assertNotEquals(initialVariable, updatedContentTypeDescriptor.id());
+            Assertions.assertEquals(initialIdentifier, updatedContentTypeDescriptor.id());
         } finally {
             deleteTempDirectory(tempFolder);
         }
