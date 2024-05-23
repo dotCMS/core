@@ -81,7 +81,7 @@ public class Task220825CreateVariantFieldTest {
             }
         }
 
-        assertTrue( variantIdFound, "Should exists de variant field in contentlet_version_info");
+        assertTrue( variantIdFound, ()->"Should exists de variant field in contentlet_version_info");
     }
 
     /**

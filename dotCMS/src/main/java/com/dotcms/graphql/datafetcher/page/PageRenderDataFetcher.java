@@ -40,7 +40,7 @@ public class PageRenderDataFetcher implements DataFetcher<String> {
                     .build();
 
             return APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(pageContext, request,
-                    response);
+                        response);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;
