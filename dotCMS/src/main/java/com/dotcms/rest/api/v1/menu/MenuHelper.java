@@ -4,6 +4,7 @@ import com.dotcms.rest.BaseRestPortlet;
 import com.dotcms.spring.portlet.PortletController;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
@@ -30,7 +31,7 @@ public class MenuHelper implements Serializable {
             new MenuHelper();
 
     private static final String PORTLET_DOESNT_EXIST_ERROR_MSG = "Portlet ID '%s' does not exist";
-
+    private static final String PORTLET_KEY_PREFIX="com.dotcms.repackage.javax.portlet.title.";
     private MenuHelper() {}
 
     /**
@@ -50,13 +51,32 @@ public class MenuHelper implements Serializable {
             menuContext.setPortletId( portletId );
             String linkHREF = getUrl(menuContext);
             Locale locale = Try.of(()-> new Locale(menuContext.getHttpServletRequest().getSession().getAttribute("com.dotcms.repackage.org.apache.struts.action.LOCALE").toString())).getOrElse(Locale.US);
-            String linkName = LanguageUtil.get(locale, "com.dotcms.repackage.javax.portlet.title." + portletId);
+            String linkName = normalizeLinkName(LanguageUtil.get(locale, PORTLET_KEY_PREFIX + portletId));
             boolean isAngular = isAngular( portletId );
             boolean isAjax = isAjax( portletId );
 
             menuItems.add ( new MenuItem(portletId, linkHREF, linkName, isAngular, isAjax) );
         }
         return menuItems;
+    }
+
+    String normalizeLinkName(String linkName) {
+        if(UtilMethods.isEmpty(linkName)){
+            return "ukn";
+        }
+        else if (!linkName.startsWith(PORTLET_KEY_PREFIX)) {
+            return linkName;
+        }
+        linkName = linkName.replace(PORTLET_KEY_PREFIX, "");
+
+        if (linkName.startsWith("c_")) {
+            linkName = linkName.substring(2);
+        }
+
+        linkName = linkName.replace("_", " ");
+
+        return UtilMethods.capitalize(linkName);
+
     }
 
     /**
