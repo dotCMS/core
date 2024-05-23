@@ -100,3 +100,4 @@ This maintenance release includes the following code fixes:
 93. https://github.com/dotCMS/core/issues/24698 : Cannot push publish to S3 buckets in the us-east-2 region #24698
 94. https://github.com/dotCMS/core/issues/28230 : spike(performance): test short lived permission cache #28230
 95. https://github.com/dotCMS/core/issues/28173 : System objects should not be push published #28173
+96. https://github.com/dotCMS/core/issues/27928 : Investigate why endpoint_ids in the table publishing_pushed_assets are null #27928
