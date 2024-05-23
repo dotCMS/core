@@ -40,7 +40,7 @@ public class EmptyPageViewSerializer extends JsonSerializer<EmptyPageView> {
      */
     protected Map<String, Object> getObjectMap(final EmptyPageView emptyPageView) {
         final Map<String, Object> pageViewMap = new TreeMap<>();
-        pageViewMap.put("vanityUrl", emptyPageView.getVanityUrl());
+        pageViewMap.put("vanityUrl", emptyPageView.getCachedVanityUrl());
         pageViewMap.put("page", new HashMap<>());
         pageViewMap.put("containers", new HashMap<>());
         pageViewMap.put("template", new HashMap<>());
