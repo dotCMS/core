@@ -1,14 +1,28 @@
 import { ComponentStore } from '@ngrx/component-store';
+import { of } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { map, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap, withLatestFrom } from 'rxjs/operators';
 
-import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, DotActionMenuItem, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotHttpErrorManagerService,
+    DotLanguagesService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import {
+    ComponentStatus,
+    DotActionMenuItem,
+    DotEnvironment,
+    DotLanguage,
+    DotLanguagesISO
+} from '@dotcms/dotcms-models';
+import { DotLocalesListResolverData } from '@dotcms/portlets/dot-locales/portlet/data-access';
 
 import {
     DotLocaleCreateEditComponent,
@@ -19,6 +33,7 @@ import {
  * Interface for language row data
  */
 export interface DotLocaleRow {
+    id: number;
     locale: string;
     language: string;
     country: string;
@@ -27,26 +42,63 @@ export interface DotLocaleRow {
     actions: DotActionMenuItem[];
 }
 
-export interface DotLocalesListState {
+export interface DotLocalesListState extends DotLanguagesISO {
     status: ComponentStatus;
     locales: DotLocaleRow[];
+    initialLocales: DotLanguage[];
+    isEnterprise: boolean;
+    pushPublishEnvironments: DotEnvironment[];
 }
 
 export interface DotLocaleListViewModel {
     locales: DotLocaleRow[];
 }
 
+export interface DotLocaleListResolverData {
+    localaes: DotLanguage[];
+    languages: { code: string; name: string }[];
+    countries: { code: string; name: string }[];
+}
+
 @Injectable()
 export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
     private readonly dialogService = inject(DialogService);
     private readonly languageService = inject(DotLanguagesService);
-    private readonly messageService = inject(DotMessageService);
+    private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
+    private readonly messageService = inject(MessageService);
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly dotPushPublishDialogService = inject(DotPushPublishDialogService);
 
     // Updaters
-    readonly setLocales = this.updater((state: DotLocalesListState, languages: DotLanguage[]) => ({
+
+    readonly setResolvedData = this.updater(
+        (
+            state: DotLocalesListState,
+            routeResolved: {
+                data: DotLocalesListResolverData;
+                isEnterprise: boolean;
+                pushPublishEnvironments: DotEnvironment[];
+            }
+        ) => ({
+            ...state,
+            initialLocales: routeResolved.data.locales,
+            locales: this.processLanguages(
+                routeResolved.data.locales,
+                routeResolved.isEnterprise,
+                routeResolved.pushPublishEnvironments
+            ),
+            countries: routeResolved.data.countries,
+            languages: routeResolved.data.languages,
+            isEnterprise: routeResolved.isEnterprise,
+            pushPublishEnvironments: routeResolved.pushPublishEnvironments
+        })
+    );
+
+    readonly setLocales = this.updater((state: DotLocalesListState, locales: DotLanguage[]) => ({
         ...state,
-        locales: this.processLanguages(languages)
+        initialLocales: locales,
+        locales: this.processLanguages(locales, state.isEnterprise, state.pushPublishEnvironments)
     }));
 
     readonly vm$ = this.select(
@@ -57,36 +109,48 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
     );
 
     //Effects
-    readonly loadDialog = this.effect<number | null>((_languageId$) => {
-        return _languageId$.pipe(
-            map((languageId) =>
+    readonly loadDialog = this.effect<number | null>((_languageId$) =>
+        _languageId$.pipe(
+            withLatestFrom(this.state$),
+            map(([languageId, { languages, countries, initialLocales }]) => {
+                const localeToEdit = initialLocales.find((l) => l.id === languageId);
+
                 this.dialogService.open(DotLocaleCreateEditComponent, {
-                    header: this.messageService.get(
-                        languageId ? 'locales.edit.locale' : 'locales.add.locale'
+                    header: this.dotMessageService.get(
+                        localeToEdit ? 'locales.edit.locale' : 'locales.add.locale'
                     ),
                     width: '31rem',
                     data: {
-                        languages: ['Spanish', 'English'],
-                        countries: ['Spain', 'USA'],
-                        languageId
+                        languages,
+                        countries,
+                        locale: localeToEdit
                     }
-                })
-            )
-        );
-    });
+                });
+            })
+        )
+    );
 
     readonly addLocale = this.effect<DotLocaleCreateEditData>((data$) => {
         return data$.pipe(
-            switchMap((data) =>
-                this.languageService.add({
-                    languageCode: data.languageCode,
-                    language: data.language,
-                    countryCode: data.countryCode,
-                    country: data.country
-                })
-            ),
+            switchMap((data) => {
+                const { languageCode, language, countryCode, country } = data.locale as DotLanguage;
+
+                return this.languageService.add({ languageCode, language, countryCode, country });
+            }),
+            map(() => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: this.dotMessageService.get('message.success'),
+                    detail: this.dotMessageService.get('locales.add.success')
+                });
+            }),
             switchMap(() => this.languageService.get()),
-            map((languages) => this.setLocales(languages))
+            map((languages) => this.setLocales(languages)),
+            catchError((error: HttpErrorResponse) => {
+                this.dotHttpErrorManagerService.handle(error);
+
+                return of(null);
+            })
         );
     });
 
@@ -107,14 +171,27 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
     });
 
     constructor() {
-        super({ status: ComponentStatus.IDLE, locales: [] });
+        super({
+            status: ComponentStatus.IDLE,
+            locales: [],
+            initialLocales: [],
+            countries: [],
+            languages: [],
+            isEnterprise: false,
+            pushPublishEnvironments: []
+        });
     }
 
     /**
      * Private function to process the languages into the format needed for the state
      */
-    private processLanguages(languages: DotLanguage[]): DotLocaleRow[] {
+    private processLanguages(
+        languages: DotLanguage[],
+        isEnterprise: boolean,
+        pushPublishEnvironments: DotEnvironment[]
+    ): DotLocaleRow[] {
         return languages.map((language) => ({
+            id: language.id,
             locale: `${language.language} (${language.isoCode})`,
             language: `${language.language} - ${language.languageCode}`,
             country: `${language.country} - ${language.countryCode}`,
@@ -123,7 +200,7 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             actions: [
                 {
                     menuItem: {
-                        label: this.messageService.get('locales.edit'),
+                        label: this.dotMessageService.get('locales.edit'),
                         command: () => {
                             this.loadDialog(language.id);
                         }
@@ -131,7 +208,21 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                 },
                 {
                     menuItem: {
-                        label: this.messageService.get('locales.make.default'),
+                        label: this.dotMessageService.get('locales.push.publish'),
+                        command: () => {
+                            this.dotPushPublishDialogService.open({
+                                assetIdentifier: language.id.toString(),
+                                title: this.dotMessageService.get(
+                                    'contenttypes.content.push_publish'
+                                )
+                            });
+                        }
+                    },
+                    shouldShow: () => isEnterprise && pushPublishEnvironments.length > 0
+                },
+                {
+                    menuItem: {
+                        label: this.dotMessageService.get('locales.make.default'),
                         command: () => {
                             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         }
@@ -140,7 +231,7 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                 },
                 {
                     menuItem: {
-                        label: this.messageService.get('locales.delete'),
+                        label: this.dotMessageService.get('locales.delete'),
                         command: () => {
                             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         }

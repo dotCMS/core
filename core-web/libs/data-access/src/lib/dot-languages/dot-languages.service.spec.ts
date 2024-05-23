@@ -1,6 +1,10 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { DotLanguagesService, LANGUAGE_API_URL } from '@dotcms/data-access';
+import {
+    DotLanguagesService,
+    LANGUAGE_API_URL,
+    LANGUAGE_API_URL_WITH_VARS
+} from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 
 describe('DotLanguagesService', () => {
@@ -11,13 +15,16 @@ describe('DotLanguagesService', () => {
 
     it('should get Languages', () => {
         spectator.service.get().subscribe();
-        spectator.expectOne(LANGUAGE_API_URL, HttpMethod.GET);
+        spectator.expectOne(LANGUAGE_API_URL_WITH_VARS, HttpMethod.GET);
     });
 
     it('should get Languages by content indode', () => {
         const contentInode = '2';
         spectator.service.get(contentInode).subscribe();
-        spectator.expectOne(`${LANGUAGE_API_URL}?contentInode=${contentInode}`, HttpMethod.GET);
+        spectator.expectOne(
+            `${LANGUAGE_API_URL_WITH_VARS}&contentInode=${contentInode}`,
+            HttpMethod.GET
+        );
     });
 
     it('should get Languages by pageId', () => {

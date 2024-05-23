@@ -1,11 +1,18 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+    AbstractControl,
+    FormControl,
+    FormGroup,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotLocalesListStore } from '../../store/dot-locales-list.store';
@@ -13,11 +20,7 @@ import { DotLocalesListStore } from '../../store/dot-locales-list.store';
 export interface DotLocaleCreateEditData {
     languages: [];
     countries: [];
-    id: string;
-    languageCode: string;
-    language: string;
-    countryCode: string;
-    country: string;
+    locale: DotLanguage | null;
 }
 
 @Component({
@@ -29,19 +32,16 @@ export interface DotLocaleCreateEditData {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLocaleCreateEditComponent implements OnInit {
-    private readonly ref = inject(DynamicDialogRef);
     readonly config: DynamicDialogConfig<DotLocaleCreateEditData> = inject(DynamicDialogConfig);
+    ref = inject(DynamicDialogRef);
     store = inject(DotLocalesListStore);
+    languageId: AbstractControl<string, string> | null | undefined;
 
     form: FormGroup = new FormGroup({});
     data: DotLocaleCreateEditData = this.config.data || {
         languages: [],
         countries: [],
-        id: '',
-        languageCode: '',
-        language: '',
-        countryCode: '',
-        country: ''
+        locale: null
     };
 
     ngOnInit(): void {
@@ -55,14 +55,22 @@ export class DotLocaleCreateEditComponent implements OnInit {
 
     private initForm(): void {
         this.form = new FormGroup({
-            language: new FormControl(this.data.id ? this.data.language : '', {
+            language: new FormControl(this.data.locale?.id ? this.data.locale : '', {
                 validators: [Validators.required]
             }),
-            country: new FormControl(this.data.id ? this.data.country : ''),
-            localeId: new FormControl(this.data.id ? this.data.countryCode : '', {
-                validators: [Validators.required]
-            }),
-            languageId: new FormControl(this.data.id || '')
+            country: new FormControl(this.data.locale?.id ? this.data.locale.country : ''),
+            localeId: new FormControl(
+                {
+                    value: this.data.locale?.countryCode,
+                    disabled: !!this.data.locale?.id
+                },
+                {
+                    validators: [Validators.required]
+                }
+            ),
+            languageId: new FormControl({ value: this.data.locale?.id || '', disabled: true })
         });
+
+        this.languageId = this.form.get('languageId');
     }
 }

@@ -3,9 +3,18 @@
         <label class="p-label-input-required" for="language">{{ 'locales.language' | dm }}</label>
         <p-dropdown
             id="language"
+            [filter]="true"
             [options]="data.languages"
             [placeholder]="'locales.language.input.placeholder' | dm"
+            filterBy="name,code"
+            appendTo="body"
             formControlName="language">
+            <ng-template let-language pTemplate="item">
+                {{ language.name }} - {{ language.code }}
+            </ng-template>
+            <ng-template let-language pTemplate="selectedItem">
+                {{ language.name }} - {{ language.code }}
+            </ng-template>
         </p-dropdown>
         <span class="p-field-hint">{{ 'locales.language.hint' | dm }}</span>
     </div>
@@ -13,9 +22,18 @@
         <label for="country">{{ 'locales.country' | dm }}</label>
         <p-dropdown
             id="country"
+            [filter]="true"
             [options]="data.countries"
             [placeholder]="'locales.language.input.placeholder' | dm"
+            filterBy="name,code"
+            appendTo="body"
             formControlName="language">
+            <ng-template let-country pTemplate="item">
+                {{ country.name }} - {{ country.code }}
+            </ng-template>
+            <ng-template let-country pTemplate="selectedItem">
+                {{ country.name }} - {{ country.code }}
+            </ng-template>
         </p-dropdown>
         <span class="p-field-hint">{{ 'locales.country.hint' | dm }}</span>
     </div>
@@ -25,17 +43,22 @@
         <input id="localeId" formControlName="localeId" pInputText type="text" />
     </div>
 
+    @if(languageId?.value){
     <div class="field">
         <label for="languageId">{{ 'Language Id' }}</label>
         <input id="languageId" formControlName="languageId" pInputText type="text" />
     </div>
+    }
 
     <div class="flex gap-2 justify-content-end">
-        <button class="p-button-text" [label]="'Cancel' | dm" pButton type="button"></button>
         <button
-            [label]="
-                form.get('languageId').value ? 'locales.edit.locale' : ('locales.add.locale' | dm)
-            "
+            class="p-button-text"
+            [label]="'Cancel' | dm"
+            (click)="ref.close()"
+            pButton
+            type="button"></button>
+        <button
+            [label]="(languageId?.value ? 'locales.edit.locale' : 'locales.add.locale') | dm"
             [disabled]="!form.valid"
             pButton
             type="submit"></button>
