@@ -2608,6 +2608,124 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * Create a relationship field with the given name and cardinality
+     */
+    private com.dotcms.contenttype.model.field.Field createRelationshipField(final String relationName,
+                                                                             final ContentType parentContentType, final String childContentTypeVar,
+                                                                             final int cardinality) throws DotSecurityException, DotDataException {
+
+        final com.dotcms.contenttype.model.field.Field newField = FieldBuilder.builder(RelationshipField.class).name(relationName)
+                .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                .relationType(childContentTypeVar).build();
+
+        return fieldAPI.save(newField, user);
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#copyContentlet(Contentlet, User, boolean)}
+     * Given Scenario: When the user copy a content with a cardinality 1 to 1 the content copied should not have any relationship
+     * ExpectedResult: The content copied should not have any relationship.
+     *
+     */
+    @Test
+    public void test_resultOfCopyContWithCardinality_OneToOne_shouldNotHaveRelationWithCotents() throws DotDataException, DotSecurityException {
+
+        //Create a child with a text field
+        final ContentType childCT = new ContentTypeDataGen().name("child").nextPersisted();
+        final com.dotcms.contenttype.model.field.Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(childCT.id())
+                .unique(false)
+                .type(TextField.class)
+                .nextPersisted();
+
+        //Create a parent with a relationship to the child
+        final ContentType parentCT = new ContentTypeDataGen().nextPersisted();
+        //create the relation field
+        final com.dotcms.contenttype.model.field.Field parentField = createRelationshipField("children", parentCT,
+                childCT.variable(), WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+        //get the relationship
+        final Relationship relationship = relationshipAPI
+                .getRelationshipFromField(parentField, user);
+
+
+        //create the contentlets
+        final Contentlet childContent = new ContentletDataGen(childCT).setProperty("title", "childCont").nextPersisted();
+
+        Contentlet parentContent = new ContentletDataGen(parentCT.id())
+                .languageId(languageAPI.getDefaultLanguage().getId()).next();
+
+
+        parentContent = contentletAPI.checkin(parentContent, CollectionsUtils
+                .map(relationship, CollectionsUtils.list(childContent)), user, false);
+
+        Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
+                .findContentRelationships(parentContent, user);
+
+        //old content relationship
+        final Map<Relationship, List<Contentlet>> oldContRelationShip = contentletAPI.findContentRelationships(childContent, user);
+        assertEquals(1, oldContRelationShip.get(relationship).size());
+
+
+        final Contentlet copiedContentlet = contentletAPI.copyContentlet(childContent, user, false);
+        //copy content relationship
+        final Map<Relationship, List<Contentlet>> contentRelationships = contentletAPI.findContentRelationships(copiedContentlet, user);
+
+        assertEquals(0, contentRelationships.get(relationship).size());
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#copyContentlet(Contentlet, User, boolean)}
+     * Given Scenario: When the user copy a content with a cardinality N to 1 the content copied should not have any relationship
+     * ExpectedResult: The content copied should not have any relationship.
+     *
+     */
+    @Test
+    public void test_resultOfCopyContWithCardinality_ManyToOne_shouldNotHaveRelationWithCotents() throws DotDataException, DotSecurityException {
+
+        //Create a child with a text field
+        final ContentType childCT = new ContentTypeDataGen().name("child").nextPersisted();
+        final com.dotcms.contenttype.model.field.Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(childCT.id())
+                .unique(false)
+                .type(TextField.class)
+                .nextPersisted();
+
+        //Create a parent with a relationship to the child
+        final ContentType parentCT = new ContentTypeDataGen().nextPersisted();
+        //create the relation field
+        final com.dotcms.contenttype.model.field.Field parentField = createRelationshipField("children", parentCT,
+                childCT.variable(), WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE.ordinal());
+        //get the relationship
+        final Relationship relationship = relationshipAPI
+                .getRelationshipFromField(parentField, user);
+
+
+        //create the contentlets
+        final Contentlet childContent = new ContentletDataGen(childCT).setProperty("title", "childCont").nextPersisted();
+
+        Contentlet parentContent = new ContentletDataGen(parentCT.id())
+                .languageId(languageAPI.getDefaultLanguage().getId()).next();
+
+
+        parentContent = contentletAPI.checkin(parentContent, CollectionsUtils
+                .map(relationship, CollectionsUtils.list(childContent)), user, false);
+
+        Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
+                .findContentRelationships(parentContent, user);
+
+        //old content relationship
+        final Map<Relationship, List<Contentlet>> oldContRelationShip = contentletAPI.findContentRelationships(childContent, user);
+        assertEquals(1, oldContRelationShip.get(relationship).size());
+
+
+        final Contentlet copiedContentlet = contentletAPI.copyContentlet(childContent, user, false);
+        //copy content relationship
+        final Map<Relationship, List<Contentlet>> contentRelationships = contentletAPI.findContentRelationships(copiedContentlet, user);
+
+        assertEquals(0, contentRelationships.get(relationship).size());
+    }
+
     private com.dotcms.contenttype.model.field.Field createRelationshipField(final String fieldName,
             final String parentContentTypeID, final String childContentTypeVariable)
             throws DotDataException, DotSecurityException {
