@@ -1,7 +1,12 @@
 import { InjectionToken } from '@angular/core';
 
 import { mockSites } from '@dotcms/dotcms-js';
-import { CONTAINER_SOURCE, DotPageContainerStructure, DotPersona } from '@dotcms/dotcms-models';
+import {
+    CONTAINER_SOURCE,
+    DEFAULT_VARIANT_ID,
+    DotPageContainerStructure,
+    DotPersona
+} from '@dotcms/dotcms-models';
 import {
     mockDotLayout,
     mockDotTemplate,
@@ -187,7 +192,7 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
             languageCode: '1',
             country: 'United States'
         },
-
+        variantId: DEFAULT_VARIANT_ID,
         persona: {
             ...DEFAULT_PERSONA
         }
