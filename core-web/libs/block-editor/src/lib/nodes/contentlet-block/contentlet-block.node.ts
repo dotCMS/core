@@ -1,4 +1,4 @@
-import { DOMOutputSpec, TagParseRule } from 'prosemirror-model';
+import { DOMOutputSpec } from 'prosemirror-model';
 
 import { Injector } from '@angular/core';
 
@@ -12,6 +12,22 @@ export type ContentletBlockOptions = {
     HTMLAttributes: Record<string, unknown>;
 };
 
+/**
+ * Remove nested editor fields from the contentlet object
+ *
+ * @param {*} obj
+ * @return {*}
+ */
+function removeNestedEditorSchema(obj) {
+    for (const key in obj) {
+        if (typeof obj[key] === 'object' && obj[key]?.type === 'doc') {
+            delete obj[key];
+        }
+    }
+
+    return obj;
+}
+
 export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions> => {
     return Node.create({
         name: 'dotContent',
@@ -19,37 +35,33 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         inline: false,
         draggable: true,
 
-        // ...configuration
         addAttributes() {
             return {
                 data: {
                     default: null,
-                    parseHTML: (element) => ({
-                        data: element.getAttribute('data')
-                    }),
-                    renderHTML: (attributes) => {
-                        return { data: attributes.data };
+                    rendered: true,
+                    parseHTML: (element) => {
+                        return {
+                            data: element.getAttribute('data')
+                        };
+                    },
+                    renderHTML: ({ data }) => {
+                        return { data: removeNestedEditorSchema(data) };
                     }
                 }
             };
         },
 
-        parseHTML(): readonly TagParseRule[] {
-            return [{ tag: 'dotcms-contentlet-block' }];
-        },
-
         renderHTML({ HTMLAttributes }): DOMOutputSpec {
-            let img = ['span', {}];
-            if (HTMLAttributes.data.hasTitleImage) {
-                img = ['img', { src: HTMLAttributes.data.image }];
-            }
+            const { data } = HTMLAttributes;
+            const img = data.hasTitleImage ? ['img', { src: data.image }] : ['span', {}];
 
             return [
                 'div',
-                ['h3', { class: HTMLAttributes.data.title }, HTMLAttributes.data.title],
-                ['div', HTMLAttributes.data.identifier],
+                ['h3', data.title],
+                ['div', data.identifier],
                 img,
-                ['div', {}, HTMLAttributes.data.language]
+                ['div', {}, data.language]
             ];
         },
 
