@@ -2,6 +2,7 @@ package com.dotmarketing.util;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -85,6 +86,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ImportUtil {
 
+    public static final String LINE_NO = "Line #";
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final static ContentletAPI conAPI = APILocator.getContentletAPI();
     private final static CategoryAPI catAPI = APILocator.getCategoryAPI();
@@ -283,8 +285,8 @@ public class ImportUtil {
                             }
                         } catch (final DotRuntimeException ex) {
                             String errorMessage = getErrorMsgFromException(user, ex);
-                            if(errorMessage.indexOf("Line #") == -1){
-                                errorMessage = "Line #" + lineNumber + ": " + errorMessage;
+                            if(errorMessage.indexOf(LINE_NO) == -1){
+                                errorMessage = LINE_NO + lineNumber + ": " + errorMessage;
                             }
                             results.get("errors").add(errorMessage);
                             errors++;
@@ -695,7 +697,7 @@ public class ImportUtil {
             for ( Integer column : headers.keySet() ) {
                 Field field = headers.get( column );
                 if ( line.length < column ) {
-                    throw new DotRuntimeException("Line #" + lineNumber + "doesn't contain all the required columns.");
+                    throw new DotRuntimeException(LINE_NO + lineNumber + "doesn't contain all the required columns.");
                 }
                 String value = line[column];
                 Object valueObj = value;
@@ -712,7 +714,7 @@ public class ImportUtil {
                         for(String catKey : categoryKeys) {
                             Category cat = catAPI.findByKey(catKey.trim(), user, false);
                             if(cat == null)
-                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors. Column: '" + field.getVelocityVarName() +
+                                throw new DotRuntimeException(LINE_NO + lineNumber + " contains errors. Column: '" + field.getVelocityVarName() +
                                         "', value: '" + value + "', invalid category key found. Line will be ignored.");
                             categories.add(cat);
                         }
@@ -751,14 +753,14 @@ public class ImportUtil {
                 } else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
                     siteAndFolder = getSiteAndFolderFromIdOrName(value, user);
                     if (siteAndFolder == null) {
-                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors. Column: '" + field.getVelocityVarName() +
+                        throw new DotRuntimeException(LINE_NO + lineNumber + " contains errors. Column: '" + field.getVelocityVarName() +
                                 "', value: '" + value + "', invalid site/folder inode found. Line will be ignored.");
                     } else {
                         valueObj = value;
                     }
                 } else if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName())){
                     if(UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)){
-                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors. URL is malformed or Response is not 200");
+                        throw new DotRuntimeException(LINE_NO + lineNumber + " contains errors. URL is malformed or Response is not 200");
                     }
                 }else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
                     String filePath = value;
@@ -835,7 +837,7 @@ public class ImportUtil {
                     values.put(urlValue.getLeft(), assetNameForURL);
                     final Pair<Host, Folder> parentPathForURL = pathAndAssetNameForURL.getLeft();
                     if (parentPathForURL == null) {
-                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors. Column: '"
+                        throw new DotRuntimeException(LINE_NO + lineNumber + " contains errors. Column: '"
                                 + HTMLPageAssetAPI.URL_FIELD + "', value: '" + urlValue.getRight()
                                 + "', invalid parent folder for URL. Line will be ignored.");
                     } else {
@@ -917,8 +919,8 @@ public class ImportUtil {
 
                 if ((contentsSearch == null) || (contentsSearch.size() == 0)) {
 
-                    Logger.warn(ImportUtil.class, "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
-                    throw new DotRuntimeException("Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
+                    Logger.warn(ImportUtil.class, LINE_NO + lineNumber + ": Content not found with identifier " + identifier + "\n");
+                    throw new DotRuntimeException(LINE_NO + lineNumber + ": Content not found with identifier " + identifier + "\n");
                 } else {
 
                     Contentlet contentlet;
@@ -927,8 +929,8 @@ public class ImportUtil {
                         if ((contentlet != null) && InodeUtils.isSet(contentlet.getInode())) {
                             contentlets.add(contentlet);
                         } else {
-                            Logger.warn(ImportUtil.class, "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
-                            throw new DotRuntimeException("Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
+                            Logger.warn(ImportUtil.class, LINE_NO + lineNumber + ": Content not found with identifier " + identifier + "\n");
+                            throw new DotRuntimeException(LINE_NO + lineNumber + ": Content not found with identifier " + identifier + "\n");
                         }
                     }
                 }
@@ -948,8 +950,8 @@ public class ImportUtil {
                         if ((contentlet != null) && InodeUtils.isSet(contentlet.getInode())) {
                             contentlets.add(contentlet);
                         } else {
-                            Logger.warn(ImportUtil.class, "Line #" + lineNumber + ": Content not found with URL " + urlValue.getRight() + "\n");
-                            throw new DotRuntimeException("Line #" + lineNumber + ": Content not found with URL " + urlValue.getRight() + "\n");
+                            Logger.warn(ImportUtil.class, LINE_NO + lineNumber + ": Content not found with URL " + urlValue.getRight() + "\n");
+                            throw new DotRuntimeException(LINE_NO + lineNumber + ": Content not found with URL " + urlValue.getRight() + "\n");
                         }
                     }
                 }
@@ -979,7 +981,7 @@ public class ImportUtil {
                         text = value.toString();
                     }
                     if(!UtilMethods.isSet(text)){
-                        throw new DotRuntimeException("Line #" + lineNumber + " key field " + field.getVelocityVarName() + " is required since it was defined as a key\n");
+                        throw new DotRuntimeException(LINE_NO + lineNumber + " key field " + field.getVelocityVarName() + " is required since it was defined as a key\n");
                     }else{
                         if (field.getVelocityVarName().equals(HTMLPageAssetAPI.URL_FIELD)
                                 && pathAndAssetNameForURL != null) {
@@ -988,7 +990,7 @@ public class ImportUtil {
                                     .append(HTMLPageAssetAPI.URL_FIELD).append(StringPool.COLON)
                                     .append(pathAndAssetNameForURL.getRight());
                             value = getURLFromFolderAndAssetName(pathAndAssetNameForURL);
-                        } else if(field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+                        } else if(new LegacyFieldTransformer(field).from() instanceof HostFolderField) {
                             appendSiteToQuery = true;
                             siteFieldValue = text;
                         } else {
@@ -1372,7 +1374,7 @@ public class ImportUtil {
                                     new ArrayList<>(categories));
                         }
                     } catch (DotContentletValidationException ex) {
-                        StringBuffer sb = new StringBuffer("Line #" + lineNumber + " contains errors\n");
+                        StringBuffer sb = new StringBuffer(LINE_NO + lineNumber + " contains errors\n");
                         HashMap<String,List<Field>> errors = (HashMap<String,List<Field>>) ex.getNotValidFields();
                         Set<String> keys = errors.keySet();
                         for (String key : keys) {
@@ -2006,7 +2008,7 @@ public class ImportUtil {
                     valueObj = parseExcelDate(value);
                 } catch (ParseException e) {
                     throw new DotRuntimeException(
-                            "Line #" + lineNumber + " contains errors, Column: " + field
+                            LINE_NO + lineNumber + " contains errors, Column: " + field
                                     .getVelocityVarName() +
                                     ", value: " + value
                                     + ", couldn't be parsed as any of the following supported formats: "
