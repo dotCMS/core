@@ -390,8 +390,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
      */
     @Test
     public void findLanguageVariablesThenUnpublishTest() throws Exception {
-
-        //destroyAll();
+        
         destroyAll();
         final LanguageCache languageCache = CacheLocator.getLanguageCache();
         languageCache.clearVariables();
