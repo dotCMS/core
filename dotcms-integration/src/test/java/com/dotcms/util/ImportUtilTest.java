@@ -2058,6 +2058,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Method to test: {@link ImportUtil#importFile}
+     * Case: Import file including a page with URL field set to a valid URL
+     * @throws DotSecurityException when there is a security exception
+     * @throws DotDataException when there is a dotCMS data exception
+     * @throws IOException when there is an IO exception
+     */
     @Test
     public void importFile_PagesWithURL_success()
             throws DotSecurityException, DotDataException, IOException {
