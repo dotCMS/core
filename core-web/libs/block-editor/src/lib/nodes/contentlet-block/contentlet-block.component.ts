@@ -23,14 +23,8 @@ export class ContentletBlockComponent extends AngularNodeViewComponent implement
 
     ngOnInit() {
         const data = this.node.attrs.data;
-        const keys = Object.keys(data);
 
-        if (keys.length > 1) {
-            this.data.set(data);
-
-            return;
-        }
-
+        // Remove this when backend is ready and test it
         this.getContentletByInode(data.identifier)
             .pipe(takeUntilDestroyed(this.detroyRef))
             .subscribe((contentlet: DotCMSContentlet) => {

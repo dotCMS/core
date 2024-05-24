@@ -25,7 +25,9 @@ const toJSON: toJSONFn = function () {
     const customAttrs = {
         ...attrs,
         data: {
-            identifier: data.identifier
+            identifier: data.identifier,
+            inode: data.inode,
+            languageId: data.languageId
         }
     };
 
