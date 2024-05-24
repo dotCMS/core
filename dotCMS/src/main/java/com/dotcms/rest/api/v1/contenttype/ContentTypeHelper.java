@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -18,6 +20,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -29,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Contentlet helper.
@@ -72,13 +76,26 @@ public class ContentTypeHelper implements Serializable {
      *
      * @param contentType The content type to evaluate.
      * @param user        The user making the request.
+     * @param isNew       If the content type is new or it is an update.
      * @return The resulting content type after evaluation.
      * @throws DotDataException     If an error occurs while accessing data.
      * @throws DotSecurityException If there are security restrictions preventing the evaluation.
      * @throws URISyntaxException   If the URI syntax is invalid.
      */
-    public ContentType evaluateContentTypeRequest(final ContentType contentType, final User user)
-            throws DotDataException, DotSecurityException, URISyntaxException {
+    public ContentType evaluateContentTypeRequest(final ContentType contentType, final User user,
+            final boolean isNew) throws DotDataException, DotSecurityException, URISyntaxException {
+
+        ContentTypeBuilder updatedContentTypeBuilder = null;
+
+        // Evaluate the id of the content type
+        var foundId = resolveContentTypeId(contentType, user, isNew);
+        if (foundId != null && !foundId.equals(contentType.id())) {
+            updatedContentTypeBuilder = setContentTypeId(
+                    contentType,
+                    updatedContentTypeBuilder,
+                    foundId
+            );
+        }
 
         // Evaluate if the content type has a detail page and if it is a URI, if so, get the
         // detail page identifier and set it back into the content type detail page but as an
@@ -87,14 +104,74 @@ public class ContentTypeHelper implements Serializable {
         var pageDetailIdentifierOptional = new DetailPageTransformerImpl(
                 contentType, user).uriToId();
         if (pageDetailIdentifierOptional.isPresent()) {
-            final var updatedContentType = ContentTypeBuilder.builder(contentType).
-                    detailPage(pageDetailIdentifierOptional.get())
-                    .build();
+            updatedContentTypeBuilder = setContentTypeDetailPage(
+                    contentType,
+                    updatedContentTypeBuilder,
+                    pageDetailIdentifierOptional.get()
+            );
+        }
+
+        if (null != updatedContentTypeBuilder) {
+            final var updatedContentType = updatedContentTypeBuilder.build();
             updatedContentType.constructWithFields(contentType.fields());
             return updatedContentType;
         }
 
         return contentType;
+    }
+
+    /**
+     * Resolves the content type id based on the provided content type, user, and if it's new or an
+     * update.
+     *
+     * @param contentType The content type to resolve the id for.
+     * @param user        The user making the request.
+     * @param isNew       Flag indicating if the content type is new or an update.
+     * @return The resolved content type id.
+     * @throws DotSecurityException If there are security restrictions preventing the resolution.
+     * @throws DotDataException     If an error occurs while accessing data.
+     */
+    private String resolveContentTypeId(ContentType contentType, final User user, boolean isNew)
+            throws DotSecurityException, DotDataException {
+
+        final var contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+
+        if (!isNew) {
+
+            // Trying to find the content type by id
+            ContentType existingContentType = getContentTypeById(contentType, contentTypeAPI);
+
+            // Now trying to find by variable if not found by id
+            if (null == existingContentType) {
+                existingContentType = getContentTypeByVariable(contentType, contentTypeAPI);
+            }
+
+            if (null == existingContentType) {
+                final var message = String.format(
+                        "Content Type to update with id [%s] and variable [%s] not found.",
+                        contentType.id(), contentType.variable()
+                );
+                throw new NotFoundInDbException(message);
+            }
+
+            if (!existingContentType.id().equals(contentType.id())) {
+
+                if (contentType.id() != null) {
+                    // We found a content type with the same variable but different id
+                    final var message = String.format(
+                            "Content Type to update with id [%s] not found, using existing "
+                                    + "Content Type with variable [%s] and id [%s] instead.",
+                            contentType.id(), existingContentType.variable(),
+                            existingContentType.id()
+                    );
+                    Logger.warn(ContentTypeHelper.class, message);
+                }
+
+                return existingContentType.id();
+            }
+        }
+
+        return contentType.id();
     }
 
     /**
@@ -142,6 +219,99 @@ public class ContentTypeHelper implements Serializable {
         }
 
         return contentTypeMap;
+    }
+
+    /**
+     * Sets the content type identifier for a given content type to the provided builder.
+     *
+     * @param contentType               The content type to set the identifier for.
+     * @param updatedContentTypeBuilder The updated content type builder, or null if not available.
+     * @param identifier                The identifier to set for the content type.
+     * @return The content type builder with the identifier set.
+     */
+    private ContentTypeBuilder setContentTypeId(final ContentType contentType,
+            final ContentTypeBuilder updatedContentTypeBuilder, final String identifier) {
+
+        if (null != updatedContentTypeBuilder) {
+            return updatedContentTypeBuilder.detailPage(identifier);
+        } else {
+            return ContentTypeBuilder.builder(contentType).id(identifier);
+        }
+    }
+
+    /**
+     * Sets the detail page for a given content type to the provided builder.
+     *
+     * @param contentType               The content type to set the detail page for.
+     * @param updatedContentTypeBuilder The updated content type builder, or null if not available.
+     * @param pageDetail                The detail page to set for the content type.
+     * @return The content type builder with the detail page set.
+     * @throws NullPointerException if contentType is null
+     */
+    private ContentTypeBuilder setContentTypeDetailPage(final ContentType contentType,
+            final ContentTypeBuilder updatedContentTypeBuilder, final String pageDetail) {
+
+        if (null != updatedContentTypeBuilder) {
+            return updatedContentTypeBuilder.detailPage(pageDetail);
+        } else {
+            return ContentTypeBuilder.builder(contentType).detailPage(pageDetail);
+        }
+    }
+
+    /**
+     * Retrieves the existing content type based on the variable of the given content type.
+     *
+     * @param contentType    The content type to evaluate.
+     * @param contentTypeAPI The ContentTypeAPI instance used to retrieve the existing content
+     *                       type.
+     * @return The existing content type if found, otherwise null.
+     * @throws DotSecurityException If there are security restrictions preventing the evaluation.
+     * @throws DotDataException     If an error occurs while accessing data.
+     */
+    private ContentType getContentTypeByVariable(ContentType contentType,
+            ContentTypeAPI contentTypeAPI) throws DotSecurityException, DotDataException {
+
+        ContentType existingContentType = null;
+
+        try {
+            existingContentType = contentTypeAPI.find(contentType.variable());
+        } catch (NotFoundInDbException e) {
+            final var message = String.format(
+                    "Content Type to update with variable [%s] not found.", contentType.variable()
+            );
+            Logger.warn(ContentTypeHelper.class, message);
+        }
+
+        return existingContentType;
+    }
+
+    /**
+     * Retrieves the existing content type based on the id of the given content type.
+     *
+     * @param contentType    The content type to evaluate.
+     * @param contentTypeAPI The ContentTypeAPI instance used to retrieve the existing content
+     *                       type.
+     * @return The existing content type if found, otherwise null.
+     * @throws DotSecurityException If there are security restrictions preventing the evaluation.
+     * @throws DotDataException     If an error occurs while accessing data.
+     */
+    private ContentType getContentTypeById(ContentType contentType,
+            ContentTypeAPI contentTypeAPI) throws DotSecurityException, DotDataException {
+
+        ContentType existingContentType = null;
+
+        try {
+            if (StringUtils.isNotEmpty(contentType.id())) {
+                existingContentType = contentTypeAPI.find(contentType.id());
+            }
+        } catch (NotFoundInDbException e) {
+            final var message = String.format(
+                    "Content Type to update with id [%s] not found.", contentType.id()
+            );
+            Logger.warn(ContentTypeHelper.class, message);
+        }
+
+        return existingContentType;
     }
 
     /**
