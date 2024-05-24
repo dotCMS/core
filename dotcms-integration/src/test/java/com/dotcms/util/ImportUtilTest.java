@@ -1,5 +1,6 @@
 package com.dotcms.util;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -11,12 +12,15 @@ import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -43,12 +47,15 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
@@ -2048,6 +2055,112 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             } catch (Exception e) {
                 Logger.error("Error deleting content type", e);
             }
+        }
+    }
+
+    @Test
+    public void importFile_PagesWithURL_success()
+            throws DotSecurityException, DotDataException, IOException {
+
+        Host site = null;
+        Template template = null;
+        ContentType pageType = null;
+        Folder parentFolder = null;
+        try {
+            site = new SiteDataGen().nextPersisted();
+
+            // create test template
+            template = new TemplateDataGen()
+                    .site(APILocator.systemHost())
+                    .nextPersisted();
+            final String templateId = template.getIdentifier();
+
+            long time = System.currentTimeMillis();
+            final String pageTypeName = "TestPageTypeWithURL_" + time;
+            final String pageTypeVarName = "velocityVarNameTestPageTypeWithURL_" + time;
+
+            // create test page type
+            pageType = new ContentTypeDataGen()
+                    .baseContentType(BaseContentType.HTMLPAGE)
+                    .host(APILocator.systemHost())
+                    .name(pageTypeName)
+                    .velocityVarName(pageTypeVarName)
+                    .nextPersisted();
+
+            // create test folder
+            final String parentFolderName = "test-base-folder_" + time;
+            parentFolder = new FolderDataGen()
+                    .name(parentFolderName)
+                    .site(site)
+                    .nextPersisted();
+            final Folder subFolder = new FolderDataGen()
+                    .name("test-sub-folder")
+                    .parent(parentFolder)
+                    .nextPersisted();
+
+            final String testPageURL = StringPool.FORWARD_SLASH
+                    + parentFolderName + "/test-sub-folder/test-page-1";
+            final Reader reader = createTempFile(
+                    HTMLPageAssetAPI.TITLE_FIELD
+                            + "," + HTMLPageAssetAPI.URL_FIELD
+                            + ",hostFolder"
+                            + "," + HTMLPageAssetAPI.TEMPLATE_FIELD
+                            + "," + HTMLPageAssetAPI.FRIENDLY_NAME_FIELD
+                            + "," + HTMLPageAssetAPI.SORT_ORDER_FIELD
+                            + "," + HTMLPageAssetAPI.CACHE_TTL_FIELD
+                            + "\r\n" +
+                            "Test Page 1," + testPageURL + ","
+                                + site.getIdentifier() + "," + templateId
+                                + ",Test Page 1,0,300\r\n");
+
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+
+            final String[] csvHeaders = csvreader.getHeaders();
+
+            final Map<String, List<String>> results = ImportUtil
+                    .importFile(0L, defaultSite.getInode(), pageType.inode(),
+                            new String[]{}, false, false,
+                            user, defaultLanguage.getId(), csvHeaders, csvreader,
+                            -1, -1,
+                            reader, null, getHttpRequest());
+
+            Logger.info(ImportUtilTest.class, "page errors: " + results.get("errors"));
+            validate(results, false, false, true);
+
+            final List<Contentlet> savedData = contentletAPI
+                    .findByStructure(pageType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertEquals(1, savedData.size());
+
+            final Contentlet contentlet = savedData.get(0);
+            final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+            assertNotNull(identifier);
+            assertEquals(testPageURL, identifier.getURI());
+
+        } finally {
+            try {
+                if (parentFolder != null) {
+                    FolderDataGen.remove(parentFolder);
+                }
+
+                if (pageType != null) {
+                    contentTypeApi.delete(pageType);
+                }
+
+                if (template != null) {
+                    TemplateDataGen.remove(template);
+                }
+
+                if (null != site) {
+                    APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+                    APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+                }
+
+            } catch (Exception e) {
+                Logger.error("Error deleting test page type", e);
+            }
+
         }
     }
 
