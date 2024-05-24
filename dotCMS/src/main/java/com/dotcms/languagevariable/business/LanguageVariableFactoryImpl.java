@@ -76,15 +76,15 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
                 + "          contentlet.contentlet_as_json->'fields'->'value'->'value' as value, \n"
                 + "          contentlet.identifier,\n"
                 + "          contentlet.language_id\n"
-                + "     from contentlet  \n"
+                + "     from contentlet   \n"
                 + "      inner join ( \n"
                 + "     select distinct c.identifier, vi.lang \n"
-                + "       from contentlet c, contentlet_version_info vi \n"
+                + "       from contentlet c, contentlet_version_info vi  \n"
                 + "     where \n"
-                + "       c.structure_inode = '"+contentType.inode()+"' \n"
-                + "       and vi.identifier = c.identifier \n"
-                + "       and ( vi.working_inode = c.inode or vi.live_inode = c.inode ) \n"
-                + "       and vi.deleted = 'false' \n"
+                + "      c.structure_inode = '"+contentType.inode()+"' \n"
+                + "      and vi.identifier = c.identifier \n"
+                + "      and ( vi.working_inode = c.inode or vi.live_inode = c.inode ) \n"
+                + "      and vi.deleted = 'false' \n"
                 + "        order by c.identifier \n"
                 + "        offset "+offset+" limit "+limit+"  \n"
                 + "    ) con_ident on contentlet.identifier = con_ident.identifier and contentlet.language_id = con_ident.lang \n";
@@ -119,7 +119,7 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
      * {@inheritDoc}
      */
     @Override
-    public int countVariablesByKey(ContentType contentType) throws DotDataException {
+    public int countVariablesByKey(ContentType contentType) {
         final DotConnect dotConnect = new DotConnect();
         final String select = "select count( distinct( contentlet.contentlet_as_json->'fields'->'key'->'value' )) as x \n"
                 + "     from contentlet  \n"
@@ -136,5 +136,27 @@ public class LanguageVariableFactoryImpl implements LanguageVariableFactory {
         dotConnect.setSQL(select);
         return dotConnect.getInt("x");
     }
+
+
+    @Override
+    public int countVariablesByKey(ContentType contentType, final long languageId) {
+        final DotConnect dotConnect = new DotConnect();
+        final String select = "select count( distinct( contentlet.contentlet_as_json->'fields'->'key'->'value' )) as x \n"
+                + "     from contentlet  \n"
+                + "     inner join ( \n"
+                + "      select distinct c.identifier, vi.lang \n"
+                + "       from contentlet c, contentlet_version_info vi \n"
+                + "      where \n"
+                + "       c.structure_inode = '"+contentType.inode()+"' \n"
+                + "       and vi.identifier = c.identifier \n"
+                + "       and ( vi.working_inode = c.inode or vi.live_inode = c.inode ) \n"
+                + "       and vi.deleted = 'false' \n"
+                + "        order by c.identifier       \n"
+                + "    ) con_ident on contentlet.identifier = con_ident.identifier and contentlet.language_id = "+languageId+ " \n";
+        dotConnect.setSQL(select);
+        return dotConnect.getInt("x");
+    }
+
+
 
 }

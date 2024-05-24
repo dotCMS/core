@@ -38,6 +38,7 @@ export interface DotPageApiResponse {
     viewAs: {
         language: DotLanguage;
         persona?: DotPersona;
+        variantId?: string;
     };
     layout: DotLayout;
     template: DotTemplate;
