@@ -239,6 +239,8 @@ public class EnvironmentResource {
 				throw new IllegalArgumentException("An Environment with the given name" + environmentName + " already exist.");
 			}
 
+			Logger.debug(this, ()-> "Creating environment: " + environmentName);
+
 			final List<String> whoCanUseList = environmentForm.getWhoCanUse();
 			final String pushType = environmentForm.getPushType();
 
