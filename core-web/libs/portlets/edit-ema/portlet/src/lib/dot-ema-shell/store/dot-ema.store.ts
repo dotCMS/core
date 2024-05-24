@@ -16,6 +16,7 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
+    DEFAULT_VARIANT_ID,
     DotContainerMap,
     DotDevice,
     DotExperimentStatus,
@@ -543,7 +544,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     editorState: EDITOR_STATE.IDLE,
                                     editorData: {
                                         ...state.editorData,
-                                        mode: EDITOR_MODE.EDIT
+                                        mode:
+                                            pageData.viewAs.variantId === DEFAULT_VARIANT_ID
+                                                ? EDITOR_MODE.EDIT
+                                                : EDITOR_MODE.EDIT_VARIANT
                                     },
                                     shouldReload: true
                                 }));
