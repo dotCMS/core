@@ -1,7 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { DotcmsLayoutComponent, PageContextService } from '@dotcms/angular';
-
+import { DotcmsLayoutComponent } from '@dotcms/angular';
 
 @Component({
   selector: 'app-root',
@@ -10,10 +9,4 @@ import { DotcmsLayoutComponent, PageContextService } from '@dotcms/angular';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
-export class AppComponent {
-
-  service = inject(PageContextService);
-  ngOnInit(){
-    console.log(this.service);
-  }
-}
+export class AppComponent {}
