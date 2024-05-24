@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
@@ -110,6 +110,29 @@ export class DotLanguagesService {
     }
 
     getISO(): Observable<DotLanguagesISO> {
-        return this.httpClient.get(`${LANGUAGE_API_URL}/iso`).pipe(pluck('entity'));
+        //return this.httpClient.get(`${LANGUAGE_API_URL}/iso`).pipe(pluck('entity'));
+        // placeholder while the API is not ready
+        return of({
+            countries: [
+                { code: 'US', name: 'United States' },
+                { code: 'CA', name: 'Canada' },
+                { code: 'MX', name: 'Mexico' },
+                { code: 'BR', name: 'Brazil' },
+                { code: 'AR', name: 'Argentina' },
+                { code: 'GB', name: 'United Kingdom' },
+                { code: 'FR', name: 'France' },
+                { code: 'DE', name: 'Germany' },
+                { code: 'IT', name: 'Italy' },
+                { code: 'ES', name: 'Spain' }
+            ],
+            languages: [
+                { code: 'en', name: 'English' },
+                { code: 'es', name: 'Spanish' },
+                { code: 'fr', name: 'French' },
+                { code: 'de', name: 'German' },
+                { code: 'zh', name: 'Chinese' },
+                { code: 'ja', name: 'Japanese' }
+            ]
+        });
     }
 }

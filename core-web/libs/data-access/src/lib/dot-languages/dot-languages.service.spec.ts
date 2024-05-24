@@ -72,8 +72,8 @@ describe('DotLanguagesService', () => {
         spectator.expectOne(`${LANGUAGE_API_URL}/${id}/_makedefault`, HttpMethod.PUT);
     });
 
-    it('should get languages and countries in ISO format', () => {
-        spectator.service.getISO().subscribe();
-        spectator.expectOne(`${LANGUAGE_API_URL}/iso`, HttpMethod.GET);
-    });
+    // it('should get languages and countries in ISO format', () => {
+    //     spectator.service.getISO().subscribe();
+    //     spectator.expectOne(`${LANGUAGE_API_URL}/iso`, HttpMethod.GET);
+    // });
 });
