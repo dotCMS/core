@@ -239,14 +239,19 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
             }
         }
 
+        int foldersDeletedCount = 0;
+
         for (File file : fileToRemove) {
             try {
                 FileUtil.deleteDir(file.toPath().toString());
+                foldersDeletedCount++;
             } catch (IOException e) {
-                final String message = "The Time Machine folder cannot be removed:" + e.getMessage();
+                final String message = "The Time Machine folder cannot be removed: " + e.getMessage();
                 Logger.error(this.getClass(), message, e);
             }
         }
+
+        Logger.info(this, "Time Machine Prune Job: " + foldersDeletedCount + " backups were removed.");
 
         return fileToRemove;
     }
