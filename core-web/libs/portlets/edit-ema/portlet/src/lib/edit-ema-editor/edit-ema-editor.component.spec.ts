@@ -3066,6 +3066,8 @@ describe('EditEmaEditorComponent', () => {
                         'saveFromInlineEditedContentlet'
                     );
                     const setEditorModeSpy = jest.spyOn(store, 'setEditorMode');
+
+                    spectator.setRouteQueryParam('variantName', DEFAULT_VARIANT_ID);
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             origin: HOST,
@@ -3078,6 +3080,51 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(saveFromInlineEditedContentletSpy).not.toHaveBeenCalled();
                     expect(setEditorModeSpy).toHaveBeenCalledWith(EDITOR_MODE.EDIT);
+                });
+
+                it('should dont trigger save from inline edited contentlet when dont have changes and does not have variantName', () => {
+                    const saveFromInlineEditedContentletSpy = jest.spyOn(
+                        store,
+                        'saveFromInlineEditedContentlet'
+                    );
+                    const setEditorModeSpy = jest.spyOn(store, 'setEditorMode');
+
+                    spectator.setRouteQueryParam('variantName', undefined);
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: null
+                            }
+                        })
+                    );
+
+                    expect(saveFromInlineEditedContentletSpy).not.toHaveBeenCalled();
+                    expect(setEditorModeSpy).toHaveBeenCalledWith(EDITOR_MODE.EDIT);
+                });
+
+                it('should dont trigger save from inline edited contentlet when dont have changes and its a variant', () => {
+                    const saveFromInlineEditedContentletSpy = jest.spyOn(
+                        store,
+                        'saveFromInlineEditedContentlet'
+                    );
+                    const setEditorModeSpy = jest.spyOn(store, 'setEditorMode');
+
+                    spectator.setRouteQueryParam('variantName', 'hello-there');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: null
+                            }
+                        })
+                    );
+
+                    expect(saveFromInlineEditedContentletSpy).not.toHaveBeenCalled();
+                    expect(setEditorModeSpy).toHaveBeenCalledWith(EDITOR_MODE.EDIT_VARIANT);
                 });
 
                 it('should trigger copy contentlet dialog when inline editing', () => {
