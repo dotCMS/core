@@ -1,5 +1,8 @@
 package com.dotcms.util;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Encapsulates Thread Local context information
  * @author jsanca
@@ -13,6 +16,8 @@ public class ThreadContext {
     private boolean includeDependencies = false;
 
     private String tag;
+
+    private Map<String, Integer> contentMap = new HashMap<>();
 
     public boolean isReindex() {
         return reindex;
@@ -37,4 +42,17 @@ public class ThreadContext {
     public void setTag(String tag) {
         this.tag = tag;
     }
+
+    public Integer getContentMap(final String key) {
+        return contentMap.getOrDefault(key, 0);
+    }
+
+    public void increaseContentMapCount(final String key) {
+        if (this.contentMap.containsKey(key)) {
+            this.contentMap.put(key, this.contentMap.get(key) + 1);
+        } else {
+            this.contentMap.put(key, 1);
+        }
+    }
+
 }

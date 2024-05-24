@@ -6,6 +6,8 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.ThreadContext;
+import com.dotcms.util.ThreadContextUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -37,6 +39,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @CloseDBIfOpened
     @Override
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
+        int counter = ThreadContextUtil.getOrCreateContext().getContentMap(this.getClass().getName());
+        if (counter > 2) {
+            return new StoryBlockReferenceResult(false, contentlet);
+        }
+        ThreadContextUtil.getOrCreateContext().increaseContentMapCount(this.getClass().getName());
         final MutableBoolean refreshed = new MutableBoolean(false);
         if (null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
