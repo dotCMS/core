@@ -54,7 +54,7 @@ export default async function Home({ searchParams, params }) {
         ])
         .fetch();
 
-    let data2Resolved = await data2;
+    let data2Resolved = data2;
 
     console.log("----------- MARKER ------------");
 

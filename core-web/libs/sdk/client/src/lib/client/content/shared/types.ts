@@ -1,5 +1,9 @@
+import { Equals } from '../../../query-builder/lucene-syntax/Equals';
+
+// Possible order values
 export type Order = 'asc' | 'desc';
 
+// Model to sort by fields
 export type SortBy = {
     field: string;
     order: Order;
@@ -7,7 +11,11 @@ export type SortBy = {
 
 export type SortByArray = Array<SortBy>;
 
-export interface ContentletMainFields {
+// Callback to build a query
+export type QueryBuilderCallback = (qb: Equals) => Equals;
+
+// Main fields of a Contentlet (Inherited from the Content Type)
+export interface ContentTypeMainFields {
     hostName: string;
     modDate: string;
     publishDate: string;
@@ -41,8 +49,10 @@ export interface ContentletMainFields {
     variant: string;
 }
 
-export type Contentlet<T> = T & ContentletMainFields;
+// The contentlet has the main fields and the custom fields of the content type
+export type Contentlet<T> = T & ContentTypeMainFields;
 
+// Response of the get collection method
 export interface GetCollectionResponse<T> {
     contentlets: Contentlet<T>[];
     page: number;
