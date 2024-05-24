@@ -245,3 +245,4 @@ This maintenance release includes the following code fixes:
 191. https://github.com/dotCMS/core/issues/26660 : Fix Menu label if we are missing the translation key #26660
 192. https://github.com/dotCMS/core/issues/27531 : Google Maps does not work on the rules page #27531
 193. https://github.com/dotCMS/core/issues/26283 : Relationship throwing error when the child content is a copy of original child content #26283
+194. https://github.com/dotCMS/core/issues/28360 : Move Async Email Actionlet to Core #28360
