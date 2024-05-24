@@ -228,12 +228,16 @@ public class EmailActionlet extends WorkFlowActionlet {
                 }
             }
 
-            mail.sendMessage();
+            sendEmail(mail, processor);
 
         } catch (Exception e) {
             Logger.error(EmailActionlet.class, e.getMessage(), e);
         }
 
+    }
+
+    protected void sendEmail(final Mailer mail, final WorkflowProcessor processor) {
+        mail.sendMessage();
     }
 
 }

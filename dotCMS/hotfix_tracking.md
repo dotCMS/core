@@ -105,3 +105,4 @@ This maintenance release includes the following code fixes:
 98. https://github.com/dotCMS/core/issues/26660 : Fix Menu label if we are missing the translation key #26660
 99. https://github.com/dotCMS/core/issues/26283 : Relationship throwing error when the child content is a copy of original child content #26283
 100. https://github.com/dotCMS/core/issues/26597 : Textareas need to be embiggened. #26597
+101. https://github.com/dotCMS/core/issues/28360 : Move Async Email Actionlet to Core #28360
