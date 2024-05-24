@@ -63,7 +63,6 @@ export class ContainerComponent implements OnChanges {
         const { identifier, uuid } = this.container;
 
         this.componentsMap = this.pageContextService.getComponentMap();
-        // console.log(this.componentsMap['Banner'])
 
         this.isInsideEditor.set(isInsideEditor);
         this.contentlets.set(contentlets);
@@ -74,8 +73,5 @@ export class ContainerComponent implements OnChanges {
             variantId,
             uuid
         });
-
-        // console.log(this.contentlets())
-        // console.log(this.componentsMap[this.contentlets()[0].contentType])
     }
 }
