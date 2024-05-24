@@ -4364,5 +4364,30 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         assertTrue("The Variant must be archived", variant2FromDataBase.archived());
 
     }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#listActive(String)}
+     * When: The method is called
+     * Should: use the {@link ExperimentsFactory#listActive(String)}
+     */
+    @Test
+    public void listActive() throws DotDataException {
+        final List<Experiment> experiments = new ArrayList<>();
+        experiments.add(mock(Experiment.class));
+        experiments.add(mock(Experiment.class));
+
+        final Host host = mock(Host.class);
+
+        final AnalyticsHelper analyticsHelper = mock(AnalyticsHelper.class);
+
+        final ExperimentsFactory experimentsFactory = mock();
+        when(experimentsFactory.listActive(host.getIdentifier())).thenReturn(experiments);
+
+        final ExperimentsAPI experimentsAPI = new ExperimentsAPIImpl(analyticsHelper, experimentsFactory);
+        final Collection<Experiment> activeExperiments = experimentsAPI.listActive(host.getIdentifier());
+
+        assertEquals(experiments, activeExperiments);
+        verify(experimentsFactory).listActive(host.getIdentifier());
+    }
 }
 
