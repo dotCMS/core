@@ -3,7 +3,7 @@ import { ComponentStore } from '@ngrx/component-store';
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
@@ -47,8 +47,9 @@ export interface DotLocalesListState extends DotLanguagesISO {
     pushPublishEnvironments: DotEnvironment[];
 }
 
-export interface DotLocaleListViewModel {
+export interface DotLocaleListViewModel extends DotLanguagesISO {
     locales: DotLocaleRow[];
+    initialLocales: DotLanguage[];
 }
 
 export interface DotLocaleListResolverData {
@@ -64,7 +65,6 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
     private readonly dialogService = inject(DialogService);
     private readonly languageService = inject(DotLanguagesService);
     private readonly dotMessageService = inject(DotMessageService);
-    private readonly confirmationService = inject(ConfirmationService);
     private readonly messageService = inject(MessageService);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotPushPublishDialogService = inject(DotPushPublishDialogService);
@@ -102,8 +102,11 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
 
     readonly vm$ = this.select(
         this.state$,
-        ({ locales }): DotLocaleListViewModel => ({
-            locales
+        ({ locales, countries, languages, initialLocales }): DotLocaleListViewModel => ({
+            locales,
+            initialLocales,
+            countries,
+            languages
         })
     );
 
@@ -196,7 +199,7 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                 },
                 {
                     menuItem: {
-                        label: this.dotMessageService.get('locales.make.default'),
+                        label: this.dotMessageService.get('locales.set.as.default'),
                         command: () => {
                             this.callDynamicDialog(
                                 locale,

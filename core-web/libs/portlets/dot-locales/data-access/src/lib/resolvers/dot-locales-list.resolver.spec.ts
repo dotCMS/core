@@ -4,52 +4,37 @@ import { EnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { DotLanguagesService } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { mockLanguagesISO, mockLocales } from '@dotcms/utils-testing';
 
-import { DotLocalesListResolver } from './dot-locales-list.resolver';
-
-const mockLanguages: DotLanguage[] = [
-    {
-        id: 1,
-        languageCode: 'en',
-        countryCode: 'US',
-        language: 'English',
-        country: 'United States',
-        isoCode: 'en-US',
-        defaultLanguage: true
-    },
-    {
-        id: 2,
-        languageCode: 'es',
-        countryCode: 'ES',
-        language: 'Spanish',
-        country: 'Spain',
-        isoCode: 'es-ES',
-        defaultLanguage: false
-    }
-];
+import { DotLocalesListResolver, DotLocalesListResolverData } from './dot-locales-list.resolver';
 
 describe('DotLocalesListResolver', () => {
+    const locales = [...mockLocales];
+    const languagesISO = { ...mockLanguagesISO };
+
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 {
                     provide: DotLanguagesService,
                     useValue: {
-                        get: () => of(mockLanguages)
+                        get: () => of(locales),
+                        getISO: () => of(languagesISO)
                     }
                 }
             ]
         });
     });
 
-    it('should resolve languages list', (done) => {
+    it('should resolve language list and ISO countries and languages', (done) => {
         const result = runInInjectionContext(TestBed.inject(EnvironmentInjector), () =>
             DotLocalesListResolver(null, null)
         );
 
-        (result as Observable<DotLanguage[]>).subscribe((languages) => {
-            expect(languages).toEqual(mockLanguages);
+        (result as Observable<DotLocalesListResolverData>).subscribe((resolverData) => {
+            expect(resolverData.locales).toEqual(locales);
+            expect(resolverData.countries).toEqual(languagesISO.countries);
+            expect(resolverData.languages).toEqual(languagesISO.languages);
             done();
         });
     });

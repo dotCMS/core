@@ -1,39 +1,82 @@
-import { SpectatorService, createServiceFactory } from '@ngneat/spectator/jest';
+import {
+    SpectatorService,
+    createServiceFactory,
+    mockProvider,
+    SpyObject
+} from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
+
+import {
+    DotHttpErrorManagerService,
+    DotLanguagesService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { MockDotMessageService, mockLanguagesISO, mockLocales } from '@dotcms/utils-testing';
 
 import { DotLocalesListStore } from './dot-locales-list.store';
 
+const messageServiceMock = new MockDotMessageService({
+    'locales.edit': 'Edit Locale',
+    'locales.set.as.default': 'Set as default',
+    'locales.delete': 'Delete',
+    'locales.push.publish': 'Push Publish'
+});
+
 describe('DotLocalesListStore', () => {
     let spectator: SpectatorService<DotLocalesListStore>;
+    let languageService: SpyObject<DotLanguagesService>;
+    let messageService: SpyObject<MessageService>;
 
-    const storeService = createServiceFactory({ service: DotLocalesListStore, providers: [] });
-
-    beforeEach(() => (spectator = storeService()));
-
-    it('should set locales correctly', () => {
-        const languages: DotLanguage[] = [
+    const storeService = createServiceFactory({
+        service: DotLocalesListStore,
+        providers: [
+            mockProvider(DotLanguagesService),
+            mockProvider(DialogService),
+            mockProvider(ConfirmationService),
+            mockProvider(MessageService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotPushPublishDialogService),
             {
-                id: 1,
-                languageCode: 'en',
-                countryCode: 'US',
-                language: 'English',
-                country: 'United States',
-                isoCode: 'en-US',
-                defaultLanguage: true
-            },
-            {
-                id: 2,
-                languageCode: 'es',
-                countryCode: 'ES',
-                language: 'Spanish',
-                country: 'Spain',
-                isoCode: 'es-ES',
-                defaultLanguage: false
+                provide: DotMessageService,
+                useValue: messageServiceMock
             }
-        ];
+        ],
+        imports: [HttpClientTestingModule]
+    });
 
-        spectator.service.setLocales(languages);
+    beforeEach(() => {
+        spectator = storeService();
+        languageService = spectator.inject(DotLanguagesService);
+        messageService = spectator.inject(MessageService);
+
+        languageService.get.mockReturnValue(of([...mockLocales]));
+        languageService.makeDefault.mockReturnValue(of(null));
+        languageService.delete.mockReturnValue(of(null));
+    });
+
+    it('should set initial state from resolver', (done) => {
+        spectator.service.setResolvedData({
+            data: { locales: [...mockLocales], ...mockLanguagesISO },
+            pushPublishEnvironments: [],
+            isEnterprise: false
+        });
+
+        spectator.service.vm$.subscribe((viewModel) => {
+            expect(viewModel.initialLocales).toEqual([...mockLocales]);
+            expect(viewModel.countries).toEqual([...mockLanguagesISO.countries]);
+            expect(viewModel.languages).toEqual([...mockLanguagesISO.languages]);
+            done();
+        });
+    });
+
+    it('should set locales correctly', (done) => {
+        spectator.service.setLocales([...mockLocales]);
 
         spectator.service.vm$.subscribe((viewModel) => {
             expect(viewModel.locales.length).toBe(2);
@@ -45,14 +88,41 @@ describe('DotLocalesListStore', () => {
             expect(viewModel.locales[1].language).toBe('Spanish - es');
             expect(viewModel.locales[1].country).toBe('Spain - ES');
             expect(viewModel.locales[1].defaultLanguage).toBe(false);
+            done();
         });
     });
 
-    it('should handle empty locales array', () => {
-        spectator.service.setLocales([]);
+    it('should make default locale', () => {
+        const mockDefaultLocaleId = 1;
+        spectator.service.makeDefaultLocale(mockDefaultLocaleId);
+
+        expect(languageService.makeDefault).toHaveBeenCalledWith(mockDefaultLocaleId);
+        expect(messageService.add).toHaveBeenCalled();
+    });
+
+    it('should delete locale', () => {
+        const mockLocaleId = 1;
+        spectator.service.deleteLocale(mockLocaleId);
+
+        expect(languageService.delete).toHaveBeenCalledWith(mockLocaleId);
+        expect(messageService.add).toHaveBeenCalled();
+    });
+
+    it('should set the local actions correctly', (done) => {
+        spectator.service.setLocales([...mockLocales]);
 
         spectator.service.vm$.subscribe((viewModel) => {
-            expect(viewModel.locales.length).toBe(0);
+            const defaultLocale = viewModel.locales[0];
+            const notDefaultLocale = viewModel.locales[1];
+
+            expect(defaultLocale.actions[0].menuItem.label).toBe('Edit Locale');
+            expect(defaultLocale.actions[1].menuItem.label).toBe('Push Publish');
+
+            expect(notDefaultLocale.actions[0].menuItem.label).toBe('Edit Locale');
+            expect(defaultLocale.actions[1].menuItem.label).toBe('Push Publish');
+            expect(notDefaultLocale.actions[2].menuItem.label).toBe('Set as default');
+            expect(notDefaultLocale.actions[3].menuItem.label).toBe('Delete');
+            done();
         });
     });
 });

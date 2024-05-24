@@ -1,99 +1,82 @@
-import { Spectator, createComponentFactory, byTestId, mockProvider } from '@ngneat/spectator/jest';
-import { provideComponentStore } from '@ngrx/component-store';
+import { Spectator, createComponentFactory, mockProvider, byTestId } from '@ngneat/spectator/jest';
 
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
+import { ConfirmationService } from 'primeng/api';
+import { Table } from 'primeng/table';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
-import { DotActionMenuButtonComponent, DotMessagePipe } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    DotHttpErrorManagerService,
+    DotLanguagesService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { MockDotMessageService, mockLanguagesISO, mockLocales } from '@dotcms/utils-testing';
 
 import { DotLocalesListComponent } from './dot-locales-list.component';
 import { DotLocalesListStore } from './store/dot-locales-list.store';
 
 const messageServiceMock = new MockDotMessageService({
-    'locale.locale': 'Locale'
+    Default: 'Default'
 });
 
 describe('DotLocalesListComponent', () => {
     let spectator: Spectator<DotLocalesListComponent>;
-
-    const endPointLanguages: DotLanguage[] = [
-        {
-            id: 1,
-            languageCode: 'en',
-            countryCode: 'US',
-            language: 'English',
-            country: 'United States',
-            isoCode: 'en-US',
-            defaultLanguage: true
-        },
-        {
-            id: 2,
-            languageCode: 'es',
-            countryCode: 'ES',
-            language: 'Spanish',
-            country: 'Spain',
-            isoCode: 'es-ES',
-            defaultLanguage: false
-        }
-    ];
-
     const createComponent = createComponentFactory({
         component: DotLocalesListComponent,
-        componentProviders: [provideComponentStore(DotLocalesListStore)],
-        imports: [
-            CommonModule,
-            InputTextModule,
-            ButtonModule,
-            DotMessagePipe,
-            TableModule,
-            DotActionMenuButtonComponent,
-            TagModule
-        ],
+        imports: [],
         providers: [
-            mockProvider(MessageService),
-            {
-                provide: DotMessageService,
-                useValue: messageServiceMock
-            },
             {
                 provide: ActivatedRoute,
                 useValue: {
                     snapshot: {
                         data: {
-                            locales: endPointLanguages
+                            data: {
+                                locales: mockLocales,
+                                countries: mockLanguagesISO.countries,
+                                languages: mockLanguagesISO.languages
+                            },
+                            pushPublishEnvironments: [],
+                            isEnterprise: true
                         }
                     }
                 }
-            }
+            },
+
+            DotLocalesListStore,
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
+            mockProvider(DotLanguagesService),
+            mockProvider(DotHttpErrorManagerService),
+            ConfirmationService
         ]
     });
 
     beforeEach(() => (spectator = createComponent()));
 
-    it('should display locales when vm$ emits', () => {
+    it('should display locales when component is initialized', () => {
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('locale-cell'))).toHaveText('English (en-US)');
+        const localeElements = spectator.queryAll(byTestId('locale-cell'));
+        expect(localeElements.length).toEqual(2);
+        expect(localeElements[0]).toHaveText('English (en-US)');
     });
 
-    it('should display default locale tag', () => {
+    it('should filter locale when using the filer input', () => {
+        const table = spectator.query(Table);
+        jest.spyOn(table, 'filterGlobal');
+
+        spectator.detectChanges();
+
+        spectator.typeInElement('Spanish', byTestId('input-search'));
+
+        expect(table.filterGlobal).toHaveBeenCalledWith('Spanish', 'contains');
+    });
+
+    it('should display default tag for default locale', () => {
         spectator.detectChanges();
 
         expect(spectator.query('.p-tag-success')).toHaveText('Default');
-    });
-
-    it('should display action menu for each locale', () => {
-        spectator.detectChanges();
-
-        expect(spectator.query(DotActionMenuButtonComponent)?.actions?.length).toEqual(2);
     });
 });

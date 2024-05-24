@@ -14,11 +14,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 
-import {
-    DotActionMenuButtonComponent,
-    DotMessagePipe,
-    DotRemoveConfirmPopupWithEscapeDirective
-} from '@dotcms/ui';
+import { DotActionMenuButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import {
     DotLocaleListViewModel,
@@ -39,7 +35,6 @@ import {
         TagModule,
         ConfirmDialogModule,
         ConfirmPopupModule,
-        DotRemoveConfirmPopupWithEscapeDirective,
         ToastModule
     ],
     templateUrl: './dot-locales-list.component.html',
