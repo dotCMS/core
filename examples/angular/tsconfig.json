@@ -19,13 +19,12 @@
     "target": "ES2022",
     "module": "ES2022",
     "useDefineForClassFields": false,
-    "lib": [
-      "ES2022",
-      "dom"
-    ],
-    // "paths": {
-    //   "@angular/*": [ "./node_modules/@angular/*" ]
-    // }
+    "lib": ["ES2022", "dom"],
+    "paths": {
+      //This acts like npm link.
+      "@dotcms/angular": ["../../core-web/dist/libs/sdk/angular"],
+      "@dotcms/client": ["../../core-web/dist/libs/sdk/client"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

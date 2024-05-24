@@ -4,11 +4,6 @@
   "compilerOptions": {
     "outDir": "./out-tsc/app",
     "types": [],
-    "paths": {
-      //This acts like npm link. 
-      // When app try to search in this package, it will look in the core-web/dist/libs/sdk/angular
-      "@dotcms/angular": [ "../../core-web/dist/libs/sdk/angular" ]
-    }
   },
   "files": [
     "src/main.ts"
