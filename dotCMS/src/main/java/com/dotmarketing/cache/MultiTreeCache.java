@@ -15,6 +15,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Table;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
@@ -105,10 +106,15 @@ public class MultiTreeCache implements Cachable {
      */
     private Collection<String> getVariants(final String pageIdentifier){
         try {
-            return experimentsAPI.listActive(pageIdentifier).stream()
+            final Collection<String> activeExperimentsVariants =  experimentsAPI.listActive(pageIdentifier).stream()
                     .flatMap(experiment -> experiment.trafficProportion().variants().stream())
                     .map(ExperimentVariant::id)
                     .collect(Collectors.toList());
+
+            return Stream.concat(activeExperimentsVariants.stream(), Stream.of(DEFAULT_VARIANT.name()))
+                    .distinct()
+                    .collect(Collectors.toList());
+
         } catch (DotDataException e) {
             Logger.error(MultiTreeCache.class, e);
             return Collections.emptyList();
