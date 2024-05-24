@@ -47,7 +47,12 @@ export class DotcmsLayoutComponent implements OnInit {
                 const pathname = '/' + urlSegments.join('/');
                 const config = {
                     pathname,
-                    onReload: () => this.router.navigate([pathname]),
+                    onReload: () => {
+                    // Reload the page when the user edit the page
+                    this.router.navigate([pathname], {
+                        onSameUrlNavigation: 'reload', // Force Angular to reload the page
+                    });
+                    },
                 };
                 initEditor(config);
                 updateNavigation(pathname || '/');

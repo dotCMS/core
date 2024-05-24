@@ -171,9 +171,15 @@ public interface LanguageVariableAPI {
     /**
      * Count content Variables
      * @return the number of content variables unique by key
-     * @throws DotDataException
      */
-    int countVariablesByKey() throws DotDataException;
+    int countVariablesByKey();
+
+    /**
+     * Count content Variables
+     * @param languageId - The ID of the language that the variable was created for.
+     * @return the number of content variables unique by key
+     */
+    int countVariablesByKey(final long languageId);
 
     /**
      * Invalidate the cache for the Language Variables
