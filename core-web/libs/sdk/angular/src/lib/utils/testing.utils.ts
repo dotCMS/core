@@ -1386,7 +1386,7 @@ export const EntityMock = {
                 browser: 'CHROME12',
                 id: 50990865,
                 browserVersion: {
-                    version: '125.0.0.0',
+                    version: '0.0.0.0',
                     majorVersion: '125',
                     minorVersion: '0'
                 }
