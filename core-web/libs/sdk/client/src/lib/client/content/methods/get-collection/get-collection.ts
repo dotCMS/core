@@ -1,7 +1,7 @@
+import { Equals } from '../../../../query-builder/lucene-syntax/Equals';
 import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
-import { Equals } from '../../../../query-builder/utils/lucene-syntax/Equals';
-import { CONTENT_TYPE_MAIN_FIELDS } from '../../const';
-import { GetCollectionResponse, SortByArray } from '../../types';
+import { CONTENT_TYPE_MAIN_FIELDS } from '../../shared/const';
+import { GetCollectionResponse, SortByArray } from '../../shared/types';
 
 export class GetCollection {
     private _render = false;
