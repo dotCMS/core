@@ -3927,6 +3927,10 @@
 .dijitToggleButton .dijitButtonNode {
     padding: 0 1rem;
     margin: none;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .dijitButton .dijitButtonNode .dijitIcon,
 .dijitToggleButton .dijitButtonNode .dijitIcon {
@@ -3972,11 +3976,19 @@
     box-shadow: 0;
     outline: 2.8px solid var(--color-palette-primary-op-20);
 }
-.dijitButtonDisabled {
+.dijitButtonDisabledFocused {
     background-color: #f3f3f4;
     border: solid 1.5px #ebecef;
     color: #afb3c0;
     box-shadow: 0;
+    outline: none;
+}
+.dijitButtonDisabled.dijitDisabled {
+    background-color: #f3f3f4;
+    border: solid 1.5px #ebecef;
+    color: #afb3c0;
+    box-shadow: 0;
+    outline: none;
 }
 .dijitDropDownButton {
     background-color: #ffffff;
@@ -4344,26 +4356,39 @@
 }
 
 .dijitCheckBox {
-    border-radius: 2px;
-    border: solid 2px #14151a;
+    border-radius: 4px;
+    border: solid 2px #afb3c0;
     background-color: #ffffff;
     width: 24px;
+    min-width: 24px;
     height: 24px;
+    cursor: pointer;
+}
+.dijitCheckBox .dijitCheckBoxInput {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
 }
 .dijitCheckBoxChecked {
-    border: solid 1px var(--color-palette-primary-500);
-    background: var(--color-palette-primary-500)
-        url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=')
+    border: solid 2px var(--color-palette-primary-500);
+    background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTZweCIgaGVpZ2h0PSIxMS4zMXB4IiB2aWV3Qm94PSIwIDAgMTAgOCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIj4gICAgICAgIDx0aXRsZT5TaGFwZTwvdGl0bGU+ICAgIDxkZXNjPkNyZWF0ZWQgd2l0aCBTa2V0Y2guPC9kZXNjPiAgICA8ZGVmcz48L2RlZnM+ICAgIDxnIGlkPSJTeW1ib2xzIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4gICAgICAgIDxnIGlkPSJjaGVja2JveC1hY3RpdmUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC00LjAwMDAwMCwgLTUuMDAwMDAwKSIgZmlsbD0iIzAwMDAwMCI+ICAgICAgICAgICAgPHBvbHlnb24gaWQ9IlNoYXBlIiBwb2ludHM9IjcuMzEwNzIwMzIgMTEuNDIyNDQ0OSA0Ljk4NjE5NTYzIDkuMDk3OTIwMTkgNC4xOTQ2MzA4NyA5Ljg4MzkxMDU1IDcuMzEwNzIwMzIgMTMgMTQgNi4zMTA3MjAzMiAxMy4yMTQwMDk2IDUuNTI0NzI5OTYiPjwvcG9seWdvbj4gICAgICAgIDwvZz4gICAgPC9nPjwvc3ZnPg==')
         center center no-repeat;
+    background-color: #ffffff;
+}
+.dijitCheckBoxHover:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
+    border-color: var(--color-palette-primary-400);
+}
+.dijitCheckBoxFocused:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
+    outline: 1.5px solid var(--color-palette-primary-op-20);
 }
 .dijitCheckBoxDisabled {
-    border: solid 2px transparent;
-    background: #afb3c0;
+    border: solid 2px #d1d4db;
+    background: #f3f3f4;
 }
 .dijitCheckBoxCheckedDisabled {
-    border: solid 2px transparent;
-    background: #afb3c0
-        url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=')
+    border: solid 2px #d1d4db;
+    background: #f3f3f4
+        url('data:image/svg+xml;base64,PCEtLSBSZXBsYWNlIHRoZSBjb250ZW50cyBvZiB0aGlzIGVkaXRvciB3aXRoIHlvdXIgU1ZHIGNvZGUgLS0+Cgo8c3ZnIHdpZHRoPSIxNnB4IiBoZWlnaHQ9IjExLjMxcHgiIHZpZXdCb3g9IjAgMCAxMCA4IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPiAgICAgICAgPHRpdGxlPlNoYXBlPC90aXRsZT4gICAgPGRlc2M+Q3JlYXRlZCB3aXRoIFNrZXRjaC48L2Rlc2M+ICAgIDxkZWZzPjwvZGVmcz4gICAgPGcgaWQ9IlN5bWJvbHMiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPiAgICAgICAgPGcgaWQ9ImNoZWNrYm94LWFjdGl2ZSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTQuMDAwMDAwLCAtNS4wMDAwMDApIiBmaWxsPSIjZDFkNGRiIj4gICAgICAgICAgICA8cG9seWdvbiBpZD0iU2hhcGUiIHBvaW50cz0iNy4zMTA3MjAzMiAxMS40MjI0NDQ5IDQuOTg2MTk1NjMgOS4wOTc5MjAxOSA0LjE5NDYzMDg3IDkuODgzOTEwNTUgNy4zMTA3MjAzMiAxMyAxNCA2LjMxMDcyMDMyIDEzLjIxNDAwOTYgNS41MjQ3Mjk5NiI+PC9wb2x5Z29uPiAgICAgICAgPC9nPiAgICA8L2c+PC9zdmc+')
         center center no-repeat;
 }
 
@@ -4373,6 +4398,12 @@
     border: solid 2px #afb3c0;
     height: 24px;
     width: 24px;
+    cursor: pointer;
+}
+.dijitRadio .dijitCheckBoxInput {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
 }
 .dijitRadioChecked {
     border: solid 2px var(--color-palette-primary-500);
@@ -4390,20 +4421,20 @@
     top: 50%;
     width: 14px;
 }
-.dijitRadioHover {
+.dijitRadioHover:not(.dijitRadioDisabled) {
     border-color: var(--color-palette-primary-400);
     cursor: pointer;
 }
-.dijitRadioFocused {
+.dijitRadioFocused:not(.dijitRadioDisabled) {
     outline: 1.5px solid var(--color-palette-primary-op-20);
 }
 .dijitRadioDisabled {
-    background-color: transparent;
+    background-color: #f3f3f4;
     border: solid 2px #d1d4db;
     position: relative;
 }
 .dijitRadioDisabled:before {
-    background-color: #afb3c0;
+    background-color: #d1d4db;
 }
 
 #select-arrow,
@@ -4827,12 +4858,10 @@
 
 .dijitTitlePane {
     border-radius: 1px;
-    box-shadow: 0 1px 3px var(--color-palette-black-op-10),
-        0 1px 2px var(--color-palette-black-op-20);
+    box-shadow: 0px 2px 8px 0px hsla(230, 13%, 9%, 0.02);
 }
 .dijitTitlePaneHover {
-    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
-        0 3px 6px var(--color-palette-black-op-20);
+    box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
 }
 .dijitTitlePaneHover .dijitTitlePaneContentOuter {
     border: none;
@@ -4888,8 +4917,7 @@
     background-color: #ffffff;
     border-radius: 0px;
     border: none;
-    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
-        0 3px 6px var(--color-palette-black-op-20);
+    box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
 }
 .dijitDialogCloseIcon {
     width: 17px;
@@ -4943,7 +4971,7 @@
     color: #14151a;
     border: 0 none;
     border-radius: 0.375rem;
-    box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+    box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
     padding: 0.5rem;
     margin-top: 0.5rem;
 }
@@ -5522,7 +5550,7 @@
     color: #14151a;
     border: 0 none;
     border-radius: 0.375rem;
-    box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+    box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
     padding: 0.5rem;
     margin-top: 0.5rem;
 }
@@ -10417,12 +10445,9 @@ a.tag_higlighted {
 }
 
 .content-search__result-item {
-    padding-left: 24px;
-    position: relative;
-}
-.content-search__result-item .dijitCheckBox {
-    position: absolute;
-    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .content-search__action-item {
@@ -10780,11 +10805,6 @@ a.tag_higlighted {
     height: 6px;
 }
 
-.portlet-sidebar .dijitCheckBox {
-    position: relative;
-    bottom: 2px;
-}
-
 .dijitContentPane .buttonRow {
     margin-bottom: 15px;
 }
@@ -10910,8 +10930,7 @@ a.tag_higlighted {
 }
 
 .context-menu {
-    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
-        0 3px 6px var(--color-palette-black-op-20);
+    box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
     position: absolute;
     background: #ffffff;
     border: 1px solid #d1d4db;
