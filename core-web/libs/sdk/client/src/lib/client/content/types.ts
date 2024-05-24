@@ -41,12 +41,10 @@ export interface ContentletMainFields {
     variant: string;
 }
 
-export interface Contentlet extends ContentletMainFields {
-    [key: string]: unknown;
-}
+export type Contentlet<T> = T & ContentletMainFields;
 
-export interface GetCollectionResponse {
-    contentlets: Contentlet[];
+export interface GetCollectionResponse<T> {
+    contentlets: Contentlet<T>[];
     page: number;
     size: number;
     total: number;

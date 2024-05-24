@@ -1,4 +1,4 @@
-import { GetCollection } from './methods/get-collection';
+import { GetCollection } from './methods/get-collection/get-collection';
 
 export class Content {
     private requestOptions: Omit<RequestInit, 'body' | 'method'>;

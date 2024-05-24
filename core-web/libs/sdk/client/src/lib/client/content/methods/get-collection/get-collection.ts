@@ -1,6 +1,6 @@
 import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
 import { Equals } from '../../../../query-builder/utils/lucene-syntax/Equals';
-import { CONTENT_API_URL, CONTENT_TYPE_MAIN_FIELDS } from '../../const';
+import { CONTENT_TYPE_MAIN_FIELDS } from '../../const';
 import { GetCollectionResponse, SortByArray } from '../../types';
 
 export class GetCollection {
@@ -15,6 +15,7 @@ export class GetCollection {
     private _defaultQuery: Equals;
     private requestOptions: Omit<RequestInit, 'body' | 'method'>;
     private serverUrl: string;
+    private readonly contentApiUrl = '/api/content/_search';
 
     private get sort() {
         return this._sortBy?.map((sort) => `${sort.field} ${sort.order}`).join(',');
@@ -25,7 +26,7 @@ export class GetCollection {
     }
 
     private get url() {
-        return `${this.serverUrl}${CONTENT_API_URL}`;
+        return `${this.serverUrl}${this.contentApiUrl}`;
     }
 
     private get currentQuery() {
@@ -99,7 +100,7 @@ export class GetCollection {
         return this;
     }
 
-    async fetch(): Promise<GetCollectionResponse> {
+    async fetch<T>(): Promise<GetCollectionResponse<T>> {
         const query = this.currentQuery.build().replace(/\+([^+:]*?):/g, (match, field) => {
             return !CONTENT_TYPE_MAIN_FIELDS.includes(field) // Fields that are not contentType fields
                 ? `+${this._contentType}.${field}:` // Should have this format: +contentTypeVar.field:
