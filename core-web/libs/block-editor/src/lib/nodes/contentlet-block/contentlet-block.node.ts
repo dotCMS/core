@@ -6,27 +6,34 @@ import { Node, NodeViewRenderer } from '@tiptap/core';
 
 import { ContentletBlockComponent } from './contentlet-block.component';
 
-import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
+import { AngularNodeViewRenderer, toJSONFn } from '../../NodeViewRenderer';
 
 export type ContentletBlockOptions = {
     HTMLAttributes: Record<string, unknown>;
 };
 
 /**
- * Remove nested editor fields from the contentlet object
+ * Set Custom JSON for this type of Node
+ * For this JSON we are going to only add the `contentlet` identifier to the backend
  *
- * @param {*} obj
+ * @param {*} this
  * @return {*}
  */
-function removeNestedEditorSchema(obj) {
-    for (const key in obj) {
-        if (typeof obj[key] === 'object' && obj[key]?.type === 'doc') {
-            delete obj[key];
+const toJSON: toJSONFn = function () {
+    const { attrs, type } = this?.node || {}; // Add null check for this.node
+    const { data } = attrs;
+    const customAttrs = {
+        ...attrs,
+        data: {
+            identifier: data.identifier
         }
-    }
+    };
 
-    return obj;
-}
+    return {
+        type: type.name,
+        attrs: customAttrs
+    };
+};
 
 export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions> => {
     return Node.create({
@@ -46,7 +53,7 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
                         };
                     },
                     renderHTML: ({ data }) => {
-                        return { data: removeNestedEditorSchema(data) };
+                        return { data };
                     }
                 }
             };
@@ -66,7 +73,7 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         },
 
         addNodeView(): NodeViewRenderer {
-            return AngularNodeViewRenderer(ContentletBlockComponent, { injector });
+            return AngularNodeViewRenderer(ContentletBlockComponent, { injector, toJSON });
         }
     });
 };

@@ -17,7 +17,12 @@ import {
     DotUploadFileService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotAssetSearchComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotAssetSearchComponent,
+    DotFieldRequiredDirective,
+    DotMessagePipe,
+    DotSpinnerModule
+} from '@dotcms/ui';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
@@ -61,7 +66,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotAssetSearchComponent,
         DialogModule,
         InputTextareaModule,
-        PaginatorModule
+        PaginatorModule,
+        DotSpinnerModule
     ],
     declarations: [
         EditorDirective,
@@ -100,7 +106,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         ReactiveFormsModule,
         SharedModule,
         BubbleFormComponent,
-        DotBlockEditorComponent
+        DotBlockEditorComponent,
+        DotSpinnerModule
     ]
 })
 export class BlockEditorModule {}
