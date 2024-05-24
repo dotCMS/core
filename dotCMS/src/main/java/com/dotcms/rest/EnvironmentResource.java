@@ -50,6 +50,58 @@ public class EnvironmentResource {
 
     private final WebResource webResource = new WebResource();
 
+	/**
+	 * Returns the environments for the current user
+	 *
+	 * @throws JSONException
+	 *
+	 */
+	@Operation(summary = "Returns the environments",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseEntityEnvironmentsView.class)),
+							description = "Collection of environments.")
+			})
+	@GET
+	@Produces("application/json")
+	@NoCache
+	public ResponseEntityEnvironmentsView loadAllEnvironments(@Context HttpServletRequest request, @Context final HttpServletResponse response)
+			throws DotDataException, JSONException, DotSecurityException {
+
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true)
+				.init();
+
+		final User user = initData.getUser();
+		final boolean isAdmin = user.isAdmin();
+		final Set<Environment> environments = new HashSet<>();
+
+		Logger.debug(this, ()-> "Retrieving environments for user: " + user.getUserId() + " isAdmin: " + isAdmin);
+		if (isAdmin) {
+
+			final List<Environment> environmentList =
+					APILocator.getEnvironmentAPI().findAllEnvironments();
+			for (final Environment environment : environmentList){
+				environments.add(environment);
+			}
+		} else {
+
+			final List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), true);
+			for (Role role : roles) {
+				environments.addAll(APILocator.getEnvironmentAPI()
+						.findEnvironmentsByRole(role.getId()));
+			}
+		}
+
+		return new ResponseEntityEnvironmentsView(environments);
+	}
+
     /**
 	 * <p>Returns a JSON representation of the environments (with servers) that the Role with the given roleid can push to
 	 * <br>Each Environment node contains: id, name.
