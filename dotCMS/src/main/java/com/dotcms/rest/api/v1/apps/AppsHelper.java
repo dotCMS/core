@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.apps;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
+import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.util.json.JSONException;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
@@ -64,16 +65,19 @@ class AppsHelper {
     private final HostAPI hostAPI;
     private final PermissionAPI permissionAPI;
 
+    private final SecurityLoggerServiceAPI securityLoggerAPI;
+
     @VisibleForTesting
     AppsHelper(
-            final AppsAPI appsAPI, final HostAPI hostAPI, final PermissionAPI permissionAPI) {
+            final AppsAPI appsAPI, final HostAPI hostAPI, final PermissionAPI permissionAPI, final SecurityLoggerServiceAPI securityLoggerAPI) {
         this.appsAPI = appsAPI;
         this.hostAPI = hostAPI;
         this.permissionAPI = permissionAPI;
+        this.securityLoggerAPI = securityLoggerAPI;
     }
 
     AppsHelper() {
-        this(APILocator.getAppsAPI(), APILocator.getHostAPI(), APILocator.getPermissionAPI());
+        this(APILocator.getAppsAPI(), APILocator.getHostAPI(), APILocator.getPermissionAPI(), APILocator.getSecurityLogger());
     }
 
     private static Comparator<AppView> compareByCountAndName = (o1, o2) -> {
@@ -277,6 +281,8 @@ class AppsHelper {
                     String.format(" Couldn't find any site with identifier `%s` ", siteId));
         }
         appsAPI.deleteSecrets(key, host, user);
+        securityLoggerAPI.logInfo(this.getClass(),
+                String.format("User `%s` deleted secrets for app `%s` on host `%s`", user, key, siteId));
     }
 
 
@@ -377,7 +383,8 @@ class AppsHelper {
             appsAPI.deleteSecrets(key, host, user);
         }
         appsAPI.saveSecrets(secrets, host, user);
-
+        securityLoggerAPI.logInfo(this.getClass(),
+                String.format("User `%s` saved secret for app `%s` on host `%s`", user, key, host.getIdentifier()));
         //This operation needs to be executed at the very end.
         appSecretsOptional.ifPresent(AppSecrets::destroy);
     }
@@ -435,6 +442,8 @@ class AppsHelper {
                         appsAPI.saveSecret(key, Tuple.of(name, secret.get()), host, user);
                     }
                 }
+                securityLoggerAPI.logInfo(this.getClass(),
+                        String.format("User `%s` updated secret for app `%s` on host `%s`", user, key, host.getIdentifier()));
             } finally {
                 form.destroySecretTraces();
             }
@@ -481,6 +490,8 @@ class AppsHelper {
             throw new DoesNotExistException(String.format("Unable to find a secret for app with Key `%s`.",key));
         } else {
             appsAPI.deleteSecret(key, params, host, user);
+            securityLoggerAPI.logInfo(this.getClass(),
+                    String.format("User `%s` deleted secrets for app `%s` on host `%s`", user, key, host.getIdentifier()));
         }
     }
 
@@ -598,9 +609,9 @@ class AppsHelper {
     /**
      * Validate the incoming param names match the params described by an appDescriptor yml.
      * This is mostly useful to validate a delete param request
-     * @param inputParamNames
-     * @param appDescriptor
-     * @throws DotDataException
+     * @param inputParamNames a set of paramNames.
+     * @param appDescriptor the app template.
+     * @throws DotDataException This will give back an exception if you send an invalid param.
      */
     private void validateFormForDelete(final Set<String> inputParamNames, final AppDescriptor appDescriptor)
             throws IllegalArgumentException {
@@ -626,7 +637,7 @@ class AppsHelper {
     /**
      * This is used to manipulate a FormDataMultiPart and extract all the files it might contain
      * Internally the file os analyzed and then processed to create new file integrations
-     * @param multipart The multi-part form
+     * @param multipart The multipart form
      * @param user Logged in dude.
      * @throws IOException
      * @throws DotDataException
@@ -638,6 +649,8 @@ class AppsHelper {
             final AppDescriptor appDescriptor;
             try {
                 appDescriptor = appsAPI.createAppDescriptor(file, user);
+                securityLoggerAPI.logInfo(this.getClass(),
+                        String.format("User `%s` created app descriptor `%s`", user, appDescriptor.getKey()));
                 return new AppView(appDescriptor, 0, 0);
             } catch (AlreadyExistException | DotSecurityException  e) {
                 throw new DotDataException(e.getMessage(), e);
@@ -648,14 +661,21 @@ class AppsHelper {
 
     /**
      *
-     * @param key
-     * @param user
+     * @param key The app key
+     * @param user The user
      * @throws DotSecurityException
      * @throws DotDataException
      */
     void removeApp(final String key, final User user, final boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
         appsAPI.removeApp(key, user, removeDescriptor);
+        if(removeDescriptor){
+            securityLoggerAPI.logInfo(this.getClass(),
+                    String.format("User `%s` removed apps and descriptor `%s`", user, key));
+        } else  {
+            securityLoggerAPI.logInfo(this.getClass(),
+                   String.format("User `%s` removed apps `%s`", user, key));
+        }
     }
 
     /**
@@ -689,8 +709,13 @@ class AppsHelper {
 
         Logger.info(AppsHelper.class,"Secrets export: "+form);
         final Key key = AppsUtil.generateKey(AppsUtil.loadPass(form::getPassword));
-            return  Files.newInputStream(appsAPI
+        try {
+            return Files.newInputStream(appsAPI
                     .exportSecrets(key, form.isExportAll(), form.getAppKeysBySite(), user));
+        } finally {
+            securityLoggerAPI.logInfo(this.getClass(),
+                    String.format("User `%s` exported secrets for `%s` ", user, form));
+        }
     }
 
     /**
@@ -715,6 +740,8 @@ class AppsHelper {
                 }
                 try {
                     appsAPI.importSecretsAndSave(file.toPath(), key, user);
+                    securityLoggerAPI.logInfo(this.getClass(),
+                            String.format("User `%s` imported secrets from file `%s`", user, file.getName()));
                     return null;
                 } catch (DotSecurityException | IOException | EncryptorException e) {
                     throw new DotDataException(e.getMessage(), e);
@@ -730,7 +757,7 @@ class AppsHelper {
          * Whatever need to happen with the file and the multipart.Should be halded
          * @param file
          * @param bodyMultipart
-         * @return
+         * @return the result
          * @throws DotDataException
          */
         T apply (File file, Map<String, Object> bodyMultipart)
@@ -740,9 +767,9 @@ class AppsHelper {
     /**
      * Multipart common process function
      * whatever specific needs be done in between has to take place in the fileConsumer
-     * @param multipart
-     * @param consumer
-     * @param <T>
+     * @param multipart the multipart
+     * @param consumer the consumer
+     * @param <T> the type of the result
      * @return
      * @throws IOException
      * @throws DotDataException
@@ -780,17 +807,17 @@ class AppsHelper {
 
     /**
      * cleanup our mess
-     * @param parentFolder
+     * @param parentFolder the parent folder
      */
     private void removeTempFolder(final File parentFolder) {
         final String parentFolderName = parentFolder.getName();
         if (parentFolder.isDirectory() && parentFolderName.startsWith("tmp_upload")) {
             if (parentFolder.delete()) {
-                Logger.info(AppsHelper.class,
+                Logger.debug(AppsHelper.class,
                         String.format(" tmp upload directory `%s` removed successfully. ",
                                 parentFolder.getAbsolutePath()));
             } else {
-                Logger.info(AppsHelper.class,
+                Logger.debug(AppsHelper.class,
                         String.format(" Unable to remove tmp upload directory `%s`. ",
                                 parentFolder.getAbsolutePath()));
             }
