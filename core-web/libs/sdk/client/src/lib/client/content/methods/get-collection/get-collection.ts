@@ -11,17 +11,18 @@ import { sanitizeQueryForContentType } from '../../shared/utils';
  * @class GetCollection
  */
 export class GetCollection {
+    private _page = 1;
+    private _limit = 10;
+    private _depth = 0;
     private _render = false;
     private _sortBy?: SortByArray;
-    private _limit = 10;
-    private _page = 1;
-    private _depth = 0;
-    private _query?: Equals;
     private _contentType: string;
-
     private _defaultQuery: Equals;
-    private requestOptions: Omit<RequestInit, 'body' | 'method'>;
+    private _query?: Equals;
+    private _rawQuery?: string;
+
     private serverUrl: string;
+    private requestOptions: Omit<RequestInit, 'body' | 'method'>;
 
     /**
      * This method returns the sort query in this format: field order, field order, ...
@@ -149,6 +150,7 @@ export class GetCollection {
 
     /**
      * This method allows you to set a lucene query to filter the content using the Lucene Query Builder.
+     * All fields will be formatted to: +contentTypeVar.field: value
      *
      * @param {QueryBuilderCallback} queryBuilderCallback
      * @return {*}  {this}
@@ -163,6 +165,19 @@ export class GetCollection {
         } else {
             throw new Error('The query builder callback should return an Equals instance');
         }
+
+        return this;
+    }
+
+    /**
+     * This method allows you to set a raw lucene query to filter the content
+     *
+     * @param {string} query
+     * @return {*}  {this}
+     * @memberof GetCollection
+     */
+    rawQuery(query: string): this {
+        this._rawQuery = query;
 
         return this;
     }
@@ -214,7 +229,12 @@ export class GetCollection {
      * @memberof GetCollection
      */
     async fetch<T>(): Promise<GetCollectionResponse<T>> {
-        const query = sanitizeQueryForContentType(this.currentQuery.build(), this._contentType);
+        const sanitizedQuery = sanitizeQueryForContentType(
+            this.currentQuery.build(),
+            this._contentType
+        );
+
+        const query = this._rawQuery ? `${sanitizedQuery} ${this._rawQuery}` : sanitizedQuery;
 
         return fetch(this.url, {
             ...this.requestOptions,
@@ -257,7 +277,6 @@ export class GetCollection {
                     });
                 } else return response.json();
             },
-
             (error) => error
         );
     }

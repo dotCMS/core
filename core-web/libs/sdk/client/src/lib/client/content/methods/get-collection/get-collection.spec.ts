@@ -14,7 +14,8 @@ global.fetch = jest.fn().mockReturnValue(
                 entity: {
                     jsonObjectView: {
                         contentlets: []
-                    }
+                    },
+                    resultsSize: 0
                 }
             })
     })
@@ -218,15 +219,16 @@ describe('GetCollection', () => {
         await client
             .query(
                 (
-                    qb // modDate is a main field and kyberCrystal is a custom field
-                ) => qb.field('modDate').equals('2024-05-28').field('kyberCrystal').equals('red')
+                    qb // kyberCrystal is a custom field
+                ) => qb.field('kyberCrystal').equals('red')
             )
+            .rawQuery('+modDate:2024-05-28') // modDate is a main field so it doesn't need to specify the content type
             .fetch();
 
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
             body: JSON.stringify({
-                query: '+contentType:lightsaber +modDate:2024-05-28 +lightsaber.kyberCrystal:red',
+                query: '+contentType:lightsaber +lightsaber.kyberCrystal:red +modDate:2024-05-28',
                 render: false,
                 limit: 10,
                 offset: 0,
@@ -312,8 +314,6 @@ describe('GetCollection', () => {
                     qb // Lucene query to append to the main query for more complex queries
                 ) =>
                     qb
-                        .field('modDate')
-                        .equals('2024-05-28')
                         .field('kyberCrystal')
                         .equals('red')
                         .and()
@@ -325,12 +325,13 @@ describe('GetCollection', () => {
             )
             .draft(true) // To retrieve the draft content
             .variant('legends-forceSensitive') // Variant of the content
+            .rawQuery('+modDate:2024-05-28 +conhost:MyCoolSite') // Raw query to append to the main query
             .fetch(); // Fetch the content
 
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
             body: JSON.stringify({
-                query: '+contentType:forceSensitive +languageId:13 +modDate:2024-05-28 +forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +live:false +variant:legends-forceSensitive',
+                query: '+contentType:forceSensitive +languageId:13 +forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +live:false +variant:legends-forceSensitive +modDate:2024-05-28 +conhost:MyCoolSite',
                 render: true,
                 sort: 'name asc,midichlorians desc',
                 limit: 20,
