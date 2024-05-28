@@ -275,9 +275,10 @@ describe('GetCollection', () => {
         const client = new GetCollection(requestOptions, serverUrl, contentType);
 
         await client
-            .language(13)
-            .render(true)
+            .language(13) // Language Id
+            .render(true) // To retrieve the content with the render
             .sortBy([
+                // Sort by multiple fields
                 {
                     field: 'name',
                     order: 'asc'
@@ -287,25 +288,28 @@ describe('GetCollection', () => {
                     order: 'desc'
                 }
             ])
-            .depth(2)
-            .limit(20)
-            .page(3)
-            .query((qb) =>
-                qb
-                    .field('modDate')
-                    .equals('2024-05-28')
-                    .field('kyberCrystal')
-                    .equals('red')
-                    .and()
-                    .equals('blue')
-                    .field('master')
-                    .equals('Yoda')
-                    .or()
-                    .equals('Obi-Wan')
+            .depth(2) // Depth of the content for relationships
+            .limit(20) // Limit of content per page
+            .page(3) // Page to fetch
+            .query(
+                (
+                    qb // Lucene query to append to the main query for more complex queries
+                ) =>
+                    qb
+                        .field('modDate')
+                        .equals('2024-05-28')
+                        .field('kyberCrystal')
+                        .equals('red')
+                        .and()
+                        .equals('blue')
+                        .field('master')
+                        .equals('Yoda')
+                        .or()
+                        .equals('Obi-Wan')
             )
-            .draft(true)
-            .variant('legends-forceSensitive')
-            .fetch();
+            .draft(true) // To retrieve the draft content
+            .variant('legends-forceSensitive') // Variant of the content
+            .fetch(); // Fetch the content
 
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
