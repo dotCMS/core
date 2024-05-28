@@ -20,7 +20,7 @@ export default meta;
 
 type Story = StoryObj<Tree>;
 
-const files: TreeNode[] = [
+export const files: TreeNode[] = [
     {
         label: 'Documents',
         data: 'Documents Folder',
