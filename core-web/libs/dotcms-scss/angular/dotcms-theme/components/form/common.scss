@@ -110,6 +110,19 @@ $select-border-size: 2px;
     color: $color-palette-primary;
 }
 
+#field-panel-icon-close {
+    color: $color-palette-primary;
+    width: $spacing-5;
+    height: $spacing-5;
+    border-radius: $border-radius-circular;
+    transition: color 0.15s, box-shadow 0.15s;
+
+    :focus{
+        outline: 0 none;
+        outline-offset: 0;
+    }
+}
+
 #field-panel-items {
     padding: 0;
 }

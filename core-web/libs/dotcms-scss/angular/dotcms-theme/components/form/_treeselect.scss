@@ -5,6 +5,13 @@
     @extend #form-field-base;
     padding: 0;
     transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+    &.p-disabled {
+        @extend #form-field-disabled;
+
+        .p-treeselect-trigger {
+            color: $color-palette-gray-500;
+        }
+    }
 }
 
 .p-treeselect:not(.p-disabled):hover {
@@ -27,11 +34,12 @@
 }
 
 .p-treeselect.p-treeselect-chip .p-treeselect-token {
-    padding: $spacing-1 $spacing-2;
+    padding: 0.375rem $spacing-1;
     margin-right: $spacing-1;
-    background: $bg-highlight;
+    background: $color-palette-primary-200;
+    border-radius: $border-radius-sm;
     color: $color-palette-primary;
-    border-radius: $border-radius-xs;
+    font-size: $font-size-sm;
 }
 
 .p-treeselect .p-treeselect-trigger {
@@ -43,93 +51,48 @@ p-treeselect.ng-invalid.ng-dirty > .p-treeselect {
 }
 
 .p-inputwrapper-filled .p-treeselect.p-treeselect-chip .p-treeselect-label {
-    padding: 0.25rem 0.75rem;
+    padding: $spacing-0 $spacing-1;
 }
 
 .p-treeselect-panel {
     @extend #field-panel;
+    .p-treeselect-header {
+        @extend #field-panel-header;
+        gap: $spacing-1;
+        .p-treeselect-filter-container {
+            .p-treeselect-filter {
+                @extend #field-panel-filter;
+            }
+            .p-treeselect-filter-icon {
+                @extend #field-panel-filter-icon;
+            }
+        }
+
+        .p-treeselect-close {
+            @extend #field-panel-icon-close;
+        }
+    }
+    .p-treeselect-items-wrapper {
+        .p-tree {
+            border: 0 none;
+            padding: 0;
+        }
+        .p-tree-empty-message {
+            padding: $spacing-2 $spacing-2;
+            color: $black;
+            background: transparent;
+        }
+    }
 }
 
-.p-treeselect-panel .p-treeselect-header {
-    @extend #field-panel-header;
-}
-
-.p-treeselect-panel .p-treeselect-header .p-treeselect-filter-container {
-    margin-right: 0.5rem;
-}
-
-.p-treeselect-panel .p-treeselect-header .p-treeselect-filter-container .p-treeselect-filter {
-    padding-right: 1.75rem;
-}
-
-.p-treeselect-panel .p-treeselect-header .p-treeselect-filter-container .p-treeselect-filter-icon {
-    right: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.p-treeselect-panel
-    .p-treeselect-header
-    .p-treeselect-filter-container.p-treeselect-clearable-filter
-    .p-treeselect-filter {
-    padding-right: 3.5rem;
-}
-
-.p-treeselect-panel
-    .p-treeselect-header
-    .p-treeselect-filter-container.p-treeselect-clearable-filter
-    .p-treeselect-filter-clear-icon {
-    right: 2.5rem;
-}
-
-.p-treeselect-panel .p-treeselect-header .p-treeselect-close {
-    width: 2rem;
-    height: 2rem;
-    color: rgba(255, 255, 255, 0.6);
-    border: 0 none;
-    background: transparent;
-    border-radius: 50%;
-    transition: color 0.15s, box-shadow 0.15s;
-}
-
-.p-treeselect-panel .p-treeselect-header .p-treeselect-close:enabled:hover {
-    color: rgba(255, 255, 255, 0.87);
-    border-color: transparent;
-    background: transparent;
-}
-
-.p-treeselect-panel .p-treeselect-header .p-treeselect-close:focus {
-    outline: 0 none;
-    outline-offset: 0;
-    box-shadow: 0 0 0 1px #e3f3fe;
-}
-
-.p-treeselect-panel .p-treeselect-items-wrapper .p-tree {
-    border: 0 none;
-}
-
-.p-treeselect-panel .p-treeselect-items-wrapper .p-treeselect-empty-message {
-    padding: 0.5rem 1.5rem;
-    color: rgba(255, 255, 255, 0.87);
-    background: transparent;
-}
-
-.p-input-filled .p-treeselect {
-    background: #3f4b5b;
-}
-
-.p-input-filled .p-treeselect:not(.p-disabled):hover {
-    background-color: #3f4b5b;
-}
-
-.p-input-filled .p-treeselect:not(.p-disabled).p-focus {
-    background-color: #3f4b5b;
-}
-
-p-treeselect.p-treeselect-clearable .p-treeselect-label-container {
-    padding-right: 1.75rem;
-}
-
-p-treeselect.p-treeselect-clearable .p-treeselect-clear-icon {
-    color: rgba(255, 255, 255, 0.6);
-    right: 2.357rem;
+p-treeselect {
+    &.p-treeselect-clearable{
+        .p-treeselect-label-container {
+            padding-right: $spacing-5;
+        }
+        .p-treeselect-clear-icon {
+            color: $color-palette-gray-500;
+            right: $spacing-7;
+        }
+    }
 }
