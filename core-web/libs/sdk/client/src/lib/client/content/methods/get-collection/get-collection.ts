@@ -157,6 +157,7 @@ export class GetCollection {
     query(queryBuilderCallback: QueryBuilderCallback): this {
         const queryResult = queryBuilderCallback(this.currentQuery);
 
+        // This can be use in Javascript so we cannot rely on the type checking
         if (queryResult instanceof Equals) {
             this._query = queryResult;
         } else {
