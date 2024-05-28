@@ -40,12 +40,12 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
     String country = null;
     
     while(count>0) {
-      country = RandomStringUtils.randomAlphabetic(2);
+      language = RandomStringUtils.randomAlphabetic(2);
       // Skip if the country is one of the ones that we already have
-      if (Set.of("de", "en", "es", "fr", "fi", "nl", "ru", "zh").contains(country)) {
+      if (Set.of("de", "en", "es", "fr", "fi", "nl", "ru", "zh", "ep", "sg").contains(language)) {
         continue;
       }
-      language = RandomStringUtils.randomAlphabetic(2);
+      country = RandomStringUtils.randomAlphabetic(2);
       count = new DotConnect().setSQL("select count(*) as test from language where language_code=? and country_code=?").addParam(language).addParam(country).getInt("test");
 
     }
