@@ -1,6 +1,8 @@
 import { DotCMSContainer, DotCMSPageAssetContainer } from '../models';
 
-const endClassMap: Record<number, string> = {
+//Changed the type, to avoid SQ issue.
+//This should be put inside a lib
+const endClassMap: Record<number, string | null> = {
     1: 'col-end-1',
     2: 'col-end-2',
     3: 'col-end-3',
@@ -16,7 +18,9 @@ const endClassMap: Record<number, string> = {
     13: 'col-end-13'
 };
 
-const startClassMap: Record<number, string> = {
+//Changed the type, to avoid SQ issue.
+//This should be put inside a lib
+const startClassMap: Record<number, string | null> = {
     1: 'col-start-1',
     2: 'col-start-2',
     3: 'col-start-3',
@@ -39,15 +43,12 @@ export const getContainersData = (
 
     const { containerStructures, container } = containers[identifier];
 
-    // Get the variant id
     const { variantId } = container?.parentPermissionable || {};
 
-    // Get accepts types of content types for this container
     const acceptTypes: string = containerStructures
         .map((structure) => structure.contentTypeVar)
         .join(',');
 
-    // Get the contentlets for "this" container
     const contentlets = containers[identifier].contentlets[`uuid-${uuid}`];
 
     return {

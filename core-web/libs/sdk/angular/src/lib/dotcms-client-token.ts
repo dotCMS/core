@@ -12,7 +12,7 @@ export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIE
  * @param {*} config
  * @return {*}
  */
-export const provideDotCMSClient = (config: ClientConfig): EnvironmentProviders => {
+export const provideDotcmsClient = (config: ClientConfig): EnvironmentProviders => {
     return makeEnvironmentProviders([
         {
             provide: DOTCMS_CLIENT_TOKEN,

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular/core';
 
 import { DotCMSContentlet } from '../../models';
 
@@ -9,10 +9,11 @@ import { DotCMSContentlet } from '../../models';
 @Component({
     selector: 'app-no-component',
     standalone: true,
-    template: `<div data-testid="no-component">No Component for {{ contentlet.contentType }}</div>`,
+    template: `No Component for {{ contentlet.contentType }}`,
     styleUrl: './no-component.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NoComponentComponent {
     @Input() contentlet!: DotCMSContentlet;
+    @HostBinding('attr.data-testid') testId = 'no-component';
 }

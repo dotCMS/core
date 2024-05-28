@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { DOTCMS_CLIENT_TOKEN } from '../dotcms-client-token';
-import { DotCMSNavigationItem, DotCMSPageAsset } from '../models';
+import { DotcmsNavigationItem, DotCMSPageAsset } from '../models';
 import { PageContextService } from '../services/dotcms-context/page-context.service';
 
 /**
@@ -16,7 +16,7 @@ export const DotCMSPageResolver = async (
     route: ActivatedRouteSnapshot
 ): Promise<{
     pageAsset: DotCMSPageAsset;
-    nav: DotCMSNavigationItem;
+    nav: DotcmsNavigationItem;
 }> => {
     const client = inject(DOTCMS_CLIENT_TOKEN);
     const pageContextService = inject(PageContextService);
@@ -39,7 +39,7 @@ export const DotCMSPageResolver = async (
     };
 
     const pageRequest = client.page.get(pageProps) as Promise<{ entity: DotCMSPageAsset }>;
-    const navRequest = client.nav.get(navProps) as Promise<{ entity: DotCMSNavigationItem }>;
+    const navRequest = client.nav.get(navProps) as Promise<{ entity: DotcmsNavigationItem }>;
 
     const [pageResponse, navResponse] = await Promise.all([pageRequest, navRequest]);
 

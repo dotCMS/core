@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { Params, Router, RouterLink } from '@angular/router';
-import { DotCMSNavigationItem } from '@dotcms/angular';
+import { DotcmsNavigationItem } from '@dotcms/angular';
 
 @Component({
   selector: 'app-navigation',
@@ -27,7 +27,7 @@ import { DotCMSNavigationItem } from '@dotcms/angular';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavigationComponent implements OnInit{
-  @Input() items!: DotCMSNavigationItem[];
+  @Input() items!: DotcmsNavigationItem[];
 
   private readonly router = inject(Router)
   

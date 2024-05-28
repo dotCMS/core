@@ -7,11 +7,6 @@ import { isInsideEditor } from '@dotcms/client';
 
 import { DotCMSPageAsset, DynamicComponentEntity } from '../../models';
 
-export interface ComponentItem {
-    component: Promise<any>;
-    module?: Promise<any>;
-}
-
 export interface DotCMSPageContext extends DotCMSPageAsset {
     isInsideEditor: boolean;
 }
@@ -28,10 +23,22 @@ export class PageContextService {
         return this.pageContext.value as DotCMSPageContext;
     }
 
+    /**
+     *Retrieves the component map.
+     *
+     * @return {*}  {Record<string, DynamicComponentEntity>}
+     * @memberof PageContextService
+     */
     getComponentMap(): Record<string, DynamicComponentEntity> {
         return this.componentsMap;
     }
 
+    /**
+     * Sets the component map.
+     *
+     * @param {Record<string, DynamicComponentEntity>} components
+     * @memberof PageContextService
+     */
     setComponentMap(components: Record<string, DynamicComponentEntity>) {
         this.componentsMap = components;
     }

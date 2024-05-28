@@ -1,6 +1,6 @@
 {
     "name": "@dotcms/angular",
-    "version": "0.0.1-alpha.1",
+    "version": "0.0.1-alpha.17",
     "peerDependencies": {
         "@angular/common": "^17.1.0",
         "@angular/core": "^17.1.0", 
@@ -9,5 +9,25 @@
     "rxjs": "~6.6.3"
     },
     "dependencies": {},
-    "sideEffects": false
+    "sideEffects": false,
+    "description": "Official Angular Components library to render a dotCMS page.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dotCMS/core.git#master"
+    },
+    "keywords": [
+        "dotCMS",
+        "CMS",
+        "Content Management",
+        "API Client",
+        "REST API",
+        "Angular",
+        "Components"
+    ],
+    "author": "dotcms <dev@dotcms.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/dotCMS/core/issues"
+    },
+    "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/angular/README.md"
 }

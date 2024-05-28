@@ -1,32 +1,22 @@
-@if (isInsideEditor()) {
+@if (isInsideEditor()) { @if(contentlets().length){ @for (contentlet of contentlets(); track $index)
+{
 <div
-    [attr.data-dot-accept-types]="dotContainer()?.acceptTypes"
-    [attr.data-dot-identifier]="dotContainer()?.identifier"
-    [attr.data-max-contentlets]="dotContainer()?.maxContentlets"
-    [attr.data-dot-uuid]="dotContainer()?.uuid"
-    [style]="contentlets().length ? null : emptyContainerStyles"
-    data-testid="dot-container"
-    data-dot-object="container">
-    @if(contentlets().length){ @for (contentlet of contentlets(); track $index) {
-    <div
-        [attr.data-dot-identifier]="contentlet.identifier"
-        [attr.data-dot-basetype]="contentlet.baseType"
-        [attr.data-dot-title]="contentlet['widgetTitle'] || contentlet.title"
-        [attr.data-dot-inode]="contentlet.inode"
-        [attr.data-dot-type]="contentlet.contentType"
-        [attr.data-dot-container]="dotContainerAsString()"
-        [attr.data-dot-on-number-of-pages]="contentlet['onNumberOfPages']"
-        data-testid="dot-contentlet"
-        data-dot-object="contentlet">
-        <ng-container
-            *ngComponentOutlet="
-                (componentsMap[contentlet.contentType] | async) || NoComponentComponent;
-                inputs: { contentlet }
-            "></ng-container>
-    </div>
-    } } @else { This container is empty. }
+    [attr.data-dot-identifier]="contentlet.identifier"
+    [attr.data-dot-basetype]="contentlet.baseType"
+    [attr.data-dot-title]="contentlet['widgetTitle'] || contentlet.title"
+    [attr.data-dot-inode]="contentlet.inode"
+    [attr.data-dot-type]="contentlet.contentType"
+    [attr.data-dot-container]="dotContainerAsString()"
+    [attr.data-dot-on-number-of-pages]="contentlet['onNumberOfPages']"
+    data-testid="dot-contentlet"
+    data-dot-object="contentlet">
+    <ng-container
+        *ngComponentOutlet="
+            (componentsMap[contentlet.contentType] | async) || NoComponentComponent;
+            inputs: { contentlet }
+        "></ng-container>
 </div>
-} @else { @for (contentlet of contentlets(); track $index) {
+} } @else { This container is empty. } } @else { @for (contentlet of contentlets(); track $index) {
 <ng-container
     *ngComponentOutlet="
         (componentsMap[contentlet.contentType] | async) || NoComponentComponent;

@@ -405,10 +405,10 @@ interface DotCMSSiteField {
     versionType: string;
 }
 
-export interface DotCMSNavigationItem {
+export interface DotcmsNavigationItem {
     code?: any;
     folder: string;
-    children?: DotCMSNavigationItem[];
+    children?: DotcmsNavigationItem[];
     host: string;
     languageId: number;
     href: string;

@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
 import { NoComponentComponent } from './no-component.component';
 
@@ -18,7 +18,7 @@ describe('NoComponentComponent', () => {
     });
 
     it('should display the content type', () => {
-        const element = spectator.query(byTestId('no-component'));
-        expect(element?.innerHTML).toBe('No Component for exampleContentType');
+        const noComponent = spectator.debugElement.nativeElement;
+        expect(noComponent?.innerHTML).toBe('No Component for exampleContentType');
     });
 });

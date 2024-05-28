@@ -61,7 +61,7 @@ describe('ContainerComponent', () => {
 
         it('should container have data attributes', () => {
             spectator.detectChanges();
-            const container = spectator.query(byTestId('dot-container'));
+            const container = spectator.debugElement.nativeElement;
             expect(container?.getAttribute('data-dot-accept-types')).toBeDefined();
             expect(container?.getAttribute('data-dot-identifier')).toBeDefined();
             expect(container?.getAttribute('data-max-contentlets')).toBeDefined();

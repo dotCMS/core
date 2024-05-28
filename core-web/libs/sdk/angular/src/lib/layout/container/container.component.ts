@@ -2,6 +2,7 @@ import { AsyncPipe, NgComponentOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    HostBinding,
     Input,
     OnChanges,
     computed,
@@ -54,6 +55,14 @@ export class ContainerComponent implements OnChanges {
     protected dotContainer = signal<DotContainer | null>(null);
     protected dotContainerAsString = computed(() => JSON.stringify(this.dotContainer()));
 
+    @HostBinding('attr.data-dot-accept-types') acceptTypes = '';
+    @HostBinding('attr.data-dot-identifier') identifier = '';
+    @HostBinding('attr.data-max-contentlets') maxContentlets: number | null = null;
+    @HostBinding('attr.data-dot-uuid') uuid = '';
+    @HostBinding('style') style: Record<string, string> | null = null;
+    @HostBinding('attr.data-dot-object') dotObject = 'container';
+    @HostBinding('attr.data-testid') testId = 'dot-container';
+
     ngOnChanges() {
         const { containers, isInsideEditor } = this.pageContextService.pageContextValue;
         const { acceptTypes, maxContentlets, variantId, path, contentlets } = getContainersData(
@@ -73,5 +82,13 @@ export class ContainerComponent implements OnChanges {
             variantId,
             uuid
         });
+
+        if (this.isInsideEditor()) {
+            this.acceptTypes = acceptTypes;
+            this.identifier = identifier;
+            this.maxContentlets = maxContentlets;
+            this.uuid = uuid;
+            this.style = this.contentlets().length ? null : this.emptyContainerStyles;
+        }
     }
 }
