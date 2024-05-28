@@ -34,4 +34,4 @@ export const CONTENT_TYPE_MAIN_FIELDS: string[] = [
     'variant'
 ];
 
-export const CONTENT_API_URL = ' /api/content/_search';
+export const CONTENT_API_URL = '/api/content/_search';
