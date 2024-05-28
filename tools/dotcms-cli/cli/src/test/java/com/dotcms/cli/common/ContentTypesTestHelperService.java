@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.enterprise.context.ApplicationScoped;
@@ -62,7 +63,9 @@ public class ContentTypesTestHelperService {
         final long identifier = System.currentTimeMillis();
         final String varName = "var_" + identifier;
 
-        final ImmutableSimpleContentType contentType = buildContentType(detailPage, urlMapPattern);
+        final ImmutableSimpleContentType contentType = buildContentType(
+                null, null, detailPage, urlMapPattern
+        );
 
         final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
                 .of(contentType).build();
@@ -80,11 +83,12 @@ public class ContentTypesTestHelperService {
      */
     public ContentTypeDescriptorCreationResult createContentTypeDescriptor(Workspace workspace)
             throws IOException {
-        return createContentTypeDescriptor(workspace, null, null);
+        return createContentTypeDescriptor(workspace, null, null, null, null);
     }
 
     /**
-     * Creates a content type descriptor in the given workspace.
+     * Creates a content type descriptor in the given workspace with a given detail page and URL map
+     * pattern.
      *
      * @param workspace     The workspace in which the content type descriptor should be created.
      * @param detailPage    The detail page of the content type.
@@ -92,11 +96,52 @@ public class ContentTypesTestHelperService {
      * @return The result of the content type descriptor creation.
      * @throws IOException If an error occurs while writing the content type descriptor to disk.
      */
-    public ContentTypeDescriptorCreationResult createContentTypeDescriptor(
+    public ContentTypeDescriptorCreationResult createContentTypeDescriptorWithDetailData(
             Workspace workspace, final String detailPage, final String urlMapPattern)
             throws IOException {
 
-        final ImmutableSimpleContentType contentType = buildContentType(detailPage, urlMapPattern);
+        return createContentTypeDescriptor(
+                workspace, null, null, detailPage, urlMapPattern
+        );
+    }
+
+    /**
+     * Creates a content type descriptor in the given workspace with a given identifier and
+     * variable.
+     *
+     * @param workspace  The workspace in which the content type descriptor should be created.
+     * @param identifier The identifier of the content type.
+     * @param variable   The variable of the content type.
+     * @return The result of the content type descriptor creation.
+     * @throws IOException If an error occurs while writing the content type descriptor to disk.
+     */
+    public ContentTypeDescriptorCreationResult createContentTypeDescriptorWithIdData(
+            Workspace workspace, final String identifier, final String variable)
+            throws IOException {
+
+        return createContentTypeDescriptor(
+                workspace, identifier, variable, null, null
+        );
+    }
+
+    /**
+     * Creates a content type descriptor in the given workspace.
+     *
+     * @param workspace     The workspace in which the content type descriptor should be created.
+     * @param identifier    The identifier of the content type.
+     * @param variable      The variable of the content type.
+     * @param detailPage    The detail page of the content type.
+     * @param urlMapPattern The URL map pattern of the content type.
+     * @return The result of the content type descriptor creation.
+     * @throws IOException If an error occurs while writing the content type descriptor to disk.
+     */
+    public ContentTypeDescriptorCreationResult createContentTypeDescriptor(
+            Workspace workspace, final String identifier, final String variable,
+            final String detailPage, final String urlMapPattern) throws IOException {
+
+        final ImmutableSimpleContentType contentType = buildContentType(
+                identifier, variable, detailPage, urlMapPattern
+        );
 
         final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
         final String asString = objectMapper.writeValueAsString(contentType);
@@ -111,21 +156,24 @@ public class ContentTypesTestHelperService {
     /**
      * Builds a content type object.
      *
+     * @param identifier    The identifier of the content type.
+     * @param variable      The variable of the content type.
      * @param detailPage    The detail page of the content type.
      * @param urlMapPattern The URL map pattern of the content type.
      * @return The content type object.
      */
-    private ImmutableSimpleContentType buildContentType(
-            final String detailPage, final String urlMapPattern) {
+    private ImmutableSimpleContentType buildContentType(final String identifier,
+            final String variable, final String detailPage, final String urlMapPattern) {
 
-        final long identifier = System.currentTimeMillis();
-        final String varName = "var_" + identifier;
+        final long millis = System.currentTimeMillis();
+        final String contentTypeVariable = Objects.requireNonNullElseGet(variable,
+                () -> "var_" + millis);
 
-        return ImmutableSimpleContentType.builder()
+        var builder = ImmutableSimpleContentType.builder()
                 .baseType(BaseContentType.CONTENT)
                 .description("ct for testing.")
-                .name("name-" + varName)
-                .variable(varName)
+                .name("name-" + contentTypeVariable)
+                .variable(contentTypeVariable)
                 .modDate(new Date())
                 .fixed(true)
                 .iDate(new Date())
@@ -135,7 +183,7 @@ public class ContentTypesTestHelperService {
                 .urlMapPattern(urlMapPattern)
                 .addFields(
                         ImmutableBinaryField.builder()
-                                .name("__bin_var__" + identifier)
+                                .name("__bin_var__" + millis)
                                 .fixed(false)
                                 .listed(true)
                                 .searchable(true)
@@ -162,7 +210,13 @@ public class ContentTypesTestHelperService {
                                 .variable("name")
                                 .fixed(true)
                                 .build()
-                ).build();
+                );
+
+        if (identifier != null) {
+            builder.id(identifier);
+        }
+
+        return builder.build();
     }
 
     /**
