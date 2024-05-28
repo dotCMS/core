@@ -282,7 +282,7 @@ class AppsHelper {
         }
         appsAPI.deleteSecrets(key, host, user);
         securityLoggerAPI.logInfo(this.getClass(),
-                String.format("User `%s` deleted secrets for app `%s` on host `%s`", user, key, siteId));
+                String.format("User `%s` deleted secret for app `%s` on host `%s`", user, key, siteId));
     }
 
 
@@ -491,7 +491,7 @@ class AppsHelper {
         } else {
             appsAPI.deleteSecret(key, params, host, user);
             securityLoggerAPI.logInfo(this.getClass(),
-                    String.format("User `%s` deleted secrets for app `%s` on host `%s`", user, key, host.getIdentifier()));
+                    String.format("User `%s` deleted secret for app `%s` on host `%s`", user, key, host.getIdentifier()));
         }
     }
 
