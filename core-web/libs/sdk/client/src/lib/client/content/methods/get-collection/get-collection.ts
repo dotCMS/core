@@ -239,11 +239,13 @@ export class GetCollection {
                     return response.json().then((data) => {
                         const contentlets = data.entity.jsonObjectView.contentlets;
 
+                        const total = data.entity.resultsSize;
+
                         const mappedResponse: GetCollectionResponse<T> = {
                             contentlets,
+                            total,
                             page: this._page,
-                            size: contentlets.length,
-                            total: 0 // There's no way to know this in the response
+                            size: contentlets.length
                         };
 
                         return this._sortBy
