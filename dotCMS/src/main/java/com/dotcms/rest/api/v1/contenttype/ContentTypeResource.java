@@ -12,6 +12,7 @@ import com.dotcms.contenttype.business.FieldDiffCommand;
 import com.dotcms.contenttype.business.FieldDiffItemsKey;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
@@ -456,7 +457,7 @@ public class ContentTypeResource implements Serializable {
 		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
 
 		if (!isNew) {
-			this.handleFields(contentType, user, contentTypeAPI);
+			this.handleFields(contentTypeSaved.id(), contentType.fieldMap(), user, contentTypeAPI);
 		}
 
 		if (UtilMethods.isSet(systemActionMappings)) {
@@ -496,19 +497,25 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	/**
-	 * We need to handle in this way b/c when the content type exists the fields are not being updated
-	 * @param newContentType
-	 * @param user
-	 * @param contentTypeAPI
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * We need to handle in this way b/c when the content type exists the fields are not being
+	 * updated
+	 *
+	 * @param contentTypeId           the content type id
+	 * @param newContentTypeFieldsMap the content type fields found in the request
+	 * @param user                    the user performing the action
+	 * @param contentTypeAPI          the content type api
+	 * @throws DotDataException     if there is an error with the data
+	 * @throws DotSecurityException if the user does not have the required permissions
 	 */
 	@WrapInTransaction
-	private void handleFields(final ContentType newContentType, final User user, final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
+	private void handleFields(final String contentTypeId,
+			final Map<String, Field> newContentTypeFieldsMap, final User user,
+			final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
 
-		final ContentType currentContentType = contentTypeAPI.find(newContentType.id());
+		final ContentType currentContentType = contentTypeAPI.find(contentTypeId);
 
-		final DiffResult<FieldDiffItemsKey, Field> diffResult = new FieldDiffCommand().applyDiff(currentContentType.fieldMap(), newContentType.fieldMap());
+		final DiffResult<FieldDiffItemsKey, Field> diffResult = new FieldDiffCommand().applyDiff(
+				currentContentType.fieldMap(), newContentTypeFieldsMap);
 
 		if (!diffResult.getToDelete().isEmpty()) {
 
@@ -523,12 +530,22 @@ public class ContentTypeResource implements Serializable {
 
 		if (!diffResult.getToUpdate().isEmpty()) {
 
-			handleUpdateFieldAndFieldVariables(user, diffResult);
+			handleUpdateFieldAndFieldVariables(contentTypeId, user, diffResult);
 		}
 	}
 
-	private void handleUpdateFieldAndFieldVariables(final User user,
-													final DiffResult<FieldDiffItemsKey, Field> diffResult) throws DotSecurityException, DotDataException {
+	/**
+	 * Handles the update of fields and field variables based on the difference result.
+	 *
+	 * @param contentTypeId The ID of the content type.
+	 * @param user          The user performing the update.
+	 * @param diffResult    The result of the field differences.
+	 * @throws DotSecurityException If a security exception occurs.
+	 * @throws DotDataException     If a data exception occurs.
+	 */
+	private void handleUpdateFieldAndFieldVariables(final String contentTypeId, final User user,
+			final DiffResult<FieldDiffItemsKey, Field> diffResult)
+			throws DotSecurityException, DotDataException {
 
 		final List<Field> fieldToUpdate = new ArrayList<>();
 		final List<Tuple2<Field, List<DiffItem>>> fieldVariableToUpdate = new ArrayList<>();
@@ -540,8 +557,20 @@ public class ContentTypeResource implements Serializable {
 			final List<DiffItem> fieldVariableList = diffPartition.get(Boolean.TRUE);  // field variable diffs
 			final List<DiffItem> fieldList         = diffPartition.get(Boolean.FALSE); // field diffs
 			if (UtilMethods.isSet(fieldList)) {
-				Logger.debug(this, "Updating the field : " + entry.getValue().variable() + " diff: " + fieldList);
-				fieldToUpdate.add(entry.getValue());
+				Logger.debug(this, "Updating the field : " + entry.getValue().variable() + " diff: "
+						+ fieldList);
+
+				final var field = entry.getValue();
+
+				// Make sure the content type id is set on the field
+				if (StringUtils.isEmpty(field.contentTypeId()) ||
+						!field.contentTypeId().equals(contentTypeId)) {
+					fieldToUpdate.add(
+							FieldBuilder.builder(field).contentTypeId(contentTypeId).build()
+					);
+				} else {
+					fieldToUpdate.add(entry.getValue());
+				}
 			}
 
 			if (UtilMethods.isSet(fieldVariableList)) {
