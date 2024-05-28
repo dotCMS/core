@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.ThreadContext;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -13,11 +14,13 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.jetbrains.annotations.NotNull;
@@ -36,20 +39,23 @@ import java.util.Set;
  */
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
+    private static final Lazy<Integer> MAX_RECURSION_LEVEL = Lazy.of(() -> Config.getIntProperty("STORY_BLOCK_MAX_RECURSION_LEVEL", 2));
     // note: this does not need @CloseDBIfOpened because it is on #getStoryBlockReferenceResult method, which is a helper method for this one
     @Override
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
 
         final String counterKey = this.getClass().getName();
-        final int counter = ThreadContextUtil.getOrCreateContext().getCounter(counterKey);
-        if (counter > 2) {
+        final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
+        final int counter = threadContext.getCounter(counterKey);
+        if (counter > MAX_RECURSION_LEVEL.get()) {
 
+            threadContext.resetCounter(counterKey);
             Logger.debug(this, () -> "The StoryBlockAPIImpl.refreshReferences method has been called more than 2 times" +
                     " in the same thread. This could be a sign of a circular reference in the Story Block field. Do not refreshing anything at this point");
             return new StoryBlockReferenceResult(false, contentlet);
         }
 
-        ThreadContextUtil.getOrCreateContext().increaseCounter(counterKey);
+        threadContext.increaseCounter(counterKey);
 
         return getStoryBlockReferenceResult(contentlet);
     }

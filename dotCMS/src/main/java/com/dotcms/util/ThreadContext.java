@@ -53,4 +53,9 @@ public class ThreadContext {
         this.counterMap.put(key, this.getCounter(key) + 1);
     }
 
+    public void resetCounter(final String key) {
+
+        this.counterMap.remove(key);
+    }
+
 }
