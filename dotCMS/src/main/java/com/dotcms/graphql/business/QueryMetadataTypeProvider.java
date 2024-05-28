@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.Scalars.GraphQLLong;
+import static graphql.scalars.ExtendedScalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
 
 /**

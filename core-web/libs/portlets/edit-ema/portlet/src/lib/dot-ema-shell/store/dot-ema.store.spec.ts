@@ -925,7 +925,7 @@ describe('EditEmaStore', () => {
                 });
             });
 
-            it('should update inline edited contentlet', () => {
+            it('should update inline edited contentlet for regular pages', (done) => {
                 const payload: SaveInlineEditing = {
                     contentlet: {
                         body: '',
@@ -939,7 +939,7 @@ describe('EditEmaStore', () => {
                 };
                 const dotPageApiService = spectator.inject(DotPageApiService);
                 jest.spyOn(dotPageApiService, 'saveContentlet').mockReturnValue(of({}));
-                jest.spyOn(dotPageApiService, 'get');
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(MOCK_RESPONSE_HEADLESS));
 
                 spectator.service.load({
                     clientHost: 'http://localhost:3000',
@@ -953,6 +953,97 @@ describe('EditEmaStore', () => {
                     contentlet: payload.contentlet
                 });
                 expect(dotPageApiService.get).toHaveBeenCalledWith(payload.params);
+
+                spectator.service.state$.subscribe((state) => {
+                    expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        isEnterpriseLicense: true,
+                        currentExperiment: null,
+                        editorState: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: undefined
+                        },
+                        shouldReload: true
+                    });
+
+                    done();
+                });
+            });
+            it('should update inline edited contentlet for variants', (done) => {
+                const payload: SaveInlineEditing = {
+                    contentlet: {
+                        body: '',
+                        inode: '123'
+                    },
+                    params: {
+                        url: 'test',
+                        language_id: '1',
+                        'com.dotmarketing.persona.id': '123'
+                    }
+                };
+
+                const mockWithVariant = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    viewAs: {
+                        ...MOCK_RESPONSE_HEADLESS.viewAs,
+                        variantId: '123'
+                    }
+                };
+
+                const dotPageApiService = spectator.inject(DotPageApiService);
+                jest.spyOn(dotPageApiService, 'saveContentlet').mockReturnValue(of({}));
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(mockWithVariant));
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123',
+                    variantName: '123'
+                });
+                spectator.service.saveFromInlineEditedContentlet(payload);
+
+                expect(dotPageApiService.saveContentlet).toHaveBeenCalledWith({
+                    contentlet: payload.contentlet
+                });
+                expect(dotPageApiService.get).toHaveBeenCalledWith(payload.params);
+
+                spectator.service.state$.subscribe((state) => {
+                    expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: mockWithVariant,
+                        isEnterpriseLicense: true,
+                        currentExperiment: null,
+                        editorState: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT_VARIANT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: '123'
+                        },
+                        shouldReload: true
+                    });
+
+                    done();
+                });
             });
         });
     });

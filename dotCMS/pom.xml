@@ -17,7 +17,7 @@
         <test.src.dir>${project.basedir}/src/test/java</test.src.dir>
         <version.spotless.plugin>2.36.0</version.spotless.plugin>
         <batik.version>1.16</batik.version>
-        <glowroot.version>0.13.1</glowroot.version>
+        <glowroot.version>0.14.1</glowroot.version>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
         <assembly-directory>${basedir}/target/dist</assembly-directory>
         <docker.skip.build>${docker.skip}</docker.skip.build>
@@ -1279,8 +1279,23 @@
 
         <!-- Test Dependencies -->
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -1297,18 +1312,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- Deprecated need to remove replace with core mockito-->
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- Deprecated need to remove replace with core mockito-->
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
             <scope>test</scope>
         </dependency>
 

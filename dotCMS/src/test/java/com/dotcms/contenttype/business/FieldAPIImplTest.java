@@ -24,14 +24,11 @@ import java.net.ConnectException;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertEquals;
 
 public class FieldAPIImplTest {
     private static PermissionAPI perAPI;
@@ -155,7 +152,7 @@ public class FieldAPIImplTest {
         final DotRuntimeException dotRuntimeException = new DotRuntimeException(connectException);
 
         when(
-                this.languageVariableAPI.getLanguageVariable(anyString(), anyLong(), anyObject(), anyBoolean(), anyBoolean())
+                languageVariableAPI.getLanguageVariable(anyString(), anyLong(), any(), anyBoolean(), anyBoolean())
         ).thenThrow(dotRuntimeException);
 
 

@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+import static com.liferay.util.StringPool.COMMA;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -11,7 +15,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
-import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -51,9 +54,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.server.JSONP;
-
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -70,19 +79,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-import static com.liferay.util.StringPool.COMMA;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * This REST Endpoint provides information related to Content Types in the current dotCMS repository.
@@ -93,6 +91,10 @@ import static com.liferay.util.StringPool.COMMA;
 @Path("/v1/contenttype")
 @Tag(name = "Content Type")
 public class ContentTypeResource implements Serializable {
+
+	private static final String MAP_KEY_WORKFLOWS = "workflows";
+	private static final String MAP_KEY_SYSTEM_ACTION_MAPPINGS = "systemActionMappings";
+
 	private final WebResource 		webResource;
 	private final ContentTypeHelper contentTypeHelper;
 	private final PaginationUtil 	paginationUtil;
@@ -247,9 +249,13 @@ public class ContentTypeResource implements Serializable {
 		final ContentType contentTypeSaved = contentTypeAPI.copyFromAndDependencies(builder.build());
 
 		return ImmutableMap.builder()
-				.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(contentTypeSaved.variable())).mapObject())
-				.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
-				.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user).stream()
+				.putAll(contentTypeHelper.contentTypeToMap(
+						contentTypeAPI.find(contentTypeSaved.variable()), user))
+				.put(MAP_KEY_WORKFLOWS,
+						this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
+				.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
+						this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user)
+								.stream()
 						.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
 				.build();
 	}
@@ -293,7 +299,9 @@ public class ContentTypeResource implements Serializable {
 			final List<Map<Object, Object>> savedContentTypes = new ArrayList<>();
 
 			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
-				final ContentType type = entry.contentType;
+				final ContentType type = contentTypeHelper.evaluateContentTypeRequest(
+						entry.contentType, user, true
+				);
 				final Set<String> workflowsIds = new HashSet<>(entry.workflowsIds);
 
 				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
@@ -306,9 +314,11 @@ public class ContentTypeResource implements Serializable {
 							form.getSystemActions(), APILocator.getContentTypeAPI(user, true), true);
 				final ContentType contentTypeSaved = tuple2._1;
 				final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
-							.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
-						.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
-						.put("systemActionMappings", tuple2._2.stream()
+						.putAll(contentTypeHelper.contentTypeToMap(contentTypeSaved, user))
+						.put(MAP_KEY_WORKFLOWS,
+								this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(),
+										initData.getUser()))
+						.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS, tuple2._2.stream()
 								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
 						.build();
 				savedContentTypes.add(responseMap);
@@ -369,25 +379,29 @@ public class ContentTypeResource implements Serializable {
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
-			final ContentType contentType = form.getContentType();
+			final ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
+					form.getContentType(), user, false
+			);
 			Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
-			checkNotEmpty(contentType.id(), BadRequestException.class, "Content Type 'id' attribute must be set");
-				final ContentType currentContentType = contentTypeAPI.find(idOrVar);
+			checkNotEmpty(contentType.id(), BadRequestException.class,
+					"Content Type 'id' attribute must be set");
 
-				if (!currentContentType.id().equals(contentType.id())) {
-					return ExceptionMapperUtil.createResponse(null, "Field id '"+ idOrVar +"' does not match the Content Type with id '"+ contentType.id() +"'");
-				} else {
-
-					final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 = this.saveContentTypeAndDependencies(contentType, user,
-							new HashSet<>(form.getWorkflowsIds()), form.getSystemActions(), contentTypeAPI, false);
-					final ImmutableMap.Builder<Object, Object> builderMap =
-							ImmutableMap.builder()
-							.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(tuple2._1.variable())).mapObject())
-							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
-							.put("systemActionMappings", tuple2._2.stream()
-								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)));
-				return Response.ok(new ResponseEntityView<>(builderMap.build())).build();
-				}
+			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
+					this.saveContentTypeAndDependencies(contentType, user,
+							new HashSet<>(form.getWorkflowsIds()), form.getSystemActions(),
+							contentTypeAPI, false);
+			final ImmutableMap.Builder<Object, Object> builderMap =
+					ImmutableMap.builder()
+							.putAll(contentTypeHelper.contentTypeToMap(
+									contentTypeAPI.find(tuple2._1.variable()), user))
+							.put(MAP_KEY_WORKFLOWS,
+									this.workflowHelper.findSchemesByContentType(
+											contentType.id(), initData.getUser()))
+							.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS, tuple2._2.stream()
+									.collect(Collectors.toMap(
+											SystemActionWorkflowActionMapping::getSystemAction,
+											mapping -> mapping)));
+			return Response.ok(new ResponseEntityView<>(builderMap.build())).build();
 		} catch (final NotFoundInDbException e) {
 			Logger.error(this, String.format("Content Type with ID or var name '%s' was not found", idOrVar), e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
@@ -627,8 +641,15 @@ public class ContentTypeResource implements Serializable {
 			Logger.debug(this, ()-> "Getting the Type: " + idOrVar);
 
 			final ContentType type = tapi.find(idOrVar);
+			if (null == type) {
+				// Humoring sonarlint, this block should never be reached as the find method will
+				// throw an exception if the type is not found.
+				throw new NotFoundInDbException(
+						String.format("Content Type with ID or var name '%s' was not found", idOrVar
+						));
+			}
 
-			if(null != session && null != type){
+			if (null != session) {
 				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
 			}
 
@@ -638,12 +659,16 @@ public class ContentTypeResource implements Serializable {
 
 			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
 					new ContentTypeInternationalization(languageId, live, user) : null;
-            final Map<String, Object> resultMap = new HashMap<>(new JsonContentTypeTransformer(type, contentTypeInternationalization).mapObject());
-
-			resultMap.put("workflows", this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
-			resultMap.put("systemActionMappings",
-					this.workflowHelper.findSystemActionsByContentType(type, initData.getUser())
-							.stream().collect(Collectors.toMap(mapping -> mapping.getSystemAction(),mapping -> mapping)));
+			final ImmutableMap<Object, Object> resultMap = ImmutableMap.builder()
+					.putAll(contentTypeHelper.contentTypeToMap(type,
+							contentTypeInternationalization, user))
+					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
+							type.id(), initData.getUser()))
+					.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
+							this.workflowHelper.findSystemActionsByContentType(
+									type, initData.getUser()).stream()
+							.collect(Collectors.toMap(mapping -> mapping.getSystemAction(),
+									mapping -> mapping))).build();
 
 			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
 					Response.ok(new ResponseEntityView<>(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():

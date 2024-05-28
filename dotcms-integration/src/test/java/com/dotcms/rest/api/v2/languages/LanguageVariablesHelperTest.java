@@ -1,24 +1,18 @@
 package com.dotcms.rest.api.v2.languages;
 
 
-import static com.dotcms.languagevariable.business.LanguageVariableAPITest.removeAll;
+import static com.dotcms.languagevariable.business.LanguageVariableAPITest.destroyAll;
 
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LanguageVariableDataGen;
-import com.dotcms.languagevariable.business.LanguageVariable;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.languagevariable.business.LanguageVariableAPITest;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.liferay.portal.model.User;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +42,11 @@ public class LanguageVariablesHelperTest {
      */
     @Test
     public void paginationTestVerifyKeyOrder()
-            throws DotDataException, DotSecurityException, JsonProcessingException {
+            throws Exception {
 
         final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
 
-        removeAll();
+        destroyAll();
         Assert.assertEquals(0, languageVariableAPI.countVariablesByKey());
 
         final List<Language> languages = List.of(

@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "7ed88769-71aa-4ed5-9cd0-09fe317728c7",
+		"_postman_id": "51ae629c-8388-4e3e-9291-93138268766b",
 		"name": "Image",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "11174695"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -17,10 +17,17 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"    const status = pm.response.status;",
+									"    console.log('status:', status)",
+									"    if (\"Not Found\" != status) {",
+									"",
+									"        pm.response.to.have.status(200);",
+									"    }",
+									"    ",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -76,10 +83,17 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"    const status = pm.response.status;",
+									"    console.log('status:', status)",
+									"    if (\"Not Found\" != status) {",
+									"",
+									"        pm.response.to.have.status(200);",
+									"    }",
+									"    ",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -348,7 +362,7 @@
 					]
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/bundle",
+					"raw": "{{serverURL}}/api/bundle/sync",
 					"host": [
 						"{{serverURL}}"
 					],

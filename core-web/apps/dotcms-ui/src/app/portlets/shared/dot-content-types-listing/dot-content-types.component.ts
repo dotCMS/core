@@ -19,6 +19,7 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
+    DotActionMenuItem,
     DotCMSBaseTypesContentTypes,
     DotCMSContentType,
     DotCopyContentTypeDialogFormFields,
@@ -28,7 +29,6 @@ import {
 import { ActionHeaderOptions } from '@models/action-header';
 import { ButtonModel } from '@models/action-header/button.model';
 import { DataTableColumn } from '@models/data-table';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 import { DotContentTypeStore } from './dot-content-type.store';
 

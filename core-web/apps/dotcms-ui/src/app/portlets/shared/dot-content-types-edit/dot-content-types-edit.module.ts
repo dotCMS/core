@@ -18,7 +18,6 @@ import { TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
-import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
@@ -44,6 +43,7 @@ import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotIconModule,
+    DotMenuComponent,
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
@@ -136,7 +136,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         TooltipModule,
         DotIconModule,
         DotMaxlengthModule,
-        DotMenuModule,
+        DotMenuComponent,
         DotPageSelectorModule,
         DotRelationshipsModule,
         DotTextareaContentModule,
