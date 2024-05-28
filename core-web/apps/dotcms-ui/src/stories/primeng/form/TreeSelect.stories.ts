@@ -8,7 +8,6 @@ import { TreeSelectModule, TreeSelect } from 'primeng/treeselect';
 
 import { files } from './../data/Tree.stories';
 
-
 const meta: Meta<TreeSelect> = {
     title: 'PrimeNG/Form/TreeSelect',
     component: TreeSelect,
@@ -201,7 +200,6 @@ export const Multiple: Story = {
         `
     })
 };
-
 
 export const Checkbox: Story = {
     render: () => ({

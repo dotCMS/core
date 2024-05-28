@@ -117,7 +117,7 @@ $select-border-size: 2px;
     border-radius: $border-radius-circular;
     transition: color 0.15s, box-shadow 0.15s;
 
-    :focus{
+    :focus {
         outline: 0 none;
         outline-offset: 0;
     }
