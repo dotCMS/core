@@ -2,7 +2,6 @@ package com.dotcms.rest;
 
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.site.ResponseSiteVariablesEntityView;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -241,12 +240,12 @@ public class EnvironmentResource {
 
 			Logger.debug(this, ()-> "Creating environment: " + environmentName);
 
-			final List<String> whoCanUseList = environmentForm.getWhoCanUse();
-			final String pushType = environmentForm.getPushType();
+			final List<String> whoCanUseList = environmentForm.getWhoCanSend();
+			final PushMode pushType = environmentForm.getPushMode();
 
 			final Environment environment = new Environment();
 			environment.setName(environmentName);
-			environment.setPushToAll("pushToAll".equals(pushType));
+			environment.setPushToAll(PushMode.PUSH_TO_ALL == pushType);
 
 			final Map<String, Permission> permissionsMap = new HashMap<>();
 

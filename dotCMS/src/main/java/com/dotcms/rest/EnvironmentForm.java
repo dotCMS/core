@@ -13,31 +13,31 @@ public class EnvironmentForm implements java.io.Serializable {
 
     @JsonProperty("name")
     private final String name;
-    @JsonProperty("pushType")
-    private final String pushType;
+    @JsonProperty("pushMode")
+    private final PushMode pushMode;
 
-    @JsonProperty("whoCanUse")
-    private final List<String> whoCanUse;
+    @JsonProperty("whoCanSend")
+    private final List<String> whoCanSend;
     @JsonCreator
     public EnvironmentForm(@JsonProperty("name")      final String name,
-                           @JsonProperty("pushType")  final String pushType,
-                           @JsonProperty("whoCanUse") final List<String> whoCanUse
+                           @JsonProperty("pushMode")  final PushMode pushType,
+                           @JsonProperty("whoCanSend") final List<String> whoCanSend
                            ) {
         this.name = name;
-        this.whoCanUse = whoCanUse;
-        this.pushType = pushType;
+        this.whoCanSend = whoCanSend;
+        this.pushMode = pushType;
     }
 
     public String getName() {
         return name;
     }
 
-    public List<String> getWhoCanUse() {
-        return whoCanUse;
+    public List<String> getWhoCanSend() {
+        return whoCanSend;
     }
 
-    public String getPushType() {
+    public PushMode getPushMode() {
 
-        return pushType;
+        return pushMode;
     }
 }
