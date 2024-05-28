@@ -839,8 +839,10 @@ public class TemplateResource {
             final Identifier imageIdentifier = APILocator.getIdentifierAPI().find(template.getImage());
             if (UtilMethods.isSet(imageIdentifier.getAssetType()) && imageIdentifier.getAssetType().equals("contentlet")) {
 
-                final Contentlet imageContentlet = templateAPI.getImageContentlet(template);
-                if (imageContentlet != null) {
+                final Optional<Contentlet> imageContentletOpt = templateAPI.getImageContentlet(template);
+                if (imageContentletOpt.isPresent()) {
+
+                    final Contentlet imageContentlet = imageContentletOpt.get();
                     final Map<String, Object> toReturn =  new HashMap<>();
                     toReturn.put("inode", imageContentlet.getInode());
                     toReturn.put("name", imageContentlet.getTitle());

@@ -54,6 +54,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -6440,6 +6441,12 @@ public class TemplateAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: Testing the #getImageContent method
+     * Given Scenario: Creates a CT + image + template and associated to the template as an image
+     * ExpectedResult: The image associated is recovery successfully from the db
+     *
+     */
     @Test
     public void getImageContentlet_Test() throws Exception {
 
@@ -6456,9 +6463,9 @@ public class TemplateAPITest extends IntegrationTestBase {
         final Template template = new TemplateDataGen().image(templateImage.getIdentifier()).drawedBody(templateBody).nextPersisted();
 
         final TemplateAPI templateAPI = APILocator.getTemplateAPI();
-        final Contentlet recoveryTemplateImage = templateAPI.getImageContentlet(template);
+        final Optional<Contentlet> recoveryTemplateImage = templateAPI.getImageContentlet(template);
 
-        assertNotNull(recoveryTemplateImage);
-        assertEquals(templateImage.getIdentifier(), recoveryTemplateImage.getIdentifier());
+        assertTrue(recoveryTemplateImage.isPresent());
+        assertEquals(templateImage.getIdentifier(), recoveryTemplateImage.get().getIdentifier());
     }
 }

@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Api to interact with Templates
@@ -445,5 +446,5 @@ public interface TemplateAPI {
 	 * @param template {@link Template}
 	 * @return Content
 	 */
-	Contentlet getImageContentlet(Template template) throws DotDataException, DotSecurityException;
+	Optional<Contentlet> getImageContentlet(Template template) throws DotDataException, DotSecurityException;
 }

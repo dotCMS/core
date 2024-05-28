@@ -1556,8 +1556,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 	@CloseDBIfOpened
 	@Override
-	public Contentlet getImageContentlet(final Template template) throws DotDataException, DotSecurityException {
+	public Optional<Contentlet> getImageContentlet(final Template template) throws DotDataException, DotSecurityException {
 
-		return com.dotmarketing.portlets.templates.factories.TemplateFactory.getImageContentlet(template);
+		return Optional.ofNullable(com.dotmarketing.portlets.templates.factories.TemplateFactory.getImageContentlet(template));
 	}
 }
