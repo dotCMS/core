@@ -40,8 +40,8 @@ export default async function Home({ searchParams, params }) {
 
     const data = await client.page.get(requestData);
 
-    const data2 = await client.content
-        .getCollection("test")
+    const content = await client.content
+        .getCollection("Blog")
         // .draft(true)
         .depth(2)
         // .language(2)
@@ -54,11 +54,9 @@ export default async function Home({ searchParams, params }) {
         ])
         .fetch();
 
-    let data2Resolved = data2;
-
     console.log("----------- MARKER ------------");
 
-    console.log(data2Resolved);
+    console.log(content);
 
     const nav = await client.nav.get({
         path: "/",
