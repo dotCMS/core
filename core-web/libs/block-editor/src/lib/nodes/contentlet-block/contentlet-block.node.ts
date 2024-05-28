@@ -6,35 +6,11 @@ import { Node, NodeViewRenderer } from '@tiptap/core';
 
 import { ContentletBlockComponent } from './contentlet-block.component';
 
-import { AngularNodeViewRenderer, toJSONFn } from '../../NodeViewRenderer';
+import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
+import { contentletToJSON } from '../../shared';
 
 export type ContentletBlockOptions = {
     HTMLAttributes: Record<string, unknown>;
-};
-
-/**
- * Set Custom JSON for this type of Node
- * For this JSON we are going to only add the `contentlet` identifier to the backend
- *
- * @param {*} this
- * @return {*}
- */
-const toJSON: toJSONFn = function () {
-    const { attrs, type } = this?.node || {}; // Add null check for this.node
-    const { data } = attrs;
-    const customAttrs = {
-        ...attrs,
-        data: {
-            identifier: data.identifier,
-            inode: data.inode,
-            languageId: data.languageId
-        }
-    };
-
-    return {
-        type: type.name,
-        attrs: customAttrs
-    };
 };
 
 export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions> => {
@@ -75,7 +51,10 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         },
 
         addNodeView(): NodeViewRenderer {
-            return AngularNodeViewRenderer(ContentletBlockComponent, { injector, toJSON });
+            return AngularNodeViewRenderer(ContentletBlockComponent, {
+                injector,
+                toJSON: contentletToJSON
+            });
         }
     });
 };
