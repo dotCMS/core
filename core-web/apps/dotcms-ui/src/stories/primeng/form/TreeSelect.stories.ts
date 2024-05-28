@@ -25,15 +25,19 @@ export default meta;
 
 type Story = StoryObj<TreeSelect>;
 
+const storyConfigBase: Partial<Story['render']> = {
+    moduleMetadata: {
+        imports: [TreeSelectModule, FormsModule, BrowserAnimationsModule, BrowserModule]
+    },
+    props: {
+        files,
+        selectedNodes: ''
+    }
+};
+
 export const Default: Story = {
     render: () => ({
-        moduleMetadata: {
-            imports: [TreeSelectModule, FormsModule, BrowserAnimationsModule, BrowserModule]
-        },
-        props: {
-            files,
-            selectedNodes: ''
-        },
+        ...storyConfigBase,
         template: `
         <div class="card flex justify-content-center w-25rem h-25rem">
             <p-treeSelect
@@ -54,13 +58,7 @@ export const Default: Story = {
 
 export const Invalid: Story = {
     render: () => ({
-        moduleMetadata: {
-            imports: [TreeSelectModule, FormsModule, BrowserAnimationsModule, BrowserModule]
-        },
-        props: {
-            files,
-            selectedNodes: ''
-        },
+        ...storyConfigBase,
         template: `
         <div class="card flex justify-content-center w-25rem h-25rem">
             <p-treeSelect
@@ -82,13 +80,7 @@ export const Invalid: Story = {
 
 export const WithLabel: Story = {
     render: () => ({
-        moduleMetadata: {
-            imports: [TreeSelectModule, FormsModule, BrowserAnimationsModule, BrowserModule]
-        },
-        props: {
-            files,
-            selectedNodes: ''
-        },
+        ...storyConfigBase,
         template: `
         <div class="card flex justify-content-center w-25rem h-25rem">
             <span class="md:w-20rem w-full">
@@ -112,14 +104,7 @@ export const WithLabel: Story = {
 
 export const WithFloatLabel: Story = {
     render: () => ({
-        moduleMetadata: {
-            imports: [TreeSelectModule, FormsModule, BrowserAnimationsModule, BrowserModule]
-        },
-        props: {
-            files,
-            selectedNodes: '',
-            dropdownIcon: 'pi pi-chevron-down'
-        },
+        ...storyConfigBase,
         template: `
         <div class="card flex justify-content-center w-25rem h-25rem">
             <div class="md:w-20rem w-full">
@@ -145,13 +130,7 @@ export const WithFloatLabel: Story = {
 
 export const Disable: Story = {
     render: () => ({
-        moduleMetadata: {
-            imports: [TreeSelectModule, FormsModule, BrowserAnimationsModule, BrowserModule]
-        },
-        props: {
-            files,
-            selectedNodes: ''
-        },
+        ...storyConfigBase,
         template: `
         <div class="card flex justify-content-center w-25rem h-25rem">
             <p-treeSelect
@@ -173,13 +152,7 @@ export const Disable: Story = {
 
 export const Multiple: Story = {
     render: () => ({
-        moduleMetadata: {
-            imports: [TreeSelectModule, FormsModule, BrowserAnimationsModule, BrowserModule]
-        },
-        props: {
-            files,
-            selectedNodes: ''
-        },
+        ...storyConfigBase,
         template: `  
         <div class="card flex justify-content-center w-25rem h-25rem">
             <p-treeSelect
@@ -203,13 +176,7 @@ export const Multiple: Story = {
 
 export const Checkbox: Story = {
     render: () => ({
-        moduleMetadata: {
-            imports: [TreeSelectModule, FormsModule, BrowserAnimationsModule, BrowserModule]
-        },
-        props: {
-            files,
-            selectedNodes: ''
-        },
+        ...storyConfigBase,
         template: `  
         <div class="card flex justify-content-center w-25rem h-25rem">
             <p-treeSelect
@@ -235,13 +202,7 @@ export const Checkbox: Story = {
 
 export const Filter: Story = {
     render: () => ({
-        moduleMetadata: {
-            imports: [TreeSelectModule, FormsModule, BrowserAnimationsModule, BrowserModule]
-        },
-        props: {
-            files,
-            selectedNodes: ''
-        },
+        ...storyConfigBase,
         template: `  
         <div class="card flex justify-content-center w-25rem h-25rem">
             <p-treeSelect
