@@ -314,6 +314,7 @@ describe('GetCollection', () => {
 
         // Start of the test
 
+        // Call all the methods and fetch the content
         await client
             .language(13) // Language Id
             .render(true) // To retrieve the content with the render
@@ -350,6 +351,7 @@ describe('GetCollection', () => {
             .rawQuery('+modDate:2024-05-28 +conhost:MyCoolSite') // Raw query to append to the main query
             .fetch(); // Fetch the content
 
+        // Check that the request was made with the correct query
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
             body: JSON.stringify({
