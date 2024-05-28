@@ -4,7 +4,7 @@
 .p-treeselect {
     @extend #form-field-base;
     padding: 0;
-    transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+    transition: background-color $basic-speed, border-color $basic-speed, box-shadow $basic-speed;
     &.p-disabled {
         @extend #form-field-disabled;
 
@@ -26,7 +26,7 @@
 
 .p-treeselect .p-treeselect-label {
     padding: $spacing-1 $spacing-2;
-    transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+    transition: background-color $basic-speed, border-color $basic-speed, box-shadow $basic-speed;
 }
 
 .p-treeselect .p-treeselect-label.p-placeholder {
