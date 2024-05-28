@@ -38,7 +38,7 @@ const EMPTY_CONTAINER_EDIT_MODE_STYLES = {
     standalone: true,
     imports: [AsyncPipe, NgComponentOutlet, NoComponentComponent],
     templateUrl: './container.component.html',
-    styleUrl: './container.component.css',
+    styles: '',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContainerComponent implements OnChanges {
