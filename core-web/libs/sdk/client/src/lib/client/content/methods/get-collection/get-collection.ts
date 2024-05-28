@@ -229,8 +229,6 @@ export class GetCollection {
             async (response) => {
                 if (response.ok) {
                     return response.json().then((data) => {
-                        // console.log(data);
-
                         const contentlets = data.entity.jsonObjectView.contentlets;
 
                         const mappedResponse: GetCollectionResponse<T> = {
