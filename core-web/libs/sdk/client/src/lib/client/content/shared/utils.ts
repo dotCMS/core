@@ -12,9 +12,9 @@ import { CONTENT_TYPE_MAIN_FIELDS } from './const';
  * @return {*}  {string}
  */
 export function sanitizeQueryForContentType(query: string, contentType: string): string {
-    return query.replace(/\+([^+:]*?):/g, (match, field) => {
+    return query.replace(/\+([^+:]*?):/g, (original, field) => {
         return !CONTENT_TYPE_MAIN_FIELDS.includes(field) // Fields that are not contentType fields
             ? `+${contentType}.${field}:` // Should have this format: +contentTypeVar.field:
-            : match;
+            : original; // Return the field if it is a contentType field
     });
 }
