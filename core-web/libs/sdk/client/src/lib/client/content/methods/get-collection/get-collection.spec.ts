@@ -44,15 +44,15 @@ describe('GetCollection', () => {
 
     it('should initialize with valid configuration', () => {
         const contentType = 'my-content-type';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
-        expect(client).toBeDefined();
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
+        expect(collectionBuilder).toBeDefined();
     });
 
     it('should build a query for a basic collection', async () => {
         const contentType = 'song';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        await client.fetch();
+        await collectionBuilder.fetch();
 
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
@@ -68,9 +68,9 @@ describe('GetCollection', () => {
 
     it('should return the contentlets in the mapped response', async () => {
         const contentType = 'song';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        const response = await client.fetch();
+        const response = await collectionBuilder.fetch();
 
         expect(response).toEqual({
             contentlets: [],
@@ -82,7 +82,7 @@ describe('GetCollection', () => {
 
     it('should return the contentlets in the mapped response with sort', async () => {
         const contentType = 'song';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
         const sortBy: SortByArray = [
             {
@@ -95,7 +95,7 @@ describe('GetCollection', () => {
             }
         ];
 
-        const response = await client.sortBy(sortBy).fetch();
+        const response = await collectionBuilder.sortBy(sortBy).fetch();
 
         expect(response).toEqual({
             contentlets: [],
@@ -108,9 +108,9 @@ describe('GetCollection', () => {
 
     it('should build a query for a collection with a specific language', async () => {
         const contentType = 'ringsOfPower';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        await client.language(13).fetch();
+        await collectionBuilder.language(13).fetch();
 
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
@@ -126,9 +126,9 @@ describe('GetCollection', () => {
 
     it('should build a query for a collection with render on true', async () => {
         const contentType = 'boringContentType';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        await client.render(true).fetch();
+        await collectionBuilder.render(true).fetch();
 
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
@@ -144,9 +144,9 @@ describe('GetCollection', () => {
 
     it("should build a query with multiply sortBy's", async () => {
         const contentType = 'jedi';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        await client
+        await collectionBuilder
             .sortBy([
                 {
                     field: 'name',
@@ -178,9 +178,9 @@ describe('GetCollection', () => {
 
     it('should build a query with a specific depth', async () => {
         const contentType = 'droid';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        await client.depth(2).fetch();
+        await collectionBuilder.depth(2).fetch();
 
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
@@ -196,9 +196,9 @@ describe('GetCollection', () => {
 
     it('should build a query with a specific limit and page', async () => {
         const contentType = 'ship';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        await client.limit(20).page(3).fetch();
+        await collectionBuilder.limit(20).page(3).fetch();
 
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
@@ -214,9 +214,9 @@ describe('GetCollection', () => {
 
     it('should build a query with an specific query with main fields and custom fields of the content type', async () => {
         const contentType = 'lightsaber';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        await client
+        await collectionBuilder
             .query(
                 (
                     qb // kyberCrystal is a custom field
@@ -239,10 +239,11 @@ describe('GetCollection', () => {
 
     it("should throw an error if the query doesn't end in an instance of Equals", async () => {
         const contentType = 'jedi';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
         try {
-            await client.query((qb) => qb.field('name') as unknown as Equals).fetch();
+            // Force the error
+            await collectionBuilder.query((qb) => qb.field('name') as unknown as Equals).fetch();
         } catch (error) {
             expect(error).toEqual(
                 new Error('The query builder callback should return an Equals instance')
@@ -254,9 +255,9 @@ describe('GetCollection', () => {
 
     it('should build a query for draft content', async () => {
         const contentType = 'draftContent';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        await client.draft(true).fetch();
+        await collectionBuilder.draft(true).fetch();
 
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
@@ -272,9 +273,9 @@ describe('GetCollection', () => {
 
     it('should build a query for a collection with a specific variant', async () => {
         const contentType = 'adventure';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        await client.variant('dimension-1334-adventure').fetch();
+        await collectionBuilder.variant('dimension-1334-adventure').fetch();
 
         expect(fetch).toHaveBeenCalledWith(requestURL, {
             ...baseRequest,
@@ -288,12 +289,12 @@ describe('GetCollection', () => {
         });
     });
 
-    it('should handle all the query methods on getCollection', async () => {
+    it('should handle all the query methods on GetCollection', async () => {
         const contentType = 'forceSensitive';
-        const client = new GetCollection(requestOptions, serverUrl, contentType);
+        const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
         // be sure that this test is updated when new methods are added
-        let methods = Object.getOwnPropertyNames(Object.getPrototypeOf(client)) as Array<
+        let methods = Object.getOwnPropertyNames(Object.getPrototypeOf(collectionBuilder)) as Array<
             keyof GetCollection
         >;
 
@@ -304,18 +305,20 @@ describe('GetCollection', () => {
 
         // Filter to take only the methods that are part of the query builder
         methods = methods.filter((method) => {
-            return !methodsToIgnore.includes(method) && typeof client[method] === 'function';
+            return (
+                !methodsToIgnore.includes(method) && typeof collectionBuilder[method] === 'function'
+            );
         });
 
         // Spy on all the methods
         methods.forEach((method) => {
-            jest.spyOn(client, method as keyof GetCollection);
+            jest.spyOn(collectionBuilder, method as keyof GetCollection);
         });
 
         // Start of the test
 
         // Call all the methods and fetch the content
-        await client
+        await collectionBuilder
             .language(13) // Language Id
             .render(true) // To retrieve the content with the render
             .sortBy([
@@ -366,7 +369,7 @@ describe('GetCollection', () => {
 
         // Chech that all functions for the queryBuilder were called
         methods.forEach((method) => {
-            expect(client[method]).toHaveBeenCalled();
+            expect(collectionBuilder[method]).toHaveBeenCalled();
         });
     });
 });
