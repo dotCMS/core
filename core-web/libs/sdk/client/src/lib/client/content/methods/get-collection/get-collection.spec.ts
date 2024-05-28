@@ -2,6 +2,7 @@
 
 import { GetCollection } from './get-collection';
 
+import { Equals } from '../../../../query-builder/lucene-syntax/Equals';
 import { CONTENT_API_URL } from '../../shared/const';
 import { SortByArray } from '../../shared/types';
 
@@ -232,6 +233,21 @@ describe('GetCollection', () => {
                 depth: 0
             })
         });
+    });
+
+    it("should throw an error if the query doesn't end in an instance of Equals", async () => {
+        const contentType = 'jedi';
+        const client = new GetCollection(requestOptions, serverUrl, contentType);
+
+        try {
+            await client.query((qb) => qb.field('name') as unknown as Equals).fetch();
+        } catch (error) {
+            expect(error).toEqual(
+                new Error('The query builder callback should return an Equals instance')
+            );
+        }
+
+        expect(fetch).not.toHaveBeenCalled();
     });
 
     it('should build a query for draft content', async () => {

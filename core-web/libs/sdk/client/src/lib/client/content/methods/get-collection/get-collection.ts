@@ -42,7 +42,8 @@ export class GetCollection {
      * @memberof GetCollection
      */
     private get offset() {
-        return this._limit * (this._page - 1); // Not sure if this is correct
+        // This could end in an empty response
+        return this._limit * (this._page - 1);
     }
 
     /**
@@ -154,7 +155,13 @@ export class GetCollection {
      * @memberof GetCollection
      */
     query(queryBuilderCallback: QueryBuilderCallback): this {
-        this._query = queryBuilderCallback(this.currentQuery);
+        const queryResult = queryBuilderCallback(this.currentQuery);
+
+        if (queryResult instanceof Equals) {
+            this._query = queryResult;
+        } else {
+            throw new Error('The query builder callback should return an Equals instance');
+        }
 
         return this;
     }
@@ -235,7 +242,7 @@ export class GetCollection {
                             contentlets,
                             page: this._page,
                             size: contentlets.length,
-                            total: 0
+                            total: 0 // There's no way to know this in the response
                         };
 
                         return this._sortBy
