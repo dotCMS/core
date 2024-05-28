@@ -58,5 +58,5 @@ export interface GetCollectionResponse<T> {
     page: number;
     size: number;
     total: number;
-    sortedBy: SortByArray;
+    sortedBy?: SortByArray;
 }

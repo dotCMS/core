@@ -1,5 +1,6 @@
 import { Equals } from '../../../../query-builder/lucene-syntax/Equals';
 import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
+import { CONTENT_API_URL } from '../../shared/const';
 import { GetCollectionResponse, QueryBuilderCallback, SortByArray } from '../../shared/types';
 import { sanitizeQueryForContentType } from '../../shared/utils';
 
@@ -21,7 +22,6 @@ export class GetCollection {
     private _defaultQuery: Equals;
     private requestOptions: Omit<RequestInit, 'body' | 'method'>;
     private serverUrl: string;
-    private readonly contentApiUrl = '/api/content/_search';
 
     /**
      * This method returns the sort query in this format: field order, field order, ...
@@ -53,7 +53,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     private get url() {
-        return `${this.serverUrl}${this.contentApiUrl}`;
+        return `${this.serverUrl}${CONTENT_API_URL}`;
     }
 
     /**
@@ -154,7 +154,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     query(queryBuilderCallback: QueryBuilderCallback): this {
-        this._query = queryBuilderCallback(this._defaultQuery);
+        this._query = queryBuilderCallback(this.currentQuery);
 
         return this;
     }
@@ -229,15 +229,23 @@ export class GetCollection {
             async (response) => {
                 if (response.ok) {
                     return response.json().then((data) => {
+                        // console.log(data);
+
                         const contentlets = data.entity.jsonObjectView.contentlets;
 
-                        return {
+                        const mappedResponse: GetCollectionResponse<T> = {
                             contentlets,
                             page: this._page,
                             size: contentlets.length,
-                            total: 'Not yet implemented',
-                            sortedBy: this._sortBy
+                            total: 0
                         };
+
+                        return this._sortBy
+                            ? {
+                                  ...mappedResponse,
+                                  sortedBy: this._sortBy
+                              }
+                            : mappedResponse;
                     });
                 } else return response.json();
             },

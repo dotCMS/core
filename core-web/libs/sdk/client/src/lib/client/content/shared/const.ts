@@ -33,3 +33,5 @@ export const CONTENT_TYPE_MAIN_FIELDS: string[] = [
     'contentTypeIcon',
     'variant'
 ];
+
+export const CONTENT_API_URL = ' /api/content/_search';
