@@ -602,7 +602,7 @@
 										"ParentContentType"
 									]
 								},
-								"description": "We have to update the parent content type to include the child relationship when the child ct already exits"
+								"description": "\n### Update Parent Content Type with Child Relationship\n\nThis API endpoint allows you to update the parent content type to include the child relationship when the child content type already exists.\n\n#### Request Body\nThe request body should be in JSON format and include the following parameters:\n- `baseType` (string): The base type of the content.\n- `clazz` (string): The class of the content.\n- `defaultType` (boolean): Indicates if it is the default type.\n- `fields` (array): An array of field objects, each containing information about the field.\n  - `clazz` (string): The class of the field.\n  - `contentTypeId` (string): The ID of the content type.\n  - `dataType` (string): The data type of the field.\n  - `fieldContentTypeProperties` (array): An array of field content type properties.\n  - `fieldType` (string): The type of the field.\n  - `fieldTypeLabel` (string): The label of the field type.\n  - `fieldVariables` (array): An array of field variables.\n  - `fixed` (boolean): Indicates if the field is fixed.\n  - `iDate` (number): The date of the field.\n  - `id` (string): The ID of the field.\n  - `indexed` (boolean): Indicates if the field is indexed.\n  - `listed` (boolean): Indicates if the field is listed.\n  - `modDate` (number): The modification date of the field.\n  - `name` (string): The name of the field.\n  - `readOnly` (boolean): Indicates if the field is read-only.\n  - `required` (boolean): Indicates if the field is required.\n  - `searchable` (boolean): Indicates if the field is searchable.\n  - `sortOrder` (number): The sort order of the field.\n  - `unique` (boolean): Indicates if the field is unique.\n  - `variable` (string): The variable of the field.\n- `fixed` (boolean): Indicates if it is fixed.\n- `folder` (string): The folder of the content.\n- `host` (string): The host of the content.\n- `iDate` (number): The date of the content.\n- `icon` (string): The icon of the content.\n- `id` (string): The ID of the content.\n- `layout` (array): An array containing layout information.\n  - `divider` (object): An object containing divider information.\n  - `columns` (array): An array of column objects, each containing information about the column.\n    - `columnDivider` (object): An object containing column divider information.\n    - `fields` (array): An array of field objects within the column.\n      - `clazz` (string): The class of the field.\n      - `contentTypeId` (string): The ID of the content type.\n      - `dataType` (string): The data type of the field.\n      - `fieldType` (string): The type of the field.\n      - `fieldTypeLabel` (string): The label of the field type.\n      - `fieldVariables` (array): An array of field variables.\n      - `fixed` (boolean): Indicates if the field is fixed.\n      - `iDate` (number): The date of the field.\n      - `id` (string): The ID of the field.\n      - `indexed` (boolean): Indicates if the field is indexed.\n      - `listed` (boolean): Indicates if the field is listed.\n      - `modDate` (number): The modification date of the field.\n      - `name` (string): The name of the field.\n      - `readOnly` (boolean): Indicates if the field is read-only.\n      - `required` (boolean): Indicates if the field is required.\n      - `searchable` (boolean): Indicates if the field is searchable.\n      - `sortOrder` (number): The sort order of the field.\n      - `unique` (boolean): Indicates if the field is unique.\n      - `variable` (string): The variable of the field.\n- `modDate` (number): The modification date of the content.\n- `multilingualable` (boolean): Indicates if it is multilingualable.\n- `name` (string): The name of the content.\n- `sortOrder` (number): The sort order of the content.\n- `system` (boolean): Indicates if it is a system content.\n- `systemActionMappings` (object): An object containing system action mappings.\n- `variable` (string): The variable of the content.\n- `versionable` (boolean): Indicates if it is versionable.\n- `workflow` (array): An array containing workflow information.\n\n#### Response\nThe response of this request is a JSON schema representing the updated parent content type with the child relationship included.\n\n"
 							},
 							"response": []
 						},
@@ -656,7 +656,7 @@
 										"PUBLISH"
 									]
 								},
-								"description": "Create the a parent content instance"
+								"description": "### HTTP PUT /api/v1/workflow/actions/default/fire/PUBLISH\n\n#### Description\n\nCreate the a parent content instance\n\n#### Request Body\n\n- raw (application/json)\n    - contentlet (object)\n        - contentType (string)\n            \n        - title (string)\n            \n\n#### Response\n\nThe response of this request is a JSON schema."
 							},
 							"response": []
 						},
@@ -710,12 +710,12 @@
 										"PUBLISH"
 									]
 								},
-								"description": "Create the a parent content instance"
+								"description": "### HTTP PUT /api/v1/workflow/actions/default/fire/PUBLISH\n\nThis endpoint is used to trigger the PUBLISH action for a default workflow.\n\n#### Request Body\n\n- contentlet (object)\n    - contentType (string, optional): The type of content.\n        \n    - title (string, optional): The title of the content.\n        \n\n#### Response\n\nThe response for this request is a JSON object conforming to the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"status\": {\n      \"type\": \"string\"\n    },\n    \"message\": {\n      \"type\": \"string\"\n    }\n  }\n}\n\n ```"
 							},
 							"response": []
 						},
 						{
-							"name": "Save Multiple Childs for parent 1",
+							"name": "Save Multiple children for parent 1",
 							"event": [
 								{
 									"listen": "test",
@@ -778,12 +778,12 @@
 										"PUBLISH"
 									]
 								},
-								"description": "Save all child for parent1"
+								"description": "\n### HTTP POST /api/v1/workflow/actions/default/fire/PUBLISH\n\nThe endpoint triggers the publication of contentlets for a specific workflow action.\n\n#### Request Body\n- raw (application/json)\n  ```json\n  {\n    \"contentlets\": [\n      {\n        \"contentType\": \"\",\n        \"title\": \"\",\n        \"parent\": \"\"\n      }\n    ]\n  }\n  ```\n\n#### Response\nThe response of this request is a JSON schema.\n"
 							},
 							"response": []
 						},
 						{
-							"name": "Save Multiple Childs for parent 2",
+							"name": "Save Multiple children for parent 2",
 							"event": [
 								{
 									"listen": "test",
@@ -840,7 +840,7 @@
 										"PUBLISH"
 									]
 								},
-								"description": "Save all childs for parent2"
+								"description": "### HTTP POST /api/v1/workflow/actions/default/fire/PUBLISH\n\nThis endpoint is used to trigger the PUBLISH action for a default workflow.\n\n#### Request Body\n\n- raw (application/json)\n    - contentlets (array): An array of contentlets to be published.\n        - contentType (string): The type of content.\n            \n        - title (string): The title of the content.\n            \n        - parent (string): The parent of the content.\n            \n\n#### Response\n\nThe response will contain the result of the PUBLISH action."
 							},
 							"response": []
 						},
@@ -1315,7 +1315,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Correct message\", function () {",
-											"    pm.expect(pm.response.text()).to.include(\"The identifier:non-existing does not exists\");",
+											"    pm.expect(pm.response.text()).to.include(\"The identifier:non-existing does not exist\");",
 											"});",
 											"",
 											""
@@ -1394,7 +1394,7 @@
 										"related"
 									]
 								},
-								"description": "Test the related contentlets with relationship field var that do not exists, should return 400"
+								"description": "### HTTP POST /api/v1/content/related\n\nTest the related contentlets with relationship field var that do not exist, should return 400.\n\n**Request Body**\n\n- identifier (string, required): The identifier.\n    \n- fieldVariable (string, required): The field variable.\n    \n\n**Response**  \nThe response of this request is documented as a JSON schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"error\": {\n      \"type\": \"string\"\n    }\n  }\n}\n\n ```"
 							},
 							"response": []
 						}
