@@ -1,3 +1,4 @@
+//NOSONAR
 export const EntityMock = {
     canCreateTemplate: true,
     containers: {
@@ -1407,6 +1408,7 @@ export const EntityMock = {
     }
 };
 
+//NOSONAR
 export const NavMock = {
     children: [
         {
