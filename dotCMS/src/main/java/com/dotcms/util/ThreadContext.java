@@ -17,7 +17,8 @@ public class ThreadContext {
 
     private String tag;
 
-    private Map<String, Integer> contentMap = new HashMap<>();
+    // helps keep the count if a different events in the current thread
+    private Map<String, Integer> counterMap = new HashMap<>();
 
     public boolean isReindex() {
         return reindex;
@@ -43,16 +44,13 @@ public class ThreadContext {
         this.tag = tag;
     }
 
-    public Integer getContentMap(final String key) {
-        return contentMap.getOrDefault(key, 0);
+    public Integer getCounter(final String key) {
+        return counterMap.getOrDefault(key, 0);
     }
 
-    public void increaseContentMapCount(final String key) {
-        if (this.contentMap.containsKey(key)) {
-            this.contentMap.put(key, this.contentMap.get(key) + 1);
-        } else {
-            this.contentMap.put(key, 1);
-        }
+    public void increaseCounter(final String key) {
+
+        this.counterMap.put(key, this.getCounter(key) + 1);
     }
 
 }

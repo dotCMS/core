@@ -6,7 +6,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
-import com.dotcms.util.ThreadContext;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -21,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,14 +36,27 @@ import java.util.Set;
  */
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
-    @CloseDBIfOpened
+    // note: this does not need @CloseDBIfOpened because it is on #getStoryBlockReferenceResult method, which is a helper method for this one
     @Override
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
-        int counter = ThreadContextUtil.getOrCreateContext().getContentMap(this.getClass().getName());
+
+        final String counterKey = this.getClass().getName();
+        final int counter = ThreadContextUtil.getOrCreateContext().getCounter(counterKey);
         if (counter > 2) {
+
+            Logger.debug(this, () -> "The StoryBlockAPIImpl.refreshReferences method has been called more than 2 times" +
+                    " in the same thread. This could be a sign of a circular reference in the Story Block field. Do not refreshing anything at this point");
             return new StoryBlockReferenceResult(false, contentlet);
         }
-        ThreadContextUtil.getOrCreateContext().increaseContentMapCount(this.getClass().getName());
+
+        ThreadContextUtil.getOrCreateContext().increaseCounter(counterKey);
+
+        return getStoryBlockReferenceResult(contentlet);
+    }
+
+    @CloseDBIfOpened
+    private StoryBlockReferenceResult getStoryBlockReferenceResult(final Contentlet contentlet) {
+
         final MutableBoolean refreshed = new MutableBoolean(false);
         if (null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
