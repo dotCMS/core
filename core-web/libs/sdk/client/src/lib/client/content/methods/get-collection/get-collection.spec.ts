@@ -288,9 +288,31 @@ describe('GetCollection', () => {
         });
     });
 
-    it('should handle all the query methods', async () => {
+    it('should handle all the query methods on getCollection', async () => {
         const contentType = 'forceSensitive';
         const client = new GetCollection(requestOptions, serverUrl, contentType);
+
+        // be sure that this test is updated when new methods are added
+        let methods = Object.getOwnPropertyNames(Object.getPrototypeOf(client)) as Array<
+            keyof GetCollection
+        >;
+
+        // Remove the constructor, fetch and the methods that are not part of the query builder.
+        // Fetch method is removed because it is the one that makes the request and we already test that
+        // For example: ["constructor", "fetch", "thisMethodIsPrivate", "thisMethodIsNotAQueryMethod", "formatQuery"]
+        const methodsToIgnore = ['constructor', 'fetch'];
+
+        // Filter to take only the methods that are part of the query builder
+        methods = methods.filter((method) => {
+            return !methodsToIgnore.includes(method) && typeof client[method] === 'function';
+        });
+
+        // Spy on all the methods
+        methods.forEach((method) => {
+            jest.spyOn(client, method as keyof GetCollection);
+        });
+
+        // Start of the test
 
         await client
             .language(13) // Language Id
@@ -338,6 +360,11 @@ describe('GetCollection', () => {
                 offset: 40,
                 depth: 2
             })
+        });
+
+        // Chech that all functions for the queryBuilder were called
+        methods.forEach((method) => {
+            expect(client[method]).toHaveBeenCalled();
         });
     });
 });
