@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.enterprise.achecker.utility.Utility;
+import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
@@ -57,6 +58,8 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.SQLException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 
 /**
@@ -947,16 +950,34 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
-    private void refreshPageInCache(final String pageIdentifier) {
-        CacheLocator.getMultiTreeCache().getVariantsInCache(pageIdentifier).stream()
-                .forEach(variantName -> {
-                    try {
-                        refreshPageInCacheInner(pageIdentifier, variantName);
-                    } catch (DotDataException e) {
-                        Logger.error(this, e.getMessage(), e);
-                    }
+    private void refreshPageInCache(final String pageIdentifier) throws DotDataException {
+
+            Stream.concat(getPageVariants(pageIdentifier).stream(), Stream.of(DEFAULT_VARIANT.name()))
+                    .distinct()
+                    .forEach(variantName -> {
+                        try {
+                            refreshPageInCacheInner(pageIdentifier, variantName);
+                        } catch (DotDataException e) {
+                            Logger.error(this, e.getMessage(), e);
+                        }
                 });
     }
+
+    private Collection<String> getPageVariants(final String pageIdentifier) throws DotDataException {
+        try{
+            final Contentlet pageAsContent = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguageAnyVariant(pageIdentifier);
+
+            return APILocator.getExperimentsAPI().listActive(pageAsContent.getHost()).stream()
+                    .flatMap(experiment -> experiment.trafficProportion().variants().stream())
+                    .map(ExperimentVariant::id)
+                    .collect(Collectors.toSet());
+        } catch (DotContentletStateException e) {
+            Logger.warn(this.getClass(), e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
 
     private void refreshPageInCache(final String pageIdentifier, final String variantName) throws DotDataException {
 
