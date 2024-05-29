@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "19eae33b-46d1-4607-83d4-d79afe27e8a0",
+		"_postman_id": "1c20479d-62d1-4a9e-b162-55e943f17c0c",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "3028555"
 	},
 	"item": [
 		{
@@ -20,10 +20,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test Content Type creation must be successful\", function() {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"var jsonData = pm.response.json();",
 											"var contentType = jsonData.entity[0];",
 											"",
@@ -31,7 +27,8 @@
 											"pm.collectionVariables.set(\"contentTypeName\", contentType.name);",
 											"pm.collectionVariables.set(\"fieldId\", contentType.fields[0].id);"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								},
 								{
@@ -40,26 +37,12 @@
 										"exec": [
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [
 									{
@@ -93,10 +76,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test Content creation must be successful\", function() {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Test contentlet was created successfully\", function () {",
 											"    var jsonData = pm.response.json().entity;",
 											"",
@@ -104,35 +83,12 @@
 											"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [],
 								"body": {
@@ -176,10 +132,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"WYSIWYG transformation must be successful\", function() {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Checking transformation of WYSIWYG field into Story Block\", function () {",
 											"    var jsonData = pm.response.json().entity;",
 											"",
@@ -187,26 +139,12 @@
 											"    pm.expect(jsonData[0].columns[0].fields[0].variable).to.eql(\"description\", \"Story Block Field does not correspond to expected 'description' field\");",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"body": {
@@ -243,39 +181,18 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test Content Type deletion must be successful\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
+											"pm.test(\"validate the content was deleted\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"deleted\");",
+											"});",
+											"",
+											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "DELETE",
 								"header": [],
 								"url": {
@@ -314,14 +231,12 @@
 									"var jsonData = pm.response.json();",
 									"var contentType = jsonData.entity[0];",
 									"",
-									"pm.test(\"Status code should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
 									"pm.test(\"Icon should be 360\", function() {",
 									"    pm.expect(contentType.icon).to.eql(\"360\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -330,26 +245,12 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -398,35 +299,12 @@
 									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -469,10 +347,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"",
@@ -482,26 +356,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -521,6 +381,30 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Test Content Type creation must be successful\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
@@ -534,8 +418,6 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
@@ -543,26 +425,12 @@
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -613,10 +481,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"check items\", function () {",
@@ -627,26 +491,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -681,10 +531,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"check items\", function () {",
@@ -694,26 +540,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -748,10 +580,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"check items\", function () {",
@@ -760,26 +588,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -814,10 +628,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"check items\", function () {",
@@ -826,26 +636,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -873,6 +669,30 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
@@ -885,8 +705,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);        ",
+									"pm.test(\"Content created\", function () {       ",
 									"    let jsonData = pm.response.json();",
 									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"issue-22756-categories-01GCAK78NPY1JH8TRGX8SWCVN3.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
@@ -894,35 +713,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -957,43 +753,19 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200); ",
+									"pm.test(\"Valid identifier\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    const entity = (jsonData.entity);",
 									"    const identifier = entity.jsonObjectView.contentlets[0].identifier;       ",
 									"    pm.collectionVariables.set(\"identifier22756\", identifier);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1027,39 +799,14 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);               ",
-									"});"
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -1094,8 +841,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200); ",
+									"pm.test(\"Update validation\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    const entity = (jsonData.entity);",
 									"    const contentlet = entity.jsonObjectView.contentlets[0];",
@@ -1103,35 +849,12 @@
 									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1165,39 +888,14 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);               ",
-									"});"
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -1232,8 +930,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200); ",
+									"pm.test(\"Update validation\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    const entity = (jsonData.entity);",
 									"    const contentlet = entity.jsonObjectView.contentlets[0];",
@@ -1241,35 +938,12 @@
 									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1303,39 +977,14 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);               ",
-									"});"
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -1370,8 +1019,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200); ",
+									"pm.test(\"Update validation\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    const entity = (jsonData.entity);",
 									"    const contentlet = entity.jsonObjectView.contentlets[0];",
@@ -1379,35 +1027,12 @@
 									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1441,39 +1066,14 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);               ",
-									"});"
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -1508,8 +1108,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200); ",
+									"pm.test(\"Update validation\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    const entity = (jsonData.entity);",
 									"    const contentlet = entity.jsonObjectView.contentlets[0];",
@@ -1517,35 +1116,12 @@
 									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1572,6 +1148,30 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
@@ -1584,10 +1184,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test File created successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No errors must be present\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -1597,26 +1193,12 @@
 									"    pm.collectionVariables.set(\"fileName\", jsonData.entity.fileName);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [
 							{
@@ -1677,10 +1259,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status must be successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Metadata section must be present and not empty\", function () {",
@@ -1696,26 +1274,12 @@
 									"    pm.expect(jsonData.contentlets[0].metaData.path).to.include(\"/\" + expectedFileInode + \"/fileAsset/\" + expectedFileName);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -1741,35 +1305,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test File unpublished successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No errors must be present\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [
 							{
@@ -1825,35 +1371,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test File archived successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No errors must be present\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [
 							{
@@ -1909,35 +1437,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test File deleted successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No errors must be present\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [
 							{
@@ -1987,7 +1497,31 @@
 					"response": []
 				}
 			],
-			"description": "Verifies that the Metadata section in the JSON response in a File Asset is added."
+			"description": "Verifies that the Metadata section in the JSON response in a File Asset is added.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
 		},
 		{
 			"name": "Auto-Save",
@@ -1999,14 +1533,11 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test Content Type creation HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var contentType = pm.response.json().entity[0];",
 									"pm.collectionVariables.set(\"contentTypeName\", contentType.name);"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -2015,26 +1546,12 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -2068,10 +1585,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test Content creation HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Test contentlet was created successfully\", function () {",
 									"    var jsonData = pm.response.json().entity;",
 									"",
@@ -2084,7 +1597,8 @@
 									"pm.collectionVariables.set(\"contentInode\", entity.results[0][contentId].inode);",
 									"pm.collectionVariables.set(\"contentIdentifier\", entity.results[0][contentId].identifier);"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -2093,35 +1607,12 @@
 								"exec": [
 									"pm.collectionVariables.set(\"originalTitle\", \"My Test Title\");"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -2159,10 +1650,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"First Auto-Save HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"First Auto-Save was issued correctly\", function () {",
 									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when issuing the first Auto-Save\");",
 									"    pm.expect(pm.response.json().entity.title).to.eql(pm.collectionVariables.get(\"firstAutoSaveTitle\"), \"First Auto-Save title is not the expected one.\")",
@@ -2171,7 +1658,8 @@
 									"pm.collectionVariables.set(\"contentInode\", pm.response.json().entity.inode);",
 									"pm.collectionVariables.set(\"contentIdentifier\", pm.response.json().entity.identifier);"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -2180,26 +1668,12 @@
 								"exec": [
 									"pm.collectionVariables.set(\"firstAutoSaveTitle\", \"My Updated Test Title\");"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -2248,16 +1722,13 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Second Auto-Save HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Second Auto-Save was issued correctly\", function () {",
 									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when issuing the second Auto-Save\");",
 									"    pm.expect(pm.response.json().entity.title).to.eql(pm.collectionVariables.get(\"secondAutoSaveTitle\"), \"Second Auto-Save title is not the expected one.\")",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -2266,26 +1737,12 @@
 								"exec": [
 									"pm.collectionVariables.set(\"secondAutoSaveTitle\", \"My Second Updated Test Title\");"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -2334,15 +1791,12 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Third Auto-Save HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Third Auto-Save was issued correctly\", function () {",
 									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when issuing the third Auto-Save\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -2351,26 +1805,12 @@
 								"exec": [
 									"pm.collectionVariables.set(\"thirdAutoSaveTitle\", \"My Third Updated Test Title\");"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -2419,10 +1859,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Version retrieval HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"There must be only 2 Content versions\", function () {",
 									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when checking the number of Content versions\");",
 									"    pm.expect(pm.response.json().entity.length).to.eql(2, \"There cannot be less or more than 2 versions for the test Content\");",
@@ -2435,26 +1871,12 @@
 									"    pm.expect(pm.response.json().entity[1].title).to.eql(originalTitle, \"Title for the original content is not correct.\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -2474,7 +1896,31 @@
 					"response": []
 				}
 			],
-			"description": "The Auto-Save feature allows dotCMS to automatically save any changes made to a given Contentlet by the User after X amount of seconds have passed.\n\nThe new Endpoint method created for this: **`/api/v1/_draft`** , works like this:\n\n- If the User is working **on the live version of the current Contentlet** and make changes to it, the draft request will create a working version in order to auto-save any changes.\n- When a second change is made, the draft method will re-use the previously generated Inode and will overwrite it with the new changes.\n- Finally, any incoming changes will keep overwriting the previous working Inode. This way, dotCMS will overwrite one single working Inode instead of creating hundreds if not thousands of \"useless\" records for any change."
+			"description": "The Auto-Save feature allows dotCMS to automatically save any changes made to a given Contentlet by the User after X amount of seconds have passed.\n\nThe new Endpoint method created for this: **`/api/v1/_draft`** , works like this:\n\n- If the User is working **on the live version of the current Contentlet** and make changes to it, the draft request will create a working version in order to auto-save any changes.\n- When a second change is made, the draft method will re-use the previously generated Inode and will overwrite it with the new changes.\n- Finally, any incoming changes will keep overwriting the previous working Inode. This way, dotCMS will overwrite one single working Inode instead of creating hundreds if not thousands of \"useless\" records for any change.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
 		},
 		{
 			"name": "Checking JSON Attributes",
@@ -2503,30 +1949,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [],
 								"body": {
@@ -2584,30 +2006,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -2715,7 +2113,9 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"console.log(\"Running test\")",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
 							"",
 							"pm.test(\"No errors\", function () {",
 							"    ",
@@ -2729,35 +2129,12 @@
 							"    pm.expect(jsonData.entity.summary.affected).to.eql(3);",
 							"});"
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -2796,9 +2173,14 @@
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Entity response\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Logout successfully\");",
 							"});"
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
@@ -2864,7 +2246,8 @@
 							" });",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
@@ -2940,35 +2323,12 @@
 							" });",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -2996,49 +2356,6 @@
 			"response": []
 		},
 		{
-			"name": "Admin Request + Invalid User",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n     \t \"query\": \"+structurename:webpagecontent\",\n      \t \"sort\":\"modDate\",\n      \t \"limit\":20,\n      \t \"offset\":1,\n         \"userId\":\"xxx\"  \n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/content/_search",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"content",
-						"_search"
-					]
-				},
-				"description": "using an admin user but with invalid user"
-			},
-			"response": []
-		},
-		{
 			"name": "Admin Request Just Query Param_Success",
 			"event": [
 				{
@@ -3054,35 +2371,12 @@
 							"});",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -3121,29 +2415,17 @@
 							"});",
 							"",
 							"",
-							"",
+							"pm.test(\"Validate response\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Unable to deserialize XML\");",
+							"});",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -3181,30 +2463,21 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
+							"pm.test(\"Validate response\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Unable to deserialize XML\");",
+							"});",
+							"",
+							"",
 							"",
 							"",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
 				"method": "PUT",
 				"header": [],
 				"body": {
@@ -3250,26 +2523,12 @@
 							"});",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -3290,13 +2549,62 @@
 			"response": []
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
 				"type": "text/javascript",
 				"exec": [
-					""
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}"
 				]
 			}
 		},
@@ -3308,6 +2616,52 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "contentTypeName",
+			"value": ""
+		},
+		{
+			"key": "fieldId",
+			"value": ""
+		},
+		{
+			"key": "identifier22756",
+			"value": ""
+		},
+		{
+			"key": "originalTitle",
+			"value": ""
+		},
+		{
+			"key": "contentInode",
+			"value": ""
+		},
+		{
+			"key": "contentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "firstAutoSaveTitle",
+			"value": ""
+		},
+		{
+			"key": "secondAutoSaveTitle",
+			"value": ""
+		},
+		{
+			"key": "thirdAutoSaveTitle",
+			"value": ""
+		},
+		{
+			"key": "testContentId",
+			"value": ""
 		}
 	]
 }
