@@ -257,26 +257,28 @@ export class GetCollection {
         }).then(
             async (response) => {
                 if (response.ok) {
-                    return response.json().then((data) => {
-                        const contentlets = data.entity.jsonObjectView.contentlets;
+                    const data = await response.json();
 
-                        const total = data.entity.resultsSize;
+                    const contentlets = data.entity.jsonObjectView.contentlets;
 
-                        const mappedResponse: GetCollectionResponse<T> = {
-                            contentlets,
-                            total,
-                            page: this.#page,
-                            size: contentlets.length
-                        };
+                    const total = data.entity.resultsSize;
 
-                        return this.#sortBy
-                            ? {
-                                  ...mappedResponse,
-                                  sortedBy: this.#sortBy
-                              }
-                            : mappedResponse;
-                    });
-                } else return response.json();
+                    const mappedResponse: GetCollectionResponse<T> = {
+                        contentlets,
+                        total,
+                        page: this.#page,
+                        size: contentlets.length
+                    };
+
+                    return this.#sortBy
+                        ? {
+                              ...mappedResponse,
+                              sortedBy: this.#sortBy
+                          }
+                        : mappedResponse;
+                } else {
+                    return response.json();
+                }
             },
             (error) => error
         );
