@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link StoryBlockAPI}.
@@ -43,7 +44,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @Override
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
 
-        final String counterKey = this.getClass().getName();
+        final String counterKey = this.getClass().getName() + "_" + Thread.currentThread().getName();
         final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
         final int counter = threadContext.getCounter(counterKey);
         if (counter > MAX_RECURSION_LEVEL.get()) {
@@ -141,13 +142,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
                     if (!identifier.equals(parentContentletIdentifier)) { // if somebody adds a story block to itself, we don't want to refresh it
                         final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
-                        if (versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getLiveInode()) &&
-                                !inode.equals(versionInfo.get().getLiveInode())) {
+                        /*if (versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getLiveInode()) &&
+                                !inode.equals(versionInfo.get().getLiveInode())) {*/
                             // The Inode in the JSON of the Story Block field does not match the latest version of the
                             // referenced Contentlet. This piece of content need to be refreshed
                             this.refreshBlockEditorDataMap(dataMap, versionInfo.get().getLiveInode());
                             refreshed = true;
-                        }
+                        //}
                     } else {
 
                         refreshed = true;
@@ -306,15 +307,58 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      * @throws DotSecurityException The User accessing the API does not have the required permissions to do so.
      */
-    private void refreshBlockEditorDataMap(final Map<String, Object> dataMap, final String liveInode) throws DotDataException, DotSecurityException {
+    private void refreshBlockEditorDataMap(Map<String, Object> dataMap, final String liveInode) throws DotDataException, DotSecurityException {
         final Contentlet contentlet = APILocator.getContentletAPI().find(liveInode, APILocator.systemUser(), false);
-        final Set<String> contentFieldNames = dataMap.keySet();
+        //final Set<String> contentFieldNames = dataMap.keySet();
+        /*final Set<String> contentFieldNames =
+                contentlet.getMap().keySet();
         for (final String contentFieldName : contentFieldNames) {
             final Object value = contentlet.get(contentFieldName);
             if (null != value) {
                 dataMap.put(contentFieldName, value);
             }
+        }*/
+        try {
+            dataMap.putAll(refreshContentlet(contentlet));
+        } catch (JsonProcessingException e) {
+            Logger.error(this, "Aqui fallo", e);
         }
+    }
+
+    private Map<String, Object> refreshContentlet(final Contentlet contentlet) throws JsonProcessingException {
+        final Map<String, Object> dataMap = new LinkedHashMap<>();
+        final List<Field> fields = contentlet.getContentType().fields();
+
+        dataMap.put(Contentlet.HOST_NAME, contentlet.getHost());
+        dataMap.put(Contentlet.MOD_DATE_KEY, contentlet.getModDate());
+        dataMap.put(Contentlet.TITTLE_KEY, contentlet.getTitle());
+        dataMap.put(Contentlet.CONTENT_TYPE_ICON, contentlet.getContentType().icon());
+        dataMap.put(Contentlet.BASE_TYPE_KEY, contentlet.getContentType().baseType().getAlternateName());
+        dataMap.put(Contentlet.INODE_KEY, contentlet.getInode());
+        dataMap.put(Contentlet.ARCHIVED_KEY, Try.of(contentlet::isArchived).getOrElse(false));
+        dataMap.put(Contentlet.WORKING_KEY, Try.of(contentlet::isWorking).getOrElse(false));
+        dataMap.put(Contentlet.LOCKED_KEY, Try.of(contentlet::isLocked).getOrElse(false));
+        dataMap.put(Contentlet.STRUCTURE_INODE_KEY,  contentlet.getContentType().inode());
+        dataMap.put(Contentlet.CONTENT_TYPE_KEY,  contentlet.getContentType().variable());
+        dataMap.put(Contentlet.LIVE_KEY, Try.of(contentlet::isLive).getOrElse(false));
+        dataMap.put(Contentlet.OWNER_KEY, contentlet.getOwner());
+        dataMap.put(Contentlet.IDENTIFIER_KEY, contentlet.getIdentifier());
+        dataMap.put(Contentlet.LANGUAGEID_KEY, contentlet.getLanguageId());
+        dataMap.put(Contentlet.HAS_LIVE_VERSION, Try.of(contentlet::hasLiveVersion).getOrElse(false));
+        dataMap.put(Contentlet.FOLDER_KEY, contentlet.getFolder());
+        dataMap.put(Contentlet.SORT_ORDER_KEY, contentlet.getSortOrder());
+        dataMap.put(Contentlet.MOD_USER_KEY, contentlet.getModUser());
+
+        for (final Field field : fields) {
+            // si el valor es nulo, no agrego ni verga
+            if (field instanceof StoryBlockField) {
+                dataMap.put(field.variable(), toMap(contentlet.get(field.variable())));
+            } else {
+                dataMap.put(field.variable(), contentlet.get(field.variable()));
+            }
+        }
+
+        return dataMap;
     }
 
 }
