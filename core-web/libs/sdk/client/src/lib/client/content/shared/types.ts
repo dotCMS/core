@@ -1,15 +1,10 @@
 import { Equals } from '../../../query-builder/lucene-syntax/Equals';
 
-// Possible order values
-export type Order = 'asc' | 'desc';
-
 // Model to sort by fields
 export type SortBy = {
     field: string;
-    order: Order;
+    order: 'asc' | 'desc';
 };
-
-export type SortByArray = Array<SortBy>;
 
 // Callback to build a query
 export type QueryBuilderCallback = (qb: Equals) => Equals;
@@ -58,5 +53,5 @@ export interface GetCollectionResponse<T> {
     page: number;
     size: number;
     total: number;
-    sortedBy?: SortByArray;
+    sortedBy?: SortBy[];
 }

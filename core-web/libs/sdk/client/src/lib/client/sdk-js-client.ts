@@ -1,5 +1,7 @@
 import { Content } from './content/content-api';
 
+export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
+
 export interface ClientConfig {
     /**
      * The URL of the dotCMS instance.
@@ -33,10 +35,10 @@ export interface ClientConfig {
      *
      * @description These options will be used in the fetch request. Any option can be specified except for 'body' and 'method' which are omitted.
      * @example `{ headers: { 'Content-Type': 'application/json' } }`
-     * @type {Omit<RequestInit, 'body' | 'method'>}
+     * @type {ClientOptions}
      * @optional
      */
-    requestOptions?: Omit<RequestInit, 'body' | 'method'>;
+    requestOptions?: ClientOptions;
 }
 
 type PageApiOptions = {
@@ -147,7 +149,7 @@ function isValidUrl(url: string): boolean {
  */
 export class DotCmsClient {
     private config: ClientConfig;
-    private requestOptions!: Omit<RequestInit, 'body' | 'method'>;
+    private requestOptions!: ClientOptions;
 
     content: Content;
 

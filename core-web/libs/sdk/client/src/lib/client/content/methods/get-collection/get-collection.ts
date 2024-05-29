@@ -1,7 +1,8 @@
 import { Equals } from '../../../../query-builder/lucene-syntax';
 import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
+import { ClientOptions } from '../../../sdk-js-client';
 import { CONTENT_API_URL } from '../../shared/const';
-import { GetCollectionResponse, QueryBuilderCallback, SortByArray } from '../../shared/types';
+import { GetCollectionResponse, QueryBuilderCallback, SortBy } from '../../shared/types';
 import { sanitizeQueryForContentType } from '../../shared/utils';
 
 /**
@@ -15,14 +16,24 @@ export class GetCollection {
     #limit = 10;
     #depth = 0;
     #render = false;
-    #sortBy?: SortByArray;
+    #sortBy?: SortBy[];
     #contentType: string;
     #defaultQuery: Equals;
     #query?: Equals;
     #rawQuery?: string;
 
-    private serverUrl: string;
-    private requestOptions: Omit<RequestInit, 'body' | 'method'>;
+    #serverUrl: string;
+    #requestOptions: ClientOptions;
+
+    constructor(requestOptions: ClientOptions, serverUrl: string, contentType: string) {
+        this.#requestOptions = requestOptions;
+        this.#serverUrl = serverUrl;
+
+        this.#contentType = contentType;
+
+        // We need to build the default query with the contentType field
+        this.#defaultQuery = new QueryBuilder().field('contentType').equals(this.#contentType);
+    }
 
     /**
      * This method returns the sort query in this format: field order, field order, ...
@@ -35,27 +46,13 @@ export class GetCollection {
         return this.#sortBy?.map((sort) => `${sort.field} ${sort.order}`).join(',');
     }
 
-    /**
-     * This method returns the offset of the content to fetch
-     *
-     * @readonly
-     * @private
-     * @memberof GetCollection
-     */
     private get offset() {
         // This could end in an empty response
         return this.#limit * (this.#page - 1);
     }
 
-    /**
-     * This method returns the url to fetch the content
-     *
-     * @readonly
-     * @private
-     * @memberof GetCollection
-     */
     private get url() {
-        return `${this.serverUrl}${CONTENT_API_URL}`;
+        return `${this.#serverUrl}${CONTENT_API_URL}`;
     }
 
     /**
@@ -67,20 +64,6 @@ export class GetCollection {
      */
     private get currentQuery() {
         return this.#query ?? this.#defaultQuery;
-    }
-
-    constructor(
-        requestOptions: Omit<RequestInit, 'body' | 'method'>,
-        serverUrl: string,
-        contentType: string
-    ) {
-        this.requestOptions = requestOptions;
-        this.serverUrl = serverUrl;
-
-        this.#contentType = contentType;
-
-        // We need to build the default query with the contentType field
-        this.#defaultQuery = new QueryBuilder().field('contentType').equals(this.#contentType);
     }
 
     /**
@@ -112,11 +95,11 @@ export class GetCollection {
     /**
      * This method allows you to sort the content by field
      *
-     * @param {SortByArray} sortBy
+     * @param {SortBy[]} sortBy
      * @return {*}  {this}
      * @memberof GetCollection
      */
-    sortBy(sortBy: SortByArray): this {
+    sortBy(sortBy: SortBy[]): this {
         this.#sortBy = sortBy;
 
         return this;
@@ -237,10 +220,10 @@ export class GetCollection {
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 
         return fetch(this.url, {
-            ...this.requestOptions,
+            ...this.#requestOptions,
             method: 'POST',
             headers: {
-                ...this.requestOptions.headers,
+                ...this.#requestOptions.headers,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({

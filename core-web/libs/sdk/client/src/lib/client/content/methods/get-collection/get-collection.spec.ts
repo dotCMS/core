@@ -3,8 +3,9 @@
 import { GetCollection } from './get-collection';
 
 import { Equals } from '../../../../query-builder/lucene-syntax';
+import { ClientOptions } from '../../../sdk-js-client';
 import { CONTENT_API_URL } from '../../shared/const';
-import { SortByArray } from '../../shared/types';
+import { SortBy } from '../../shared/types';
 
 global.fetch = jest.fn().mockReturnValue(
     Promise.resolve({
@@ -22,7 +23,7 @@ global.fetch = jest.fn().mockReturnValue(
 );
 
 describe('GetCollection', () => {
-    const requestOptions: Omit<RequestInit, 'body' | 'method'> = {
+    const requestOptions: ClientOptions = {
         cache: 'no-cache' // To simulate a valid request
     };
 
@@ -84,7 +85,7 @@ describe('GetCollection', () => {
         const contentType = 'song';
         const collectionBuilder = new GetCollection(requestOptions, serverUrl, contentType);
 
-        const sortBy: SortByArray = [
+        const sortBy: SortBy[] = [
             {
                 field: 'title',
                 order: 'asc'

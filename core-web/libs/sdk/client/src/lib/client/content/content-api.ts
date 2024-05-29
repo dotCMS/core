@@ -1,5 +1,7 @@
 import { GetCollection } from './methods/get-collection/get-collection';
 
+import { ClientOptions } from '../sdk-js-client';
+
 /**
  * Content classs exposes the content api methods
  *
@@ -7,10 +9,10 @@ import { GetCollection } from './methods/get-collection/get-collection';
  * @class Content
  */
 export class Content {
-    private requestOptions: Omit<RequestInit, 'body' | 'method'>;
+    private requestOptions: ClientOptions;
     private serverUrl;
 
-    constructor(requestOptions: Omit<RequestInit, 'body' | 'method'>, serverUrl: string) {
+    constructor(requestOptions: ClientOptions, serverUrl: string) {
         this.requestOptions = requestOptions;
         this.serverUrl = serverUrl;
     }
