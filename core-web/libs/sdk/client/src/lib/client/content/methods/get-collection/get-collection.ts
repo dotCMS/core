@@ -1,6 +1,5 @@
-import { Equals } from '@dotcms/lucene-syntax';
-import { QueryBuilder } from '@dotcms/query-builder';
-
+import { Equals } from '../../../../query-builder/lucene-syntax';
+import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
 import { CONTENT_API_URL } from '../../shared/const';
 import { GetCollectionResponse, QueryBuilderCallback, SortByArray } from '../../shared/types';
 import { sanitizeQueryForContentType } from '../../shared/utils';
