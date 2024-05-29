@@ -39,23 +39,23 @@ import java.util.stream.Collectors;
  */
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
+    private static ThreadLocal<Integer> refreshReferencesCounter = ThreadLocal.withInitial(() -> 0);
+
     private static final Lazy<Integer> MAX_RECURSION_LEVEL = Lazy.of(() -> Config.getIntProperty("STORY_BLOCK_MAX_RECURSION_LEVEL", 2));
     // note: this does not need @CloseDBIfOpened because it is on #getStoryBlockReferenceResult method, which is a helper method for this one
     @Override
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
 
-        final String counterKey = this.getClass().getName() + "_" + Thread.currentThread().getName();
-        final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
-        final int counter = threadContext.getCounter(counterKey);
+        final int counter = refreshReferencesCounter.get();
         if (counter > MAX_RECURSION_LEVEL.get()) {
 
-            threadContext.resetCounter(counterKey);
+            refreshReferencesCounter.remove();
             Logger.debug(this, () -> "The StoryBlockAPIImpl.refreshReferences method has been called more than 2 times" +
                     " in the same thread. This could be a sign of a circular reference in the Story Block field. Do not refreshing anything at this point");
             return new StoryBlockReferenceResult(false, contentlet);
         }
 
-        threadContext.increaseCounter(counterKey);
+        refreshReferencesCounter.set(counter + 1);
 
         return getStoryBlockReferenceResult(contentlet);
     }
