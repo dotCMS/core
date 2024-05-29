@@ -23,7 +23,6 @@ import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.LinkedHashMap;
 import java.util.List;
