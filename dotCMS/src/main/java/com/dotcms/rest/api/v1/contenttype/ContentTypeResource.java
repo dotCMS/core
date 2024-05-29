@@ -514,8 +514,8 @@ public class ContentTypeResource implements Serializable {
 
 		final ContentType currentContentType = contentTypeAPI.find(contentTypeId);
 
-		final DiffResult<FieldDiffItemsKey, Field> diffResult = new FieldDiffCommand().applyDiff(
-				currentContentType.fieldMap(), newContentTypeFieldsMap);
+		final DiffResult<FieldDiffItemsKey, Field> diffResult = new FieldDiffCommand(contentTypeId)
+				.applyDiff(currentContentType.fieldMap(), newContentTypeFieldsMap);
 
 		if (!diffResult.getToDelete().isEmpty()) {
 
@@ -559,18 +559,7 @@ public class ContentTypeResource implements Serializable {
 			if (UtilMethods.isSet(fieldList)) {
 				Logger.debug(this, "Updating the field : " + entry.getValue().variable() + " diff: "
 						+ fieldList);
-
-				final var field = entry.getValue();
-
-				// Make sure the content type id is set on the field
-				if (StringUtils.isEmpty(field.contentTypeId()) ||
-						!field.contentTypeId().equals(contentTypeId)) {
-					fieldToUpdate.add(
-							FieldBuilder.builder(field).contentTypeId(contentTypeId).build()
-					);
-				} else {
-					fieldToUpdate.add(entry.getValue());
-				}
+				fieldToUpdate.add(entry.getValue());
 			}
 
 			if (UtilMethods.isSet(fieldVariableList)) {
