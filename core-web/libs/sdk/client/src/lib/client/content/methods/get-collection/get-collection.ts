@@ -1,5 +1,6 @@
-import { Equals } from '../../../../query-builder/lucene-syntax/Equals';
-import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
+import { Equals } from '@dotcms/lucene-syntax';
+import { QueryBuilder } from '@dotcms/query-builder';
+
 import { CONTENT_API_URL } from '../../shared/const';
 import { GetCollectionResponse, QueryBuilderCallback, SortByArray } from '../../shared/types';
 import { sanitizeQueryForContentType } from '../../shared/utils';
@@ -11,15 +12,15 @@ import { sanitizeQueryForContentType } from '../../shared/utils';
  * @class GetCollection
  */
 export class GetCollection {
-    private _page = 1;
-    private _limit = 10;
-    private _depth = 0;
-    private _render = false;
-    private _sortBy?: SortByArray;
-    private _contentType: string;
-    private _defaultQuery: Equals;
-    private _query?: Equals;
-    private _rawQuery?: string;
+    #page = 1;
+    #limit = 10;
+    #depth = 0;
+    #render = false;
+    #sortBy?: SortByArray;
+    #contentType: string;
+    #defaultQuery: Equals;
+    #query?: Equals;
+    #rawQuery?: string;
 
     private serverUrl: string;
     private requestOptions: Omit<RequestInit, 'body' | 'method'>;
@@ -32,7 +33,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     private get sort() {
-        return this._sortBy?.map((sort) => `${sort.field} ${sort.order}`).join(',');
+        return this.#sortBy?.map((sort) => `${sort.field} ${sort.order}`).join(',');
     }
 
     /**
@@ -44,7 +45,7 @@ export class GetCollection {
      */
     private get offset() {
         // This could end in an empty response
-        return this._limit * (this._page - 1);
+        return this.#limit * (this.#page - 1);
     }
 
     /**
@@ -66,7 +67,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     private get currentQuery() {
-        return this._query ?? this._defaultQuery;
+        return this.#query ?? this.#defaultQuery;
     }
 
     constructor(
@@ -77,10 +78,10 @@ export class GetCollection {
         this.requestOptions = requestOptions;
         this.serverUrl = serverUrl;
 
-        this._contentType = contentType;
+        this.#contentType = contentType;
 
         // We need to build the default query with the contentType field
-        this._defaultQuery = new QueryBuilder().field('contentType').equals(this._contentType);
+        this.#defaultQuery = new QueryBuilder().field('contentType').equals(this.#contentType);
     }
 
     /**
@@ -91,7 +92,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     language(language: number): this {
-        this._query = this.currentQuery.field('languageId').equals(language.toString());
+        this.#query = this.currentQuery.field('languageId').equals(language.toString());
 
         return this;
     }
@@ -104,7 +105,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     render(render: boolean): this {
-        this._render = render;
+        this.#render = render;
 
         return this;
     }
@@ -117,7 +118,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     sortBy(sortBy: SortByArray): this {
-        this._sortBy = sortBy;
+        this.#sortBy = sortBy;
 
         return this;
     }
@@ -130,7 +131,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     limit(limit: number): this {
-        this._limit = limit;
+        this.#limit = limit;
 
         return this;
     }
@@ -143,7 +144,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     page(page: number): this {
-        this._page = page;
+        this.#page = page;
 
         return this;
     }
@@ -161,7 +162,7 @@ export class GetCollection {
 
         // This can be use in Javascript so we cannot rely on the type checking
         if (queryResult instanceof Equals) {
-            this._query = queryResult;
+            this.#query = queryResult;
         } else {
             throw new Error('The query builder callback should return an Equals instance');
         }
@@ -177,7 +178,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     rawQuery(query: string): this {
-        this._rawQuery = query;
+        this.#rawQuery = query;
 
         return this;
     }
@@ -190,7 +191,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     draft(draft: boolean): this {
-        this._query = this.currentQuery.field('live').equals((!draft).toString());
+        this.#query = this.currentQuery.field('live').equals((!draft).toString());
 
         return this;
     }
@@ -203,7 +204,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     variant(variant: string): this {
-        this._query = this.currentQuery.field('variant').equals(variant);
+        this.#query = this.currentQuery.field('variant').equals(variant);
 
         return this;
     }
@@ -216,7 +217,7 @@ export class GetCollection {
      * @memberof GetCollection
      */
     depth(depth: number): this {
-        this._depth = depth;
+        this.#depth = depth;
 
         return this;
     }
@@ -231,10 +232,10 @@ export class GetCollection {
     async fetch<T>(): Promise<GetCollectionResponse<T>> {
         const sanitizedQuery = sanitizeQueryForContentType(
             this.currentQuery.build(),
-            this._contentType
+            this.#contentType
         );
 
-        const query = this._rawQuery ? `${sanitizedQuery} ${this._rawQuery}` : sanitizedQuery;
+        const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 
         return fetch(this.url, {
             ...this.requestOptions,
@@ -245,11 +246,11 @@ export class GetCollection {
             },
             body: JSON.stringify({
                 query,
-                render: this._render,
+                render: this.#render,
                 sort: this.sort,
-                limit: this._limit,
+                limit: this.#limit,
                 offset: this.offset,
-                depth: this._depth
+                depth: this.#depth
                 //userId: This exist but we currently don't use it
                 //allCategoriesInfo: This exist but we currently don't use it
             })
@@ -264,14 +265,14 @@ export class GetCollection {
                         const mappedResponse: GetCollectionResponse<T> = {
                             contentlets,
                             total,
-                            page: this._page,
+                            page: this.#page,
                             size: contentlets.length
                         };
 
-                        return this._sortBy
+                        return this.#sortBy
                             ? {
                                   ...mappedResponse,
-                                  sortedBy: this._sortBy
+                                  sortedBy: this.#sortBy
                               }
                             : mappedResponse;
                     });

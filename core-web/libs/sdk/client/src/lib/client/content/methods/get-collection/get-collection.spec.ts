@@ -1,8 +1,9 @@
 /// <reference types="jest" />
 
+import { Equals } from '@dotcms/lucene-syntax';
+
 import { GetCollection } from './get-collection';
 
-import { Equals } from '../../../../query-builder/lucene-syntax/Equals';
 import { CONTENT_API_URL } from '../../shared/const';
 import { SortByArray } from '../../shared/types';
 

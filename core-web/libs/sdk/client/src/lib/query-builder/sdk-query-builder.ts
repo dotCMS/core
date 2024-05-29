@@ -1,5 +1,4 @@
-import { Equals } from './lucene-syntax/Equals';
-import { Field } from './lucene-syntax/Field';
+import { Equals, Field } from './lucene-syntax/index';
 import { buildExcludeField, buildField, buildRawEquals } from './utils';
 
 /**
