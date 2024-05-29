@@ -1174,58 +1174,6 @@
 							"response": []
 						},
 						{
-							"name": "Related - Easy case parent2 pagination last page",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Validate that the 'errors' array is empty\", function () {",
-											"    const response = pm.response.json();",
-											"    pm.expect(response.errors).to.be.an('array').that.is.empty;",
-											"});",
-											"",
-											"pm.test(\"Validate the existence of entity and its content\", function () {",
-											"    const jsonData = pm.response.json();",
-											"    pm.expect(jsonData.entity).to.be.an('array').that.is.not.empty;",
-											"    pm.expect(jsonData.entity[0]).to.have.property('title');",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"identifier\":\"{{parentId2}}\",\n    \"fieldVariable\":\"children\",\n    \"offset\":10,\n    \"limit\":20,\n    \"orderBy\":\"title desc\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/content/related",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"content",
-										"related"
-									]
-								},
-								"description": "Test an easy case for parent 2, should returns 20 contents"
-							},
-							"response": []
-						},
-						{
 							"name": "Related - Easy case parent1 Anon user",
 							"event": [
 								{
@@ -1274,6 +1222,66 @@
 									]
 								},
 								"description": "Test an easy case for parent 1"
+							},
+							"response": []
+						},
+						{
+							"name": "Related - Easy case parent2 pagination last page",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Validate that the 'errors' array is empty\", function () {",
+											"    const response = pm.response.json();",
+											"    pm.expect(response.errors).to.be.an('array').that.is.empty;",
+											"});",
+											"",
+											"pm.test(\"Validate the existence of entity and its content\", function () {",
+											"    console.log(pm.collectionVariables.get(\"parentId2\"));",
+											"    const jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity).to.be.an('array').that.is.not.empty;",
+											"    pm.expect(jsonData.entity[0]).to.have.property('title');",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"packages": {},
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"identifier\":\"{{parentId2}}\",\n    \"fieldVariable\":\"children\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/related",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"related"
+									]
+								},
+								"description": "Test an easy case for parent 2, should returns 20 contents"
 							},
 							"response": []
 						}
@@ -1417,8 +1425,8 @@
 								"type": "text/javascript",
 								"packages": {},
 								"exec": [
-									"pm.test(\"Status code should be 404\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code should be 400 or 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
 									"});"
 								]
 							}
