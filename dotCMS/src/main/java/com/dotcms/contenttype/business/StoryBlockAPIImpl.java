@@ -4,10 +4,9 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
-import com.dotcms.util.ThreadContext;
-import com.dotcms.util.ThreadContextUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -28,8 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link StoryBlockAPI}.
@@ -39,33 +36,22 @@ import java.util.stream.Collectors;
  */
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
-    private static ThreadLocal<Integer> refreshReferencesCounter = ThreadLocal.withInitial(() -> 0);
-
     private static final Lazy<Integer> MAX_RECURSION_LEVEL = Lazy.of(() -> Config.getIntProperty("STORY_BLOCK_MAX_RECURSION_LEVEL", 2));
-    // note: this does not need @CloseDBIfOpened because it is on #getStoryBlockReferenceResult method, which is a helper method for this one
+
     @Override
-    public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
-
-        final int counter = refreshReferencesCounter.get();
-        if (counter > MAX_RECURSION_LEVEL.get()) {
-
-            refreshReferencesCounter.remove();
-            Logger.debug(this, () -> "The StoryBlockAPIImpl.refreshReferences method has been called more than 2 times" +
-                    " in the same thread. This could be a sign of a circular reference in the Story Block field. Do not refreshing anything at this point");
-            return new StoryBlockReferenceResult(false, contentlet);
-        }
-
-        refreshReferencesCounter.set(counter + 1);
-
-        return getStoryBlockReferenceResult(contentlet);
-    }
-
     @CloseDBIfOpened
-    private StoryBlockReferenceResult getStoryBlockReferenceResult(final Contentlet contentlet) {
-
+    public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
         final MutableBoolean refreshed = new MutableBoolean(false);
         if (null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
+
+            if (ExceptionUtil.isMethodCallCountGteThan(
+                    "com.dotcms.contenttype.business.StoryBlockAPIImpl.refreshReferences", MAX_RECURSION_LEVEL.get())) {
+                Logger.debug(this, () -> "The StoryBlockAPIImpl.refreshReferences method has been called more than 2 times" +
+                        " in the same thread. This could be a sign of a circular reference in the Story Block field. Do not refreshing anything at this point");
+                return new StoryBlockReferenceResult(false, contentlet);
+            }
+
             contentlet.getContentType().fields(StoryBlockField.class)
                     .forEach(field -> {
 
@@ -136,19 +122,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             final Map<String, Object> dataMap = (Map) attrsMap.get(DATA_KEY);
             if (UtilMethods.isSet(dataMap)) {
                 final String identifier = (String) dataMap.get(IDENTIFIER_KEY);
-                final String inode = (String) dataMap.get(INODE_KEY);
                 final long languageId = ConversionUtils.toLong(dataMap.get(LANGUAGE_ID_KEY), ()-> APILocator.getLanguageAPI().getDefaultLanguage().getId());
-                if (UtilMethods.isSet(identifier) && UtilMethods.isSet(inode)) {
-
+                if (UtilMethods.isSet(identifier)) {
                     if (!identifier.equals(parentContentletIdentifier)) { // if somebody adds a story block to itself, we don't want to refresh it
                         final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
-                        /*if (versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getLiveInode()) &&
-                                !inode.equals(versionInfo.get().getLiveInode())) {*/
-                            // The Inode in the JSON of the Story Block field does not match the latest version of the
-                            // referenced Contentlet. This piece of content need to be refreshed
+                        if (versionInfo.isPresent()) {
                             this.refreshBlockEditorDataMap(dataMap, versionInfo.get().getLiveInode());
                             refreshed = true;
-                        //}
+                        }
                     } else {
 
                         refreshed = true;
@@ -307,24 +288,24 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      * @throws DotSecurityException The User accessing the API does not have the required permissions to do so.
      */
-    private void refreshBlockEditorDataMap(Map<String, Object> dataMap, final String liveInode) throws DotDataException, DotSecurityException {
-        final Contentlet contentlet = APILocator.getContentletAPI().find(liveInode, APILocator.systemUser(), false);
-        //final Set<String> contentFieldNames = dataMap.keySet();
-        /*final Set<String> contentFieldNames =
-                contentlet.getMap().keySet();
-        for (final String contentFieldName : contentFieldNames) {
-            final Object value = contentlet.get(contentFieldName);
-            if (null != value) {
-                dataMap.put(contentFieldName, value);
-            }
-        }*/
+    private void refreshBlockEditorDataMap(Map<String, Object> dataMap, final String liveInode) {
+        final Optional<Contentlet> contentlet = APILocator.getContentletAPI().findInDb(liveInode);
         try {
-            dataMap.putAll(refreshContentlet(contentlet));
+            if (contentlet.isPresent()) {
+                dataMap.putAll(refreshContentlet(contentlet.get()));
+            }
         } catch (JsonProcessingException e) {
-            Logger.error(this, "Aqui fallo", e);
+            Logger.error(this, "Failed to load attrs", e);
         }
     }
 
+    /**
+     * Refreshes the Contentlet data using the Contentlet from the API call to the DB
+     *
+     * @param contentlet
+     * @return
+     * @throws JsonProcessingException
+     */
     private Map<String, Object> refreshContentlet(final Contentlet contentlet) throws JsonProcessingException {
         final Map<String, Object> dataMap = new LinkedHashMap<>();
         final List<Field> fields = contentlet.getContentType().fields();
@@ -350,11 +331,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         dataMap.put(Contentlet.MOD_USER_KEY, contentlet.getModUser());
 
         for (final Field field : fields) {
-            // si el valor es nulo, no agrego ni verga
+            final Object value = contentlet.get(field.variable());
+            if (null == value) {
+                continue;
+            }
             if (field instanceof StoryBlockField) {
-                dataMap.put(field.variable(), toMap(contentlet.get(field.variable())));
+                dataMap.put(field.variable(), toMap(value));
             } else {
-                dataMap.put(field.variable(), contentlet.get(field.variable()));
+                dataMap.put(field.variable(), value);
             }
         }
 

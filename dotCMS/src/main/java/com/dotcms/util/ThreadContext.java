@@ -1,8 +1,5 @@
 package com.dotcms.util;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Encapsulates Thread Local context information
  * @author jsanca
@@ -16,9 +13,6 @@ public class ThreadContext {
     private boolean includeDependencies = false;
 
     private String tag;
-
-    // helps keep the count if a different events in the current thread
-    private Map<String, Integer> counterMap = new HashMap<>();
 
     public boolean isReindex() {
         return reindex;
@@ -43,19 +37,4 @@ public class ThreadContext {
     public void setTag(String tag) {
         this.tag = tag;
     }
-
-    public Integer getCounter(final String key) {
-        return counterMap.getOrDefault(key, 0);
-    }
-
-    public void increaseCounter(final String key) {
-
-        this.counterMap.put(key, this.getCounter(key) + 1);
-    }
-
-    public void resetCounter(final String key) {
-
-        this.counterMap.remove(key);
-    }
-
 }
