@@ -40,24 +40,6 @@ export default async function Home({ searchParams, params }) {
 
     const data = await client.page.get(requestData);
 
-    const content = await client.content
-        .getCollection("Blog")
-        // .draft(true)
-        .depth(2)
-        // .language(2)
-        // .render(true)
-        .sortBy([
-            {
-                field: "modDate",
-                order: "asc",
-            },
-        ])
-        .fetch();
-
-    console.log("----------- MARKER ------------");
-
-    console.log(content);
-
     const nav = await client.nav.get({
         path: "/",
         depth: 2,
