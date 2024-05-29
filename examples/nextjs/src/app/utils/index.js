@@ -9,16 +9,16 @@ import { permanentRedirect, redirect } from "next/navigation";
  *  - permanentRedirect: https://nextjs.org/docs/app/building-your-application/routing/redirecting#permanentredirect-function
  *  - redirect: https://nextjs.org/docs/app/building-your-application/routing/redirecting#redirect-function
  *
- * @param {*} DotVanityUrl
+ * @param {*} vanityUrl
  */
-export function handleVanityUrlRedirect ({
+export function handleVanityUrlRedirect({
     forwardTo,
     temporaryRedirect,
-    permanentRedirect: dotPermanentRedirect,
+    permanentRedirect: isPermanentRedirect,
 }) {
     if (temporaryRedirect) {
         redirect(forwardTo);
-    } else if (dotPermanentRedirect) {
+    } else if (isPermanentRedirect) {
         permanentRedirect(forwardTo, "replace");
     }
 };
