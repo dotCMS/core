@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
@@ -15,6 +16,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
@@ -36,7 +39,8 @@ import java.util.Optional;
  */
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
-    private static final Lazy<Integer> MAX_RECURSION_LEVEL = Lazy.of(() -> Config.getIntProperty("STORY_BLOCK_MAX_RECURSION_LEVEL", 2));
+    private static final Lazy<Integer> MAX_RECURSION_LEVEL = Lazy.of(() -> Config.getIntProperty(
+            "STORY_BLOCK_MAX_RECURSION_LEVEL", 2));
 
     @Override
     @CloseDBIfOpened
@@ -44,11 +48,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         final MutableBoolean refreshed = new MutableBoolean(false);
         if (null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
-
-            if (ExceptionUtil.isMethodCallCountGteThan(
-                    "com.dotcms.contenttype.business.StoryBlockAPIImpl.refreshReferences", MAX_RECURSION_LEVEL.get())) {
-                Logger.debug(this, () -> "The StoryBlockAPIImpl.refreshReferences method has been called more than 2 times" +
-                        " in the same thread. This could be a sign of a circular reference in the Story Block field. Do not refreshing anything at this point");
+            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", MAX_RECURSION_LEVEL.get())) {
+                Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL.get() +
+                        " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
                 return new StoryBlockReferenceResult(false, contentlet);
             }
 
@@ -72,6 +74,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
     @CloseDBIfOpened
     @Override
+    @SuppressWarnings("unchecked")
     public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed = false;
         try {
@@ -93,9 +96,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 return new StoryBlockReferenceResult(true, this.toJson(blockEditorMap));
             }
         } catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when refreshing Story Block Contentlet " +
-                                                          "references: %s", e.getMessage());
-            Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg,e);
+            final String errorMsg = String.format("An error occurred when refreshing Story Block Contentlet references in parent Content " +
+                    "'%s': %s", parentContentletIdentifier, ExceptionUtil.getErrorMessage(e));
+            Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
         // Return the original value in case no data was refreshed
@@ -111,33 +114,50 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      *
      * @return If the referenced Contentlet <b>IS NOT</b> the latest live version, then its data map will be refreshed
      * and {@code true} will be returned.
-     *
-     * @throws DotDataException     An error occurred when interacting with the data source.
-     * @throws DotSecurityException The User accessing the API does not have the required permissions to do so.
      */
-    private boolean refreshStoryBlockMap(final Map<String, Object> contentMap, final String parentContentletIdentifier) throws DotDataException, DotSecurityException {
+    @SuppressWarnings("unchecked")
+    private boolean refreshStoryBlockMap(final Map<String, Object> contentMap, final String parentContentletIdentifier) {
         boolean refreshed  = false;
-        final Map<String, Object> attrsMap = (Map) contentMap.get(ATTRS_KEY);
+        final Map<String, Object> attrsMap = (Map<String, Object>) contentMap.get(ATTRS_KEY);
         if (UtilMethods.isSet(attrsMap)) {
-            final Map<String, Object> dataMap = (Map) attrsMap.get(DATA_KEY);
+            final Map<String, Object> dataMap = (Map<String, Object>) attrsMap.get(DATA_KEY);
             if (UtilMethods.isSet(dataMap)) {
                 final String identifier = (String) dataMap.get(IDENTIFIER_KEY);
                 final long languageId = ConversionUtils.toLong(dataMap.get(LANGUAGE_ID_KEY), ()-> APILocator.getLanguageAPI().getDefaultLanguage().getId());
                 if (UtilMethods.isSet(identifier)) {
-                    if (!identifier.equals(parentContentletIdentifier)) { // if somebody adds a story block to itself, we don't want to refresh it
+                    // if somebody adds a story block to itself, we don't want to refresh it
+                    if (!identifier.equals(parentContentletIdentifier)) {
                         final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
                         if (versionInfo.isPresent()) {
-                            this.refreshBlockEditorDataMap(dataMap, versionInfo.get().getLiveInode());
+                            final String chosenInode = this.getInodeBasedOnPageMode(versionInfo.get());
+                            this.refreshBlockEditorDataMap(dataMap, chosenInode);
                             refreshed = true;
                         }
                     } else {
-
                         refreshed = true;
                     }
                 }
             }
         }
         return refreshed;
+    }
+
+    /**
+     * Returns the Inode of the Contentlet based on the current Page Mode. If the selected
+     * {@link PageMode} present in the current HTTP Request is {@link PageMode#LIVE} or
+     * {@link PageMode#ADMIN_MODE}, then the live Inode will be returned. Otherwise, the working
+     * inode is returned.
+     *
+     * @param contentletVersionInfo The {@link ContentletVersionInfo} object containing the
+     *                              Contentlet's Inodes.
+     *
+     * @return The Inode of the Contentlet based on the current Page Mode.
+     */
+    private String getInodeBasedOnPageMode(final ContentletVersionInfo contentletVersionInfo) {
+        final PageMode currentPageMode = PageMode.get(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+        return currentPageMode == PageMode.LIVE || currentPageMode == PageMode.ADMIN_MODE
+                ? contentletVersionInfo.getLiveInode()
+                : contentletVersionInfo.getWorkingInode();
     }
 
     @CloseDBIfOpened
@@ -207,32 +227,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      *
      * @return The Story Block field as a Map with the Contentlet in it.
      */
+    @SuppressWarnings("unchecked")
     private Map<String, Object> addContentlet(final Map<String, Object> storyBlockValueMap, final Contentlet contentlet) {
         if (storyBlockValueMap.containsKey(StoryBlockAPI.CONTENT_KEY)) {
-            final List<Map<String, Object>> contentList = (List) storyBlockValueMap.get(StoryBlockAPI.CONTENT_KEY);
+            final List<Map<String, Object>> contentList = (List<Map<String, Object>>) storyBlockValueMap.get(StoryBlockAPI.CONTENT_KEY);
             final Map<String, Object> dataMap = new LinkedHashMap<>();
             final List<Field> fields = contentlet.getContentType().fields();
-
-            dataMap.put(Contentlet.HOST_NAME, contentlet.getHost());
-            dataMap.put(Contentlet.MOD_DATE_KEY, contentlet.getModDate());
-            dataMap.put(Contentlet.TITTLE_KEY, contentlet.getTitle());
-            dataMap.put(Contentlet.CONTENT_TYPE_ICON, contentlet.getContentType().icon());
-            dataMap.put(Contentlet.BASE_TYPE_KEY, contentlet.getContentType().baseType().getAlternateName());
-            dataMap.put(Contentlet.INODE_KEY, contentlet.getInode());
-            dataMap.put(Contentlet.ARCHIVED_KEY, Try.of(contentlet::isArchived).getOrElse(false));
-            dataMap.put(Contentlet.WORKING_KEY, Try.of(contentlet::isWorking).getOrElse(false));
-            dataMap.put(Contentlet.LOCKED_KEY, Try.of(contentlet::isLocked).getOrElse(false));
-            dataMap.put(Contentlet.STRUCTURE_INODE_KEY,  contentlet.getContentType().inode());
-            dataMap.put(Contentlet.CONTENT_TYPE_KEY,  contentlet.getContentType().variable());
-            dataMap.put(Contentlet.LIVE_KEY, Try.of(contentlet::isLive).getOrElse(false));
-            dataMap.put(Contentlet.OWNER_KEY, contentlet.getOwner());
-            dataMap.put(Contentlet.IDENTIFIER_KEY, contentlet.getIdentifier());
-            dataMap.put(Contentlet.LANGUAGEID_KEY, contentlet.getLanguageId());
-            dataMap.put(Contentlet.HAS_LIVE_VERSION, Try.of(contentlet::hasLiveVersion).getOrElse(false));
-            dataMap.put(Contentlet.FOLDER_KEY, contentlet.getFolder());
-            dataMap.put(Contentlet.SORT_ORDER_KEY, contentlet.getSortOrder());
-            dataMap.put(Contentlet.MOD_USER_KEY, contentlet.getModUser());
-
+            this.loadCommonContentletProps(contentlet, dataMap);
             for (final Field field : fields) {
                 dataMap.put(field.variable(), contentlet.get(field.variable()));
             }
@@ -245,6 +246,33 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             contentList.add(contentMap);
         }
         return storyBlockValueMap;
+    }
+
+    /**
+     *
+     * @param contentlet
+     * @param dataMap
+     */
+    private void loadCommonContentletProps(final Contentlet contentlet, final Map<String, Object> dataMap) {
+        dataMap.put(Contentlet.HOST_NAME, contentlet.getHost());
+        dataMap.put(Contentlet.MOD_DATE_KEY, contentlet.getModDate());
+        dataMap.put(Contentlet.TITTLE_KEY, contentlet.getTitle());
+        dataMap.put(Contentlet.CONTENT_TYPE_ICON, contentlet.getContentType().icon());
+        dataMap.put(Contentlet.BASE_TYPE_KEY, contentlet.getContentType().baseType().getAlternateName());
+        dataMap.put(Contentlet.INODE_KEY, contentlet.getInode());
+        dataMap.put(Contentlet.ARCHIVED_KEY, Try.of(contentlet::isArchived).getOrElse(false));
+        dataMap.put(Contentlet.WORKING_KEY, Try.of(contentlet::isWorking).getOrElse(false));
+        dataMap.put(Contentlet.LOCKED_KEY, Try.of(contentlet::isLocked).getOrElse(false));
+        dataMap.put(Contentlet.STRUCTURE_INODE_KEY,  contentlet.getContentType().inode());
+        dataMap.put(Contentlet.CONTENT_TYPE_KEY,  contentlet.getContentType().variable());
+        dataMap.put(Contentlet.LIVE_KEY, Try.of(contentlet::isLive).getOrElse(false));
+        dataMap.put(Contentlet.OWNER_KEY, contentlet.getOwner());
+        dataMap.put(Contentlet.IDENTIFIER_KEY, contentlet.getIdentifier());
+        dataMap.put(Contentlet.LANGUAGEID_KEY, contentlet.getLanguageId());
+        dataMap.put(Contentlet.HAS_LIVE_VERSION, Try.of(contentlet::hasLiveVersion).getOrElse(false));
+        dataMap.put(Contentlet.FOLDER_KEY, contentlet.getFolder());
+        dataMap.put(Contentlet.SORT_ORDER_KEY, contentlet.getSortOrder());
+        dataMap.put(Contentlet.MOD_USER_KEY, contentlet.getModUser());
     }
 
     /**
@@ -309,39 +337,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     private Map<String, Object> refreshContentlet(final Contentlet contentlet) throws JsonProcessingException {
         final Map<String, Object> dataMap = new LinkedHashMap<>();
         final List<Field> fields = contentlet.getContentType().fields();
-
-        dataMap.put(Contentlet.HOST_NAME, contentlet.getHost());
-        dataMap.put(Contentlet.MOD_DATE_KEY, contentlet.getModDate());
-        dataMap.put(Contentlet.TITTLE_KEY, contentlet.getTitle());
-        dataMap.put(Contentlet.CONTENT_TYPE_ICON, contentlet.getContentType().icon());
-        dataMap.put(Contentlet.BASE_TYPE_KEY, contentlet.getContentType().baseType().getAlternateName());
-        dataMap.put(Contentlet.INODE_KEY, contentlet.getInode());
-        dataMap.put(Contentlet.ARCHIVED_KEY, Try.of(contentlet::isArchived).getOrElse(false));
-        dataMap.put(Contentlet.WORKING_KEY, Try.of(contentlet::isWorking).getOrElse(false));
-        dataMap.put(Contentlet.LOCKED_KEY, Try.of(contentlet::isLocked).getOrElse(false));
-        dataMap.put(Contentlet.STRUCTURE_INODE_KEY,  contentlet.getContentType().inode());
-        dataMap.put(Contentlet.CONTENT_TYPE_KEY,  contentlet.getContentType().variable());
-        dataMap.put(Contentlet.LIVE_KEY, Try.of(contentlet::isLive).getOrElse(false));
-        dataMap.put(Contentlet.OWNER_KEY, contentlet.getOwner());
-        dataMap.put(Contentlet.IDENTIFIER_KEY, contentlet.getIdentifier());
-        dataMap.put(Contentlet.LANGUAGEID_KEY, contentlet.getLanguageId());
-        dataMap.put(Contentlet.HAS_LIVE_VERSION, Try.of(contentlet::hasLiveVersion).getOrElse(false));
-        dataMap.put(Contentlet.FOLDER_KEY, contentlet.getFolder());
-        dataMap.put(Contentlet.SORT_ORDER_KEY, contentlet.getSortOrder());
-        dataMap.put(Contentlet.MOD_USER_KEY, contentlet.getModUser());
-
+        this.loadCommonContentletProps(contentlet, dataMap);
         for (final Field field : fields) {
             final Object value = contentlet.get(field.variable());
             if (null == value) {
                 continue;
             }
-            if (field instanceof StoryBlockField) {
-                dataMap.put(field.variable(), toMap(value));
-            } else {
-                dataMap.put(field.variable(), value);
-            }
+            dataMap.put(field.variable(), field instanceof StoryBlockField ? this.toMap(value) : value);
         }
-
         return dataMap;
     }
 

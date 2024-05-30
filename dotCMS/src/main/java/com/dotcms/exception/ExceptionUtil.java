@@ -38,7 +38,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -456,19 +455,6 @@ public class ExceptionUtil {
     public static String getCurrentStackTraceAsString (final int limit) {
         final StackTraceElement [] traces = Thread.currentThread().getStackTrace();
         return getStackTraceAsString(limit, traces);
-    }
-
-    /**
-     * Checks whether a specific method name with its fully-qualified class name has been called
-     * at least X number of times.
-     * @param methodName
-     * @param maxCount
-     * @return
-     */
-    public static boolean isMethodCallCountGteThan(final String methodName, final int maxCount) {
-        final String currentStackTrace =  getCurrentStackTraceAsString(1000);
-        final int countMatches = StringUtils.countMatches(currentStackTrace, methodName);
-        return countMatches >= maxCount;
     }
 
     /**
