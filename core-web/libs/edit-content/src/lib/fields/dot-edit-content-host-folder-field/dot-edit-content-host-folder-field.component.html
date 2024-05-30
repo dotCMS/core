@@ -1,6 +1,6 @@
 <p-treeSelect
     [formControlName]="field.variable"
-    [options]="options"
+    [options]="options()"
     [attr.aria-labelledby]="'field-' + field.variable"
     optionLabel="label"
     optionValue="value" />
