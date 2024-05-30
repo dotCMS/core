@@ -17,6 +17,7 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotEnvironment } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockLanguagesISO, mockLocales } from '@dotcms/utils-testing';
 
 import { DotLocalesListStore } from './dot-locales-list.store';
@@ -25,13 +26,15 @@ const messageServiceMock = new MockDotMessageService({
     'locales.edit': 'Edit Locale',
     'locales.set.as.default': 'Set as default',
     'locales.delete': 'Delete',
-    'locales.push.publish': 'Push Publish'
+    'locales.push.publish': 'Push Publish',
+    'contenttypes.content.push_publish': 'Push Publish'
 });
 
 describe('DotLocalesListStore', () => {
     let spectator: SpectatorService<DotLocalesListStore>;
     let languageService: SpyObject<DotLanguagesService>;
     let messageService: SpyObject<MessageService>;
+    let dotPushPublishDialogService: DotPushPublishDialogService;
 
     const storeService = createServiceFactory({
         service: DotLocalesListStore,
@@ -54,40 +57,37 @@ describe('DotLocalesListStore', () => {
         spectator = storeService();
         languageService = spectator.inject(DotLanguagesService);
         messageService = spectator.inject(MessageService);
+        dotPushPublishDialogService = spectator.inject(DotPushPublishDialogService);
 
         languageService.get.mockReturnValue(of([...mockLocales]));
+        languageService.getISO.mockReturnValue(of(mockLanguagesISO));
         languageService.makeDefault.mockReturnValue(of(null));
         languageService.delete.mockReturnValue(of(null));
-    });
 
-    it('should set initial state from resolver', (done) => {
-        spectator.service.setResolvedData({
-            data: { locales: [...mockLocales], ...mockLanguagesISO },
-            pushPublishEnvironments: [],
-            isEnterprise: false
-        });
-
-        spectator.service.vm$.subscribe((viewModel) => {
-            expect(viewModel.initialLocales).toEqual([...mockLocales]);
-            expect(viewModel.countries).toEqual([...mockLanguagesISO.countries]);
-            expect(viewModel.languages).toEqual([...mockLanguagesISO.languages]);
-            done();
+        spectator.service.loadLocales({
+            pushPublishEnvironments: [{ test: 1 }] as unknown as DotEnvironment[],
+            isEnterprise: true
         });
     });
 
-    it('should set locales correctly', (done) => {
-        spectator.service.setLocales([...mockLocales]);
-
+    it('should load locales', (done) => {
         spectator.service.vm$.subscribe((viewModel) => {
             expect(viewModel.locales.length).toBe(2);
             expect(viewModel.locales[0].locale).toBe('English (en-US)');
             expect(viewModel.locales[0].language).toBe('English - en');
             expect(viewModel.locales[0].country).toBe('United States - US');
             expect(viewModel.locales[0].defaultLanguage).toBe(true);
+            expect(viewModel.locales[0].variables).toBe('1/5');
+
             expect(viewModel.locales[1].locale).toBe('Spanish (es-ES)');
             expect(viewModel.locales[1].language).toBe('Spanish - es');
             expect(viewModel.locales[1].country).toBe('Spain - ES');
             expect(viewModel.locales[1].defaultLanguage).toBe(false);
+            expect(viewModel.locales[1].variables).toBe('1/1');
+
+            expect(viewModel.countries).toEqual([...mockLanguagesISO.countries]);
+            expect(viewModel.languages).toEqual([...mockLanguagesISO.languages]);
+
             done();
         });
     });
@@ -108,20 +108,39 @@ describe('DotLocalesListStore', () => {
         expect(messageService.add).toHaveBeenCalled();
     });
 
-    it('should set the local actions correctly', (done) => {
-        spectator.service.setLocales([...mockLocales]);
+    it('should open the push publish dialog', () => {
+        jest.spyOn(dotPushPublishDialogService, 'open');
 
         spectator.service.vm$.subscribe((viewModel) => {
-            const defaultLocale = viewModel.locales[0];
-            const notDefaultLocale = viewModel.locales[1];
+            const pushPublishMenuItem = viewModel.locales[0].actions[1].menuItem;
 
-            expect(defaultLocale.actions[0].menuItem.label).toBe('Edit Locale');
-            expect(defaultLocale.actions[1].menuItem.label).toBe('Push Publish');
+            pushPublishMenuItem.command();
 
-            expect(notDefaultLocale.actions[0].menuItem.label).toBe('Edit Locale');
-            expect(defaultLocale.actions[1].menuItem.label).toBe('Push Publish');
-            expect(notDefaultLocale.actions[2].menuItem.label).toBe('Set as default');
-            expect(notDefaultLocale.actions[3].menuItem.label).toBe('Delete');
+            expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
+                assetIdentifier: mockLocales[0].id.toString(),
+                title: 'Push Publish'
+            });
+        });
+    });
+
+    it('should set the local actions correctly', (done) => {
+        spectator.service.vm$.subscribe((viewModel) => {
+            const defaultLocaleActions = viewModel.locales[0].actions.filter((action) =>
+                action?.shouldShow ? action.shouldShow() : true
+            );
+            const notDefaultLocaleActions = viewModel.locales[1].actions.filter((action) =>
+                action?.shouldShow ? action.shouldShow() : true
+            );
+
+            expect(defaultLocaleActions.length).toEqual(2);
+            expect(defaultLocaleActions[0].menuItem.label).toBe('Edit Locale');
+            expect(defaultLocaleActions[1].menuItem.label).toBe('Push Publish');
+
+            expect(notDefaultLocaleActions.length).toEqual(4);
+            expect(notDefaultLocaleActions[0].menuItem.label).toBe('Edit Locale');
+            expect(notDefaultLocaleActions[1].menuItem.label).toBe('Push Publish');
+            expect(notDefaultLocaleActions[2].menuItem.label).toBe('Set as default');
+            expect(notDefaultLocaleActions[3].menuItem.label).toBe('Delete');
             done();
         });
     });

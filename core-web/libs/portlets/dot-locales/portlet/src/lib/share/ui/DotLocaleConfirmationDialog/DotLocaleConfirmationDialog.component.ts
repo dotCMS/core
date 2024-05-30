@@ -18,7 +18,7 @@ export interface DotLocaleConfirmationDialogData {
 }
 
 @Component({
-    selector: 'dot-dot-locale-confirmation-dialog',
+    selector: 'dot-locale-confirmation-dialog',
     standalone: true,
     imports: [CommonModule, DialogModule, ButtonModule, DotMessagePipe, InputTextModule],
     templateUrl: './DotLocaleConfirmationDialog.component.html',

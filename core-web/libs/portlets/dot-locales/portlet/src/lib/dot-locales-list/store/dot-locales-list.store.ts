@@ -1,4 +1,5 @@
 import { ComponentStore } from '@ngrx/component-store';
+import { forkJoin } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
@@ -18,10 +19,10 @@ import {
     ComponentStatus,
     DotActionMenuItem,
     DotEnvironment,
+    DotISOItem,
     DotLanguage,
     DotLanguagesISO
 } from '@dotcms/dotcms-models';
-import { DotLocalesListResolverData } from '@dotcms/portlets/dot-locales/portlet/data-access';
 
 import { DotLocaleConfirmationDialogComponent } from '../../share/ui/DotLocaleConfirmationDialog/DotLocaleConfirmationDialog.component';
 import { getLocaleISOCode } from '../../share/utils';
@@ -42,20 +43,12 @@ export interface DotLocaleRow {
 export interface DotLocalesListState extends DotLanguagesISO {
     status: ComponentStatus;
     locales: DotLocaleRow[];
-    initialLocales: DotLanguage[];
     isEnterprise: boolean;
     pushPublishEnvironments: DotEnvironment[];
 }
 
 export interface DotLocaleListViewModel extends DotLanguagesISO {
     locales: DotLocaleRow[];
-    initialLocales: DotLanguage[];
-}
-
-export interface DotLocaleListResolverData {
-    localaes: DotLanguage[];
-    languages: { code: string; name: string }[];
-    countries: { code: string; name: string }[];
 }
 
 export const LOCALE_CONFIRM_DIALOG_KEY = 'LOCALE_CONFIRM_DIALOG_KEY';
@@ -70,52 +63,76 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
     private readonly dotPushPublishDialogService = inject(DotPushPublishDialogService);
 
     // Updaters
+    readonly setLocales = this.updater((state: DotLocalesListState, locales: DotLanguage[]) => ({
+        ...state,
+        locales: this.processLanguages(locales, state.isEnterprise, state.pushPublishEnvironments)
+    }));
 
-    readonly setResolvedData = this.updater(
-        (
-            state: DotLocalesListState,
-            routeResolved: {
-                data: DotLocalesListResolverData;
-                isEnterprise: boolean;
-                pushPublishEnvironments: DotEnvironment[];
-            }
-        ) => ({
+    readonly setEnterprise = this.updater((state: DotLocalesListState, isEnterprise: boolean) => ({
+        ...state,
+        isEnterprise
+    }));
+
+    readonly setPushPublishEnvironments = this.updater(
+        (state: DotLocalesListState, pushPublishEnvironments: DotEnvironment[]) => ({
             ...state,
-            initialLocales: routeResolved.data.locales,
-            locales: this.processLanguages(
-                routeResolved.data.locales,
-                routeResolved.isEnterprise,
-                routeResolved.pushPublishEnvironments
-            ),
-            countries: routeResolved.data.countries,
-            languages: routeResolved.data.languages,
-            isEnterprise: routeResolved.isEnterprise,
-            pushPublishEnvironments: routeResolved.pushPublishEnvironments
+            pushPublishEnvironments
         })
     );
 
-    readonly setLocales = this.updater((state: DotLocalesListState, locales: DotLanguage[]) => ({
+    readonly setCountries = this.updater((state: DotLocalesListState, countries: DotISOItem[]) => ({
         ...state,
-        initialLocales: locales,
-        locales: this.processLanguages(locales, state.isEnterprise, state.pushPublishEnvironments)
+        countries
+    }));
+
+    readonly setLanguages = this.updater((state: DotLocalesListState, languages: DotISOItem[]) => ({
+        ...state,
+        languages
+    }));
+
+    readonly setStatus = this.updater((state: DotLocalesListState, status: ComponentStatus) => ({
+        ...state,
+        status
     }));
 
     readonly vm$ = this.select(
         this.state$,
-        ({ locales, countries, languages, initialLocales }): DotLocaleListViewModel => ({
+        ({ locales, countries, languages }): DotLocaleListViewModel => ({
             locales,
-            initialLocales,
             countries,
             languages
         })
     );
 
     //Effects
+    readonly loadLocales = this.effect<{
+        pushPublishEnvironments: DotEnvironment[];
+        isEnterprise: boolean;
+    }>((data$) => {
+        return data$.pipe(
+            tap(() => this.setStatus(ComponentStatus.LOADING)),
+            switchMap(({ isEnterprise, pushPublishEnvironments }) =>
+                forkJoin([this.languageService.get(), this.languageService.getISO()]).pipe(
+                    tap(([languages, ISOData]) => {
+                        this.setCountries(ISOData.countries);
+                        this.setLanguages(ISOData.languages);
+                        this.setEnterprise(isEnterprise);
+                        this.setPushPublishEnvironments(pushPublishEnvironments);
+                        this.setLocales(languages);
+                        this.setStatus(ComponentStatus.IDLE);
+                    })
+                )
+            )
+        );
+    });
+
     readonly makeDefaultLocale = this.effect<number>((languageId$) => {
         return languageId$.pipe(
+            tap(() => this.setStatus(ComponentStatus.LOADING)),
             switchMap((languageId) => this.languageService.makeDefault(languageId)),
             switchMap(() => this.languageService.get()),
             tap((languages) => {
+                this.setStatus(ComponentStatus.IDLE);
                 this.setLocales(languages);
                 this.messageService.add({
                     severity: 'success',
@@ -129,9 +146,11 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
 
     readonly deleteLocale = this.effect<number>((languageId$) =>
         languageId$.pipe(
+            tap(() => this.setStatus(ComponentStatus.LOADING)),
             switchMap((languageId) => this.languageService.delete(languageId)),
             switchMap(() => this.languageService.get()),
             tap((languages) => {
+                this.setStatus(ComponentStatus.IDLE);
                 this.setLocales(languages);
                 this.messageService.add({
                     severity: 'info',
@@ -151,7 +170,6 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
         super({
             status: ComponentStatus.IDLE,
             locales: [],
-            initialLocales: [],
             countries: [],
             languages: [],
             isEnterprise: false,
@@ -172,7 +190,7 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             locale: `${locale.language} (${locale.isoCode})`,
             language: `${locale.language} - ${locale.languageCode}`,
             country: `${locale.country} - ${locale.countryCode}`,
-            variables: 'TBD',
+            variables: `${locale.variables?.count}/${locale.variables?.total}`,
             defaultLanguage: locale.defaultLanguage,
             actions: [
                 {

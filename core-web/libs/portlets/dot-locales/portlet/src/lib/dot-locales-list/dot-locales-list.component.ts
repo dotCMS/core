@@ -50,7 +50,7 @@ export class DotLocalesListComponent implements OnInit {
     vm$: Observable<DotLocaleListViewModel> = this.store.vm$;
 
     ngOnInit() {
-        const { data, pushPublishEnvironments, isEnterprise } = this.route.snapshot.data;
-        this.store.setResolvedData({ data, pushPublishEnvironments, isEnterprise });
+        const { pushPublishEnvironments, isEnterprise } = this.route.snapshot.data;
+        this.store.loadLocales({ pushPublishEnvironments, isEnterprise });
     }
 }

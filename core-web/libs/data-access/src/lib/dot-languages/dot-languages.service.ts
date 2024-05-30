@@ -1,11 +1,11 @@
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-import { DotLanguage, DotLanguagesISO } from '@dotcms/dotcms-models';
+import { DotAddLanguage, DotLanguage, DotLanguagesISO } from '@dotcms/dotcms-models';
 
 export const LANGUAGE_API_URL = '/api/v2/languages';
 
@@ -27,8 +27,8 @@ export class DotLanguagesService {
      */
     get(contentInode?: string): Observable<DotLanguage[]> {
         const url = !contentInode
-            ? '/api/v2/languages'
-            : `/api/v2/languages?contentInode=${contentInode}`;
+            ? LANGUAGE_API_URL_WITH_VARS
+            : `${LANGUAGE_API_URL_WITH_VARS}&contentInode=${contentInode}`;
 
         return this.httpClient.get(url).pipe(pluck('entity'));
     }
@@ -48,20 +48,10 @@ export class DotLanguagesService {
     /**
      * Add a new language to the system.
      *
-     * @param {{
-     *          language: string;
-     *         languageCode: string;
-     *         country?: string;
-     *         countryCode?: string;
-     *     }} language - The language to be added.
+     * @param {DotAddLanguage} language - The language to be added.
      * @return {Observable<DotLanguage>} An observable of the language added.
      */
-    add(language: {
-        language: string;
-        languageCode: string;
-        country?: string;
-        countryCode?: string;
-    }): Observable<DotLanguage> {
+    add(language: DotAddLanguage): Observable<DotLanguage> {
         return this.httpClient.post(LANGUAGE_API_URL, language).pipe(pluck('entity'));
     }
 
@@ -110,29 +100,6 @@ export class DotLanguagesService {
     }
 
     getISO(): Observable<DotLanguagesISO> {
-        //return this.httpClient.get(`${LANGUAGE_API_URL}/iso`).pipe(pluck('entity'));
-        // placeholder while the API is not ready
-        return of({
-            countries: [
-                { code: 'US', name: 'United States' },
-                { code: 'CA', name: 'Canada' },
-                { code: 'MX', name: 'Mexico' },
-                { code: 'BR', name: 'Brazil' },
-                { code: 'AR', name: 'Argentina' },
-                { code: 'GB', name: 'United Kingdom' },
-                { code: 'FR', name: 'France' },
-                { code: 'DE', name: 'Germany' },
-                { code: 'IT', name: 'Italy' },
-                { code: 'ES', name: 'Spain' }
-            ],
-            languages: [
-                { code: 'en', name: 'English' },
-                { code: 'es', name: 'Spanish' },
-                { code: 'fr', name: 'French' },
-                { code: 'de', name: 'German' },
-                { code: 'zh', name: 'Chinese' },
-                { code: 'ja', name: 'Japanese' }
-            ]
-        });
+        return this.httpClient.get(`${LANGUAGE_API_URL}/iso`).pipe(pluck('entity'));
     }
 }

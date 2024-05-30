@@ -29,7 +29,8 @@ export const mockLocales: DotLanguage[] = [
         language: 'English',
         country: 'United States',
         isoCode: 'en-US',
-        defaultLanguage: true
+        defaultLanguage: true,
+        variables: { count: 1, total: 5 }
     },
     {
         id: 2,
@@ -38,7 +39,8 @@ export const mockLocales: DotLanguage[] = [
         language: 'Spanish',
         country: 'Spain',
         isoCode: 'es-ES',
-        defaultLanguage: false
+        defaultLanguage: false,
+        variables: { count: 1, total: 1 }
     }
 ];
 
