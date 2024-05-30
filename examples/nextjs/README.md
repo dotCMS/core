@@ -35,6 +35,12 @@ Once all the configuration is in place, it is time to run the web app.
 
 Consider that if you go to `localhost:3000/about`, the page `/about` needs to exist in your dotCMS instance.
 
+## Handling Vanity URLs
+
+In dotCMS, Vanity URLs serve as alternative reference paths to internal or external URLs. They are simple yet powerful tools that can significantly aid in site maintenance and SEO.
+
+Next.js is a robust framework that provides the capability to handle vanity URLs. It allows you to redirect or forward users to the appropriate content based on predefined logic. You can seamlessly integrate this feature of Next.js with dotCMS. For an implementation example, refer to this [link](https://github.com/dotCMS/core/blob/master/examples/nextjs/src/app/utils/index.js).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
