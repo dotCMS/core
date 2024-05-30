@@ -82,6 +82,9 @@
             [field]="field"
             [attr.data-testId]="'field-' + field.variable" />
     }
+    @case (fieldTypes.HOST_FOLDER) {
+        <p>Hello</p>
+    }
 }
 @if (field.hint) {
     <small [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
