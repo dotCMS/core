@@ -97,7 +97,7 @@ describe('EditEmaToolbarComponent', () => {
                                 iframeURL: 'http://localhost:8080/index',
                                 clientHost: 'http://localhost:3000',
                                 apiURL: 'http://localhost/api/v1/page/json/page-one',
-                                pageURI: 'http://localhost:8080/index',
+                                pureURL: 'http://localhost:8080/index',
                                 editorData: {
                                     mode: EDITOR_MODE.EDIT,
                                     canEditPage: true,
