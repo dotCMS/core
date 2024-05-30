@@ -63,7 +63,7 @@
         <dependency>
             <groupId>com.dotcms.core.plugins</groupId>
             <artifactId>com.dotcms.telemetry</artifactId>
-            <version>24.4.1</version>
+            <version>24.05.29</version>
             <scope>provided</scope>
 
             <exclusions>

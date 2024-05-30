@@ -24,53 +24,72 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
-
+/**
+ * The ImageResource class provides REST endpoints for interacting with the AI image generation service.
+ * It includes methods for generating images based on a given prompt.
+ */
 @Path("/v1/ai/image")
 public class ImageResource {
 
-
+    /**
+     * Handles GET requests to test the response of the image service.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @return a Response object containing the test response
+     */
     @GET
     @JSONP
     @Path("/test")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response indexByInode(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response) {
+                                       @Context final HttpServletResponse response) {
 
-        Response.ResponseBuilder builder = Response.ok(Map.of("type", "image"), MediaType.APPLICATION_JSON);
-        return builder.build();
+        return Response.ok(Map.of("type", "image"), MediaType.APPLICATION_JSON).build();
     }
 
+    /**
+     * Handles GET requests to generate images based on a given prompt.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param prompt the prompt to generate images from
+     * @return a Response object containing the generated images
+     * @throws IOException if an I/O error occurs
+     */
     @GET
     @JSONP
     @Path("/generate")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response indexByInode(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @QueryParam("prompt") String prompt) throws IOException {
-        AIImageRequestDTO.Builder dto = new AIImageRequestDTO.Builder();
+                                       @Context final HttpServletResponse response,
+                                       @QueryParam("prompt") final String prompt) throws IOException {
+
+        final AIImageRequestDTO.Builder dto = new AIImageRequestDTO.Builder();
         dto.prompt(prompt);
         return handleImageRequest(request, response, dto.build());
     }
 
-
     /**
+     * Handles POST requests to generate images based on a given AIImageRequestDTO.
      *
-     * @param request
-     * @param response
-     * @param aiImageRequestDTO
-     * @return
-     * @throws IOException
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param aiImageRequestDTO the AIImageRequestDTO containing the prompt and other parameters
+     * @return a Response object containing the generated images
+     * @throws IOException if an I/O error occurs
      */
     @POST
     @Path("/generate")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response handleImageRequest(@Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            AIImageRequestDTO aiImageRequestDTO) throws IOException {
+    public Response handleImageRequest(@Context final HttpServletRequest request,
+                                       @Context final HttpServletResponse response,
+                                       final AIImageRequestDTO aiImageRequestDTO) throws IOException {
 
-        User user = new WebResource.InitBuilder(request, response)
+        final User user = new WebResource.InitBuilder(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(true)
                 .init().getUser();
@@ -81,7 +100,6 @@ public class ImageResource {
                 readParameters(request.getParameterMap()), Marshaller.marshal(aiImageRequestDTO)));
 
         final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
-
         if (UtilMethods.isEmpty(config.getApiKey())) {
             return Response
                     .status(Status.INTERNAL_SERVER_ERROR)
@@ -94,7 +112,6 @@ public class ImageResource {
                     .status(Status.BAD_REQUEST)
                     .entity(Map.of("error", "`prompt` is required"))
                     .build();
-
         }
 
         final OpenAIImageService service = new OpenAIImageServiceImpl(
@@ -105,26 +122,17 @@ public class ImageResource {
         final JSONObject resp = service.sendRequest(aiImageRequestDTO);
 
         return Response.ok(Marshaller.marshal(resp)).type(MediaType.APPLICATION_JSON_TYPE).build();
-
     }
 
-    private String readParameters(Map<String, String[]> parameterMap) {
-
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("[");
-        for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
-            String paramName = entry.getKey();
-
-            sb.append(paramName).append(":");
-
-            String[] paramValues = entry.getValue();
-            for (String paramValue : paramValues) {
-                sb.append(paramValue);
-            }
-        }
+    private String readParameters(final Map<String, String[]> parameterMap) {
+        final StringBuilder sb = new StringBuilder("[");
+        parameterMap.forEach((key, paramValues) -> {
+            sb.append(key).append(":");
+            Arrays.stream(paramValues).forEach(sb::append);
+        });
         sb.append("]");
 
         return sb.toString();
     }
+
 }
