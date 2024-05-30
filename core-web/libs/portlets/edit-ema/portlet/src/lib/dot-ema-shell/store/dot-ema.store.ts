@@ -156,7 +156,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         (state) => '/' + sanitizeURL(state.editor.page.pageURI)
     );
     private readonly error$ = this.select((state) => state.error);
-    private readonly pageURI$ = this.select(
+    private readonly pureURL$ = this.select(
         this.clientHost$,
         this.currentUrl$,
         (clientHost, pageURI) => `${clientHost || window.location.origin}${pageURI}`
@@ -305,8 +305,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly editorToolbarData$ = this.select(
         this.editorState$,
         this.previewURL$,
-        this.pageURI$,
-        (editorState, previewURL, pageURI) => ({
+        this.pureURL$,
+        (editorState, previewURL, pureURL) => ({
             ...editorState,
             showWorkflowActions:
                 editorState.editorData.mode === EDITOR_MODE.EDIT ||
@@ -316,7 +316,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
                     editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING),
             previewURL,
-            pageURI
+            pureURL
         })
     );
 

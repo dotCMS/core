@@ -229,7 +229,7 @@ describe('EditEmaStore', () => {
                         editor: MOCK_RESPONSE_HEADLESS,
                         currentExperiment: null,
                         apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
-                        pageURI: 'http://localhost:3000/test-url',
+                        pureURL: 'http://localhost:3000/test-url',
                         iframeURL:
                             'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
                         isEnterpriseLicense: true,
