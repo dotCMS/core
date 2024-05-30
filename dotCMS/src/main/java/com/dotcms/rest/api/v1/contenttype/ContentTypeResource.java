@@ -573,34 +573,72 @@ public class ContentTypeResource implements Serializable {
 			APILocator.getContentTypeFieldAPI().saveFields(fieldToUpdate, user);
 		}
 
-		if (UtilMethods.isSet(fieldVariableToUpdate)) { // any diff on field variables, lets see what kind of diffs are.
+		// any diff on field variables, lets see what kind of diffs are.
+		if (UtilMethods.isSet(fieldVariableToUpdate)) {
+			handleUpdateFieldVariables(user, fieldVariableToUpdate);
+		}
+	}
 
-			for (final Tuple2<Field, List<DiffItem>> fieldVariableTuple : fieldVariableToUpdate) {
+	/**
+	 * Handles the update of field variables for a given user and a list of field variable tuples.
+	 *
+	 * @param user                  The user object for which the field variables will be updated.
+	 * @param fieldVariableToUpdate List of tuples containing the field and a list of diff items to
+	 *                              update.
+	 * @throws DotDataException     If there is an error accessing the data.
+	 * @throws DotSecurityException If there is a security error.
+	 */
+	private void handleUpdateFieldVariables(
+			final User user, final List<Tuple2<Field, List<DiffItem>>> fieldVariableToUpdate)
+			throws DotDataException, DotSecurityException {
 
-				final Map<String, FieldVariable>  fieldVariableMap = fieldVariableTuple._1().fieldVariablesMap();
-				for (final DiffItem diffItem : fieldVariableTuple._2()) {
+		for (final Tuple2<Field, List<DiffItem>> fieldVariableTuple : fieldVariableToUpdate) {
+			handleUpdateFieldVariables(user, fieldVariableTuple);
+		}
+	}
 
-					// normalizing the real varname
-					final String fieldVariableVarName = StringUtils.replace(diffItem.getVariable(), "fieldVariable.", StringPool.BLANK);
-					if ("delete".equals(diffItem.getDetail()) && fieldVariableMap.containsKey(fieldVariableVarName)) {
+	/**
+	 * Handles the update of field variables for a user and field variable tuple.
+	 *
+	 * @param user               the user performing the update
+	 * @param fieldVariableTuple the tuple containing the field and list of diff items
+	 * @throws DotDataException     if there is an issue with data access
+	 * @throws DotSecurityException if there is a security issue
+	 */
+	private void handleUpdateFieldVariables(
+			final User user, final Tuple2<Field, List<DiffItem>> fieldVariableTuple)
+			throws DotDataException, DotSecurityException {
 
-						APILocator.getContentTypeFieldAPI().delete(fieldVariableMap.get(fieldVariableVarName));
-					}
+		final Map<String, FieldVariable> fieldVariableMap =
+				fieldVariableTuple._1().fieldVariablesMap();
+		for (final DiffItem diffItem : fieldVariableTuple._2()) {
 
-					// if add or update, it is pretty much the same
-					if ("add".equals(diffItem.getDetail()) || "update".equals(diffItem.getDetail())) {
+			final var detail = diffItem.getDetail();
 
-						if ("update".equals(diffItem.getDetail()) && !fieldVariableMap.containsKey(fieldVariableVarName)) {
-							// on update get the current field and gets the id
-							continue;
-						}
+			// normalizing the real varname
+			final String fieldVariableVarName = StringUtils.replace(diffItem.getVariable(),
+					"fieldVariable.", StringPool.BLANK);
+			if ("delete".equals(detail) &&
+					fieldVariableMap.containsKey(fieldVariableVarName)) {
 
-						APILocator.getContentTypeFieldAPI().save(fieldVariableMap.get(fieldVariableVarName), user);
-					}
+				APILocator.getContentTypeFieldAPI()
+						.delete(fieldVariableMap.get(fieldVariableVarName));
+			}
+
+			// if add or update, it is pretty much the same
+			if ("add".equals(detail) || "update".equals(detail)) {
+
+				if ("update".equals(detail) &&
+						!fieldVariableMap.containsKey(fieldVariableVarName)) {
+					// on update get the current field and gets the id
+					continue;
 				}
+
+				APILocator.getContentTypeFieldAPI()
+						.save(fieldVariableMap.get(fieldVariableVarName), user);
 			}
 		}
-	} // handleUpdateFieldAndFieldVariables.
+	}
 
 	@DELETE
 	@Path("/id/{idOrVar}")
