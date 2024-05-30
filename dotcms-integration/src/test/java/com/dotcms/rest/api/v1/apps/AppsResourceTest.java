@@ -126,7 +126,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                 }
         );
 
-        final AppsHelper appsHelperNonLicense = new AppsHelper(appsAPI, APILocator.getHostAPI(), APILocator.getPermissionAPI());
+        final AppsHelper appsHelperNonLicense = new AppsHelper(appsAPI, APILocator.getHostAPI(), APILocator.getPermissionAPI(), APILocator.getSecurityLogger());
         appsResourceNonLicense = new AppsResource(webResource,
                 appsHelperNonLicense);
 
