@@ -83,7 +83,9 @@
             [attr.data-testId]="'field-' + field.variable" />
     }
     @case (fieldTypes.HOST_FOLDER) {
-        <p>Hello</p>
+        <dot-edit-content-host-folder-field
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable" />
     }
 }
 @if (field.hint) {
