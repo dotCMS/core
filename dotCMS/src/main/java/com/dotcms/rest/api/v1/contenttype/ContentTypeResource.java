@@ -12,7 +12,6 @@ import com.dotcms.contenttype.business.FieldDiffCommand;
 import com.dotcms.contenttype.business.FieldDiffItemsKey;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
@@ -518,33 +517,35 @@ public class ContentTypeResource implements Serializable {
 				.applyDiff(currentContentType.fieldMap(), newContentTypeFieldsMap);
 
 		if (!diffResult.getToDelete().isEmpty()) {
-
-			APILocator.getContentTypeFieldLayoutAPI().deleteField(currentContentType, diffResult.getToDelete().
-					values().stream().map(Field::id).collect(Collectors.toList()), user);
+			APILocator.getContentTypeFieldLayoutAPI().deleteField(
+					currentContentType,
+					diffResult.getToDelete().values().stream().
+							map(Field::id).
+							collect(Collectors.toList()),
+					user);
 		}
 
 		if (!diffResult.getToAdd().isEmpty()) {
-
-			APILocator.getContentTypeFieldAPI().saveFields(new ArrayList<>(diffResult.getToAdd().values()), user);
+			APILocator.getContentTypeFieldAPI().saveFields(
+					new ArrayList<>(diffResult.getToAdd().values()), user
+			);
 		}
 
 		if (!diffResult.getToUpdate().isEmpty()) {
-
-			handleUpdateFieldAndFieldVariables(contentTypeId, user, diffResult);
+			handleUpdateFieldAndFieldVariables(user, diffResult);
 		}
 	}
 
 	/**
 	 * Handles the update of fields and field variables based on the difference result.
 	 *
-	 * @param contentTypeId The ID of the content type.
 	 * @param user          The user performing the update.
 	 * @param diffResult    The result of the field differences.
 	 * @throws DotSecurityException If a security exception occurs.
 	 * @throws DotDataException     If a data exception occurs.
 	 */
-	private void handleUpdateFieldAndFieldVariables(final String contentTypeId, final User user,
-			final DiffResult<FieldDiffItemsKey, Field> diffResult)
+	private void handleUpdateFieldAndFieldVariables(
+			final User user, final DiffResult<FieldDiffItemsKey, Field> diffResult)
 			throws DotSecurityException, DotDataException {
 
 		final List<Field> fieldToUpdate = new ArrayList<>();
