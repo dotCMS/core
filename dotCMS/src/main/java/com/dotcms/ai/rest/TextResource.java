@@ -20,30 +20,53 @@ import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * The TextResource class provides REST endpoints for interacting with the AI text generation service.
+ * It includes methods for generating text based on a given prompt.
+ */
 @Path("/v1/ai/text")
 public class TextResource {
 
+    /**
+     * Handles GET requests to generate text based on a given prompt.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param prompt the prompt to generate text from
+     * @return a Response object containing the generated text
+     * @throws IOException if an I/O error occurs
+     */
     @Path("/generate")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response doGet(@Context HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @QueryParam("prompt") String prompt) throws IOException {
+    public Response doGet(@Context final HttpServletRequest request,
+                          @Context final HttpServletResponse response,
+                          @QueryParam("prompt") String prompt) throws IOException {
 
         return doPost(request, response, new CompletionsForm.Builder().prompt(prompt).build());
     }
 
+    /**
+     * Handles POST requests to generate text based on a given prompt.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param formIn the form data containing the prompt
+     * @return a Response object containing the generated text
+     * @throws IOException if an I/O error occurs
+     */
     @Path("/generate")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public Response doPost(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            CompletionsForm formIn) throws IOException {
+                           @Context final HttpServletResponse response,
+                           final CompletionsForm formIn) throws IOException {
 
         new WebResource.InitBuilder(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(true)
-                .init().getUser();
+                .init()
+                .getUser();
 
         if (UtilMethods.isEmpty(formIn.prompt)) {
             return Response
@@ -53,35 +76,35 @@ public class TextResource {
         }
 
         final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
-
         ConfigService.INSTANCE.config();
 
-
         return Response.ok(CompletionsAPI.impl().raw(generateRequest(formIn,config )).toString()).build();
-
     }
 
-    JSONObject generateRequest(CompletionsForm form, AppConfig config){
+    /**
+     * Generates a request for the AI text generation service based on the given form data and configuration.
+     *
+     * @param form the form data containing the prompt
+     * @param config the configuration for the AI text generation service
+     * @return a JSONObject representing the request
+     */
+    private JSONObject generateRequest(final CompletionsForm form, final AppConfig config) {
+        final String systemPrompt = UtilMethods.isSet(config.getRolePrompt()) ? config.getRolePrompt() : null;
+        final String model = form.model;
+        final float temperature = form.temperature;
+        final JSONObject request = new JSONObject();
+        final JSONArray messages = new JSONArray();
 
-        String systemPrompt = UtilMethods.isSet(config.getRolePrompt()) ? config.getRolePrompt() : null;
-        String prompt = form.prompt;
-        String model = form.model;
-        float temperature = form.temperature;
-        JSONObject request = new JSONObject();
-        JSONArray messages = new JSONArray();
-        if(UtilMethods.isSet(systemPrompt)) {
+        if (UtilMethods.isSet(systemPrompt)) {
             messages.add(Map.of("role", "system", "content", systemPrompt));
         }
         messages.add(Map.of("role", "user", "content", form.prompt));
+
         request.put("model", model);
         request.put("temperature", temperature);
         request.put("messages", messages);
+
         return request;
-
     }
-
-
-
-
 
 }
