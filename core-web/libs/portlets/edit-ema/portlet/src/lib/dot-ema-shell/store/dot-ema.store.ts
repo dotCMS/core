@@ -156,6 +156,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         (state) => '/' + sanitizeURL(state.editor.page.pageURI)
     );
     private readonly error$ = this.select((state) => state.error);
+    private readonly pageURI$ = this.select(
+        this.clientHost$,
+        this.currentUrl$,
+        (clientHost, pageURI) => `${clientHost || window.location.origin}${pageURI}`
+    );
+
     /**
      * Before this was layoutProperties, but are separate to "temp" selector.
      * And then is merged with templateIdentifier in layoutProperties$.
@@ -299,7 +305,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly editorToolbarData$ = this.select(
         this.editorState$,
         this.previewURL$,
-        (editorState, previewURL) => ({
+        this.pageURI$,
+        (editorState, previewURL, pageURI) => ({
             ...editorState,
             showWorkflowActions:
                 editorState.editorData.mode === EDITOR_MODE.EDIT ||
@@ -308,7 +315,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 !editorState.editorData.canEditPage ||
                 (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
                     editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING),
-            previewURL
+            previewURL,
+            pageURI
         })
     );
 
