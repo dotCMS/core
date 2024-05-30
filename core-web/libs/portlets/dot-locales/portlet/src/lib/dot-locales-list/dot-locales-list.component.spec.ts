@@ -1,4 +1,5 @@
 import { Spectator, createComponentFactory, mockProvider, byTestId } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -30,15 +31,17 @@ describe('DotLocalesListComponent', () => {
                 useValue: {
                     snapshot: {
                         data: {
-                            data: {
-                                locales: mockLocales,
-                                countries: mockLanguagesISO.countries,
-                                languages: mockLanguagesISO.languages
-                            },
                             pushPublishEnvironments: [],
                             isEnterprise: true
                         }
                     }
+                }
+            },
+            {
+                provide: DotLanguagesService,
+                useValue: {
+                    get: () => of([...mockLocales]),
+                    getISO: () => of(mockLanguagesISO)
                 }
             },
 
@@ -47,7 +50,6 @@ describe('DotLocalesListComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
-            mockProvider(DotLanguagesService),
             mockProvider(DotHttpErrorManagerService),
             ConfirmationService
         ]
