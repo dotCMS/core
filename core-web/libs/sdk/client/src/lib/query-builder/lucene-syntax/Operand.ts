@@ -1,7 +1,7 @@
 import { Equals } from './Equals';
 import { Field } from './Field';
 
-import { buildExcludeField, buildField, buildEquals } from '..';
+import { buildExcludeField, buildField, buildEquals } from '../utils';
 
 /**
  * 'Operand' Is a Typescript class that provides the ability to use operands in the lucene query string.}
