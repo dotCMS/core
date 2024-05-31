@@ -2,5 +2,12 @@
     [formControlName]="field.variable"
     [options]="options()"
     [attr.aria-labelledby]="'field-' + field.variable"
+    [filter]="true"
+    [filterInputAutoFocus]="true"
     optionLabel="label"
-    optionValue="value" />
+    optionValue="value"
+    (onNodeSelect)="onNodeSelect($event)">
+    <ng-template let-node pTemplate="default">
+        <span>{{ node.label | truncatePath }}</span>
+    </ng-template>
+</p-treeSelect>

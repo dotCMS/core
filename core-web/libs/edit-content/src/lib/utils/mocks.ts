@@ -563,6 +563,32 @@ export const WYSIWYG_MOCK: DotCMSContentTypeField = {
     variable: 'WYSIWYG'
 };
 
+export const HOST_FOLDER_FIELD_TEXT_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
+    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
+    dataType: 'TEXT',
+    defaultValue: null,
+    fieldType: 'Host-Folder',
+    fieldTypeLabel: 'hostFolder',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1697579843000,
+    hint: 'A hint Text',
+    id: 'a6f33b8941b6c06c8ab36e44c4bf6500',
+    indexed: false,
+    listed: false,
+    modDate: 1697661626000,
+    name: 'hostFolderNormal',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    values: '',
+    variable: 'hostFolderNormal'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -585,7 +611,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     CUSTOM_FIELD_MOCK,
     JSON_FIELD_MOCK,
     KEY_VALUE_MOCK,
-    WYSIWYG_MOCK
+    WYSIWYG_MOCK,
+    HOST_FOLDER_FIELD_TEXT_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
