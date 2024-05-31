@@ -40,10 +40,10 @@ public class ExperimentsFactoryImpl implements
     public static final String NAME_FILTER = "AND name LIKE ?";
 
     public static final String STATUS_FILTER = "SELECT * from experiment WHERE status = ?";
-    
-    private static final String ACTIVE_EXPERIMENTS_BY_HOST = "SELECT experiment.* " +
-    "FROM experiment INNER JOIN identifier ON experiment.page_id = identifier.id " +
-    "WHERE status NOT IN (?, ?) and host_inode = ?";
+
+    private static final String ACTIVE_EXPERIMENTS_BY_PAGE = "SELECT experiment.* " +
+    "FROM experiment " +
+    "WHERE status NOT IN (?, ?) and page_id = ?";
 
     @Override
     public void save(Experiment experiment) throws DotDataException {
@@ -179,17 +179,17 @@ public class ExperimentsFactoryImpl implements
     /**
      * Default implementation for {@link ExperimentsFactory#listActive(String)} (Host)}
      *
-     * @param hostIdentifier
+     * @param pageIdentifier
      * @return
      * @throws DotDataException
      */
     @Override
-    public final Collection<Experiment> listActive(final String hostIdentifier) throws DotDataException {
+    public final Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException {
         final List<Map<String, Object>> results = new DotConnect()
-                .setSQL(ACTIVE_EXPERIMENTS_BY_HOST)
+                .setSQL(ACTIVE_EXPERIMENTS_BY_PAGE)
                 .addParam(AbstractExperiment.Status.ENDED.toString())
                 .addParam(AbstractExperiment.Status.ARCHIVED.toString())
-                .addParam(hostIdentifier)
+                .addParam(pageIdentifier)
                 .loadObjectResults();
 
         return TransformerLocator.createExperimentTransformer(results).list;

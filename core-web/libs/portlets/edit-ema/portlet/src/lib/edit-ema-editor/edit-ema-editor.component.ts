@@ -41,6 +41,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
+    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotCMSTempFile,
     DotExperimentStatus,
@@ -1064,7 +1065,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const payload = <UpdatedContentlet>data.payload;
 
                 if (!payload) {
-                    this.store.setEditorMode(EDITOR_MODE.EDIT);
+                    const mode =
+                        this.queryParams.variantName &&
+                        this.queryParams.variantName !== DEFAULT_VARIANT_ID
+                            ? EDITOR_MODE.EDIT_VARIANT
+                            : EDITOR_MODE.EDIT;
+
+                    this.store.setEditorMode(mode);
 
                     return;
                 }
