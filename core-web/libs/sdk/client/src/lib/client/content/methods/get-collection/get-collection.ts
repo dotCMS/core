@@ -2,7 +2,12 @@ import { Equals } from '../../../../query-builder/lucene-syntax';
 import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
 import { ClientOptions } from '../../../sdk-js-client';
 import { CONTENT_API_URL } from '../../shared/const';
-import { GetCollectionResponse, QueryBuilderCallback, SortBy } from '../../shared/types';
+import {
+    GetCollectionResponse,
+    BuildQuery,
+    SortBy,
+    GetCollectionRawResponse
+} from '../../shared/types';
 import { sanitizeQueryForContentType } from '../../shared/utils';
 
 /**
@@ -11,7 +16,7 @@ import { sanitizeQueryForContentType } from '../../shared/utils';
  * @export
  * @class GetCollection
  */
-export class GetCollection {
+export class GetCollection<T = unknown> {
     #page = 1;
     #limit = 10;
     #depth = 0;
@@ -131,36 +136,30 @@ export class GetCollection {
         return this;
     }
 
-    /**
-     * This method allows you to set a lucene query to filter the content using the Lucene Query Builder.
-     * All fields will be formatted to: +contentTypeVar.field: value
-     *
-     * @param {QueryBuilderCallback} queryBuilderCallback
-     * @return {*}  {this}
-     * @memberof GetCollection
-     */
-    query(queryBuilderCallback: QueryBuilderCallback): this {
-        const queryResult = queryBuilderCallback(this.currentQuery);
+    // Docs here
+    query(buildQuery: string): this;
+    // Docs here
+    query(buildQuery: BuildQuery): this;
 
-        // This can be use in Javascript so we cannot rely on the type checking
-        if (queryResult instanceof Equals) {
-            this.#query = queryResult;
-        } else {
-            throw new Error('The query builder callback should return an Equals instance');
+    query(buildQuery: BuildQuery | string): this {
+        if (typeof buildQuery === 'string') {
+            this.#rawQuery = buildQuery;
+
+            return this;
         }
 
-        return this;
-    }
+        if (typeof buildQuery !== 'function') {
+            throw new Error('Parameter for query method should be a function or a string');
+        }
 
-    /**
-     * This method allows you to set a raw lucene query to filter the content
-     *
-     * @param {string} query
-     * @return {*}  {this}
-     * @memberof GetCollection
-     */
-    rawQuery(query: string): this {
-        this.#rawQuery = query;
+        const builtQuery = buildQuery(new QueryBuilder());
+
+        // This can be use in Javascript so we cannot rely on the type checking
+        if (builtQuery instanceof Equals) {
+            this.#query = builtQuery.raw(this.currentQuery.build());
+        } else {
+            throw new Error('The query builder callback should return a DotQuery instance');
+        }
 
         return this;
     }
@@ -204,14 +203,60 @@ export class GetCollection {
         return this;
     }
 
-    /**
-     * This method returns the result of the fetch using the query built.
-     *
-     * @template T
-     * @return {*}  {Promise<GetCollectionResponse<T>>}
-     * @memberof GetCollection
-     */
-    async fetch<T>(): Promise<GetCollectionResponse<T>> {
+    // DOCS MISSING.
+    then(
+        onfulfilled?:
+            | ((
+                  value: GetCollectionResponse<T>
+              ) => GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>> | void)
+            | undefined
+            | null,
+        onrejected?: ((error: unknown) => unknown | PromiseLike<unknown> | void) | undefined | null
+    ): Promise<GetCollectionResponse<T> | unknown> {
+        return this.fetchContentApi().then(async (response) => {
+            const data = await response.json();
+            if (response.ok) {
+                const formattedResponse = this.formatResponse<T>(data);
+
+                const finalResponse =
+                    typeof onfulfilled === 'function'
+                        ? onfulfilled(formattedResponse)
+                        : formattedResponse;
+
+                return finalResponse;
+            } else {
+                // Fetch does not reject on server errors, so we only have to bubble up the error as a normal fetch
+                return {
+                    status: response.status,
+                    ...data
+                };
+            }
+        }, onrejected);
+    }
+
+    // Formats the response to the desired format
+    private formatResponse<T>(data: GetCollectionRawResponse<T>): GetCollectionResponse<T> {
+        const contentlets = data.entity.jsonObjectView.contentlets;
+
+        const total = data.entity.resultsSize;
+
+        const mappedResponse: GetCollectionResponse<T> = {
+            contentlets,
+            total,
+            page: this.#page,
+            size: contentlets.length
+        };
+
+        return this.#sortBy
+            ? {
+                  ...mappedResponse,
+                  sortedBy: this.#sortBy
+              }
+            : mappedResponse;
+    }
+
+    // Calls the content API to fetch the content
+    private fetchContentApi(): Promise<Response> {
         const sanitizedQuery = sanitizeQueryForContentType(
             this.currentQuery.build(),
             this.#contentType
@@ -236,33 +281,6 @@ export class GetCollection {
                 //userId: This exist but we currently don't use it
                 //allCategoriesInfo: This exist but we currently don't use it
             })
-        }).then(
-            async (response) => {
-                if (response.ok) {
-                    const data = await response.json();
-
-                    const contentlets = data.entity.jsonObjectView.contentlets;
-
-                    const total = data.entity.resultsSize;
-
-                    const mappedResponse: GetCollectionResponse<T> = {
-                        contentlets,
-                        total,
-                        page: this.#page,
-                        size: contentlets.length
-                    };
-
-                    return this.#sortBy
-                        ? {
-                              ...mappedResponse,
-                              sortedBy: this.#sortBy
-                          }
-                        : mappedResponse;
-                } else {
-                    return response.json();
-                }
-            },
-            (error) => error
-        );
+        });
     }
 }

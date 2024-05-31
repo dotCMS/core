@@ -1,4 +1,5 @@
-import { Equals } from '../../../query-builder/lucene-syntax/Equals';
+import { Equals } from '../../../query-builder/lucene-syntax';
+import { QueryBuilder } from '../../../query-builder/sdk-query-builder';
 
 // Model to sort by fields
 export type SortBy = {
@@ -7,7 +8,7 @@ export type SortBy = {
 };
 
 // Callback to build a query
-export type QueryBuilderCallback = (qb: Equals) => Equals;
+export type BuildQuery = (qb: QueryBuilder) => Equals;
 
 // Main fields of a Contentlet (Inherited from the Content Type)
 export interface ContentTypeMainFields {
@@ -54,4 +55,13 @@ export interface GetCollectionResponse<T> {
     size: number;
     total: number;
     sortedBy?: SortBy[];
+}
+
+export interface GetCollectionRawResponse<T> {
+    entity: {
+        jsonObjectView: {
+            contentlets: Contentlet<T>[];
+        };
+        resultsSize: number;
+    };
 }
