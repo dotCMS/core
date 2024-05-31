@@ -6,6 +6,7 @@
                 class="locales-list__search"
                 (input)="dt.filterGlobal($event.target.value, 'contains')"
                 type="text"
+                data-testId="input-search"
                 pInputText />
         </span>
         <button
@@ -53,3 +54,6 @@
         </ng-template>
     </p-table>
 </ng-container>
+
+<p-confirmDialog [key]="dialogKey" [style]="{ width: '30vw' }" />
+<p-toast></p-toast>
