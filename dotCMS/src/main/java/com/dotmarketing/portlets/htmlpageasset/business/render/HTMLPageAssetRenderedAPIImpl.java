@@ -3,9 +3,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.web.ExperimentWebAPI;
-import com.dotcms.experiments.model.Experiment;
 import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockRequest;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
@@ -146,12 +144,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setResponse(response)
                 .setSite(host)
                 .setURLMapper(htmlPageUrl.getPageUrlMapper())
-                .setLive(htmlPageUrl.hasLive());
-
+                .setLive(htmlPageUrl.hasLive())
+                .setVanityUrl(context.getVanityUrl());
         if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
             APILocator.getExperimentsAPI()
                     .getRunningExperimentPerPage(htmlPageUrl.getHTMLPage().getIdentifier())
-                    .ifPresent(experiment -> htmlPageAssetRenderedBuilder.setRunningExperiment(experiment));
+                    .ifPresent(htmlPageAssetRenderedBuilder::setRunningExperiment);
         }
 
         return htmlPageAssetRenderedBuilder.build(false, context.getPageMode());
@@ -209,12 +207,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setSite(host)
                 .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .setLive(htmlPageUrl.hasLive())
-                .setParseJSON(context.isParseJSON());
-
+                .setParseJSON(context.isParseJSON())
+                .setVanityUrl(context.getVanityUrl());
         if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
             APILocator.getExperimentsAPI()
                     .getRunningExperimentPerPage(htmlPageUrl.getHTMLPage().getIdentifier())
-                    .ifPresent(experiment -> htmlPageAssetRenderedBuilder.setRunningExperiment(experiment));
+                    .ifPresent(htmlPageAssetRenderedBuilder::setRunningExperiment);
         }
 
         return htmlPageAssetRenderedBuilder.build(true, mode);

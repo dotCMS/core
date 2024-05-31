@@ -25,6 +25,7 @@ import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.variant.VariantAPI;
@@ -48,6 +49,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotF
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageLivePreviewVersionBean;
+import com.dotmarketing.portlets.htmlpageasset.business.render.VanityURLView;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.EmptyPageView;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -325,6 +327,7 @@ public class PageResource {
         final Optional<CachedVanityUrl> cachedVanityUrlOpt =
                 this.pageResourceHelper.resolveVanityUrlIfPresent(originalRequest, uri, languageId);
         if (cachedVanityUrlOpt.isPresent()) {
+            response.setHeader(VanityUrlAPI.VANITY_URL_RESPONSE_HEADER, cachedVanityUrlOpt.get().vanityUrlId);
             if (cachedVanityUrlOpt.get().isTemporaryRedirect() || cachedVanityUrlOpt.get().isPermanentRedirect()) {
                 Logger.debug(this, () -> String.format("Incoming Vanity URL is a %d Redirect",
                         cachedVanityUrlOpt.get().response));
@@ -348,16 +351,18 @@ public class PageResource {
             request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
         }
         PageView pageRendered;
+        final PageContextBuilder pageContextBuilder = PageContextBuilder.builder()
+                .setUser(user)
+                .setPageUri(resolvedUri)
+                .setPageMode(mode);
+        cachedVanityUrlOpt.ifPresent(cachedVanityUrl
+                -> pageContextBuilder.setVanityUrl(new VanityURLView.Builder().vanityUrl(cachedVanityUrl).build()));
         if (asJson) {
             pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
-                    PageContextBuilder.builder()
-                            .setUser(user)
-                            .setPageUri(resolvedUri)
-                            .setPageMode(mode)
+                    pageContextBuilder
                             .setParseJSON(true)
                             .build(),
-                    request,
-                    response
+                    request, response
             );
         } else {
             final HttpSession session = request.getSession(false);
@@ -367,13 +372,7 @@ public class PageResource {
                 session.removeAttribute("tm_date");
             }
             pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
-                    PageContextBuilder.builder()
-                            .setUser(user)
-                            .setPageUri(resolvedUri)
-                            .setPageMode(mode)
-                            .build(),
-                    request,
-                    response
+                    pageContextBuilder.build(), request, response
             );
         }
         final Host site = APILocator.getHostAPI().find(pageRendered.getPage().getHost(), user,

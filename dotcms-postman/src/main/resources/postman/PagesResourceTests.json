@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "7fc617c3-c71c-4042-be7a-1cccad16ea1d",
+		"_postman_id": "b6d2acb2-66fa-49d6-bc67-8f7de74d7417",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "3028555"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -852,11 +852,11 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Response body contains\", function () {",
+											"pm.test(\"Response body contains the 'uuid' attribute\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"uuid\");",
 											"});",
 											"",
-											"pm.test(\"'page' element includes all properties\", function () {",
+											"pm.test(\"The 'page' element includes all the expected properties\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var page = jsonData[\"entity\"][\"page\"];",
 											"    pm.expect(page[\"__icon__\"]).equal(\"pageIcon\");",
@@ -914,8 +914,15 @@
 											"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
 											"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
 											"    pm.expect(page[\"workingInode\"]).not.equal(null)",
+											"});",
 											"",
-											"});"
+											"pm.test(\"The 'Forward' Vanity URL data must be present\", function() {",
+											"    var entity = pm.response.json().entity;",
+											"    pm.expect(entity.vanityUrl).not.not.equal(undefined, \"The 'vanityUrl' attribute is missing\");",
+											"    pm.expect(entity.vanityUrl.url).to.be.equal(\"/forward-json\", \"The 'url' attribute is NOT the expected one\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(200, \"The 'response' attribute must be 200\");",
+											"});",
+											""
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -948,9 +955,10 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"The test Temporary Redirect Vanity URL must be returned\", function () {",
+											"pm.test(\"The 'Temporary Redirect' Vanity URL data must be present\", function() {",
 											"    var entity = pm.response.json().entity;",
 											"    pm.expect(entity.vanityUrl).to.not.equal(undefined, \"The 'vanityUrl' attribute must be present\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(302, \"The 'response' attribute must be 302\");",
 											"    pm.expect(entity.vanityUrl.temporaryRedirect).to.equal(true, \"The returned Vanity URL MUST be a temporary redirect\");",
 											"    pm.expect(entity.vanityUrl.permanentRedirect).to.equal(false, \"The returned Vanity URL MUST NOT be a permanent redirect\");",
 											"    pm.expect(entity.vanityUrl.forward).to.equal(false, \"The returned Vanity URL MUST NOT be a forward\");",
@@ -988,9 +996,10 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"The test Permanent Redirect Vanity URL must be returned\", function () {",
+											"pm.test(\"The 'Permanent Redirect' Vanity URL must be present\", function() {",
 											"    var entity = pm.response.json().entity;",
 											"    pm.expect(entity.vanityUrl).to.not.equal(undefined, \"The 'vanityUrl' attribute must be present\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(301, \"The 'response' attribute must be 301\");",
 											"    pm.expect(entity.vanityUrl.permanentRedirect).to.equal(true, \"The returned Vanity URL MUST be a permanent redirect\");",
 											"    pm.expect(entity.vanityUrl.temporaryRedirect).to.equal(false, \"The returned Vanity URL MUST NOT be a temporary redirect\");",
 											"    pm.expect(entity.vanityUrl.forward).to.equal(false, \"The returned Vanity URL MUST NOT be a forward\");",
@@ -1043,7 +1052,6 @@
 									"pm.test(\"HTTP Status must be 200\", function() {",
 									"    pm.response.to.have.status(200);",
 									"});",
-									"",
 									""
 								]
 							}
@@ -1782,15 +1790,15 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Response body contains\", function () {",
+											"pm.test(\"Response body contains the 'rendered' attribute\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"rendered\");",
 											"});",
 											"",
-											"pm.test(\"Response body contains\", function () {",
+											"pm.test(\"Response body contains the 'uuid' attribute\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"uuid\");",
 											"});",
 											"",
-											"pm.test(\"'page' element includes all properties\", function () {",
+											"pm.test(\"The 'page' element includes all the expected properties\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var page = jsonData[\"entity\"][\"page\"];",
 											"    pm.expect(page[\"__icon__\"]).equal(\"pageIcon\");",
@@ -1848,8 +1856,15 @@
 											"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
 											"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
 											"    pm.expect(page[\"workingInode\"]).not.equal(null)",
+											"});",
 											"",
-											"});"
+											"pm.test(\"The 'Forward' Vanity URL data must be present\", function() {",
+											"    var entity = pm.response.json().entity;",
+											"    pm.expect(entity.vanityUrl).not.not.equal(undefined, \"The 'vanityUrl' attribute is missing\");",
+											"    pm.expect(entity.vanityUrl.url).to.be.equal(\"/forward-render\", \"The 'url' attribute is NOT the expected one\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(200, \"The 'response' attribute must be 200\");",
+											"});",
+											""
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -1882,9 +1897,10 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"The test Temporary Redirect Vanity URL must be returned\", function () {",
+											"pm.test(\"The 'Temporary Redirect' Vanity URL data must be present\", function() {",
 											"    var entity = pm.response.json().entity;",
 											"    pm.expect(entity.vanityUrl).to.not.equal(undefined, \"The 'vanityUrl' attribute must be present\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(302, \"The 'response' attribute must be 302\");",
 											"    pm.expect(entity.vanityUrl.temporaryRedirect).to.equal(true, \"The returned Vanity URL MUST be a temporary redirect\");",
 											"    pm.expect(entity.vanityUrl.permanentRedirect).to.equal(false, \"The returned Vanity URL MUST NOT be a permanent redirect\");",
 											"    pm.expect(entity.vanityUrl.forward).to.equal(false, \"The returned Vanity URL MUST NOT be a forward\");",
@@ -1922,9 +1938,10 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"The test Permanent Redirect Vanity URL must be returned\", function () {",
+											"pm.test(\"The 'Permanent Redirect' Vanity URL must be present\", function() {",
 											"    var entity = pm.response.json().entity;",
 											"    pm.expect(entity.vanityUrl).to.not.equal(undefined, \"The 'vanityUrl' attribute must be present\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(301, \"The 'response' attribute must be 301\");",
 											"    pm.expect(entity.vanityUrl.permanentRedirect).to.equal(true, \"The returned Vanity URL MUST be a permanent redirect\");",
 											"    pm.expect(entity.vanityUrl.temporaryRedirect).to.equal(false, \"The returned Vanity URL MUST NOT be a temporary redirect\");",
 											"    pm.expect(entity.vanityUrl.forward).to.equal(false, \"The returned Vanity URL MUST NOT be a forward\");",
@@ -5939,116 +5956,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "siteIdTestHost",
-			"value": ""
-		},
-		{
-			"key": "sitevariableIdTestHost",
-			"value": ""
-		},
-		{
-			"key": "containeridentifier",
-			"value": ""
-		},
-		{
-			"key": "inode",
-			"value": ""
-		},
-		{
-			"key": "templateIdToPublishedHost",
-			"value": ""
-		},
-		{
-			"key": "pageUrlHostVariablestest",
-			"value": ""
-		},
-		{
-			"key": "richContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "pageIdentifier",
-			"value": ""
-		},
-		{
-			"key": "containerId",
-			"value": ""
-		},
-		{
-			"key": "contentId",
-			"value": ""
-		},
-		{
-			"key": "pageId",
-			"value": ""
-		},
-		{
-			"key": "personalization",
-			"value": ""
-		},
-		{
-			"key": "relationType",
-			"value": ""
-		},
-		{
-			"key": "treeOrder",
-			"value": ""
-		},
-		{
-			"key": "variantId",
-			"value": ""
-		},
-		{
-			"key": "copiedRichContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "pageDeepCopyIdentifier",
-			"value": ""
-		},
-		{
-			"key": "defaultSiteId",
-			"value": ""
-		},
-		{
-			"key": "firstPageUrl",
-			"value": ""
-		},
-		{
-			"key": "firstPageIdentifier",
-			"value": ""
-		},
-		{
-			"key": "secondPageUrl",
-			"value": ""
-		},
-		{
-			"key": "secondPageIdentifier",
-			"value": ""
-		},
-		{
-			"key": "pageid",
-			"value": ""
-		},
-		{
-			"key": "pagepath",
-			"value": ""
-		},
-		{
-			"key": "host_id",
-			"value": ""
-		},
-		{
-			"key": "testPageTitle",
-			"value": ""
-		},
-		{
-			"key": "testPageUrl",
-			"value": ""
 		}
 	]
 }
