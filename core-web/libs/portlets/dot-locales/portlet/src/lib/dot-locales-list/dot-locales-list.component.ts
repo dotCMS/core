@@ -1,17 +1,26 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { ToastModule } from 'primeng/toast';
 
 import { DotActionMenuButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { DotLocaleListViewModel, DotLocalesListStore } from './store/dot-locales-list.store';
+import {
+    DotLocaleListViewModel,
+    DotLocalesListStore,
+    LOCALE_CONFIRM_DIALOG_KEY
+} from './store/dot-locales-list.store';
 
 @Component({
     selector: 'dot-locales-list',
@@ -23,22 +32,25 @@ import { DotLocaleListViewModel, DotLocalesListStore } from './store/dot-locales
         DotMessagePipe,
         TableModule,
         DotActionMenuButtonComponent,
-        TagModule
+        TagModule,
+        ConfirmDialogModule,
+        ConfirmPopupModule,
+        ToastModule
     ],
     templateUrl: './dot-locales-list.component.html',
     styleUrl: './dot-locales-list.component.scss',
-    providers: [DotLocalesListStore],
+    providers: [DotLocalesListStore, DialogService, MessageService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLocalesListComponent implements OnInit {
-    vm$: Observable<DotLocaleListViewModel> = this.dotLocalesListStore.vm$;
+    private readonly route = inject(ActivatedRoute);
+    store = inject(DotLocalesListStore);
+    dialogKey = LOCALE_CONFIRM_DIALOG_KEY;
 
-    constructor(
-        private readonly route: ActivatedRoute,
-        private readonly dotLocalesListStore: DotLocalesListStore
-    ) {}
+    vm$: Observable<DotLocaleListViewModel> = this.store.vm$;
 
     ngOnInit() {
-        this.dotLocalesListStore.setLocales(this.route.snapshot.data['locales']);
+        const { pushPublishEnvironments, isEnterprise } = this.route.snapshot.data;
+        this.store.loadLocales({ pushPublishEnvironments, isEnterprise });
     }
 }
