@@ -1,5 +1,12 @@
+@use "variables" as *;
+
 :host {
     display: block;
     height: fit-content;
     margin-bottom: 0;
+
+    small {
+        margin-top: $spacing-1;
+        display: block;
+    }
 }

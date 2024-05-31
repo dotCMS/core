@@ -1,0 +1,19 @@
+<div class="category-field__dialog h-full w-full">
+    <div class="category-field__left-pane flex flex-column">Search & category tree</div>
+    <div class="category-field__right-pane flex flex-column">
+        <div class="category-field__selected-categories flex-1">Selected Categories</div>
+        <div class="category-field__actions flex justify-content-end">
+            <button
+                class="p-button p-button-link"
+                (click)="dialogRef.close()"
+                data-testId="cancel-btn"
+                pButton>
+                Cancel
+                {{ 'edit.content.category-field.cancel' | dm }}
+            </button>
+            <button class="p-button" data-testId="apply-btn">
+                {{ 'edit.content.category-field.apply' | dm }}
+            </button>
+        </div>
+    </div>
+</div>
