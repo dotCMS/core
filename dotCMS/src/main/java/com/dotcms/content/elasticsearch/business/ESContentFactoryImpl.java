@@ -920,7 +920,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        if (REFRESH_BLOCK_EDITOR_REFERENCES) {
+        if (REFRESH_BLOCK_EDITOR_REFERENCES && !cachedContentlet.getBoolProperty("__hidrated__")) {
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
             if (storyBlockRefreshedResult.isRefreshed()) {

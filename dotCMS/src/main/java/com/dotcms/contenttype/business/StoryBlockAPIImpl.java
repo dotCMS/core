@@ -237,7 +237,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             for (final Field field : fields) {
                 dataMap.put(field.variable(), contentlet.get(field.variable()));
             }
-
+            dataMap.put("__hidrated__", true);
             final Map<String, Map<String, Object>> attrsMap = new LinkedHashMap<>();
             attrsMap.put(StoryBlockAPI.DATA_KEY, dataMap);
             final Map<String, Object> contentMap = new LinkedHashMap<>();
@@ -317,13 +317,21 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * @throws DotSecurityException The User accessing the API does not have the required permissions to do so.
      */
     private void refreshBlockEditorDataMap(Map<String, Object> dataMap, final String liveInode) {
-        final Optional<Contentlet> contentlet = APILocator.getContentletAPI().findInDb(liveInode);
+        //final Optional<Contentlet> contentlet = APILocator.getContentletAPI().findInDb(liveInode);
         try {
-            if (contentlet.isPresent()) {
+            /*if (contentlet.isPresent()) {
                 dataMap.putAll(refreshContentlet(contentlet.get()));
+            }*/
+            final Contentlet contentlet = APILocator.getContentletAPI().find(liveInode, APILocator.systemUser(), false);
+            if (null != contentlet) {
+                dataMap.putAll(refreshContentlet(contentlet));
             }
         } catch (JsonProcessingException e) {
             Logger.error(this, "Failed to load attrs", e);
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        } catch (DotSecurityException e) {
+            throw new RuntimeException(e);
         }
     }
 
