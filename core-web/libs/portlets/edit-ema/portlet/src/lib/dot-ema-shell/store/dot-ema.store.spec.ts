@@ -1,6 +1,6 @@
 import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 
@@ -68,6 +68,7 @@ describe('EditEmaStore', () => {
     describe('EditEmaStore Headless', () => {
         let spectator: SpectatorService<EditEmaStore>;
         let dotPageApiService: SpyObject<DotPageApiService>;
+        let dotExperimentsService: DotExperimentsService;
 
         const createService = createServiceFactory({
             service: EditEmaStore,
@@ -127,6 +128,7 @@ describe('EditEmaStore', () => {
             spectator = createService();
 
             dotPageApiService = spectator.inject(DotPageApiService);
+            dotExperimentsService = spectator.inject(DotExperimentsService);
             jest.spyOn(dotPageApiService, 'get').mockImplementation(({ url }) => {
                 return of({
                     ...MOCK_RESPONSE_HEADLESS,
@@ -671,6 +673,51 @@ describe('EditEmaStore', () => {
                 });
             });
 
+            it('should handle successful data loading even if experiments throw an error', (done) => {
+                jest.spyOn(dotExperimentsService, 'getById').mockReturnValue(throwError(null));
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'test-url',
+                    'com.dotmarketing.persona.id': '123',
+                    experimentId: 'i-have-a-draft-experiment',
+                    variantName: ''
+                });
+
+                spectator.service.editorState$.subscribe((state) => {
+                    expect(state).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS,
+                        currentExperiment: null,
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=&mode=EDIT_MODE',
+                        iframeURL:
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=&mode=EDIT_MODE',
+                        isEnterpriseLicense: true,
+                        favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                        state: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditPage: true,
+                            canEditVariant: true,
+                            variantId: '',
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            }
+                        },
+                        dragItem: undefined,
+                        showContentletTools: false,
+                        showDropzone: false,
+                        showPalette: true
+                    });
+                    done();
+                });
+            });
+
             it("should call save method from dotPageApiService when 'save' action is dispatched", () => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -980,6 +1027,7 @@ describe('EditEmaStore', () => {
                     done();
                 });
             });
+
             it('should update inline edited contentlet for variants', (done) => {
                 const payload: SaveInlineEditing = {
                     contentlet: {
