@@ -1,13 +1,13 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
-import { NoComponentComponent } from './no-component.component';
+import { NoComponent } from './no-component.component';
 
 import { DotCMSContentlet } from '../../models';
 
 describe('NoComponentComponent', () => {
-    let spectator: Spectator<NoComponentComponent>;
+    let spectator: Spectator<NoComponent>;
 
-    const createComponent = createComponentFactory(NoComponentComponent);
+    const createComponent = createComponentFactory(NoComponent);
 
     beforeEach(() => {
         spectator = createComponent({

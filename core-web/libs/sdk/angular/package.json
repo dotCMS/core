@@ -8,8 +8,6 @@
     "@dotcms/client": "0.0.1-alpha.17",
     "rxjs": "~6.6.3"
     },
-    "dependencies": {},
-    "sideEffects": false,
     "description": "Official Angular Components library to render a dotCMS page.",
     "repository": {
         "type": "git",

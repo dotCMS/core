@@ -4,7 +4,7 @@ import { MockComponent } from 'ng-mocks';
 import { ColumnComponent } from './column.component';
 
 import { DotPageAssetLayoutColumn } from '../../models';
-import { EntityMock } from '../../utils/testing.utils';
+import { PageResponseMock } from '../../utils/testing.utils';
 import { ContainerComponent } from '../container/container.component';
 
 describe('ColumnComponent', () => {
@@ -18,7 +18,7 @@ describe('ColumnComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                column: EntityMock.layout.body.rows[0].columns[0] as DotPageAssetLayoutColumn
+                column: PageResponseMock.layout.body.rows[0].columns[0] as DotPageAssetLayoutColumn
             }
         });
     });

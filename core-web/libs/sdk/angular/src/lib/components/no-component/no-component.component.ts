@@ -7,13 +7,13 @@ import { DotCMSContentlet } from '../../models';
  * This is a component for the `NoComponentComponent` component.
  */
 @Component({
-    selector: 'app-no-component',
+    selector: 'dotcms-no-component',
     standalone: true,
     template: `No Component for {{ contentlet.contentType }}`,
     styleUrl: './no-component.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class NoComponentComponent {
+export class NoComponent {
     @Input() contentlet!: DotCMSContentlet;
     @HostBinding('attr.data-testid') testId = 'no-component';
 }

@@ -5,12 +5,10 @@ import { Component, Input } from '@angular/core';
 
 import { ContainerComponent } from './container.component';
 
-import { NoComponentComponent } from '../../components/no-component/no-component.component';
+import { NoComponent } from '../../components/no-component/no-component.component';
 import { DotCMSContainer, DotCMSContentlet } from '../../models';
 import { PageContextService } from '../../services/dotcms-context/page-context.service';
-import { EntityMock } from '../../utils/testing.utils';
-
-//Create a mock component
+import { PageResponseMock } from '../../utils/testing.utils';
 
 @Component({
     selector: 'dotcms-mock-component',
@@ -23,7 +21,6 @@ class DotcmsSDKMockComponent {
 
 describe('ContainerComponent', () => {
     let spectator: Spectator<ContainerComponent>;
-    // let pageContextService: PageContextService;
 
     describe('inside editor', () => {
         const createComponent = createComponentFactory({
@@ -34,12 +31,14 @@ describe('ContainerComponent', () => {
                     provide: PageContextService,
                     useValue: {
                         pageContextValue: {
-                            containers: EntityMock.containers,
+                            pageAsset: {
+                                containers: PageResponseMock.containers
+                            },
+                            components: {
+                                Banner: of(DotcmsSDKMockComponent)
+                            },
                             isInsideEditor: true
-                        },
-                        getComponentMap: () => ({
-                            Banner: of(DotcmsSDKMockComponent)
-                        })
+                        }
                     }
                 }
             ]
@@ -48,7 +47,7 @@ describe('ContainerComponent', () => {
         beforeEach(() => {
             spectator = createComponent({
                 props: {
-                    container: EntityMock.layout.body.rows[0].columns[0]
+                    container: PageResponseMock.layout.body.rows[0].columns[0]
                         .containers[0] as DotCMSContainer
                 }
             });
@@ -85,16 +84,16 @@ describe('ContainerComponent', () => {
         it('should render NoComponentComponent when no component is found', () => {
             spectator.setInput(
                 'container',
-                EntityMock.layout.body.rows[1].columns[0].containers[0] as DotCMSContainer
+                PageResponseMock.layout.body.rows[1].columns[0].containers[0] as DotCMSContainer
             );
             spectator.detectChanges();
-            expect(spectator.query(NoComponentComponent)).toBeTruthy();
+            expect(spectator.query(NoComponent)).toBeTruthy();
         });
 
         it('should render message when container is empty', () => {
             spectator.setInput(
                 'container',
-                EntityMock.layout.body.rows[2].columns[0].containers[0] as DotCMSContainer
+                PageResponseMock.layout.body.rows[2].columns[0].containers[0] as DotCMSContainer
             );
             spectator.detectChanges();
             expect(spectator.query(byText('This container is empty.'))).toBeTruthy();
@@ -110,12 +109,14 @@ describe('ContainerComponent', () => {
                     provide: PageContextService,
                     useValue: {
                         pageContextValue: {
-                            containers: EntityMock.containers,
+                            pageAsset: {
+                                containers: PageResponseMock.containers
+                            },
+                            components: {
+                                Banner: of(DotcmsSDKMockComponent)
+                            },
                             isInsideEditor: false
-                        },
-                        getComponentMap: () => ({
-                            Banner: of(DotcmsSDKMockComponent)
-                        })
+                        }
                     }
                 }
             ]
@@ -124,13 +125,13 @@ describe('ContainerComponent', () => {
         beforeEach(() => {
             spectator = createComponent({
                 props: {
-                    container: EntityMock.layout.body.rows[0].columns[0]
+                    container: PageResponseMock.layout.body.rows[0].columns[0]
                         .containers[0] as DotCMSContainer
                 }
             });
         });
 
-        it('should dont have data attributes', () => {
+        it('should not have data attributes', () => {
             spectator.detectChanges();
             const container = spectator.query(byTestId('dot-container'));
             expect(container?.getAttribute('data-dot-accept-types')).toBeUndefined();

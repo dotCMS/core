@@ -2,8 +2,6 @@ import { EnvironmentProviders, InjectionToken, makeEnvironmentProviders } from '
 
 import { ClientConfig, DotCmsClient, dotcmsClient } from '@dotcms/client';
 
-import { PageContextService } from './services/dotcms-context/page-context.service';
-
 export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIENT');
 
 /**
@@ -17,7 +15,6 @@ export const provideDotcmsClient = (config: ClientConfig): EnvironmentProviders 
         {
             provide: DOTCMS_CLIENT_TOKEN,
             useValue: dotcmsClient.init(config)
-        },
-        PageContextService
+        }
     ]);
 };

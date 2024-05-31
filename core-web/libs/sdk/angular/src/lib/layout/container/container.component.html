@@ -1,25 +1,17 @@
-@if (isInsideEditor()) { @if(contentlets().length){ @for (contentlet of contentlets(); track $index)
-{
-<div
-    [attr.data-dot-identifier]="contentlet.identifier"
-    [attr.data-dot-basetype]="contentlet.baseType"
-    [attr.data-dot-title]="contentlet['widgetTitle'] || contentlet.title"
-    [attr.data-dot-inode]="contentlet.inode"
-    [attr.data-dot-type]="contentlet.contentType"
-    [attr.data-dot-container]="dotContainerAsString()"
-    [attr.data-dot-on-number-of-pages]="contentlet['onNumberOfPages']"
-    data-testid="dot-contentlet"
-    data-dot-object="contentlet">
+@if ($isInsideEditor()) { @if($contentlets().length){ @for (contentlet of $contentlets(); track
+$index) {
+
+<dotcms-contentlet-wrapper [contentlet]="contentlet" [container]="$dotContainerAsString()">
     <ng-container
         *ngComponentOutlet="
-            (componentsMap[contentlet.contentType] | async) || NoComponentComponent;
+            (componentsMap[contentlet.contentType] | async) || NoComponent;
             inputs: { contentlet }
-        "></ng-container>
-</div>
-} } @else { This container is empty. } } @else { @for (contentlet of contentlets(); track $index) {
+        " />
+</dotcms-contentlet-wrapper>
+} } @else { This container is empty. } } @else { @for (contentlet of $contentlets(); track $index) {
 <ng-container
     *ngComponentOutlet="
-        (componentsMap[contentlet.contentType] | async) || NoComponentComponent;
+        (componentsMap[contentlet.contentType] | async) || NoComponent;
         inputs: { contentlet }
-    "></ng-container>
+    " />
 } }

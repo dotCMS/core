@@ -9,6 +9,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { filter } from 'rxjs/operators';
+
 import { initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
 
 import { DotCMSPageAsset, DynamicComponentEntity } from '../../models';
@@ -19,14 +21,14 @@ import { RowComponent } from '../row/row.component';
     selector: 'dotcms-layout',
     standalone: true,
     imports: [RowComponent],
-    template: `@for(row of entity.layout.body.rows; track $index) {
+    template: `@for(row of pageAsset.layout.body.rows; track $index) {
         <dotcms-row [row]="row" />
         }`,
     styleUrl: './dotcms-layout.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotcmsLayoutComponent implements OnInit {
-    @Input({ required: true }) entity!: DotCMSPageAsset;
+    @Input({ required: true }) pageAsset!: DotCMSPageAsset;
     @Input({ required: true }) components!: Record<string, DynamicComponentEntity>;
 
     private readonly route = inject(ActivatedRoute);
@@ -35,10 +37,12 @@ export class DotcmsLayoutComponent implements OnInit {
     private readonly destroyRef$ = inject(DestroyRef);
 
     ngOnInit() {
-        this.pageContextService.setComponentMap(this.components);
-
-        this.route.url.pipe(takeUntilDestroyed(this.destroyRef$)).subscribe((urlSegments) => {
-            if (isInsideEditor()) {
+        this.route.url
+            .pipe(
+                takeUntilDestroyed(this.destroyRef$),
+                filter(() => isInsideEditor())
+            )
+            .subscribe((urlSegments) => {
                 const pathname = '/' + urlSegments.join('/');
                 const config = {
                     pathname,
@@ -51,7 +55,11 @@ export class DotcmsLayoutComponent implements OnInit {
                 };
                 initEditor(config);
                 updateNavigation(pathname || '/');
-            }
-        });
+            });
+    }
+
+    ngOnChanges() {
+        //Each time the layout changes, we need to update the context
+        this.pageContextService.setContext(this.pageAsset, this.components);
     }
 }

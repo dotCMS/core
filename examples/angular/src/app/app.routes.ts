@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { DotCMSPagesComponent } from './pages/pages.component';
-import { DotCMSPageResolver } from '@dotcms/angular';
+// import { DotCMSPageResolver } from '@dotcms/angular';
+import { DotCMSPageResolver } from './resolver/dotcms-page.resolver';
 
 export const routes: Routes = [
   {

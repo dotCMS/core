@@ -1,4 +1,4 @@
-export const EntityMock = {
+export const PageResponseMock = {
     canCreateTemplate: true,
     containers: {
         '//demo.dotcms.com/application/containers/default/': {

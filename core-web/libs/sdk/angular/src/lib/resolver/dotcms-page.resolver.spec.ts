@@ -4,10 +4,10 @@ import { ActivatedRouteSnapshot, UrlSegment } from '@angular/router';
 
 import { DotCMSPageResolver } from './dotcms-page.resolver';
 
-import { DOTCMS_CLIENT_TOKEN } from '../dotcms-client-token';
+import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client-token';
 import { DotCMSPageAsset } from '../models';
 import { PageContextService } from '../services/dotcms-context/page-context.service';
-import { EntityMock, NavMock } from '../utils/testing.utils';
+import { PageResponseMock, NavMock } from '../utils/testing.utils';
 
 describe('DotcmsPageResolver', () => {
     const mockRouteWithoutQueryParams = {
@@ -22,7 +22,7 @@ describe('DotcmsPageResolver', () => {
                     provide: DOTCMS_CLIENT_TOKEN,
                     useValue: {
                         page: {
-                            get: () => Promise.resolve({ entity: EntityMock })
+                            get: () => Promise.resolve({ entity: PageResponseMock })
                         },
                         nav: {
                             get: () => Promise.resolve({ entity: NavMock })
@@ -72,7 +72,7 @@ describe('DotcmsPageResolver', () => {
         );
         const result = await data;
         expect(result).toEqual({
-            pageAsset: EntityMock as unknown as DotCMSPageAsset,
+            pageAsset: PageResponseMock as unknown as DotCMSPageAsset,
             nav: NavMock
         });
     });

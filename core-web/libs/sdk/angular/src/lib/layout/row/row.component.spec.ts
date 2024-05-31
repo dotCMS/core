@@ -4,7 +4,7 @@ import { MockComponent } from 'ng-mocks';
 import { RowComponent } from './row.component';
 
 import { DotPageAssetLayoutRow } from '../../models';
-import { EntityMock } from '../../utils/testing.utils';
+import { PageResponseMock } from '../../utils/testing.utils';
 import { ColumnComponent } from '../column/column.component';
 
 describe('RowComponent', () => {
@@ -17,7 +17,7 @@ describe('RowComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                row: EntityMock.layout.body.rows[1] as DotPageAssetLayoutRow
+                row: PageResponseMock.layout.body.rows[1] as DotPageAssetLayoutRow
             }
         });
     });

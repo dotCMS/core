@@ -8,7 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import * as dotcmsClient from '@dotcms/client';
 
-import { EntityMock } from './../../utils/testing.utils';
+import { PageResponseMock } from './../../utils/testing.utils';
 import { DotcmsLayoutComponent } from './dotcms-layout.component';
 
 import { DotCMSContentlet, DotCMSPageAsset } from '../../models';
@@ -42,9 +42,7 @@ describe('DotcmsLayoutComponent', () => {
             {
                 provide: PageContextService,
                 useValue: {
-                    setComponentMap: jest.fn(),
-                    pageContextValue: {},
-                    getComponentMap: () => ({ Banner: of(DotcmsSDKMockComponent) })
+                    setContext: jest.fn()
                 }
             }
         ]
@@ -53,7 +51,7 @@ describe('DotcmsLayoutComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                entity: EntityMock as unknown as DotCMSPageAsset,
+                pageAsset: PageResponseMock as unknown as DotCMSPageAsset,
                 components: {
                     Banner: Promise.resolve(DotcmsSDKMockComponent)
                 }
@@ -70,10 +68,10 @@ describe('DotcmsLayoutComponent', () => {
         expect(spectator.queryAll(RowComponent).length).toBe(3);
     });
 
-    it('should save component map', () => {
+    it('should save pageContext', () => {
         spectator.detectChanges();
-        jest.spyOn(spectator.inject(PageContextService), 'setComponentMap');
-        expect(spectator.inject(PageContextService).setComponentMap).toHaveBeenCalled();
+        jest.spyOn(spectator.inject(PageContextService), 'setContext');
+        expect(spectator.inject(PageContextService).setContext).toHaveBeenCalled();
     });
 
     describe('inside editor', () => {

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { PageContextService } from './page-context.service';
 
-import { DotCMSPageAsset, DynamicComponentEntity } from '../../models';
+import { DotCMSPageAsset, DotCMSPageComponent } from '../../models';
 
 describe('PageContextService', () => {
     let spectator: SpectatorService<PageContextService>;
@@ -23,25 +23,28 @@ describe('PageContextService', () => {
     });
 
     it('should set the context', () => {
-        const mockPageContext = {
-            page: {}
-        } as DotCMSPageAsset;
+        const pageAssetMock = {} as DotCMSPageAsset;
+        const componentsMock = {} as DotCMSPageComponent;
 
-        service.setContext(mockPageContext);
+        service.setContext(pageAssetMock, componentsMock);
 
         expect(service.pageContextValue).toEqual({
-            ...mockPageContext,
+            components: componentsMock,
+            pageAsset: pageAssetMock,
             isInsideEditor: false
         });
     });
 
-    it('should set/get components map', () => {
-        const mockComponentsMap: Record<string, DynamicComponentEntity> = {
-            '1': Promise.resolve(() => ({}))
-        } as unknown as Record<string, DynamicComponentEntity>;
+    it('should return the context', () => {
+        const pageAssetMock = {} as DotCMSPageAsset;
+        const componentsMock = {} as DotCMSPageComponent;
 
-        service.setComponentMap(mockComponentsMap);
+        service.setContext(pageAssetMock, componentsMock);
 
-        expect(service.getComponentMap()).toEqual(mockComponentsMap);
+        expect(service.pageContextValue).toEqual({
+            components: componentsMock,
+            pageAsset: pageAssetMock,
+            isInsideEditor: false
+        });
     });
 });
