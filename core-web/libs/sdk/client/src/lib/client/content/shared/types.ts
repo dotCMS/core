@@ -65,3 +65,8 @@ export interface GetCollectionRawResponse<T> {
         resultsSize: number;
     };
 }
+
+export interface GetCollectionError {
+    status: number;
+    [key: string]: unknown;
+}

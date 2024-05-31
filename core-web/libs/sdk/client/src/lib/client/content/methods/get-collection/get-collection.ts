@@ -6,7 +6,8 @@ import {
     GetCollectionResponse,
     BuildQuery,
     SortBy,
-    GetCollectionRawResponse
+    GetCollectionRawResponse,
+    GetCollectionError
 } from '../../shared/types';
 import { sanitizeQueryForContentType } from '../../shared/utils';
 
@@ -211,9 +212,14 @@ export class GetCollection<T = unknown> {
               ) => GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>> | void)
             | undefined
             | null,
-        onrejected?: ((error: unknown) => unknown | PromiseLike<unknown> | void) | undefined | null
-    ): Promise<GetCollectionResponse<T> | unknown> {
-        return this.fetchContentApi().then(async (response) => {
+        onrejected?:
+            | ((
+                  error: GetCollectionError
+              ) => GetCollectionError | PromiseLike<GetCollectionError> | void)
+            | undefined
+            | null
+    ): Promise<GetCollectionResponse<T> | GetCollectionError> {
+        return this.fetch().then(async (response) => {
             const data = await response.json();
             if (response.ok) {
                 const formattedResponse = this.formatResponse<T>(data);
@@ -256,7 +262,7 @@ export class GetCollection<T = unknown> {
     }
 
     // Calls the content API to fetch the content
-    private fetchContentApi(): Promise<Response> {
+    private fetch(): Promise<Response> {
         const sanitizedQuery = sanitizeQueryForContentType(
             this.currentQuery.build(),
             this.#contentType
