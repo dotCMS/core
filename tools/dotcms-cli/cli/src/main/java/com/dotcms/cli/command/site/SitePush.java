@@ -87,7 +87,7 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>, 
         if (workspace.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format("No valid workspace found at path: [%s]",
-                            this.getPushMixin().path.toPath()));
+                            this.getPushMixin().pushPath.toPath()));
         }
 
         File inputFile = this.getPushMixin().path().toFile();

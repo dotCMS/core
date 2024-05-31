@@ -101,9 +101,9 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
         if (workspace.isEmpty()) {
 
             var message = "No valid workspace found";
-            if (this.getPushMixin().path != null) {
+            if (this.getPushMixin().pushPath != null) {
                 message = String.format("No valid workspace found at path: [%s]",
-                        this.getPushMixin().path.toPath());
+                        this.getPushMixin().pushPath.toPath());
             }
 
             throw new IllegalArgumentException(message);

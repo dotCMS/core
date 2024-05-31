@@ -19,7 +19,7 @@ push - *dotCMS global push*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*--dotcms-url*=_<remoteURL>_]
+*push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-w*[=_watch_]] [*--dotcms-url*=_<remoteURL>_]
      [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
@@ -55,6 +55,9 @@ push - *dotCMS global push*
 
 *-tk, --token*=_<token>_::
   A dotCMS token to use for authentication. 
+
+*-w*, *--watch*[=_watch_]::
+  When this option is enabled the tool watches for file changes within the push path If a change is detected the push operation gets triggered. The default watch interval is 2 seconds, but this can set passing an int value to this option.
 
 // end::picocli-generated-man-section-options[]
 

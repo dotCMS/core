@@ -19,9 +19,9 @@ language-push - *Push languages*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*language push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-rl*] [*--byIso*=_<languageIso>_]
-              [*--dotcms-url*=_<remoteURL>_] [*--retry-attempts*=_<retryAttempts>_]
-              [*-tk*=_<token>_] [_path_]
+*language push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-rl*] [*-w*[=_watch_]]
+              [*--byIso*=_<languageIso>_] [*--dotcms-url*=_<remoteURL>_]
+              [*--retry-attempts*=_<retryAttempts>_] [*-tk*=_<token>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -62,6 +62,9 @@ This command enables the pushing of languages to the server. It accommodates the
 
 *-tk, --token*=_<token>_::
   A dotCMS token to use for authentication. 
+
+*-w*, *--watch*[=_watch_]::
+  When this option is enabled the tool watches for file changes within the push path If a change is detected the push operation gets triggered. The default watch interval is 2 seconds, but this can set passing an int value to this option.
 
 // end::picocli-generated-man-section-options[]
 

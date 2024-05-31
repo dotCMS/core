@@ -19,7 +19,7 @@ content-type-push - *Push content types*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*content-type push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-rct*]
+*content-type push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-rct*] [*-w*[=_watch_]]
                   [*--dotcms-url*=_<remoteURL>_] [*--retry-attempts*=_<retryAttempts>_]
                   [*-tk*=_<token>_] [_path_]
 
@@ -59,6 +59,9 @@ This command enables the pushing of content types to the server. It accommodates
 
 *-tk, --token*=_<token>_::
   A dotCMS token to use for authentication. 
+
+*-w*, *--watch*[=_watch_]::
+  When this option is enabled the tool watches for file changes within the push path If a change is detected the push operation gets triggered. The default watch interval is 2 seconds, but this can set passing an int value to this option.
 
 // end::picocli-generated-man-section-options[]
 

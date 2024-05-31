@@ -14,7 +14,7 @@ public class PushMixin {
 
     @CommandLine.Parameters(index = "0", arity = "0..1", paramLabel = "path",
             description = "local directory or file to push")
-    public File path;
+    public File pushPath;
 
     @CommandLine.Option(names = {"--dry-run"}, defaultValue = "false",
             description =
@@ -35,6 +35,16 @@ public class PushMixin {
                             + "and the command will not retry on error.")
     public int retryAttempts;
 
+    @CommandLine.Option(names = {"-w","--watch"},
+            arity = "0..1",
+            paramLabel = "watch",
+            fallbackValue = "2",
+            description =
+                    "When this option is enabled the tool watches for file changes within the push path"
+                            + " If a change is detected the push operation gets triggered. "
+                            + "The default watch interval is 2 seconds, but this can set passing an int value to this option.")
+    public Integer interval;
+
     @CommandLine.Option(names = {"--noValidateUnmatchedArguments"},
             description = "Allows to skip the the validation of the unmatched arguments. "
                     + "Useful for internal use when a push sub-command is called from the global push.",
@@ -48,10 +58,14 @@ public class PushMixin {
      * @return The path of the file.
      */
     public Path path() {
-        if (null == path) {
+        if (null == pushPath) {
             return Path.of("").toAbsolutePath();
         }
-        return path.toPath();
+        return pushPath.toPath();
+    }
+
+    public boolean isWatchOn(){
+        return null != interval;
     }
 
 }
