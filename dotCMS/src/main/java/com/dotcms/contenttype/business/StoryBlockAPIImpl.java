@@ -26,10 +26,12 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Implementation class for the {@link StoryBlockAPI}.
@@ -317,21 +319,37 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * @throws DotSecurityException The User accessing the API does not have the required permissions to do so.
      */
     private void refreshBlockEditorDataMap(Map<String, Object> dataMap, final String liveInode) {
-        //final Optional<Contentlet> contentlet = APILocator.getContentletAPI().findInDb(liveInode);
         try {
-            /*if (contentlet.isPresent()) {
-                dataMap.putAll(refreshContentlet(contentlet.get()));
-            }*/
             final Contentlet contentlet = APILocator.getContentletAPI().find(liveInode, APILocator.systemUser(), false);
             if (null != contentlet) {
-                dataMap.putAll(refreshContentlet(contentlet));
+                final Map<String, Object> updatedDataMap = refreshContentlet(contentlet);
+                this.excludeNonExistingProperties(dataMap, updatedDataMap);
+                dataMap.putAll(updatedDataMap);
             }
-        } catch (JsonProcessingException e) {
-            Logger.error(this, "Failed to load attrs", e);
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
-        } catch (DotSecurityException e) {
-            throw new RuntimeException(e);
+        } catch (final JsonProcessingException e) {
+            Logger.error(this, "An error occurred when transforming JSON data in contentlet with Inode '%s': %s", e);
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.error(this, "An error occurred when reading the contentlet with Inode '%s': %s", e);
+        }
+    }
+
+    /**
+     * Takes the Contentlet properties that exist in the Block Editor field that <b>no longer exist
+     * in the latest version of the Contentlet.</b>
+     * <p>For instance, if a Checkbox Field is unchecked, its value will still be present in the
+     * Block Editor's JSON data, but it's NOT present in the latest {@link Contentlet} object. This
+     * makes sure both data maps have the same properties.</p>
+     *
+     * @param dataMap        The Map with the Contentlet's properties from the Block Editor field.
+     * @param updatedDataMap The Map with the Contentlet's properties from the latest version in the
+     *                       database/cache.
+     */
+    private void excludeNonExistingProperties(final Map<String, Object> dataMap, final Map<String, Object> updatedDataMap) {
+        if (dataMap.size() > updatedDataMap.size()) {
+            final Set<String> additionalKeysInDataMap = new HashSet<>(dataMap.keySet());
+            additionalKeysInDataMap.removeAll(updatedDataMap.keySet());
+            dataMap.entrySet().removeIf(entry ->
+                    additionalKeysInDataMap.contains(entry.getKey()));
         }
     }
 
