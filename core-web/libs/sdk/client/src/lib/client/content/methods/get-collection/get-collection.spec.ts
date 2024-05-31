@@ -439,23 +439,25 @@ describe('GetCollection', () => {
                 contentType
             ).limit(10);
 
+            const error = {
+                message: 'Internal server error',
+                buffer: {
+                    stacktrace: 'Some really long server stacktrace'
+                }
+            };
+
             // Mock the fetch to return a rejected promise
             (fetch as jest.Mock).mockReturnValue(
                 Promise.resolve({
                     status: 500,
-                    json: () =>
-                        Promise.resolve({
-                            message: 'Internal server error',
-                            buffer: 'Some really buffer with a stacktrace'
-                        })
+                    json: () => Promise.resolve(error)
                 })
             );
 
             collectionBuilder.then((response) => {
                 expect(response).toEqual({
-                    message: 'Internal server error',
                     status: 500,
-                    buffer: 'Some really buffer with a stacktrace'
+                    ...error
                 });
             });
         });
