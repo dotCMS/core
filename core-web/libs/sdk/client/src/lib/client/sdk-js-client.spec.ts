@@ -1,5 +1,6 @@
 /// <reference types="jest" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Content } from './content/content-api';
 import { DotCmsClient, dotcmsClient } from './sdk-js-client';
 global.fetch = jest.fn();
 
@@ -141,6 +142,12 @@ describe('DotCmsClient', () => {
                         headers: { Authorization: 'Bearer ABC' }
                     }
                 );
+            });
+        });
+
+        describe('content', () => {
+            it('should have an instance of the content API', () => {
+                expect(client.content instanceof Content).toBeTruthy();
             });
         });
 

@@ -10,7 +10,7 @@ import {
     buildOperand,
     buildRawEquals,
     sanitizeQuery
-} from '..';
+} from '../utils';
 
 /**
  * 'Equal' Is a Typescript class that provides the ability to use terms in the lucene query string.
