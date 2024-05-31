@@ -1,6 +1,8 @@
 import { dotcmsClient } from "@dotcms/client";
 import { MyPage } from "@/components/my-page";
 
+import { handleVanityUrlRedirect } from "../utils";
+
 const client = dotcmsClient.init({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
     authToken: process.env.DOTCMS_AUTH_TOKEN,
@@ -12,11 +14,11 @@ const client = dotcmsClient.init({
 });
 
 export async function generateMetadata({ params, searchParams }) {
-
     const requestData = {
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
-        'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || '',
+        "com.dotmarketing.persona.id":
+            searchParams['com.dotmarketing.persona.id'] || '',
         mode: searchParams.mode,
         variantName: searchParams['variantName']
     };
@@ -32,18 +34,23 @@ export default async function Home({ searchParams, params }) {
     const requestData = {
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
-        'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || '',
+        'com.dotmarketing.persona.id':
+            searchParams['com.dotmarketing.persona.id'] || '',
         mode: searchParams.mode,
         variantName: searchParams['variantName']
     };
 
     const data = await client.page.get(requestData);
-
     const nav = await client.nav.get({
         path: '/',
         depth: 2,
-        languageId: searchParams.language_id
+        languageId: searchParams.language_id,
     });
+    const { vanityUrl } = data.entity;
+
+    if (vanityUrl) {
+        handleVanityUrlRedirect(vanityUrl);
+    }
 
     return <MyPage nav={nav.entity.children} data={data.entity}></MyPage>;
 }

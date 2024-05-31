@@ -1,27 +1,26 @@
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { TreeNode } from 'primeng/api';
+import { Tree, TreeModule } from 'primeng/tree';
 
-import { TreeModule } from 'primeng/tree';
+import type { Meta, StoryObj } from '@storybook/angular';
 
-export default {
+const meta: Meta<Tree> = {
     title: 'PrimeNG/Data/Tree',
-    decorators: [
-        moduleMetadata({
-            imports: [TreeModule]
-        })
-    ],
+    component: Tree,
     parameters: {
         layout: 'centered',
         docs: {
             description: {
                 component:
-                    'Paginator is a generic component to display content in paged format.: https://primefaces.org/primeng/showcase/#/paginator'
+                    'Tree is used to display hierarchical data: https://www.primefaces.org/primeng-v15-lts/tree'
             }
         }
     }
-} as Meta;
+};
+export default meta;
 
-const files = [
+type Story = StoryObj<Tree>;
+
+export const files: TreeNode[] = [
     {
         label: 'Documents',
         data: 'Documents Folder',
@@ -102,21 +101,14 @@ const files = [
     }
 ];
 
-const BasicTemplate = `<p-tree [value]="files"></p-tree>`;
-
-export const Basic: Story = () => {
-    return {
-        template: BasicTemplate,
+export const Default: Story = {
+    render: () => ({
+        moduleMetadata: {
+            imports: [TreeModule]
+        },
         props: {
             files
-        }
-    };
-};
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: BasicTemplate
-        }
-    }
+        },
+        template: `<p-tree [value]="files"></p-tree>`
+    })
 };

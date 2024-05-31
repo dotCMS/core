@@ -70,9 +70,13 @@ dev-run-map-dev-paths:
 dev-run-debug-suspend:
     ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend
 
-# Starts the dotCMS Docker container in the background
+# Starts the dotCMS Docker container in the background, running on random port
 dev-start:
     ./mvnw -pl :dotcms-core -Pdocker-start
+
+# Starts the dotCMS Docker container in the background
+dev-start-on-port port="8082":
+    ./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port={{ port }}
 
 # Stops the development Docker container
 dev-stop:
