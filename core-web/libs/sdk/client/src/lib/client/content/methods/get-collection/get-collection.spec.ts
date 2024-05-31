@@ -313,10 +313,10 @@ describe('GetCollection', () => {
                 Object.getPrototypeOf(collectionBuilder)
             ) as Array<keyof GetCollection>;
 
-            // Remove the constructor, fetch and the methods that are not part of the query builder.
+            // Remove the constructor and the methods that are not part of the query builder.
             // Fetch method is removed because it is the one that makes the request and we already test that
-            // For example: ["constructor", "fetch", "thisMethodIsPrivate", "thisMethodIsNotAQueryMethod", "formatQuery"]
-            const methodsToIgnore = ['constructor', 'fetch', 'formatResponse', 'fetchContentApi'];
+            // For example: ["constructor", "thisMethodIsPrivate", "thisMethodIsNotAQueryMethod", "formatQuery"]
+            const methodsToIgnore = ['constructor', 'formatResponse', 'fetchContentApi'];
 
             // Filter to take only the methods that are part of the query builder
             methods = methods.filter((method) => {
