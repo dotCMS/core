@@ -2,7 +2,7 @@ import { Observable, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormControl, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { SelectItem } from 'primeng/api';
@@ -117,14 +117,17 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     }
 
     private isEmail(potentialEmail: string): boolean {
-        return !!new FormControl(potentialEmail, Validators.email).errors?.email;
+        const EMAIL_REGEXP =
+            /^(?=.{1,254}$)(?=.{1,64}@)[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
+        return EMAIL_REGEXP.test(potentialEmail);
     }
 
     private setInitialMessage(loginInfo: DotLoginInformation): void {
         this.route.queryParams.pipe(take(1)).subscribe((params: Params) => {
             if (params['changedPassword']) {
                 this.setMessage(loginInfo.i18nMessagesMap['reset-password-success']);
-            } else if (params['resetEmailSent'] && !this.isEmail(params['resetEmail'])) {
+            } else if (params['resetEmailSent'] && this.isEmail(params['resetEmail'])) {
                 this.setMessage(
                     loginInfo.i18nMessagesMap['a-new-password-has-been-sent-to-x'].replace(
                         '{0}',
