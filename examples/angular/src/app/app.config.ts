@@ -5,7 +5,7 @@ import { ClientConfig } from '@dotcms/client';
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
-import { provideDotcmsClient } from '@dotcms/angular';
+import { provideDotcmsClient } from './client-token/dotcms-client';
 
 const DOTCMS_CLIENT_CONFIG: ClientConfig = {
     dotcmsUrl: environment.dotcmsUrl,

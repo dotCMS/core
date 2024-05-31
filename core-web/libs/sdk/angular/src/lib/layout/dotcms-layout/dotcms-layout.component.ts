@@ -17,6 +17,13 @@ import { DotCMSPageAsset, DynamicComponentEntity } from '../../models';
 import { PageContextService } from '../../services/dotcms-context/page-context.service';
 import { RowComponent } from '../row/row.component';
 
+/**
+ * `DotcmsLayoutComponent` is a class that represents the layout for a DotCMS page.
+ *  It includes a `pageAsset` property that represents the DotCMS page asset and a `components` property that represents the dynamic components for the page.
+ *
+ * @export
+ * @class DotcmsLayoutComponent
+ */
 @Component({
     selector: 'dotcms-layout',
     standalone: true,
