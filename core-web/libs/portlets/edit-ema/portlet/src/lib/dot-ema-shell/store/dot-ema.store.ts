@@ -1,5 +1,5 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { EMPTY, Observable, forkJoin } from 'rxjs';
+import { EMPTY, Observable, forkJoin, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -19,6 +19,7 @@ import {
     DEFAULT_VARIANT_ID,
     DotContainerMap,
     DotDevice,
+    DotExperiment,
     DotExperimentStatus,
     DotLayout,
     DotPageContainerStructure
@@ -385,7 +386,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             }
                         }),
                         switchMap(({ pageData, licenseData, currentUser }) =>
-                            this.dotExperimentsService.getById(params.experimentId ?? '').pipe(
+                            this.getExperiment(params.experimentId).pipe(
                                 tap({
                                     next: (experiment) => {
                                         // Can be blocked by an experiment if there is a running experiment or a scheduled one
@@ -433,12 +434,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                             },
                                             shouldReload: true
                                         });
-                                    },
-                                    error: ({ status }: HttpErrorResponse) => {
-                                        this.createEmptyState(
-                                            { canEdit: false, canRead: false },
-                                            status
-                                        );
                                     }
                                 })
                             )
@@ -929,6 +924,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             },
             shouldReload: false
         });
+    }
+
+    /**
+     * Get the experiment data
+     *
+     * @private
+     * @param {string} [experimentId='']
+     * @return {*}
+     * @memberof EditEmaStore
+     */
+    private getExperiment(experimentId = ''): Observable<DotExperiment | null> {
+        return this.dotExperimentsService.getById(experimentId).pipe(
+            // If there is an error, we return null
+            // This is to avoid blocking the page if there is an error with the experiment
+            catchError(() => of(null))
+        );
     }
 
     /**
