@@ -1,0 +1,8 @@
+@use "variables" as *;
+
+.locale-add__buttons {
+    display: flex;
+    gap: $spacing-3;
+    margin-top: $spacing-7;
+    justify-content: flex-end;
+}

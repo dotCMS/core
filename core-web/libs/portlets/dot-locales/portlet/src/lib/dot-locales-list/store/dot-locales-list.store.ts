@@ -7,7 +7,7 @@ import { inject, Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take, tap, withLatestFrom } from 'rxjs/operators';
 
 import {
     DotHttpErrorManagerService,
@@ -18,6 +18,7 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
     DotActionMenuItem,
+    DotAddLanguage,
     DotEnvironment,
     DotISOItem,
     DotLanguage,
@@ -26,17 +27,16 @@ import {
 
 import { DotLocaleConfirmationDialogComponent } from '../../share/ui/DotLocaleConfirmationDialog/DotLocaleConfirmationDialog.component';
 import { getLocaleISOCode } from '../../share/utils';
+import { DotLocaleCreateEditComponent } from '../components/dot-locale-create-edit/DotLocaleCreateEdit.component';
 
 /**
  * Interface for language row data
  */
-export interface DotLocaleRow {
+export interface DotLocaleRow extends DotAddLanguage {
     id: number;
-    locale: string;
-    language: string;
-    country: string;
-    variables: string;
     defaultLanguage: boolean | undefined;
+    locale: string;
+    variables: string;
     actions: DotActionMenuItem[];
 }
 
@@ -126,20 +126,65 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
         );
     });
 
-    readonly makeDefaultLocale = this.effect<number>((languageId$) => {
-        return languageId$.pipe(
-            tap(() => this.setStatus(ComponentStatus.LOADING)),
-            switchMap((languageId) => this.languageService.makeDefault(languageId)),
-            switchMap(() => this.languageService.get()),
-            tap((languages) => {
-                this.setStatus(ComponentStatus.IDLE);
-                this.setLocales(languages);
-                this.messageService.add({
-                    severity: 'success',
-                    summary: this.dotMessageService.get('locale.notification.success.title'),
-                    detail: this.dotMessageService.get('locale.notification.success.message')
+    readonly openAddEditDialog = this.effect<number | null>((_languageId$) =>
+        _languageId$.pipe(
+            withLatestFrom(this.state$),
+            map(([languageId, { languages, countries, locales }]) => {
+                const localeToEdit = locales.find((l) => l.id === languageId);
+
+                const dialogRef: DynamicDialogRef = this.dialogService.open(
+                    DotLocaleCreateEditComponent,
+                    {
+                        header: this.dotMessageService.get(
+                            localeToEdit ? 'locales.edit.locale' : 'locales.add.locale'
+                        ),
+                        width: '31rem',
+                        data: {
+                            languages,
+                            countries,
+                            locale: localeToEdit
+                        }
+                    }
+                );
+
+                dialogRef.onClose.pipe(take(1)).subscribe((locale: DotLanguage) => {
+                    if (locale.id) {
+                        const { id, language, languageCode } = locale;
+                        this.updateLocale({ id, language, languageCode });
+                    } else {
+                        this.addLocale(locale);
+                    }
                 });
-            }),
+            })
+        )
+    );
+
+    readonly addLocale = this.effect<DotAddLanguage>((locale$) => {
+        return locale$.pipe(
+            tap(() => this.setStatus(ComponentStatus.LOADING)),
+            switchMap((locale) => this.languageService.add(locale)),
+            switchMap(() => this.languageService.get()),
+            tap((languages) => this.updateListAndNotify(languages)),
+            catchError((error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error))
+        );
+    });
+
+    readonly updateLocale = this.effect<DotLanguage>((locale$) => {
+        return locale$.pipe(
+            tap(() => this.setStatus(ComponentStatus.LOADING)),
+            switchMap((locale) => this.languageService.update(locale)),
+            switchMap(() => this.languageService.get()),
+            tap((languages) => this.updateListAndNotify(languages)),
+            catchError((error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error))
+        );
+    });
+
+    readonly makeDefaultLocale = this.effect<number>((localeId$) => {
+        return localeId$.pipe(
+            tap(() => this.setStatus(ComponentStatus.LOADING)),
+            switchMap((localeId) => this.languageService.makeDefault(localeId)),
+            switchMap(() => this.languageService.get()),
+            tap((languages) => this.updateListAndNotify(languages)),
             catchError((error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error))
         );
     });
@@ -189,15 +234,18 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             id: locale.id,
             locale: `${locale.language} (${locale.isoCode})`,
             language: `${locale.language} - ${locale.languageCode}`,
+            languageCode: locale.languageCode,
             country: `${locale.country} - ${locale.countryCode}`,
+            countryCode: locale.countryCode,
             variables: `${locale.variables?.count}/${locale.variables?.total}`,
             defaultLanguage: locale.defaultLanguage,
+            isoCode: locale.isoCode,
             actions: [
                 {
                     menuItem: {
                         label: this.dotMessageService.get('locales.edit'),
                         command: () => {
-                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            this.openAddEditDialog(locale.id);
                         }
                     }
                 },
@@ -284,5 +332,15 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                 filter((isDelete) => isDelete)
             )
             .subscribe(action);
+    }
+
+    private updateListAndNotify(locales: DotLanguage[]) {
+        this.setLocales(locales);
+        this.messageService.add({
+            severity: 'success',
+            summary: this.dotMessageService.get('locale.notification.success.title'),
+            detail: this.dotMessageService.get('locale.notification.success.message')
+        });
+        this.setStatus(ComponentStatus.IDLE);
     }
 }
