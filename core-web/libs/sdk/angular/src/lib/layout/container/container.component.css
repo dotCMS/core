@@ -1,0 +1,9 @@
+:host.empty-container {
+    width: 100%;
+    background-color: #ecf0fd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #030e32;
+    height: 10rem;
+}

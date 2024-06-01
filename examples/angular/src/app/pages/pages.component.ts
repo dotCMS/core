@@ -2,20 +2,25 @@ import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotcmsLayoutComponent } from '../lib/layout/dotcms-layout/dotcms-layout.component';
-
 import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { NavigationComponent } from './components/navigation/navigation.component';
 
 import { DYNAMIC_COMPONENTS } from '../utils';
 
+import { DotcmsLayoutComponent } from '@dotcms/angular';
+
 @Component({
   selector: 'dotcms-pages',
   standalone: true,
-  imports: [DotcmsLayoutComponent, HeaderComponent, NavigationComponent, FooterComponent],
+  imports: [
+    DotcmsLayoutComponent,
+    HeaderComponent,
+    NavigationComponent,
+    FooterComponent,
+  ],
   templateUrl: './pages.component.html',
-  styleUrl: './pages.component.css'
+  styleUrl: './pages.component.css',
 })
 export class DotCMSPagesComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -26,9 +31,10 @@ export class DotCMSPagesComponent implements OnInit {
 
   ngOnInit() {
     // Get the context data from the route
-    this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
-      this.context.set(data['context']);
-    });
-
+    this.route.data
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((data) => {
+        this.context.set(data['context']);
+      });
   }
 }
