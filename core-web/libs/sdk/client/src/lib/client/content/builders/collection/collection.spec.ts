@@ -244,9 +244,7 @@ describe('CollectionBuilder', () => {
                 // Force the error
                 await collectionBuilder.query((qb) => qb.field('name') as unknown as Equals);
             } catch (error) {
-                expect(error).toEqual(
-                    new Error('The query builder callback should return a DotQuery instance')
-                );
+                expect(error).toEqual(new Error('Provided query is not valid.'));
             }
 
             expect(fetch).not.toHaveBeenCalled();
@@ -263,6 +261,34 @@ describe('CollectionBuilder', () => {
                 expect(error).toEqual(
                     new Error('Parameter for query method should be a function or a string')
                 );
+            }
+
+            expect(fetch).not.toHaveBeenCalled();
+        });
+
+        it('should throw an error if the depth is out of range (positive value)', async () => {
+            const contentType = 'jedi';
+            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+
+            try {
+                // Force the error
+                await collectionBuilder.depth(5);
+            } catch (error) {
+                expect(error).toEqual(new Error('Depth must be between 0 and 3'));
+            }
+
+            expect(fetch).not.toHaveBeenCalled();
+        });
+
+        it('should throw an error if the depth is out of range (negative value)', async () => {
+            const contentType = 'jedi';
+            const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
+
+            try {
+                // Force the error
+                await collectionBuilder.depth(-5);
+            } catch (error) {
+                expect(error).toEqual(new Error('Depth must be between 0 and 3'));
             }
 
             expect(fetch).not.toHaveBeenCalled();

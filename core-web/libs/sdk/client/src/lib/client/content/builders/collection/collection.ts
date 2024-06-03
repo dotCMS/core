@@ -232,13 +232,17 @@ export class CollectionBuilder<T = unknown> {
     /**
      * Takes a number that represents the depth of the relationships of a content
      *
-     * Note: The depth is set to 0 by default
+     * Note: The depth is set to 0 by default and the max supported value is 3
      *
      * @param {number} depth The depth of the relationships of a content
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
      * @memberof CollectionBuilder
      */
     depth(depth: number): this {
+        if (depth < 0 || depth > 3) {
+            throw new Error('Depth must be between 0 and 3');
+        }
+
         this.#depth = depth;
 
         return this;
