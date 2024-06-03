@@ -19,12 +19,14 @@ import com.liferay.portal.model.User;
  * @since Feb 22nd, 2019
  */
 public class PageContextBuilder {
+
     private User user;
     private String pageUri;
     private PageMode pageMode;
     private HTMLPageAsset page;
     private boolean graphQL;
     private boolean parseJSON;
+    private VanityURLView vanityUrl;
 
     private PageContextBuilder() {}
 
@@ -67,8 +69,20 @@ public class PageContextBuilder {
         return this;
     }
 
+    /**
+     * If the page URL matches a Vanity URL, this method sets the associated Vanity URL object.
+     *
+     * @param vanityUrl The {@link VanityURLView} object representing the Vanity URL.
+     *
+     * @return The {@link PageContextBuilder} object.
+     */
+    public PageContextBuilder setVanityUrl(final VanityURLView vanityUrl) {
+        this.vanityUrl = vanityUrl;
+        return this;
+    }
+
     public PageContext build() {
-        return new PageContext(user, pageUri, pageMode, page, graphQL, parseJSON);
+        return new PageContext(user, pageUri, pageMode, page, graphQL, parseJSON, vanityUrl);
     }
 
 }

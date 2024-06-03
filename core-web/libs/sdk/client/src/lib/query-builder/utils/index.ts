@@ -1,7 +1,7 @@
-import { Equals } from './lucene-syntax/Equals';
-import { Field } from './lucene-syntax/Field';
-import { NotOperand } from './lucene-syntax/NotOperand';
-import { Operand } from './lucene-syntax/Operand';
+import { Equals } from '../lucene-syntax/Equals';
+import { Field } from '../lucene-syntax/Field';
+import { NotOperand } from '../lucene-syntax/NotOperand';
+import { Operand } from '../lucene-syntax/Operand';
 
 /**
  * Enum for common Operands

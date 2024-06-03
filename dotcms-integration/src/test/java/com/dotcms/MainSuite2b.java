@@ -303,7 +303,9 @@ import org.junit.runners.Suite.SuiteClasses;
         PruneTimeMachineBackupJobTest.class,
         CMSUrlUtilIntegrationTest.class,
         ContentFileAssetIntegrityCheckerTest.class,
-        ITConfigTest.class
+        ITConfigTest.class,
+        Task240530AddDotAIPortletToLayoutTest.class
+
 })
 
 public class MainSuite2b {

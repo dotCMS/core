@@ -1,5 +1,5 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { EMPTY, Observable, forkJoin } from 'rxjs';
+import { EMPTY, Observable, forkJoin, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -19,6 +19,7 @@ import {
     DEFAULT_VARIANT_ID,
     DotContainerMap,
     DotDevice,
+    DotExperiment,
     DotExperimentStatus,
     DotLayout,
     DotPageContainerStructure
@@ -156,6 +157,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         (state) => '/' + sanitizeURL(state.editor.page.pageURI)
     );
     private readonly error$ = this.select((state) => state.error);
+    private readonly pureURL$ = this.select(
+        this.clientHost$,
+        this.currentUrl$,
+        (clientHost, pageURI) => `${clientHost || window.location.origin}${pageURI}`
+    );
+
     /**
      * Before this was layoutProperties, but are separate to "temp" selector.
      * And then is merged with templateIdentifier in layoutProperties$.
@@ -299,7 +306,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly editorToolbarData$ = this.select(
         this.editorState$,
         this.previewURL$,
-        (editorState, previewURL) => ({
+        this.pureURL$,
+        (editorState, previewURL, pureURL) => ({
             ...editorState,
             showWorkflowActions:
                 editorState.editorData.mode === EDITOR_MODE.EDIT ||
@@ -308,7 +316,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 !editorState.editorData.canEditPage ||
                 (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
                     editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING),
-            previewURL
+            previewURL,
+            pureURL
         })
     );
 
@@ -377,7 +386,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             }
                         }),
                         switchMap(({ pageData, licenseData, currentUser }) =>
-                            this.dotExperimentsService.getById(params.experimentId ?? '').pipe(
+                            this.getExperiment(params.experimentId).pipe(
                                 tap({
                                     next: (experiment) => {
                                         // Can be blocked by an experiment if there is a running experiment or a scheduled one
@@ -425,12 +434,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                             },
                                             shouldReload: true
                                         });
-                                    },
-                                    error: ({ status }: HttpErrorResponse) => {
-                                        this.createEmptyState(
-                                            { canEdit: false, canRead: false },
-                                            status
-                                        );
                                     }
                                 })
                             )
@@ -921,6 +924,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             },
             shouldReload: false
         });
+    }
+
+    /**
+     * Get the experiment data
+     *
+     * @private
+     * @param {string} [experimentId='']
+     * @return {*}
+     * @memberof EditEmaStore
+     */
+    private getExperiment(experimentId = ''): Observable<DotExperiment | null> {
+        return this.dotExperimentsService.getById(experimentId).pipe(
+            // If there is an error, we return null
+            // This is to avoid blocking the page if there is an error with the experiment
+            catchError(() => of(null))
+        );
     }
 
     /**

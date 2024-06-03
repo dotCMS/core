@@ -5,9 +5,7 @@ import { ClientConfig } from '@dotcms/client';
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
-
-import { provideDotCMSClient } from './lib/dotcms-client-token';
-import { PageContextService } from './lib/services/dotcms-context/page-context.service';
+import { provideDotcmsClient } from './client-token/dotcms-client';
 
 const DOTCMS_CLIENT_CONFIG: ClientConfig = {
     dotcmsUrl: environment.dotcmsUrl,
@@ -17,8 +15,7 @@ const DOTCMS_CLIENT_CONFIG: ClientConfig = {
 
 export const appConfig: ApplicationConfig = {
     providers: [
+        provideDotcmsClient(DOTCMS_CLIENT_CONFIG),
         provideRouter(routes),
-        provideDotCMSClient(DOTCMS_CLIENT_CONFIG),
-        PageContextService
     ],
 };
