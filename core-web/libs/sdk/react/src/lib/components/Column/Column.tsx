@@ -5,14 +5,14 @@ import styles from './column.module.css';
 import { PageContext } from '../../contexts/PageContext';
 import { combineClasses, getPositionStyleClasses } from '../../utils/utils';
 import { Container } from '../Container/Container';
-import { PageProviderContext } from '../PageProvider/PageProvider';
+import { DotCMSPageContext } from '../PageProvider/PageProvider';
 
 export interface ColumnProps {
-    readonly column: PageProviderContext['layout']['body']['rows'][0]['columns'][0];
+    readonly column: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0];
 }
 
 export function Column({ column }: ColumnProps) {
-    const { isInsideEditor } = useContext(PageContext) as PageProviderContext;
+    const { isInsideEditor } = useContext(PageContext) as DotCMSPageContext;
 
     const { startClass, endClass } = getPositionStyleClasses(
         column.leftOffset,

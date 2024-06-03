@@ -33,7 +33,7 @@ const componentsMap = {
 };
 
 
-export function MyPage({ data, nav }) {
+export function MyPage({ pageAsset, nav }) {
   const { refresh, replace } = useRouter();
   const pathname = usePathname();
 
@@ -52,18 +52,18 @@ export function MyPage({ data, nav }) {
 
   return (
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
-      {data.layout.header && (
+      {pageAsset.layout.header && (
         <Header>
           <Navigation items={nav} />
         </Header>
       )}
       <main className="container flex flex-col gap-8 m-auto">
         <DotLayoutComponent
-          entity={{ components: componentsMap, ...data }}
+          pageContext={{ components: componentsMap, pageAsset: pageAsset }}
           config={{ onReload: refresh, pathname }}
         />
       </main>
-      {data.layout.footer && <Footer />}
+      {pageAsset.layout.footer && <Footer />}
     </div>
   );
 

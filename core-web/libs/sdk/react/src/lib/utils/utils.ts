@@ -1,4 +1,5 @@
-import { ContainerData, PageProviderContext } from '../components/PageProvider/PageProvider';
+import { DotCMSPageContext } from '../components/PageProvider/PageProvider';
+import { DotCMSPageAssetContainer } from '../models';
 
 const endClassMap: Record<number, string> = {
     1: 'col-end-1',
@@ -32,8 +33,8 @@ const startClassMap: Record<number, string> = {
 };
 
 export const getContainersData = (
-    containers: ContainerData,
-    containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0]
+    containers: DotCMSPageAssetContainer,
+    containerRef: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0]['containers'][0]
 ) => {
     const { identifier, uuid } = containerRef;
 

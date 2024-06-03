@@ -15,7 +15,7 @@ export interface DotPageAssetLayoutRow {
     value?: string;
     id?: string;
     columns: DotPageAssetLayoutColumn[];
-    styleClass?: string;
+    styleClass: string;
 }
 
 export interface DotPageAssetLayoutColumn {
@@ -25,7 +25,7 @@ export interface DotPageAssetLayoutColumn {
     width: number;
     leftOffset: number;
     left: number;
-    styleClass?: string;
+    styleClass: string;
 }
 
 export interface DotCMSPageAssetContainer {

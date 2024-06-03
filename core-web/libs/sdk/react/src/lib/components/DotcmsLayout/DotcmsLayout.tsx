@@ -1,7 +1,7 @@
 import { DotCMSPageEditorConfig } from '@dotcms/client';
 
 import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
-import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
+import { DotCMSPageContext, PageProvider } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
 
 /**
@@ -10,7 +10,7 @@ import { Row } from '../Row/Row';
  *
  * @typedef {Object} DotcmsPageProps
  *
- * @property {PageProviderContext} entity - The context for a DotCMS page.
+ * @property {DotCMSPageContext} entity - The context for a DotCMS page.
  * @readonly
  */
 export type DotcmsPageProps = {
@@ -20,10 +20,10 @@ export type DotcmsPageProps = {
      *
      * @property {PageProviderContext} entity
      * @memberof DotcmsPageProps
-     * @type {PageProviderContext}
+     * @type {DotCMSPageContext}
      * @readonly
      */
-    readonly entity: PageProviderContext;
+    readonly pageContext: DotCMSPageContext;
 
     readonly config?: DotCMSPageEditorConfig;
 };
@@ -36,12 +36,12 @@ export type DotcmsPageProps = {
  * @param {DotcmsPageProps} props - The properties for the DotCMS page.
  * @returns {JSX.Element} - A JSX element that represents the layout for a DotCMS page.
  */
-export function DotcmsLayout({ entity, config }: DotcmsPageProps): JSX.Element {
+export function DotcmsLayout({ pageContext, config }: DotcmsPageProps): JSX.Element {
     const isInsideEditor = useDotcmsEditor(config);
 
     return (
-        <PageProvider entity={{ ...entity, isInsideEditor }}>
-            {entity.layout.body.rows.map((row, index) => (
+        <PageProvider pageContext={{ ...pageContext, isInsideEditor }}>
+            {pageContext.pageAsset.layout.body.rows.map((row, index) => (
                 <Row key={index} row={row} />
             ))}
         </PageProvider>
