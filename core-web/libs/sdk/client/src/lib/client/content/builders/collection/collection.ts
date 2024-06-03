@@ -18,6 +18,7 @@ import { sanitizeQueryForContentType } from '../../shared/utils';
  *
  * @export
  * @class CollectionBuilder
+ * @template T
  */
 export class CollectionBuilder<T = unknown> {
     #page = 1;

@@ -34,7 +34,7 @@ export class Content {
      * @example
      * ```javascript
      * // Using then and catch
-     * this.content
+     * client.content
      *      .getCollection('Blog')
      *      .limit(10)
      *      .page(2)
@@ -48,13 +48,41 @@ export class Content {
      *          console.error(error);
      *      });
      * ```
+     * @example
+     * ```typescript
+     * // Using an specific type for your content
      *
+     * type Blog = {
+     *     summary: string;
+     *     author: string;
+     *     title: string;
+     * };
+     *
+     * this.content
+     *     .getCollection<Blog>('Blog')
+     *     .limit(10)
+     *     .page(2)
+     *     .sortBy([{ field: 'title', order: 'asc' }])
+     *     .query((queryBuilder) => queryBuilder.field('author').equals('John Doe'))
+     *     .depth(1)
+     *     .then((response) => {
+     *         response.contentlets.forEach((blog) => {
+     *             console.log(blog.title);
+     *             console.log(blog.author);
+     *             console.log(blog.summary);
+     *         });
+     *     })
+     *     .catch((error) => {
+     *         console.error(error);
+     *     });
+     * ```
      *
      * @param {string} contentType The content type to get the collection
      * @return {CollectionBuilder} CollectionBuilder to filter and fetch the collection
+     * @template T Represents the type of the content type. defaults to unknown
      * @memberof Content
      */
-    getCollection<T>(contentType: string): CollectionBuilder<T> {
+    getCollection<T = unknown>(contentType: string): CollectionBuilder<T> {
         return new CollectionBuilder(this.#requestOptions, this.#serverUrl, contentType);
     }
 }
