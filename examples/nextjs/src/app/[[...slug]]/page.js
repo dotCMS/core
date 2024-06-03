@@ -30,6 +30,35 @@ export async function generateMetadata({ params, searchParams }) {
     };
 }
 
+// Define your GraphQL query
+const query = `{
+    page(url: "/index") {
+        title
+        url
+        seodescription
+        containers {
+          path
+          identifier
+          containerStructures {
+              id
+              structureId
+              containerInode
+              code,
+          }
+          containerContentlets {
+              uuid
+              contentlets {
+                  identifier
+                  inode
+                  title
+              }
+          }
+      }
+    }
+  }
+  `;
+
+
 export default async function Home({ searchParams, params }) {
     const requestData = {
         path: params?.slug ? params.slug.join('/') : 'index',
@@ -46,7 +75,16 @@ export default async function Home({ searchParams, params }) {
         depth: 2,
         languageId: searchParams.language_id,
     });
+
+    const { data: { page } } = await fetch("http://localhost:8080/api/v1/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+    }).then((response) => response.json());
+
     const { vanityUrl } = data.entity;
+
+    console.log('graphql', page);
 
     if (vanityUrl) {
         handleVanityUrlRedirect(vanityUrl);
