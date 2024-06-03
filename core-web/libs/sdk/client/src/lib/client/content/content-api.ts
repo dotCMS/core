@@ -10,7 +10,7 @@ import { ClientOptions } from '../sdk-js-client';
  */
 export class Content {
     #requestOptions: ClientOptions;
-    #serverUrl;
+    #serverUrl: string;
 
     constructor(requestOptions: ClientOptions, serverUrl: string) {
         this.#requestOptions = requestOptions;
