@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 
-import { DotCMSPageContext } from '../components/PageProvider/PageProvider';
 import { PageContext } from '../contexts/PageContext';
+import { DotCMSPageContext } from '../models';
 
 /**
  * `useDotcmsPageContext` is a custom React hook that provides access to the `PageProviderContext`.

@@ -3,9 +3,9 @@ import { useContext } from 'react';
 import styles from './column.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
+import { DotCMSPageContext } from '../../models';
 import { combineClasses, getPositionStyleClasses } from '../../utils/utils';
 import { Container } from '../Container/Container';
-import { DotCMSPageContext } from '../PageProvider/PageProvider';
 
 export interface ColumnProps {
     readonly column: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0];

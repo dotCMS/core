@@ -1,4 +1,5 @@
-import { PageProvider, DotCMSPageContext } from '../components/PageProvider/PageProvider';
+import { PageProvider } from '../components/PageProvider/PageProvider';
+import { DotCMSPageContext } from '../models';
 
 export const mockPageContext: DotCMSPageContext = {
     pageAsset: {

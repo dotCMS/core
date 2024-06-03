@@ -1,32 +1,11 @@
 import { ReactNode } from 'react';
 
 import { PageContext } from '../../contexts/PageContext';
-import { DotCMSPageAsset } from '../../models';
 
 export interface PageProviderProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly pageContext: any;
     readonly children: ReactNode;
-}
-
-export interface DotCMSPageContext {
-    /**
-     * `components` is a property of the `PageProviderProps` type.
-     * It is an object that maps content type variables to their corresponding React components.
-     *
-     * It will be use to render the contentlets in the page.
-     *
-     * @property {Object} components
-     * @memberof PageProviderProps
-     * @type {Object.<string, React.ElementType>}
-     */
-    components: {
-        [contentTypeVariable: string]: React.ElementType;
-    };
-    pageAsset: DotCMSPageAsset;
-    isInsideEditor: boolean;
-    // If the page is part of an experiment, this will be the experiment id
-    runningExperimentId?: string;
 }
 
 /**

@@ -1,7 +1,8 @@
 import { DotCMSPageEditorConfig } from '@dotcms/client';
 
 import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
-import { DotCMSPageContext, PageProvider } from '../PageProvider/PageProvider';
+import { DotCMSPageContext } from '../../models';
+import { PageProvider } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
 
 /**
@@ -15,10 +16,10 @@ import { Row } from '../Row/Row';
  */
 export type DotcmsPageProps = {
     /**
-     * `entity` is a readonly property of the `DotcmsPageProps` type.
+     * `pageContext` is a readonly property of the `DotcmsPageProps` type.
      * It represents the context for a DotCMS page and is of type `PageProviderContext`.
      *
-     * @property {PageProviderContext} entity
+     * @property {PageProviderContext} pageContext
      * @memberof DotcmsPageProps
      * @type {DotCMSPageContext}
      * @readonly

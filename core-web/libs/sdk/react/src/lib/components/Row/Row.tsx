@@ -3,9 +3,9 @@ import { forwardRef, useContext } from 'react';
 import styles from './row.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
+import { DotCMSPageContext } from '../../models';
 import { combineClasses } from '../../utils/utils';
 import { Column } from '../Column/Column';
-import { DotCMSPageContext } from '../PageProvider/PageProvider';
 
 /**
  * Props for the row component
