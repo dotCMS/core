@@ -297,7 +297,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CompletionsToolTest.class,
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
-        PruneTimeMachineBackupJobTest.class
+        PruneTimeMachineBackupJobTest.class,
+        Task240530AddDotAIPortletToLayoutTest.class
 })
 
 public class MainSuite2b {
