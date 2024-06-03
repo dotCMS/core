@@ -104,10 +104,14 @@ export class CollectionBuilder<T = unknown> {
     /**
      * Takes an array of constrains to sort the content by field an specific order
      *
-     * Example : [{ field: 'title', order: 'asc' }, { field: 'modDate', order: 'desc' }]
+     * @example
+     * ```javascript
+     * // This will sort the content by title in ascending order
+     * // and by modDate in descending order
+     *  const sortBy = [{ field: 'title', order: 'asc' }, { field: 'modDate', order: 'desc' }]
      *
-     * This will sort the content by title in ascending order and then by modDate in descending order
-     *
+     *  collectionBuilder.sortBy(sortBy)
+     *```
      *
      * @param {SortBy[]} sortBy Array of constrains to sort the content by
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
@@ -160,7 +164,13 @@ export class CollectionBuilder<T = unknown> {
 
     /**
      * Takes a function that recieves a QueryBuilder to buid a query for content filtering.
-     *
+     * @example
+     *```javascript
+     * // This will filter the content by title equals 'Hello World' or 'Hello World 2'
+     * collectionBuilder.query((queryBuilder) =>
+     *     queryBuilder.field('title').equals('Hello World').or().equals('Hello World 2')
+     * );
+     *```
      * @param {BuildQuery} buildQuery A function that receives a QueryBuilder instance and returns a valid query
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
      * @memberof CollectionBuilder
@@ -183,7 +193,7 @@ export class CollectionBuilder<T = unknown> {
         if (builtQuery instanceof Equals) {
             this.#query = builtQuery.raw(this.currentQuery.build());
         } else {
-            throw new Error('Provided query is not valid. Query can be incomplete or wrong.');
+            throw new Error('Provided query is not valid.');
         }
 
         return this;
