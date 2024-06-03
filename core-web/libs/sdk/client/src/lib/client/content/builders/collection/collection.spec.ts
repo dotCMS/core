@@ -22,7 +22,7 @@ global.fetch = jest.fn().mockReturnValue(
     })
 );
 
-describe('GetCollection', () => {
+describe('CollectionBuilder', () => {
     const requestOptions: ClientOptions = {
         cache: 'no-cache' // To simulate a valid request
     };
