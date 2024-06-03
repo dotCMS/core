@@ -39,15 +39,15 @@
         <ng-template pTemplate="body" let-locale>
             <tr>
                 <td [ngClass]="{ 'tag-padding': locale.defaultLanguage }" data-testId="locale-cell">
-                    {{ locale.locale }}
+                    {{ locale.language }} ({{ locale.isoCode }})
                     <p-tag
                         class="sm p-tag-success"
                         *ngIf="locale.defaultLanguage"
                         [value]="'Default' | dm" />
                 </td>
-                <td>{{ locale.language }}</td>
-                <td>{{ locale.country }}</td>
-                <td>{{ locale.variables }}</td>
+                <td>{{ locale.language }} - {{ locale.languageCode }}</td>
+                <td>{{ locale.country }} - {{ locale.countryCode }}</td>
+                <td>{{ locale.variables.count }}/{{ locale.variables.total }}</td>
                 <td>
                     <dot-action-menu-button [actions]="locale.actions"></dot-action-menu-button>
                 </td>

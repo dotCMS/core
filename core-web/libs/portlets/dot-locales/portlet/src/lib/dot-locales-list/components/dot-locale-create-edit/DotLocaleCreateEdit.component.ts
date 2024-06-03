@@ -17,7 +17,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotISOItem, DotLanguage } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 export interface DotLocaleCreateEditData {
@@ -69,16 +69,21 @@ export class DotLocaleCreateEditComponent implements OnInit {
 
     handleSubmit(): void {
         if (this.form.valid) {
-            const value = this.form.value;
-            if (this.data.locale?.id) {
-                // edit
-                this.ref.close(value);
-            } else {
-                // add
-            }
-        }
+            const { language, languageCode, country, countryCode } = this.form.value;
 
-        this.ref.close(this.form.value);
+            this.ref.close({
+                language,
+                languageCode,
+                country,
+                countryCode,
+                id: this.data.locale?.id
+            });
+        }
+    }
+
+    handleTypeChange(): void {
+        this.form.get('languageDropdown')?.setValue(null);
+        this.form.get('countryDropdown')?.setValue(null);
     }
 
     private initForm(): void {
@@ -86,23 +91,38 @@ export class DotLocaleCreateEditComponent implements OnInit {
             language: new FormControl(this.data.locale?.language, {
                 validators: [Validators.required]
             }),
-            languageCode: new FormControl(this.data.locale?.languageCode),
+            languageCode: new FormControl(this.data.locale?.languageCode, {
+                validators: [Validators.required, Validators.pattern(/^[a-zA-Z0-9-]*$/)]
+            }),
             country: new FormControl(this.data.locale?.country),
             countryCode: new FormControl(this.data.locale?.countryCode),
             id: new FormControl({ value: this.data.locale?.id, disabled: true }),
             isoCode: new FormControl({ value: this.data.locale?.isoCode, disabled: true }),
-            localeId: new FormControl(
-                {
-                    value: this.data.locale?.countryCode,
-                    disabled: !!this.data.locale?.id
-                },
-                {
-                    validators: [Validators.required]
-                }
-            ),
-            languageId: new FormControl({ value: this.data.locale?.id || '', disabled: true })
+            languageDropdown: new FormControl(''),
+            countryDropdown: new FormControl('')
         });
 
-        this.languageId = this.form.get('languageId');
+        this.languageId = this.form.get('id');
+
+        this.form.get('languageDropdown')?.valueChanges.subscribe((language: DotISOItem) => {
+            this.form.get('language')?.setValue(language?.name);
+            this.form.get('languageCode')?.setValue(language?.code);
+            this.setISOCode();
+        });
+
+        this.form.get('countryDropdown')?.valueChanges.subscribe((country: DotISOItem) => {
+            this.form.get('country')?.setValue(country?.name);
+            this.form.get('countryCode')?.setValue(country?.code);
+            this.setISOCode();
+        });
+    }
+
+    setISOCode(): void {
+        const { languageCode, countryCode } = this.form.getRawValue();
+        const isoCode = this.form.get('isoCode') as AbstractControl;
+
+        isoCode.setValue(
+            languageCode ? (countryCode ? `${languageCode}-${countryCode}` : languageCode) : ''
+        );
     }
 }

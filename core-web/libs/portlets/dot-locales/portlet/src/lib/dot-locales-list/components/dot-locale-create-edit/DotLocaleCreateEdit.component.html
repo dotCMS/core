@@ -1,19 +1,25 @@
-<form class="p-fluid" [formGroup]="form" (ngSubmit)="handleSubmit()">
+<form
+    class="p-fluid"
+    [ngClass]="{ 'locale-add__edit-form': languageId?.value }"
+    [formGroup]="form"
+    (ngSubmit)="handleSubmit()">
     @if(languageId?.value){
+    <!--Edit language-->
     <div class="field">
-        <label for="langEdit">{{ 'locale.display.name' | dm }}</label>
-        <input id="langEdit" formControlName="language" pInputText type="text" />
+        <label class="p-label-input-required" for="langEdit">{{
+            'locale.display.name' | dm
+        }}</label>
+        <input id="langEdit" [maxlength]="50" formControlName="language" pInputText type="text" />
         <span class="p-field-hint">{{ 'TBD' | dm }}</span>
     </div>
 
     <div class="field">
-        <label for="isoCode">{{ 'locale.id' | dm }}</label>
+        <label for="isoCodeEdit">{{ 'locale.id' | dm }}</label>
         <span class="p-input-icon-right">
             <i class="pi pi-copy" [cdkCopyToClipboard]="localeIDInput.value"></i>
             <input
-                id="isoCode"
+                id="isoCodeEdit"
                 #localeIDInput
-                [disabled]="true"
                 formControlName="isoCode"
                 pInputText
                 type="text" />
@@ -23,36 +29,36 @@
         <label for="id">{{ 'locale.language.id' | dm }}</label>
         <span class="p-input-icon-right">
             <i class="pi pi-copy" [cdkCopyToClipboard]="languageIDInput.value"></i>
-            <input
-                id="id"
-                #languageIDInput
-                [disabled]="true"
-                formControlName="id"
-                pInputText
-                type="text" />
+            <input id="id" #languageIDInput formControlName="id" pInputText type="text" />
         </span>
     </div>
-
     } @else {
     <!--Add new language-->
     <div class="field">
         <label for="localeType">{{ 'locales.type' | dm }}</label>
-        <p-dropdown id="localeType" #localeTypeDropdown [options]="localeType" appendTo="body">
+        <p-dropdown
+            id="localeType"
+            #localeTypeDropdown
+            [options]="localeType"
+            (onChange)="handleTypeChange()"
+            appendTo="body">
         </p-dropdown>
     </div>
 
     @if (localeTypeDropdown.value == 1 ) {
-
+    <!--Standard Locale-->
     <div class="field">
-        <label class="p-label-input-required" for="language">{{ 'locales.language' | dm }}</label>
+        <label class="p-label-input-required" for="languageDropdown">{{
+            'locales.language' | dm
+        }}</label>
         <p-dropdown
-            id="language"
+            id="languageDropdown"
             [filter]="true"
             [options]="data.languages"
             [placeholder]="'locales.language.input.placeholder' | dm"
             filterBy="name,code"
             appendTo="body"
-            formControlName="language">
+            formControlName="languageDropdown">
             <ng-template let-language pTemplate="item">
                 {{ language.name }} - {{ language.code }}
             </ng-template>
@@ -63,15 +69,15 @@
         <span class="p-field-hint">{{ 'locales.language.hint' | dm }}</span>
     </div>
     <div class="field">
-        <label for="country">{{ 'locales.country' | dm }}</label>
+        <label for="countryDropdown">{{ 'locales.country' | dm }}</label>
         <p-dropdown
-            id="country"
+            id="countryDropdown"
             [filter]="true"
             [options]="data.countries"
             [placeholder]="'locales.language.input.placeholder' | dm"
             filterBy="name,code"
             appendTo="body"
-            formControlName="language">
+            formControlName="countryDropdown">
             <ng-template let-country pTemplate="item">
                 {{ country.name }} - {{ country.code }}
             </ng-template>
@@ -82,36 +88,42 @@
         <span class="p-field-hint">{{ 'locales.country.hint' | dm }}</span>
     </div>
     <div class="field">
-        <label for="localeId">{{ 'locale.id' | dm }}</label>
+        <label for="isoCode">{{ 'locale.id' | dm }}</label>
         <span class="p-input-icon-right">
-            <i class="pi pi-copy" [cdkCopyToClipboard]="localeIDInput.value"></i>
+            <i class="pi pi-copy" [cdkCopyToClipboard]="isoCodeInput.value"></i>
             <input
-                id="localeId"
-                #localeIDInput
+                id="isoCode"
+                #isoCodeInput
                 [placeholder]="'locale.id.placeholder' | dm"
-                [disabled]="true"
+                formControlName="isoCode"
                 pInputText
                 type="text" />
         </span>
-        <span class="p-field-hint">{{ 'locale.id.hint' | dm }}</span>
+        <span class="p-field-hint">{{ 'locale.id.standard.hint' | dm }}</span>
     </div>
     } @else {
+    <!--Custom Locale-->
     <div class="field">
-        <label for="lang">{{ 'locale.display.name' | dm }}</label>
-        <input id="lang" [maxlength]="50" formControlName="language" pInputText type="text" />
+        <label class="p-label-input-required" for="language">{{
+            'locale.display.name' | dm
+        }}</label>
+        <input id="language" [maxlength]="50" formControlName="language" pInputText type="text" />
         <span class="p-field-hint">{{ 'locale.display.name.hint' | dm }}</span>
     </div>
     <div class="field">
-        <label for="customLocaleId">{{ 'locale.id' | dm }}</label>
+        <label class="p-label-input-required" for="languageCode">{{ 'locale.id' | dm }}</label>
         <input
-            id="customLocaleId"
+            id="languageCode"
             [maxlength]="5"
-            formControlName="localeId"
+            formControlName="languageCode"
             pInputText
             type="text" />
         <span class="p-field-hint">{{ 'locale.id.hint' | dm }}</span>
     </div>
-
+    <span class="locale-add__warning">
+        <i class="pi pi-info-circle" style="color: slateblue"></i>
+        {{ 'locale.custom.waring' | dm }}</span
+    >
     } }
 
     <div class="locale-add__buttons">

@@ -1,8 +1,30 @@
 @use "variables" as *;
 
+:host {
+    form {
+        min-height: 29rem;
+        display: flex;
+        flex-direction: column;
+
+        &.locale-add__edit-form {
+            min-height: 20rem;
+        }
+    }
+}
+
 .locale-add__buttons {
     display: flex;
     gap: $spacing-3;
-    margin-top: $spacing-7;
+    margin-top: auto;
     justify-content: flex-end;
+}
+
+.locale-add__warning {
+    margin-top: $spacing-3;
+    display: flex;
+    gap: $spacing-1;
+    font-size: $font-size-smd;
+    i {
+        color: $color-palette-primary-500;
+    }
 }

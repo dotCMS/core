@@ -72,10 +72,10 @@ export class DotLanguagesService {
      * @return {Observable<DotLanguage>} An observable of the updated language.
      */
     update(locale: DotLanguage): Observable<DotLanguage> {
-        const { id, languageCode, language } = locale;
+        const { id, languageCode, language, countryCode, country } = locale;
 
         return this.httpClient
-            .put(`${LANGUAGE_API_URL}/${id}`, { languageCode, language })
+            .put(`${LANGUAGE_API_URL}/${id}`, { languageCode, language, countryCode, country })
             .pipe(pluck('entity'));
     }
 

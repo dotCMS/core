@@ -32,11 +32,7 @@ import { DotLocaleCreateEditComponent } from '../components/dot-locale-create-ed
 /**
  * Interface for language row data
  */
-export interface DotLocaleRow extends DotAddLanguage {
-    id: number;
-    defaultLanguage: boolean | undefined;
-    locale: string;
-    variables: string;
+export interface DotLocaleRow extends DotLanguage {
     actions: DotActionMenuItem[];
 }
 
@@ -147,14 +143,18 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                     }
                 );
 
-                dialogRef.onClose.pipe(take(1)).subscribe((locale: DotLanguage) => {
-                    if (locale.id) {
-                        const { id, language, languageCode } = locale;
-                        this.updateLocale({ id, language, languageCode });
-                    } else {
-                        this.addLocale(locale);
-                    }
-                });
+                dialogRef.onClose
+                    .pipe(
+                        take(1),
+                        filter((locale) => locale)
+                    )
+                    .subscribe((locale: DotLanguage) => {
+                        if (locale.id) {
+                            this.updateLocale({ ...locale });
+                        } else {
+                            this.addLocale(locale);
+                        }
+                    });
             })
         )
     );
@@ -231,15 +231,7 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
         pushPublishEnvironments: DotEnvironment[]
     ): DotLocaleRow[] {
         return locales.map((locale) => ({
-            id: locale.id,
-            locale: `${locale.language} (${locale.isoCode})`,
-            language: `${locale.language} - ${locale.languageCode}`,
-            languageCode: locale.languageCode,
-            country: `${locale.country} - ${locale.countryCode}`,
-            countryCode: locale.countryCode,
-            variables: `${locale.variables?.count}/${locale.variables?.total}`,
-            defaultLanguage: locale.defaultLanguage,
-            isoCode: locale.isoCode,
+            ...locale,
             actions: [
                 {
                     menuItem: {
