@@ -48,6 +48,18 @@ export interface ContentTypeMainFields {
 // The contentlet has the main fields and the custom fields of the content type
 export type Contentlet<T> = T & ContentTypeMainFields;
 
+export type OnFullfilled<T> =
+    | ((
+          value: GetCollectionResponse<T>
+      ) => GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>> | void)
+    | undefined
+    | null;
+
+export type OnRejected =
+    | ((error: GetCollectionError) => GetCollectionError | PromiseLike<GetCollectionError> | void)
+    | undefined
+    | null;
+
 // Response of the get collection method
 export interface GetCollectionResponse<T> {
     contentlets: Contentlet<T>[];

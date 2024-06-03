@@ -1,4 +1,4 @@
-import { GetCollection } from './methods/get-collection/get-collection';
+import { CollectionBuilder } from './builders/collection/collection';
 
 import { ClientOptions } from '../sdk-js-client';
 
@@ -9,22 +9,22 @@ import { ClientOptions } from '../sdk-js-client';
  * @class Content
  */
 export class Content {
-    private requestOptions: ClientOptions;
-    private serverUrl;
+    #requestOptions: ClientOptions;
+    #serverUrl;
 
     constructor(requestOptions: ClientOptions, serverUrl: string) {
-        this.requestOptions = requestOptions;
-        this.serverUrl = serverUrl;
+        this.#requestOptions = requestOptions;
+        this.#serverUrl = serverUrl;
     }
 
     /**
-     * Allows you to build a query to get a collection of an specified content type
+     * Takes a content type and returns a builder to filter and fetch the collection
      *
-     * @param {string} contentType
-     * @return {*}
+     * @param {string} contentType The content type to get the collection
+     * @return {CollectionBuilder} CollectionBuilder to filter and fetch the collection
      * @memberof Content
      */
-    getCollection(contentType: string): GetCollection {
-        return new GetCollection(this.requestOptions, this.serverUrl, contentType);
+    getCollection(contentType: string): CollectionBuilder {
+        return new CollectionBuilder(this.#requestOptions, this.#serverUrl, contentType);
     }
 }

@@ -7,17 +7,19 @@ import {
     BuildQuery,
     SortBy,
     GetCollectionRawResponse,
-    GetCollectionError
+    GetCollectionError,
+    OnFullfilled,
+    OnRejected
 } from '../../shared/types';
 import { sanitizeQueryForContentType } from '../../shared/utils';
 
 /**
- * 'GetCollection' Is a Typescript class that provides the ability build a query to get a collection of content.
+ * Creates a Builder to filter and fetch content from the content API for an specific content type
  *
  * @export
- * @class GetCollection
+ * @class CollectionBuilder
  */
-export class GetCollection<T = unknown> {
+export class CollectionBuilder<T = unknown> {
     #page = 1;
     #limit = 10;
     #depth = 0;
@@ -46,7 +48,7 @@ export class GetCollection<T = unknown> {
      *
      * @readonly
      * @private
-     * @memberof GetCollection
+     * @memberof CollectionBuilder
      */
     private get sort() {
         return this.#sortBy?.map((sort) => `${sort.field} ${sort.order}`).join(',');
@@ -66,31 +68,32 @@ export class GetCollection<T = unknown> {
      *
      * @readonly
      * @private
-     * @memberof GetCollection
+     * @memberof CollectionBuilder
      */
     private get currentQuery() {
         return this.#query ?? this.#defaultQuery;
     }
 
     /**
-     * This method allows to filter the content by language.
+     * Takes a language id and filters the content by that language
      *
-     * @param {number} language
-     * @return {*}  {this}
-     * @memberof GetCollection
+     *
+     * @param {number} languageId The language id to filter the content by
+     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @memberof CollectionBuilder
      */
-    language(language: number): this {
-        this.#query = this.currentQuery.field('languageId').equals(language.toString());
+    language(languageId: number): this {
+        this.#query = this.currentQuery.field('languageId').equals(languageId.toString());
 
         return this;
     }
 
     /**
-     * This method allows you to fetch the render version of the content
+     * Takes a boolean representing if the content should be rendered or not
      *
-     * @param {boolean} render
-     * @return {*}  {this}
-     * @memberof GetCollection
+     * @param {boolean} render A boolean representing if the content should be rendered or not
+     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @memberof CollectionBuilder
      */
     render(render: boolean): this {
         this.#render = render;
@@ -99,11 +102,16 @@ export class GetCollection<T = unknown> {
     }
 
     /**
-     * This method allows you to sort the content by field
+     * Takes an array of constrains to sort the content by field an specific order
      *
-     * @param {SortBy[]} sortBy
-     * @return {*}  {this}
-     * @memberof GetCollection
+     * Example : [{ field: 'title', order: 'asc' }, { field: 'modDate', order: 'desc' }]
+     *
+     * This will sort the content by title in ascending order and then by modDate in descending order
+     *
+     *
+     * @param {SortBy[]} sortBy Array of constrains to sort the content by
+     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @memberof CollectionBuilder
      */
     sortBy(sortBy: SortBy[]): this {
         this.#sortBy = sortBy;
@@ -112,11 +120,13 @@ export class GetCollection<T = unknown> {
     }
 
     /**
-     * This method allows you to limit the number of content to fetch
+     * Takes a number that represents the max amount of content to fetch
      *
-     * @param {number} limit
-     * @return {*}  {this}
-     * @memberof GetCollection
+     * Note: The limit is set to 10 by default
+     *
+     * @param {number} limit The max amount of content to fetch
+     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @memberof CollectionBuilder
      */
     limit(limit: number): this {
         this.#limit = limit;
@@ -125,11 +135,11 @@ export class GetCollection<T = unknown> {
     }
 
     /**
-     * This method allows you to set the page of the content to fetch
+     * Takes a number that represents the page to fetch
      *
-     * @param {number} page
-     * @return {*}  {this}
-     * @memberof GetCollection
+     * @param {number} page The page to fetch
+     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @memberof CollectionBuilder
      */
     page(page: number): this {
         this.#page = page;
@@ -137,11 +147,25 @@ export class GetCollection<T = unknown> {
         return this;
     }
 
-    // Docs here
-    query(buildQuery: string): this;
-    // Docs here
-    query(buildQuery: BuildQuery): this;
+    /**
+     * Takes a string that represents a Lucene Query that is used to filter the content to fetch.
+     *
+     * Note: The string is not validated, so be cautious when using it.
+     *
+     * @param {string} query A Lucene Query String
+     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @memberof CollectionBuilder
+     */
+    query(query: string): this;
 
+    /**
+     * Takes a function that recieves a QueryBuilder to buid a query for content filtering.
+     *
+     * @param {BuildQuery} buildQuery A function that receives a QueryBuilder instance and returns a valid query
+     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @memberof CollectionBuilder
+     */
+    query(buildQuery: BuildQuery): this;
     query(buildQuery: BuildQuery | string): this {
         if (typeof buildQuery === 'string') {
             this.#rawQuery = buildQuery;
@@ -159,18 +183,20 @@ export class GetCollection<T = unknown> {
         if (builtQuery instanceof Equals) {
             this.#query = builtQuery.raw(this.currentQuery.build());
         } else {
-            throw new Error('The query builder callback should return a DotQuery instance');
+            throw new Error('Provided query is not valid. Query can be incomplete or wrong.');
         }
 
         return this;
     }
 
     /**
-     * This method allows you to fetch draft content
+     * Takes a boolean that represents if the content to query should be on draft or not
      *
-     * @param {boolean} draft
-     * @return {*}  {this}
-     * @memberof GetCollection
+     * Note: The default value is false to fetch content that is not on draft
+     *
+     * @param {boolean} draft A boolean that represents the state of the content
+     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @memberof CollectionBuilder
      */
     draft(draft: boolean): this {
         this.#query = this.currentQuery.field('live').equals((!draft).toString());
@@ -179,24 +205,28 @@ export class GetCollection<T = unknown> {
     }
 
     /**
-     * This method allows you to filter content by experiment variant
+     * Takes a string that represents a variant ID of content created with the A/B Testing feature
      *
-     * @param {string} variant
-     * @return {*}  {this}
-     * @memberof GetCollection
+     * Note: variantId defaults to "DEFAULT" to fetch content that is not part of an A/B test
+     *
+     * @param {string} variantId A string that represents a variant ID
+     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @memberof CollectionBuilder
      */
-    variant(variant: string): this {
-        this.#query = this.currentQuery.field('variant').equals(variant);
+    variant(variantId: string): this {
+        this.#query = this.currentQuery.field('variant').equals(variantId);
 
         return this;
     }
 
     /**
-     * This method allows you to set the depth of the relationships in the content
+     * Takes a number that represents the depth of the relationships of a content
      *
-     * @param {number} depth
-     * @return {*}  {this}
-     * @memberof GetCollection
+     * Note: The depth is set to 0 by default
+     *
+     * @param {number} depth The depth of the relationships of a content
+     * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
+     * @memberof CollectionBuilder
      */
     depth(depth: number): this {
         this.#depth = depth;
@@ -204,20 +234,17 @@ export class GetCollection<T = unknown> {
         return this;
     }
 
-    // DOCS MISSING.
+    /**
+     * Executes the fetch and returns a promise that resolves to the content or rejects to an error
+     *
+     * @param {OnFullfilled} [onfulfilled] A callback that is called when the fetch is successful
+     * @param {OnRejected} [onrejected] A callback that is called when the fetch fails
+     * @return {Promise<GetCollectionResponse<T> | GetCollectionError>} A promise that resolves to the content or rejects to an error
+     * @memberof CollectionBuilder
+     */
     then(
-        onfulfilled?:
-            | ((
-                  value: GetCollectionResponse<T>
-              ) => GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>> | void)
-            | undefined
-            | null,
-        onrejected?:
-            | ((
-                  error: GetCollectionError
-              ) => GetCollectionError | PromiseLike<GetCollectionError> | void)
-            | undefined
-            | null
+        onfulfilled?: OnFullfilled<T>,
+        onrejected?: OnRejected
     ): Promise<GetCollectionResponse<T> | GetCollectionError> {
         return this.fetch().then(async (response) => {
             const data = await response.json();
