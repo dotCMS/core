@@ -114,6 +114,7 @@
         <label class="p-label-input-required" for="languageCode">{{ 'locale.id' | dm }}</label>
         <input
             id="languageCode"
+            #languageCodeInput
             [maxlength]="5"
             formControlName="languageCode"
             pInputText
@@ -124,7 +125,9 @@
         <i class="pi pi-info-circle" style="color: slateblue"></i>
         {{ 'locale.custom.waring' | dm }}</span
     >
-    } }
+    } } @if (showError | async){
+    <span class="locale-add__error-message">{{ 'locale.error.message' | dm }}</span>
+    }
 
     <div class="locale-add__buttons">
         <button

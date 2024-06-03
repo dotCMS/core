@@ -1,3 +1,5 @@
+import { BehaviorSubject } from 'rxjs';
+
 import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
@@ -9,6 +11,7 @@ import {
     Validators
 } from '@angular/forms';
 
+import { ConfirmationService } from 'primeng/api';
 import { SelectItem } from 'primeng/api/selectitem';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
@@ -16,7 +19,13 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { take } from 'rxjs/operators';
+
+import {
+    DotLanguagesService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotISOItem, DotLanguage } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -46,17 +55,19 @@ export interface DotLocaleCreateEditData {
 export class DotLocaleCreateEditComponent implements OnInit {
     readonly config: DynamicDialogConfig<DotLocaleCreateEditData> = inject(DynamicDialogConfig);
     private readonly dotMessageService = inject(DotMessageService);
+    private readonly languageService = inject(DotLanguagesService);
+    private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
+    private readonly confirmationService = inject(ConfirmationService);
 
     ref = inject(DynamicDialogRef);
-
     languageId: AbstractControl<string, string> | null | undefined;
-
     form: FormGroup = new FormGroup({});
     data: DotLocaleCreateEditData = this.config.data || {
         languages: [],
         countries: [],
         locale: null
     };
+    showError = new BehaviorSubject<boolean>(false);
 
     localeType: SelectItem[] = [
         { label: this.dotMessageService.get('locale.standard.locale'), value: 1 },
@@ -69,15 +80,33 @@ export class DotLocaleCreateEditComponent implements OnInit {
 
     handleSubmit(): void {
         if (this.form.valid) {
-            const { language, languageCode, country, countryCode } = this.form.value;
+            const { language, languageCode, country, countryCode, id } = this.form.value;
 
-            this.ref.close({
-                language,
-                languageCode,
-                country,
-                countryCode,
-                id: this.data.locale?.id
-            });
+            if (id) {
+                this.ref.close({
+                    language,
+                    languageCode,
+                    country,
+                    countryCode,
+                    id: this.data.locale?.id
+                });
+            } else {
+                this.languageService
+                    .getByISOCode(this.getISOCode())
+                    .pipe(take(1))
+                    .subscribe((locale: DotLanguage) => {
+                        if (locale) {
+                            this.showError.next(true);
+                        } else {
+                            this.ref.close({
+                                language,
+                                languageCode,
+                                country,
+                                countryCode
+                            });
+                        }
+                    });
+            }
         }
     }
 
@@ -107,22 +136,28 @@ export class DotLocaleCreateEditComponent implements OnInit {
         this.form.get('languageDropdown')?.valueChanges.subscribe((language: DotISOItem) => {
             this.form.get('language')?.setValue(language?.name);
             this.form.get('languageCode')?.setValue(language?.code);
-            this.setISOCode();
+            this.form.get('isoCode')?.setValue(this.getISOCode());
         });
 
         this.form.get('countryDropdown')?.valueChanges.subscribe((country: DotISOItem) => {
             this.form.get('country')?.setValue(country?.name);
             this.form.get('countryCode')?.setValue(country?.code);
-            this.setISOCode();
+            this.form.get('isoCode')?.setValue(this.getISOCode());
         });
     }
 
-    setISOCode(): void {
-        const { languageCode, countryCode } = this.form.getRawValue();
-        const isoCode = this.form.get('isoCode') as AbstractControl;
+    // private setISOCode(): void {
+    //     const { languageCode, countryCode } = this.form.getRawValue();
+    //     const isoCode = this.form.get('isoCode') as AbstractControl;
+    //
+    //     isoCode.setValue(
+    //         languageCode ? (countryCode ? `${languageCode}-${countryCode}` : languageCode) : ''
+    //     );
+    // }
 
-        isoCode.setValue(
-            languageCode ? (countryCode ? `${languageCode}-${countryCode}` : languageCode) : ''
-        );
+    private getISOCode(): string {
+        const { languageCode, countryCode } = this.form.getRawValue();
+
+        return languageCode ? (countryCode ? `${languageCode}-${countryCode}` : languageCode) : '';
     }
 }

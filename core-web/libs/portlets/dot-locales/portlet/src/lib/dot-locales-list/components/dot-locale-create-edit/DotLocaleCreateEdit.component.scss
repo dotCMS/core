@@ -2,7 +2,7 @@
 
 :host {
     form {
-        min-height: 29rem;
+        min-height: 30rem;
         display: flex;
         flex-direction: column;
 
@@ -20,11 +20,17 @@
 }
 
 .locale-add__warning {
-    margin-top: $spacing-3;
+    margin: $spacing-3 0;
     display: flex;
     gap: $spacing-1;
     font-size: $font-size-smd;
     i {
         color: $color-palette-primary-500;
     }
+}
+
+.locale-add__error-message {
+    margin: $spacing-1 0;
+    font-size: $font-size-smd;
+    color: $red;
 }
