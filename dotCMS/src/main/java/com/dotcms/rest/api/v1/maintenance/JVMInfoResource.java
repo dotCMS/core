@@ -91,7 +91,7 @@ public class JVMInfoResource implements Serializable {
         resultMap.put("cpuLoadJava",  percentage.format(os.getProcessCpuLoad()));
         resultMap.put("arch",  os.getArch());
         resultMap.put("cpuLoadSystem",  percentage.format(os.getSystemCpuLoad()));
-        resultMap.put("systemLoadAverage",  percentage.format(os.getSystemLoadAverage()));
+        //resultMap.put("systemLoadAverage",  percentage.format(os.getSystemLoadAverage()));
         resultMap.put("os",  os.getName());
         resultMap.put("osVersion",  os.getVersion());
         resultMap.put("hostname", Try.of(()->InetAddress.getLocalHost().getHostName()).getOrElse("ukn") );
