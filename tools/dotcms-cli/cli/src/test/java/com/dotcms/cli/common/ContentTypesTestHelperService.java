@@ -208,7 +208,7 @@ public class ContentTypesTestHelperService {
                                 .searchable(true)
                                 .name("Name")
                                 .variable("name")
-                                .fixed(true)
+                                .fixed(false)
                                 .build()
                 );
 

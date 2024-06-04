@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
 import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.exception.DotDataValidationException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -32,8 +34,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import org.apache.commons.lang.time.DateUtils;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -45,8 +45,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.DotPreconditions.checkNotNull;
+import org.apache.commons.lang.time.DateUtils;
 
 /**
  * This class provides a SQL-based implementation for the {@link FieldFactory} interface.
@@ -268,40 +267,43 @@ public class FieldFactoryImpl implements FieldFactory {
     
     Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
     builder.modDate(modDate);
-    
 
-    Field oldField = null;
-    try {
-      oldField = selectInDb(throwAwayField.id());
-      builder.fixed(oldField.fixed());
-      builder.readOnly(oldField.readOnly());
-      builder.dataType(oldField.dataType());
-      builder.dbColumn(oldField.dbColumn());
+      // Search for the field in the database to see if it already exists
+      var oldFieldOptional = resolveExistingField(throwAwayField);
+      if (oldFieldOptional.isPresent()) {
+          Field oldField = oldFieldOptional.get();
+          builder.id(oldField.id());
+          builder.fixed(oldField.fixed());
+          builder.readOnly(oldField.readOnly());
+          builder.dataType(oldField.dataType());
+          builder.dbColumn(oldField.dbColumn());
+      } else {
+          List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
 
-    } catch (NotFoundInDbException e) {
-      List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
+          if (throwAwayField.sortOrder() < 0) {
+              // move to the end of the line
+              builder.sortOrder(
+                      fieldsAlreadyAdded.stream().map(Field::sortOrder).max(Integer::compare)
+                              .orElse(-1) + 1
+              );
+          }
 
-      if (throwAwayField.sortOrder() < 0) {
-        // move to the end of the line
-    	builder.sortOrder(
-    		fieldsAlreadyAdded.stream().map(Field::sortOrder).max(Integer::compare).orElse(-1) + 1
-    	);
+          // normalize our velocityvar
+          final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable)
+                  .collect(
+                          Collectors.toList());
+
+          String tryVar = getFieldVariable(throwAwayField, takenFieldVars);
+
+          builder.variable(tryVar);
+
+          // assign an inode and db column if needed
+          if (throwAwayField.id() == null) {
+              builder.id(APILocator.getDeterministicIdentifierAPI()
+                      .generateDeterministicIdBestEffort(throwAwayField, () -> tryVar));
+          }
       }
 
-      // normalize our velocityvar
-      final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable).collect(
-              Collectors.toList());
-
-      String tryVar = getFieldVariable(throwAwayField, takenFieldVars);
-
-      builder.variable(tryVar);
-
-      // assign an inode and db column if needed
-      if (throwAwayField.id() == null) {
-          builder.id(APILocator.getDeterministicIdentifierAPI().generateDeterministicIdBestEffort(throwAwayField, ()->tryVar));
-      }
-
-    }
     builder = FieldBuilder.builder(normalizeData(builder.build()));
 
     Field retField = builder.build();
@@ -309,21 +311,82 @@ public class FieldFactoryImpl implements FieldFactory {
 
     validateDbColumn(retField);
 
-
-
-    
-    if (oldField == null) {
-      insertInodeInDb(retField);
-      insertFieldInDb(retField);
-    } else {
-      updateInodeInDb(retField);
-      updateFieldInDb(retField);
-    }
+      if (oldFieldOptional.isEmpty()) {
+          insertInodeInDb(retField);
+          insertFieldInDb(retField);
+      } else {
+          updateInodeInDb(retField);
+          updateFieldInDb(retField);
+      }
 
 
 
     return retField;
   }
+
+    /**
+     * Resolves the existing field by searching in the database.
+     * <p>
+     * First tries to find the field by its ID. If the field is not found by ID, it tries to find
+     * the field by content type and variable.
+     *
+     * @param field the field to resolve
+     * @return an Optional containing the resolved field, or an empty Optional if the field is not
+     * found
+     * @throws DotDataException if there is an error while resolving the field
+     */
+    private Optional<Field> resolveExistingField(final Field field) throws DotDataException {
+
+        Field oldField = null;
+
+        // The following block of code is used to find the field in the database, if it exists, as
+        // the id should not be really required, we should be able to identify the field also by
+        // variable.
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(field.id())) {
+
+            try {
+                oldField = selectInDb(field.id());
+            } catch (NotFoundInDbException e) {
+
+                if (org.apache.commons.lang.StringUtils.isNotEmpty(field.variable())) {
+
+                    Logger.warn(this.getClass(), String.format(
+                            "Failed to find field by ID [%s]. Falling back to lookup by variable [%s].",
+                            field.id(), field.variable()
+                    ));
+
+                    // We provided a field id, but it was not found in the database, now let's try
+                    // to find it by content type and variable
+                    try {
+                        oldField = selectByContentTypeFieldVarInDb(
+                                field.contentTypeId(), field.variable()
+                        );
+                    } catch (NotFoundInDbException byVarException) {
+                        Logger.debug(this.getClass(),
+                                String.format(
+                                        "Failed to find field by content type [%s] and variable [%s]",
+                                        field.contentTypeId(), field.variable()));
+                    }
+                } else {
+                    Logger.warn(this.getClass(), String.format(
+                            "Failed to find field by ID [%s].", field.id()
+                    ));
+                }
+            }
+        } else if (org.apache.commons.lang.StringUtils.isNotEmpty(field.variable())) {
+            try {
+                oldField = selectByContentTypeFieldVarInDb(
+                        field.contentTypeId(), field.variable()
+                );
+            } catch (NotFoundInDbException e) {
+                Logger.debug(this.getClass(),
+                        String.format("Failed to find field by content type [%s] and variable [%s]",
+                                field.contentTypeId(), field.variable()));
+            }
+        }
+
+        return Optional.ofNullable(oldField);
+    }
 
   /**
    * Returns the field variable to use in the new field being saved

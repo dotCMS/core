@@ -26,6 +26,8 @@ import java.util.Optional;
  */
 public interface VanityUrlAPI {
 
+    String VANITY_URL_RESPONSE_HEADER = "X-DOT-VanityUrl";
+
     /**
      * Verifies that the Vanity URL as Contentlet has all the required fields. the list of mandatory fields can be
      * verified in the Content Type's definition.
