@@ -35,10 +35,26 @@ const query = `{
                     inode
                     title
                     contentType
-                    image,
-                    caption,
-                    buttonText,
-                    link
+                    ...on Banner {
+                        caption
+                        buttonText
+                        link 
+                    }
+                    ... on webPageContent {
+                        body
+                    }
+                    ... on Activity {
+                        description
+                        urlTitle
+                    }
+                    ... on Product {
+                        salePrice
+                        retailPrice
+                        urlTitle
+                    }
+                    ... on Image {
+                        description
+                    }
                 }
             }
         }
@@ -51,6 +67,12 @@ const query = `{
             body {
                 rows {
                     columns {
+                        widthPercent
+                        leftOffset
+                        styleClass
+                        preview
+                        width
+                        left
                         containers {
                             identifier
                             uuid
@@ -77,8 +99,7 @@ const query = `{
             mode
         }
     }
-}
-  `;
+}`;
 
 export default async function Home({ searchParams, params }) {
     const requestData = {
