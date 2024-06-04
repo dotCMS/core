@@ -300,6 +300,47 @@
 							"response": []
 						},
 						{
+							"name": "Retrieving Test Generic Content - Wrong ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response message\", function () {",
+											"    pm.expect(pm.response.json().message).to.include('The contentlet wrongID does not exists');",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/:wrongId",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										":wrongId"
+									],
+									"variable": [
+										{
+											"key": "wrongId",
+											"value": "wrongID"
+										}
+									]
+								},
+								"description": "\nThis HTTP GET request is used to retrieve content details by providing the content ID in the endpoint URL. The server URL should be prefixed before the endpoint, and the specific content ID should be provided in place of {{testContentId}}.\n\n### Request\nThe request does not contain a request body, but it requires the following headers:\n- Authorization: Bearer <token>\n  - Type: string\n  - Description: A valid access token to authenticate the request.\n\n### Response\nUpon a successful request, the server will respond with a JSON object containing the details of the requested content, including its ID, title, description, and any other relevant information.\n\nExample Response:\n```json\n{\n  \"contentId\": \"12345\",\n  \"title\": \"Sample Content\",\n  \"description\": \"This is a sample content description.\"\n  // Other relevant information\n}\n```\n"
+							},
+							"response": []
+						},
+						{
 							"name": "Creating Test Generic Content - No auth",
 							"event": [
 								{
@@ -331,7 +372,6 @@
 											"        console.log('Logout failed:', err);",
 											"    } else {",
 											"        console.log('Logout successful, cookies should be cleared.');",
-											"        pm.environment.unset(\"jwt\")",
 											"    }",
 											"});"
 										],
@@ -371,47 +411,6 @@
 									]
 								},
 								"description": "\nThe API endpoint triggers the publication of specified content items. Upon successful execution, the response is returned in the form of a JSON schema.\n\n```json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"results\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"additionalProperties\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"errorMessage\": {\n                  \"type\": \"string\"\n                },\n                \"identifier\": {\n                  \"type\": [\"string\", \"null\"]\n                },\n                \"inode\": {\n                  \"type\": [\"string\", \"null\"]\n                }\n              }\n            }\n          }\n        },\n        \"summary\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"affected\": {\n              \"type\": \"integer\"\n            },\n            \"failCount\": {\n              \"type\": \"integer\"\n            },\n            \"successCount\": {\n              \"type\": \"integer\"\n            },\n            \"time\": {\n              \"type\": \"integer\"\n            }\n          }\n        }\n      }\n    },\n    \"errors\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"i18nMessagesMap\": {\n      \"type\": \"object\"\n    },\n    \"messages\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"permissions\": {\n      \"type\": \"array\",\n      \"items\": {}\n    }\n  }\n}\n```\n"
-							},
-							"response": []
-						},
-						{
-							"name": "Retrieving Test Generic Content - Wrong ID",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response message\", function () {",
-											"    pm.expect(pm.response.json().message).to.include('The contentlet wrongID does not exists');",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{serverURL}}/api/v1/content/:wrongId",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"content",
-										":wrongId"
-									],
-									"variable": [
-										{
-											"key": "wrongId",
-											"value": "wrongID"
-										}
-									]
-								},
-								"description": "\nThis HTTP GET request is used to retrieve content details by providing the content ID in the endpoint URL. The server URL should be prefixed before the endpoint, and the specific content ID should be provided in place of {{testContentId}}.\n\n### Request\nThe request does not contain a request body, but it requires the following headers:\n- Authorization: Bearer <token>\n  - Type: string\n  - Description: A valid access token to authenticate the request.\n\n### Response\nUpon a successful request, the server will respond with a JSON object containing the details of the requested content, including its ID, title, description, and any other relevant information.\n\nExample Response:\n```json\n{\n  \"contentId\": \"12345\",\n  \"title\": \"Sample Content\",\n  \"description\": \"This is a sample content description.\"\n  // Other relevant information\n}\n```\n"
 							},
 							"response": []
 						}
@@ -857,7 +856,6 @@
 											"        console.log('Logout failed:', err);",
 											"    } else {",
 											"        console.log('Logout successful, cookies should be cleared.');",
-											"        pm.environment.unset(\"jwt\")",
 											"    }",
 											"});"
 										],
