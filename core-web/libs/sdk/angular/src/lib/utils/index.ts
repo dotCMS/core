@@ -1,4 +1,4 @@
-import { DotCMSContainer, DotCMSPageAssetContainer } from '../models';
+import { DotCMSContainer, DotCMSPageAssetContainer } from '../models/dotcms.model';
 
 //Changed the type, to avoid SQ issue.
 //This should be put inside a lib

@@ -4,7 +4,7 @@ import { Row } from './Row';
 
 import { MockContextRender } from '../../mocks/mockPageContext';
 import { ColumnProps } from '../Column/Column';
-import { PageProviderContext } from '../PageProvider/PageProvider';
+import { DotCMSPageContext } from '../PageProvider/PageProvider';
 
 import '@testing-library/jest-dom';
 
@@ -17,7 +17,7 @@ jest.mock('../Column/Column', () => {
 });
 
 describe('Row', () => {
-    const mockRowData: PageProviderContext['layout']['body']['rows'][0] = {
+    const mockRowData: DotCMSPageContext['layout']['body']['rows'][0] = {
         columns: [
             {
                 width: 60,

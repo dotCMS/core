@@ -11,7 +11,8 @@ import {
 } from '@angular/core';
 
 import { NoComponent } from '../../components/no-component/no-component.component';
-import { DotCMSContainer, DotCMSContentlet, DynamicComponentEntity } from '../../models';
+import { DynamicComponentEntity } from '../../models';
+import { DotCMSContainer, DotCMSContentlet } from '../../models/dotcms.model';
 import { PageContextService } from '../../services/dotcms-context/page-context.service';
 import { getContainersData } from '../../utils';
 import { ContentletComponent } from '../contentlet/contentlet.component';

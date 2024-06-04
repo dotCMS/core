@@ -1,26 +1,27 @@
 import { useContext } from 'react';
 
 import { PageContext } from '../../contexts/PageContext';
+import { DotCMSPageContext } from '../../models';
 import { getContainersData } from '../../utils/utils';
-import { PageProviderContext } from '../PageProvider/PageProvider';
 
 function NoContent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;
 }
 
 export interface ContainerProps {
-    readonly containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0];
+    readonly containerRef: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0]['containers'][0];
 }
 
 export function Container({ containerRef }: ContainerProps) {
-    const { isInsideEditor } = useContext(PageContext) as PageProviderContext;
+    const { isInsideEditor } = useContext(PageContext) as DotCMSPageContext;
 
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, components } = useContext<PageProviderContext | null>(
-        PageContext
-    ) as PageProviderContext;
+    const {
+        pageAsset: { containers },
+        components
+    } = useContext<DotCMSPageContext | null>(PageContext) as DotCMSPageContext;
 
     const { acceptTypes, contentlets, maxContentlets, variantId, path } = getContainersData(
         containers,
