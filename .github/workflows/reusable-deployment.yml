@@ -85,6 +85,8 @@ jobs:
           # Make value below which is source dotcms/dotcms tag to base dev image on dynamic to use whatever tag created above
           build_args: |
             DOTCMS_DOCKER_TAG=${{ inputs.environment }}
+            # This is a secret that is used to request a dev license from license.dotcms.com
+            DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }} 
 
       # The artifacts are uploaded to Artifactory using the 'deploy-artifact-artifactory' action.
       - name: CLI Deploy
