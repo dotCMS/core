@@ -4403,10 +4403,10 @@
 
 .dijitTitlePane {
   border-radius: 1px;
-  box-shadow: 0 1px 3px var(--color-palette-black-op-10), 0 1px 2px var(--color-palette-black-op-20);
+  box-shadow: 0px 2px 8px 0px hsla(230, 13%, 9%, 0.02);
 }
 .dijitTitlePaneHover {
-  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
+  box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
 }
 .dijitTitlePaneHover .dijitTitlePaneContentOuter {
   border: none;
@@ -4462,7 +4462,7 @@
   background-color: #ffffff;
   border-radius: 0px;
   border: none;
-  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
+  box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
 }
 .dijitDialogCloseIcon {
   width: 17px;
@@ -4514,7 +4514,7 @@
   color: #14151a;
   border: 0 none;
   border-radius: 0.375rem;
-  box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+  box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
   padding: 0.5rem;
   margin-top: 0.5rem;
 }
@@ -5079,7 +5079,7 @@
   color: #14151a;
   border: 0 none;
   border-radius: 0.375rem;
-  box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
+  box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
   padding: 0.5rem;
   margin-top: 0.5rem;
 }
@@ -10384,7 +10384,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .context-menu {
-  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
+  box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
   position: absolute;
   background: #ffffff;
   border: 1px solid #d1d4db;
@@ -11229,5 +11229,3 @@ body {
   padding: 0;
   height: calc(100vh - 3rem - 20px - 1rem - 0.5rem - 20px - 61px - 1rem);
 }
-
-/*# sourceMappingURL=dotcms.css.map */

@@ -3,10 +3,10 @@ import { ReactNode } from 'react';
 
 import { useDotcmsPageContext } from './useDotcmsPageContext'; // Adjust the import path based on your file structure.
 
-import { PageProviderContext } from '../components/PageProvider/PageProvider';
+import { DotCMSPageContext } from '../components/PageProvider/PageProvider';
 import { PageContext } from '../contexts/PageContext';
 
-const mockContextValue: PageProviderContext = {
+const mockContextValue: DotCMSPageContext = {
     components: {},
     containers: {},
     layout: {

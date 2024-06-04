@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.util.diff.DiffCommand;
 import com.dotcms.util.diff.DiffItem;
@@ -16,24 +17,30 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Implements the diff command for fields
  * @author jsanca
  */
 public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,String, Field> {
 
+    private final String contentTypeId;
     private final Differentiator<Field> fieldDifferentiator;
     private final Differentiator<Map<String, FieldVariable>> fieldVariableDifferentiator;
 
-    public FieldDiffCommand() {
+    public FieldDiffCommand(final String contentTypeId) {
+        this.contentTypeId = contentTypeId;
         this.fieldDifferentiator = this::diff;
         this.fieldVariableDifferentiator = this::diffFieldVariable;
     }
 
-    public FieldDiffCommand(final Differentiator<Field> fieldDifferentiator,
-                            final Differentiator<Map<String, FieldVariable>> fieldVariableDifferentiator) {
+    public FieldDiffCommand(final String contentTypeId,
+            final Differentiator<Field> fieldDifferentiator,
+            final Differentiator<Map<String, FieldVariable>> fieldVariableDifferentiator) {
 
-        this.fieldDifferentiator         = fieldDifferentiator;
+        this.contentTypeId = contentTypeId;
+        this.fieldDifferentiator = fieldDifferentiator;
         this.fieldVariableDifferentiator = fieldVariableDifferentiator;
     }
 
@@ -44,14 +51,26 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
         final DiffResult.Builder<FieldDiffItemsKey, Field> builder = new DiffResult.Builder<>();
 
         final Map<FieldDiffItemsKey, Field> fieldsToDelete = currentObjects.entrySet().stream()
-                .filter(entry ->  !newObjects.containsKey(entry.getKey()))
-                .collect(Collectors.toMap(entry ->
-                        new FieldDiffItemsKey(entry.getKey(), new DiffItem.Builder().variable(entry.getKey()).build()), entry -> entry.getValue()));
+                .filter(entry -> !newObjects.containsKey(entry.getKey()))
+                .collect(Collectors.toMap(
+                        entry ->
+                                new FieldDiffItemsKey(
+                                        entry.getKey(),
+                                        new DiffItem.Builder().variable(entry.getKey()).build()
+                                ),
+                        entry -> ensureFieldContentTypeId(contentTypeId, entry.getValue())
+                ));
 
-        final Map<FieldDiffItemsKey, Field> fieldsToAdd    = newObjects.entrySet().stream()
-                .filter(entry ->  !currentObjects.containsKey(entry.getKey()))
-                .collect(Collectors.toMap(entry ->
-                        new FieldDiffItemsKey(entry.getKey(), new DiffItem.Builder().variable(entry.getKey()).build()), entry -> entry.getValue()));
+        final Map<FieldDiffItemsKey, Field> fieldsToAdd = newObjects.entrySet().stream()
+                .filter(entry -> !currentObjects.containsKey(entry.getKey()))
+                .collect(Collectors.toMap(
+                        entry ->
+                                new FieldDiffItemsKey(
+                                        entry.getKey(),
+                                        new DiffItem.Builder().variable(entry.getKey()).build()
+                                ),
+                        entry -> ensureFieldContentTypeId(contentTypeId, entry.getValue())
+                ));
 
         final Map<FieldDiffItemsKey, Field> fieldsToUpdate = new HashMap<>();
         for (final Map.Entry<String, Field> entry : newObjects.entrySet()) {
@@ -61,7 +80,10 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
                 final Collection<DiffItem> diffItems = this.fieldDifferentiator.diff(currentObjects.get(entry.getKey()), entry.getValue());
                 if (UtilMethods.isSet(diffItems)) {
 
-                    fieldsToUpdate.put(new FieldDiffItemsKey(entry.getKey(), diffItems), entry.getValue());
+                    fieldsToUpdate.put(
+                            new FieldDiffItemsKey(entry.getKey(), diffItems),
+                            ensureFieldContentTypeId(contentTypeId, entry.getValue())
+                    );
                 }
             }
         }
@@ -214,4 +236,26 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
 
         return (null != s1 && !s1.equals(s2)) || null == s1 && null != s2;
     }
+
+    /**
+     * Ensures that the content type id is set on the given field. If the content type id is not set
+     * or is different from the provided content type id, a new Field object is created with the
+     * updated content type id and returned. Otherwise, the original field is returned.
+     *
+     * @param contentTypeId the desired content type id
+     * @param field         the field to be checked and updated if necessary
+     * @return the field object with the updated content type id, or the original field if no update
+     * is needed
+     */
+    private Field ensureFieldContentTypeId(final String contentTypeId, final Field field) {
+
+        // Make sure the content type id is set on the field
+        if (StringUtils.isEmpty(field.contentTypeId()) ||
+                !field.contentTypeId().equals(contentTypeId)) {
+            return FieldBuilder.builder(field).contentTypeId(contentTypeId).build();
+        }
+
+        return field;
+    }
+
 }

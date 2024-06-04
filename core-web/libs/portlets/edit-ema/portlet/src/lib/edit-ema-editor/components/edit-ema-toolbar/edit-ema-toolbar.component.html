@@ -31,7 +31,7 @@
 
             <dot-ema-bookmarks [url]="es.favoritePageURL" />
             <p-button
-                [cdkCopyToClipboard]="es.iframeURL"
+                [cdkCopyToClipboard]="es.pureURL"
                 [label]="'editpage.header.copy' | dm"
                 (cdkCopyToClipboardCopied)="triggerCopyToast()"
                 icon="pi pi-copy"
