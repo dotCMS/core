@@ -307,7 +307,7 @@
 									"script": {
 										"exec": [
 											"// Validate the errorMessage contains 'has invalid / missing field(s)'",
-											"pm.test(\"Validate errorMessage contains 'has invalid / missing field(s)'\", function () {",
+											"pm.test(\"Validate errorMessage\", function () {",
 											"  var jsonData = pm.response.json();",
 											"  jsonData.entity.results.forEach((result) => {",
 											"    var error = result[Object.keys(result)[0]].errorMessage;",
@@ -331,6 +331,7 @@
 											"        console.log('Logout failed:', err);",
 											"    } else {",
 											"        console.log('Logout successful, cookies should be cleared.');",
+											"        pm.environment.unset(\"jwt\")",
 											"    }",
 											"});"
 										],
@@ -340,6 +341,9 @@
 								}
 							],
 							"request": {
+								"auth": {
+									"type": "noauth"
+								},
 								"method": "POST",
 								"header": [],
 								"body": {
@@ -853,6 +857,7 @@
 											"        console.log('Logout failed:', err);",
 											"    } else {",
 											"        console.log('Logout successful, cookies should be cleared.');",
+											"        pm.environment.unset(\"jwt\")",
 											"    }",
 											"});"
 										],
@@ -862,6 +867,9 @@
 								}
 							],
 							"request": {
+								"auth": {
+									"type": "noauth"
+								},
 								"method": "PUT",
 								"header": [
 									{
