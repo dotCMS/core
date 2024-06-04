@@ -64,4 +64,16 @@ public final class ThreadUtils {
         return false;
     }
 
+    /*public static int methodCallCount(final String className,
+                                                     final String methodName) {
+        final StackTraceElement[] traces = Thread.currentThread().getStackTrace();
+        int counter = 0;
+        for (final StackTraceElement trace : traces) {
+            if (trace.getClassName().equals(className) && trace.getMethodName().equals(methodName)) {
+                counter++;
+            }
+        }
+        return counter;
+    }*/
+
 }

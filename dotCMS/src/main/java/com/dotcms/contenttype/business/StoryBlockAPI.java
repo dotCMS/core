@@ -25,6 +25,8 @@ public interface StoryBlockAPI {
     String IDENTIFIER_KEY = "identifier";
     String INODE_KEY = "inode";
     String LANGUAGE_ID_KEY = "languageId";
+    String HYDRATED = "__hydrated__";
+    String HYDRATED_TIME = "__hydrated_time__";
 
     /**
      * Contains the types of Contentlets that can be added to a Story Block field

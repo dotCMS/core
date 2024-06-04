@@ -5,6 +5,7 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -920,14 +921,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        if (REFRESH_BLOCK_EDITOR_REFERENCES && !cachedContentlet.getBoolProperty("__hidrated__")) {
+        final long currentTimestamp = System.currentTimeMillis();
+        final long lastHydratedTimestamp = cachedContentlet.getLongProperty(StoryBlockAPI.HYDRATED_TIME);
+
+        //long TWO_MINUTES = 1000 * 60 * 2;
+        long TTL = 1000 * 20; //20 segundos
+        boolean forceReload =
+                (currentTimestamp - lastHydratedTimestamp) >= TTL ||
+                lastHydratedTimestamp == 0;
+
+        if (REFRESH_BLOCK_EDITOR_REFERENCES && forceReload) {
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
             if (storyBlockRefreshedResult.isRefreshed()) {
                 Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet '%s'",
                         cachedContentlet.getIdentifier()));
-
                 final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();
+                refreshedContentlet.setBoolProperty(StoryBlockAPI.HYDRATED, true);
+                refreshedContentlet.setLongProperty(StoryBlockAPI.HYDRATED_TIME, System.currentTimeMillis());
                 contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
                 return refreshedContentlet;
             }
