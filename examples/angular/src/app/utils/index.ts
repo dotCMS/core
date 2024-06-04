@@ -16,4 +16,7 @@ export const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
   Product: import('../pages/content-types/product/product.component').then(
     (c) => c.ProductComponent,
   ),
+  Empty: import('../pages/content-types/empty/empty.component').then(
+    (c) => c.EmptyComponent,
+  ),
 };

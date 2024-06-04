@@ -19,6 +19,14 @@ class DotcmsSDKMockComponent {
     @Input() contentlet!: DotCMSContentlet;
 }
 
+@Component({
+    selector: 'dot-no-component',
+    template: 'no component yet - Custom'
+})
+class EmptyComponent {
+    @Input() contentlet!: DotCMSContentlet;
+}
+
 describe('ContainerComponent', () => {
     let spectator: Spectator<ContainerComponent>;
 
@@ -81,7 +89,7 @@ describe('ContainerComponent', () => {
             });
         });
 
-        it('should render NoComponentComponent when no component is found', () => {
+        it('should render NoComponent component for unsetted content types', () => {
             spectator.setInput(
                 'container',
                 PageResponseMock.layout.body.rows[1].columns[0].containers[0] as DotCMSContainer
@@ -97,6 +105,58 @@ describe('ContainerComponent', () => {
             );
             spectator.detectChanges();
             expect(spectator.query(byText('This container is empty.'))).toBeTruthy();
+        });
+    });
+
+    describe('with custom NoComponent component', () => {
+        const createComponent = createComponentFactory({
+            component: ContainerComponent,
+            detectChanges: false,
+            providers: [
+                {
+                    provide: PageContextService,
+                    useValue: {
+                        pageContextValue: {
+                            pageAsset: {
+                                containers: PageResponseMock.containers
+                            },
+                            components: {
+                                Banner: of(DotcmsSDKMockComponent)
+                            },
+                            isInsideEditor: true
+                        }
+                    }
+                }
+            ]
+        });
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    container: PageResponseMock.layout.body.rows[1].columns[0]
+                        .containers[0] as DotCMSContainer
+                },
+                providers: [
+                    {
+                        provide: PageContextService,
+                        useValue: {
+                            pageContextValue: {
+                                pageAsset: {
+                                    containers: PageResponseMock.containers
+                                },
+                                components: {
+                                    Empty: of(EmptyComponent)
+                                },
+                                isInsideEditor: true
+                            }
+                        }
+                    }
+                ]
+            });
+        });
+
+        it('should render custom NoComponent component for unsetted content types', () => {
+            spectator.detectChanges();
+            expect(spectator.query(EmptyComponent)).toBeTruthy();
         });
     });
 
