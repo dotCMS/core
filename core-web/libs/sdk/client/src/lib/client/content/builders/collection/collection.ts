@@ -18,7 +18,7 @@ import { sanitizeQueryForContentType } from '../../shared/utils';
  *
  * @export
  * @class CollectionBuilder
- * @template T
+ * @template T Represents the type of the content type to fetch. Defaults to unknown
  */
 export class CollectionBuilder<T = unknown> {
     #page = 1;
