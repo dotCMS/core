@@ -9,8 +9,13 @@
         <label class="p-label-input-required" for="langEdit">{{
             'locale.display.name' | dm
         }}</label>
-        <input id="langEdit" [maxlength]="50" formControlName="language" pInputText type="text" />
-        <span class="p-field-hint">{{ 'TBD' | dm }}</span>
+        <input
+            id="langEdit"
+            [maxlength]="50"
+            data-testId="langEdit"
+            formControlName="language"
+            pInputText
+            type="text" />
     </div>
 
     <div class="field">
@@ -20,6 +25,7 @@
             <input
                 id="isoCodeEdit"
                 #localeIDInput
+                data-testId="isoCodeEdit"
                 formControlName="isoCode"
                 pInputText
                 type="text" />
@@ -29,7 +35,13 @@
         <label for="id">{{ 'locale.language.id' | dm }}</label>
         <span class="p-input-icon-right">
             <i class="pi pi-copy" [cdkCopyToClipboard]="languageIDInput.value"></i>
-            <input id="id" #languageIDInput formControlName="id" pInputText type="text" />
+            <input
+                id="id"
+                #languageIDInput
+                data-testId="id"
+                formControlName="id"
+                pInputText
+                type="text" />
         </span>
     </div>
     } @else {
@@ -41,6 +53,7 @@
             #localeTypeDropdown
             [options]="localeType"
             (onChange)="handleTypeChange()"
+            data-testId="localeType"
             appendTo="body">
         </p-dropdown>
     </div>
@@ -57,6 +70,7 @@
             [options]="data.languages"
             [placeholder]="'locales.language.input.placeholder' | dm"
             filterBy="name,code"
+            data-testId="languageDropdown"
             appendTo="body"
             formControlName="languageDropdown">
             <ng-template let-language pTemplate="item">
@@ -75,6 +89,7 @@
             [filter]="true"
             [options]="data.countries"
             [placeholder]="'locales.language.input.placeholder' | dm"
+            data-testId="countryDropdown"
             filterBy="name,code"
             appendTo="body"
             formControlName="countryDropdown">
@@ -95,6 +110,7 @@
                 id="isoCode"
                 #isoCodeInput
                 [placeholder]="'locale.id.placeholder' | dm"
+                data-testId="isoCode"
                 formControlName="isoCode"
                 pInputText
                 type="text" />
@@ -107,15 +123,21 @@
         <label class="p-label-input-required" for="language">{{
             'locale.display.name' | dm
         }}</label>
-        <input id="language" [maxlength]="50" formControlName="language" pInputText type="text" />
+        <input
+            id="language"
+            [maxlength]="50"
+            data-testId="language"
+            formControlName="language"
+            pInputText
+            type="text" />
         <span class="p-field-hint">{{ 'locale.display.name.hint' | dm }}</span>
     </div>
     <div class="field">
         <label class="p-label-input-required" for="languageCode">{{ 'locale.id' | dm }}</label>
         <input
             id="languageCode"
-            #languageCodeInput
             [maxlength]="5"
+            data-testId="languageCode"
             formControlName="languageCode"
             pInputText
             type="text" />
@@ -126,7 +148,9 @@
         {{ 'locale.custom.waring' | dm }}</span
     >
     } } @if (showError | async){
-    <span class="locale-add__error-message">{{ 'locale.error.message' | dm }}</span>
+    <span class="locale-add__error-message" data-testId="error-message">{{
+        'locale.error.message' | dm
+    }}</span>
     }
 
     <div class="locale-add__buttons">
@@ -139,6 +163,7 @@
         <button
             [label]="(languageId?.value ? 'locales.edit.locale' : 'locales.add.locale') | dm"
             [disabled]="!form.valid"
+            data-testId="submit-button"
             pButton
             type="submit"></button>
     </div>

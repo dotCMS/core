@@ -138,7 +138,8 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                         data: {
                             languages,
                             countries,
-                            locale: localeToEdit
+                            locale: localeToEdit,
+                            localeList: locales
                         }
                     }
                 );
