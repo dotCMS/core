@@ -112,4 +112,10 @@ public interface StoryBlockAPI {
      */
     String toJson (final Map<String, Object> blockEditorMap) throws JsonProcessingException;
 
+    /**
+     *
+     * @return
+     */
+    int getMaxHydrationTTL();
+
 }

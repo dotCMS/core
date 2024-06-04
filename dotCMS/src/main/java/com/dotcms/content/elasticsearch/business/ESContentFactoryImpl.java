@@ -921,15 +921,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        final long currentTimestamp = System.currentTimeMillis();
-        final long lastHydratedTimestamp = cachedContentlet.getLongProperty(StoryBlockAPI.HYDRATED_TIME);
-
-        //long TWO_MINUTES = 1000 * 60 * 2;
-        long TTL = 1000 * 20; //20 segundos
-        boolean forceReload =
-                (currentTimestamp - lastHydratedTimestamp) >= TTL ||
-                lastHydratedTimestamp == 0;
-
+        boolean forceReload = this.forceBlockEditorReload(cachedContentlet);
         if (REFRESH_BLOCK_EDITOR_REFERENCES && forceReload) {
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
@@ -937,6 +929,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet '%s'",
                         cachedContentlet.getIdentifier()));
                 final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();
+                // These flags help avoid infinite loops when refreshing Contentlets inside the
+                // Block Editor that might reference each other
                 refreshedContentlet.setBoolProperty(StoryBlockAPI.HYDRATED, true);
                 refreshedContentlet.setLongProperty(StoryBlockAPI.HYDRATED_TIME, System.currentTimeMillis());
                 contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
@@ -944,6 +938,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
         return cachedContentlet;
+    }
+
+    /**
+     * Determines whether the contents of one or more Block Editor fields inside a Contentlet must
+     * be refreshed with their latest versions or not.
+     * <p></p>
+     *
+     * @param contentlet The Contentlet to check.
+     * @return
+     */
+    private boolean forceBlockEditorReload(final Contentlet contentlet) {
+        final long currentTimestamp = System.currentTimeMillis();
+        final long lastHydratedTimestamp = contentlet.getLongProperty(StoryBlockAPI.HYDRATED_TIME);
+        long ttl = 1000L * APILocator.getStoryBlockAPI().getMaxHydrationTTL();
+        return 0 == lastHydratedTimestamp || (currentTimestamp - lastHydratedTimestamp) >= ttl;
     }
 
 	@Override

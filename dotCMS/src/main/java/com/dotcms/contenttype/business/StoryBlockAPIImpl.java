@@ -6,13 +6,12 @@ import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Config;
@@ -21,6 +20,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
@@ -28,6 +28,7 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,6 +46,10 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
     private static final Lazy<Integer> MAX_RECURSION_LEVEL = Lazy.of(() -> Config.getIntProperty(
             "STORY_BLOCK_MAX_RECURSION_LEVEL", 2));
+    private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
+            "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", "2"));
+    private static final Lazy<Integer> HYDRATION_TTL = Lazy.of(() -> Config.getIntProperty(
+            "STORY_BLOCK_HYDRATION_TTL", 120));
 
     @Override
     @CloseDBIfOpened
@@ -53,16 +58,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         boolean inTransaction = DbConnectionFactory.inTransaction();
         if (!inTransaction && null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
-
-            /*Logger.error(this, "===============================================================");
-            Logger.error(this, "===============================================================");
-            Logger.error(this, " Thread Name: " + Thread.currentThread().getName());
-            Logger.error(this, " NO CUMPLE LA CONDICION: " + contentlet.getIdentifier() + " / " + contentlet.getTitle());
-            Logger.error(this, " COUNT = " + ThreadUtils.methodCallCount(this.getClass().getName(), "refreshReferences"));
-            Logger.error(this, "===============================================================");
-            Logger.error(this, "===============================================================");*/
-
-            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", MAX_RECURSION_LEVEL.get())) {
+            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(),
+                    "refreshReferences", MAX_RECURSION_LEVEL.get())) {
                 Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL.get() +
                         " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
                 return new StoryBlockReferenceResult(false, contentlet);
@@ -91,6 +88,12 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @SuppressWarnings("unchecked")
     public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed = false;
+        if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(),
+                "refreshStoryBlockValueReferences", MAX_RECURSION_LEVEL.get())) {
+            Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL.get() +
+                    " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
+            return new StoryBlockReferenceResult(false, storyBlockValue);
+        }
         try {
             final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
             final Object contentsMap = blockEditorMap.get(CONTENT_KEY);
@@ -210,8 +213,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 }
             }
         } catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when retrieving Contentlet references from Story" +
-                                                          " Block field: %s", e.getMessage());
+            final String errorMsg = String.format("An error occurred when retrieving Contentlet references from Story Block field: " +
+                    "%s", e.getMessage());
             Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg,e);
             
         }
@@ -262,9 +265,10 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     /**
+     * Loads the common properties of a {@link Contentlet} into the specified data map.
      *
-     * @param contentlet
-     * @param dataMap
+     * @param contentlet The Contentlet whose properties will be loaded.
+     * @param dataMap    The Map where the properties will be stored.
      */
     private void loadCommonContentletProps(final Contentlet contentlet, final Map<String, Object> dataMap) {
         dataMap.put(Contentlet.HOST_NAME, contentlet.getHost());
@@ -320,21 +324,20 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     /**
-     * Refreshes the data map from a referenced Contentlet in the Story Block field with the latest data specified by
-     * the live Inode.
+     * Refreshes the data map from a referenced Contentlet in the Story Block field with the latest
+     * data specified by the live Inode.
      *
-     * @param dataMap   The Map containing the Contentlet's properties.
-     * @param inode The live Inode of the Contentlet whose properties will be copied over to the previous data map.
-     *
-     * @throws DotDataException     An error occurred when interacting with the data source.
-     * @throws DotSecurityException The User accessing the API does not have the required permissions to do so.
+     * @param dataMap The Map containing the Contentlet's properties.
+     * @param inode   The live Inode of the Contentlet whose properties will be copied over to the
+     *                previous data map.
      */
-    private void refreshBlockEditorDataMap(Map<String, Object> dataMap, final String inode) {
+    private void refreshBlockEditorDataMap(final Map<String, Object> dataMap, final String inode) {
         try {
-            //final Contentlet contentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
-            final Optional<Contentlet> contentlet = APILocator.getContentletAPI().findInDb(inode);
-            if (contentlet.isPresent()) {
-                final Map<String, Object> updatedDataMap = refreshContentlet(contentlet.get());
+            final Optional<Contentlet> contentletOpt = APILocator.getContentletAPI().findInDb(inode);
+            if (contentletOpt.isPresent()) {
+                final Contentlet contentlet = contentletOpt.get();
+                this.addContentletRelationships(contentlet);
+                final Map<String, Object> updatedDataMap = this.refreshContentlet(contentlet);
                 this.excludeNonExistingProperties(dataMap, updatedDataMap);
                 dataMap.putAll(updatedDataMap);
             }
@@ -344,11 +347,26 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     /**
+     * Adds the relationships of the specified {@link Contentlet} object, if required.
+     *
+     * @param contentlet The Contentlet that may contain Relationship fields.
+     */
+    private void addContentletRelationships(final Contentlet contentlet) {
+        final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final PageMode currentPageMode = PageMode.get(httpRequest);
+        if (null != httpRequest && null == httpRequest.getAttribute(WebKeys.HTMLPAGE_DEPTH)) {
+            httpRequest.setAttribute(WebKeys.HTMLPAGE_DEPTH, MAX_RELATIONSHIP_DEPTH.get());
+        }
+        ContentUtils.addRelationships(contentlet, APILocator.systemUser(), currentPageMode, contentlet.getLanguageId());
+    }
+
+    /**
      * Takes the Contentlet properties that exist in the Block Editor field that <b>no longer exist
      * in the latest version of the Contentlet.</b>
-     * <p>For instance, if a Checkbox Field is unchecked, its value will still be present in the
-     * Block Editor's JSON data, but it's NOT present in the latest {@link Contentlet} object. This
-     * makes sure both data maps have the same properties.</p>
+     * <p>For instance, if a Contentlet with a Checkbox Field is added to a Block Editor, and later
+     * on such a field is unchecked, its value will still be present in the Block Editor's JSON
+     * data even though it's NOT present in the latest {@link Contentlet} object. This makes sure
+     * both data maps have the same properties.</p>
      *
      * @param dataMap        The Map with the Contentlet's properties from the Block Editor field.
      * @param updatedDataMap The Map with the Contentlet's properties from the latest version in the
@@ -366,9 +384,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     /**
      * Refreshes the Contentlet data using the Contentlet from the API call to the DB
      *
-     * @param contentlet
-     * @return
-     * @throws JsonProcessingException
+     * @param contentlet The {@link Contentlet} with the latest properties.
+     *
+     * @return The updated data map with the latest properties.
+     *
+     * @throws JsonProcessingException An error occurred when processing property with JSON data.
      */
     private Map<String, Object> refreshContentlet(final Contentlet contentlet) throws JsonProcessingException {
         final Map<String, Object> dataMap = new LinkedHashMap<>();
@@ -385,6 +405,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             dataMap.put(field.variable(), field instanceof StoryBlockField ? this.toMap(value) : value);
         }
         return dataMap;
+    }
+
+    @Override
+    public int getMaxHydrationTTL() {
+        return HYDRATION_TTL.get();
     }
 
 }
