@@ -26,7 +26,6 @@
         <jackson.version>2.16.1</jackson.version>
         <jersey.version>2.22.1</jersey.version>
         <graalvm.version>22.3.3</graalvm.version>
-        <dotcms.tika-api.version>2023.09.8</dotcms.tika-api.version>
     </properties>
     <dependencyManagement>
 
@@ -59,7 +58,7 @@
             <dependency>
                 <groupId>com.dotcms.core.plugins</groupId>
                 <artifactId>com.dotcms.tika-api</artifactId>
-                <version>${dotcms.tika-api.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
@@ -799,7 +798,7 @@
            <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
-                <version>2.1.8</version>
+                <version>3.5.3</version>
             </dependency>
 
             <dependency>
@@ -1505,7 +1504,12 @@
                 <artifactId>mockito-core</artifactId>
                 <version>5.11.0</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>5.11.0</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <!-- Hamcrest is a framework for writing matcher objects allowing 'match' rules to be defined declaratively. -->
                 <groupId>org.hamcrest</groupId>
