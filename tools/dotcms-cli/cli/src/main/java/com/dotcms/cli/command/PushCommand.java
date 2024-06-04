@@ -1,9 +1,12 @@
 package com.dotcms.cli.command;
 
+import com.dotcms.api.client.util.DirectoryWatcherService;
 import com.dotcms.cli.common.AuthenticationMixin;
+import com.dotcms.cli.common.CommandInterceptor;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -34,7 +37,8 @@ import picocli.CommandLine;
                 "" // empty string here so we can have a new line
         }
 )
-public class PushCommand implements Callable<Integer>, DotCommand {
+
+public class PushCommand implements Callable<Integer>, DotPush {
 
     static final String NAME = "push";
 
@@ -59,8 +63,11 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     @Inject
     Instance<DotPush> pushCommands;
 
+    @Inject
+    DirectoryWatcherService directoryWatcherService;
 
     @Override
+    @CommandInterceptor
     public Integer call() throws Exception {
         // Find the instances of all push subcommands
 
@@ -70,6 +77,24 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         // Validate we have a workspace at the specified path
         checkValidWorkspace(pushMixin.path());
 
+        /*
+        if(pushMixin.isWatchOn()){
+            directoryWatcherService.watch(pushMixin.path(), pushMixin.interval, true, event -> {
+                execCommands();
+            });
+            return CommandLine.ExitCode.OK;
+        }
+         */
+
+        final Integer exitCode = execSubCommands();
+        if (exitCode != null) {
+            return exitCode;
+        }
+
+        return CommandLine.ExitCode.OK;
+    }
+
+    private Integer execSubCommands() {
         // Preparing the list of arguments to be passed to the subcommands
         var expandedArgs = new ArrayList<>(spec.commandLine().getParseResult().expandedArgs());
         expandedArgs.add("--noValidateUnmatchedArguments");
@@ -77,6 +102,7 @@ public class PushCommand implements Callable<Integer>, DotCommand {
 
         // Sort the subcommands by order
         final var pushCommandsSorted = pushCommands.stream()
+                .filter( dotPush ->  !dotPush.isGlobalPush() )
                 .sorted(Comparator.comparingInt(DotPush::getOrder))
                 .collect(Collectors.toList());
 
@@ -107,8 +133,7 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         }
 
         executorService.shutdown();
-
-        return CommandLine.ExitCode.OK;
+        return null;
     }
 
     /**
@@ -155,4 +180,13 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         return output;
     }
 
+    @Override
+    public PushMixin getPushMixin() {
+        return this.pushMixin;
+    }
+
+    @Override
+    public boolean isGlobalPush() {
+        return true;
+    }
 }

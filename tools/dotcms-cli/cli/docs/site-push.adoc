@@ -43,10 +43,16 @@ This command enables the pushing of sites to the server. It accommodates the spe
   The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.
 
 *--dry-run*::
-  When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.
+  When this option is enabled, the push process displays information about the changes that would be made on 
++
+the remote server without actually pushing those changes. No modifications will be made to the remote server. 
++
+By default, this option is disabled, and the changes will be applied to the remote server.
 
 *-ff, --fail-fast*::
-  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
+  Stop at first failure and exit the command. By default, this option is disabled, 
++
+and the command will continue on error.
 
 *-fse, --forceSiteExecution*::
   Force must me set to true to update a site name.
@@ -55,7 +61,9 @@ This command enables the pushing of sites to the server. It accommodates the spe
   Display this help message.
 
 *--retry-attempts*=_<retryAttempts>_::
-  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
+  Number of retry attempts on errors. By default, this option is disabled, 
++
+and the command will not retry on error.
 
 *-rs, --removeSites*::
   When this option is enabled, the push process allows the deletion of sites in the remote server. By default, this option is disabled, and sites will not be removed on the remote server.
@@ -64,7 +72,13 @@ This command enables the pushing of sites to the server. It accommodates the spe
   A dotCMS token to use for authentication. 
 
 *-w*, *--watch*[=_watch_]::
-  When this option is enabled the tool watches for file changes within the push path If a change is detected the push operation gets triggered. The default watch interval is 2 seconds, but this can set passing an int value to this option.
+  When this option is enabled the tool watches for changes int the file system within the push path
++
+If a change is detected the push command being executed gets triggered. 
++
+The default watch interval is 2 seconds, but this can be set passing an int value to this option.
++
+e.g. --watch 5
 
 // end::picocli-generated-man-section-options[]
 

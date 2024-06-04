@@ -32,8 +32,7 @@ import picocli.CommandLine;
                 "" // empty string to add a new line
         }
 )
-public class SitePush extends AbstractSiteCommand implements Callable<Integer>, DotCommand,
-        DotPush {
+public class SitePush extends AbstractSiteCommand implements Callable<Integer>, DotPush {
 
     static final String NAME = "push";
 

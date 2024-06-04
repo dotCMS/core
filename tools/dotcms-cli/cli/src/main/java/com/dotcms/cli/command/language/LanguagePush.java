@@ -45,8 +45,7 @@ import picocli.CommandLine;
                 "" // empty string to add a new line
         }
 )
-public class LanguagePush extends AbstractLanguageCommand implements Callable<Integer>, DotCommand,
-        DotPush {
+public class LanguagePush extends AbstractLanguageCommand implements Callable<Integer>, DotPush {
 
     static final String NAME = "push";
 

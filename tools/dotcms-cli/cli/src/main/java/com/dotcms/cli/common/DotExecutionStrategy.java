@@ -11,6 +11,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.IExecutionStrategy;
 import picocli.CommandLine.ParameterException;
+import picocli.CommandLine.ParseResult;
 
 /**
  * This class implements the execution strategy interface, with the added functionality of logging
@@ -65,23 +66,8 @@ public class DotExecutionStrategy implements IExecutionStrategy {
                 return underlyingStrategy.execute(parseResult);
             }
 
-            final String parentCommand = commandsChain.firstSubcommand()
-                    .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
-
-            if (!ConfigCommand.NAME.equals(parentCommand)){
-                final ServiceManager manager = getServiceManager();
-                try {
-                    final List<ServiceBean> services = manager.services();
-                    if (services.isEmpty()) {
-                        throw new ExecutionException(
-                                parseResult.commandSpec().commandLine(),
-                                "No dotCMS configured instances were found. Please run '"+ConfigCommand.NAME+"' to setup an instance to use CLI.");
-                    }
-                } catch (IOException e) {
-                    throw new ExecutionException(parseResult.commandSpec().commandLine(),
-                            "Error reading dotCMS instances", e);
-                }
-            }
+            //If no remote URL is set, we need to check if there is a configuration
+            verifyConfigExists(parseResult, commandsChain);
         }
 
         return underlyingStrategy.execute(parseResult);
@@ -108,6 +94,35 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         }
 
         return false;
+    }
+
+    /**
+     * Verifies that a configuration exists in the dotCMS CLI. If no configuration exists, it throws
+     * an ExecutionException.
+     *
+     * @param parseResult    the parse result from which to select one or more CommandSpec instances
+     *                       to execute
+     * @param commandsChain  the CommandsChain object to check
+     * @throws ExecutionException if no configuration exists
+     */
+    private void verifyConfigExists(ParseResult parseResult, CommandsChain commandsChain) {
+        final String parentCommand = commandsChain.firstSubcommand()
+                .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+
+        if (!ConfigCommand.NAME.equals(parentCommand)){
+            final ServiceManager manager = getServiceManager();
+            try {
+                final List<ServiceBean> services = manager.services();
+                if (services.isEmpty()) {
+                    throw new ExecutionException(
+                            parseResult.commandSpec().commandLine(),
+                            "No dotCMS configured instances were found. Please run '"+ConfigCommand.NAME+"' to setup an instance to use CLI.");
+                }
+            } catch (IOException e) {
+                throw new ExecutionException(parseResult.commandSpec().commandLine(),
+                        "Error reading dotCMS instances", e);
+            }
+        }
     }
 
     /**

@@ -7,7 +7,6 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 import com.dotcms.api.client.files.PushService;
 import com.dotcms.api.client.files.traversal.PushTraverseParams;
 import com.dotcms.api.client.files.traversal.TraverseResult;
-import com.dotcms.api.client.util.DirectoryWatcherService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.command.DotCommand;
@@ -42,8 +41,7 @@ import picocli.CommandLine;
                 "" // empty string here so we can have a new line
         }
 )
-public class FilesPush extends AbstractFilesCommand implements Callable<Integer>,
-        DotCommand, DotPush {
+public class FilesPush extends AbstractFilesCommand implements Callable<Integer>, DotPush {
 
     static final String NAME = "push";
     static final String FILES_PUSH_MIXIN = "filesPushMixin";
@@ -77,97 +75,50 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         }
 
         // Validating and resolving the workspace and path
-       var resolvedWorkspaceAndPath = resolveWorkspaceAndPath();
+        var resolvedWorkspaceAndPath = resolveWorkspaceAndPath();
 
-       if(pushMixin.isWatchOn()){
-           new DirectoryWatcherService().watch(pushMixin.path(),2L, true, event -> {
-               System.out.println("File changed: " + event.context() + " : " + event.kind());
+        File finalInputFile = resolvedWorkspaceAndPath.getRight();
+        CompletableFuture<List<TraverseResult>>
+                folderTraversalFuture = executor.supplyAsync(
+                () ->
+                        // Service to handle the traversal of the folder
+                        pushService.traverseLocalFolders(
+                                output, resolvedWorkspaceAndPath.getLeft().root().toFile(),
+                                finalInputFile, filesPushMixin.removeAssets,
+                                filesPushMixin.removeFolders, false, pushMixin.failFast)
+        );
 
-               CompletableFuture<List<TraverseResult>>
-                       folderTraversalFuture = executor.supplyAsync(
-                       () ->
-                               // Service to handle the traversal of the folder
-                               pushService.traverseLocalFolders(
-                                       output, resolvedWorkspaceAndPath.getLeft().root().toFile(),
-                                       pushMixin.path().toFile(), filesPushMixin.removeAssets,
-                                       filesPushMixin.removeFolders, false, pushMixin.failFast)
-               );
+        // ConsoleLoadingAnimation instance to handle the waiting "animation"
+        ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
+                output,
+                folderTraversalFuture
+        );
 
-               // ConsoleLoadingAnimation instance to handle the waiting "animation"
-               ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
-                       output,
-                       folderTraversalFuture
-               );
+        CompletableFuture<Void> animationFuture = executor.runAsync(
+                consoleLoadingAnimation
+        );
 
-               CompletableFuture<Void> animationFuture = executor.runAsync(
-                       consoleLoadingAnimation
-               );
+        // Waits for the completion of both the folder traversal and console loading animation tasks.
+        // This line blocks the current thread until both CompletableFuture instances
+        // (folderTraversalFuture and animationFuture) have completed.
+        CompletableFuture.allOf(folderTraversalFuture, animationFuture).join();
+        final var result = folderTraversalFuture.get();
 
-               // Waits for the completion of both the folder traversal and console loading animation tasks.
-               // This line blocks the current thread until both CompletableFuture instances
-               // (folderTraversalFuture and animationFuture) have completed.
-               CompletableFuture.allOf(folderTraversalFuture, animationFuture).join();
-               final var result = folderTraversalFuture.get();
-               if (result == null) {
-                   output.error(String.format(
-                           "Error occurred while pushing folder info: [%s].",
-                           pushMixin.path().toAbsolutePath()));
+        if (result == null) {
+            output.error(String.format(
+                    "Error occurred while pushing folder info: [%s].",
+                    pushMixin.path().toAbsolutePath()));
+            return CommandLine.ExitCode.SOFTWARE;
+        }
 
-               } else {
-                   if (result.isEmpty()) {
-                       output.info(String.format("\r%n"
-                               + " ──────%n"
-                               + " No changes in %s to push%n%n", "Files"));
-                   } else {
-                       pushChangesIfAny(resolvedWorkspaceAndPath.getLeft().root(), result);
-                   }
-               }
+        if (result.isEmpty()) {
+            output.info(String.format("\r%n"
+                    + " ──────%n"
+                    + " No changes in %s to push%n%n", "Files"));
+        } else {
+            pushChangesIfAny(resolvedWorkspaceAndPath.getLeft().root(), result);
+        }
 
-           });
-       } else {
-
-           File finalInputFile = resolvedWorkspaceAndPath.getRight();
-           CompletableFuture<List<TraverseResult>>
-                   folderTraversalFuture = executor.supplyAsync(
-                   () ->
-                           // Service to handle the traversal of the folder
-                           pushService.traverseLocalFolders(
-                                   output, resolvedWorkspaceAndPath.getLeft().root().toFile(),
-                                   finalInputFile, filesPushMixin.removeAssets,
-                                   filesPushMixin.removeFolders, false, pushMixin.failFast)
-           );
-
-           // ConsoleLoadingAnimation instance to handle the waiting "animation"
-           ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
-                   output,
-                   folderTraversalFuture
-           );
-
-           CompletableFuture<Void> animationFuture = executor.runAsync(
-                   consoleLoadingAnimation
-           );
-
-           // Waits for the completion of both the folder traversal and console loading animation tasks.
-           // This line blocks the current thread until both CompletableFuture instances
-           // (folderTraversalFuture and animationFuture) have completed.
-           CompletableFuture.allOf(folderTraversalFuture, animationFuture).join();
-           final var result = folderTraversalFuture.get();
-
-           if (result == null) {
-               output.error(String.format(
-                       "Error occurred while pushing folder info: [%s].",
-                       pushMixin.path().toAbsolutePath()));
-               return CommandLine.ExitCode.SOFTWARE;
-           }
-
-           if (result.isEmpty()) {
-               output.info(String.format("\r%n"
-                       + " ──────%n"
-                       + " No changes in %s to push%n%n", "Files"));
-           } else {
-               pushChangesIfAny(resolvedWorkspaceAndPath.getLeft().root(), result);
-           }
-       }
 
         return CommandLine.ExitCode.OK;
     }
