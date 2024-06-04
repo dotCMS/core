@@ -79,7 +79,7 @@ export class Content {
      *
      * @param {string} contentType The content type to get the collection
      * @return {CollectionBuilder} CollectionBuilder to filter and fetch the collection
-     * @template T Represents the type of the content type. Defaults to unknown
+     * @template T Represents the type of the content type to fetch. Defaults to unknown
      * @memberof Content
      */
     getCollection<T = unknown>(contentType: string): CollectionBuilder<T> {
