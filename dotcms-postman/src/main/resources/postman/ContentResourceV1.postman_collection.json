@@ -2,6 +2,7 @@
 	"info": {
 		"_postman_id": "da5582a8-f046-4c8e-ab40-bb8e06c57e5e",
 		"name": "ContentResourceV1",
+		"description": "This folder contains a comprehensive set of API requests related to the `ContentResourceV1` API endpoints. These requests cover various operations such as creating, retrieving and updating content. The folder is organized to help developers and testers efficiently validate and interact with the content resource endpoints in the system.\n\n#### Objectives:\n\n1. **Create Content**:\n    \n    - Test the creation of new content items with valid and invalid data.\n        \n    - Ensure that the response includes all necessary details for the created content.\n        \n2. **Retrieve Content**:\n    \n    - Validate the retrieval of content items by ID.\n        \n    - Ensure the response contains accurate and complete content details.\n        \n3. **Update Content**:\n    \n    - Test updating existing content items with valid and invalid data.\n        \n    - Verify that the response reflects the updated content accurately.\n        \n    - Ensure that only authorized users can update content.\n        \n4. **Error Handling**:\n    \n    - Verify that the API returns appropriate error messages for invalid requests.\n        \n    - Ensure the correct HTTP status codes are used for different error scenarios.\n        \n5. **Security**:\n    \n    - Validate that only authorized users can perform operations on the content.\n        \n    - Ensure that all security protocols are enforced during API interactions.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "3028555"
 	},
@@ -110,6 +111,7 @@
 							"response": []
 						}
 					],
+					"description": "This folder contains two essential API requests for testing the creation and retrieval of generic content. These requests are designed to validate the core functionalities of the `ContentResourceV1` endpoint.\n\n#### Requests Included:\n\n1. **Creating Test Generic Content**:\n    \n    - **Purpose**: Test the creation of a generic content item.\n        \n    - **Details**: This request ensures that a new content item can be successfully created with the provided data. It verifies that the content creation process works as expected and that the response contains all necessary details of the newly created content.\n        \n2. **Retrieving Test Generic Content**:\n    \n    - **Purpose**: Test the retrieval of a generic content item.\n        \n    - **Details**: This request validates that a content item can be successfully retrieved using its ID. It checks that the response includes accurate and complete details of the requested content.\n        \n\n#### Objectives:\n\n- **Content Creation Validation**: Ensure that generic content can be created successfully and that the API response includes all expected fields and values.\n    \n- **Content Retrieval Validation**: Verify that the created content can be retrieved accurately by ID and that the response contains all necessary details.\n    \n- **Basic Functionality Check**: Confirm that the basic operations of creating and retrieving content work as intended.",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -131,6 +133,288 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Validations",
+					"item": [
+						{
+							"name": "Creating Test Generic Content without parameters",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Error message contains 'Content Type does not exist'\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    jsonData.entity.results.forEach((result) => {",
+											"        pm.expect(result['{}'].errorMessage).to.include(\"Content Type does not exist\");",
+											"    });",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n           \n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "\nThe API endpoint triggers the publication of specified content items. Upon successful execution, the response is returned in the form of a JSON schema.\n\n```json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"results\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"additionalProperties\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"errorMessage\": {\n                  \"type\": \"string\"\n                },\n                \"identifier\": {\n                  \"type\": [\"string\", \"null\"]\n                },\n                \"inode\": {\n                  \"type\": [\"string\", \"null\"]\n                }\n              }\n            }\n          }\n        },\n        \"summary\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"affected\": {\n              \"type\": \"integer\"\n            },\n            \"failCount\": {\n              \"type\": \"integer\"\n            },\n            \"successCount\": {\n              \"type\": \"integer\"\n            },\n            \"time\": {\n              \"type\": \"integer\"\n            }\n          }\n        }\n      }\n    },\n    \"errors\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"i18nMessagesMap\": {\n      \"type\": \"object\"\n    },\n    \"messages\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"permissions\": {\n      \"type\": \"array\",\n      \"items\": {}\n    }\n  }\n}\n```\n"
+							},
+							"response": []
+						},
+						{
+							"name": "Creating Test Generic Content - No title",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Validate the errorMessage contains 'has invalid / missing field(s)'",
+											"pm.test(\"Validate errorMessage contains 'has invalid / missing field(s)'\", function () {",
+											"  var jsonData = pm.response.json();",
+											"  jsonData.entity.results.forEach((result) => {",
+											"    var error = result[Object.keys(result)[0]].errorMessage;",
+											"    pm.expect(error).to.include('has invalid / missing field(s)');",
+											"  });",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n        \n            \"contentHost\": \"default\",\n            \"body\": \"This is my Test Generic Content\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "\nThe API endpoint triggers the publication of specified content items. Upon successful execution, the response is returned in the form of a JSON schema.\n\n```json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"results\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"additionalProperties\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"errorMessage\": {\n                  \"type\": \"string\"\n                },\n                \"identifier\": {\n                  \"type\": [\"string\", \"null\"]\n                },\n                \"inode\": {\n                  \"type\": [\"string\", \"null\"]\n                }\n              }\n            }\n          }\n        },\n        \"summary\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"affected\": {\n              \"type\": \"integer\"\n            },\n            \"failCount\": {\n              \"type\": \"integer\"\n            },\n            \"successCount\": {\n              \"type\": \"integer\"\n            },\n            \"time\": {\n              \"type\": \"integer\"\n            }\n          }\n        }\n      }\n    },\n    \"errors\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"i18nMessagesMap\": {\n      \"type\": \"object\"\n    },\n    \"messages\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"permissions\": {\n      \"type\": \"array\",\n      \"items\": {}\n    }\n  }\n}\n```\n"
+							},
+							"response": []
+						},
+						{
+							"name": "Creating Test Generic Content - No body",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Validate the errorMessage contains 'has invalid / missing field(s)'",
+											"pm.test(\"Validate errorMessage contains 'has invalid / missing field(s)'\", function () {",
+											"  var jsonData = pm.response.json();",
+											"  jsonData.entity.results.forEach((result) => {",
+											"    var error = result[Object.keys(result)[0]].errorMessage;",
+											"    pm.expect(error).to.include('has invalid / missing field(s)');",
+											"  });",
+											"});",
+											"",
+											"pm.environment.unset(\"jwt\");"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"title\": \"Test Generic Content\",\n            \"contentHost\": \"default\"   \n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "\nThe API endpoint triggers the publication of specified content items. Upon successful execution, the response is returned in the form of a JSON schema.\n\n```json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"results\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"additionalProperties\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"errorMessage\": {\n                  \"type\": \"string\"\n                },\n                \"identifier\": {\n                  \"type\": [\"string\", \"null\"]\n                },\n                \"inode\": {\n                  \"type\": [\"string\", \"null\"]\n                }\n              }\n            }\n          }\n        },\n        \"summary\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"affected\": {\n              \"type\": \"integer\"\n            },\n            \"failCount\": {\n              \"type\": \"integer\"\n            },\n            \"successCount\": {\n              \"type\": \"integer\"\n            },\n            \"time\": {\n              \"type\": \"integer\"\n            }\n          }\n        }\n      }\n    },\n    \"errors\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"i18nMessagesMap\": {\n      \"type\": \"object\"\n    },\n    \"messages\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"permissions\": {\n      \"type\": \"array\",\n      \"items\": {}\n    }\n  }\n}\n```\n"
+							},
+							"response": []
+						},
+						{
+							"name": "Creating Test Generic Content - No auth",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Validate the errorMessage contains 'has invalid / missing field(s)'",
+											"pm.test(\"Validate errorMessage contains 'has invalid / missing field(s)'\", function () {",
+											"  var jsonData = pm.response.json();",
+											"  jsonData.entity.results.forEach((result) => {",
+											"    var error = result[Object.keys(result)[0]].errorMessage;",
+											"    pm.expect(error).to.include(\"User: anonymous doesn't have write permissions to create the Contentlet\");",
+											"  });",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"title\": \"Test Generic Content\",\n            \"contentHost\": \"default\"   \n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "\nThe API endpoint triggers the publication of specified content items. Upon successful execution, the response is returned in the form of a JSON schema.\n\n```json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"results\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"additionalProperties\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"errorMessage\": {\n                  \"type\": \"string\"\n                },\n                \"identifier\": {\n                  \"type\": [\"string\", \"null\"]\n                },\n                \"inode\": {\n                  \"type\": [\"string\", \"null\"]\n                }\n              }\n            }\n          }\n        },\n        \"summary\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"affected\": {\n              \"type\": \"integer\"\n            },\n            \"failCount\": {\n              \"type\": \"integer\"\n            },\n            \"successCount\": {\n              \"type\": \"integer\"\n            },\n            \"time\": {\n              \"type\": \"integer\"\n            }\n          }\n        }\n      }\n    },\n    \"errors\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"i18nMessagesMap\": {\n      \"type\": \"object\"\n    },\n    \"messages\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"permissions\": {\n      \"type\": \"array\",\n      \"items\": {}\n    }\n  }\n}\n```\n"
+							},
+							"response": []
+						},
+						{
+							"name": "Retrieving Test Generic Content - Wrong ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response message\", function () {",
+											"    pm.expect(pm.response.json().message).to.include('The contentlet wrongID does not exists');",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/:wrongId",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										":wrongId"
+									],
+									"variable": [
+										{
+											"key": "wrongId",
+											"value": "wrongID"
+										}
+									]
+								},
+								"description": "\nThis HTTP GET request is used to retrieve content details by providing the content ID in the endpoint URL. The server URL should be prefixed before the endpoint, and the specific content ID should be provided in place of {{testContentId}}.\n\n### Request\nThe request does not contain a request body, but it requires the following headers:\n- Authorization: Bearer <token>\n  - Type: string\n  - Description: A valid access token to authenticate the request.\n\n### Response\nUpon a successful request, the server will respond with a JSON object containing the details of the requested content, including its ID, title, description, and any other relevant information.\n\nExample Response:\n```json\n{\n  \"contentId\": \"12345\",\n  \"title\": \"Sample Content\",\n  \"description\": \"This is a sample content description.\"\n  // Other relevant information\n}\n```\n"
+							},
+							"response": []
+						}
+					],
+					"description": "This folder contains a set of validation requests designed to test the robustness and error handling of the API when creating a generic content type. These tests cover various negative scenarios to ensure the API responds correctly to invalid inputs and unauthorized access attempts.\n\n#### Requests Included:\n\n1. **Creating Test Generic Content without Parameters**:\n    \n    - **Purpose**: Test the API's response when attempting to create content without providing any parameters.\n        \n    - **Details**: This request checks if the API correctly handles missing parameters and returns appropriate error messages.\n        \n2. **Creating Test Generic Content - No Title**:\n    \n    - **Purpose**: Validate the API's response when the title parameter is missing.\n        \n    - **Details**: This request ensures the API returns a proper error message indicating that the title is a required field.\n        \n3. **Creating Test Generic Content - No Body**:\n    \n    - **Purpose**: Validate the API's response when the body parameter is missing.\n        \n    - **Details**: This request checks if the API correctly handles the absence of the body field and returns an appropriate error message.\n        \n4. **Creating Test Generic Content - No Auth**:\n    \n    - **Purpose**: Test the API's response when the request is made without proper authentication.\n        \n    - **Details**: This request ensures that the API enforces authentication and returns an error when the request is not authorized.\n        \n5. **Retrieving Test Generic Content - Wrong ID**:\n    \n    - **Purpose**: Validate the API's response when attempting to retrieve content using an invalid ID.\n        \n    - **Details**: This request checks if the API returns an appropriate error message indicating that the content with the specified ID does not exist.\n        \n\n#### Objectives:\n\n- **Error Handling**: Ensure the API returns appropriate and informative error messages for various invalid input scenarios.\n    \n- **Validation of Required Fields**: Confirm that the API correctly enforces required fields and handles their absence appropriately.\n    \n- **Security**: Verify that the API enforces authentication and responds correctly to unauthorized access attempts.\n    \n- **Data Integrity**: Check that the API properly handles attempts to retrieve non-existent content and maintains data integrity.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"Status code should be 200 or 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});"
 								]
 							}
 						}
@@ -339,6 +623,72 @@
 								"description": "This endpoint makes an HTTP GET request to retrieve the content lock information for a specific contentlet identified by the `contentletIdentifier`. The response of this request can be documented as a JSON schema."
 							},
 							"response": []
+						},
+						{
+							"name": "UpdateContent_SuccessRequest",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"var identifier = pm.collectionVariables.get(\"contentletIdentifier\");",
+											"pm.test(\"Id check\", function () {",
+											"    pm.expect(jsonData.entity.identifier).to.eql(identifier);",
+											"});",
+											"",
+											"pm.test(\"Validate key&value\", function () {",
+											"    pm.expect(jsonData.entity.key).to.eql(\"UpdatedKey\");",
+											"    pm.expect(jsonData.entity.value).to.eql(\"Updatedvalue\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"identifier\" : \"{{contentletIdentifier}}\",\n  \"languageId\" : 1,\n  \"key\": \"UpdatedKey\",\n  \"value\": \"Updatedvalue\"\n}\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "### Update Workflow Action\n\nThis endpoint allows you to fire any action using the actionId.\n\n#### Request Body\n\nThe request should include a JSON payload with the following structure:\n\n``` json\n{\n  \"contentlet\": {\n    \"stInode\": \"\",\n    \"languageId\": 0,\n    \"key\": \"\",\n    \"value\": \"\"\n  }\n}\n\n ```\n\nOptional: If you pass ?inode={inode}, you don't need a body here.\n\n#### Response\n\nThe response is a JSON object with the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"AUTO_ASSIGN_WORKFLOW\": { \"type\": \"boolean\" },\n        \"__IS_NEW_CONTENT__\": { \"type\": \"boolean\" },\n        \"archived\": { \"type\": \"boolean\" },\n        \"baseType\": { \"type\": \"string\" },\n        \"contentType\": { \"type\": \"string\" },\n        \"creationDate\": { \"type\": \"number\" },\n        \"folder\": { \"type\": \"string\" },\n        \"hasLiveVersion\": { \"type\": \"boolean\" },\n        \"hasTitleImage\": { \"type\": \"boolean\" },\n        \"host\": { \"type\": \"string\" },\n        \"hostName\": { \"type\": \"string\" },\n        \"identifier\": { \"type\": \"string\" },\n        \"inode\": { \"type\": \"string\" },\n        \"key\": { \"type\": \"string\" },\n        \"languageId\": { \"type\": \"number\" },\n        \"live\": { \"type\": \"boolean\" },\n        \"locked\": { \"type\": \"boolean\" },\n        \"modDate\": { \"type\": \"number\" },\n        \"modUser\": { \"type\": \"string\" },\n        \"modUserName\": { \"type\": \"string\" },\n        \"owner\": { \"type\": \"string\" },\n        \"ownerName\": { \"type\": \"string\" },\n        \"publishDate\": { \"type\": \"number\" },\n        \"publishUser\": { \"type\": \"string\" },\n        \"publishUserName\": { \"type\": \"string\" },\n        \"sortOrder\": { \"type\": \"number\" },\n        \"stInode\": { \"type\": \"string\" },\n        \"title\": { \"type\": \"string\" },\n        \"titleImage\": { \"type\": \"string\" },\n        \"url\": { \"type\": \"string\" },\n        \"value\": { \"type\": \"string\" },\n        \"working\": { \"type\": \"boolean\" }\n      }\n    },\n    \"errors\": { \"type\": \"array\", \"items\": {} },\n    \"i18nMessagesMap\": { \"type\": \"object\" },\n    \"messages\": { \"type\": \"array\", \"items\": {} },\n    \"pagination\": { \"type\": \"null\" },\n    \"permissions\": { \"type\": \"array\", \"items\": {} }\n  }\n}\n\n ```"
+							},
+							"response": []
 						}
 					],
 					"description": "This folder contains a set of requests designed to successfully create new content within our application. Each request has been carefully crafted and tested to ensure that it adheres to the required specifications and completes without errors.\n\n#### Objectives:\n\n1. **Content Creation Verification**: Ensure that new content is created successfully and meets all specified requirements.\n    \n2. **Response Validation**: Validate that the API responses contain the correct status codes and data structures.\n    \n3. **Data Integrity**: Confirm that newly created content is accurately stored and retrievable.",
@@ -371,7 +721,7 @@
 					"name": "Validations",
 					"item": [
 						{
-							"name": "Content not exists",
+							"name": "Content not exists by identifier",
 							"event": [
 								{
 									"listen": "test",
@@ -407,11 +757,118 @@
 											"value": "6faf3063-5478-4e0a-a44b-dba540ec79"
 										}
 									]
+								},
+								"description": "This HTTP GET request retrieves content from the API by providing the content ID in the URL. The request should include the specific content ID in place of \":wrongId\" in the URL.\n\n### Request\n\nNo request body is required for this endpoint.\n\n#### Request URL\n\n```\n{{serverURL}}/api/v1/content/:wrongId\n\n ```\n\n### Response\n\nUpon a successful execution, the response will have a status code of 404 and the content type will be \"application/json\". The response body will include a message indicating the reason for the failure."
+							},
+							"response": []
+						},
+						{
+							"name": "Content not exists by inode",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Body matches string\", function () {",
+											"    pm.expect(pm.response.text()).to.contains(\"The contentlet 21b19188-bd85-4baa-bba2-5b54cd1cb3ea does not exists\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
 								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/:wrongInode",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										":wrongInode"
+									],
+									"variable": [
+										{
+											"key": "wrongInode",
+											"value": "21b19188-bd85-4baa-bba2-5b54cd1cb3ea"
+										}
+									]
+								},
+								"description": "\nThis API endpoint makes an HTTP GET request to retrieve content based on the provided inode. The request should include the inode in the URL path.\n\n### Request\n\n- Method: GET\n- URL: {{serverURL}}/api/v1/content/:wrongInode\n\n### Response\n\nThe API returns a 404 status code with a JSON response in the following format:\n```json\n{\n    \"message\": \"\"\n}\n```\n"
+							},
+							"response": []
+						},
+						{
+							"name": "UpdateContent_WithoutCredentials",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Validate message \", function () {",
+											"    var message = pm.response.json().message;",
+											"    pm.expect(message).to.include('does not have permissions to the Content Type');",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"identifier\" : \"{{contentletIdentifier}}\",\n  \"languageId\" : 1,\n  \"key\": \"UpdatedKey\",\n  \"value\": \"Updatedvalue\"\n}\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "### Update Workflow Action\n\nThis endpoint allows you to fire any action using the actionId.\n\n#### Request Body\n\nThe request should include a JSON payload with the following structure:\n\n``` json\n{\n  \"contentlet\": {\n    \"stInode\": \"\",\n    \"languageId\": 0,\n    \"key\": \"\",\n    \"value\": \"\"\n  }\n}\n\n ```\n\nOptional: If you pass ?inode={inode}, you don't need a body here.\n\n#### Response\n\nThe response is a JSON object with the following schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"AUTO_ASSIGN_WORKFLOW\": { \"type\": \"boolean\" },\n        \"__IS_NEW_CONTENT__\": { \"type\": \"boolean\" },\n        \"archived\": { \"type\": \"boolean\" },\n        \"baseType\": { \"type\": \"string\" },\n        \"contentType\": { \"type\": \"string\" },\n        \"creationDate\": { \"type\": \"number\" },\n        \"folder\": { \"type\": \"string\" },\n        \"hasLiveVersion\": { \"type\": \"boolean\" },\n        \"hasTitleImage\": { \"type\": \"boolean\" },\n        \"host\": { \"type\": \"string\" },\n        \"hostName\": { \"type\": \"string\" },\n        \"identifier\": { \"type\": \"string\" },\n        \"inode\": { \"type\": \"string\" },\n        \"key\": { \"type\": \"string\" },\n        \"languageId\": { \"type\": \"number\" },\n        \"live\": { \"type\": \"boolean\" },\n        \"locked\": { \"type\": \"boolean\" },\n        \"modDate\": { \"type\": \"number\" },\n        \"modUser\": { \"type\": \"string\" },\n        \"modUserName\": { \"type\": \"string\" },\n        \"owner\": { \"type\": \"string\" },\n        \"ownerName\": { \"type\": \"string\" },\n        \"publishDate\": { \"type\": \"number\" },\n        \"publishUser\": { \"type\": \"string\" },\n        \"publishUserName\": { \"type\": \"string\" },\n        \"sortOrder\": { \"type\": \"number\" },\n        \"stInode\": { \"type\": \"string\" },\n        \"title\": { \"type\": \"string\" },\n        \"titleImage\": { \"type\": \"string\" },\n        \"url\": { \"type\": \"string\" },\n        \"value\": { \"type\": \"string\" },\n        \"working\": { \"type\": \"boolean\" }\n      }\n    },\n    \"errors\": { \"type\": \"array\", \"items\": {} },\n    \"i18nMessagesMap\": { \"type\": \"object\" },\n    \"messages\": { \"type\": \"array\", \"items\": {} },\n    \"pagination\": { \"type\": \"null\" },\n    \"permissions\": { \"type\": \"array\", \"items\": {} }\n  }\n}\n\n ```"
 							},
 							"response": []
 						}
 					],
+					"description": "This folder contains a set of requests designed to validate the creation of new content within the system. Each request ensures that the API correctly handles various scenarios, including negative cases. These validations are essential for maintaining the integrity and consistency of the content creation process.\n\n#### Objectives:\n\n1. **Negative Testing**:\n    \n    - Test for appropriate error responses when invalid data is submitted.\n        \n    - Check how the API handles missing required fields, incorrect data types, and other edge cases.\n        \n2. **Data Integrity**:\n    \n    - Confirm that duplicate content cannot be created.\n        \n    - Ensure that content constraints, such as unique fields, are respected.\n        \n3. **Security**:\n    \n    - Validate that unauthorized users cannot create content.\n        \n    - Ensure that all security checks are enforced during the content creation process.",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -429,8 +886,8 @@
 								"type": "text/javascript",
 								"packages": {},
 								"exec": [
-									"pm.test(\"Status code should be 404\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code should be 403 or 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([403, 404]);",
 									"});"
 								]
 							}
@@ -1371,7 +1828,9 @@
 											"pm.test(\"Correct message\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"The field:non-existing is not a relationship\");",
 											"});",
-											""
+											"",
+											"",
+											"pm.environment.unset(\"jwt\");"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -1405,6 +1864,68 @@
 								"description": "### HTTP POST /api/v1/content/related\n\nTest the related contentlets with relationship field var that do not exist, should return 400.\n\n**Request Body**\n\n- identifier (string, required): The identifier.\n    \n- fieldVariable (string, required): The field variable.\n    \n\n**Response**  \nThe response of this request is documented as a JSON schema:\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"error\": {\n      \"type\": \"string\"\n    }\n  }\n}\n\n ```"
 							},
 							"response": []
+						},
+						{
+							"name": "Update Parent without credentials",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response content type is text/plain\", function () {",
+											"  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"text/plain\");",
+											"});",
+											"",
+											"pm.test(\"Check if the response is invalid\", function () {",
+											"  pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"baseType\": \"CONTENT\",\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\": \"1f41ee0d4bef4e76f676c38c8ccbb663\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"iDate\": 1654119489000,\n            \"id\": \"fe8f5a1b169291d093a216269218907d\",\n            \"indexed\": false,\n            \"listed\": false,\n            \"modDate\": 1654188022000,\n            \"name\": \"fields-0\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"fields0\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"contentTypeId\": \"1f41ee0d4bef4e76f676c38c8ccbb663\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"iDate\": 1654119489000,\n            \"id\": \"9417e368fed2fdad9a4cc29bbde8bf10\",\n            \"indexed\": false,\n            \"listed\": false,\n            \"modDate\": 1654188022000,\n            \"name\": \"fields-1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"fields1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"contentTypeId\": \"1f41ee0d4bef4e76f676c38c8ccbb663\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"iDate\": 1654119498000,\n            \"id\": \"f14d00b4e481fa6269224124fdff87f3\",\n            \"indexed\": false,\n            \"listed\": false,\n            \"modDate\": 1654188022000,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRelationshipField\",\n            \"contentTypeId\": \"1f41ee0d4bef4e76f676c38c8ccbb663\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldType\": \"Relationship\",\n            \"fieldTypeLabel\": \"Relationships Field\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"iDate\": 1654119633000,\n            \"id\": \"0511d803c9f28fe5a2bb281db424fbb9\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1654186518000,\n            \"name\": \"children\",\n            \"readOnly\": false,\n            \"relationships\": {\n                \"cardinality\": 1,\n                \"velocityVar\": \"ChildContentType\"\n            },\n            \"required\": false,\n            \"searchable\": false,\n            \"skipRelationshipCreation\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"children\"\n        }\n    ],\n    \"fixed\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n    \"iDate\": 1654119489000,\n    \"icon\": \"event_note\",\n    \"id\": \"1f41ee0d4bef4e76f676c38c8ccbb663\",\n    \"layout\": [\n        {\n            \"divider\": {\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n                \"contentTypeId\": \"1f41ee0d4bef4e76f676c38c8ccbb663\",\n                \"dataType\": \"SYSTEM\",\n                \"fieldContentTypeProperties\": [],\n                \"fieldType\": \"Row\",\n                \"fieldTypeLabel\": \"Row\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1654119489000,\n                \"id\": \"fe8f5a1b169291d093a216269218907d\",\n                \"indexed\": false,\n                \"listed\": false,\n                \"modDate\": 1654188022000,\n                \"name\": \"fields-0\",\n                \"readOnly\": false,\n                \"required\": false,\n                \"searchable\": false,\n                \"sortOrder\": 0,\n                \"unique\": false,\n                \"variable\": \"fields0\"\n            },\n            \"columns\": [\n                {\n                    \"columnDivider\": {\n                        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\": \"1f41ee0d4bef4e76f676c38c8ccbb663\",\n                        \"dataType\": \"SYSTEM\",\n                        \"fieldContentTypeProperties\": [],\n                        \"fieldType\": \"Column\",\n                        \"fieldTypeLabel\": \"Column\",\n                        \"fieldVariables\": [],\n                        \"fixed\": false,\n                        \"iDate\": 1654119489000,\n                        \"id\": \"9417e368fed2fdad9a4cc29bbde8bf10\",\n                        \"indexed\": false,\n                        \"listed\": false,\n                        \"modDate\": 1654188022000,\n                        \"name\": \"fields-1\",\n                        \"readOnly\": false,\n                        \"required\": false,\n                        \"searchable\": false,\n                        \"sortOrder\": 1,\n                        \"unique\": false,\n                        \"variable\": \"fields1\"\n                    },\n                    \"fields\": [\n                        {\n                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"contentTypeId\": \"1f41ee0d4bef4e76f676c38c8ccbb663\",\n                            \"dataType\": \"TEXT\",\n                            \"fieldType\": \"Text\",\n                            \"fieldTypeLabel\": \"Text\",\n                            \"fieldVariables\": [],\n                            \"fixed\": false,\n                            \"iDate\": 1654119498000,\n                            \"id\": \"f14d00b4e481fa6269224124fdff87f3\",\n                            \"indexed\": false,\n                            \"listed\": false,\n                            \"modDate\": 1654188022000,\n                            \"name\": \"title\",\n                            \"readOnly\": false,\n                            \"required\": false,\n                            \"searchable\": false,\n                            \"sortOrder\": 2,\n                            \"unique\": false,\n                            \"variable\": \"title\"\n                        },\n                        {\n                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRelationshipField\",\n                            \"contentTypeId\": \"1f41ee0d4bef4e76f676c38c8ccbb663\",\n                            \"dataType\": \"SYSTEM\",\n                            \"fieldType\": \"Relationship\",\n                            \"fieldTypeLabel\": \"Relationships Field\",\n                            \"fieldVariables\": [],\n                            \"fixed\": false,\n                            \"iDate\": 1654119633000,\n                            \"id\": \"0511d803c9f28fe5a2bb281db424fbb9\",\n                            \"indexed\": true,\n                            \"listed\": false,\n                            \"modDate\": 1654186518000,\n                            \"name\": \"children\",\n                            \"readOnly\": false,\n                            \"relationships\": {\n                                \"cardinality\": 1,\n                                \"velocityVar\": \"ChildContentType\"\n                            },\n                            \"required\": false,\n                            \"searchable\": false,\n                            \"skipRelationshipCreation\": false,\n                            \"sortOrder\": 3,\n                            \"unique\": false,\n                            \"variable\": \"children\"\n                        }\n                    ]\n                }\n            ]\n        }\n    ],\n    \"modDate\": 1654188088000,\n    \"multilingualable\": false,\n    \"name\": \"ParentContentType\",\n    \"sortOrder\": 0,\n    \"system\": false,\n    \"systemActionMappings\": {\n       \n    },\n    \"variable\": \"ParentContentType\",\n    \"versionable\": true,\n    \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/ParentContentType",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"ParentContentType"
+									]
+								},
+								"description": "\n### Update Parent Content Type with Child Relationship\n\nThis API endpoint allows you to update the parent content type to include the child relationship when the child content type already exists.\n\n#### Request Body\nThe request body should be in JSON format and include the following parameters:\n- `baseType` (string): The base type of the content.\n- `clazz` (string): The class of the content.\n- `defaultType` (boolean): Indicates if it is the default type.\n- `fields` (array): An array of field objects, each containing information about the field.\n  - `clazz` (string): The class of the field.\n  - `contentTypeId` (string): The ID of the content type.\n  - `dataType` (string): The data type of the field.\n  - `fieldContentTypeProperties` (array): An array of field content type properties.\n  - `fieldType` (string): The type of the field.\n  - `fieldTypeLabel` (string): The label of the field type.\n  - `fieldVariables` (array): An array of field variables.\n  - `fixed` (boolean): Indicates if the field is fixed.\n  - `iDate` (number): The date of the field.\n  - `id` (string): The ID of the field.\n  - `indexed` (boolean): Indicates if the field is indexed.\n  - `listed` (boolean): Indicates if the field is listed.\n  - `modDate` (number): The modification date of the field.\n  - `name` (string): The name of the field.\n  - `readOnly` (boolean): Indicates if the field is read-only.\n  - `required` (boolean): Indicates if the field is required.\n  - `searchable` (boolean): Indicates if the field is searchable.\n  - `sortOrder` (number): The sort order of the field.\n  - `unique` (boolean): Indicates if the field is unique.\n  - `variable` (string): The variable of the field.\n- `fixed` (boolean): Indicates if it is fixed.\n- `folder` (string): The folder of the content.\n- `host` (string): The host of the content.\n- `iDate` (number): The date of the content.\n- `icon` (string): The icon of the content.\n- `id` (string): The ID of the content.\n- `layout` (array): An array containing layout information.\n  - `divider` (object): An object containing divider information.\n  - `columns` (array): An array of column objects, each containing information about the column.\n    - `columnDivider` (object): An object containing column divider information.\n    - `fields` (array): An array of field objects within the column.\n      - `clazz` (string): The class of the field.\n      - `contentTypeId` (string): The ID of the content type.\n      - `dataType` (string): The data type of the field.\n      - `fieldType` (string): The type of the field.\n      - `fieldTypeLabel` (string): The label of the field type.\n      - `fieldVariables` (array): An array of field variables.\n      - `fixed` (boolean): Indicates if the field is fixed.\n      - `iDate` (number): The date of the field.\n      - `id` (string): The ID of the field.\n      - `indexed` (boolean): Indicates if the field is indexed.\n      - `listed` (boolean): Indicates if the field is listed.\n      - `modDate` (number): The modification date of the field.\n      - `name` (string): The name of the field.\n      - `readOnly` (boolean): Indicates if the field is read-only.\n      - `required` (boolean): Indicates if the field is required.\n      - `searchable` (boolean): Indicates if the field is searchable.\n      - `sortOrder` (number): The sort order of the field.\n      - `unique` (boolean): Indicates if the field is unique.\n      - `variable` (string): The variable of the field.\n- `modDate` (number): The modification date of the content.\n- `multilingualable` (boolean): Indicates if it is multilingualable.\n- `name` (string): The name of the content.\n- `sortOrder` (number): The sort order of the content.\n- `system` (boolean): Indicates if it is a system content.\n- `systemActionMappings` (object): An object containing system action mappings.\n- `variable` (string): The variable of the content.\n- `versionable` (boolean): Indicates if it is versionable.\n- `workflow` (array): An array containing workflow information.\n\n#### Response\nThe response of this request is a JSON schema representing the updated parent content type with the child relationship included.\n\n"
+							},
+							"response": []
 						}
 					],
 					"description": "This folder contains a set of requests designed to ensure that our API correctly handles attempts to relate content using invalid or non-existent IDs. The validations within these requests are essential for maintaining the integrity and consistency of our data relationships.\n\n#### Objectives:\n\n1. **Invalid ID Detection**: Verify that the API appropriately rejects attempts to relate content using invalid IDs.\n    \n2. **Error Messaging**: Ensure that the API provides clear and informative error messages when invalid IDs are used.\n    \n3. **Data Integrity**: Confirm that no data relationships are established or altered when invalid IDs are submitted.\n    \n4. **Edge Cases**: Test various edge cases, including empty IDs, improperly formatted IDs, and IDs that do not exist in the database.",
@@ -1425,15 +1946,16 @@
 								"type": "text/javascript",
 								"packages": {},
 								"exec": [
-									"pm.test(\"Status code should be 400 or 404\", function () {",
-									"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+									"pm.test(\"Status code should be 400, 401 or 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 401, 404]);",
 									"});"
 								]
 							}
 						}
 					]
 				}
-			]
+			],
+			"description": "This folder contains a comprehensive set of requests designed to handle the creation, relationship management, and updating of content within our application. These requests are essential for ensuring that content operations are performed correctly and efficiently.  \n  \nThis will include both possitive and negative testing."
 		}
 	],
 	"auth": {
