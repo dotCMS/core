@@ -30,7 +30,7 @@ const componentsMap = {
     Activity: Activity,
     Product: Product,
     Image: ImageComponent,
-    Empty: () => <div>This is my Custom Empty component...</div>,
+    Empty: () => <div class="relative w-full bg-gray-200 h-12 flex justify-center items-center overflow-hidden">Dont have a component for this contentlet.</div>,
 };
 
 export function MyPage({ pageAsset, nav }) {
