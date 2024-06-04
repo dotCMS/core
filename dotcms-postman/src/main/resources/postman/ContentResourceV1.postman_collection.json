@@ -26,6 +26,8 @@
 											"    var contentId = Object.keys(jsonData.entity.results[0]);",
 											"    pm.collectionVariables.set(\"testContentId\", jsonData.entity.results[0][contentId].identifier);",
 											"});",
+											"",
+											"",
 											""
 										],
 										"type": "text/javascript",
@@ -259,7 +261,7 @@
 											"  });",
 											"});",
 											"",
-											"pm.environment.unset(\"jwt\");"
+											""
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -311,6 +313,25 @@
 											"    var error = result[Object.keys(result)[0]].errorMessage;",
 											"    pm.expect(error).to.include(\"User: anonymous doesn't have write permissions to create the Contentlet\");",
 											"  });",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.sendRequest({",
+											"    url: pm.environment.get(\"serverURL\") + \"/api/v1/logout\",",
+											"    method: 'GET'",
+											"}, function (err, res) {",
+											"    if (err) {",
+											"        console.log('Logout failed:', err);",
+											"    } else {",
+											"        console.log('Logout successful, cookies should be cleared.');",
+											"    }",
 											"});"
 										],
 										"type": "text/javascript",
@@ -421,6 +442,7 @@
 					]
 				}
 			],
+			"description": "This folder includes positive and negative testing for contents.",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -826,7 +848,16 @@
 									"listen": "prerequest",
 									"script": {
 										"exec": [
-											""
+											"pm.sendRequest({",
+											"    url: pm.environment.get(\"serverURL\") + \"/api/v1/logout\",",
+											"    method: 'GET'",
+											"}, function (err, res) {",
+											"    if (err) {",
+											"        console.log('Logout failed:', err);",
+											"    } else {",
+											"        console.log('Logout successful, cookies should be cleared.');",
+											"    }",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -1830,7 +1861,7 @@
 											"});",
 											"",
 											"",
-											"pm.environment.unset(\"jwt\");"
+											""
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -1888,7 +1919,16 @@
 									"listen": "prerequest",
 									"script": {
 										"exec": [
-											""
+											"pm.sendRequest({",
+											"    url: pm.environment.get(\"serverURL\") + \"/api/v1/logout\",",
+											"    method: 'GET'",
+											"}, function (err, res) {",
+											"    if (err) {",
+											"        console.log('Logout failed:', err);",
+											"    } else {",
+											"        console.log('Logout successful, cookies should be cleared.');",
+											"    }",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
