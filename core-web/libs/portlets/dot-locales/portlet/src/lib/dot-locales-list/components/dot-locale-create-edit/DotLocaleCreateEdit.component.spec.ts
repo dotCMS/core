@@ -31,12 +31,6 @@ describe('DotLocaleCreateEditComponent', () => {
         ]
     });
 
-    // beforeEach(() => {
-    //     spectator = createComponent();
-    //     ref = spectator.inject(DynamicDialogRef);
-    //     jest.spyOn(ref, 'close');
-    // });
-
     describe('edit form', () => {
         beforeEach(() => {
             const dynamicData = {
