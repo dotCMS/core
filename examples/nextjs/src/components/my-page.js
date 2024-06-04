@@ -37,9 +37,6 @@ export function MyPage({ data, nav }) {
   const { refresh, replace } = useRouter();
   const pathname = usePathname();
 
-  console.log(data);
-
-
   /**
    * If using experiments, `DotLayoutComponent` is `withExperiments(DotcmsLayout)`.
    * If not using experiments:

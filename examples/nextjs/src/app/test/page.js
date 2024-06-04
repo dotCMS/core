@@ -1,6 +1,5 @@
-import { dotcmsClient } from "@dotcms/client";
+import { dotcmsClient, graphqlToPageEntity } from "@dotcms/client";
 import { MyPage } from "@/components/my-page";
-import { graphqlToPageEntity } from "../utils/gql";
 
 const client = dotcmsClient.init({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
@@ -116,12 +115,12 @@ export default async function Home({ searchParams, params }) {
         languageId: searchParams.language_id,
     });
 
-    const { data } = await fetch("http://localhost:8080/api/v1/graphql", {
+    const res = await fetch("http://localhost:8080/api/v1/graphql", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
-    }).then((response) => response.json());
-
+    });
+    const { data } = await res.json();
     const entity = graphqlToPageEntity(data);
 
     return <MyPage nav={nav.entity.children} data={entity}></MyPage>;

@@ -76,15 +76,7 @@ export default async function Home({ searchParams, params }) {
         languageId: searchParams.language_id,
     });
 
-    const { data: { page } } = await fetch("http://localhost:8080/api/v1/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
-    }).then((response) => response.json());
-
     const { vanityUrl } = data.entity;
-
-    console.log('graphql', page);
 
     if (vanityUrl) {
         handleVanityUrlRedirect(vanityUrl);
