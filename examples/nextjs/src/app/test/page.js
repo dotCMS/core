@@ -1,6 +1,8 @@
 import { dotcmsClient, graphqlToPageEntity } from "@dotcms/client";
 import { MyPage } from "@/components/my-page";
 
+import { getGraphQLPageData } from "../utils/gql";
+
 const client = dotcmsClient.init({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
     authToken: process.env.DOTCMS_AUTH_TOKEN,
@@ -11,71 +13,6 @@ const client = dotcmsClient.init({
     },
 });
 
-// Define your GraphQL query
-const query = `{
-    page(url: "/index") {
-        title
-        url
-        seodescription
-        containers {
-            path
-            identifier
-            containerStructures {
-                id
-                structureId
-                containerInode
-                containerId
-                code
-            }
-            containerContentlets {
-                uuid
-                contentlets {
-                    _map
-                }
-            }
-        }
-        host {
-            hostName
-        }
-        layout {
-            header
-            footer
-            body {
-                rows {
-                    columns {
-                        widthPercent
-                        leftOffset
-                        styleClass
-                        preview
-                        width
-                        left
-                        containers {
-                            identifier
-                            uuid
-                        }
-                    }
-                }
-            }
-        }
-        template {
-            iDate
-            inode
-            identifier
-            source
-            title
-            friendlyName
-            modDate
-            sortOrder
-            showOnMenu
-            image
-            drawed
-            drawedBody
-        }
-        viewAs {
-            mode
-        }
-    }
-}`;
 
 export default async function Home({ searchParams, params }) {
     const requestData = {
@@ -92,12 +29,7 @@ export default async function Home({ searchParams, params }) {
         languageId: searchParams.language_id,
     });
 
-    const res = await fetch("http://localhost:8080/api/v1/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
-    });
-    const { data } = await res.json();
+    const data = await getGraphQLPageData(requestData);
     const entity = graphqlToPageEntity(data);
 
     return <MyPage nav={nav.entity.children} data={entity}></MyPage>;
