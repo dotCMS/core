@@ -205,12 +205,6 @@ public class StringUtil {
 		return sb.toString();
 	}
 
-	public static String randomize(String s) {
-		Randomizer r = new Randomizer();
-
-		return r.randomize(s);
-	}
-
 	public static String read(ClassLoader classLoader, String name)
 		throws IOException {
 		InputStream is=classLoader.getResourceAsStream(name);

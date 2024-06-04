@@ -111,9 +111,17 @@ test-integration:
 test-integration-debug-suspend:
     ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Pdebug-suspend
 
+# Just rebuild core and its deps without docker, e.g. pickup changes for it tests
+build-core-with-deps:
+    ./mvnw install -pl :dotcms-core --am -DskipTests -Ddocker.skip=true
+
+# Just rebuild core without docker, e.g. pickup changes for it tests
+build-core-only:
+    ./mvnw install -pl :dotcms-core  -DskipTests -Ddocker.skip=true
+
 # Prepares the environment for running integration tests in an IDE
 test-integration-ide:
-    ./mvnw -pl :dotcms-integration -Pdocker-start -Dcoreit.test.skip=false
+    ./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false
 
 # Stops integration test services
 test-integration-stop:
