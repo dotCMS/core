@@ -111,7 +111,7 @@ export class CollectionBuilder<T = unknown> {
      * // and by modDate in descending order
      *  const sortBy = [{ field: 'title', order: 'asc' }, { field: 'modDate', order: 'desc' }]
      *
-     *  collectionBuilder.sortBy(sortBy)
+     *  client.content.getCollection("Blog").sortBy(sortBy)
      *```
      *
      * @param {SortBy[]} sortBy Array of constrains to sort the content by
@@ -168,7 +168,7 @@ export class CollectionBuilder<T = unknown> {
      * @example
      *```javascript
      * // This will filter the content by title equals 'Hello World' or 'Hello World 2'
-     * collectionBuilder.query((queryBuilder) =>
+     * client.content.getCollection("Activity").query((queryBuilder) =>
      *     queryBuilder.field('title').equals('Hello World').or().equals('Hello World 2')
      * );
      *```

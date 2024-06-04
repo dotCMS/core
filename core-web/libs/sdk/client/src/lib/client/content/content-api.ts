@@ -23,7 +23,7 @@ export class Content {
      * @example
      * ```javascript
      * // Using await and async
-     * const blogs = await this.content
+     * const blogs = await client.content
      *     .getCollection('Blog')
      *     .limit(10)
      *     .page(2)
@@ -58,7 +58,7 @@ export class Content {
      *     title: string;
      * };
      *
-     * this.content
+     * client.content
      *     .getCollection<Blog>('Blog')
      *     .limit(10)
      *     .page(2)
