@@ -1,3 +1,5 @@
+// For now, we are using this file to parse the response from the GraphQL API.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const graphqlToPageEntity = ({ page }: { page: Record<string, unknown> }) => {
     const { layout, template, containers, viewAs, ...pageAsset } = page;
 
@@ -30,12 +32,17 @@ const parseContainers = (containers = []) => {
     }, {});
 };
 
-const parseContentletsToUuidMap = (contentlets = []) => {
-    return contentlets.reduce((acc, contentlet) => {
-        const { uuid, contentlets: innerContentlets } = contentlet;
+const parseContentletsToUuidMap = (containerContentlets: any[]) => {
+    return containerContentlets.reduce((acc, containerContentlet) => {
+        const { uuid, contentlets } = containerContentlet;
 
-        acc[uuid] = innerContentlets;
+        acc[uuid] = contentlets.map(({ _map = {}, ...rest }) => {
+            return {
+                ..._map,
+                ...rest
+            };
+        });
 
         return acc;
-    }, {});
+    }, {} as any);
 };

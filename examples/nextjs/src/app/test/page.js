@@ -30,30 +30,7 @@ const query = `{
             containerContentlets {
                 uuid
                 contentlets {
-                    identifier
-                    inode
-                    title
-                    contentType
-                    ...on Banner {
-                        caption
-                        buttonText
-                        link 
-                    }
-                    ... on webPageContent {
-                        body
-                    }
-                    ... on Activity {
-                        description
-                        urlTitle
-                    }
-                    ... on Product {
-                        salePrice
-                        retailPrice
-                        urlTitle
-                    }
-                    ... on Image {
-                        description
-                    }
+                    _map
                 }
             }
         }
