@@ -1,4 +1,43 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+export interface DotCMSPageAsset {
+    canCreateTemplate: boolean;
+    containers: DotCMSPageAssetContainer;
+    layout: DotCMSLayout;
+    page: DotCMSPage;
+    site: DotCMSSite;
+    template: DotCMSTemplate;
+    viewAs: DotCMSViewAs;
+}
+
+export interface DotPageAssetLayoutRow {
+    identifier: number;
+    value?: string;
+    id?: string;
+    columns: DotPageAssetLayoutColumn[];
+    styleClass?: string;
+}
+
+export interface DotPageAssetLayoutColumn {
+    preview: boolean;
+    containers: DotCMSContainer[];
+    widthPercent: number;
+    width: number;
+    leftOffset: number;
+    left: number;
+    styleClass?: string;
+}
+
+export interface DotCMSPageAssetContainer {
+    [key: string]: {
+        container: DotCMSContainer;
+        containerStructures: DotCMSContainerStructure[];
+        contentlets: {
+            [key: string]: DotCMSContentlet[];
+        };
+    };
+}
+
 export interface DotCMSContainer {
     identifier: string;
     uuid: string;
@@ -82,27 +121,21 @@ export interface DotCMSContentlet {
     [key: string]: any; // This is a catch-all for any other custom properties that might be on the contentlet.
 }
 
-export interface DotCMSPageAsset {
-    canCreateTemplate: boolean;
-    containers: DotCMSPageAssetContainer;
-    layout: DotCMSLayout;
-    page: DotCMSPage;
-    site: DotCMSSite;
-    template: DotCMSTemplate;
-    viewAs: DotCMSViewAs;
+export interface DotcmsNavigationItem {
+    code?: any;
+    folder: string;
+    children?: DotcmsNavigationItem[];
+    host: string;
+    languageId: number;
+    href: string;
+    title: string;
+    type: string;
+    hash: number;
+    target: string;
+    order: number;
 }
 
-export interface DotCMSPageAssetContainer {
-    [key: string]: {
-        container: DotCMSContainer;
-        containerStructures: DotCMSContainerStructure[];
-        contentlets: {
-            [key: string]: DotCMSContentlet[];
-        };
-    };
-}
-
-export interface DotCMSTemplate {
+interface DotCMSTemplate {
     iDate: number;
     type: string;
     owner: string;
@@ -137,7 +170,7 @@ export interface DotCMSTemplate {
     canEdit: boolean;
 }
 
-export interface DotCMSPage {
+interface DotCMSPage {
     template: string;
     modDate: number;
     metadata: string;
@@ -183,7 +216,7 @@ export interface DotCMSPage {
     shortyLive: string;
 }
 
-export interface DotCMSViewAs {
+interface DotCMSViewAs {
     language: {
         id: number;
         languageCode: string;
@@ -194,7 +227,7 @@ export interface DotCMSViewAs {
     mode: string;
 }
 
-export interface DotCMSLayout {
+interface DotCMSLayout {
     pageWidth: string;
     width: string;
     layout: string;
@@ -205,7 +238,7 @@ export interface DotCMSLayout {
     sidebar: DotPageAssetLayoutSidebar;
 }
 
-export interface DotCMSContainerStructure {
+interface DotCMSContainerStructure {
     id: string;
     structureId: string;
     containerInode: string;
@@ -214,7 +247,7 @@ export interface DotCMSContainerStructure {
     contentTypeVar: string;
 }
 
-export interface DotPageAssetLayoutSidebar {
+interface DotPageAssetLayoutSidebar {
     preview: boolean;
     containers: DotCMSContainer[];
     location: string;
@@ -222,29 +255,11 @@ export interface DotPageAssetLayoutSidebar {
     width: string;
 }
 
-export interface DotPageAssetLayoutBody {
+interface DotPageAssetLayoutBody {
     rows: DotPageAssetLayoutRow[];
 }
 
-export interface DotPageAssetLayoutRow {
-    identifier: number;
-    value?: string;
-    id?: string;
-    columns: DotPageAssetLayoutColumn[];
-    styleClass?: string;
-}
-
-export interface DotPageAssetLayoutColumn {
-    preview: boolean;
-    containers: DotCMSContainer[];
-    widthPercent: number;
-    width: number;
-    leftOffset: number;
-    left: number;
-    styleClass?: string;
-}
-
-export interface DotCMSSite {
+interface DotCMSSite {
     lowIndexPriority: boolean;
     name: string;
     default: boolean;
@@ -403,18 +418,4 @@ interface DotCMSSiteField {
     title: string;
     versionId: string;
     versionType: string;
-}
-
-export interface DotcmsNavigationItem {
-    code?: any;
-    folder: string;
-    children?: DotcmsNavigationItem[];
-    host: string;
-    languageId: number;
-    href: string;
-    title: string;
-    type: string;
-    hash: number;
-    target: string;
-    order: number;
 }
