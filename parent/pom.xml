@@ -59,6 +59,7 @@
         <mvn.environment.name>${ext.mvn.environment.name}</mvn.environment.name>
         <!--suppress UnresolvedMavenProperty -->
         <docker.image.search>${ext.docker.image.search}</docker.image.search>
+        <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
         <!--suppress UnresolvedMavenProperty -->
         <docker.image.postgres>${ext.docker.image.postgres}</docker.image.postgres>
         <!--suppress UnresolvedMavenProperty -->
@@ -179,7 +180,7 @@
         <docker.container.name.pattern>${docker.run.context}_%a</docker.container.name.pattern>
         <license.user.path>${user.home}/.dotcms/license/license.dat</license.user.path>
         <license.use>false</license.use>
-        <dotcms.startup.timeout>120000</dotcms.startup.timeout>
+        <dotcms.startup.timeout>150000</dotcms.startup.timeout>
         <docker.license.volume.internal>/data/local/dotsecure/license/license.dat</docker.license.volume.internal>
         <docker.starter.volume.internal>/data/starter</docker.starter.volume.internal>
         <docker.db.volume>${docker.run.context}_db</docker.db.volume>
@@ -332,6 +333,24 @@
                                     </log>
                                 </run>
                             </opensearch>
+                            <wiremock>
+                                <name>${docker.image.wiremock}</name>
+                                <run>
+                                    <ports>
+                                        <port>wiremock.port:50505</port>
+                                    </ports>
+                                    <volumes>
+                                        <bind>
+                                            <volume>./src/test/resources/__files:/home/wiremock/__files</volume>
+                                            <volume>./src/test/resources/mappings:/home/wiremock/mappings</volume>
+                                        </bind>
+                                    </volumes>
+                                    <log>
+                                        <prefix>WireMock:</prefix>
+                                        <color>green</color>
+                                    </log>
+                                </run>
+                            </wiremock>
                             <dotcms>
                                 <name>${dotcms.image.name}</name>
                                 <external>
@@ -372,6 +391,7 @@
                                     <links>
                                         <link>database:db</link>
                                         <link>opensearch:es</link>
+                                        <link>wiremock:wm</link>
                                     </links>
                                     <log>
                                         <prefix>DOTCMS:</prefix>
@@ -1526,7 +1546,6 @@
                             </excludes>
                         </configuration>
                         <executions>
-
                             <execution>
                                 <id>prepare-agent</id>
                                 <goals>
