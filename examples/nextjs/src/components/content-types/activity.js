@@ -4,7 +4,7 @@ import { useDotcmsPageContext } from '@dotcms/react';
 
 function Activity({ title, description, image, urlTitle }) {
     const {
-        viewAs: { language }
+        pageAsset: {viewAs: { language }}
     } = useDotcmsPageContext();
 
     return (

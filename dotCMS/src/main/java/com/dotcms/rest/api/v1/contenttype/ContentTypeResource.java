@@ -405,6 +405,8 @@ public class ContentTypeResource implements Serializable {
 		} catch (final NotFoundInDbException e) {
 			Logger.error(this, String.format("Content Type with ID or var name '%s' was not found", idOrVar), e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+		} catch (final IllegalArgumentException e) {
+			return ExceptionMapperUtil.createResponse(null, e.getMessage());
 		} catch (final DotStateException | DotDataException e) {
 			final String errorMsg = String.format("Failed to update Content Type with ID or var name " +
 					"'%s': %s", idOrVar, ExceptionUtil.getErrorMessage(e));
