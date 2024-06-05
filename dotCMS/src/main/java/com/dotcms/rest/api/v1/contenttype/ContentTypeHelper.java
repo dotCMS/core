@@ -103,7 +103,8 @@ public class ContentTypeHelper implements Serializable {
         // If not conversion is made, the content type is returned as it is.
         var pageDetailIdentifierOptional = new DetailPageTransformerImpl(
                 contentType, user).uriToId();
-        if (pageDetailIdentifierOptional.isPresent()) {
+        if (pageDetailIdentifierOptional.isPresent() &&
+                !pageDetailIdentifierOptional.get().equals(contentType.detailPage())) {
             updatedContentTypeBuilder = setContentTypeDetailPage(
                     contentType,
                     updatedContentTypeBuilder,

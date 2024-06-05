@@ -2,6 +2,7 @@
 package com.dotcms.contenttype.model.field;
 
 import com.dotcms.api.provider.ClientObjectMapper;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -151,6 +152,7 @@ public abstract class Field {
 
     public abstract DataTypes dataType();
 
+    @JsonIgnore
     @Nullable
     public abstract String contentTypeId();
 

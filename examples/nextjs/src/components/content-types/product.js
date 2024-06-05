@@ -4,7 +4,7 @@ import { useDotcmsPageContext } from '@dotcms/react';
 
 function Product({ image, title, salePrice, retailPrice, urlTitle }) {
     const {
-        viewAs: { language }
+        pageAsset: {viewAs: { language }}
     } = useDotcmsPageContext();
 
     const formatPrice = (price) => {

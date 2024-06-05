@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 function ImageComponent({ fileAsset, title, description }) {
     const {
-        viewAs: { language }
+        pageAsset: {viewAs: { language }}
     } = useDotcmsPageContext();
 
     return (
