@@ -8,7 +8,7 @@
     }
     
     <main class="container flex flex-col gap-8 m-auto">
-        <dotcms-layout [entity]="pageAsset" [components]="components()" />
+        <dotcms-layout [pageAsset]="pageAsset" [components]="components()" />
     </main>
     
     @if(pageAsset.layout.footer) {

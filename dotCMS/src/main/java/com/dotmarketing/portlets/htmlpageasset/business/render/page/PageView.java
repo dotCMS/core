@@ -7,6 +7,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
+import com.dotmarketing.portlets.htmlpageasset.business.render.VanityURLView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -54,7 +55,7 @@ public class PageView implements Serializable {
     private int numberContents = 0;
     final String pageUrlMapper;
     final boolean live;
-
+    final VanityURLView vanityUrl;
     final Experiment runningExperiment;
 
     /**
@@ -74,6 +75,7 @@ public class PageView implements Serializable {
         this.live = false;
         this.urlContent = null;
         this.runningExperiment = null;
+        this.vanityUrl = null;
     }
 
     /**
@@ -94,6 +96,7 @@ public class PageView implements Serializable {
         this.live = builder.live;
         this.urlContent = builder.urlContent;
         this.runningExperiment = builder.runningExperiment;
+        this.vanityUrl = builder.vanityUrl;
     }
 
     public boolean isLive() {
@@ -213,6 +216,10 @@ public class PageView implements Serializable {
         return runningExperiment;
     }
 
+    public VanityURLView getVanityUrl() {
+        return this.vanityUrl;
+    }
+
     public static class Builder {
 
         //  The {@link Host} where the HTML Page lives in.
@@ -231,8 +238,8 @@ public class PageView implements Serializable {
         private  Contentlet urlContent;
         private String pageUrlMapper;
         private boolean live;
-
         private Experiment runningExperiment;
+        private VanityURLView vanityUrl;
 
         public Builder site(final Host site) {
             this.site = site;
@@ -289,14 +296,20 @@ public class PageView implements Serializable {
             return this;
         }
 
-        public PageView build() {
-            return new PageView(this);
-        }
-
         public Builder runningExperiment(final Experiment runningExperiment) {
             this.runningExperiment = runningExperiment;
             return this;
         }
+
+        public Builder vanityUrl(final VanityURLView vanityUrl) {
+            this.vanityUrl = vanityUrl;
+            return this;
+        }
+
+        public PageView build() {
+            return new PageView(this);
+        }
+
     }
 
 }

@@ -1,4 +1,4 @@
-import { describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { ActivatedRouteStub } from '@ngneat/spectator';
 import { SpectatorRouting, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
@@ -281,6 +281,26 @@ describe('DotEmaShellComponent', () => {
                     language_id: 2,
                     url: 'my-awesome-page',
                     'com.dotmarketing.persona.id': 'SomeCoolDude'
+                });
+            });
+
+            it('should trigger a load when changing the clientHost', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:1111',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
             });
         });
