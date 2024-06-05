@@ -113,8 +113,15 @@ public interface StoryBlockAPI {
     String toJson (final Map<String, Object> blockEditorMap) throws JsonProcessingException;
 
     /**
+     * Returns the maximum TTL (Time To Live) indicating how long a Contentlet with one or more
+     * Block Editor fields will keep the information of Contentlets added to them <b>before
+     * refreshing their information from the database.</b> This is useful to avoid hitting the
+     * database constantly trying to refresh contentlet data, thus improving the performance.
+     * issues.
+     * <p>The name of the configuration variable for the TTL is
+     * {@code DOT_STORY_BLOCK_HYDRATION_TTL}</p>.
      *
-     * @return
+     * @return The maximum TTL in seconds for all Block Editor fields.
      */
     int getMaxHydrationTTL();
 

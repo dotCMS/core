@@ -921,7 +921,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        boolean forceReload = this.forceBlockEditorReload(cachedContentlet);
+        final boolean forceReload = this.forceBlockEditorReload(cachedContentlet);
         if (REFRESH_BLOCK_EDITOR_REFERENCES && forceReload) {
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
