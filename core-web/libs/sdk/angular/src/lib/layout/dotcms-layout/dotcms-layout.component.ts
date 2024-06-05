@@ -13,7 +13,8 @@ import { filter } from 'rxjs/operators';
 
 import { initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
 
-import { DotCMSPageAsset, DynamicComponentEntity } from '../../models';
+import { DynamicComponentEntity } from '../../models';
+import { DotCMSPageAsset } from '../../models/dotcms.model';
 import { PageContextService } from '../../services/dotcms-context/page-context.service';
 import { RowComponent } from '../row/row.component';
 

@@ -3,9 +3,9 @@ import { forwardRef, useContext } from 'react';
 import styles from './row.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
+import { DotCMSPageContext } from '../../models';
 import { combineClasses } from '../../utils/utils';
 import { Column } from '../Column/Column';
-import { PageProviderContext } from '../PageProvider/PageProvider';
 
 /**
  * Props for the row component
@@ -17,10 +17,10 @@ export interface RowProps {
     /**
      * Row data
      *
-     * @type {PageProviderContext['layout']['body']['rows'][0]}
+     * @type {DotCMSPageContext['layout']['body']['rows'][0]}
      * @memberof RowProps
      */
-    row: PageProviderContext['layout']['body']['rows'][0];
+    row: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0];
 }
 
 /**
@@ -31,9 +31,9 @@ export interface RowProps {
  * @return {*}
  */
 export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) => {
-    const { isInsideEditor } = useContext<PageProviderContext | null>(
+    const { isInsideEditor } = useContext<DotCMSPageContext | null>(
         PageContext
-    ) as PageProviderContext;
+    ) as DotCMSPageContext;
 
     const { row } = props;
 
