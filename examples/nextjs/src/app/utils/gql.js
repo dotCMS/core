@@ -35,6 +35,7 @@ const getGraphQLPageQuery = ({ path, language_id, mode}) => {
                     containerInode
                     containerId
                     code
+                    contentTypeVar
                 }
                 containerContentlets {
                     uuid
