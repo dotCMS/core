@@ -19,17 +19,6 @@
     justify-content: flex-end;
 }
 
-.locale-add__warning {
-    margin: $spacing-3 0;
-    display: flex;
-    gap: $spacing-1;
-    font-size: $font-size-smd;
-    i {
-        color: $color-palette-primary-500;
-    }
-    word-break: break-word;
-}
-
 .locale-add__error-message {
     margin: $spacing-1 0;
     font-size: $font-size-smd;
