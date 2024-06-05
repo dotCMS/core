@@ -48,7 +48,6 @@ export function MyPage({ pageAsset, nav }) {
     redirectFn: replace
   }) : DotcmsLayout;
 
-
   return (
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
       {pageAsset.layout.header && (

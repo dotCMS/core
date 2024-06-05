@@ -16,7 +16,7 @@ const client = dotcmsClient.init({
 
 export default async function Home({ searchParams, params }) {
     const requestData = {
-        path: params?.slug ? params.slug.join("/") : "index",
+        path: '/destinations',
         language_id: searchParams.language_id,
         "com.dotmarketing.persona.id":
             searchParams["com.dotmarketing.persona.id"] || "",
@@ -32,5 +32,5 @@ export default async function Home({ searchParams, params }) {
     const data = await getGraphQLPageData(requestData);
     const entity = graphqlToPageEntity(data);
 
-    return <MyPage nav={nav.entity.children} data={entity}></MyPage>;
+    return <MyPage nav={nav.entity.children} pageAsset={entity}></MyPage>;
 }

@@ -7,14 +7,14 @@ const API_URL = `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/api/v1/graphql`;
  * @return {*} 
  */
 const getGraphQLPageQuery = ({ path, language_id, mode}) => {
-    const params = [''];
+    const params = [];
 
     if(language_id) {
-        params.push(`language_id: "${language_id}"`); 
+        params.push(`languageId: "${language_id}"`); 
     }
 
     if(mode) {
-        params.push(`mode: "${mode}"`); 
+        params.push(`pageMode: "${mode}"`); 
     }
 
     const paramsString = params.length ? `, ${params.join(", ")}` : "";
@@ -28,6 +28,7 @@ const getGraphQLPageQuery = ({ path, language_id, mode}) => {
             containers {
                 path
                 identifier
+                maxContentlets
                 containerStructures {
                     id
                     structureId
@@ -108,12 +109,14 @@ const getGraphQLPageQuery = ({ path, language_id, mode}) => {
  * @return {*} 
  */
 export const getGraphQLPageData = async (params) => {
-
     const query = getGraphQLPageQuery(params);
 
     const res = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            'Authorization': `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`, 
+            "Content-Type": "application/json"
+        },
         body: JSON.stringify({ query }),
     });
     const { data } = await res.json();
