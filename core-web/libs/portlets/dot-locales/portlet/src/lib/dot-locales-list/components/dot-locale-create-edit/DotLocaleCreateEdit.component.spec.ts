@@ -64,7 +64,6 @@ describe('DotLocaleCreateEditComponent', () => {
         });
 
         it('should load the edit form correctly', () => {
-            //  console.log('langEdit: ', spectator.query(byTestId('langEdit')));
             expect((spectator.query(byTestId('langEdit')) as HTMLInputElement).value).toBe(
                 'English'
             );

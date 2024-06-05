@@ -2,7 +2,8 @@ import { BehaviorSubject } from 'rxjs';
 
 import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     AbstractControl,
     FormControl,
@@ -29,6 +30,10 @@ export interface DotLocaleCreateEditData {
     localeList: DotLanguage[];
 }
 
+/**
+ * Form that allows to create or edit a locale, pass the locale.id will mean is an edit operation
+ * since is locale that already exist.
+ */
 @Component({
     selector: 'dot-locale-create-edit',
     standalone: true,
@@ -49,6 +54,7 @@ export interface DotLocaleCreateEditData {
 export class DotLocaleCreateEditComponent implements OnInit {
     readonly config: DynamicDialogConfig<DotLocaleCreateEditData> = inject(DynamicDialogConfig);
     private readonly dotMessageService = inject(DotMessageService);
+    private destroyRef = inject(DestroyRef);
 
     ref = inject(DynamicDialogRef);
     languageId: AbstractControl<string, string> | null | undefined;
@@ -72,11 +78,8 @@ export class DotLocaleCreateEditComponent implements OnInit {
     handleSubmit(): void {
         if (this.form.valid) {
             const { language, languageCode, country, countryCode } = this.form.value;
-            const isDuplicate = this.data.localeList.some(
-                (locale) => locale.isoCode?.toLowerCase() === this.getISOCode()
-            );
 
-            if (this.data.locale?.id || (!this.data.locale?.id && !isDuplicate)) {
+            if (this.isEditMode() || !this.isDuplicate()) {
                 this.ref.close({
                     language,
                     languageCode,
@@ -111,21 +114,47 @@ export class DotLocaleCreateEditComponent implements OnInit {
             countryDropdown: new FormControl('')
         });
 
+        this.subscribeToLanguageDropdown();
+        this.subscribeToCountryDropdown();
+
         this.languageId = this.form.get('id');
+    }
 
-        this.form.get('languageDropdown')?.valueChanges.subscribe((language: DotISOItem) => {
-            this.form.get('language')?.setValue(language?.name);
-            this.form.get('languageCode')?.setValue(language?.code);
-            this.form.get('isoCode')?.setValue(this.getISOCode());
-            this.showError.next(false);
-        });
+    private isEditMode(): boolean {
+        return !!this.data.locale?.id;
+    }
 
-        this.form.get('countryDropdown')?.valueChanges.subscribe((country: DotISOItem) => {
-            this.form.get('country')?.setValue(country?.name);
-            this.form.get('countryCode')?.setValue(country?.code);
-            this.form.get('isoCode')?.setValue(this.getISOCode());
-            this.showError.next(false);
-        });
+    private isDuplicate(): boolean {
+        return (
+            !this.isEditMode() &&
+            this.data.localeList.some(
+                (locale) => locale.isoCode?.toLowerCase() === this.getISOCode()
+            )
+        );
+    }
+
+    private subscribeToLanguageDropdown(): void {
+        this.form
+            .get('languageDropdown')
+            ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((language: DotISOItem) => {
+                this.form.get('language')?.setValue(language?.name);
+                this.form.get('languageCode')?.setValue(language?.code);
+                this.form.get('isoCode')?.setValue(this.getISOCode());
+                this.showError.next(false);
+            });
+    }
+
+    private subscribeToCountryDropdown(): void {
+        this.form
+            .get('countryDropdown')
+            ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((country: DotISOItem) => {
+                this.form.get('country')?.setValue(country?.name);
+                this.form.get('countryCode')?.setValue(country?.code);
+                this.form.get('isoCode')?.setValue(this.getISOCode());
+                this.showError.next(false);
+            });
     }
 
     private getISOCode(): string {
