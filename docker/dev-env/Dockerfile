@@ -12,7 +12,7 @@ ARG USER_UID="65001"
 ARG USER_GID="65001"
 ARG USER_GROUP="dotcms"
 ARG USER_NAME="dotcms"
-
+ARG DEV_REQUEST_TOKEN
 ARG PG_VERSION=16
 ENV PG_VERSION=${PG_VERSION}
 RUN groupadd -f -g $USER_GID $USER_GROUP
@@ -60,5 +60,11 @@ RUN /usr/share/opensearch/opensearch-onetime-setup.sh
 RUN chown -R dotcms.dotcms /usr/share/opensearch/config
 COPY entrypoint.sh /
 RUN chmod 755 /entrypoint.sh
+
+## This file is used to request a dev license from dotCMS
+COPY license-request.sh /
+RUN chmod 755 /license-request.sh
+RUN bash -x /license-request.sh
+RUN rm /license-request.sh
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
