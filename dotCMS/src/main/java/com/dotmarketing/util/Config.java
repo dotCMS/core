@@ -187,7 +187,7 @@ public class Config {
 
         if (props.getBoolean(USE_CONFIG_TEST_OVERRIDE_TRACKER, false)) {
             testOverrideTracker.forEach((key, value) -> {
-                String currentValue = props.getString(key);
+                String currentValue = Try.of(()->props.getString(key)).getOrElse(()->props.getProperty(key).toString());
                 if (value.equals("[remove]"))
                 {
                     if (currentValue != null)
