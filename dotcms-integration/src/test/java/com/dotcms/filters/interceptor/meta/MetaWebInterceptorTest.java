@@ -101,7 +101,7 @@ public class MetaWebInterceptorTest {
             Assert.assertTrue(header.startsWith("unknown|"));
         } finally {
 
-            Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, true);
+            Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, true);
         }
     }
 }
