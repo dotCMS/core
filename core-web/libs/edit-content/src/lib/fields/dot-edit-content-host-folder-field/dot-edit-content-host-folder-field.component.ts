@@ -1,42 +1,27 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
-import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    Input,
+    OnInit,
+    ViewChild,
+    inject,
+    signal
+} from '@angular/core';
+import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/forms';
 
-import { TreeNode } from 'primeng/api';
-import { TreeSelectModule } from 'primeng/treeselect';
+import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
+import { Site } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
+import {
+    TreeNodeItem,
+    TreeNodeSelectEvent,
+    TreeNodeSelectItem
+} from '../../models/dot-edit-content-host-folder-field.interface';
 import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
-
-const files: TreeNode[] = [
-    {
-        label: 'demo.dotcms.com',
-        data: 'demo.dotcms.com',
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder',
-        children: [
-            {
-                label: 'demo.dotcms.com/activities',
-                data: 'activities',
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
-                children: [
-                    {
-                        label: 'demo.dotcms.com/activities/themes',
-                        data: 'themes',
-                        icon: 'pi pi-folder-open'
-                    }
-                ]
-            },
-            {
-                label: 'demo.dotcms.com/home',
-                data: 'home',
-                icon: 'pi pi-folder-open'
-            }
-        ]
-    }
-];
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 
 @Component({
     selector: 'dot-edit-content-host-folder-field',
@@ -54,28 +39,76 @@ const files: TreeNode[] = [
 })
 export class DotEditContentHostFolderFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
-    private readonly controlContainer = inject(ControlContainer);
+    @ViewChild(TreeSelect) tree!: TreeSelect;
+    readonly #controlContainer = inject(ControlContainer);
+    readonly #editContentService = inject(DotEditContentService);
 
-    options = signal<TreeNode[]>(files);
+    options = signal<TreeNodeItem[]>([]);
+    pathControl = new FormControl();
 
     ngOnInit() {
-        const options = this.options();
-        this.formControl.patchValue(options[0].children[0]);
+        this.#editContentService.getSitesTreePath().subscribe((options) => {
+            this.options.set(options);
+            this.getInitialValue();
+        });
     }
 
-    /**
-     * Returns the form control for the select field.
-     * @returns {AbstractControl} The form control for the select field.
-     */
-    get formControl(): AbstractControl {
-        return this.controlContainer.control.get(
+    get formControl(): FormControl {
+        return this.#controlContainer.control.get(
             this.field.variable
-        ) as AbstractControl<DotEditContentFieldSingleSelectableDataTypes>;
+        ) as FormControl<DotEditContentFieldSingleSelectableDataTypes>;
     }
 
-    /**
-    onNodeSelect(event: TreeNodeSelectEvent) {
-        console.log(event.node);
+    onNodeSelect(event: TreeNodeSelectEvent<Site>) {
+        this.formControl.setValue(event.node.label);
     }
-    */
+
+    onNodeExpand(event: TreeNodeSelectItem) {
+        if (!event.node.children) {
+            this.#editContentService.getFoldersTreeNode(event.node.label).subscribe((children) => {
+                if (children.length > 0) {
+                    event.node.children = children;
+                } else {
+                    event.node.leaf = true;
+                    event.node.icon = 'pi pi-folder-open';
+                }
+
+                this.tree.cd.detectChanges();
+            });
+        }
+    }
+
+    getInitialValue() {
+        const value = this.formControl.value as string;
+        if (value) {
+            const split = value.split('/');
+            const paths = split.reduce((array, item, index) => {
+                const prev = array[index - 1];
+                let path = `${item}/`;
+                if (prev) {
+                    path = `${prev}${path}`;
+                }
+
+                array.push(path);
+
+                return array;
+            }, []);
+            this.#editContentService.buildTreeByPaths(paths).subscribe((rta) => {
+                const sitePath = rta.tree.path.replace('/', '');
+                this.options.update((options) => {
+                    return options.map((item) => {
+                        if (item.key === sitePath) {
+                            return {
+                                ...item,
+                                children: [...rta.tree.folders]
+                            };
+                        }
+
+                        return item;
+                    });
+                });
+                this.pathControl.setValue(rta.node);
+            });
+        }
+    }
 }

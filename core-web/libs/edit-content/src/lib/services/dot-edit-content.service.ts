@@ -1,18 +1,25 @@
-import { Observable } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { map, pluck } from 'rxjs/operators';
 
-import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotWorkflowActionsFireService,
+    DotSiteService
+} from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import { DotFolder, TreeNodeItem } from '../models/dot-edit-content-host-folder-field.interface';
 
 @Injectable()
 export class DotEditContentService {
-    private readonly dotContentTypeService = inject(DotContentTypeService);
-    private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
-    private readonly http = inject(HttpClient);
+    readonly #dotContentTypeService = inject(DotContentTypeService);
+    readonly #siteService = inject(DotSiteService);
+    readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    readonly #http = inject(HttpClient);
 
     /**
      * Retrieves the content by its ID.
@@ -20,7 +27,7 @@ export class DotEditContentService {
      * @returns An observable of the DotCMSContentType object.
      */
     getContentById(id: string): Observable<DotCMSContentlet> {
-        return this.http.get(`/api/v1/content/${id}`).pipe(pluck('entity'));
+        return this.#http.get(`/api/v1/content/${id}`).pipe(pluck('entity'));
     }
 
     /**
@@ -31,7 +38,7 @@ export class DotEditContentService {
      * @memberof DotEditContentService
      */
     getContentType(idOrVar: string): Observable<DotCMSContentType> {
-        return this.dotContentTypeService.getContentType(idOrVar);
+        return this.#dotContentTypeService.getContentType(idOrVar);
     }
 
     /**
@@ -42,7 +49,7 @@ export class DotEditContentService {
     getTags(name: string) {
         const params = new HttpParams().set('name', name);
 
-        return this.http.get('/api/v2/tags', { params }).pipe(
+        return this.#http.get('/api/v2/tags', { params }).pipe(
             pluck('entity'),
             map((res) => Object.values(res).map((obj) => obj.label))
         );
@@ -54,6 +61,83 @@ export class DotEditContentService {
      * The type of the emitted contentlet is determined by the generic type parameter.
      */
     saveContentlet<T>(data: { [key: string]: string }): Observable<T> {
-        return this.dotWorkflowActionsFireService.saveContentlet(data);
+        return this.#dotWorkflowActionsFireService.saveContentlet(data);
+    }
+
+    /**
+     * Get data for site/folder field and tranform into TreeNode
+     * @returns files
+     */
+    getSitesTreePath(): Observable<TreeNodeItem[]> {
+        return this.#siteService.getSites().pipe(
+            map((sites) => {
+                return sites.map((site) => ({
+                    key: site.hostname,
+                    label: `${site.hostname}`,
+                    data: { ...site, path: site.hostname, type: 'site' },
+                    expandedIcon: 'pi pi-folder-open',
+                    collapsedIcon: 'pi pi-folder',
+                    leaf: false
+                }));
+            })
+        );
+    }
+
+    getFolders(path: string): Observable<DotFolder[]> {
+        return this.#http.post<DotFolder>('/api/v1/folder/byPath', { path }).pipe(pluck('entity'));
+    }
+
+    getFoldersTreeNode(fullPath: string): Observable<TreeNodeItem[]> {
+        let path = fullPath.split('/').splice(1).join('/');
+        path = path === '' ? '/' : `/${path}`;
+
+        return this.getFolders(`//${fullPath}`).pipe(
+            map((folders) => {
+                return folders
+                    .filter((folder) => folder.path !== path)
+                    .map((folder) => ({
+                        key: `${folder.hostName}${folder.path}`,
+                        label: `${folder.hostName}${folder.path}`,
+                        data: { ...folder, path: folder.path, type: 'folder' },
+                        expandedIcon: 'pi pi-folder-open',
+                        collapsedIcon: 'pi pi-folder',
+                        leaf: false
+                    }));
+            })
+        );
+    }
+
+    buildTreeByPaths(paths: string[]) {
+        const requests = paths
+            .reverse()
+            .map((path) =>
+                this.getFoldersTreeNode(path).pipe(map((folders) => ({ path, folders })))
+            );
+
+        return forkJoin(requests).pipe(
+            map((response) => {
+                const [mainNode] = response;
+
+                return response.reduce(
+                    (rta, node, index, array) => {
+                        const next = array[index + 1];
+                        if (next) {
+                            const folder = next.folders.find((item) => item.key === node.path);
+                            if (folder) {
+                                folder.children = node.folders;
+                                if (mainNode.path === folder.key) {
+                                    rta.node = folder;
+                                }
+                            }
+                        }
+
+                        rta.tree = node;
+
+                        return rta;
+                    },
+                    { tree: null, node: null }
+                );
+            })
+        );
     }
 }

@@ -1,4 +1,3 @@
-import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { ChangeDetectionStrategy, Component, HostBinding, Input, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
@@ -26,9 +25,6 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgSwitch,
-        NgSwitchCase,
-        NgIf,
         ReactiveFormsModule,
         DotEditContentFieldsModule,
         DotFieldRequiredDirective,
