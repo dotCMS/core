@@ -9,6 +9,7 @@ import com.dotcms.api.client.push.language.LanguagePushHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.common.ApplyCommandOrder;
+import com.dotcms.cli.common.CommandInterceptor;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
@@ -84,6 +85,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     CommandLine.Model.CommandSpec spec;
 
     @Override
+    @CommandInterceptor
     public Integer call() throws Exception {
 
         // When calling from the global push we should avoid the validation of the unmatched

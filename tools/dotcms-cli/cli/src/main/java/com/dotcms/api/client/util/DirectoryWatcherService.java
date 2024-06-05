@@ -33,12 +33,16 @@ public class DirectoryWatcherService {
     private final Logger logger = Logger.getLogger(DirectoryWatcherService.class);
     private final Set<Path> paths = ConcurrentHashMap.newKeySet();
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean suspended = new AtomicBoolean(false);
+
 
     public DirectoryWatcherService() throws IOException {
         watchService = FileSystems.getDefault().newWatchService();
         scheduler = Executors.newScheduledThreadPool(1);
     }
 
+
+    @SuppressWarnings("java:S1452")
     public BlockingQueue<WatchEvent<?>> watch(Path path, long pollIntervalSeconds) throws IOException {
         registerAll(path);
         if(running.compareAndSet(false, true)){
@@ -49,10 +53,11 @@ public class DirectoryWatcherService {
 
     private void processEvents() {
         try{
-            pollEvents();
+            if (!suspended.get()) {
+                pollEvents();
+            }
         } catch (Exception e) {
             logger.error("Error processing events", e);
-
         }
     }
 
@@ -62,6 +67,7 @@ public class DirectoryWatcherService {
         if (key != null) {
             WatchEvent<?> lastEvent = null;
             for (WatchEvent<?> event : key.pollEvents()) {
+                System.out.println("Event kind:" + event.kind() + ". File affected: " + event.context());
                 lastEvent = event;
             }
             if (lastEvent != null) {
@@ -73,6 +79,18 @@ public class DirectoryWatcherService {
 
     public boolean isRunning() {
         return running.get();
+    }
+
+    public boolean isSuspended() {
+        return suspended.get();
+    }
+
+    public void suspend() {
+        suspended.set(true);
+    }
+
+    public void resume() {
+        suspended.set(false);
     }
 
     public void stop() {

@@ -1,6 +1,5 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.api.client.util.DirectoryWatcherService;
 import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.CommandInterceptor;
 import com.dotcms.cli.common.FullPushOptionsMixin;
@@ -11,12 +10,7 @@ import com.dotcms.common.WorkspaceManager;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.enterprise.inject.Instance;
@@ -63,8 +57,6 @@ public class PushCommand implements Callable<Integer>, DotPush {
     @Inject
     Instance<DotPush> pushCommands;
 
-    @Inject
-    DirectoryWatcherService directoryWatcherService;
 
     @Override
     @CommandInterceptor
@@ -77,24 +69,6 @@ public class PushCommand implements Callable<Integer>, DotPush {
         // Validate we have a workspace at the specified path
         checkValidWorkspace(pushMixin.path());
 
-        /*
-        if(pushMixin.isWatchOn()){
-            directoryWatcherService.watch(pushMixin.path(), pushMixin.interval, true, event -> {
-                execCommands();
-            });
-            return CommandLine.ExitCode.OK;
-        }
-         */
-
-        final Integer exitCode = execSubCommands();
-        if (exitCode != null) {
-            return exitCode;
-        }
-
-        return CommandLine.ExitCode.OK;
-    }
-
-    private Integer execSubCommands() {
         // Preparing the list of arguments to be passed to the subcommands
         var expandedArgs = new ArrayList<>(spec.commandLine().getParseResult().expandedArgs());
         expandedArgs.add("--noValidateUnmatchedArguments");
@@ -106,34 +80,19 @@ public class PushCommand implements Callable<Integer>, DotPush {
                 .sorted(Comparator.comparingInt(DotPush::getOrder))
                 .collect(Collectors.toList());
 
-        // Usa  ExecutorService for parallel execution of the subcommands
-        final ExecutorService executorService = Executors.newFixedThreadPool(pushCommandsSorted.size());
-        final List<Future<Integer>> futures = new ArrayList<>();
-
+        // Process each subcommand
         for (var subCommand : pushCommandsSorted) {
-            Callable<Integer> task = () -> {
-                var cmdLine = createCommandLine(subCommand);
-                return cmdLine.execute(args);
-            };
-            futures.add(executorService.submit(task));
-        }
 
-        // Wait for all subcommands to finish and check for errors
-        for (Future<Integer> future : futures) {
-            try {
-                int exitCode = future.get();
-                if (exitCode != CommandLine.ExitCode.OK) {
-                    executorService.shutdownNow();
-                    return exitCode;
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                executorService.shutdownNow();
-                throw new RuntimeException("Error executing subcommand", e);
+            var cmdLine = createCommandLine(subCommand);
+
+            // Use execute to parse the parameters with the subcommand
+            int exitCode = cmdLine.execute(args);
+            if (exitCode != CommandLine.ExitCode.OK) {
+                return exitCode;
             }
         }
 
-        executorService.shutdown();
-        return null;
+        return CommandLine.ExitCode.OK;
     }
 
     /**
