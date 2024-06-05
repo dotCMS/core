@@ -57,20 +57,8 @@ export class DotEditContentCategoryFieldComponent {
     field = input.required<DotCMSContentTypeField>();
 
     // TODO: Replace with the content of the selected categories
-    // values = [];
-    values = [
-        { id: 1, value: 'Streetwear' },
-        { id: 2, value: 'Boys' },
-        { id: 2, value: 'Jeans' },
-        { id: 2, value: 'Pants' },
-        { id: 2, value: 'Formal' },
-        { id: 2, value: 'Plain' },
-        { id: 2, value: 'Pants with linen for woman' },
-        { id: 2, value: 'Printed' },
-        { id: 2, value: 'Formal pants for man' },
-        { id: 2, value: 'Kids' },
-        { id: 2, value: 'Kids streetwear' }
-    ];
+    values = [];
+
     #dialogService = inject(DialogService);
 
     /**
