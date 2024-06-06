@@ -235,7 +235,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
     }
 
-    function showOnMenuKeyHandler(e) {
+    /*function showOnMenuKeyHandler(e) {
         var inode = getInodeFromID(Event.element(e).id);
         if (document.layers)
             Key = e.which;
@@ -247,7 +247,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
         if (Key == 27)
             cancelChangeContentShowOnMenu ();
-    }
+    }*/
 
     function contentNameDIVClicked(e)
     {
@@ -257,7 +257,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         return false;
     }
 
-    function contentShowOnMenuClicked(e)
+    /*function contentShowOnMenuClicked(e)
     {
         var inode = getInodeFromID(Event.element(e).id);
         showDebugMessage('contentShowOnMenuClicked: inode = ' + inode +
@@ -271,7 +271,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 ', changingShowOnMenuTo = ' + changingShowOnMenuTo);
             executeChangeShowOnMenu();
         }
-    }
+    }*/
 
     function contentTRMouseUp(e) {
         var inode = getInodeFromID(Event.element(e).id);
@@ -800,7 +800,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
                 //Attaching events
                 Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
-                Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
+                //Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);//todo borrar
                 Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
                 Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
                 Event.observe(asset.inode + '-TR', 'mouseout', mouseOutContent);
@@ -915,7 +915,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
                 //Attaching events
                 Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
-                Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
+                //Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
                 Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
                 Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
                 Event.observe(asset.inode + '-TR', 'mouseout', mouseOutContent);
@@ -1096,7 +1096,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
     }
 
-    function enableChangeContentShowOnMenu (inode) {
+    /*function enableChangeContentShowOnMenu (inode) {
         if (changingShowOnMenuTo != inode) {
             executeChangeShowOnMenu (changingShowOnMenuTo);
             var currentValue = $(inode + '-ShowOnMenuSPAN').innerHTML.replace(/\s/g,'').replace(/&nbsp;/g,'');
@@ -1113,9 +1113,9 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
         changingShowOnMenuTo = inode;
         showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Enabling-show-on-menu-edit-on")) %>: ' + inode);
-    }
+    }*/
 
-    function cancelChangeContentShowOnMenu () {
+    /*function cancelChangeContentShowOnMenu () {
 
         if ($(changingShowOnMenuTo + '-ShowOnMenuSPAN') != null) {
             var value = lastShowOnMenu;
@@ -1124,9 +1124,9 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
 
         changingShowOnMenuTo = null;
-    }
+    }*/
 
-    function executeChangeShowOnMenu () {
+    /*function executeChangeShowOnMenu () {
         if (changingShowOnMenuTo != null) {
             var rawNewValue = $(changingShowOnMenuTo + '-ShowOnMenuText').value.replace(/\s/g,'');
             var newValue = rawNewValue;
@@ -1153,9 +1153,9 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             changingShowOnMenuTo = null;
         }
         lastShowOnMenu = null;
-    }
+    }*/
 
-    function executeChangeShowOnMenuCallBack (data) {
+    /*function executeChangeShowOnMenuCallBack (data) {
 
         var inode = data.inode;
         var lastValue = data.lastName;
@@ -1172,7 +1172,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             $(inode + '-ShowOnMenuSPAN').innerHTML = value;
         }
 
-    }
+    }*/
 
     function markForCut (objId, parentId, referer) {
         if ($(markedForCopy + '-TR') != null) {
