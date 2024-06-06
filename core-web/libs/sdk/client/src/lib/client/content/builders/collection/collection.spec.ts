@@ -244,7 +244,11 @@ describe('CollectionBuilder', () => {
                 // Force the error
                 await collectionBuilder.query((qb) => qb.field('name') as unknown as Equals);
             } catch (error) {
-                expect(error).toEqual(new Error('Provided query is not valid.'));
+                expect(error).toEqual(
+                    new Error(
+                        'Provided query is not valid. A query should end in an equals method call.\n ex: (queryBuilder) => queryBuilder.field("title").equals("Hello World")\nSee documentation for more information.'
+                    )
+                );
             }
 
             expect(fetch).not.toHaveBeenCalled();
@@ -259,7 +263,9 @@ describe('CollectionBuilder', () => {
                 await collectionBuilder.query({} as string);
             } catch (error) {
                 expect(error).toEqual(
-                    new Error('Parameter for query method should be a function or a string')
+                    new Error(
+                        'Parameter for query method should be a buildQuery function or a string. See documentation for more information.'
+                    )
                 );
             }
 
@@ -274,7 +280,7 @@ describe('CollectionBuilder', () => {
                 // Force the error
                 await collectionBuilder.depth(5);
             } catch (error) {
-                expect(error).toEqual(new Error('Depth must be between 0 and 3'));
+                expect(error).toEqual(new Error('Depth value must be between 0 and 3'));
             }
 
             expect(fetch).not.toHaveBeenCalled();
@@ -288,7 +294,7 @@ describe('CollectionBuilder', () => {
                 // Force the error
                 await collectionBuilder.depth(-5);
             } catch (error) {
-                expect(error).toEqual(new Error('Depth must be between 0 and 3'));
+                expect(error).toEqual(new Error('Depth value must be between 0 and 3'));
             }
 
             expect(fetch).not.toHaveBeenCalled();

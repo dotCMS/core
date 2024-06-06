@@ -126,7 +126,7 @@ export class CollectionBuilder<T = unknown> {
     /**
      * Takes a number that represents the max amount of content to fetch
      *
-     * Note: The limit is set to 10 by default
+     * The limit is set to 10 by default
      *
      * @param {number} limit The max amount of content to fetch
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
@@ -152,11 +152,11 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes a string that represents a Lucene Query that is used to filter the content to fetch.
+     * Takes a string that represents a {@link https://www.dotcms.com/docs/latest/content-search-syntax#Lucene Lucene Query} that is used to filter the content to fetch.
      *
-     * Note: The string is not validated, so be cautious when using it.
+     * The string is not validated, so be cautious when using it.
      *
-     * @param {string} query A Lucene Query String
+     * @param {string} query A {@link https://www.dotcms.com/docs/latest/content-search-syntax#Lucene Lucene Query} String
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
      * @memberof CollectionBuilder
      */
@@ -176,24 +176,28 @@ export class CollectionBuilder<T = unknown> {
      * @memberof CollectionBuilder
      */
     query(buildQuery: BuildQuery): this;
-    query(buildQuery: unknown): this {
-        if (typeof buildQuery === 'string') {
-            this.#rawQuery = buildQuery;
+    query(arg: unknown): this {
+        if (typeof arg === 'string') {
+            this.#rawQuery = arg;
 
             return this;
         }
 
-        if (typeof buildQuery !== 'function') {
-            throw new Error('Parameter for query method should be a function or a string');
+        if (typeof arg !== 'function') {
+            throw new Error(
+                'Parameter for query method should be a buildQuery function or a string. See documentation for more information.'
+            );
         }
 
-        const builtQuery = buildQuery(new QueryBuilder());
+        const builtQuery = arg(new QueryBuilder());
 
         // This can be use in Javascript so we cannot rely on the type checking
         if (builtQuery instanceof Equals) {
             this.#query = builtQuery.raw(this.currentQuery.build());
         } else {
-            throw new Error('Provided query is not valid.');
+            throw new Error(
+                'Provided query is not valid. A query should end in an equals method call.\n ex: (queryBuilder) => queryBuilder.field("title").equals("Hello World")\nSee documentation for more information.'
+            );
         }
 
         return this;
@@ -214,9 +218,9 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes a string that represents a variant ID of content created with the A/B Testing feature
+     * Takes a string that represents a variant ID of content created with the {@link https://www.dotcms.com/docs/latest/experiments-and-a-b-testing A/B Testing} feature
      *
-     * Note: variantId defaults to "DEFAULT" to fetch content that is not part of an A/B test
+     * `variantId` defaults to "DEFAULT" to fetch content that is not part of an A/B test
      *
      * @param {string} variantId A string that represents a variant ID
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
@@ -231,7 +235,7 @@ export class CollectionBuilder<T = unknown> {
     /**
      * Takes a number that represents the depth of the relationships of a content
      *
-     * Note: The depth is set to 0 by default and the max supported value is 3
+     * The `depth` is set to 0 by default and the max supported value is 3.
      *
      * @param {number} depth The depth of the relationships of a content
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
@@ -239,7 +243,7 @@ export class CollectionBuilder<T = unknown> {
      */
     depth(depth: number): this {
         if (depth < 0 || depth > 3) {
-            throw new Error('Depth must be between 0 and 3');
+            throw new Error('Depth value must be between 0 and 3');
         }
 
         this.#depth = depth;
