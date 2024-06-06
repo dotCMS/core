@@ -40,7 +40,8 @@ import {
     BINARY_FIELD_CONTENTLET,
     createFormGroupDirectiveMock,
     DOT_MESSAGE_SERVICE_MOCK,
-    FIELDS_MOCK
+    FIELDS_MOCK,
+    TREE_SELECT_MOCK
 } from '../../utils/mocks';
 
 interface DotEditFieldTestBed {
@@ -73,7 +74,14 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     [FIELD_TYPES.DATE]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.DATE_AND_TIME]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
-    [FIELD_TYPES.HOST_FOLDER]: DotEditContentHostFolderFieldComponent,
+    [FIELD_TYPES.HOST_FOLDER]: {
+        component: DotEditContentHostFolderFieldComponent,
+        providers: [
+            mockProvider(DotEditContentService, {
+                getSitesTreePath: jest.fn().mockReturnValue(of(TREE_SELECT_MOCK))
+            })
+        ]
+    },
     [FIELD_TYPES.TAG]: {
         component: DotEditContentTagFieldComponent,
         providers: [{ provide: DotEditContentService, useValue: { getTags: () => of([]) } }]

@@ -196,7 +196,7 @@ export const stringToJson = (value: string) => {
  * ```
  */
 export const createPaths = (path: string): string[] => {
-    const split = path.split('/');
+    const split = path.split('/').filter((item) => item !== '');
 
     return split.reduce((array, item, index) => {
         const prev = array[index - 1];

@@ -101,7 +101,7 @@ export class DotEditContentService {
                         return folder.path !== checkPath;
                     })
                     .map((folder) => ({
-                        key: `${folder.hostName}${folder.path}`.replace('/', ''),
+                        key: `${folder.hostName}${folder.path}`.replace(/[/]/g, ''),
                         label: `${folder.hostName}${folder.path}`,
                         data: {
                             hostname: folder.hostName,
@@ -123,7 +123,7 @@ export class DotEditContentService {
             const subPath = split.slice(1).join('/');
 
             return this.getFoldersTreeNode(hostName, subPath).pipe(
-                map((folders) => ({ path, folders }))
+                map((folders) => ({ path: path.replace(/[/]/g, ''), folders }))
             );
         });
 
