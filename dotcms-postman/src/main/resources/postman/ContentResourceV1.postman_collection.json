@@ -347,14 +347,10 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"// Validate the errorMessage contains 'has invalid / missing field(s)'",
-											"pm.test(\"Validate errorMessage\", function () {",
-											"  var jsonData = pm.response.json();",
-											"  jsonData.entity.results.forEach((result) => {",
-											"    var error = result[Object.keys(result)[0]].errorMessage;",
-											"    pm.expect(error).to.include(\"User: anonymous doesn't have write permissions to create the Contentlet\");",
-											"  });",
-											"});"
+											"pm.test(\"Response text contains the expected error message\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required\");",
+											"});",
+											""
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -373,6 +369,7 @@
 											"    } else {",
 											"        console.log('Logout successful, cookies should be cleared.');",
 											"    }",
+											"    test = false; ",
 											"});"
 										],
 										"type": "text/javascript",
@@ -433,8 +430,8 @@
 								"type": "text/javascript",
 								"packages": {},
 								"exec": [
-									"pm.test(\"Status code should be 200 or 404\", function () {",
-									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"pm.test(\"Status code should be 200, 401 or 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 401, 404]);",
 									"});"
 								]
 							}
@@ -833,11 +830,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"var jsonData = pm.response.json();",
-											"",
-											"pm.test(\"Validate message \", function () {",
-											"    var message = pm.response.json().message;",
-											"    pm.expect(message).to.include('does not have permissions to the Content Type');",
+											"// Test to check for the response text",
+											"pm.test(\"Response text is as expected\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required\");",
 											"});"
 										],
 										"type": "text/javascript",
@@ -917,8 +912,8 @@
 								"type": "text/javascript",
 								"packages": {},
 								"exec": [
-									"pm.test(\"Status code should be 403 or 404\", function () {",
-									"    pm.expect(pm.response.code).to.be.oneOf([403, 404]);",
+									"pm.test(\"Status code should be 401 or 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([401, 404]);",
 									"});"
 								]
 							}
@@ -2054,7 +2049,8 @@
 					"            }",
 					"        });",
 					"    }",
-					"}"
+					"}",
+					""
 				]
 			}
 		},
