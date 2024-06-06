@@ -1,8 +1,10 @@
 package com.dotcms.ai.service;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotcms.ai.util.OpenAIRequest;
+import com.dotcms.ai.util.OpenAiRequestUtil;
 import com.dotcms.ai.util.StopWordsUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
@@ -22,6 +24,7 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.HttpMethod;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -47,37 +50,25 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
 
     @Override
     public JSONObject sendRequest(final JSONObject jsonObject) {
-        if (!jsonObject.containsKey("prompt")){
+        if (!jsonObject.containsKey(AiKeys.PROMPT)){
             throw new DotRuntimeException("Image request missing `prompt` key:" + jsonObject);
         }
 
-        final String prompt = jsonObject.getString("prompt");
-        if (prompt.length() > 400) {
-            final StringBuilder builder = new StringBuilder();
-            for(final String token : prompt.split("\\s+")) {
-                builder.append(token).append(" ");
-                if (builder.length() + token.length() + 5 > 400){
-                    break;
-                }
-
-            }
-            jsonObject.put("prompt", builder.toString());
-        }
-
-        jsonObject.putIfAbsent("model", config.getImageModel());
-        jsonObject.putIfAbsent("size", config.getImageSize());
-        jsonObject.putIfAbsent("n", 1);
+        OpenAiRequestUtil.get().handleLargePrompt(jsonObject);
+        jsonObject.putIfAbsent(AiKeys.MODEL, config.getImageModel());
+        jsonObject.putIfAbsent(AiKeys.SIZE, config.getImageSize());
+        jsonObject.putIfAbsent(AiKeys.N, 1);
 
         String responseString = "";
         try {
             responseString = doRequest(config.getApiImageUrl(), config.getApiKey(), jsonObject);
 
             JSONObject returnObject = new JSONObject(responseString);
-            if (returnObject.containsKey("error")) {
-                throw new DotRuntimeException("Error generating image: " + returnObject.get("error"));
+            if (returnObject.containsKey(AiKeys.ERROR)) {
+                throw new DotRuntimeException("Error generating image: " + returnObject.get(AiKeys.ERROR));
             } else {
                 returnObject = returnObject.getJSONArray("data").getJSONObject(0);
-                returnObject.put("originalPrompt", jsonObject.getString("prompt"));
+                returnObject.put(AiKeys.ORIGINAL_PROMPT, jsonObject.getString(AiKeys.PROMPT));
             }
 
             return createTempFile(returnObject);
@@ -89,7 +80,6 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
         }
     }
 
-
     @Override
     public JSONObject sendRawRequest(final String prompt) {
         return sendRequest(new JSONObject(prompt));
@@ -98,10 +88,10 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
     @Override
     public JSONObject sendRequest(final AIImageRequestDTO dto) {
         JSONObject jsonRequest = new JSONObject();
-        jsonRequest.put("model", config.getImageModel());
-        jsonRequest.put("prompt", dto.getPrompt());
-        jsonRequest.put("size", dto.getSize());
-        jsonRequest.put("n", dto.getNumberOfImages());
+        jsonRequest.put(AiKeys.MODEL, config.getImageModel());
+        jsonRequest.put(AiKeys.PROMPT, dto.getPrompt());
+        jsonRequest.put(AiKeys.SIZE, dto.getSize());
+        jsonRequest.put(AiKeys.N, dto.getNumberOfImages());
         return sendRequest(jsonRequest);
     }
 
@@ -111,24 +101,24 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
     }
 
     private JSONObject createTempFile(final JSONObject imageResponse) {
-        final String url = imageResponse.optString("url");
+        final String url = imageResponse.optString(AiKeys.URL);
         if (UtilMethods.isEmpty(() -> url)) {
             Logger.warn(this.getClass(), "imageResponse does not include URL:" + imageResponse);
             throw new DotRuntimeException("Image Response does not include URL:" + imageResponse);
         }
 
         try {
-            final String fileName = generateFileName(imageResponse.getString("originalPrompt"));
+            final String fileName = generateFileName(imageResponse.getString(AiKeys.ORIGINAL_PROMPT));
             imageResponse.put("tempFileName", fileName);
 
             final DotTempFile file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
-            imageResponse.put("response", file.id);
+            imageResponse.put(AiKeys.RESPONSE, file.id);
             imageResponse.put("tempFile", file.file.getAbsolutePath());
 
             return imageResponse;
         } catch (Exception e) {
-            imageResponse.put("response", e.getMessage());
-            imageResponse.put("error", e.getMessage());
+            imageResponse.put(AiKeys.RESPONSE, e.getMessage());
+            imageResponse.put(AiKeys.ERROR, e.getMessage());
             Logger.error(this.getClass(), "Error building tempfile:" + e.getMessage(), e);
             throw new DotRuntimeException("Error building tempfile from:" + imageResponse);
         }
@@ -141,7 +131,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
      *
      * @return a {@link HttpServletRequest} instance
      */
-    HttpServletRequest getRequest() {
+    private HttpServletRequest getRequest() {
         if (null != HttpServletRequestThreadLocal.INSTANCE.getRequest()) {
             return HttpServletRequestThreadLocal.INSTANCE.getRequest();
         }
@@ -172,7 +162,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
             newFileName = stopWordsUtil.removeStopWords(newFileName);
 
             newFileName = String.join("-", newFileName.split("\\s+"));
-            newFileName = newFileName.substring(0, Math.min(100,newFileName.length()));
+            newFileName = newFileName.substring(0, Math.min(100, newFileName.length()));
             return newFileName.substring(0, newFileName.lastIndexOf("-"))
                     + "_"
                     + dateToString.format(new Date())
@@ -186,7 +176,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
 
     @VisibleForTesting
     String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
-        return OpenAIRequest.doRequest(urlIn, "POST", openAiAPIKey, json);
+        return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, openAiAPIKey, json);
     }
 
     @VisibleForTesting

@@ -29,10 +29,11 @@ public enum AppKeys {
     EMBEDDINGS_CACHE_SIZE("com.dotcms.ai.embeddings.cache.size", "1000"),
     LISTENER_INDEXER("listenerIndexer", "{}"),
     EMBEDDINGS_DB_DELETE_OLD_ON_UPDATE("com.dotcms.ai.embeddings.delete.old.on.update", "true");
+
     public static final String APP_KEY = "dotAI";
-    public static final String APP_YAML_NAME = APP_KEY + ".yml";
-    final public String key;
-    final public String defaultValue;
+
+    public final String key;
+    public final String defaultValue;
 
     AppKeys(String key, String defaultValue) {
         this.key = key;

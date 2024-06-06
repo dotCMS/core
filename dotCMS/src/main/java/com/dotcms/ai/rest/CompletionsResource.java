@@ -1,5 +1,6 @@
 package com.dotcms.ai.rest;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
@@ -25,139 +26,154 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Call
+ * The CompletionsResource class provides REST endpoints for interacting with the AI completions service.
+ * It includes methods for generating completions based on a given prompt.
  */
 @Path("/v1/ai/completions")
 public class CompletionsResource {
 
-
+    /**
+     * Handles POST requests to generate completions based on a given prompt.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param formIn the form data containing the prompt
+     * @return a Response object containing the generated completions
+     */
     @POST
     @JSONP
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
-    public final Response summarizeFromContent(@Context final HttpServletRequest request, @Context final HttpServletResponse response, CompletionsForm formIn
-
-    ) {
-
-        // get user if we have one (this is allow anon)
-        User user = new WebResource
-                .InitBuilder(request, response)
-                .requiredBackendUser(true)
-                .requiredFrontendUser(true)
-                .init()
-                .getUser();
+    public final Response summarizeFromContent(@Context final HttpServletRequest request,
+                                               @Context final HttpServletResponse response,
+                                               final CompletionsForm formIn) {
 
         if (formIn.prompt == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(Map.of("error", "query required")).build();
-        }
-        Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-
-
-        final CompletionsForm form = (!user.isAdmin()) ? CompletionsForm.copy(formIn).model(ConfigService.INSTANCE.config(host).getModel()).build() : formIn;
-
-
-        long startTime = System.currentTimeMillis();
-
-
-        if (!form.stream) {
-            JSONObject jsonResponse = CompletionsAPI.impl().summarize(form);
-            jsonResponse.put("totalTime", System.currentTimeMillis() - startTime + "ms");
-            return Response.ok(jsonResponse.toString(), MediaType.APPLICATION_JSON).build();
+            return badRequestResponse();
         }
 
-        final StreamingOutput streaming = output -> {
-            CompletionsAPI.impl().summarizeStream(form, new LineReadingOutputStream(output));
-            output.flush();
-            output.close();
-
-        };
-
-        return Response.ok(streaming).build();
+        final CompletionsForm form = resolveForm(request, response, formIn);
+        return fromForm(
+                form,
+                () -> CompletionsAPI.impl().summarize(form),
+                out -> CompletionsAPI.impl().summarizeStream(form, new LineReadingOutputStream(out)));
     }
 
-
+    /**
+     * Handles POST requests to generate completions based on a raw prompt.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param formIn the form data containing the prompt
+     * @return a Response object containing the generated completions
+     */
     @Path("/rawPrompt")
     @POST
     @JSONP
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
-    public final Response rawPrompt(@Context final HttpServletRequest request, @Context final HttpServletResponse response, CompletionsForm formIn
+    public final Response rawPrompt(@Context final HttpServletRequest request,
+                                    @Context final HttpServletResponse response,
+                                    final CompletionsForm formIn) {
 
-    ) {
+        if (formIn.prompt == null) {
+            return badRequestResponse();
+        }
+        
+        final CompletionsForm form = resolveForm(request, response, formIn);
+        return fromForm(
+                form,
+                () -> CompletionsAPI.impl().raw(form),
+                out -> CompletionsAPI.impl().rawStream(form, new LineReadingOutputStream(out)));
+    }
 
+    /**
+     * Handles GET requests to retrieve the configuration of the completions service.
+     *
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @return a Response object containing the configuration of the completions service
+     */
+    @GET
+    @JSONP
+    @Path("/config")
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    public final Response getConfig(@Context final HttpServletRequest request,
+                                    @Context final HttpServletResponse response) {
         // get user if we have one (this is allow anon)
-        User user = new WebResource
+        new WebResource
+                .InitBuilder(request, response)
+                .requiredBackendUser(true)
+                .init()
+                .getUser();
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final AppConfig app = ConfigService.INSTANCE.config(host);
+
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(AiKeys.CONFIG_HOST, host.getHostname() + " (falls back to system host)");
+        for (final AppKeys config : AppKeys.values()) {
+            map.put(config.key, app.getConfig(config));
+        }
+
+        final String apiKey = UtilMethods.isSet(app.getApiKey()) ? "*****" : "NOT SET";
+        map.put(AppKeys.API_KEY.key, apiKey);
+
+        final List<String> models = Arrays.stream(OpenAIModel.values())
+                .filter(m->m.completionModel)
+                .map(m-> m.modelName)
+                .collect(Collectors.toList());
+        map.put(AiKeys.AVAILABLE_MODELS, models);
+
+        return Response.ok(map).build();
+    }
+
+    private static Response badRequestResponse() {
+        return Response.status(Response.Status.BAD_REQUEST).entity(Map.of(AiKeys.ERROR, "query required")).build();
+    }
+
+    private static CompletionsForm resolveForm(final HttpServletRequest request,
+                                               final HttpServletResponse response,
+                                               final CompletionsForm formIn) {
+        // get user if we have one (this allows anon)
+        final User user = new WebResource
                 .InitBuilder(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(true)
                 .init()
                 .getUser();
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        return (!user.isAdmin())
+                ? CompletionsForm.copy(formIn).model(ConfigService.INSTANCE.config(host).getModel()).build()
+                : formIn;
+    }
 
-        if (formIn.prompt == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(Map.of("error", "query required")).build();
-        }
-
-        Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        final CompletionsForm form = (!user.isAdmin()) ? CompletionsForm.copy(formIn).model(ConfigService.INSTANCE.config(host).getModel()).build() : formIn;
-
-
-        long startTime = System.currentTimeMillis();
-
+    private static Response fromForm(final CompletionsForm form,
+                                     final Supplier<JSONObject> noStream,
+                                     final Consumer<OutputStream> stream) {
+        final long startTime = System.currentTimeMillis();
 
         if (!form.stream) {
-            JSONObject jsonResponse = CompletionsAPI.impl().raw(form);
-            jsonResponse.put("totalTime", System.currentTimeMillis() - startTime + "ms");
+            final JSONObject jsonResponse = noStream.get();
+            jsonResponse.put(AiKeys.TOTAL_TIME, System.currentTimeMillis() - startTime + "ms");
             return Response.ok(jsonResponse.toString(), MediaType.APPLICATION_JSON).build();
         }
 
         final StreamingOutput streaming = output -> {
-            CompletionsAPI.impl().rawStream(form, new LineReadingOutputStream(output));
+            stream.accept(output);
             output.flush();
             output.close();
-
         };
 
         return Response.ok(streaming).build();
     }
-
-
-    @GET
-    @JSONP
-    @Path("/config")
-    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
-    public final Response getConfig(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
-        // get user if we have one (this is allow anon)
-        User user = new WebResource
-                .InitBuilder(request, response)
-                .requiredBackendUser(true)
-                .init()
-                .getUser();
-
-        Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-
-        AppConfig app = ConfigService.INSTANCE.config(host);
-
-
-        Map<String, Object> map = new HashMap<>();
-        map.put("configHost", host.getHostname() + " (falls back to system host)");
-        for (AppKeys config : AppKeys.values()) {
-            String key = config.key;
-            map.put(config.key, app.getConfig(config));
-        }
-        String apiKEYYY = app.getApiKey();
-
-        String apiKey = UtilMethods.isSet(app.getApiKey()) ? "*****" : "NOT SET";
-        map.put(AppKeys.API_KEY.key, apiKey);
-
-        List<String> models = Arrays.stream(OpenAIModel.values()).filter(m->m.completionModel).map(m-> m.modelName).collect(Collectors.toList());
-        map.put("availableModels", models);
-        return Response.ok(map).build();
-    }
-
 
 }

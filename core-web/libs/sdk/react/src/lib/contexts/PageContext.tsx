@@ -1,5 +1,5 @@
 import { createContext } from 'react';
 
-import { PageProviderContext } from '../components/PageProvider/PageProvider';
+import { DotCMSPageContext } from '../models';
 
-export const PageContext = createContext<PageProviderContext | null>(null);
+export const PageContext = createContext<DotCMSPageContext | null>(null);
