@@ -40,6 +40,9 @@ on:
         NPM_ORG_TOKEN:
           required: false
           description: 'NPM token'
+        DEV_REQUEST_TOKEN:
+          required: false
+          description: 'Token to request a dev license from license.dotcms.com'
 jobs:
   deployment:
     runs-on: ubuntu-latest

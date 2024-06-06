@@ -1,0 +1,41 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\".What is the significance of the Mona Lisa.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "cmpl-3",
+      "object": "text_completion",
+      "created": 1699999999,
+      "model": "gpt-3.5-turbo-16k",
+      "choices": [
+        {
+          "text": "The Mona Lisa, painted by Leonardo da Vinci, is one of the most famous and iconic works of art in the world. Its significance lies in its exquisite detail, the mysterious expression of the subject, and its influence on the Renaissance art movement. The painting is also known for its use of sfumato, a technique that creates a soft transition between colors and tones.",
+          "index": 0,
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 62,
+        "total_tokens": 72
+      }
+    }
+  }
+}

@@ -17,9 +17,9 @@
                 <div class="column" *ngFor="let column of row.columns" data-testId="column">
                     <dot-edit-content-field
                         *ngFor="let field of column.fields"
-                        [field]="field"
-                        [contentlet]="formData.contentlet"
                         [contentType]="formData.contentType.variable"
+                        [contentlet]="formData.contentlet"
+                        [field]="field"
                         data-testId="field" />
                 </div>
             </div>

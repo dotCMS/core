@@ -76,4 +76,9 @@ describe('DotLanguagesService', () => {
         spectator.service.getISO().subscribe();
         spectator.expectOne(`${LANGUAGE_API_URL}/iso`, HttpMethod.GET);
     });
+
+    it('should get language by ISO code', () => {
+        spectator.service.getByISOCode('test').subscribe();
+        spectator.expectOne(`${LANGUAGE_API_URL}/test`, HttpMethod.GET);
+    });
 });

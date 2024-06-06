@@ -17,5 +17,5 @@
             "outputs": ["{options.outputFile}"]
         }
     },
-    "tags": []
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:edit-content"]
 }

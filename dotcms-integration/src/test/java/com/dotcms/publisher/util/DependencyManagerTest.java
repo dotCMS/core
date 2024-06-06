@@ -29,6 +29,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -599,6 +600,35 @@ public class DependencyManagerTest {
         dependencyManager.setDependencies();
 
         assertTrue(dependencyManager.getTemplates().contains(template.getIdentifier()));
+    }
+
+    /**
+     * <b>Method to test:</b> {@link com.dotcms.publisher.util.dependencies.PushPublishigDependencyProcesor#tryToAdd(PusheableAsset, Object, String)}<p>
+     * <b>Given Scenario:</b>  A page that only exist in a non default lang should PP the template/layout if required <p>
+     * <b>ExpectedResult:</b> The template/layout should be included in the dependencies
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_PP_page_non_default_language_should_contains_template_layout_in_dependencies() throws DotDataException, DotBundleException, DotSecurityException {
+        final PushPublisherConfig config = new PushPublisherConfig();
+        //Layout templates are identified by the prefix 'anonymous_layout_'
+        final Template template = new TemplateDataGen().title(Template.ANONYMOUS_PREFIX+"shouldBeIncluded"+System.currentTimeMillis()).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).languageId(language.getId()).nextPersisted();
+        //Create a bundle with filter 'Only Selected Items'
+        final String filterKey = "ShallowPush.yml";
+        if(!APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)){
+            createShallowPushFilter();
+        }
+        createBundle(config, htmlPageAsset, filterKey);
+        createBundle(config, htmlPageAsset, "ShallowPush.yml");
+        DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
+        dependencyManager.setDependencies();
+
+        assertTrue("Template isn't in the bundle",dependencyManager.getTemplates().contains(template.getIdentifier()));
     }
 
 }

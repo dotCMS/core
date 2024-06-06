@@ -1,5 +1,6 @@
 package com.dotcms.ai.rest;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
@@ -71,14 +72,14 @@ public class TextResource {
         if (UtilMethods.isEmpty(formIn.prompt)) {
             return Response
                     .status(Status.BAD_REQUEST)
-                    .entity(Map.of("error", "`prompt` is required"))
+                    .entity(Map.of(AiKeys.ERROR, "`prompt` is required"))
                     .build();
         }
 
         final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
         ConfigService.INSTANCE.config();
 
-        return Response.ok(CompletionsAPI.impl().raw(generateRequest(formIn,config )).toString()).build();
+        return Response.ok(CompletionsAPI.impl().raw(generateRequest(formIn, config)).toString()).build();
     }
 
     /**
@@ -96,13 +97,13 @@ public class TextResource {
         final JSONArray messages = new JSONArray();
 
         if (UtilMethods.isSet(systemPrompt)) {
-            messages.add(Map.of("role", "system", "content", systemPrompt));
+            messages.add(Map.of(AiKeys.ROLE, AiKeys.SYSTEM, AiKeys.CONTENT, systemPrompt));
         }
-        messages.add(Map.of("role", "user", "content", form.prompt));
+        messages.add(Map.of(AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, form.prompt));
 
-        request.put("model", model);
-        request.put("temperature", temperature);
-        request.put("messages", messages);
+        request.put(AiKeys.MODEL, model);
+        request.put(AiKeys.TEMPERATURE, temperature);
+        request.put(AiKeys.MESSAGES, messages);
 
         return request;
     }
