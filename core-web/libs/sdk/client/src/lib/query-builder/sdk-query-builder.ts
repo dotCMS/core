@@ -1,6 +1,5 @@
+import { Equals, Field } from './lucene-syntax/index';
 import { buildExcludeField, buildField, buildRawEquals } from './utils';
-import { Equals } from './utils/lucene-syntax/Equals';
-import { Field } from './utils/lucene-syntax/Field';
 
 /**
  * 'QueryBuilder' Is a Typescript class that provides the ability to build a query string using the Lucene syntax in a more readable way.

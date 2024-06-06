@@ -3,6 +3,7 @@ package com.dotcms.contenttype.transform.contenttype;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -33,45 +34,37 @@ public class DetailPageTransformerImpl implements DetailPageTransformer {
         final var detailPage = contentType.detailPage();
 
         // Checking if the detail page is a URL
-        if (UtilMethods.isSet(detailPage) &&
-                !UUIDUtil.isUUID(detailPage)) {
+        if (UtilMethods.isSet(detailPage)) {
 
-            // Evaluate the detail page URI
-            final var detailPageURI = new URI(detailPage);
-            var path = detailPageURI.getRawPath();
+            if (!UUIDUtil.isUUID(detailPage)) {
 
-            final Host site = APILocator.getHostAPI()
-                    .findByName(detailPageURI.getRawAuthority(), user, false);
-            if (null == site) {
-                throw new IllegalArgumentException(
-                        String.format("Site [%s] in detail page URL [%s] not found.",
-                                detailPageURI.getRawAuthority(), detailPage));
-            }
+                // Evaluate the detail page URI
+                final var detailPageURI = new URI(detailPage);
+                var path = detailPageURI.getRawPath();
 
-            if (null == detailPageURI.getRawPath()) {
-                throw new IllegalArgumentException(
-                        String.format("Unable to determine detail page URL: [%s].",
-                                detailPage));
-            }
-
-            // And finally search for the identifier based on the site and path
-            var identifier = APILocator.getIdentifierAPI().find(site, path);
-            if (null != identifier &&
-                    identifier.exists() &&
-                    identifier.getAssetSubType().equals(PAGE_SUBTYPE)) {
-                return Optional.of(identifier.getId());
-            } else {
-                if (null != identifier &&
-                        identifier.exists() &&
-                        !identifier.getAssetSubType().equals(PAGE_SUBTYPE)) {
+                final Host site = APILocator.getHostAPI()
+                        .findByName(detailPageURI.getRawAuthority(), user, false);
+                if (null == site) {
                     throw new IllegalArgumentException(
-                            String.format("[%s] in Content Type [%s] is not a valid detail page.",
-                                    detailPage, contentType.name()));
+                            String.format("Site [%s] in detail page URL [%s] not found.",
+                                    detailPageURI.getRawAuthority(), detailPage));
                 }
 
-                throw new IllegalArgumentException(
-                        String.format("Detail page [%s] in Content Type [%s] does not exit.",
-                                detailPage, contentType.name()));
+                if (null == detailPageURI.getRawPath()) {
+                    throw new IllegalArgumentException(
+                            String.format("Unable to determine detail page URL: [%s].",
+                                    detailPage));
+                }
+
+                // And finally search for the identifier based on the site and path
+                var detailPageIdentifier = APILocator.getIdentifierAPI().find(site, path);
+                return validateIdentifier(detailPage, detailPageIdentifier);
+            } else {
+
+                // It is already an identifier, but we need to check the detail page exists and has the
+                // correct type
+                var detailPageIdentifier = APILocator.getIdentifierAPI().find(detailPage);
+                return validateIdentifier(detailPage, detailPageIdentifier);
             }
         }
 
@@ -111,6 +104,36 @@ public class DetailPageTransformerImpl implements DetailPageTransformer {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Validates the identifier of a detail page.
+     *
+     * @param detailPage                The detail page.
+     * @param foundDetailPageIdentifier The Identifier of the detail page.
+     * @return An Optional containing the identifier value if it is valid.
+     * @throws IllegalArgumentException if the identifier is invalid.
+     */
+    private Optional<String> validateIdentifier(
+            String detailPage, Identifier foundDetailPageIdentifier) {
+
+        if (null != foundDetailPageIdentifier &&
+                foundDetailPageIdentifier.exists() &&
+                foundDetailPageIdentifier.getAssetSubType().equals(PAGE_SUBTYPE)) {
+            return Optional.of(foundDetailPageIdentifier.getId());
+        } else {
+            if (null != foundDetailPageIdentifier &&
+                    foundDetailPageIdentifier.exists() &&
+                    !foundDetailPageIdentifier.getAssetSubType().equals(PAGE_SUBTYPE)) {
+                throw new IllegalArgumentException(
+                        String.format("[%s] in Content Type [%s] is not a valid detail page.",
+                                detailPage, contentType.name()));
+            }
+
+            throw new IllegalArgumentException(
+                    String.format("Detail page [%s] in Content Type [%s] does not exit.",
+                            detailPage, contentType.name()));
+        }
     }
 
 }

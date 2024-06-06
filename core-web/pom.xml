@@ -14,9 +14,6 @@
 
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
-        <java.version>11</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
         <cargo.tomcat.major.version>9</cargo.tomcat.major.version>

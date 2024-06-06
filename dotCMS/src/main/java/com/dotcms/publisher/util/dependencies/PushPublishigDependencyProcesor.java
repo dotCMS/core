@@ -458,7 +458,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             for (final Contentlet contentletVersion : contentList) {
 
                 if (contentletVersion.isHTMLPage()) {
-                    processHTMLPagesDependency(contentletVersion.getIdentifier());
+                    processHTMLPagesDependency(contentletVersion.getIdentifier(),contentletVersion.getLanguageId());
                 }
                 processStoryBockDependencies(contentletVersion);
 
@@ -715,7 +715,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      * </ul>
      *
      */
-    private void processHTMLPagesDependency(final String pageId) {
+    private void processHTMLPagesDependency(final String pageId, final long languageId) {
         try {
 
             final IdentifierAPI idenAPI = APILocator.getIdentifierAPI();
@@ -730,7 +730,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             final IHTMLPage workingPage = Try.of(
                     ()->APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(
                             identifier,
-                            APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                            languageId,
                             false,
                             user,
                             false)
@@ -753,8 +753,13 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             final IHTMLPage livePage = workingPage.isLive()
                     ? workingPage
                     : Try.of(()->
-                            APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(identifier, APILocator.getLanguageAPI().getDefaultLanguage().getId(), true, user, false))
-                            .onFailure(e->Logger.warnAndDebug(DependencyManager.class, e)).getOrNull();
+                            APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(
+                                    identifier,
+                                    languageId,
+                                    true,
+                                    user,
+                                    false))
+                    .onFailure(e->Logger.warnAndDebug(DependencyManager.class, e)).getOrNull();
 
             // working template working page
             addTemplateAsDependency(workingPage);
