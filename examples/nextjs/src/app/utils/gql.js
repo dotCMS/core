@@ -115,9 +115,11 @@ export const getGraphQLPageData = async (params) => {
         method: "POST",
         headers: {
             'Authorization': `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`, 
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "dotcachettl": "0" // Bypasses GraphQL cache
         },
         body: JSON.stringify({ query }),
+        cache: "no-cache", // Invalidate cache for Next.js
     });
     const { data } = await res.json();
     return data;
