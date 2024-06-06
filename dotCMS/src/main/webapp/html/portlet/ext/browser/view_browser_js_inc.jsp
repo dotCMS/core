@@ -308,7 +308,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             if (changingShowOnMenuTo != inode) {
                 showDebugMessage('contentTRMouseUp: inode = ' + inode +
                     ', changingShowOnMenuTo = ' + changingShowOnMenuTo);
-                executeChangeShowOnMenu();
+                //executeChangeShowOnMenu();
             }
         }
         return false;
@@ -321,7 +321,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         var inode = getInodeFromID(Event.element(e).id);
 
         showDebugMessage('contentTRDoubleClicked: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Double-click-over")) %>: ' + inode);
-        executeChangeShowOnMenu();
+        //executeChangeShowOnMenu();
         if (inodes[inode].type == 'folder') {
             showDebugMessage(DWRUtil.toDescriptiveString(inodes[inode], 2));
             openFolder(inode);
@@ -720,7 +720,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             if($(asset.inode + '-DIV') != null)
             {
                 Event.stopObserving(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
-                Event.stopObserving(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
+                //Event.stopObserving(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
                 Event.stopObserving(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
                 Event.stopObserving(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
                 Event.stopObserving(asset.inode + '-TR', 'mouseout', mouseOutContent);
