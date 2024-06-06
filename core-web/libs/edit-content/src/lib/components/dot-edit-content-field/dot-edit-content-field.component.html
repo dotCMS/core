@@ -1,10 +1,10 @@
 <label
     [attr.data-testId]="'label-' + field.variable"
-    [for]="field.variable"
     [checkIsRequiredControl]="field.variable"
-    dotFieldRequired
-    >{{ field.name }}</label
->
+    [for]="field.variable"
+    dotFieldRequired>
+    {{ field.name }}
+</label>
 
 @switch (field.fieldType) {
     @case (fieldTypes.SELECT) {
@@ -86,6 +86,11 @@
         <dot-edit-content-host-folder-field
             [field]="field"
             [attr.data-testId]="'field-' + field.variable" />
+    }
+    @case (fieldTypes.CATEGORY) {
+        <dot-edit-content-category-field
+            [attr.data-testId]="'field-' + field.variable"
+            [field]="field" />
     }
 }
 @if (field.hint) {
