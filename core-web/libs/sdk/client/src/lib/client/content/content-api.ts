@@ -83,6 +83,6 @@ export class Content {
      * @memberof Content
      */
     getCollection<T = unknown>(contentType: string): CollectionBuilder<T> {
-        return new CollectionBuilder(this.#requestOptions, this.#serverUrl, contentType);
+        return new CollectionBuilder<T>(this.#requestOptions, this.#serverUrl, contentType);
     }
 }

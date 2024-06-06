@@ -130,7 +130,7 @@ describe('CollectionBuilder', () => {
             const contentType = 'boringContentType';
             const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
 
-            await collectionBuilder.render(true);
+            await collectionBuilder.render();
 
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
@@ -298,7 +298,7 @@ describe('CollectionBuilder', () => {
             const contentType = 'draftContent';
             const collectionBuilder = new CollectionBuilder(requestOptions, serverUrl, contentType);
 
-            await collectionBuilder.draft(true);
+            await collectionBuilder.draft();
 
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
@@ -362,7 +362,7 @@ describe('CollectionBuilder', () => {
             // Call all the methods and fetch the content
             await collectionBuilder
                 .language(13) // Language Id
-                .render(true) // To retrieve the content with the render
+                .render() // To retrieve the content with the render
                 .sortBy([
                     // Sort by multiple fields
                     {
@@ -391,7 +391,7 @@ describe('CollectionBuilder', () => {
                             .or()
                             .equals('Obi-Wan')
                 )
-                .draft(true) // To retrieve the draft content
+                .draft() // To retrieve the draft content
                 .variant('legends-forceSensitive') // Variant of the content
                 .query('+modDate:2024-05-28 +conhost:MyCoolSite'); // Raw query to append to the main query // Fetch the content
 
@@ -425,14 +425,14 @@ describe('CollectionBuilder', () => {
             ).language(13);
 
             // Mock the fetch to return a rejected promise
-            (fetch as jest.Mock).mockReturnValue(Promise.reject(new Error('Network error')));
+            (fetch as jest.Mock).mockRejectedValue(new Error('URL is invalid'));
 
             collectionBuilder.then(
                 () => {
                     /* */
                 },
                 (error) => {
-                    expect(error).toEqual(new Error('Network error'));
+                    expect(error).toEqual(new Error('URL is invalid'));
                     done();
                 }
             );
@@ -447,12 +447,30 @@ describe('CollectionBuilder', () => {
             ).query((dotQuery) => dotQuery.field('author').equals('Linkin Park'));
 
             // Mock the fetch to return a rejected promise
-            (fetch as jest.Mock).mockReturnValue(Promise.reject(new Error('Network error')));
+            (fetch as jest.Mock).mockRejectedValue(new Error('DNS are not resolving'));
 
             collectionBuilder.then().catch((error) => {
-                expect(error).toEqual(new Error('Network error'));
+                expect(error).toEqual(new Error('DNS are not resolving'));
                 done();
             });
+        });
+
+        it('should trigger catch of try catch block', async () => {
+            const contentType = 'song';
+            const collectionBuilder = new CollectionBuilder(
+                requestOptions,
+                serverUrl,
+                contentType
+            ).query((dotQuery) => dotQuery.field('author').equals('Linkin Park'));
+
+            // Mock a network error
+            (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+
+            try {
+                await collectionBuilder;
+            } catch (e) {
+                expect(e).toEqual(new Error('Network error'));
+            }
         });
     });
 

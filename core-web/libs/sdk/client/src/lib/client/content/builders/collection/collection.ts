@@ -79,25 +79,24 @@ export class CollectionBuilder<T = unknown> {
      * Takes a language id and filters the content by that language
      *
      *
-     * @param {number} languageId The language id to filter the content by
+     * @param {number | string} languageId The language id to filter the content by
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
      * @memberof CollectionBuilder
      */
-    language(languageId: number): this {
+    language(languageId: number | string): this {
         this.#query = this.currentQuery.field('languageId').equals(languageId.toString());
 
         return this;
     }
 
     /**
-     * Takes a boolean representing if the content should be rendered or not
+     * The retrieved content will have the rendered HTML
      *
-     * @param {boolean} render A boolean representing if the content should be rendered or not
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
      * @memberof CollectionBuilder
      */
-    render(render: boolean): this {
-        this.#render = render;
+    render(): this {
+        this.#render = true;
 
         return this;
     }
@@ -177,7 +176,7 @@ export class CollectionBuilder<T = unknown> {
      * @memberof CollectionBuilder
      */
     query(buildQuery: BuildQuery): this;
-    query(buildQuery: BuildQuery | string): this {
+    query(buildQuery: unknown): this {
         if (typeof buildQuery === 'string') {
             this.#rawQuery = buildQuery;
 
@@ -201,16 +200,15 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes a boolean that represents if the content to query should be on draft or not
+     * The retrieved content will be draft content
      *
-     * Note: The default value is false to fetch content that is not on draft
+     * The default value is false to fetch content that is not on draft
      *
-     * @param {boolean} draft A boolean that represents the state of the content
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
      * @memberof CollectionBuilder
      */
-    draft(draft: boolean): this {
-        this.#query = this.currentQuery.field('live').equals((!draft).toString());
+    draft(): this {
+        this.#query = this.currentQuery.field('live').equals(false.toString());
 
         return this;
     }
