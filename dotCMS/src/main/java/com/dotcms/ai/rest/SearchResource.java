@@ -1,5 +1,6 @@
 package com.dotcms.ai.rest;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.rest.forms.CompletionsForm;
@@ -50,7 +51,7 @@ public class SearchResource {
     public final Response testResponse(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response) {
 
-        Response.ResponseBuilder builder = Response.ok(Map.of("type", "search"), MediaType.APPLICATION_JSON);
+        Response.ResponseBuilder builder = Response.ok(Map.of(AiKeys.TYPE, AiKeys.SEARCH), MediaType.APPLICATION_JSON);
         return builder.build();
     }
 
@@ -154,11 +155,11 @@ public class SearchResource {
                 response,
                 new JSONObject(
                         Map.of(
-                                "language", language,
-                                "identifier", identifier,
-                                "inode", inode,
-                                "indexName", indexName,
-                                "fieldVar", fieldVar)));
+                                AiKeys.LANGUAGE, language,
+                                AiKeys.IDENTIFIER, identifier,
+                                AiKeys.INODE, inode,
+                                AiKeys.INDEX_NAME, indexName,
+                                AiKeys.FIELD_VAR, fieldVar)));
     }
 
     /**
@@ -178,13 +179,17 @@ public class SearchResource {
                                         @Context final HttpServletResponse response,
                                         final JSONObject json)
             throws DotDataException, DotSecurityException {
-        final String fieldVar = json.optString("fieldVar");
-        final String indexName = json.optString("indexName", "default");
-        final String inode = json.optString("inode");
-        final String identifier = json.optString("identifier");
-        final long language = json.optLong("language", APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-        final User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true).requiredFrontendUser(true).init().getUser();
+        final String fieldVar = json.optString(AiKeys.FIELD_VAR);
+        final String indexName = json.optString(AiKeys.INDEX_NAME, AiKeys.DEFAULT);
+        final String inode = json.optString(AiKeys.INODE);
+        final String identifier = json.optString(AiKeys.IDENTIFIER);
+        final long language = json.optLong(AiKeys.LANGUAGE, APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+        final User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true)
+                .requiredFrontendUser(true)
+                .init()
+                .getUser();
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final Contentlet contentlet =
                 (UtilMethods.isSet(inode))
@@ -199,7 +204,9 @@ public class SearchResource {
                                     true);
 
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
-            Logger.warn(this.getClass(), "unable to find matching contentlet for id:" + identifier + " inode:" + inode + " language:" + language);
+            Logger.warn(
+                    this.getClass(),
+                    "unable to find matching contentlet for id:" + identifier + " inode:" + inode + " language:" + language);
             return Response.status(404).build();
         }
 
@@ -210,7 +217,9 @@ public class SearchResource {
 
         final Optional<String> contentToRelate = ContentToStringUtil.impl.get().parseFields(contentlet, fields);
         if (contentToRelate.isEmpty()) {
-            Logger.warn(this.getClass(), "unable to find matching content for id:" + identifier + " inode:" + inode + " language:" + language);
+            Logger.warn(
+                    this.getClass(),
+                    "unable to find matching content for id:" + identifier + " inode:" + inode + " language:" + language);
             return Response.status(404).build();
         }
 
