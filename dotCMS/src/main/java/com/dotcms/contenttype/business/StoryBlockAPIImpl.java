@@ -11,11 +11,12 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.ThreadUtils;
@@ -44,12 +45,9 @@ import java.util.Set;
  */
 public class StoryBlockAPIImpl implements StoryBlockAPI {
 
-    private static final Lazy<Integer> MAX_RECURSION_LEVEL = Lazy.of(() -> Config.getIntProperty(
-            "STORY_BLOCK_MAX_RECURSION_LEVEL", 2));
+    private static final int MAX_RECURSION_LEVEL = 2;
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
             "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", "2"));
-    private static final Lazy<Integer> HYDRATION_TTL = Lazy.of(() -> Config.getIntProperty(
-            "STORY_BLOCK_HYDRATION_TTL", 120));
 
     @Override
     @CloseDBIfOpened
@@ -58,9 +56,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         boolean inTransaction = DbConnectionFactory.inTransaction();
         if (!inTransaction && null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
-            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(),
-                    "refreshReferences", MAX_RECURSION_LEVEL.get())) {
-                Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL.get() +
+            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", MAX_RECURSION_LEVEL)) {
+                Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL +
                         " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
                 return new StoryBlockReferenceResult(false, contentlet);
             }
@@ -89,8 +86,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed = false;
         if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(),
-                "refreshStoryBlockValueReferences", MAX_RECURSION_LEVEL.get())) {
-            Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL.get() +
+                "refreshStoryBlockValueReferences", MAX_RECURSION_LEVEL)) {
+            Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL +
                     " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
             return new StoryBlockReferenceResult(false, storyBlockValue);
         }
@@ -333,16 +330,17 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      */
     private void refreshBlockEditorDataMap(final Map<String, Object> dataMap, final String inode) {
         try {
-            final Optional<Contentlet> contentletOpt = APILocator.getContentletAPI().findInDb(inode);
-            if (contentletOpt.isPresent()) {
-                final Contentlet contentlet = contentletOpt.get();
-                this.addContentletRelationships(contentlet);
-                final Map<String, Object> updatedDataMap = this.refreshContentlet(contentlet);
+            final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+            if (null != fattyContentlet) {
+                this.addContentletRelationships(fattyContentlet);
+                final Map<String, Object> updatedDataMap = this.refreshContentlet(fattyContentlet);
                 this.excludeNonExistingProperties(dataMap, updatedDataMap);
                 dataMap.putAll(updatedDataMap);
             }
         } catch (final JsonProcessingException e) {
             Logger.error(this, "An error occurred when transforming JSON data in contentlet with Inode '%s': %s", e);
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -394,22 +392,18 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         final Map<String, Object> dataMap = new LinkedHashMap<>();
         final List<Field> fields = contentlet.getContentType().fields();
         this.loadCommonContentletProps(contentlet, dataMap);
-        if (ConfigUtils.isDevMode()) {
-            dataMap.put(StoryBlockAPI.HYDRATED, contentlet.getMap().get(StoryBlockAPI.HYDRATED));
-        }
         for (final Field field : fields) {
             final Object value = contentlet.get(field.variable());
-            if (null == value) {
-                continue;
+            if (null != value) {
+                if (field instanceof StoryBlockField) {
+                    dataMap.put(field.variable(), this.toMap(contentlet.get(field.variable() +
+                            "_raw")));
+                } else {
+                    dataMap.put(field.variable(), value);
+                }
             }
-            dataMap.put(field.variable(), field instanceof StoryBlockField ? this.toMap(value) : value);
         }
         return dataMap;
-    }
-
-    @Override
-    public int getMaxHydrationTTL() {
-        return HYDRATION_TTL.get();
     }
 
 }

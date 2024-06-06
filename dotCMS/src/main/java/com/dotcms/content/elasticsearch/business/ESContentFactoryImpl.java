@@ -5,7 +5,6 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -921,38 +920,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        final boolean forceReload = this.forceBlockEditorReload(cachedContentlet);
-        if (REFRESH_BLOCK_EDITOR_REFERENCES && forceReload) {
+        if (REFRESH_BLOCK_EDITOR_REFERENCES) {
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
             if (storyBlockRefreshedResult.isRefreshed()) {
                 Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet '%s'",
                         cachedContentlet.getIdentifier()));
                 final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();
-                // These flags help avoid infinite loops when refreshing Contentlets inside the
-                // Block Editor that might reference each other
-                refreshedContentlet.setBoolProperty(StoryBlockAPI.HYDRATED, true);
-                refreshedContentlet.setLongProperty(StoryBlockAPI.HYDRATED_TIME, System.currentTimeMillis());
                 contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
                 return refreshedContentlet;
             }
         }
         return cachedContentlet;
-    }
-
-    /**
-     * Determines whether the contents of one or more Block Editor fields inside a Contentlet must
-     * be refreshed with their latest versions or not.
-     * <p></p>
-     *
-     * @param contentlet The Contentlet to check.
-     * @return
-     */
-    private boolean forceBlockEditorReload(final Contentlet contentlet) {
-        final long currentTimestamp = System.currentTimeMillis();
-        final long lastHydratedTimestamp = contentlet.getLongProperty(StoryBlockAPI.HYDRATED_TIME);
-        long ttl = 1000L * APILocator.getStoryBlockAPI().getMaxHydrationTTL();
-        return 0 == lastHydratedTimestamp || (currentTimestamp - lastHydratedTimestamp) >= ttl;
     }
 
 	@Override

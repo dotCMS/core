@@ -25,8 +25,6 @@ public interface StoryBlockAPI {
     String IDENTIFIER_KEY = "identifier";
     String INODE_KEY = "inode";
     String LANGUAGE_ID_KEY = "languageId";
-    String HYDRATED = "__hydrated__";
-    String HYDRATED_TIME = "__hydrated_time__";
 
     /**
      * Contains the types of Contentlets that can be added to a Story Block field
@@ -111,18 +109,5 @@ public interface StoryBlockAPI {
      * @throws JsonProcessingException An error occurred when transforming the Map into JSON data.
      */
     String toJson (final Map<String, Object> blockEditorMap) throws JsonProcessingException;
-
-    /**
-     * Returns the maximum TTL (Time To Live) indicating how long a Contentlet with one or more
-     * Block Editor fields will keep the information of Contentlets added to them <b>before
-     * refreshing their information from the database.</b> This is useful to avoid hitting the
-     * database constantly trying to refresh contentlet data, thus improving the performance.
-     * issues.
-     * <p>The name of the configuration variable for the TTL is
-     * {@code DOT_STORY_BLOCK_HYDRATION_TTL}</p>.
-     *
-     * @return The maximum TTL in seconds for all Block Editor fields.
-     */
-    int getMaxHydrationTTL();
 
 }
