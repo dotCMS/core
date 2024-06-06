@@ -1,7 +1,7 @@
 import { dotcmsClient, graphqlToPageEntity } from "@dotcms/client";
 import { MyPage } from "@/components/my-page";
 
-import { getGraphQLPageData } from "../utils/gql";
+import { getGraphQLPageData } from "../../utils/gql";
 
 const client = dotcmsClient.init({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
@@ -13,10 +13,13 @@ const client = dotcmsClient.init({
     },
 });
 
-
 export default async function Home({ searchParams, params }) {
+    const defaultPath = "/campaigns/colorado-preseason-special";
+    const path = params?.slug
+        ? "/campaigns/" + params.slug.join("/")
+        : defaultPath;
     const requestData = {
-        path: '/destinations',
+        path,
         language_id: searchParams.language_id,
         "com.dotmarketing.persona.id":
             searchParams["com.dotmarketing.persona.id"] || "",
@@ -30,7 +33,7 @@ export default async function Home({ searchParams, params }) {
     });
 
     const data = await getGraphQLPageData(requestData);
-    const entity = graphqlToPageEntity(data);
+    const pageAsset = graphqlToPageEntity(data);
 
-    return <MyPage nav={nav.entity.children} pageAsset={entity}></MyPage>;
+    return <MyPage nav={nav.entity.children} pageAsset={pageAsset}></MyPage>;
 }

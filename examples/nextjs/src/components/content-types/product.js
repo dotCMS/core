@@ -26,16 +26,19 @@ function Product({ image, title, salePrice, retailPrice, urlTitle }) {
                 />
             </div>
             <div className="px-6 py-4 bg-slate-100">
-                <div className="mb-2 text-xl font-bold">{title}</div>
+                <div className="mb-2 text-xl font-bold line-clamp-1">{title}</div>
                 {retailPrice && salePrice ? (
                     <>
                         <div className="text-gray-500 line-through">{formatPrice(retailPrice)}</div>
                         <div className="text-3xl font-bold ">{formatPrice(salePrice)}</div>
                     </>
                 ) : (
+                    <>
+                    <div className="min-h-6" />
                     <div className="text-3xl font-bold">
                         {retailPrice ? formatPrice(retailPrice) : formatPrice(salePrice)}
                     </div>
+                    </>
                 )}
                 <Link
                     href={`/store/products/${urlTitle || '#'}`}

@@ -1,12 +1,13 @@
 // For now, we are not typing the functions in this file
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const graphqlToPageEntity = ({ page }: { page: Record<string, unknown> }) => {
-    const { layout, template, containers, viewAs, ...pageAsset } = page;
+    const { layout, template, containers, urlContentMap, viewAs, ...pageAsset } = page;
 
     return {
         layout,
         template,
         viewAs,
+        urlContentMap,
         page: pageAsset,
         containers: parseContainers(containers as [])
     };

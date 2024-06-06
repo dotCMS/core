@@ -62,6 +62,9 @@ const GRAPHQL_RESPONSE_MOCK = {
         template: {
             identifier: '31f4c794-c769-4929-9d5d-7c383408c65c'
         },
+        urlContentMap: {
+            identifier: '31f4c794-c769-4929-9d5d-7c383408c74d'
+        },
         viewAs: {
             mode: 'LIVE'
         }
@@ -126,6 +129,9 @@ const MOCK_PAGE_ENTITY = {
         seodescription: null,
         title: 'test2',
         url: '/test2'
+    },
+    urlContentMap: {
+        identifier: '31f4c794-c769-4929-9d5d-7c383408c74d'
     },
     template: {
         identifier: '31f4c794-c769-4929-9d5d-7c383408c65c'

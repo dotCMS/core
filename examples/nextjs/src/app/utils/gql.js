@@ -41,17 +41,16 @@ const getGraphQLPageQuery = ({ path, language_id, mode}) => {
                     uuid
                     contentlets {
                         _map
-                        # Nested Fields
-                        ...on webPageContent {
-                            title
-                            textRelation {
-                              title,
-                              textRelation {
-                                title,
-                                textRelation {
-                                  title
+                        ... on calendarEvent {
+                            # Related Contentlet
+                            location {
+                                title
+                                url
+                                # Related Fields
+                                activities {
+                                    title
+                                    urlMap
                                 }
-                              }
                             }
                         }
                     }

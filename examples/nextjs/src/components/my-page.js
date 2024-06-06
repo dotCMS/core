@@ -3,6 +3,8 @@
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
 import Activity from "./content-types/activity";
+import CallToAction from "./content-types/callToAction";
+import CalendarEvent from "./content-types/calendarEvent";
 import Product from "./content-types/product";
 import ImageComponent from "./content-types/image";
 
@@ -29,9 +31,10 @@ const componentsMap = {
   Banner: Banner,
   Activity: Activity,
   Product: Product,
-  Image: ImageComponent
+  Image: ImageComponent,
+  calendarEvent: CalendarEvent,
+  CallToAction: CallToAction
 };
-
 
 export function MyPage({ pageAsset, nav }) {
   const { refresh, replace } = useRouter();
