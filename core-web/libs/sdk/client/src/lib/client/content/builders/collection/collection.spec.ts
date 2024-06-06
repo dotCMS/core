@@ -246,7 +246,7 @@ describe('CollectionBuilder', () => {
             } catch (error) {
                 expect(error).toEqual(
                     new Error(
-                        'Provided query is not valid. A query should end in an equals method call.\n ex: (queryBuilder) => queryBuilder.field("title").equals("Hello World")\nSee documentation for more information.'
+                        'Provided query is not valid. A query should end in an equals method call.\nExample:\n(queryBuilder) => queryBuilder.field("title").equals("Hello World")\nSee documentation for more information.'
                     )
                 );
             }
@@ -264,7 +264,7 @@ describe('CollectionBuilder', () => {
             } catch (error) {
                 expect(error).toEqual(
                     new Error(
-                        'Parameter for query method should be a buildQuery function or a string. See documentation for more information.'
+                        `Parameter for query method should be a buildQuery function or a string.\nExample:\nclient.content.getCollection('Activity').query((queryBuilder) => queryBuilder.field('title').equals('Hello World'))\nor\nclient.content.getCollection('Activity').query('+Activity.title:"Hello World"') \nSee documentation for more information.`
                     )
                 );
             }

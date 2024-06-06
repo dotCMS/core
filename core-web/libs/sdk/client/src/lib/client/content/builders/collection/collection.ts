@@ -126,7 +126,7 @@ export class CollectionBuilder<T = unknown> {
     /**
      * Takes a number that represents the max amount of content to fetch
      *
-     * The limit is set to 10 by default
+     * `limit` is set to 10 by default
      *
      * @param {number} limit The max amount of content to fetch
      * @return {CollectionBuilder} CollectionBuilder - A CollectionBuilder instance
@@ -185,7 +185,7 @@ export class CollectionBuilder<T = unknown> {
 
         if (typeof arg !== 'function') {
             throw new Error(
-                'Parameter for query method should be a buildQuery function or a string. See documentation for more information.'
+                `Parameter for query method should be a buildQuery function or a string.\nExample:\nclient.content.getCollection('Activity').query((queryBuilder) => queryBuilder.field('title').equals('Hello World'))\nor\nclient.content.getCollection('Activity').query('+Activity.title:"Hello World"') \nSee documentation for more information.`
             );
         }
 
@@ -196,7 +196,7 @@ export class CollectionBuilder<T = unknown> {
             this.#query = builtQuery.raw(this.currentQuery.build());
         } else {
             throw new Error(
-                'Provided query is not valid. A query should end in an equals method call.\n ex: (queryBuilder) => queryBuilder.field("title").equals("Hello World")\nSee documentation for more information.'
+                'Provided query is not valid. A query should end in an equals method call.\nExample:\n(queryBuilder) => queryBuilder.field("title").equals("Hello World")\nSee documentation for more information.'
             );
         }
 
