@@ -7,6 +7,8 @@ import {
     ValidatorFn
 } from '@angular/forms';
 
+import { TreeNode } from 'primeng/api';
+
 import {
     DotCMSContentlet,
     DotCMSContentType,
@@ -1155,3 +1157,32 @@ export const MockResizeObserver = class {
         //
     }
 };
+
+export const TREE_SELECT_MOCK: TreeNode[] = [
+    {
+        key: 'demo.dotcms.com',
+        label: 'demo.dotcms.com',
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder',
+        children: [
+            {
+                key: 'demo.dotcms.com/activities',
+                label: 'demo.dotcms.com/activities',
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder',
+                children: [
+                    {
+                        key: 'demo.dotcms.com/activities/themes',
+                        label: 'demo.dotcms.com/activities/themes',
+                        icon: 'pi pi-folder-open'
+                    }
+                ]
+            },
+            {
+                key: 'demo.dotcms.com/home',
+                label: 'demo.dotcms.com/home',
+                icon: 'pi pi-folder-open'
+            }
+        ]
+    }
+];

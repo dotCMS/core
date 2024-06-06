@@ -2,12 +2,15 @@ import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models'
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
-export type FnResolution = (contentlet: DotCMSContentlet, field: DotCMSContentTypeField) => string;
+export type FnResolutionValue = (
+    contentlet: DotCMSContentlet,
+    field: DotCMSContentTypeField
+) => string;
 
-const defaultResolutionFn: FnResolution = (contentlet, field) =>
+const defaultResolutionFn: FnResolutionValue = (contentlet, field) =>
     contentlet?.[field.variable] ?? field.defaultValue;
 
-export const resolutionValue: Record<FIELD_TYPES, FnResolution> = {
+export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
     [FIELD_TYPES.BINARY]: defaultResolutionFn,
     [FIELD_TYPES.BLOCK_EDITOR]: defaultResolutionFn,
     [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,

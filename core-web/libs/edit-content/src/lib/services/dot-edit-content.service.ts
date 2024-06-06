@@ -74,7 +74,11 @@ export class DotEditContentService {
                 return sites.map((site) => ({
                     key: site.hostname,
                     label: `${site.hostname}`,
-                    data: { ...site, path: site.hostname, type: 'site' },
+                    data: {
+                        hostname: site.hostname,
+                        path: '',
+                        type: 'site'
+                    },
                     expandedIcon: 'pi pi-folder-open',
                     collapsedIcon: 'pi pi-folder',
                     leaf: false
@@ -87,18 +91,23 @@ export class DotEditContentService {
         return this.#http.post<DotFolder>('/api/v1/folder/byPath', { path }).pipe(pluck('entity'));
     }
 
-    getFoldersTreeNode(fullPath: string): Observable<TreeNodeItem[]> {
-        let path = fullPath.split('/').splice(1).join('/');
-        path = path === '' ? '/' : `/${path}`;
-
-        return this.getFolders(`//${fullPath}`).pipe(
+    getFoldersTreeNode(hostName: string, path: string): Observable<TreeNodeItem[]> {
+        return this.getFolders(`//${hostName}/${path}`).pipe(
             map((folders) => {
                 return folders
-                    .filter((folder) => folder.path !== path)
+                    .filter((folder) => {
+                        const checkPath = path === '' ? '/' : path;
+
+                        return folder.path !== checkPath;
+                    })
                     .map((folder) => ({
-                        key: `${folder.hostName}${folder.path}`,
+                        key: `${folder.hostName}${folder.path}`.replace('/', ''),
                         label: `${folder.hostName}${folder.path}`,
-                        data: { ...folder, path: folder.path, type: 'folder' },
+                        data: {
+                            hostname: folder.hostName,
+                            path: folder.path,
+                            type: 'folder'
+                        },
                         expandedIcon: 'pi pi-folder-open',
                         collapsedIcon: 'pi pi-folder',
                         leaf: false
@@ -108,11 +117,15 @@ export class DotEditContentService {
     }
 
     buildTreeByPaths(paths: string[]) {
-        const requests = paths
-            .reverse()
-            .map((path) =>
-                this.getFoldersTreeNode(path).pipe(map((folders) => ({ path, folders })))
+        const requests = paths.reverse().map((path) => {
+            const split = path.split('/');
+            const [hostName] = split;
+            const subPath = split.slice(1).join('/');
+
+            return this.getFoldersTreeNode(hostName, subPath).pipe(
+                map((folders) => ({ path, folders }))
             );
+        });
 
         return forkJoin(requests).pipe(
             map((response) => {

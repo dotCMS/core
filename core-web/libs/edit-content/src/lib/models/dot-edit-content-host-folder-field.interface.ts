@@ -1,16 +1,10 @@
 import { TreeNode } from 'primeng/api';
 
-import { Site } from '@dotcms/dotcms-js';
+export type TreeNodeData = { type: 'site' | 'folder'; path: string; hostname: string };
 
-export type TreeSiteData = Site & { type: 'site'; path: string };
+export type TreeNodeItem = TreeNode<TreeNodeData>;
 
-export type TreeFolderData = DotFolder & { type: 'folder'; path: string };
-
-export type TreeDataItems = TreeSiteData | TreeFolderData;
-
-export type TreeNodeItem = TreeNode<TreeDataItems>;
-
-export type TreeNodeSelectItem = TreeNodeSelectEvent<TreeDataItems>;
+export type TreeNodeSelectItem = TreeNodeSelectEvent<TreeNodeData>;
 
 export interface TreeNodeSelectEvent<T> {
     originalEvent: Event;

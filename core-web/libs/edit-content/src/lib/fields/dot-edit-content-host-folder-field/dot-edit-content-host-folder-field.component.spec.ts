@@ -3,41 +3,14 @@ import { of } from 'rxjs';
 
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
-import { TreeNode } from 'primeng/api';
-
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { HOST_FOLDER_FIELD_TEXT_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
-
-const files: TreeNode[] = [
-    {
-        label: 'demo.dotcms.com',
-        data: 'demo.dotcms.com',
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder',
-        children: [
-            {
-                label: 'demo.dotcms.com/activities',
-                data: 'activities',
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
-                children: [
-                    {
-                        label: 'demo.dotcms.com/activities/themes',
-                        data: 'themes',
-                        icon: 'pi pi-folder-open'
-                    }
-                ]
-            },
-            {
-                label: 'demo.dotcms.com/home',
-                data: 'home',
-                icon: 'pi pi-folder-open'
-            }
-        ]
-    }
-];
+import {
+    HOST_FOLDER_FIELD_TEXT_MOCK,
+    TREE_SELECT_MOCK,
+    createFormGroupDirectiveMock
+} from '../../utils/mocks';
 
 describe('DotEditContentHostFolderFieldComponent', () => {
     let spectator: Spectator<DotEditContentHostFolderFieldComponent>;
@@ -51,7 +24,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         providers: [
             FormGroupDirective,
             mockProvider(DotEditContentService, {
-                getSitesTreePath: jest.fn().mockReturnValue(of(files))
+                getSitesTreePath: jest.fn().mockReturnValue(of(TREE_SELECT_MOCK))
             })
         ],
         detectChanges: false

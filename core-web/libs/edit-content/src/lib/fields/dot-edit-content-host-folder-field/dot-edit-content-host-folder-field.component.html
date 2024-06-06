@@ -1,8 +1,8 @@
 <p-treeSelect
+    selectionMode="single"
     [formControl]="pathControl"
     [options]="options()"
     [attr.aria-labelledby]="'field-' + field.variable"
-    selectionMode="single"
     (onNodeSelect)="onNodeSelect($event)"
     (onNodeExpand)="onNodeExpand($event)">
     <ng-template let-node pTemplate="default">

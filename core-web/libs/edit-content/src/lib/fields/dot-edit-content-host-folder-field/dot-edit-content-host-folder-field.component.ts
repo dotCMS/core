@@ -22,6 +22,7 @@ import {
 } from '../../models/dot-edit-content-host-folder-field.interface';
 import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { createPaths } from '../../utils/functions.util';
 
 @Component({
     selector: 'dot-edit-content-host-folder-field',
@@ -39,7 +40,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 })
 export class DotEditContentHostFolderFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
-    @ViewChild(TreeSelect) tree!: TreeSelect;
+    @ViewChild(TreeSelect) treeSelect!: TreeSelect;
     readonly #controlContainer = inject(ControlContainer);
     readonly #editContentService = inject(DotEditContentService);
 
@@ -60,12 +61,21 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     }
 
     onNodeSelect(event: TreeNodeSelectEvent<Site>) {
-        this.formControl.setValue(event.node.label);
+        const label = event.node.label;
+        if (label) {
+            const split = label.split('/');
+            if (split.length > 0) {
+                const site = split[0];
+                const path = split.slice(1, split.length);
+                this.formControl.setValue(`${site}:/${path.join('/')}`);
+            }
+        }
     }
 
     onNodeExpand(event: TreeNodeSelectItem) {
         if (!event.node.children) {
-            this.#editContentService.getFoldersTreeNode(event.node.label).subscribe((children) => {
+            const { hostname, path } = event.node.data;
+            this.#editContentService.getFoldersTreeNode(hostname, path).subscribe((children) => {
                 if (children.length > 0) {
                     event.node.children = children;
                 } else {
@@ -73,7 +83,7 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
                     event.node.icon = 'pi pi-folder-open';
                 }
 
-                this.tree.cd.detectChanges();
+                this.treeSelect.cd.detectChanges();
             });
         }
     }
@@ -81,34 +91,33 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     getInitialValue() {
         const value = this.formControl.value as string;
         if (value) {
-            const split = value.split('/');
-            const paths = split.reduce((array, item, index) => {
-                const prev = array[index - 1];
-                let path = `${item}/`;
-                if (prev) {
-                    path = `${prev}${path}`;
-                }
-
-                array.push(path);
-
-                return array;
-            }, []);
-            this.#editContentService.buildTreeByPaths(paths).subscribe((rta) => {
-                const sitePath = rta.tree.path.replace('/', '');
-                this.options.update((options) => {
-                    return options.map((item) => {
-                        if (item.key === sitePath) {
-                            return {
-                                ...item,
-                                children: [...rta.tree.folders]
-                            };
-                        }
-
-                        return item;
-                    });
-                });
-                this.pathControl.setValue(rta.node);
-            });
+            const hasPaths = value.includes('/');
+            if (hasPaths) {
+                this.buildTreeByPaths(value);
+            } else {
+                const options = this.options();
+                this.pathControl.setValue(options.find((item) => item.key === value));
+            }
         }
+    }
+
+    private buildTreeByPaths(path: string) {
+        const paths = createPaths(path);
+        this.#editContentService.buildTreeByPaths(paths).subscribe((rta) => {
+            const sitePath = rta.tree.path;
+            this.options.update((options) => {
+                return options.map((item) => {
+                    if (item.key === sitePath) {
+                        return {
+                            ...item,
+                            children: [...rta.tree.folders]
+                        };
+                    }
+
+                    return item;
+                });
+            });
+            this.pathControl.setValue(rta.node);
+        });
     }
 }
