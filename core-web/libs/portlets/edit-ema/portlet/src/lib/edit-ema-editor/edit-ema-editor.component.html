@@ -20,7 +20,7 @@
         <div
             class="iframe-wrapper"
             [ngClass]="{
-                'iframe-wrapper--device': es.editorData.mode === editorMode.DEVICE,
+                'iframe-wrapper--device': es.editorData.mode === editorMode.DEVICE
             }"
             [ngStyle]="{
                 width:
@@ -80,20 +80,22 @@
         [variantId]="es.editorData.variantId"
         data-testId="palette" />
 
-    @if(es.editorData.canEditVariant && (es.editorData.mode === editorMode.EDIT ||
-    es.editorData.mode === editorMode.EDIT_VARIANT)) {
-    <dot-edit-ema-dialog
-        #dialog
-        (action)="onCustomEvent($event)"
-        (reloadFromDialog)="reloadFromDialog()"
-        data-testId="ema-dialog"></dot-edit-ema-dialog>
-    <p-confirmDialog
-        [style]="{
-            width: '400px'
-        }"
-        rejectIcon="hidden"
-        acceptIcon="hidden"
-        rejectButtonStyleClass="p-button-outlined"
-        data-testId="confirm-dialog"></p-confirmDialog>
+    @if (
+        es.editorData.canEditVariant &&
+        (es.editorData.mode === editorMode.EDIT || es.editorData.mode === editorMode.EDIT_VARIANT)
+    ) {
+        <dot-edit-ema-dialog
+            #dialog
+            (action)="onCustomEvent($event)"
+            (reloadFromDialog)="reloadFromDialog()"
+            data-testId="ema-dialog"></dot-edit-ema-dialog>
+        <p-confirmDialog
+            [style]="{
+                width: '400px'
+            }"
+            rejectIcon="hidden"
+            acceptIcon="hidden"
+            rejectButtonStyleClass="p-button-outlined"
+            data-testId="confirm-dialog"></p-confirmDialog>
     }
 </ng-container>
