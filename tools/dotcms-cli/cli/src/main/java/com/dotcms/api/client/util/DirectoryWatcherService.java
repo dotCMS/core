@@ -67,7 +67,7 @@ public class DirectoryWatcherService {
         if (key != null) {
             WatchEvent<?> lastEvent = null;
             for (WatchEvent<?> event : key.pollEvents()) {
-                System.out.println("Event kind:" + event.kind() + ". File affected: " + event.context());
+                logger.debug("Event kind:" + event.kind() + ". File affected: " + event.context());
                 lastEvent = event;
             }
             if (lastEvent != null) {

@@ -1,6 +1,9 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.cli.common.PushMixin;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
+import java.nio.file.Path;
 import java.util.Optional;
 
 /**
@@ -47,6 +50,23 @@ public interface DotPush extends DotCommand {
      */
     default boolean isGlobalPush() {
         return false;
+    }
+
+    WorkspaceManager workspaceManager();
+
+    default Optional<Workspace> workspace(){
+       return workspaceManager().findWorkspace(getPushMixin().path());
+    }
+
+    default Path workingRootDir() {
+        final Optional<Workspace> workspace = workspace();
+        if (workspace.isPresent()) {
+            return workspace.get().root();
+        }
+        throw new IllegalArgumentException(
+                String.format("No valid workspace found at path: [%s]",
+                        this.getPushMixin().pushPath.toPath())
+        );
     }
 
 }

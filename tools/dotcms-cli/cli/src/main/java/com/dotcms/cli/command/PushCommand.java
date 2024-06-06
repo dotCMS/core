@@ -1,7 +1,6 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.cli.common.AuthenticationMixin;
-import com.dotcms.cli.common.CommandInterceptor;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -59,7 +58,6 @@ public class PushCommand implements Callable<Integer>, DotPush {
 
 
     @Override
-    @CommandInterceptor
     public Integer call() throws Exception {
         // Find the instances of all push subcommands
 
@@ -147,5 +145,10 @@ public class PushCommand implements Callable<Integer>, DotPush {
     @Override
     public boolean isGlobalPush() {
         return true;
+    }
+
+    @Override
+    public WorkspaceManager workspaceManager() {
+        return workspaceManager;
     }
 }

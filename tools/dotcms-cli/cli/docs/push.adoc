@@ -36,7 +36,11 @@ push - *dotCMS global push*
 == Options
 
 *-dau, --disable-auto-update*::
-  Disable the default behaviour of updating the local file descriptor with the response from the server after a push. When this option is used, the local file will remain in its initial state even after a successful push.
+  Disable the default behaviour of updating the local file descriptor with the 
++
+response from the server after a push. When this option is used, the 
++
+local file will remain in its initial state even after a successful push.
 
 *--dotcms-url*=_<remoteURL>_::
   The dotCMS URL to connect to. This option must be used along with the token option, which provides the token for the specified dotCMS URL.

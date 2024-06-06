@@ -2,6 +2,7 @@ package com.dotcms.cli.command;
 
 import com.dotcms.api.client.model.AuthenticationParam;
 import com.dotcms.api.client.model.ServiceManager;
+import com.dotcms.api.client.util.DirectoryWatcherService;
 import com.dotcms.cli.command.contenttype.ContentTypeCommand;
 import com.dotcms.cli.command.files.FilesCommand;
 import com.dotcms.cli.command.language.LanguageCommand;
@@ -59,6 +60,9 @@ public class EntryCommand implements DotCommand {
     @SecuredPassword
     @Inject
     ServiceManager serviceManager;
+
+    @Inject
+    DirectoryWatcherService directoryWatcherService;
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;

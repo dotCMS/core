@@ -4,10 +4,8 @@ import com.dotcms.api.client.push.PushService;
 import com.dotcms.api.client.push.contenttype.ContentTypeComparator;
 import com.dotcms.api.client.push.contenttype.ContentTypeFetcher;
 import com.dotcms.api.client.push.contenttype.ContentTypePushHandler;
-import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.common.ApplyCommandOrder;
-import com.dotcms.cli.common.CommandInterceptor;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
@@ -64,7 +62,6 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
     CommandLine.Model.CommandSpec spec;
 
     @Override
-    @CommandInterceptor
     public Integer call() throws Exception {
 
         // When calling from the global push we should avoid the validation of the unmatched
@@ -75,9 +72,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
         }
 
         // Make sure the path is within a workspace
-        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
-                this.getPushMixin().path()
-        );
+        final Optional<Workspace> workspace = workspace();
         if (workspace.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format("No valid workspace found at path: [%s]",
@@ -143,6 +138,23 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
     @Override
     public int getOrder() {
         return ApplyCommandOrder.CONTENT_TYPE.getOrder();
+    }
+
+    @Override
+    public WorkspaceManager workspaceManager() {
+        return workspaceManager;
+    }
+
+    @Override
+    public Path workingRootDir() {
+        final Optional<Workspace> workspace = workspace();
+        if (workspace.isPresent()) {
+            return workspace.get().contentTypes();
+        }
+        throw new IllegalArgumentException(
+                String.format("No valid workspace found at path: [%s]",
+                        this.getPushMixin().pushPath.toPath())
+        );
     }
 
 }

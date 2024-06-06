@@ -38,6 +38,7 @@ public class SubcommandProcessor {
         //This is a sub command
         boolean isHelpRequestedAny = false; //This will be true if any subcommand requested help
         boolean isShowErrors = false; //This will be true if any subcommand requested to show errors
+        boolean watchMode = false; //This will be true if any subcommand requested to watch
         List<ParseResult> subcommands = new ArrayList<>();
 
         // Get all instances that implement DotPush
@@ -53,6 +54,7 @@ public class SubcommandProcessor {
         while (current != null) {
             isShowErrors = isShowErrors || (current.matchedOption("--errors") != null);
             isHelpRequestedAny = isHelpRequestedAny || current.isUsageHelpRequested();
+            watchMode = watchMode || (current.matchedOption("--watch") != null);
             //We're only interested in subcommands that are not the main command
             if(!isMainCommand(current)) {
                 subcommands.add(current);
@@ -69,6 +71,7 @@ public class SubcommandProcessor {
                         subcommands(subcommands).
                         isShowErrorsAny(isShowErrors).
                         isHelpRequestedAny(isHelpRequestedAny).
+                        isWatchMode(watchMode).
                         isRemoteURLSet(isRemoteURLSet).
                         isTokenSet(isTokenSet).
                         command(String.join(" ", collect)).

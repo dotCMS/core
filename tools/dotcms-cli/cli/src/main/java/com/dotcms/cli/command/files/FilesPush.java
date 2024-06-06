@@ -9,16 +9,15 @@ import com.dotcms.api.client.files.traversal.PushTraverseParams;
 import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
-import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.command.PushContext;
 import com.dotcms.cli.common.ApplyCommandOrder;
-import com.dotcms.cli.common.CommandInterceptor;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.common.LocalPathStructure;
+import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import java.io.File;
 import java.io.IOException;
@@ -66,7 +65,6 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     ManagedExecutor executor;
 
     @Override
-    @CommandInterceptor
     public Integer call() throws Exception {
 
         // When calling from the global push we should avoid the validation of the unmatched
@@ -197,9 +195,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     private Pair<Workspace, File> resolveWorkspaceAndPath() throws IOException {
 
         // Make sure the path is within a workspace
-        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
-                this.getPushMixin().path()
-        );
+        final Optional<Workspace> workspace = workspace();
         if (workspace.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format("No valid workspace found at path: [%s]",
@@ -302,4 +298,20 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         return ApplyCommandOrder.FILES.getOrder();
     }
 
+    @Override
+    public WorkspaceManager workspaceManager() {
+        return workspaceManager;
+    }
+
+    @Override
+    public Path workingRootDir() {
+        final Optional<Workspace> workspace = workspace();
+        if (workspace.isPresent()) {
+            return workspace.get().files();
+        }
+        throw new IllegalArgumentException(
+                String.format("No valid workspace found at path: [%s]",
+                        this.getPushMixin().pushPath.toPath())
+        );
+    }
 }

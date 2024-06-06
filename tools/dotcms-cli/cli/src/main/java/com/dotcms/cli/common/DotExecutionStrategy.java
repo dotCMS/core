@@ -1,14 +1,22 @@
 package com.dotcms.cli.common;
 
 import com.dotcms.api.client.model.ServiceManager;
+import com.dotcms.api.client.util.DirectoryWatcherService;
 import com.dotcms.cli.command.ConfigCommand;
+import com.dotcms.cli.command.DotCommand;
+import com.dotcms.cli.command.DotPush;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.arc.Arc;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
 import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
+import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.IExecutionStrategy;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.ParseResult;
@@ -21,6 +29,9 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
     private static final java.util.logging.Logger LOGGER = java.util.logging.Logger.getLogger(
             DotExecutionStrategy.class.getName());
+
+    private static final ThreadLocal<Integer> callDepth = ThreadLocal.withInitial(() -> 0);
+
     private final IExecutionStrategy underlyingStrategy;
 
     /**
@@ -63,11 +74,15 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             // If the dotCMS URL and token are set, we can proceed with the command execution, we
             // can bypass the configuration check as we have everything we need for a remote call
             if (isRemoteURLSet(commandsChain, parseResult.commandSpec().commandLine())) {
-                return underlyingStrategy.execute(parseResult);
+                return internalExecute(commandsChain, underlyingStrategy, parseResult);
             }
 
             //If no remote URL is set, we need to check if there is a configuration
             verifyConfigExists(parseResult, commandsChain);
+
+            //If we have a configuration, we can proceed with the command execution
+            return internalExecute(commandsChain, underlyingStrategy, parseResult);
+
         }
 
         return underlyingStrategy.execute(parseResult);
@@ -110,7 +125,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
                 .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
 
         if (!ConfigCommand.NAME.equals(parentCommand)){
-            final ServiceManager manager = getServiceManager();
+            final ServiceManager manager = serviceManager();
             try {
                 final List<ServiceBean> services = manager.services();
                 if (services.isEmpty()) {
@@ -126,11 +141,107 @@ public class DotExecutionStrategy implements IExecutionStrategy {
     }
 
     /**
+     * Executes the command specified in the parse result, while logging the executed command. If the
+     * @param commandsChain the CommandsChain object with the parsed options
+     * @param underlyingStrategy the underlying strategy to use for execution
+     * @param parseResult the parse result from which to select one or more CommandSpec instances to execute
+     * @return the exit code of the executed command
+     * @throws ExecutionException if an exception occurs during command execution
+     * @throws ParameterException if there is an error with the command parameters
+     */
+    private int internalExecute(final CommandsChain commandsChain,
+            final IExecutionStrategy underlyingStrategy,
+            final ParseResult parseResult)
+            throws ExecutionException, ParameterException {
+        try {
+            if (callDepth.get() >= 1) {
+                return underlyingStrategy.execute(parseResult);
+            }
+        } finally {
+            callDepth.set(callDepth.get() + 1);
+        }
+        if (commandsChain.isWatchMode()) {
+            //We need to figure out how to handle the watch
+            final Optional<DotCommand> optional = command(commandsChain);
+            if (optional.isPresent()) {
+                final DotCommand command = optional.get();
+                if (command instanceof DotPush) {
+                    final DotPush push = (DotPush) command;
+                    return handleWatchPush(underlyingStrategy, parseResult, push);
+                }
+            }
+        }
+        return underlyingStrategy.execute(parseResult);
+    }
+
+    private int handleWatchPush(final IExecutionStrategy underlyingStrategy, final ParseResult parseResult, final DotPush push) {
+        final PushMixin pushMixin = push.getPushMixin();
+        push.getOutput().println("Running in Watch Mode on " + push.workingRootDir());
+        try {
+
+            return watch(underlyingStrategy, parseResult, push.workingRootDir(), pushMixin.interval);
+        } catch (IOException e) {
+            throw new ExecutionException(parseResult.commandSpec().commandLine(), "Failure starting watch service", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ExecutionException(parseResult.commandSpec().commandLine(), "Watch service interrupted", e);
+        }
+    }
+
+    private int watch(final IExecutionStrategy underlyingStrategy, final ParseResult parseResult,
+            final Path workingDir, final int interval) throws IOException, InterruptedException {
+        final DirectoryWatcherService service = watchService();
+        int result = ExitCode.OK;
+        final BlockingQueue<WatchEvent<?>> eventQueue = service.watch(workingDir, interval);
+        while (service.isRunning()) {
+            final WatchEvent<?> event = eventQueue.take();
+            if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
+                continue;
+            }
+            try {
+                //Disengage the watch service to avoid recursion issues
+                //The command itself might trigger a file change
+                service.suspend();
+                result = underlyingStrategy.execute(parseResult);
+            } finally {
+                //Re-engage the watch mode
+                service.resume();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the PushMixin instance from the last subcommand in the CommandsChain object.
+     * @param commandsChain the CommandsChain object to check
+     * @return an Optional of PushMixin
+     */
+    Optional<DotCommand> command(final CommandsChain commandsChain) {
+        final Optional<ParseResult> lastSubcommand = commandsChain.lastSubcommand();
+        if (lastSubcommand.isPresent()) {
+            final ParseResult parseResult = lastSubcommand.get();
+            final Object command = parseResult.commandSpec().userObject();
+            if (command instanceof DotCommand) {
+                return Optional.of((DotCommand) command);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
      * Returns the ServiceManager instance declared at EntryCommand.
      * @return the ServiceManager instance from the Arc container
      */
-    private ServiceManager getServiceManager() {
+     ServiceManager serviceManager() {
         return Arc.container().instance(ServiceManager.class).get();
+    }
+
+    /**
+     * Returns the DirectoryWatcherService instance declared at EntryCommand.
+     * @return the DirectoryWatcherService instance from the Arc container
+     */
+    DirectoryWatcherService watchService(){
+        return Arc.container().instance(DirectoryWatcherService.class).get();
     }
 
 }

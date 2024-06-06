@@ -6,10 +6,8 @@ import com.dotcms.api.client.push.PushService;
 import com.dotcms.api.client.push.language.LanguageComparator;
 import com.dotcms.api.client.push.language.LanguageFetcher;
 import com.dotcms.api.client.push.language.LanguagePushHandler;
-import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.common.ApplyCommandOrder;
-import com.dotcms.cli.common.CommandInterceptor;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
@@ -85,7 +83,6 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     CommandLine.Model.CommandSpec spec;
 
     @Override
-    @CommandInterceptor
     public Integer call() throws Exception {
 
         // When calling from the global push we should avoid the validation of the unmatched
@@ -96,9 +93,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
         }
 
         // Make sure the path is within a workspace
-        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
-                this.getPushMixin().path()
-        );
+        final Optional<Workspace> workspace = workspace();
         if (workspace.isEmpty()) {
 
             var message = "No valid workspace found";
@@ -135,7 +130,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
                     PushOptions.builder().
                             failFast(pushMixin.failFast).
                             allowRemove(languagePushMixin.removeLanguages).
-                            disableAutoUpdate(pushMixin.disableAutoUpdate).
+                            disableAutoUpdate(pushMixin.isDisableAutoUpdate()).
                             maxRetryAttempts(pushMixin.retryAttempts).
                             dryRun(pushMixin.dryRun).
                             build(),
@@ -208,5 +203,22 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     public int getOrder() {
         return ApplyCommandOrder.LANGUAGE.getOrder();
     }
-    
+
+    @Override
+    public WorkspaceManager workspaceManager() {
+        return workspaceManager;
+    }
+
+    @Override
+    public Path workingRootDir() {
+        final Optional<Workspace> workspace = workspace();
+        if (workspace.isPresent()) {
+            return workspace.get().languages();
+        }
+        throw new IllegalArgumentException(
+                String.format("No valid workspace found at path: [%s]",
+                        this.getPushMixin().pushPath.toPath())
+        );
+    }
+
 }
