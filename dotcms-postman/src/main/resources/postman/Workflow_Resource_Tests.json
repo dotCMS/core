@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "1c702c12-31df-460a-9eb1-b3b2decefbac",
+		"_postman_id": "a2c66797-5b79-4c46-9376-929d90a263ec",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -80,7 +80,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "52c56f10-e66a-4730-9a84-4ba1ad1fa643"
+								"uuid": "04248e20-914c-41ba-8a22-dff34c3cf241"
 							}
 						],
 						"body": {
@@ -156,7 +156,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "96f8e493-40de-4f49-a325-403926b9c556"
+								"uuid": "6e47f54c-7d0b-4692-824e-c8ddc4d5209e"
 							}
 						],
 						"body": {
@@ -230,7 +230,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "c8a125c5-37ff-479d-8fc5-3a46e1d119e5"
+								"uuid": "6fdcca5c-d70b-439e-9e9a-fc4464f51a0e"
 							}
 						],
 						"body": {
@@ -333,7 +333,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "b2d30c56-1536-4e76-84e6-8431636991e4"
+								"uuid": "e12eda2c-fd2d-4084-82f8-171a0031b9f5"
 							}
 						],
 						"body": {
@@ -451,7 +451,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "1330d327-d733-432d-8334-fcd28ab494f7"
+								"uuid": "15833ced-b80c-4e1a-a994-aa01c0ea60c3"
 							}
 						],
 						"body": {
@@ -529,7 +529,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "9661f8ac-71f8-4ef0-937e-ec05b260b746"
+								"uuid": "4ab237ed-306f-4aba-a241-ee5df8167521"
 							}
 						],
 						"body": {
@@ -603,7 +603,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "3bbc7943-2493-444f-b1a2-c0967547a0e4"
+								"uuid": "996f7dd1-f847-4a5a-9d65-d388e023f806"
 							}
 						],
 						"body": {
@@ -677,7 +677,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "8f6ea605-b685-4c50-b0c0-91f53b1133dd"
+								"uuid": "c43bac69-4d04-4cb2-8684-e4ed59ef11e9"
 							}
 						],
 						"body": {
@@ -748,7 +748,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "e05a3110-d6f6-4476-ae3e-b9da16b8db35"
+								"uuid": "62c6870d-896c-4daf-bd01-4b880ad3746f"
 							}
 						],
 						"body": {
@@ -858,7 +858,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "a32c0ba0-2e75-4c1b-9a07-0114e9a2eaad"
+								"uuid": "2b6394b2-6d4e-473a-bdf2-accbb0b34d24"
 							}
 						],
 						"body": {
@@ -936,7 +936,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "b6467e23-916c-42f1-b004-c197dc560620"
+								"uuid": "4c24f673-63b4-4d1c-be9f-d763f814aa53"
 							}
 						],
 						"body": {
@@ -1010,7 +1010,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "1187ffba-cfde-4008-b791-1688f558afd5"
+								"uuid": "0b508518-410b-4554-a9e9-2fa7cfa10e00"
 							}
 						],
 						"body": {
@@ -1084,7 +1084,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "f1a0899b-9147-4e9d-9f99-768ee84d9bcb"
+								"uuid": "3a5451f2-ccd0-4bfa-af3c-e87834a5b584"
 							}
 						],
 						"body": {
@@ -1158,7 +1158,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "c8298506-c313-4c95-a52a-5b9d456519af"
+								"uuid": "03166695-3d3b-4dc2-9240-da964d8aaade"
 							}
 						],
 						"body": {
@@ -1228,7 +1228,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "ab8c1aa1-1049-4610-9da8-d33ddf7559fb"
+								"uuid": "c641a3e9-e90e-4a34-b90c-e0e415834ec8"
 							}
 						],
 						"body": {
@@ -2270,7 +2270,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "a79cc3da-4cc5-4ae2-839f-22122484480d"
+								"uuid": "3285a011-be8c-427c-805c-e8806148c502"
 							}
 						],
 						"body": {
@@ -4855,7 +4855,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "5f89e66f-7b06-4938-bab3-396badb77d03"
+								"uuid": "67f118da-1933-47cf-8f1b-9b013a120111"
 							}
 						],
 						"body": {
@@ -4929,7 +4929,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "3d395130-455b-4e90-9ad3-9f611a7920dd"
+								"uuid": "de9082df-64fa-4872-bbbe-1bc83b511f58"
 							}
 						],
 						"body": {
@@ -5003,7 +5003,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "322d3944-7598-48d2-8467-fab657fcd70f"
+								"uuid": "a29ac667-d8d1-4869-bb3c-4d58ec94faf3"
 							}
 						],
 						"body": {
@@ -5079,7 +5079,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "126beabf-b356-4ee8-8f00-1edfa449a7c6"
+								"uuid": "c9a3a2e5-5bf1-4b21-8563-d050170f240e"
 							}
 						],
 						"body": {
@@ -5151,7 +5151,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "4a1a8de7-c5aa-4503-9f4b-03b5ccbea841"
+								"uuid": "7bc15d94-54b8-43d3-86b6-9c77458be71f"
 							}
 						],
 						"body": {
@@ -5271,7 +5271,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "2d3c21be-ad52-42cf-8354-0fc15ed98e3b"
+								"uuid": "d2f4bf0e-966b-4353-9405-777912fb296b"
 							}
 						],
 						"body": {
@@ -5347,7 +5347,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "6643189d-7990-486b-9276-38c9f7c51fe8"
+								"uuid": "ab3e9549-856b-4ad3-83d7-7fe1f0bd4978"
 							}
 						],
 						"body": {
@@ -5423,7 +5423,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "1b7de025-8122-4965-9a8a-5a9d22b54dcf"
+								"uuid": "ddc5826f-4a72-4ebd-9662-7834fa98c821"
 							}
 						],
 						"body": {
@@ -5499,7 +5499,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "046069d3-99eb-45ef-bd70-bf575b3b5add"
+								"uuid": "3d940461-fd1c-4b56-b4f4-119f39d851aa"
 							}
 						],
 						"body": {
@@ -5575,7 +5575,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "d56f5524-320f-40aa-8ac3-4d867f70ac2b"
+								"uuid": "86ae1b52-7199-4a4a-9144-7edf91d7c802"
 							}
 						],
 						"body": {
@@ -5649,7 +5649,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "81d49c8d-4f67-4833-ba19-8cb902c0021f"
+								"uuid": "f7491e4b-b1f4-4f7b-a798-e0937fba3923"
 							}
 						],
 						"body": {
@@ -5739,7 +5739,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "c6be0c75-8d63-43d7-b385-f0b3ca6ed06d"
+								"uuid": "27b22980-c50c-4036-8a64-8a08fc00ef80"
 							}
 						],
 						"body": {
@@ -5814,7 +5814,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "cbfd6052-9212-4ac2-9002-d7492c8419d5"
+								"uuid": "713cb5fb-4dfc-45aa-8bb5-84540d051249"
 							}
 						],
 						"body": {
@@ -5889,7 +5889,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "c9963fb5-8b7f-4019-95e0-1456ee948b46"
+								"uuid": "f317dfc7-c243-4de7-8ef4-45f76bc869ed"
 							}
 						],
 						"body": {
@@ -5960,7 +5960,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "52fb04d3-e2d2-4d2a-9686-f6c2af304f2a"
+								"uuid": "5a5db414-8202-43bc-92a1-dbdf6e8aef04"
 							}
 						],
 						"body": {
@@ -6035,7 +6035,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "59e07a41-59ea-4323-9ac4-3a9bf2f14e47"
+								"uuid": "1a155a7e-9906-4a92-973e-0565b617e74b"
 							}
 						],
 						"body": {
@@ -6107,7 +6107,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "07f21eb0-c3ef-4d09-9e34-284e6bb9114e"
+								"uuid": "ddb3fa6f-0fac-4d14-96b9-fd712c94ca10"
 							}
 						],
 						"body": {
@@ -6431,7 +6431,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "2afa8a5b-a168-4e31-b827-660fb1c12a5f"
+								"uuid": "7a625cc4-e262-4dce-baa6-c8126e049f92"
 							}
 						],
 						"body": {
@@ -6506,7 +6506,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "20c7500f-93a2-4df1-bd4c-d65c566d74fc"
+								"uuid": "53144f6b-a777-4c8e-9d6a-6311b3f66eea"
 							}
 						],
 						"body": {
@@ -6581,7 +6581,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "4609275b-9659-4cbe-906c-612fecbdd340"
+								"uuid": "932b0208-9e74-4703-a00f-d1db60bc7a30"
 							}
 						],
 						"body": {
@@ -6656,7 +6656,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "a02f88a5-81d8-4057-8287-5b05fdfb27b2"
+								"uuid": "398761fc-3db7-425a-a1f4-3d363923c0c1"
 							}
 						],
 						"body": {
@@ -6728,7 +6728,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "b38d2525-b9bf-4ed1-8eb9-1376938f9e6e"
+								"uuid": "3e0719e4-2387-427b-9600-d183cf746e41"
 							}
 						],
 						"body": {
@@ -7123,7 +7123,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "97de15f6-9f2b-48fc-8c17-e0bead49bc25"
+								"uuid": "85680399-ba1c-4694-9619-e6eaaa59dda9"
 							}
 						],
 						"body": {
@@ -7198,7 +7198,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "3a2f8cdf-4a62-4400-949a-1ee82047a37d"
+								"uuid": "79dc476e-0c33-4b68-be67-cc8e390a12b0"
 							}
 						],
 						"body": {
@@ -7273,7 +7273,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "d9b878a8-368f-4a4c-93fd-804e2b613346"
+								"uuid": "3337e418-ebf0-4354-a4ea-4a584b7b0c35"
 							}
 						],
 						"body": {
@@ -7348,7 +7348,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "abc3bc1c-d9a2-4dd8-aef6-6335b140dc90"
+								"uuid": "40080367-48ba-42cc-86de-af1fbb41589e"
 							}
 						],
 						"body": {
@@ -7420,7 +7420,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "975e3cc7-9158-45b2-9e44-15c2dc9b0a32"
+								"uuid": "c38fd4a2-1f5e-4772-a070-65d6c7456a83"
 							}
 						],
 						"body": {
@@ -7519,7 +7519,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "980b5d19-eca0-4172-bc00-c9c9fd9f90a5"
+								"uuid": "d9a755f6-14c7-49b7-8886-688d6da8122d"
 							}
 						],
 						"body": {
@@ -7597,7 +7597,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "7657047b-08bc-4a70-8dcb-fa9bc4e4853e"
+								"uuid": "21333645-c6d8-4766-a2b1-b5836377d201"
 							}
 						],
 						"body": {
@@ -7675,7 +7675,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "c9ce7445-4064-47ae-b92c-537c71c3baca"
+								"uuid": "e0dfc0f0-a2f7-4192-babd-16c9eb4cd2d2"
 							}
 						],
 						"body": {
@@ -7753,7 +7753,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "b7f3ded4-c45a-4ece-95c5-47275d905dd6"
+								"uuid": "9c9b6403-f2a1-400c-8d8f-1bbe73788aa0"
 							}
 						],
 						"body": {
@@ -7831,7 +7831,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "007ba97c-7c0f-4a88-b8ea-17d7756d5e62"
+								"uuid": "b9748c00-5095-4319-a46c-2780525d67d7"
 							}
 						],
 						"body": {
@@ -7909,7 +7909,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "c2da72c8-4e1c-4324-b6a9-42ab51077c60"
+								"uuid": "4d5b73bb-23d8-4392-9af3-5858b28f33ae"
 							}
 						],
 						"body": {
@@ -7984,7 +7984,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "cbba1e41-1199-4894-8c0d-100557b7d378"
+								"uuid": "16eabbe5-b491-4a1b-ba84-850921b51a09"
 							}
 						],
 						"body": {
@@ -8078,7 +8078,7 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"uuid": "5d3c2893-df72-4803-95da-0c3e8c755548"
+										"uuid": "412d068d-08b5-40df-b13b-6119e0e1fdbe"
 									}
 								],
 								"body": {
@@ -8140,7 +8140,7 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"uuid": "e69e8f14-9981-4d68-97df-75e03bf8a13d"
+										"uuid": "e2fd8769-78c8-4564-80de-0f7dc7dc992e"
 									}
 								],
 								"body": {
@@ -8397,7 +8397,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "593b894c-df89-4673-bd1e-44eff9c35656"
+								"uuid": "d8177902-bc90-4697-8bb5-c36dbbd5fdac"
 							}
 						],
 						"body": {
@@ -8473,7 +8473,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "978a5849-d3f0-4051-9d0e-b66c3ef62bfb"
+								"uuid": "18626e00-74ca-4290-883b-108543585212"
 							}
 						],
 						"body": {
@@ -8550,7 +8550,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "ba81be2a-4b90-42b4-b17c-266c5738b94d"
+								"uuid": "780292cc-b150-4561-bc72-3458e0c14d34"
 							}
 						],
 						"body": {
@@ -8626,7 +8626,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "2bae79bd-d647-4484-8fb4-835761bc5ce4"
+								"uuid": "674d8cf3-1a44-4afd-b6d8-8421c0012889"
 							}
 						],
 						"body": {
@@ -8702,7 +8702,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "4b653026-d489-447c-80f1-0c8a5503f785"
+								"uuid": "d65c12b4-5070-42bc-beac-10da03ee28e1"
 							}
 						],
 						"body": {
@@ -8784,7 +8784,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "d30c1ecf-6755-4428-9588-4d45eb928c67"
+								"uuid": "417b69a1-c49a-4d04-848d-7d8326571ca4"
 							}
 						],
 						"body": {
@@ -8856,7 +8856,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "1ae2de0c-a230-4c8d-8a2a-d64f481710a3"
+								"uuid": "4dc0363b-83e0-4c59-af33-018fe2bccdbd"
 							}
 						],
 						"body": {
@@ -8936,7 +8936,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "353b983a-3d26-49ca-ad63-b9034d6e83bd"
+								"uuid": "cc0550f5-fad2-46a9-b99a-d0fc98e2af3a"
 							}
 						],
 						"body": {
@@ -9074,7 +9074,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "6576222d-3668-443a-a36c-81f424968064"
+								"uuid": "7c2e4fd4-f672-4995-8998-ac1a49981645"
 							}
 						],
 						"body": {
@@ -9145,7 +9145,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "287ba7bd-7a31-465a-99d6-05ee5f5e1138"
+								"uuid": "07168bea-399b-44ec-8bb1-5065f9187ac2"
 							}
 						],
 						"body": {
@@ -9222,7 +9222,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "0c8b098b-a360-4f0b-888d-e90612890304"
+								"uuid": "dd58bb83-d45c-44df-965b-07faf5ca2960"
 							}
 						],
 						"body": {
@@ -9300,7 +9300,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "a857b76d-39e9-4a16-a98f-adcd4f74775d"
+								"uuid": "8071746d-6171-4d03-86b7-ec7d774fee4f"
 							}
 						],
 						"body": {
@@ -9376,7 +9376,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "48b77c31-2113-453a-83cd-3dfb8c2bddc7"
+								"uuid": "d2a95d28-e7cd-4132-8a03-e89df95adbe4"
 							}
 						],
 						"body": {
@@ -9458,7 +9458,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "ccbf2e67-c525-41b5-b505-fb09e32fed1e"
+								"uuid": "a7c9eb78-f948-4ea0-a719-d3acb03a273f"
 							}
 						],
 						"body": {
@@ -9531,7 +9531,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "544973aa-a81b-4ba9-bb7d-845aeed25928"
+								"uuid": "aa0cb81c-91fa-43a9-8464-9908da88af9d"
 							}
 						],
 						"body": {
@@ -9611,7 +9611,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "7a416c1d-d8b6-42c6-8106-7e01b4fbc4fc"
+								"uuid": "b5346e95-04b1-4130-8109-1bbd807e0a9a"
 							}
 						],
 						"body": {
@@ -9802,7 +9802,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "6b56f928-6360-4e93-8e4c-7722e1f2910e"
+								"uuid": "934a997a-68e8-4bab-bb8c-fccaeffd7433"
 							}
 						],
 						"body": {
@@ -9884,7 +9884,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "00864b39-c7d6-4999-b97d-11f29d0d986f"
+								"uuid": "15ab39d8-fe62-44ef-ac2f-9415d1a3740b"
 							}
 						],
 						"body": {
@@ -9966,7 +9966,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "36248344-4180-4e5a-a3d6-9a6a48f93a44"
+								"uuid": "6fe77392-8ecd-4ef5-929f-0a4d87972aac"
 							}
 						],
 						"body": {
@@ -10047,7 +10047,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "0a196bcf-37e2-4e41-8a94-02953df65796"
+								"uuid": "961360cb-c474-4edd-9cbc-594ea3566181"
 							}
 						],
 						"body": {
@@ -10129,7 +10129,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "2efc54ce-7e5d-4c1d-a4b2-d4af572800e2"
+								"uuid": "45765471-0a36-46dc-af3b-b882e3c8610e"
 							}
 						],
 						"body": {
@@ -10495,7 +10495,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "45d1dd50-0c44-403d-b501-effcbbed8b95"
+								"uuid": "8719321d-dafa-442e-9b1d-dce94f87dfa7"
 							}
 						],
 						"body": {
@@ -10861,7 +10861,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "ad1bb966-1e5d-43b9-83d8-de6122864ec5"
+								"uuid": "aa60b739-162e-490b-aded-73cdd3a79a58"
 							}
 						],
 						"body": {
@@ -10939,7 +10939,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "84cd1be9-8956-49ff-9692-92b4b9ac10ce"
+								"uuid": "0891ab31-69d7-4b17-bba8-c7b72f0b542e"
 							}
 						],
 						"body": {
@@ -11087,7 +11087,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "5d2c3e74-2bd9-4e1c-9574-dff3f1a964b3"
+								"uuid": "99ff71dc-40cb-4a22-9b48-6a8f9bb0541d"
 							}
 						],
 						"body": {
@@ -11165,7 +11165,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "b57008fb-226f-4265-ae84-20b6bfe70562"
+								"uuid": "84610bb0-9b47-49f7-94c6-d818752030ac"
 							}
 						],
 						"body": {
@@ -11530,7 +11530,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "bb5f05d5-cbf4-4fdc-8688-a0a9790ea826"
+								"uuid": "2686fbe5-9e36-438c-b820-1b28207eb5c8"
 							}
 						],
 						"body": {
@@ -11608,7 +11608,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "03044d8f-8193-4494-ab63-bb1739e57352"
+								"uuid": "07224e5a-cf9e-4797-aeac-f0995f707821"
 							}
 						],
 						"body": {
@@ -11828,7 +11828,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "0b1bca15-118e-4a87-9d27-294bcf104618"
+								"uuid": "dd5b3197-0625-4a41-8d6e-5715a0b38e65"
 							}
 						],
 						"body": {
@@ -12039,7 +12039,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "ca45b7f2-f294-4d92-b5a4-a40008685d19"
+								"uuid": "a59484d6-f1f0-4e2a-b95c-dce6e348079f"
 							}
 						],
 						"body": {
@@ -12113,7 +12113,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "b82cad69-0d4b-42bd-8a84-440f5550ae77"
+								"uuid": "18990f5f-a48b-4a95-98fa-f9a49289b243"
 							}
 						],
 						"body": {
@@ -12267,7 +12267,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "c6fc7fd2-276c-4d85-9a4b-b8e49ad4432b"
+								"uuid": "edf29861-e079-47a7-80ea-ee444d5a8b60"
 							}
 						],
 						"body": {
@@ -12334,7 +12334,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "38322d53-996f-4cf0-b586-1b7c88cdb248"
+								"uuid": "8349170e-71e2-494c-8d32-74d6015d2c89"
 							}
 						],
 						"body": {
@@ -12498,7 +12498,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "2594bc6b-aac6-4dac-bb25-c029acd3ba3f"
+								"uuid": "9cf209f6-ece5-4d45-95ed-c637d6652d4a"
 							}
 						],
 						"body": {
@@ -12577,7 +12577,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "21bfd85b-a1e0-4e73-9eb2-d5a857fa97ac"
+								"uuid": "3174e7ab-be14-43e2-bba6-4979ec945247"
 							}
 						],
 						"body": {
@@ -12658,7 +12658,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "ab57d6b6-fd17-44c6-993c-321fd4912afd"
+								"uuid": "79c64635-f9df-4d6f-9027-48677ed9402b"
 							}
 						],
 						"body": {
@@ -13428,12 +13428,12 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "56505a1a-221a-4978-8c21-9efa50273a55"
+								"uuid": "77c65c1a-8ef4-4a29-b217-8d37ce638900"
 							},
 							{
 								"key": "Origin",
 								"value": "{{serverURL}}",
-								"uuid": "e75d76e1-5986-4235-b9f2-a50ac6498cfc"
+								"uuid": "63a5ac44-2d83-4971-92fe-2af71d795f26"
 							}
 						],
 						"body": {
@@ -13765,7 +13765,7 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"uuid": "607c649d-5dbf-46bf-b32d-675dbebe7a7e"
+										"uuid": "2b85dbfe-8d1a-4ddd-b86f-477ce3d0b228"
 									}
 								],
 								"body": {
@@ -13894,7 +13894,7 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"uuid": "a5aa8dd1-f5eb-4970-b831-223c0a13c9d2"
+										"uuid": "6e3315c3-6165-4d7b-90f6-dfaa7e201e05"
 									}
 								],
 								"body": {
@@ -14093,7 +14093,7 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"uuid": "e0cf94bc-4828-4f2f-8214-b30bb28d67e1"
+										"uuid": "1307ff8f-a336-433b-a2d4-a547b7b2682a"
 									}
 								],
 								"body": {
@@ -14172,7 +14172,7 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"uuid": "16b615c5-c83f-4761-91ff-f58cde76d1f9"
+										"uuid": "3bc46816-fbf2-42a6-94a9-a3d611d1d6b6"
 									}
 								],
 								"body": {
@@ -15456,12 +15456,12 @@
 							{
 								"key": "Content-Type",
 								"value": "application/octet-stream",
-								"uuid": "3f0a28f5-d168-4603-93a6-8cb219426b11"
+								"uuid": "05c32d1e-9fde-45ca-afc2-d5bb5eaf92e8"
 							},
 							{
 								"key": "Content-Disposition",
 								"value": "attachment",
-								"uuid": "9d2b14d1-ea03-4bce-b70b-83daf5295ca0"
+								"uuid": "9d2671f4-fa16-4359-9133-63d064d92b6d"
 							}
 						],
 						"body": {
@@ -15554,7 +15554,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "4418fb87-8b79-4f8a-a8d2-7ddbc82553c6"
+								"uuid": "3742a6ec-609b-4677-8fcd-b01691fe08a1"
 							}
 						],
 						"body": {
@@ -15600,12 +15600,15 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity.fileAsset).to.include(\"greatings.txt\");",
 									"    pm.expect(jsonData.entity.contentType).to.be.eql(\"FileAsset\");",
+									"    pm.expect(jsonData.entity.metaData.name).to.be.eql(\"greatings.txt\");",
+									"    pm.expect(jsonData.entity.metaData.title).to.be.eql(\"greatings.txt\");",
 									"});",
 									"",
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -15988,7 +15991,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "6a3f7438-2b44-4894-8d75-4c06811f618f"
+								"uuid": "dc94edcd-34ab-457e-9f93-4ebd70b17176"
 							}
 						],
 						"body": {
@@ -16069,7 +16072,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "05e329dd-93fb-4f9a-a78e-b06e31803401"
+								"uuid": "5258ba97-f039-4455-ab6a-a733b84b61ca"
 							}
 						],
 						"body": {
@@ -16141,7 +16144,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "1421fb61-dda8-4dff-8384-51770f7e4901"
+								"uuid": "0dc542e3-ab71-4263-b48b-a49ca00859a8"
 							}
 						],
 						"body": {
@@ -16224,7 +16227,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "70625f07-cb0f-4062-9d3f-a5cfbb934875"
+								"uuid": "c2010c3a-c351-41b4-9d75-0f9751eaca6b"
 							}
 						],
 						"body": {
@@ -16308,7 +16311,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "195c873c-03a4-4adb-a7f8-9fff5dc4d0b6"
+								"uuid": "2eb9a57b-0503-47f1-800a-6f267d75720d"
 							}
 						],
 						"body": {
@@ -16523,7 +16526,7 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"uuid": "3fc588ce-2fda-4dfe-822b-bfcef7f983ee"
+										"uuid": "2e242a3d-e41c-444f-b963-1aa0a31df973"
 									}
 								],
 								"body": {
@@ -16580,7 +16583,7 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"uuid": "242d2242-d255-4827-a87a-033fea8cf8ab"
+										"uuid": "70438f28-10d0-4a24-9a0f-5612965a4737"
 									}
 								],
 								"body": {
@@ -16712,7 +16715,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "0a078346-47c7-40b1-8e08-0f35787e0ff6"
+								"uuid": "3e6f93bb-9245-48eb-9ece-33a961ff8413"
 							}
 						],
 						"body": {
@@ -16771,7 +16774,7 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"uuid": "30010ed0-b088-4f6a-ac28-d0868f57caa0"
+								"uuid": "14e31245-dd78-4d4b-a4fa-6a4a60f317f6"
 							}
 						],
 						"body": {
