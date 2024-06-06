@@ -28,36 +28,7 @@ export async function generateMetadata({ params, searchParams }) {
     return {
         title: data.entity.page.friendlyName || data.entity.page.title
     };
-}
-
-// Define your GraphQL query
-const query = `{
-    page(url: "/index") {
-        title
-        url
-        seodescription
-        containers {
-          path
-          identifier
-          containerStructures {
-              id
-              structureId
-              containerInode
-              code,
-          }
-          containerContentlets {
-              uuid
-              contentlets {
-                  identifier
-                  inode
-                  title
-              }
-          }
-      }
-    }
-  }
-  `;
-
+};
 
 export default async function Home({ searchParams, params }) {
     const requestData = {
