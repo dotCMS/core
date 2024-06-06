@@ -30,7 +30,6 @@ export const contentletToJSON: toJSONFn = function () {
     const formattedData = data
         ? {
               identifier: data?.identifier,
-              inode: data?.inode,
               languageId: data?.languageId
           }
         : {};
