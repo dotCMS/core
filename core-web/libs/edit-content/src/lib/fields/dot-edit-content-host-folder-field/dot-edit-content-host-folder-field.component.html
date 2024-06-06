@@ -1,10 +1,10 @@
 <p-treeSelect
-    selectionMode="single"
     [formControl]="pathControl"
     [options]="options()"
     [attr.aria-labelledby]="'field-' + field.variable"
     (onNodeSelect)="onNodeSelect($event)"
-    (onNodeExpand)="onNodeExpand($event)">
+    (onNodeExpand)="onNodeExpand($event)"
+    selectionMode="single">
     <ng-template let-node pTemplate="default">
         <span>{{ node.label | truncatePath }}</span>
     </ng-template>
