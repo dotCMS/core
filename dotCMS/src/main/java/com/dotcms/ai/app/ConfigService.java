@@ -11,42 +11,47 @@ import io.vavr.control.Try;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * ConfigService is a service that provides access to the configuration for the AI application.
+ */
 public class ConfigService {
 
     public static final ConfigService INSTANCE = new ConfigService();
 
-
-
-
     public AppConfig config() {
         return config(null);
     }
+
     /**
      * Gets the secrets from the App - this will check the current host then the SYSTEM_HOST for a valid configuration. This lookup is low overhead and cached
      * by dotCMS.
      */
     public AppConfig config(final Host host) {
 
-        final Optional<AppSecrets> appSecrets = Try.of(() -> APILocator.getAppsAPI().getSecrets(AppKeys.APP_KEY, true, resolveHost(host), APILocator.systemUser())).getOrElse(Optional.empty());
+        final Optional<AppSecrets> appSecrets = Try.of(() -> APILocator
+                .getAppsAPI()
+                .getSecrets(AppKeys.APP_KEY, true, resolveHost(host), APILocator.systemUser()))
+                .getOrElse(Optional.empty());
 
         final Map<String, Secret> secrets = appSecrets.isPresent() ? appSecrets.get().getSecrets() : Map.of();
-
 
         return new AppConfig(secrets);
     }
 
     /**
-     * if we have a host, send it, otherwise, system_host
+     * Ff we have a host, send it, otherwise, system_host
+     *
      * @param incoming
-     * @return
+     * @return Host to use
      */
-    Host resolveHost(Host incoming){
-        if(incoming!=null){
+    private Host resolveHost(Host incoming){
+        if (incoming != null){
             return incoming;
         }
-        return Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(HttpServletRequestThreadLocal.INSTANCE.getRequest())).getOrElse(APILocator.systemHost());
-
+        return Try.of(() -> WebAPILocator
+                .getHostWebAPI()
+                .getCurrentHostNoThrow(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+                .getOrElse(APILocator.systemHost());
     }
-
 
 }

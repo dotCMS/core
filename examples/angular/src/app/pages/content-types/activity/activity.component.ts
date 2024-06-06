@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { DotCMSContentlet } from '@dotcms/angular';
 
-import { DotCMSContentlet } from '../../../lib/models';
 
 @Component({
   selector: 'app-activity',

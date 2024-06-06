@@ -90,7 +90,7 @@ public class VanityURLFilter implements Filter {
 
               request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
               if(addVanityHeader) {
-                  response.setHeader("X-DOT-VanityUrl",cachedVanity.get().vanityUrlId );
+                  response.setHeader(VanityUrlAPI.VANITY_URL_RESPONSE_HEADER, cachedVanity.get().vanityUrlId);
               }
               final VanityUrlResult vanityUrlResult = cachedVanity.get().handle(uri);
               final VanityUrlRequestWrapper vanityUrlRequestWrapper = new VanityUrlRequestWrapper(request, vanityUrlResult);

@@ -3,13 +3,14 @@
 ASSETS_BACKUP_FILE=/data/assets.zip
 DB_BACKUP_FILE=/data/dotcms_db.sql.gz
 STARTER_ZIP=/data/starter.zip
-
+DEV_LICENSE_SRC=/srv/dev_licensepack.zip
+DEV_LICENSE_DEST=/data/shared/assets/licensepack.zip
 export JAVA_HOME=/usr/share/opensearch/jdk
-export PATH=$PATH:$JAVA_HOME/bin:/usr/local/pgsql/bin
 export ES_JAVA_OPTS=${ES_JAVA_OPTS:-"-Xmx512m"}
 export DOTCMS_CLONE_TYPE=${DOTCMS_CLONE_TYPE:-"dump"}
 export DOWNLOAD_ALL_ASSETS=${ALL_ASSETS:-"false"}
-
+export PG_VERSION=${PG_VERSION:-"16"}
+export PATH=$PATH:$JAVA_HOME/bin:/usr/local/pgsql/bin:/usr/lib/postgresql/$PG_VERSION/bin/
 
 setup_postgres () {
     echo "Starting Postgres Database"
@@ -60,6 +61,7 @@ setup_opensearch () {
     # Start up Elasticsearch
     su -c "/usr/share/opensearch/bin/opensearch 1> /dev/null" dotcms &
 }
+
 
 pull_dotcms_starter_zip () {
   echo "- Pulling starter.zip file"
@@ -166,6 +168,7 @@ pull_dotcms_backups () {
 
 }
 
+## Unpacks the assets.zip file if it exists and has not been unpacked
 unpack_assets(){
   if [ -d "/data/shared/assets/1" ]; then
     echo "Assets Already Unpacked, skipping.  If you would like to unpack them again, please delete the /data/shared/assets folder"
@@ -181,7 +184,7 @@ unpack_assets(){
 }
 
 
-
+## Starts dotCMS
 start_dotcms () {
 
 
@@ -205,12 +208,29 @@ start_dotcms () {
     . /srv/entrypoint.sh
 }
 
+## Moves the dev license to the correct location
+apply_license () {
+  if [ ! -f "$DEV_LICENSE_SRC" ]; then
+    echo "No Dev License found: skipping"
+    return 0
+  fi
+  if [  -f "$DEV_LICENSE_DEST" ]; then
+    echo "Dev License Already Present: skipping"
+    return 0
+  fi
 
+  if [ ! -d "/data/shared/assets" ]; then
+    mkdir -p /data/shared/assets
+  fi
 
-
+  mv $DEV_LICENSE_SRC $DEV_LICENSE_DEST
+  chown dotcms.dotcms $DEV_LICENSE_DEST
+  echo "Dev License Applied"
+}
 
 pull_dotcms_backups && echo ""
 setup_postgres && echo ""
 unpack_assets && echo ""
 setup_opensearch && echo ""
+apply_license && echo ""
 start_dotcms
