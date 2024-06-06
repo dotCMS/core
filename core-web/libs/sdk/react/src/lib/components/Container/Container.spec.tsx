@@ -59,7 +59,9 @@ describe('Container', () => {
                 ...mockPageContext,
                 isInsideEditor: true,
                 components: {
-                    Empty: () => <div data-testid="custom-no-component">Custom No Component</div>
+                    CustomNoComponent: () => (
+                        <div data-testid="custom-no-component">Custom No Component</div>
+                    )
                 }
             };
 

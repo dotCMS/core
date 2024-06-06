@@ -23,7 +23,7 @@ class DotcmsSDKMockComponent {
     selector: 'dot-no-component',
     template: 'no component yet - Custom'
 })
-class EmptyComponent {
+class CustomNoComponent {
     @Input() contentlet!: DotCMSContentlet;
 }
 
@@ -144,7 +144,7 @@ describe('ContainerComponent', () => {
                                     containers: PageResponseMock.containers
                                 },
                                 components: {
-                                    Empty: of(EmptyComponent)
+                                    CustomNoComponent: of(CustomNoComponent)
                                 },
                                 isInsideEditor: true
                             }
@@ -156,7 +156,7 @@ describe('ContainerComponent', () => {
 
         it('should render custom NoComponent component for unsetted content types', () => {
             spectator.detectChanges();
-            expect(spectator.query(EmptyComponent)).toBeTruthy();
+            expect(spectator.query(CustomNoComponent)).toBeTruthy();
         });
     });
 
