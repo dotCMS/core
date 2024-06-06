@@ -4,8 +4,12 @@ import { PageContext } from '../../contexts/PageContext';
 import { DotCMSPageContext } from '../../models';
 import { getContainersData } from '../../utils/utils';
 
-function NoContent({ contentType }: { readonly contentType: string }) {
+function NoComponent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;
+}
+
+function EmptyContent() {
+    return null;
 }
 
 export interface ContainerProps {
@@ -49,7 +53,12 @@ export function Container({ containerRef }: ContainerProps) {
           };
 
     const ContainerChildren = contentlets.map((contentlet) => {
-        const Component = components[contentlet.contentType] || NoContent;
+        const ContentTypeComponent = components[contentlet.contentType];
+        const DefaultComponent = components['CustomNoComponent'] || NoComponent;
+
+        const Component = isInsideEditor
+            ? ContentTypeComponent || DefaultComponent
+            : ContentTypeComponent || EmptyContent;
 
         return isInsideEditor ? (
             <div
