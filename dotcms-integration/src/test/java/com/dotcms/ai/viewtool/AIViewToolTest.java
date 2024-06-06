@@ -30,7 +30,7 @@ import static org.mockito.Mockito.mock;
  *
  * @author vico
  */
-public class AIViewToolTest implements AiTest {
+public class AIViewToolTest {
 
     private static AppConfig config;
     private static WireMockServer wireMockServer;

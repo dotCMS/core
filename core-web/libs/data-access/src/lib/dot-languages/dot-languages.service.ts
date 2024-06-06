@@ -66,14 +66,26 @@ export class DotLanguagesService {
     }
 
     /**
+     * Get Language by ISO code.
+     *
+     * @param {string} isoCode
+     * @return {Observable<DotLanguage>}
+     */
+    getByISOCode(isoCode: string): Observable<DotLanguage> {
+        return this.httpClient.get(`${LANGUAGE_API_URL}/${isoCode}`).pipe(pluck('entity'));
+    }
+
+    /**
      * Update a language.
      *
-     * @param {DotLanguage} language - The language to be updated.
+     * @param {DotLanguage} locale - The language to be updated.
      * @return {Observable<DotLanguage>} An observable of the updated language.
      */
-    update(language: DotLanguage): Observable<DotLanguage> {
+    update(locale: DotLanguage): Observable<DotLanguage> {
+        const { id, languageCode, language, countryCode, country } = locale;
+
         return this.httpClient
-            .put(`${LANGUAGE_API_URL}/${language.id}`, language)
+            .put(`${LANGUAGE_API_URL}/${id}`, { languageCode, language, countryCode, country })
             .pipe(pluck('entity'));
     }
 
