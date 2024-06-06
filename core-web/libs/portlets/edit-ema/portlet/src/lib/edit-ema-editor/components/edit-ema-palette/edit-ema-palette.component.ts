@@ -33,6 +33,7 @@ import { DotPaletteStore, PALETTE_TYPES } from './store/edit-ema-palette.store';
 })
 export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     @Input() languageId: number;
+    @Input() variantId: string;
     @Input() containers: DotPageContainerStructure;
 
     private readonly store = inject(DotPaletteStore);
@@ -55,7 +56,8 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
         this.store.loadContentlets({
             filter: '',
             languageId: this.languageId.toString(),
-            contenttypeName: contentTypeName
+            contenttypeName: contentTypeName,
+            variantId: this.variantId
         });
     }
 
@@ -77,7 +79,8 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
             filter: '',
             languageId: this.languageId.toString(),
             contenttypeName: contentTypeVarName,
-            page: page
+            page: page,
+            variantId: this.variantId
         });
     }
 
@@ -92,7 +95,8 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
         this.store.loadContentlets({
             filter,
             contenttypeName: currentContentType,
-            languageId: this.languageId.toString()
+            languageId: this.languageId.toString(),
+            variantId: this.variantId
         });
     }
 

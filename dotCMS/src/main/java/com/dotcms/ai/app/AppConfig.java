@@ -11,7 +11,13 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * The AppConfig class provides a configuration for the AI application.
+ * It includes methods for retrieving configuration values based on given keys.
+ */
 public class AppConfig implements Serializable {
+
+    public static final Pattern SPLITTER= Pattern.compile("\\s?,\\s?");
 
     public final String model;
     public final String imageModel;
@@ -44,79 +50,143 @@ public class AppConfig implements Serializable {
         Logger.debug(this.getClass().getName(), () -> "imageModel: " + imageModel);
         Logger.debug(this.getClass().getName(), () -> "imageSize: " + imageSize);
         Logger.debug(this.getClass().getName(), () -> "model: " + model);
-
     }
 
-    public static final Pattern SPLITTER= Pattern.compile("\\s?,\\s?");
-
+    /**
+     * Retrieves the API URL.
+     *
+     * @return the API URL
+     */
     public String getApiUrl() {
         return UtilMethods.isEmpty(apiUrl) ? "https://api.openai.com/v1/chat/completions" : apiUrl;
     }
 
+    /**
+     * Retrieves the API Image URL.
+     *
+     * @return the API Image URL
+     */
     public String getApiImageUrl() {
         return UtilMethods.isEmpty(apiImageUrl)? "https://api.openai.com/v1/images/generations" : apiImageUrl;
     }
 
+    /**
+     * Retrieves the API Key.
+     *
+     * @return the API Key
+     */
     public String getApiKey() {
         return apiKey;
     }
 
+    /**
+     * Retrieves the Role Prompt.
+     *
+     * @return the Role Prompt
+     */
     public String getRolePrompt() {
         return rolePrompt;
     }
 
+    /**
+     * Retrieves the Image Model.
+     *
+     * @return the Image Model
+     */
     public String getImageModel() {return imageModel;}
 
+    /**
+     * Retrieves the Text Prompt.
+     *
+     * @return the Text Prompt
+     */
     public String getTextPrompt() {
         return textPrompt;
     }
 
+    /**
+     * Retrieves the Image Prompt.
+     *
+     * @return the Image Prompt
+     */
     public String getImagePrompt() {
         return imagePrompt;
     }
 
+    /**
+     * Retrieves the Image Size.
+     *
+     * @return the Image Size
+     */
     public String getImageSize() {
         return imageSize;
     }
 
+    /**
+     * Retrieves the Model.
+     *
+     * @return the Model
+     */
     public String getModel() {
         return model;
     }
 
+    /**
+     * Retrieves the integer configuration value for a given key.
+     *
+     * @param appKey the key to retrieve the configuration value for
+     * @return the integer configuration value
+     */
     public int getConfigInteger(AppKeys appKey) {
         String value =  Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
         return Try.of(()->Integer.parseInt(value)).getOrElse(0);
     }
 
+    /**
+     * Retrieves the float configuration value for a given key.
+     *
+     * @param appKey the key to retrieve the configuration value for
+     * @return the float configuration value
+     */
     public float getConfigFloat(AppKeys appKey) {
         String value =  Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
         return Try.of(()->Float.parseFloat(value)).getOrElse(0f);
     }
 
+    /**
+     * Retrieves the boolean configuration value for a given key.
+     *
+     * @param appKey the key to retrieve the configuration value for
+     * @return the boolean configuration value
+     */
     public boolean getConfigBoolean(AppKeys appKey) {
         String value =  Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
         return Try.of(()->Boolean.parseBoolean(value)).getOrElse(false);
     }
 
+    /**
+     * Retrieves the array configuration value for a given key.
+     *
+     * @param appKey the key to retrieve the configuration value for
+     * @return the array configuration value
+     */
     public String[] getConfigArray(AppKeys appKey) {
         String returnValue = getConfig(appKey);
 
         return returnValue != null ? SPLITTER.split(returnValue) : new String[0];
-
     }
 
     /**
-     * this is needed to allow for custom config properties to be added to the APP
-     * defaults for the values can
+     * Retrieves the configuration value for a given key.
      *
-     * @param appKey
-     * @return
+     * @param appKey the key to retrieve the configuration value for
+     * @return the configuration value
      */
-
     public String getConfig(AppKeys appKey) {
         if (configValues.containsKey(appKey.key)) {
             return Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
         }
         return appKey.defaultValue;
     }
+
 }

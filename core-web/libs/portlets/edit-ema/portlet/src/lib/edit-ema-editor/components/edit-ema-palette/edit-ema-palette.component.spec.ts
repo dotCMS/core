@@ -237,6 +237,24 @@ describe('EditEmaPaletteComponent', () => {
                 contenttypeName: 'TestNameContentType'
             });
         });
+
+        it('should show contentlets from content type when a variant is present', () => {
+            spectator.setInput('variantId', 'cool-variant');
+            spectator.detectChanges();
+
+            const storeSpy = jest.spyOn(store, 'loadContentlets');
+            spectator.triggerEventHandler(
+                EditEmaPaletteContentTypeComponent,
+                'showContentlets',
+                'TestNameContentType'
+            );
+            expect(storeSpy).toHaveBeenCalledWith({
+                filter: '',
+                languageId: '1',
+                contenttypeName: 'TestNameContentType',
+                variantId: 'cool-variant'
+            });
+        });
     });
 
     describe('Contentlets', () => {
@@ -295,15 +313,23 @@ describe('EditEmaPaletteComponent', () => {
             });
         });
 
-        it('should show content types when component emits click on back button', () => {
-            const resetContentLetsSpy = jest.spyOn(store, 'resetContentlets');
-            spectator.triggerEventHandler(
-                EditEmaPaletteContentletsComponent,
-                'showContentTypes',
-                true
-            );
+        it('should load contentlets on paginate when a variant is present', () => {
+            spectator.setInput('variantId', 'cool-variant');
+            spectator.detectChanges();
 
-            expect(resetContentLetsSpy).toHaveBeenCalled();
+            const storeSpy = jest.spyOn(store, 'loadContentlets');
+            spectator.triggerEventHandler(EditEmaPaletteContentletsComponent, 'paginate', {
+                contentTypeVarName: 'TestNameContentType',
+                page: 1
+            });
+
+            expect(storeSpy).toHaveBeenCalledWith({
+                filter: '',
+                languageId: '1',
+                contenttypeName: 'TestNameContentType',
+                page: 1,
+                variantId: 'cool-variant'
+            });
         });
     });
 });
