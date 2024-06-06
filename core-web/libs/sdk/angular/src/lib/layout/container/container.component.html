@@ -4,7 +4,7 @@ $index) {
 <dotcms-contentlet-wrapper [contentlet]="contentlet" [container]="$dotContainerAsString()">
     <ng-container
         *ngComponentOutlet="
-            (componentsMap[contentlet.contentType] || componentsMap['Empty'] | async) ||
+            (componentsMap[contentlet.contentType] || componentsMap['CustomNoComponent'] | async) ||
                 NoComponent;
             inputs: { contentlet }
         " />

@@ -12,6 +12,7 @@ import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
 import { withExperiments } from "@dotcms/experiments";
+import { CustomNoComponent } from "./content-types/empty";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -30,7 +31,7 @@ const componentsMap = {
     Activity: Activity,
     Product: Product,
     Image: ImageComponent,
-    Empty: () => <div class="relative w-full bg-gray-200 h-12 flex justify-center items-center overflow-hidden">Dont have a component for this contentlet.</div>,
+    CustomNoComponent: CustomNoComponent,
 };
 
 export function MyPage({ pageAsset, nav }) {

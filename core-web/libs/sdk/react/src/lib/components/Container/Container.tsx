@@ -54,7 +54,7 @@ export function Container({ containerRef }: ContainerProps) {
 
     const ContainerChildren = contentlets.map((contentlet) => {
         const ContentTypeComponent = components[contentlet.contentType];
-        const DefaultComponent = components['Empty'] || NoComponent;
+        const DefaultComponent = components['CustomNoComponent'] || NoComponent;
 
         const Component = isInsideEditor
             ? ContentTypeComponent || DefaultComponent
