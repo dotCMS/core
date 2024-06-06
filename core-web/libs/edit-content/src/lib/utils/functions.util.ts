@@ -192,7 +192,7 @@ export const stringToJson = (value: string) => {
  * ```ts
  * const path = 'demo.com/level1/level2';
  * const paths = createPaths(path);
- * console.log(paths); // ['demo.com', 'demo.com/level1', 'demo.com/level1/level2']
+ * console.log(paths); // ['demo.com/', 'demo.com/level1/', 'demo.com/level1/level2/']
  * ```
  */
 export const createPaths = (path: string): string[] => {

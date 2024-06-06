@@ -35,5 +35,6 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
     [FIELD_TYPES.TEXT]: defaultResolutionFn,
     [FIELD_TYPES.TEXTAREA]: defaultResolutionFn,
     [FIELD_TYPES.TIME]: defaultResolutionFn,
-    [FIELD_TYPES.WYSIWYG]: defaultResolutionFn
+    [FIELD_TYPES.WYSIWYG]: defaultResolutionFn,
+    [FIELD_TYPES.CATEGORY]: defaultResolutionFn
 };
