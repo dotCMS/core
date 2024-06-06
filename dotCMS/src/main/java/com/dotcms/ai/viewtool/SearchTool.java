@@ -1,5 +1,6 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.util.ContentToStringUtil;
@@ -30,7 +31,6 @@ import java.util.Optional;
 public class SearchTool implements ViewTool {
 
     private static final String STACKTRACE_KEY = "stackTrace";
-    private static final String ERROR_KEY = "error";
 
     private final HttpServletRequest request;
     private final Host host;
@@ -66,7 +66,7 @@ public class SearchTool implements ViewTool {
         try {
             return EmbeddingsAPI.impl(host).searchForContent(searcher);
         } catch (Exception e) {
-            return Map.of(ERROR_KEY, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
+            return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
         }
     }
 
@@ -84,7 +84,7 @@ public class SearchTool implements ViewTool {
         try {
             return EmbeddingsAPI.impl(host).searchForContent(searcher);
         } catch (Exception e) {
-            return Map.of(ERROR_KEY, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
+            return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
         }
     }
 
@@ -96,7 +96,7 @@ public class SearchTool implements ViewTool {
      * @return the search results
      */
     public Object query(final String query) {
-        return query(query, "default");
+        return query(query, AiKeys.DEFAULT);
     }
 
     /**
@@ -139,7 +139,7 @@ public class SearchTool implements ViewTool {
                     .build();
             return EmbeddingsAPI.impl(host).searchForContent(searcher);
         } catch (Exception e) {
-            return Map.of(ERROR_KEY, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
+            return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
         }
     }
 

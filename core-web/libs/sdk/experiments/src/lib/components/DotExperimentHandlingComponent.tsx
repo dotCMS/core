@@ -24,7 +24,7 @@ export const DotExperimentHandlingComponent: React.FC<ExperimentHandlingProps> =
     WrappedComponent,
     ...props
 }) => {
-    const { shouldWaitForVariant } = useExperimentVariant(props.entity);
+    const { shouldWaitForVariant } = useExperimentVariant(props.pageContext.pageAsset);
 
     if (shouldWaitForVariant) {
         return (
