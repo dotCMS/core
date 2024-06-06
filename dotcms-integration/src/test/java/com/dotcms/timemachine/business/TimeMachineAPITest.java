@@ -1,22 +1,33 @@
 package com.dotcms.timemachine.business;
 
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.model.Template;
+
 import com.dotmarketing.util.Config;
+
 import com.dotmarketing.util.FileUtil;
-import junit.framework.TestCase;
-import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.Calendar;
 import java.util.stream.Collectors;
 
+import java.util.stream.Stream;
+
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 
 public class TimeMachineAPITest {
 
@@ -37,28 +48,47 @@ public class TimeMachineAPITest {
         final File tmTestingFolder = FileUtil.createTemporaryDirectory("tm_testing");
         final String timemachinePathPreviousValue = Config.getStringProperty("TIMEMACHINE_PATH", null);
 
+        final File assetFolder = new File(Config.getStringProperty("ASSET_REAL_PATH", null));
+        final File bundleFolder = new File(assetFolder, "bundles");
+        bundleFolder.mkdir();
+
         try {
             Config.setProperty("TIMEMACHINE_PATH", tmTestingFolder.toPath().toAbsolutePath().toString());
 
-            final List<File> expireFolders = createFiles(tmTestingFolder, "timeMachineBundle_expired_",
+            final List<File> expireFoldersInTimeMachine = createFiles(tmTestingFolder, "tm_expired_",
                     91, 100);
-            final List<File> notExpireFolders = createFiles(tmTestingFolder, "timeMachineBundle_not_expired_",
+            final List<File> notExpireFoldersInTimeMachine = createFiles(tmTestingFolder, "tm_not_expired_",
+                    45, 89);
+
+            final List<File> expireFoldersInBundle = createFiles(bundleFolder, "timeMachineBundle_expired_",
+                    91, 100);
+            final List<File> notExpireFoldersInBundle = createFiles(bundleFolder, "timeMachineBundle_not_expired_",
                     45, 89);
 
             final List<File> removedFiles = APILocator.getTimeMachineAPI().removeOldTimeMachineBackupsFiles();
 
+            final List<File> expireFolders = Stream
+                    .concat(expireFoldersInTimeMachine.stream(), expireFoldersInBundle.stream())
+                    .collect(Collectors.toList());
+
             assertEquals(expireFolders.size(), removedFiles.size());
             assertTrue(removeAll(expireFolders, removedFiles).isEmpty());
 
-            final File[] files = tmTestingFolder.listFiles();
-            assertEquals(notExpireFolders.size(), files.length);
-            assertTrue(removeAll(Arrays.asList(files), notExpireFolders).isEmpty());
+            final List<File> noExpireFolders = Stream
+                    .concat(notExpireFoldersInTimeMachine.stream(), notExpireFoldersInBundle.stream())
+                    .collect(Collectors.toList());
+
+            final List<File> files = Stream.concat(Arrays.stream(tmTestingFolder.listFiles()),
+                            Arrays.stream(bundleFolder.listFiles()))
+                    .collect(Collectors.toList());
+
+            assertTrue(noExpireFolders.size() <= files.size());
+            assertTrue(removeAll(noExpireFolders, files).isEmpty());
         } finally {
             Config.setProperty("TIMEMACHINE_PATH", timemachinePathPreviousValue);
         }
     }
 
-    @NotNull
     private static List<String> removeAll(final List<File> list1, final List<File> list2) {
         final List<String> list1Path = list1.stream()
                 .map(File::getAbsolutePath)
@@ -116,6 +146,8 @@ public class TimeMachineAPITest {
         final String timemachinePathPreviousValue = Config.getStringProperty("TIMEMACHINE_PATH", null);
 
         try {
+            Config.setProperty("TIMEMACHINE_PATH", tmTestingFolder.toPath().toAbsolutePath().toString());
+
             final List<File> expireFolders = createFiles(tmTestingFolder, "", 90, 100);
             final List<File> removedFiles = APILocator.getTimeMachineAPI().removeOldTimeMachineBackupsFiles();
             assertTrue(removedFiles.isEmpty());
@@ -128,4 +160,60 @@ public class TimeMachineAPITest {
             Config.setProperty("TIMEMACHINE_PATH", timemachinePathPreviousValue);
         }
     }
+
+    /**
+     * Method to test: {@link TimeMachineAPIImpl#getAvailableTimeMachineFolder()}
+     *
+     * when: Does not exist any Time Machine folder on the Time Machine Path
+     * should: return a empty list
+     *
+     * when: The {@link com.dotmarketing.quartz.job.TimeMachineJob run} the first time
+     * should: Return a List with one element
+     *
+     * when: The {@link com.dotmarketing.quartz.job.TimeMachineJob run} the second time
+     * should: Return a List with two elements
+     *
+     * when: The {@link com.dotmarketing.quartz.job.TimeMachineJob run} the third time
+     * should: Return a List with three elements
+     *
+     * Note: A {@link com.dotmarketing.beans.Host} with a {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}
+     * is created on the test to create not empty Time Machine folders
+     */
+    @Test
+    public void getAvailableTimeMachineFolder() throws IOException {
+        final File tmTestingFolder = FileUtil.createTemporaryDirectory("tm_testing");
+        final String timemachinePathPreviousValue = Config.getStringProperty("TIMEMACHINE_PATH", null);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        try {
+            Config.setProperty("TIMEMACHINE_PATH", tmTestingFolder.toPath().toAbsolutePath().toString());
+
+            final List<File> availableTimeMachineFolder_1 = APILocator.getTimeMachineAPI().getAvailableTimeMachineFolder();
+            assertTrue(availableTimeMachineFolder_1.isEmpty());
+
+            APILocator.getTimeMachineAPI().startTimeMachine(list(host), list(defaultLanguage), false);
+
+            final List<File> availableTimeMachineFolder_2 = APILocator.getTimeMachineAPI().getAvailableTimeMachineFolder();
+            assertEquals(1, availableTimeMachineFolder_2.size());
+
+            APILocator.getTimeMachineAPI().startTimeMachine(list(host), list(defaultLanguage), false);
+
+            final List<File> availableTimeMachineFolder_3 = APILocator.getTimeMachineAPI().getAvailableTimeMachineFolder();
+            assertEquals(2, availableTimeMachineFolder_3.size());
+
+            APILocator.getTimeMachineAPI().startTimeMachine(list(host), list(defaultLanguage), false);
+
+            final List<File> availableTimeMachineFolder_4 = APILocator.getTimeMachineAPI().getAvailableTimeMachineFolder();
+            assertEquals(3, availableTimeMachineFolder_4.size());
+        } finally {
+            Config.setProperty("TIMEMACHINE_PATH", timemachinePathPreviousValue);
+        }
+    }
+
 }

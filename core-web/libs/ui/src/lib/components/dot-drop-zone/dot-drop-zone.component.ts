@@ -82,9 +82,6 @@ export class DotDropZoneComponent {
         if (files.length === 0) return;
 
         this.setValidity(files);
-
-        dataTransfer.items?.clear();
-        dataTransfer.clearData();
         this.fileDropped.emit({
             file, // Only one file is allowed
             validity: this._validity

@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Provides access to Language Variable objects in the system, which allow you to associate a key to
@@ -147,6 +148,15 @@ public interface LanguageVariableAPI {
     List<LanguageVariable> findVariables(final long langId) throws DotDataException;
 
     /**
+     * Returns an Optional of {@link LanguageVariable} matching the specified language ID and key.
+     * @param languageId - The ID of the language that the variable was created for.
+     * @param key - The key to the Language Variable that starts with.
+     * @return Optional of Language Variables.
+     * @throws DotDataException - If an error occurs while retrieving the Language Variables.
+     */
+    Optional<LanguageVariable> findVariable(final long languageId, final String key) throws DotDataException;
+
+    /**
      * Returns a list of {@link LanguageVariable} that the key starts with the specified key and
      *
      * @param offset  - The offset of the list.
@@ -161,9 +171,15 @@ public interface LanguageVariableAPI {
     /**
      * Count content Variables
      * @return the number of content variables unique by key
-     * @throws DotDataException
      */
-    int countVariablesByKey() throws DotDataException;
+    int countVariablesByKey();
+
+    /**
+     * Count content Variables
+     * @param languageId - The ID of the language that the variable was created for.
+     * @return the number of content variables unique by key
+     */
+    int countVariablesByKey(final long languageId);
 
     /**
      * Invalidate the cache for the Language Variables

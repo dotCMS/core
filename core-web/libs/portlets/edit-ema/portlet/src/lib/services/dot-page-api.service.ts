@@ -38,6 +38,7 @@ export interface DotPageApiResponse {
     viewAs: {
         language: DotLanguage;
         persona?: DotPersona;
+        variantId?: string;
     };
     layout: DotLayout;
     template: DotTemplate;
@@ -52,6 +53,7 @@ export interface DotPageApiParams {
     variantName?: string;
     experimentId?: string;
     mode?: string;
+    clientHost?: string;
 }
 
 export interface GetPersonasParams {
@@ -83,7 +85,7 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    get(params: DotPageApiParams & { clientHost?: string }): Observable<DotPageApiResponse> {
+    get(params: DotPageApiParams): Observable<DotPageApiResponse> {
         // Remove trailing and leading slashes
         const url = params.url.replace(/^\/+|\/+$/g, '');
 

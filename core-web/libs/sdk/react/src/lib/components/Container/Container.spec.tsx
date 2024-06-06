@@ -74,7 +74,7 @@ describe('Container', () => {
 
             const container = getContainer({
                 containerRef: mockContainer,
-                containers: updatedContext.containers
+                containers: updatedContext.pageAsset.containers
             });
 
             const contentlet = screen.getByTestId('dot-contentlet');

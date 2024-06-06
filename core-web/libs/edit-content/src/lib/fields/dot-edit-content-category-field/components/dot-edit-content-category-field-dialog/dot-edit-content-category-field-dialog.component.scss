@@ -1,0 +1,31 @@
+@use "variables" as *;
+
+.category-field__dialog {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    margin: auto;
+}
+
+.category-field__left-pane,
+.category-field__right-pane {
+    padding: $spacing-3;
+    gap: $spacing-3;
+}
+
+.category-field__left-pane {
+    background-color: $color-palette-gray-300;
+}
+
+.category-field__selected-categories {
+    border: $field-border-size solid $color-palette-gray-400;
+    border-radius: $border-radius-sm;
+    padding: $spacing-3;
+}
+
+.category-field__actions {
+    gap: $spacing-1;
+}
+
+::ng-deep .category-field__dialog .p-dialog-content {
+    padding: 0;
+}

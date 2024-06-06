@@ -1,11 +1,14 @@
 package com.dotcms.rest.api.v2.languages;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.isLocalizationEnhancementsEnabled;
 import static com.dotmarketing.util.WebKeys.CONTENT_SELECTED_LANGUAGE;
 import static com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE;
 import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
 
 import com.dotcms.keyvalue.model.KeyValue;
+import com.dotcms.languagevariable.business.LanguageVariable;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
@@ -33,12 +36,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -72,19 +76,26 @@ import org.glassfish.jersey.server.JSONP;
 public class LanguagesResource {
 
     private final LanguageAPI languageAPI;
+
+    private final LanguageVariableAPI languageVariableAPI;
+
     private final WebResource webResource;
     private final com.dotcms.rest.api.v1.languages.LanguagesResource oldLanguagesResource;
 
     public LanguagesResource() {
         this(APILocator.getLanguageAPI(),
-                new WebResource(new ApiProvider()));
+             APILocator.getLanguageVariableAPI(),
+             new WebResource(new ApiProvider())
+        );
     }
 
     @VisibleForTesting
     public LanguagesResource(final LanguageAPI languageAPI,
-                                final WebResource webResource) {
+                             final LanguageVariableAPI languageVariableAPI,
+                             final WebResource webResource) {
 
         this.languageAPI  = languageAPI;
+        this.languageVariableAPI = languageVariableAPI;
         this.webResource  = webResource;
         this.oldLanguagesResource = new com.dotcms.rest.api.v1.languages.LanguagesResource(languageAPI, webResource, I18NUtil.INSTANCE);
     }
@@ -113,7 +124,7 @@ public class LanguagesResource {
             throw new DoesNotExistException("The language id = " + languageId + " does not exists");
         }
 
-        return Response.ok(new ResponseEntityView(new LanguageView(language))).build();
+        return Response.ok(new ResponseEntityView<>(new LanguageView(language, ()->isDefault(language)))).build();
     }
 
     @GET
@@ -121,9 +132,12 @@ public class LanguagesResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     /**
-     * return a array with all the languages
+     * return an array with all the languages
      */
-    public Response  list(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @QueryParam("contentInode") final String contentInode)
+    public Response list(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+            @QueryParam("contentInode") final String contentInode,
+             @QueryParam("countLangVars") final boolean countLangVars
+    )
             throws DotDataException, DotSecurityException {
 
         Logger.debug(this, () -> String.format("listing languages %s", request.getRequestURI()));
@@ -134,7 +148,15 @@ public class LanguagesResource {
         final List<Language> languages = contentInode != null ?
                 languageAPI.getAvailableContentLanguages(contentInode, user) :
                 languageAPI.getLanguages();
-
+        if (countLangVars){
+            //We calculate the total number of language variables once as this value is the same for all languages
+            final int total = languageVariableAPI.countVariablesByKey();
+            return Response.ok(
+                    new ResponseEntityView<>(languages.stream()
+                            .map(language -> withLangVarCounts(language, total))
+                            .collect(Collectors.toList())))
+                    .build();
+        }
         return Response.ok(
                 new ResponseEntityView<>(languages.stream()
                         .map(instanceLanguageView())
@@ -142,10 +164,30 @@ public class LanguagesResource {
                 .build();
     }
 
-    public Function<Language, LanguageView> instanceLanguageView() {
-        return LanguageView::new;
+    @VisibleForTesting
+    boolean isDefault(final Language language){
+        return language.getId() == languageAPI.getDefaultLanguage().getId();
     }
 
+    /**
+     * Returns a {@link LanguageView} with the total number of language variables and the number of language variables
+     * @param language {@link Language}
+     * @return {@link LanguageView}
+     */
+   LanguageView withLangVarCounts(final Language language, final int total){
+       final int langCount = languageVariableAPI.countVariablesByKey(language.getId());
+       return new LanguageView(language, ()->isDefault(language), ()->ImmutableLangVarsCount.builder().total(total).count(langCount).build());
+    }
+
+    public Function<Language, LanguageView> instanceLanguageView() {
+       return language -> new LanguageView(language, ()->isDefault(language));
+    }
+
+    /**
+     * Validates if the language exists in the system
+     * @param languageForm LanguageForm
+     * @return Language
+     */
     private Language validateLanguageExists(final LanguageForm languageForm) {
         DotPreconditions.checkArgument(UtilMethods.isSet(languageForm.getLanguageCode())
                         || UtilMethods.isSet(languageForm.getIsoCode()),
@@ -179,10 +221,11 @@ public class LanguagesResource {
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = validateLanguageExists(languageForm);
         if(null != language && language != LanguageCacheImpl.LANG_404){
-            return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
+            return Response.ok(new ResponseEntityView<>(language, List.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
+        final Language savedOrUpdateLanguage = saveOrUpdateLanguage(null, languageForm);
         return Response.ok(new ResponseEntityView<>(
-                new LanguageView(saveOrUpdateLanguage(null, languageForm))
+                new LanguageView(savedOrUpdateLanguage,()->isDefault(savedOrUpdateLanguage) )
         )).build(); // 200
     }
 
@@ -207,10 +250,11 @@ public class LanguagesResource {
 
         final Language language = validateLanguageExists(languageForm);
         if(null != language && language != LanguageCacheImpl.LANG_404){
-           return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
+           return Response.ok(new ResponseEntityView<>(language, List.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
+        final Language saveOrUpdateLanguage = saveOrUpdateLanguage(null, languageForm);
         return Response.ok(new ResponseEntityView<>(
-                new LanguageView(saveOrUpdateLanguage(null, languageForm))
+                new LanguageView(saveOrUpdateLanguage,()->isDefault(saveOrUpdateLanguage))
         )).build(); // 200
     }
 
@@ -237,7 +281,7 @@ public class LanguagesResource {
            return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(new ResponseEntityView<>(new LanguageView(language))).build();
+        return Response.ok(new ResponseEntityView<>(new LanguageView(language,()->isDefault(language) ))).build();
     }
 
     private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {
@@ -275,7 +319,7 @@ public class LanguagesResource {
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = saveOrUpdateLanguage(languageId, languageForm);
         return Response.ok(new ResponseEntityView<>(
-                new LanguageView(language)
+                new LanguageView(language, ()->isDefault(language))
         )).build(); // 200
     }
 
@@ -300,7 +344,7 @@ public class LanguagesResource {
         DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         final Language language = languageAPI.getLanguage(languageId);
         languageAPI.deleteLanguage(language);
-        return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
     }
 
     @POST
@@ -347,10 +391,6 @@ public class LanguagesResource {
     }
     
     
-    
-    
-    
-    
     /**
      * Gets all the Messages from the language passed.
      * If default is passed it will get the messages for the default language.
@@ -368,7 +408,7 @@ public class LanguagesResource {
     public Response getAllMessages (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("language") final String language){
+            @PathParam("language") final String language) throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(request, response)
                 .requiredAnonAccess(AnonymousAccess.READ)
@@ -377,36 +417,51 @@ public class LanguagesResource {
         final User user = initData.getUser();
 
         final Locale currentLocale=resolveAdminLocale(language);
-
+        
         //Messages in the properties file
-        final Map mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(currentLocale);
+        //These are the resources that are in the properties file added by developers to dotCMS so will always need this
+        final Map<?,?> mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(currentLocale);
 
-        final Map result = new TreeMap(mapPropertiesFile);
+        final Map<Object,Object> result = new TreeMap<>(mapPropertiesFile);
 
-        final Language language1 = APILocator.getLanguageAPI().getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
+        final Language language1 = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
         if(UtilMethods.isSet(language1)) {
-            //Language Keys
-            final Map mapLanguageKeys = APILocator.getLanguageAPI()
-                    .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
-                            Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 
-            result.putAll(mapLanguageKeys);
+            if(isLocalizationEnhancementsEnabled()) {
+                final Language matchingLang = languageAPI.getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
+                // Enhanced Language Vars
+                final List<LanguageVariable> variables = languageVariableAPI.findVariables(matchingLang.getId());
+                final Map<?,?> map = variables.stream().collect(
+                        Collectors.toMap(LanguageVariable::key, LanguageVariable::value, (value1,value2) ->{
+                            //Merge function is always a good idea to have.
+                            //There can be cases on which the "unique" constraint of the key is lifted allowing for duplicates
+                            Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
+                            return value1;
+                        }));
+                result.putAll(map);
+            } else {
+                //Language Keys
+                final Map <?,?> mapLanguageKeys = languageAPI
+                        .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
+                                Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 
-            //Language Variable
-            long langId = language1.getId();
-            final Map mapLanguageVariables = Try.of(()->APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith("", langId,
-                    user, -1)).getOrElse(ArrayList::new).stream().collect(Collectors.toMap(
-                    KeyValue::getKey,KeyValue::getValue, (value1,value2) ->{
-                        Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
-                        return value1;
-                    }));
+                result.putAll(mapLanguageKeys);
 
-            result.putAll(mapLanguageVariables);
+                //Legacy Language Variable
+                long langId = language1.getId();
+                final Map mapLanguageVariables = Try.of(()->APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith("", langId,
+                        user, -1)).getOrElse(ArrayList::new).stream().collect(Collectors.toMap(
+                        KeyValue::getKey,KeyValue::getValue, (value1,value2) ->{
+                            Logger.warn(this.getClass(),"Duplicate language variable found using latest value: " + value1);
+                            return value1;
+                        }));
+                result.putAll(mapLanguageVariables);
+            }
 
         }
 
 
-        return Response.ok(new ResponseEntityView(result)).build();
+        return Response.ok(new ResponseEntityView<>(result)).build();
     }
 
     /**
@@ -523,7 +578,34 @@ public class LanguagesResource {
         httpServletRequest.getSession().removeAttribute(HTMLPAGE_LANGUAGE);
         httpServletRequest.getSession().removeAttribute(CONTENT_SELECTED_LANGUAGE);
         return Response.ok(new ResponseEntityView<>(
-                new LanguageView(newDefault)
+                new LanguageView(newDefault, ()->isDefault(newDefault))
         )).build(); // 200
     }
+
+    @GET
+    @Path("/iso")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getIsoLanguagesAndCountries (
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response)  {
+
+        final List<Map<String, String>> languages = Arrays.stream(Locale.getISOLanguages())
+                .map(code -> Map.of("code", code, "name", new Locale(code).getDisplayLanguage()))
+                .sorted(Comparator.comparing(o -> o.get("name")))
+                .collect(Collectors.toList());
+
+        final List<Map<String, String>> countries = Arrays.stream(Locale.getISOCountries())
+                .map(code -> Map.of("code", code, "name", new Locale("", code).getDisplayCountry()))
+                .sorted(Comparator.comparing(o -> o.get("name")))
+                .collect(Collectors.toList());
+
+        return Response.ok(new ResponseEntityView<>(Map.of(
+                 "languages", languages,
+                 "countries", countries)
+               )
+        ).build();
+    }
+
 }

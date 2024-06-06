@@ -39,7 +39,7 @@ public class TemplateAjax {
 	TemplateAPI templateAPI;
 	HostAPI hostAPI;
 
-	public TemplateAjax () {
+	public TemplateAjax () { //NOSONAR
 		templateAPI = APILocator.getTemplateAPI();
 		userWebAPI = WebAPILocator.getUserWebAPI();
 		hostAPI = APILocator.getHostAPI();

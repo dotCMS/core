@@ -14,9 +14,6 @@
 
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
-        <java.version>11</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
         <cargo.tomcat.major.version>9</cargo.tomcat.major.version>
@@ -29,8 +26,6 @@
         <sonar.tests>apps,libs</sonar.tests>
         <sonar.test.inclusions>**/*.spec.ts</sonar.test.inclusions>
         <skip.core-web.updates>false</skip.core-web.updates>
-        <!-- Needs to match list in husky pre-commit hook change to have common source of this -->
-        <frontend.lint.excluded.projects>dot-rules,dot-layout-grid,dot-primeng-theme-styles,dot-rules,dotcms,dotcms-field-elements,dotcms-js,dotcms-models,dotcms-webcomponents,dotcdn-e2e,dotcms-block-editor,dotcms-block-editor-e2e,dotcms-ui-e2e,utils-testing,dojo-theme</frontend.lint.excluded.projects>
         <skip.validate>true</skip.validate>
         <git.origin.branch>origin/master</git.origin.branch>
         <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
@@ -292,7 +287,7 @@
                                 <!-- optional: the default phase is "generate-resources" -->
                                 <phase>generate-resources</phase>
                                 <configuration>
-                                    <arguments>npx nx affected --target=lint ${nx.affected.options} --parallel --exclude=${frontend.lint.excluded.projects}</arguments>
+                                    <arguments>nx affected -t lint --exclude='tag:skip:lint'</arguments>
                                 </configuration>
                             </execution>
                         </executions>
