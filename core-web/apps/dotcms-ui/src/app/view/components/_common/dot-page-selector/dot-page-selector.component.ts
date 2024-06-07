@@ -231,8 +231,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         return this.isSearchingForHost(query)
             ? SearchType.SITE
             : this.folderSearch
-              ? SearchType.FOLDER
-              : SearchType.PAGE;
+            ? SearchType.FOLDER
+            : SearchType.PAGE;
     }
 
     private getConditionalSearch(param: string): Observable<DotPageSelectorItem[]> {
@@ -301,8 +301,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         return cleanedQuery.startsWith('//')
             ? cleanedQuery
             : cleanedQuery.length >= 3
-              ? cleanedQuery
-              : '';
+            ? cleanedQuery
+            : '';
     }
 
     private cleanHost(query: string): string {

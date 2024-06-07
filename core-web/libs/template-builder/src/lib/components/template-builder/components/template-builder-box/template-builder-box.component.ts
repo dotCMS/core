@@ -66,10 +66,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
 
-    constructor(
-        private el: ElementRef,
-        private dotMessage: DotMessageService
-    ) {}
+    constructor(private el: ElementRef, private dotMessage: DotMessageService) {}
 
     private _dropdownLabel: string | null = null;
 

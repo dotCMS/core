@@ -19,10 +19,7 @@ window['mapsApiReady'] = () => {
 export class GoogleMapService {
     mapsApi$: BehaviorSubject<{ ready: boolean; error?: any }>;
     private destroy$ = new Subject<boolean>();
-    constructor(
-        private siteService: SiteService,
-        private dotSiteService: DotSiteService
-    ) {
+    constructor(private siteService: SiteService, private dotSiteService: DotSiteService) {
         this.loadApi(this.siteService.currentSite.identifier).subscribe();
         this.mapsApi$ = window['mapsApi$'];
         this.mapsApi$.subscribe();

@@ -3,7 +3,7 @@
     <span [innerHTML]="data.message"></span>
 </div>
 <div class="locale-confirmation__confirmation">
-    <span [innerHTML]="'locale.action.confirmation.text' | dm: [data.ISOCode]"></span>
+    <span [innerHTML]="'locale.action.confirmation.text' | dm : [data.ISOCode]"></span>
     <input #userKey pInputText data-testid="input" />
 </div>
 <div class="locale-confirmation__buttons">

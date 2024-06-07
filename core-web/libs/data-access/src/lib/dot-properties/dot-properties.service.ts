@@ -76,14 +76,11 @@ export class DotPropertiesService {
     getFeatureFlags(keys: FeaturedFlags[]): Observable<Record<string, boolean | string>> {
         return this.getKeys(keys).pipe(
             map((flags) => {
-                return Object.entries(flags).reduce(
-                    (acc, [key, value]) => {
-                        acc[key] = value === 'true' ? true : value === 'false' ? false : value;
+                return Object.entries(flags).reduce((acc, [key, value]) => {
+                    acc[key] = value === 'true' ? true : value === 'false' ? false : value;
 
-                        return acc;
-                    },
-                    {} as Record<string, boolean | string>
-                );
+                    return acc;
+                }, {} as Record<string, boolean | string>);
             })
         );
     }

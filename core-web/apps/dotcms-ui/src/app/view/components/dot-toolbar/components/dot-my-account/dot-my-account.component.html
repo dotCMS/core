@@ -55,7 +55,7 @@
                     {{ getRequiredMessage('email-address' | dm) }}
                 </span>
                 <span *ngIf="emailInput.errors && emailInput.errors.pattern">
-                    {{ 'errors.email' | dm: ['email-address' | dm] }}
+                    {{ 'errors.email' | dm : ['email-address' | dm] }}
                 </span>
             </small>
         </div>

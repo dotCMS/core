@@ -33,10 +33,7 @@ export class AppComponent implements OnInit {
     chartHeight = '25rem';
     options: CdnChartOptions;
 
-    constructor(
-        private fb: UntypedFormBuilder,
-        private dotCdnStore: DotCDNStore
-    ) {}
+    constructor(private fb: UntypedFormBuilder, private dotCdnStore: DotCDNStore) {}
 
     ngOnInit(): void {
         this.setChartOptions();

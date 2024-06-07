@@ -27,10 +27,7 @@ export class ApiRoot {
         return result;
     }
 
-    constructor(
-        authUser: UserModel,
-        private loggerService: LoggerService
-    ) {
+    constructor(authUser: UserModel, private loggerService: LoggerService) {
         this.authUser = authUser;
 
         try {

@@ -644,8 +644,8 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
             e = oe.touches.length
                 ? oe.touches[0]
                 : oe.changedTouches.length
-                  ? oe.changedTouches[0]
-                  : e;
+                ? oe.changedTouches[0]
+                : e;
         } else if (e.touches) {
             e = e.touches.length ? e.touches[0] : e.changedTouches.length ? e.changedTouches[0] : e;
         }

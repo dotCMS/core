@@ -9,7 +9,7 @@ import { ColumnComponent } from '../column/column.component';
     imports: [ColumnComponent],
     template: `@for (column of row.columns; track $index) {
         <dotcms-column [column]="column" />
-    }`,
+        }`,
     styleUrl: './row.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

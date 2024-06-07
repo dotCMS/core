@@ -1,7 +1,7 @@
 <div
     *ngIf="showAsCompare; else compareValue"
     [innerHTML]="
-        htmlWorkingValue$ | async | dotDiff: (htmlCompareValue$ | async) : showDiff | safeHtml
+        htmlWorkingValue$ | async | dotDiff : (htmlCompareValue$ | async) : showDiff | safeHtml
     "
     data-testId="div-compare"></div>
 

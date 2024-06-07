@@ -46,10 +46,7 @@ export class DotCommentAndAssignFormComponent
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotRolesService: DotRolesService,
-        public fb: UntypedFormBuilder
-    ) {}
+    constructor(private dotRolesService: DotRolesService, public fb: UntypedFormBuilder) {}
 
     ngOnInit() {
         if (this.data) {

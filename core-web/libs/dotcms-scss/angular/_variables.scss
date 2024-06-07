@@ -14,11 +14,8 @@
 @use "../shared/mixins" as *;
 
 $input-border-color-hover: $color-palette-primary;
-$input-inset-shadow:
-    inset 0 0 0 1px $color-palette-primary,
-    inset 0 0 0 1px $color-palette-primary,
-    inset 0 0 0 1px $color-palette-primary,
-    inset 0 0 0 1px $color-palette-primary;
+$input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
+    inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary;
 $input-border-color: $color-palette-gray-500;
 $input-border-color-focus: $color-palette-gray-500;
 $input-bg-color: $color-palette-gray-500;

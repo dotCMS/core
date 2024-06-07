@@ -24,12 +24,12 @@
     </dd>
 
     @if ($workflowStatus()?.task) {
-        <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
-        <dd
-            class="workflow-column__description"
-            aria-labelledby="assignee-title"
-            data-testId="workflow-assigned">
-            {{ $workflowStatus().task.assignedTo }}
-        </dd>
+    <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
+    <dd
+        class="workflow-column__description"
+        aria-labelledby="assignee-title"
+        data-testId="workflow-assigned">
+        {{ $workflowStatus().task.assignedTo }}
+    </dd>
     }
 </dl>

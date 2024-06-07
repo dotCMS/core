@@ -13,10 +13,7 @@ export class WebSocketProtocol extends Protocol {
     private socket: WebSocket;
     private errorThrown: boolean;
 
-    constructor(
-        private url: string,
-        loggerService: LoggerService
-    ) {
+    constructor(private url: string, loggerService: LoggerService) {
         super(loggerService);
 
         const match = new RegExp('wss?://').test(url);

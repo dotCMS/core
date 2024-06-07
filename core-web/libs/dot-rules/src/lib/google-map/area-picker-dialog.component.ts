@@ -55,10 +55,7 @@ export class AreaPickerDialogComponent implements OnChanges {
 
     private _prevCircle: GCircle;
 
-    constructor(
-        public mapsService: GoogleMapService,
-        private loggerService: LoggerService
-    ) {
+    constructor(public mapsService: GoogleMapService, private loggerService: LoggerService) {
         this.loggerService.debug('AreaPickerDialogComponent', 'constructor', this.mapId);
     }
 

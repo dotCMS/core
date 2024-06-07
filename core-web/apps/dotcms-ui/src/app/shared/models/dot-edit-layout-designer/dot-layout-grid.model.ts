@@ -35,10 +35,7 @@ const DEFAULT_CONFIG_FOR_NOT_EMPTY_GRID_TEMPLATE: Record<string, boolean | numbe
  */
 
 export class DotLayoutGrid {
-    constructor(
-        private dotLayoutGridBoxs: DotLayoutGridBox[],
-        private rowClasses: string[]
-    ) {}
+    constructor(private dotLayoutGridBoxs: DotLayoutGridBox[], private rowClasses: string[]) {}
 
     static getDefaultConfig(): NgGridItemConfig {
         return {

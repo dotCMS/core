@@ -1,5 +1,5 @@
 <span *ngIf="show" class="page-info__locked-by-message" #lockedPageMessage>
-    {{ 'editpage.toolbar.page.locked.by.user' | dm: [pageState.page.lockedByName] }}
+    {{ 'editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName] }}
 </span>
 
 <span *ngIf="!pageState.page.canEdit" class="page-info__cant-edit-message" #lockedPageMessage>

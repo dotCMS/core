@@ -89,10 +89,7 @@ export class ConditionComponent implements OnInit {
 
     typeDropdown: any;
 
-    constructor(
-        private _resources: I18nService,
-        private loggerService: LoggerService
-    ) {}
+    constructor(private _resources: I18nService, private loggerService: LoggerService) {}
 
     ngOnInit(): void {
         setTimeout(() => {

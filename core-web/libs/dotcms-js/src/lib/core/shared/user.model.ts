@@ -9,10 +9,7 @@ export class UserModel {
     locale: string;
     suppressAlerts = false;
 
-    constructor(
-        private loggerService: LoggerService,
-        @Inject(LOCALE_ID) localeId: string
-    ) {
+    constructor(private loggerService: LoggerService, @Inject(LOCALE_ID) localeId: string) {
         this.locale = localeId; // default to 'en-US'
         try {
             const url = window.location.search.substring(1);

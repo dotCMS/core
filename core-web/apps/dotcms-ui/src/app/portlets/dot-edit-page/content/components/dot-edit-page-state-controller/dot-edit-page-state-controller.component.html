@@ -32,7 +32,7 @@
         [disabled]="!pageState.page.canLock"
         [pTooltip]="
             pageState.state.lockedByAnotherUser && pageState.page.canEdit
-                ? ('editpage.toolbar.page.locked.by.user' | dm: [pageState.page.lockedByName])
+                ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
                 : null
         "
         [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"

@@ -24,10 +24,7 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private fb: UntypedFormBuilder,
-        private siteService: SiteService
-    ) {}
+    constructor(private fb: UntypedFormBuilder, private siteService: SiteService) {}
 
     ngOnInit() {
         this.initPersonaForm();

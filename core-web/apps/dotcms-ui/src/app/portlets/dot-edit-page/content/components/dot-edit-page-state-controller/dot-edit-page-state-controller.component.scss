@@ -43,9 +43,7 @@ p-inputSwitch {
             position: absolute;
             text-rendering: auto;
             top: 1px;
-            transition:
-                transform $basic-speed ease-in,
-                color $basic-speed ease-in;
+            transition: transform $basic-speed ease-in, color $basic-speed ease-in;
         }
 
         .p-inputswitch-checked .p-inputswitch-slider:after {

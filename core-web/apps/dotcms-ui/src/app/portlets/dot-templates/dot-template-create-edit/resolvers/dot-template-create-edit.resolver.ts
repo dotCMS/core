@@ -11,10 +11,7 @@ import { DotTemplate } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {
-    constructor(
-        private service: DotTemplatesService,
-        private dotRouterService: DotRouterService
-    ) {}
+    constructor(private service: DotTemplatesService, private dotRouterService: DotRouterService) {}
 
     resolve(route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<DotTemplate> {
         const inode = route.paramMap.get('inode');

@@ -187,10 +187,7 @@ $dot-table-cell-height: 1.25rem;
                     border: 0 none;
                     background: transparent;
                     border-radius: 50%;
-                    transition:
-                        background-color 0.2s,
-                        color 0.2s,
-                        box-shadow 0.2s;
+                    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
 
                     &:enabled:hover {
                         color: $text-color-hover;

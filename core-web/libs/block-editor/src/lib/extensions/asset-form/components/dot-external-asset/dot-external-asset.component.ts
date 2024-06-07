@@ -47,10 +47,7 @@ export class DotExternalAssetComponent {
         return this.form.controls.url?.invalid;
     }
 
-    constructor(
-        private fb: FormBuilder,
-        private cd: ChangeDetectorRef
-    ) {
+    constructor(private fb: FormBuilder, private cd: ChangeDetectorRef) {
         this.form = this.fb.group({
             url: ['', [Validators.required, Validators.pattern(regexURL)]]
         });

@@ -25,7 +25,7 @@
     <span
         [pTooltip]="
             pageState.state.lockedByAnotherUser && pageState.page.canEdit
-                ? ('editpage.toolbar.page.locked.by.user' | dm: [pageState.page.lockedByName])
+                ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
                 : ('lock.clipboard' | dm)
         "
         tooltipPosition="bottom"

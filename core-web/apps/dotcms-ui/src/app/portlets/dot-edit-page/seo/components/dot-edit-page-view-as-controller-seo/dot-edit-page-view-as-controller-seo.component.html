@@ -38,9 +38,9 @@
     rejectButtonStyleClass="p-button-outlined" />
 
 @if (showEditJSPDialog()) {
-    <dot-iframe-dialog
-        (custom)="customIframeDialog($event)"
-        (shutdown)="removeEditJSPDialog()"
-        [header]="pageState.page.title"
-        [url]="urlEditPageIframeDialog()" />
+<dot-iframe-dialog
+    (custom)="customIframeDialog($event)"
+    (shutdown)="removeEditJSPDialog()"
+    [header]="pageState.page.title"
+    [url]="urlEditPageIframeDialog()" />
 }
