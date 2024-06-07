@@ -1,9 +1,13 @@
 package com.dotcms.cli.command;
 
+import com.dotcms.api.client.model.ServiceManager;
+import com.dotcms.cli.common.DirectoryWatcherService;
 import com.dotcms.cli.common.DotExceptionHandler;
 import com.dotcms.cli.common.DotExecutionStrategy;
 import com.dotcms.cli.common.DotExitCodeExceptionMapper;
+import com.dotcms.cli.common.SubcommandProcessor;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import io.quarkus.arc.Arc;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import picocli.CommandLine;
@@ -35,7 +39,11 @@ class CustomConfigurationUtil {
     public CustomConfigurationUtil customize(CommandLine cmdLine) {
 
         cmdLine.setCaseInsensitiveEnumValuesAllowed(true)
-                .setExecutionStrategy(new DotExecutionStrategy(new CommandLine.RunLast()))
+                .setExecutionStrategy(new DotExecutionStrategy(
+                    new CommandLine.RunLast(), new SubcommandProcessor(),
+                    Arc.container().instance(DirectoryWatcherService.class).get(),
+                    Arc.container().instance(ServiceManager.class).get())
+                )
                 .setExecutionExceptionHandler(new DotExceptionHandler())
                 .setExitCodeExceptionMapper(new DotExitCodeExceptionMapper());
         return this;

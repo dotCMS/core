@@ -5,7 +5,7 @@ import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.model.config.ServiceBean;
-import io.quarkus.arc.Arc;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -33,13 +33,26 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
     private final IExecutionStrategy underlyingStrategy;
 
+    private final SubcommandProcessor processor;
+
+    private final DirectoryWatcherService watchService;
+
+    private final ServiceManager serviceManager;
+
+
     /**
      * Constructs a new instance of LoggingExecutionStrategy with the provided underlying strategy.
      *
      * @param underlyingStrategy the underlying strategy to use for execution
      */
-    public DotExecutionStrategy(IExecutionStrategy underlyingStrategy) {
+    @VisibleForTesting
+    public DotExecutionStrategy(final IExecutionStrategy underlyingStrategy,
+            final SubcommandProcessor processor, final DirectoryWatcherService watchService,
+            final ServiceManager serviceManager) {
         this.underlyingStrategy = underlyingStrategy;
+        this.processor = processor;
+        this.watchService = watchService;
+        this.serviceManager = serviceManager;
     }
 
     /**
@@ -55,7 +68,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
     public int execute(CommandLine.ParseResult parseResult)
             throws ExecutionException, ParameterException {
 
-        final Optional<CommandsChain> chain = SubcommandProcessor.process(parseResult);
+        final Optional<CommandsChain> chain = processor.process(parseResult);
 
         if (chain.isPresent()) {
             final CommandsChain commandsChain = chain.get();
@@ -119,14 +132,13 @@ public class DotExecutionStrategy implements IExecutionStrategy {
      * @param commandsChain  the CommandsChain object to check
      * @throws ExecutionException if no configuration exists
      */
-    private void verifyConfigExists(ParseResult parseResult, CommandsChain commandsChain) {
+    void verifyConfigExists(ParseResult parseResult, CommandsChain commandsChain) {
         final String parentCommand = commandsChain.firstSubcommand()
                 .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
 
         if (!ConfigCommand.NAME.equals(parentCommand)){
-            final ServiceManager manager = serviceManager();
             try {
-                final List<ServiceBean> services = manager.services();
+                final List<ServiceBean> services = serviceManager.services();
                 if (services.isEmpty()) {
                     throw new ExecutionException(
                             parseResult.commandSpec().commandLine(),
@@ -148,7 +160,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
      * @throws ExecutionException if an exception occurs during command execution
      * @throws ParameterException if there is an error with the command parameters
      */
-    private int internalExecute(final CommandsChain commandsChain,
+    int internalExecute(final CommandsChain commandsChain,
             final IExecutionStrategy underlyingStrategy,
             final ParseResult parseResult)
             throws ExecutionException, ParameterException {
@@ -204,11 +216,10 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         callDepth.set(callDepth.get() + 1);
     }
 
-    private int handleWatchPush(final IExecutionStrategy underlyingStrategy, final ParseResult parseResult, final DotPush push) {
+    int handleWatchPush(final IExecutionStrategy underlyingStrategy, final ParseResult parseResult, final DotPush push) {
         final PushMixin pushMixin = push.getPushMixin();
         push.getOutput().println("Running in Watch Mode on " + push.workingRootDir());
         try {
-
             return watch(underlyingStrategy, parseResult, push.workingRootDir(), pushMixin.interval);
         } catch (IOException e) {
             throw new ExecutionException(parseResult.commandSpec().commandLine(), "Failure starting watch service", e);
@@ -220,10 +231,10 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
     private int watch(final IExecutionStrategy underlyingStrategy, final ParseResult parseResult,
             final Path workingDir, final int interval) throws IOException, InterruptedException {
-        final DirectoryWatcherService service = watchService();
+
         int result = ExitCode.OK;
-        final BlockingQueue<WatchEvent<?>> eventQueue = service.watch(workingDir, interval);
-        while (service.isRunning()) {
+        final BlockingQueue<WatchEvent<?>> eventQueue = watchService.watch(workingDir, interval);
+        while (watchService.isRunning()) {
             final WatchEvent<?> event = eventQueue.take();
             if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
                 continue;
@@ -231,12 +242,12 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             try {
                 //Disengage the watch service to avoid recursion issues
                 //The command itself might trigger a file change
-                service.suspend();
+                watchService.suspend();
                 incCallDepth();
                 result = underlyingStrategy.execute(parseResult);
             } finally {
                 //Re-engage the watch mode
-                service.resume();
+                watchService.resume();
             }
         }
         return result;
@@ -258,21 +269,4 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         }
         return Optional.empty();
     }
-
-    /**
-     * Returns the ServiceManager instance declared at EntryCommand.
-     * @return the ServiceManager instance from the Arc container
-     */
-     ServiceManager serviceManager() {
-        return Arc.container().instance(ServiceManager.class).get();
-    }
-
-    /**
-     * Returns the DirectoryWatcherService instance declared at EntryCommand.
-     * @return the DirectoryWatcherService instance from the Arc container
-     */
-    DirectoryWatcherService watchService(){
-        return Arc.container().instance(DirectoryWatcherService.class).get();
-    }
-
 }

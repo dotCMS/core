@@ -19,16 +19,12 @@ import picocli.CommandLine.ParseResult;
  */
 public class SubcommandProcessor {
 
-    private SubcommandProcessor() {
-        //Utility class
-    }
-
     /**
      * This method will process the result of a command execution and return a CommandsChain object
      * @param subcommand the result of the command execution
      * @return an Optional of CommandsChain
      */
-    public static Optional<CommandsChain> process(final ParseResult subcommand){
+    public Optional<CommandsChain> process(final ParseResult subcommand){
 
         //If We're Looking only at EntryCommand this means that we're only displaying The main help screen and no subcommand therefore no need to process
         if(null == subcommand || EntryCommand.NAME.equals(subcommand.commandSpec().name()) && !subcommand.hasSubcommand()){
@@ -85,7 +81,7 @@ public class SubcommandProcessor {
      * @param subcommand the result of the command execution
      * @return true if the subcommand is the main command
      */
-    static boolean isMainCommand(ParseResult subcommand){
+    boolean isMainCommand(ParseResult subcommand){
         return EntryCommand.NAME.equals(subcommand.commandSpec().name());
     }
 
