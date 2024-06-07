@@ -47,9 +47,9 @@
         <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
         <dot-results-seo-tool
             *ngIf="pageState.seoMedia; else dotEditIframe"
+            [device]="pageState.viewAs.device"
             [hostName]="pageState.page.hostName"
             [seoMedia]="pageState.seoMedia"
-            [device]="pageState.viewAs.device"
             [seoOGTagsResults]="seoOGTagsResults"
             [seoOGTags]="seoOGTags"></dot-results-seo-tool>
         <ng-template #dotEditIframe>
@@ -84,10 +84,11 @@
                                 visibility: showWhatsChanged ? 'hidden' : '',
                                 position: showWhatsChanged ? 'absolute' : ''
                             }"
-                            class="dot-edit__iframe"
                             #iframe
+                            class="dot-edit__iframe"
                             frameborder="0"
                             height="100%"
+                            title="Edit Content"
                             width="100%"></iframe>
                     </div>
                 </div>

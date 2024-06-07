@@ -17,8 +17,7 @@ export default {
         validationMessage: 'This field is invalid',
         disabled: false,
         regexCheck: '',
-        type: 'text',
-        hint: 'This is a help message'
+        type: 'text'
     }
 };
 
