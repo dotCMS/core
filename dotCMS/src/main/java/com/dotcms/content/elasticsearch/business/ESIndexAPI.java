@@ -467,114 +467,7 @@ public class ESIndexAPI {
 		return Try.of(()->indexName.substring(indexName.lastIndexOf("_") + 1)).getOrNull();
 	}
 
-	/**
-	 * Restores an index from a backup file
-	 * @param backupFile
-	 * @param index
-	 * @throws IOException
-	 */
-	public  void restoreIndex(File backupFile, String index) throws IOException {
 
-        AdminLogger.log(this.getClass(), "restoreIndex", "Trying to restore index: " + index);
-
-        BufferedReader br = null;
-
-        boolean indexExists = indexExists(index);
-
-        try {
-            if (!indexExists) {
-
-                createIndex(index);
-            }
-
-            final ZipInputStream zipIn = new ZipInputStream(
-                    Files.newInputStream(backupFile.toPath()));
-            zipIn.getNextEntry();
-            br = new BufferedReader(new InputStreamReader(zipIn));
-
-            // wait a bit for the changes be made
-            Thread.sleep(1000L);
-
-            // setting up mapping
-            String mapping = br.readLine();
-            boolean mappingExists = mapping.startsWith(MAPPING_MARKER);
-            String type;
-            ArrayList<String> jsons = new ArrayList<>();
-            if (mappingExists) {
-
-                String patternStr = "^" + MAPPING_MARKER + "\\s*\\{\\s*\"(\\w+)\"";
-                Pattern pattern = Pattern.compile(patternStr);
-                Matcher matcher = pattern.matcher(mapping);
-                boolean matchFound = matcher.find();
-                if (matchFound) {
-                    type = matcher.group(1);
-
-                    // we recover the line that wasn't a mapping so it should be content
-
-                    ObjectMapper mapper = new ObjectMapper();
-                    while (br.ready()) {
-                        //read in 100 lines
-                        for (int i = 0; i < 100; i++) {
-                            if (!br.ready()) {
-                                break;
-                            }
-                            jsons.add(br.readLine());
-                        }
-
-                        if (jsons.size() > 0) {
-                            try {
-								BulkRequest request = new BulkRequest();
-								request.timeout(TimeValue.
-										timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-                                for (String raw : jsons) {
-                                    int delimidx = raw.indexOf(JSON_RECORD_DELIMITER);
-                                    if (delimidx > 0) {
-                                        String id = raw.substring(0, delimidx);
-                                        String json = raw.substring(
-                                                delimidx + JSON_RECORD_DELIMITER.length());
-                                        if (id != null) {
-                                            @SuppressWarnings("unchecked")
-                                            Map<String, Object> oldMap = mapper
-                                                    .readValue(json, HashMap.class);
-                                            Map<String, Object> newMap = new HashMap<>();
-
-                                            for (String key : oldMap.keySet()) {
-                                                Object val = oldMap.get(key);
-                                                if (val != null && UtilMethods
-                                                        .isSet(val.toString())) {
-                                                    newMap.put(key, oldMap.get(key));
-                                                }
-                                            }
-											request.add(new IndexRequest(getNameWithClusterIDPrefix(index), type, id)
-                                                    .source(mapper.writeValueAsString(newMap)));
-                                        }
-                                    }
-                                }
-                                if (request.numberOfActions() > 0) {
-                                	RestHighLevelClientProvider.getInstance().getClient()
-											.bulk(request, RequestOptions.DEFAULT);
-                                }
-                            } finally {
-                                jsons = new ArrayList<>();
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            throw new IOException(e.getMessage(), e);
-        } finally {
-            if (br != null) {
-                br.close();
-            }
-
-            final List<String> list = new ArrayList<>();
-            list.add(index);
-            optimize(list);
-
-            AdminLogger.log(this.getClass(), "restoreIndex", "Index restored: " + index);
-        }
-    }
 
 	/**
 	 * List of all indicies
@@ -605,7 +498,10 @@ public class ESIndexAPI {
 	 * @return
 	 */
 	public  boolean indexExists(String indexName) {
-		return listIndices().contains(indexName.toLowerCase());
+		if(listIndices().contains(indexName.toLowerCase())){
+			return true;
+		}
+		return listIndices().contains(removeClusterIdFromName(indexName.toLowerCase()));
 	}
 
 	/**
@@ -987,11 +883,14 @@ public class ESIndexAPI {
 					RestHighLevelClientProvider.getInstance().getClient().indices()
 							.get(request, RequestOptions.DEFAULT).getIndices()));
 
-			return indexes.stream()
-					.filter(indexName -> hasClusterPrefix(indexName))
+			List<String> returnVal = indexes.stream()
+					.filter(this::hasClusterPrefix)
 					.map(this::removeClusterIdFromName)
 					.sorted(new IndexSortByDate())
 					.collect(Collectors.toList());
+
+
+			return returnVal;
 		} catch (ElasticsearchStatusException | IOException e) {
 			Logger.warnAndDebug(ContentletIndexAPIImpl.class, "The list of indexes cannot be returned. Reason: " + e.getMessage(), e);
 		}
