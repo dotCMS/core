@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import java.util.function.Supplier;
 
 
@@ -41,6 +42,14 @@ public interface DeterministicIdentifierAPI {
      * @return generated deterministic id
      */
     String generateDeterministicIdBestEffort(ContentType contentType, Supplier<String> contentTypeVarName);
+
+    /**
+     * Entry point for Workflow Schemes
+     *
+     * @param scheme Workflow to generate the id for
+     * @return generated deterministic id
+     */
+    String generateDeterministicIdBestEffort(WorkflowScheme scheme);
 
     /**
      * Entry point for Fields

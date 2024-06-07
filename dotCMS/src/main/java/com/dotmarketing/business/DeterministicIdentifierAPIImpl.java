@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import static com.dotmarketing.util.UUIDUtil.isUUID;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -22,6 +24,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -31,16 +34,13 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.codec.digest.DigestUtils;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.util.UUIDUtil.isUUID;
+import org.apache.commons.codec.digest.DigestUtils;
 
 /**
  * This class is an implementation of the {@link DeterministicIdentifierAPI} interface.
@@ -410,6 +410,15 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
                 this::isContentTypeInode, uuidSupplier) : uuidSupplier.get();
     }
 
+    @CloseDBIfOpened
+    @Override
+    public String generateDeterministicIdBestEffort(final WorkflowScheme scheme) {
+
+        return isEnabled() ? bestEffortDeterministicId(
+                hash(scheme.getVariableName()),
+                this::isWorkflowId, uuidSupplier) : uuidSupplier.get();
+    }
+
     /**
      * Entry point for field id generation
      * @param throwAwayField a field that might or might not has been initialized
@@ -558,6 +567,19 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
                 .setSQL("SELECT count(*) as test  FROM inode, category WHERE inode.inode = category.inode AND inode.type = 'category' AND inode.inode =?")
                 .addParam(hash)
                 .getInt("test")>0;
+    }
+
+    /**
+     * Test the calculated hash has already been used as a workflow identifier
+     *
+     * @param hash the hash to test
+     * @return true if the hash has been used as a workflow identifier
+     */
+    private boolean isWorkflowId(final String hash) {
+        return new DotConnect()
+                .setSQL("SELECT count(*) as test FROM workflow_scheme WHERE id =?")
+                .addParam(hash)
+                .getInt("test") > 0;
     }
 
     /**
