@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "a1ab4e17-4b45-4f2c-b566-c62f708d5c06",
+		"_postman_id": "7b7931a7-d546-4f77-b4de-6cd7c851686b",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "31066048"
+		"_exporter_id": "3028555"
 	},
 	"item": [
 		{
@@ -4853,10 +4853,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"HTTP Status code must be 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Storing page data for subsequent tests\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.collectionVariables.set(\"pageDetailSiteId\", jsonData.entity.identifier);",
@@ -4870,21 +4866,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [],
 								"body": {
@@ -4917,10 +4898,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Storing page id and path for subsequent tests\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.collectionVariables.set(\"pageDetailPageId1\", jsonData.entity.identifier);",
@@ -4934,30 +4911,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"body": {
@@ -4994,10 +4947,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Storing page id and path for subsequent tests\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.collectionVariables.set(\"pageDetailPageId2\", jsonData.entity.identifier);",
@@ -5011,30 +4960,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"body": {
@@ -5071,10 +4996,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Storing content type id\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
@@ -5108,30 +5029,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [
 									{
@@ -5165,10 +5062,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"",
 											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId1\");",
@@ -5187,30 +5080,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -5237,10 +5106,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"",
 											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId2\");",
@@ -5258,30 +5123,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"body": {
@@ -5317,10 +5158,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"",
 											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId2\");",
@@ -5339,30 +5176,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -5389,10 +5202,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"",
 											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId1\");",
@@ -5410,30 +5219,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"body": {
@@ -5469,10 +5254,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"",
 											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId1\");",
@@ -5491,30 +5272,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -5541,10 +5298,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"",
 											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId2\");",
@@ -5562,30 +5315,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"body": {
@@ -5621,10 +5350,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"",
 											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId2\");",
@@ -5643,30 +5368,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -5693,10 +5394,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData).not.have.property('detailPage');",
@@ -5709,30 +5406,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"body": {
@@ -5768,10 +5441,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData).not.have.property('detailPage');",
@@ -5785,30 +5454,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -5835,10 +5480,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test page archived successfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"No errors must be present\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -5850,21 +5491,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [
 									{
@@ -5920,10 +5546,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test page archived successfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"No errors must be present\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -5935,21 +5557,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [
 									{
@@ -6005,10 +5612,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test page deleted successfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"No errors must be present\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -6020,21 +5623,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [
 									{
@@ -6090,10 +5678,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test page deleted successfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"No errors must be present\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -6105,21 +5689,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [
 									{
@@ -6175,8 +5744,12 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
+											"pm.test(\"Response entity contains 'deleted'\", function () {",
+											"  pm.expect(pm.response.json().entity).to.include(\"deleted\");",
+											"});",
+											"",
+											"pm.test(\"Errors array is empty\", function () {",
+											"  pm.expect(pm.response.json().errors).to.be.an('array').that.is.empty;",
 											"});"
 										],
 										"type": "text/javascript",
@@ -6185,30 +5758,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "DELETE",
 								"header": [],
 								"url": {
@@ -6235,8 +5784,14 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"HTTP Status code must be 200\", function () {",
-											"    pm.response.to.have.status(200);",
+											"pm.test(\"Entity archived property is true\", function () {",
+											"    var siteId= pm.collectionVariables.get(\"pageDetailSiteId\")",
+											"    pm.expect(pm.response.json().entity.identifier).contains(siteId);",
+											"    pm.expect(pm.response.json().entity.archived).to.be.true;",
+											"});",
+											"",
+											"pm.test(\"Errors array is empty\", function () {",
+											"  pm.expect(pm.response.json().errors).to.be.an('array').that.is.empty;",
 											"});",
 											""
 										],
@@ -6246,21 +5801,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"url": {
@@ -6286,10 +5826,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"HTTP Status code must be 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											""
+											"pm.test(\"Errors array is empty\", function () {",
+											"  pm.expect(pm.response.json().errors).to.be.an('array').that.is.empty;",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -6297,21 +5836,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "DELETE",
 								"header": [],
 								"url": {
@@ -6330,7 +5854,31 @@
 							"response": []
 						}
 					],
-					"description": "The `detailPage` attributte supports id and URI for updates, these tests validate both cases are working as expected."
+					"description": "The `detailPage` attributte supports id and URI for updates, these tests validate both cases are working as expected.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
 				},
 				{
 					"name": "Test create content type with detailPage as URI",
@@ -6342,10 +5890,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"HTTP Status code must be 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Storing page data for subsequent tests\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.collectionVariables.set(\"pageDetailSiteId\", jsonData.entity.identifier);",
@@ -6359,21 +5903,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [],
 								"body": {
@@ -6406,10 +5935,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Storing page id and path for subsequent tests\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.collectionVariables.set(\"pageDetailPageId1\", jsonData.entity.identifier);",
@@ -6423,30 +5948,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"body": {
@@ -6483,10 +5984,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Storing content type id\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
@@ -6520,29 +6017,142 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"sortOrder\": 3,\n    \"detailPage\": \"//{{pageDetailSiteName}}{{pageDetailPageURL1}}\",\n    \"urlMapPattern\" : \"/{name}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
 									]
+								},
+								"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+							},
+							"response": []
+						},
+						{
+							"name": "Try to create a page detail with non existing URI",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Correct response message\", function () {",
+											"    pm.expect(pm.response.json().message).to.include('Missing required information when creating Content Type(s):');",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"skipPreResquest\", false); "
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.set(\"skipPreResquest\", true); "
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"sortOrder\": 3,\n    \"detailPage\": \"//{{pageDetailSiteName}}11{{pageDetailPageURL1}}\",\n    \"urlMapPattern\" : \"/{name}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+							},
+							"response": []
+						},
+						{
+							"name": "Try to create ContentType with page detail as URI without credentials",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"",
+											"pm.test(\"Response content type is text/plain\", function () {",
+											"  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"text/plain\");",
+											"});",
+											"",
+											"pm.test(\"Check if the response is invalid\", function () {",
+											"  pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+											"});",
+											"",
+											"",
+											"pm.collectionVariables.set(\"skipPreResquest\", false);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.sendRequest({",
+											"    url: pm.environment.get(\"serverURL\") + \"/api/v1/logout\",",
+											"    method: 'GET'",
+											"}, function (err, res) {",
+											"    if (err) {",
+											"        console.log('Logout failed:', err);",
+											"    } else {",
+											"        console.log('Logout successful, cookies should be cleared.');",
+											"    }",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"skipPreResquest\", true);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
 								},
 								"method": "POST",
 								"header": [
@@ -6577,10 +6187,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"",
 											"    var pageId = pm.collectionVariables.get(\"pageDetailPageId1\");",
@@ -6599,30 +6205,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -6649,10 +6231,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData).not.have.property('detailPage');",
@@ -6665,30 +6243,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"body": {
@@ -6724,10 +6278,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Check detail page\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData).not.have.property('detailPage');",
@@ -6741,30 +6291,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -6791,10 +6317,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test page archived successfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"No errors must be present\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -6806,21 +6328,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [
 									{
@@ -6876,10 +6383,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test page deleted successfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"No errors must be present\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -6891,21 +6394,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [
 									{
@@ -6961,9 +6449,7 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code should be ok 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
+											""
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -6971,30 +6457,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "DELETE",
 								"header": [],
 								"url": {
@@ -7021,8 +6483,14 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"HTTP Status code must be 200\", function () {",
-											"    pm.response.to.have.status(200);",
+											"pm.test(\"Entity archived property is true\", function () {",
+											"    var siteId= pm.collectionVariables.get(\"pageDetailSiteId\")",
+											"    pm.expect(pm.response.json().entity.identifier).contains(siteId);",
+											"    pm.expect(pm.response.json().entity.archived).to.be.true;",
+											"});",
+											"",
+											"pm.test(\"Errors array is empty\", function () {",
+											"  pm.expect(pm.response.json().errors).to.be.an('array').that.is.empty;",
 											"});",
 											""
 										],
@@ -7032,21 +6500,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [],
 								"url": {
@@ -7072,10 +6525,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"HTTP Status code must be 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											""
+											"pm.test(\"Errors array is empty\", function () {",
+											"  pm.expect(pm.response.json().errors).to.be.an('array').that.is.empty;",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -7083,21 +6535,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "DELETE",
 								"header": [],
 								"url": {
@@ -7116,7 +6553,58 @@
 							"response": []
 						}
 					],
-					"description": "The `detailPage` attributte supports id and URI for updates, these tests validate both cases are working as expected."
+					"description": "The `detailPage` attributte supports id and URI for updates, these tests validate both cases are working as expected.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"skipPreResquest = pm.collectionVariables.get(\"skipPreResquest\");",
+									"",
+									"if (!skipPreResquest){",
+									"    pm.test(\"Status code is 200\", function () {",
+									"        pm.response.to.have.status(200);",
+									"    });",
+									"}"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "when specifying a detail page for a url mapped page, a user should be able to specify a path and not rely on an id, e.g. //demo.dotcms.com/blogs/detail-page",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -7691,7 +7179,7 @@
 												"does-not-exist"
 											]
 										},
-										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+										"description": "Given a content type ID and a payload containing content type properties.  \nExpect that code is 200.  \nExpect content type is updated without issues.  \nExpect that the new properties (icon and sortOrder) are updated with the new values."
 									},
 									"response": []
 								},
@@ -8571,6 +8059,16 @@
 			]
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
 	"event": [
 		{
 			"listen": "prerequest",
@@ -8578,13 +8076,14 @@
 				"type": "text/javascript",
 				"exec": [
 					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
 					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
 					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
 					"",
 					"    if (!pm.environment.get('jwt')) {",
-					"        const username = 'admin@dotcms.com';",
-					"        const password = 'admin';",
-					"        const basicAuth = btoa(`${username}:${password}`);",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
 					"",
 					"        const requestOptions = {",
 					"            url: apiUrl,",
@@ -8611,10 +8110,12 @@
 					"            } else {",
 					"                const jwt = response.json().entity.jwt;",
 					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
 					"            }",
 					"        });",
 					"    }",
-					"}"
+					"}",
+					""
 				]
 			}
 		},
@@ -8711,6 +8212,10 @@
 		},
 		{
 			"key": "contentTypeField1Variable",
+			"value": ""
+		},
+		{
+			"key": "skipPreResquest",
 			"value": ""
 		}
 	]
