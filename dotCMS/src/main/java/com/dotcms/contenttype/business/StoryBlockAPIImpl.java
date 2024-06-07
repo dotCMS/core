@@ -211,7 +211,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when retrieving Contentlet references from Story Block field: " +
-                    "%s", e.getMessage());
+                    "%s", ExceptionUtil.getErrorMessage(e));
             Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg,e);
             
         }
@@ -225,8 +225,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             this.addContentlet(storyBlockValueMap, contentlet);
             return this.toJson(storyBlockValueMap);
         } catch (final JsonProcessingException e) {
-            final String errorMsg = String.format("An error occurred when adding Contentlet '%s' to the Story Block " +
-                                                          "field: %s", contentlet.getIdentifier(), e.getMessage());
+            final String errorMsg = String.format("An error occurred when adding Contentlet '%s' to the Story Block field: " +
+                    "%s", contentlet.getIdentifier(), ExceptionUtil.getErrorMessage(e));
             Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg, e);
             return storyBlockValue;
         }
@@ -338,9 +338,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 dataMap.putAll(updatedDataMap);
             }
         } catch (final JsonProcessingException e) {
-            Logger.error(this, "An error occurred when transforming JSON data in contentlet with Inode '%s': %s", e);
-        } catch (DotDataException | DotSecurityException e) {
-            throw new RuntimeException(e);
+            Logger.error(this, String.format("An error occurred when transforming JSON data in contentlet with Inode " +
+                    "'%s': %s", inode, ExceptionUtil.getErrorMessage(e)), e);
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.error(this, String.format("An error occurred when retrieving contentlet with Inode " +
+                    "'%s': %s", inode, ExceptionUtil.getErrorMessage(e)), e);
         }
     }
 
@@ -380,7 +382,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     /**
-     * Refreshes the Contentlet data using the Contentlet from the API call to the DB
+     * Refreshes the Contentlet data using the Contentlet from the API call to the DB.
      *
      * @param contentlet The {@link Contentlet} with the latest properties.
      *
