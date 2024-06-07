@@ -15,6 +15,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
 import {
+    StatusRequest,
     TreeNodeItem,
     TreeNodeSelectItem
 } from '../../models/dot-edit-content-host-folder-field.interface';
@@ -43,12 +44,20 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     readonly #editContentService = inject(DotEditContentService);
 
     options = signal<TreeNodeItem[]>([]);
+    sitesStatus = signal<StatusRequest>('init');
     pathControl = new FormControl();
 
     ngOnInit() {
-        this.#editContentService.getSitesTreePath().subscribe((options) => {
-            this.options.set(options);
-            this.getInitialValue();
+        this.sitesStatus.set('loading');
+        this.#editContentService.getSitesTreePath().subscribe({
+            next: (options) => {
+                this.options.set(options);
+                this.getInitialValue();
+                this.sitesStatus.set('success');
+            },
+            error: () => {
+                this.sitesStatus.set('failed');
+            }
         });
     }
 
