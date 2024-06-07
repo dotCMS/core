@@ -563,6 +563,30 @@ export const WYSIWYG_MOCK: DotCMSContentTypeField = {
     variable: 'WYSIWYG'
 };
 
+export const CATEGORY_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
+    contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
+    dataType: 'TEXT',
+    fieldType: 'Category',
+    fieldTypeLabel: 'Category',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    iDate: 1698291913000,
+    id: '96909fa20a00497cd3b766b52edac0ec',
+    indexed: false,
+    listed: false,
+    modDate: 1698291913000,
+    name: 'Category',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 1,
+    unique: false,
+    values: '<p>HELLO</p>',
+    variable: 'Category'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -585,7 +609,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     CUSTOM_FIELD_MOCK,
     JSON_FIELD_MOCK,
     KEY_VALUE_MOCK,
-    WYSIWYG_MOCK
+    WYSIWYG_MOCK,
+    CATEGORY_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
@@ -1121,12 +1146,15 @@ export const MockResizeObserver = class {
     constructor() {
         //
     }
+
     observe() {
         //
     }
+
     unobserve() {
         //
     }
+
     disconnect() {
         //
     }
