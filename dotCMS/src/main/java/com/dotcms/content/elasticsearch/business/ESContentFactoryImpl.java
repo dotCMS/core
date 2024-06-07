@@ -926,6 +926,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if (storyBlockRefreshedResult.isRefreshed()) {
                 Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet '%s'",
                         cachedContentlet.getIdentifier()));
+
                 final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();
                 contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
                 return refreshedContentlet;
