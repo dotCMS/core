@@ -1,4 +1,4 @@
-package com.dotcms.api.client.util;
+package com.dotcms.cli.common;
 
 import io.quarkus.runtime.ShutdownEvent;
 import java.io.IOException;
@@ -24,6 +24,11 @@ import java.util.concurrent.TimeUnit;
 import javax.enterprise.event.Observes;
 import org.jboss.logging.Logger;
 
+/**
+ * Service that watches a directory for changes and registers events in a queue.
+ * You can not subscribe to events, but you can poll the queue for changes.
+ * This is by design to avoid losing the current thread context.
+ */
 @ApplicationScoped
 public class DirectoryWatcherService {
 
@@ -36,12 +41,23 @@ public class DirectoryWatcherService {
     private final AtomicBoolean suspended = new AtomicBoolean(false);
 
 
+    /**
+     * Creates a new DirectoryWatcherService
+     * @throws IOException if an I/O error occurs
+     */
     public DirectoryWatcherService() throws IOException {
         watchService = FileSystems.getDefault().newWatchService();
         scheduler = Executors.newScheduledThreadPool(1);
     }
 
 
+    /**
+     * Watch a directory for changes
+     * @param path the directory to watch
+     * @param pollIntervalSeconds the interval in seconds to poll for changes
+     * @return the event queue
+     * @throws IOException if an I/O error occurs
+     */
     @SuppressWarnings("java:S1452")
     public BlockingQueue<WatchEvent<?>> watch(Path path, long pollIntervalSeconds) throws IOException {
         registerAll(path);
@@ -51,6 +67,9 @@ public class DirectoryWatcherService {
         return eventQueue;
     }
 
+    /**
+     * Process events
+     */
     private void processEvents() {
         try{
             if (!suspended.get()) {
@@ -61,6 +80,9 @@ public class DirectoryWatcherService {
         }
     }
 
+    /**
+     * Poll events internally and add them to the queue
+     */
     private void pollEvents() {
         final WatchKey key = watchService.poll();
         logger.debug("Processing events  ");
@@ -77,22 +99,39 @@ public class DirectoryWatcherService {
         }
     }
 
+    /**
+     * Check if the service is running
+     * @return true if the service is running
+     */
     public boolean isRunning() {
         return running.get();
     }
 
+    /**
+     * Check if the service is suspended (Not processing events) but still running
+     * @return true if the service is suspended
+     */
     public boolean isSuspended() {
         return suspended.get();
     }
 
+    /**
+     * Suspend the service (Stop processing events)
+     */
     public void suspend() {
         suspended.set(true);
     }
 
+    /**
+     * Resume the service (Start processing events)
+     */
     public void resume() {
         suspended.set(false);
     }
 
+    /**
+     * Stop the service
+     */
     public void stop() {
         if (scheduler != null) {
             scheduler.shutdown();

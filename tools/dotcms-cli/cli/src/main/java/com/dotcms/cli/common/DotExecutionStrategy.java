@@ -1,7 +1,6 @@
 package com.dotcms.cli.common;
 
 import com.dotcms.api.client.model.ServiceManager;
-import com.dotcms.api.client.util.DirectoryWatcherService;
 import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
@@ -154,24 +153,55 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             final ParseResult parseResult)
             throws ExecutionException, ParameterException {
         try {
-            if (callDepth.get() >= 1) {
-                return underlyingStrategy.execute(parseResult);
+            if (isWatchModeAlreadyRunning()) {
+                   incCallDepth();
+                   return underlyingStrategy.execute(parseResult);
             }
-        } finally {
-            callDepth.set(callDepth.get() + 1);
-        }
-        if (commandsChain.isWatchMode()) {
-            //We need to figure out how to handle the watch
-            final Optional<DotCommand> optional = command(commandsChain);
-            if (optional.isPresent()) {
-                final DotCommand command = optional.get();
-                if (command instanceof DotPush) {
-                    final DotPush push = (DotPush) command;
-                    return handleWatchPush(underlyingStrategy, parseResult, push);
+
+            if (commandsChain.isWatchMode()) {
+                //We need to figure out how to handle the watch
+                final Optional<DotCommand> optional = command(commandsChain);
+                if (optional.isPresent()) {
+                    final DotCommand command = optional.get();
+                    if (command instanceof DotPush) {
+                        final DotPush push = (DotPush) command;
+                        return handleWatchPush(underlyingStrategy, parseResult, push);
+                    }
                 }
             }
+            incCallDepth();
+            return underlyingStrategy.execute(parseResult);
+        } finally {
+            // Decrement the call depth and remove ThreadLocal if it's zero
+            decCallDepth();
         }
-        return underlyingStrategy.execute(parseResult);
+    }
+
+    /**
+     * Checks if the watch mode is already running.
+     *
+     * @return true if the watch mode is already running, false otherwise
+     */
+    private boolean isWatchModeAlreadyRunning() {
+        return callDepth.get() > 0;
+    }
+
+    /**
+     * Decrements the call depth by one. If the call depth is zero, it removes the ThreadLocal.
+     */
+    private static void decCallDepth() {
+        int depth = callDepth.get() - 1;
+        callDepth.set(depth);
+        if (depth == 0) {
+            callDepth.remove();
+        }
+    }
+
+    /**
+     * Increments the call depth by one.
+     */
+    private static void incCallDepth() {
+        callDepth.set(callDepth.get() + 1);
     }
 
     private int handleWatchPush(final IExecutionStrategy underlyingStrategy, final ParseResult parseResult, final DotPush push) {
@@ -202,6 +232,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
                 //Disengage the watch service to avoid recursion issues
                 //The command itself might trigger a file change
                 service.suspend();
+                incCallDepth();
                 result = underlyingStrategy.execute(parseResult);
             } finally {
                 //Re-engage the watch mode

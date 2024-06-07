@@ -2,7 +2,7 @@ package com.dotcms.cli.command;
 
 import com.dotcms.api.client.model.AuthenticationParam;
 import com.dotcms.api.client.model.ServiceManager;
-import com.dotcms.api.client.util.DirectoryWatcherService;
+import com.dotcms.cli.common.DirectoryWatcherService;
 import com.dotcms.cli.command.contenttype.ContentTypeCommand;
 import com.dotcms.cli.command.files.FilesCommand;
 import com.dotcms.cli.command.language.LanguageCommand;
@@ -91,15 +91,14 @@ class CustomConfiguration {
     CommandLine customCommandLine(final PicocliCommandLineFactory factory) {
 
         final CommandLine cmdLine = factory.create();
-
-        var configurationUtil = CustomConfigurationUtil.getInstance();
-
-        // Injecting custom push mixins to the global push command
-        configurationUtil.injectPushMixins(cmdLine);
-        // Injecting custom pull mixins to the global pull command
-        configurationUtil.injectPullMixins(cmdLine);
-        // Customizing the CommandLine object
-        configurationUtil.customize(cmdLine);
+        CustomConfigurationUtil.newInstance()
+                // Injecting custom push mixins to the global push command
+                .injectPushMixins(cmdLine)
+                // Injecting custom pull mixins to the global pull command
+                .injectPullMixins(cmdLine)
+                // Customizing the CommandLine object
+                .customize(cmdLine)
+        ;
 
         return cmdLine;
     }

@@ -103,7 +103,7 @@ public class PushCommand implements Callable<Integer>, DotPush {
     CommandLine createCommandLine(DotPush command) {
 
         var cmdLine = new CommandLine(command);
-        CustomConfigurationUtil.getInstance().customize(cmdLine);
+        CustomConfigurationUtil.newInstance().customize(cmdLine);
 
         // Make sure unmatched arguments pass silently
         cmdLine.setUnmatchedArgumentsAllowed(true);

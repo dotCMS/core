@@ -151,10 +151,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
         if (workspace.isPresent()) {
             return workspace.get().contentTypes();
         }
-        throw new IllegalArgumentException(
-                String.format("No valid workspace found at path: [%s]",
-                        this.getPushMixin().pushPath.toPath())
-        );
+        throw new IllegalArgumentException("No valid workspace found.");
     }
 
 }

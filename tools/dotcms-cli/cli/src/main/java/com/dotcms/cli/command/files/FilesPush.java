@@ -309,9 +309,6 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         if (workspace.isPresent()) {
             return workspace.get().files();
         }
-        throw new IllegalArgumentException(
-                String.format("No valid workspace found at path: [%s]",
-                        this.getPushMixin().pushPath.toPath())
-        );
+        throw new IllegalArgumentException("No valid workspace found.");
     }
 }

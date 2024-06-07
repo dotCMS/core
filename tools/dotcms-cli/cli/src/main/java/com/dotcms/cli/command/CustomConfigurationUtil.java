@@ -3,6 +3,7 @@ package com.dotcms.cli.command;
 import com.dotcms.cli.common.DotExceptionHandler;
 import com.dotcms.cli.common.DotExecutionStrategy;
 import com.dotcms.cli.common.DotExitCodeExceptionMapper;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import picocli.CommandLine;
@@ -14,21 +15,14 @@ import picocli.CommandLine.Model.OptionSpec;
  */
 class CustomConfigurationUtil {
 
-    private static final CustomConfigurationUtil INSTANCE = new CustomConfigurationUtil();
-
-    private CustomConfigurationUtil() {
-        if (INSTANCE != null) {
-            throw new IllegalStateException("Singleton already constructed");
-        }
-    }
 
     /**
      * Returns the singleton instance of CustomConfigurationUtil.
      *
      * @return the singleton instance of CustomConfigurationUtil
      */
-    public static CustomConfigurationUtil getInstance() {
-        return INSTANCE;
+    public static CustomConfigurationUtil newInstance() {
+        return new CustomConfigurationUtil();
     }
 
     /**
@@ -37,12 +31,14 @@ class CustomConfigurationUtil {
      * @param cmdLine the CommandLine object to customize
      * @return the customized CommandLine object
      */
-    public void customize(CommandLine cmdLine) {
+    @CanIgnoreReturnValue
+    public CustomConfigurationUtil customize(CommandLine cmdLine) {
 
         cmdLine.setCaseInsensitiveEnumValuesAllowed(true)
                 .setExecutionStrategy(new DotExecutionStrategy(new CommandLine.RunLast()))
                 .setExecutionExceptionHandler(new DotExceptionHandler())
                 .setExitCodeExceptionMapper(new DotExitCodeExceptionMapper());
+        return this;
     }
 
     /**
@@ -50,7 +46,8 @@ class CustomConfigurationUtil {
      *
      * @param cmdLine the main entry command
      */
-    public void injectPushMixins(CommandLine cmdLine) {
+    @CanIgnoreReturnValue
+    public CustomConfigurationUtil injectPushMixins(CommandLine cmdLine) {
 
         // Looking for the global push command
         CommandSpec pushCommandSpec = cmdLine.getSubcommands().get(PushCommand.NAME)
@@ -74,6 +71,7 @@ class CustomConfigurationUtil {
                 }
             });
         }
+        return this;
     }
 
     /**
@@ -81,7 +79,8 @@ class CustomConfigurationUtil {
      *
      * @param cmdLine the main entry command
      */
-    public void injectPullMixins(CommandLine cmdLine) {
+    @CanIgnoreReturnValue
+    public CustomConfigurationUtil injectPullMixins(CommandLine cmdLine) {
 
         // Looking for the global pull command
         CommandSpec pullCommandSpec = cmdLine.getSubcommands().get(PullCommand.NAME)
@@ -105,6 +104,7 @@ class CustomConfigurationUtil {
                 }
             });
         }
+        return this;
     }
 
 }

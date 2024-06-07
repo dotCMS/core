@@ -159,10 +159,7 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>, 
         if (workspace.isPresent()) {
             return workspace.get().sites();
         }
-        throw new IllegalArgumentException(
-                String.format("No valid workspace found at path: [%s]",
-                        this.getPushMixin().pushPath.toPath())
-        );
+        throw new IllegalArgumentException("No valid workspace found.");
     }
 
 }
