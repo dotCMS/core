@@ -98,6 +98,13 @@ $select-border-size: 2px;
     margin: 0;
     border-top-right-radius: $border-radius-xs;
     border-top-left-radius: $border-radius-xs;
+    gap: $spacing-1;
+}
+
+#field-panel-empty-message {
+    padding: $spacing-2 $spacing-2;
+    color: $black;
+    background: transparent;
 }
 
 #field-panel-filter {
@@ -112,14 +119,26 @@ $select-border-size: 2px;
 
 #field-panel-icon-close {
     color: $color-palette-primary;
-    width: $spacing-5;
-    height: $spacing-5;
+    width: $spacing-6;
+    height: $spacing-6;
     border-radius: $border-radius-circular;
     transition: color 0.15s, box-shadow 0.15s;
+    border: 0 none;
+    background: transparent;
 
-    :focus {
+    &:hover {
+        background-color: $color-palette-primary-op-10;
+    }
+
+    &:active {
+        background-color: $color-palette-primary-op-20;
+    }
+
+    &:focus {
         outline: 0 none;
         outline-offset: 0;
+        background-color: transparent;
+        @include field-focus;
     }
 }
 

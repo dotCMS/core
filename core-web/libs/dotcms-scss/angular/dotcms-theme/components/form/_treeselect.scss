@@ -62,7 +62,6 @@
 
     .p-treeselect-header {
         @extend #field-panel-header;
-        gap: $spacing-1;
 
         .p-treeselect-filter-container {
             .p-treeselect-filter {
@@ -86,9 +85,7 @@
         }
 
         .p-tree-empty-message {
-            padding: $spacing-2 $spacing-2;
-            color: $black;
-            background: transparent;
+            @extend #field-panel-empty-message;
         }
     }
 }
