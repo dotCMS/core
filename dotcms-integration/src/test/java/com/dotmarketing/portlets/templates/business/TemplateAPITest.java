@@ -54,6 +54,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -6438,5 +6439,33 @@ public class TemplateAPITest extends IntegrationTestBase {
                 throw new AssertionError("Contententlet not expected: " + multiTree.getContentlet());
             }
         }
+    }
+
+    /**
+     * Method to test: Testing the #getImageContent method
+     * Given Scenario: Creates a CT + image + template and associated to the template as an image
+     * ExpectedResult: The image associated is recovery successfully from the db
+     *
+     */
+    @Test
+    public void getImageContentlet_Test() throws Exception {
+
+        final ContentType contentType  = new ContentTypeDataGen().nextPersisted();
+        final Contentlet templateImage = new ContentletDataGen(contentType).nextPersisted();
+        final String templateBody = "  This is just test<br/>  \n" +
+                "  #parseContainer   ('f4a02846-7ca4-4e08-bf07-a61366bbacbb','1552493847863')  \n" +
+                "  <p>This is just test</p>  \n" +
+                "  #parseContainer   ('/application/containers/test1/','1552493847864')  \n" +
+                "#parseContainer('/application/containers/test2/','1552493847868')\n" +
+                "#parseContainer('/application/containers/test3/'     ,'1552493847869'       )\n" +
+                "#parseContainer(    '/application/containers/test4/',    '1552493847870')\n";
+
+        final Template template = new TemplateDataGen().image(templateImage.getIdentifier()).drawedBody(templateBody).nextPersisted();
+
+        final TemplateAPI templateAPI = APILocator.getTemplateAPI();
+        final Optional<Contentlet> recoveryTemplateImage = templateAPI.getImageContentlet(template);
+
+        assertTrue(recoveryTemplateImage.isPresent());
+        assertEquals(templateImage.getIdentifier(), recoveryTemplateImage.get().getIdentifier());
     }
 }

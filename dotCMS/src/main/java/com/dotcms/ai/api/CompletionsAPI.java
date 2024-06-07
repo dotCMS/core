@@ -42,20 +42,20 @@ public interface CompletionsAPI {
     void summarizeStream(CompletionsForm searcher, OutputStream out);
 
     /**
-     * this method takes a prompt and returns the AI response based upon that prompt
-     *
-     * @param promptForm
-     * @return
-     */
-    JSONObject raw(CompletionsForm promptForm);
-
-    /**
      * this method takes a prompt in the form of json and returns a json AI response based upon that prompt
      *
      * @param promptJSON
      * @return
      */
     JSONObject raw(JSONObject promptJSON);
+
+    /**
+     * this method takes a prompt and returns the AI response based upon that prompt
+     *
+     * @param promptForm
+     * @return
+     */
+    JSONObject raw(CompletionsForm promptForm);
 
     /**
      * this method takes a prompt in the form of parameters and returns a json AI response based on the parameters
