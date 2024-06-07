@@ -174,7 +174,7 @@ public class VariantWebAPIImpl implements VariantWebAPI{
     @Override
     public ContentletVersionInfo getContentletVersionInfoByFallback(final long tryingLang, final String identifier,
             final PageMode pageMode, final User user) {
-        return getContentletVersionInfoByFallback(tryingLang, identifier, pageMode, user, false);
+        return getContentletVersionInfoByFallback(tryingLang, identifier, pageMode, user, true);
     }
 
     public ContentletVersionInfo getContentletVersionInfoByFallback(final long tryingLang, final String identifier,
@@ -240,6 +240,7 @@ public class VariantWebAPIImpl implements VariantWebAPI{
 
         return Boolean.TRUE.equals(contentlet.isHTMLPage()) ||
                 forceFallbackByContentType(type) ||
+                isFileFallback(type) ||
                 isContentletFallback(type) ||
                 isWidgetFallback(type);
     }
@@ -247,6 +248,11 @@ public class VariantWebAPIImpl implements VariantWebAPI{
     private static boolean isWidgetFallback(ContentType type) {
         return type.baseType() == BaseContentType.WIDGET
                 && APILocator.getLanguageAPI().canDefaultWidgetToDefaultLanguage();
+    }
+
+    private static boolean isFileFallback(ContentType type) {
+        return type.baseType() == BaseContentType.FILEASSET
+                && APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage();
     }
 
     private static boolean isContentletFallback(ContentType type) {
