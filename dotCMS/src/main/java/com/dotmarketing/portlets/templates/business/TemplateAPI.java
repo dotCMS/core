@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
@@ -20,6 +21,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Api to interact with Templates
@@ -439,4 +441,10 @@ public interface TemplateAPI {
     Template saveAndUpdateLayout(Template template, TemplateLayout newLayout, Host site, User user,
 								 boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Retrieve the image content associated to the template
+	 * @param template {@link Template}
+	 * @return Content
+	 */
+	Optional<Contentlet> getImageContentlet(Template template) throws DotDataException, DotSecurityException;
 }

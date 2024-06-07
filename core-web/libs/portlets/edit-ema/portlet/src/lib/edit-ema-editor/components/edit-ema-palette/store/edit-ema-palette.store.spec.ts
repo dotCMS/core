@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { SpectatorService } from '@ngneat/spectator';
 import { createServiceFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
@@ -147,7 +148,52 @@ describe('EditEmaPaletteStore', () => {
                     lang: '1',
                     filter: '',
                     offset: '0',
-                    query: '+contentType: TestContentType1 +deleted: false'
+                    query: '+contentType:TestContentType1 +deleted:false +variant:DEFAULT'
+                });
+                expect(patchStateSpy).toHaveBeenCalled();
+                expect(state).toEqual({
+                    contentlets: {
+                        filter: {
+                            query: '',
+                            contentTypeVarName: 'TestContentType1'
+                        },
+                        items: [],
+                        totalRecords: 0,
+                        itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
+                    },
+                    contenttypes: {
+                        filter: '',
+                        items: []
+                    },
+                    status: EditEmaPaletteStoreStatus.LOADED,
+                    currentContentType: 'TestContentType1',
+                    currentPaletteType: PALETTE_TYPES.CONTENTLET,
+                    allowedTypes: []
+                });
+                done();
+            });
+        });
+
+        it('should load contentlets with variant', (done) => {
+            const contentServiceSpy = jest.spyOn(spectator.inject(DotESContentService), 'get');
+            const patchStateSpy = jest.spyOn(spectator.service, 'patchState');
+
+            contentServiceSpy.mockClear(); // clear the spy because it had the register of the last call
+
+            spectator.service.loadContentlets({
+                filter: '',
+                contenttypeName: 'TestContentType1',
+                languageId: '1',
+                variantId: 'cool-variant'
+            });
+
+            spectator.service.vm$.subscribe((state) => {
+                expect(contentServiceSpy).toHaveBeenCalledWith({
+                    itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE,
+                    lang: '1',
+                    filter: '',
+                    offset: '0',
+                    query: '+contentType:TestContentType1 +deleted:false +variant:(DEFAULT OR cool-variant)'
                 });
                 expect(patchStateSpy).toHaveBeenCalled();
                 expect(state).toEqual({
