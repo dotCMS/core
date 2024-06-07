@@ -11,13 +11,11 @@ import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/for
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
-import { Site } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
 import {
     TreeNodeItem,
-    TreeNodeSelectEvent,
     TreeNodeSelectItem
 } from '../../models/dot-edit-content-host-folder-field.interface';
 import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
@@ -60,32 +58,33 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
         ) as FormControl<DotEditContentFieldSingleSelectableDataTypes>;
     }
 
-    onNodeSelect(event: TreeNodeSelectEvent<Site>) {
-        const label = event.node.label;
-        if (label) {
-            const split = label.split('/');
-            if (split.length > 0) {
-                const site = split[0];
-                const path = split.slice(1, split.length);
-                this.formControl.setValue(`${site}:/${path.join('/')}`);
-            }
+    onNodeSelect(event: TreeNodeSelectItem) {
+        const data = event.node.data;
+        if (!data) {
+            return;
         }
+
+        const path = `${data.hostname}:${data.path ? data.path : '/'}`;
+        this.formControl.setValue(path);
     }
 
     onNodeExpand(event: TreeNodeSelectItem) {
-        if (!event.node.children) {
-            const { hostname, path } = event.node.data;
-            this.#editContentService.getFoldersTreeNode(hostname, path).subscribe((children) => {
-                if (children.length > 0) {
-                    event.node.children = children;
-                } else {
-                    event.node.leaf = true;
-                    event.node.icon = 'pi pi-folder-open';
-                }
-
-                this.treeSelect.cd.detectChanges();
-            });
+        const children = event.node.children;
+        if (children && children.length > 0) {
+            return;
         }
+
+        const { hostname, path } = event.node.data;
+        this.#editContentService.getFoldersTreeNode(hostname, path).subscribe((children) => {
+            if (children.length > 0) {
+                event.node.children = children;
+            } else {
+                event.node.leaf = true;
+                event.node.icon = 'pi pi-folder-open';
+            }
+
+            this.treeSelect.cd.detectChanges();
+        });
     }
 
     getInitialValue() {

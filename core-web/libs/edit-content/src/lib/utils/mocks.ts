@@ -1232,7 +1232,20 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                     type: 'folder'
                 },
                 expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder'
+                collapsedIcon: 'pi pi-folder',
+                children: [
+                    {
+                        key: 'demo.dotcms.comlevel1child1',
+                        label: 'demo.dotcms.com/level1/child1/',
+                        data: {
+                            hostname: 'demo.dotcms.com',
+                            path: '/level1/child1/',
+                            type: 'folder'
+                        },
+                        expandedIcon: 'pi pi-folder-open',
+                        collapsedIcon: 'pi pi-folder'
+                    }
+                ]
             },
             {
                 key: 'demo.dotcms.comlevel2',
