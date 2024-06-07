@@ -28,7 +28,7 @@ export async function generateMetadata({ params, searchParams }) {
     return {
         title: data.entity.page.friendlyName || data.entity.page.title
     };
-}
+};
 
 export default async function Home({ searchParams, params }) {
     const requestData = {
@@ -46,6 +46,7 @@ export default async function Home({ searchParams, params }) {
         depth: 2,
         languageId: searchParams.language_id,
     });
+
     const { vanityUrl } = data.entity;
 
     if (vanityUrl) {
