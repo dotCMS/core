@@ -46,7 +46,7 @@ const getGraphQLPageQuery = ({ path, language_id, mode}) => {
                             location {
                                 title
                                 url
-                                # Related Fields
+                                # Related Contentlet
                                 activities {
                                     title
                                     urlMap
@@ -95,6 +95,14 @@ const getGraphQLPageQuery = ({ path, language_id, mode}) => {
             }
             viewAs {
                 mode
+                visitor {
+                  persona {
+                    name
+                  }
+                }
+                language {
+                  id
+                }
             }
         }
     }
