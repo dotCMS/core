@@ -5,7 +5,6 @@ import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
-import com.dotcms.model.config.Workspace;
 import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Inject;
