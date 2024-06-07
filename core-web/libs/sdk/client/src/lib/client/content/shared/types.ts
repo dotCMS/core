@@ -1,4 +1,5 @@
-import { Equals } from '../../../query-builder/lucene-syntax/Equals';
+import { Equals } from '../../../query-builder/lucene-syntax';
+import { QueryBuilder } from '../../../query-builder/sdk-query-builder';
 
 // Model to sort by fields
 export type SortBy = {
@@ -7,7 +8,7 @@ export type SortBy = {
 };
 
 // Callback to build a query
-export type QueryBuilderCallback = (qb: Equals) => Equals;
+export type BuildQuery = (qb: QueryBuilder) => Equals;
 
 // Main fields of a Contentlet (Inherited from the Content Type)
 export interface ContentTypeMainFields {
@@ -47,6 +48,18 @@ export interface ContentTypeMainFields {
 // The contentlet has the main fields and the custom fields of the content type
 export type Contentlet<T> = T & ContentTypeMainFields;
 
+export type OnFullfilled<T> =
+    | ((
+          value: GetCollectionResponse<T>
+      ) => GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>> | void)
+    | undefined
+    | null;
+
+export type OnRejected =
+    | ((error: GetCollectionError) => GetCollectionError | PromiseLike<GetCollectionError> | void)
+    | undefined
+    | null;
+
 // Response of the get collection method
 export interface GetCollectionResponse<T> {
     contentlets: Contentlet<T>[];
@@ -54,4 +67,18 @@ export interface GetCollectionResponse<T> {
     size: number;
     total: number;
     sortedBy?: SortBy[];
+}
+
+export interface GetCollectionRawResponse<T> {
+    entity: {
+        jsonObjectView: {
+            contentlets: Contentlet<T>[];
+        };
+        resultsSize: number;
+    };
+}
+
+export interface GetCollectionError {
+    status: number;
+    [key: string]: unknown;
 }
