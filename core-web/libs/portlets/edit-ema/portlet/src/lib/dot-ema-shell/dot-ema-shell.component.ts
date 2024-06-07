@@ -186,7 +186,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             language_id: queryParams['language_id'],
             url: queryParams['url'],
             'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id'],
-            variantName: queryParams['variantName']
+            variantName: queryParams['variantName'],
+            clientHost: queryParams['clientHost']
         };
     }
 
@@ -196,7 +197,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             .subscribe(([{ data }, queryParams]) => {
                 this.store.load({
                     ...(queryParams as DotPageApiParams),
-                    clientHost: data?.url
+                    clientHost: queryParams.clientHost ?? data?.url
                 });
             });
 
@@ -233,8 +234,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             this.activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
                 this.store.load({
-                    clientHost: data?.url,
-                    ...this.queryParams
+                    ...this.queryParams,
+                    clientHost: this.queryParams.clientHost ?? data?.url
                 });
             });
         }

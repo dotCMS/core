@@ -1,5 +1,6 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.service.OpenAIChatService;
@@ -152,7 +153,7 @@ public class AIViewTool implements ViewTool {
 
     private JSONObject handleException(final Throwable e) {
         final JSONObject jsonResponse = new JSONObject();
-        jsonResponse.put("error", e.getMessage());
+        jsonResponse.put(AiKeys.ERROR, e.getMessage());
         return jsonResponse;
     }
 
