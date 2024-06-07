@@ -1553,4 +1553,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		APILocator.getFolderAPI().subscribeFolderListener(appTemplateFolder, new ApplicationTemplateFolderListener(),
 				childName -> null != childName && (childName.endsWith(Constants.VELOCITY_FILE_EXTENSION) || childName.endsWith(Constants.JSON_FILE_EXTENSION)));
 	}
+
+	@CloseDBIfOpened
+	@Override
+	public Optional<Contentlet> getImageContentlet(final Template template) throws DotDataException, DotSecurityException {
+
+		return Optional.ofNullable(com.dotmarketing.portlets.templates.factories.TemplateFactory.getImageContentlet(template));
+	}
 }
