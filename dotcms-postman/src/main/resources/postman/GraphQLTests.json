@@ -256,6 +256,211 @@
 			"name": "Page API",
 			"item": [
 				{
+					"name": "Test DotAsset as titleImage",
+					"item": [
+						{
+							"name": "pre_ImportBundleWithTestPages",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"titleImageDotAsset.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream",
+										"uuid": "09453c85-59e1-457c-9465-d70d94f0a6b8"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment",
+										"uuid": "8eb2ebe4-d782-4fc2-a0a4-0a2873e6be3f"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/GraphQL/titleImageDotAsset.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/sync?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"sync"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n\n*   pp-test page with all the dependencies. pp-test page was created on a demo.dotcms.com site"
+							},
+							"response": []
+						},
+						{
+							"name": "GivenDotAssetAsTitleImage_RequestTitleImage_ShouldReturnInfo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"'page' element includes the requested titleImage attributes\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var page = jsonData.data.page;",
+											"    ",
+											"    if (page && page != undefined) {",
+											"    pm.expect(page[\"titleImage\"].name, 'FAILED:[titleImage.name]').equal(\"IMG_1645.PNG\");",
+											"    pm.expect(page[\"titleImage\"].idPath, 'FAILED:[titleImage.idPath]').contains(\"/dA/29b579cf11/asset/IMG_1645.PNG\");",
+											"    pm.expect(page[\"titleImage\"].versionPath, 'FAILED:[titleImage.versionPath]').equal(\"/dA/c443b663b0/asset/IMG_1645.PNG\");",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "User-Agent",
+										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+										"uuid": "f2495614-0e5f-4992-86d2-5ee735738fe5"
+									}
+								],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n  page(url:\"/mygraphqlpage\") {\n    \n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n  }\n}",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GivenNoImage_RequestTitleImage_ShouldNotFail",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"'page' element includes the requsted titleImage attributes as null\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var page = jsonData.data.page;",
+											"    ",
+											"    if (page && page != undefined) {",
+											"    pm.expect(page[\"titleImage\"].name, 'FAILED:[titleImage.name]').is.null;",
+											"    pm.expect(page[\"titleImage\"].idPath, 'FAILED:[titleImage.idPath]').is.null;",
+											"    pm.expect(page[\"titleImage\"].versionPath, 'FAILED:[titleImage.versionPath]').is.null;",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "User-Agent",
+										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+										"uuid": "f2495614-0e5f-4992-86d2-5ee735738fe5"
+									}
+								],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n  page(url:\"/pagenoimage\") {\n    \n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n  }\n}",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "Pre-Execution Requests",
 					"item": [
 						{
@@ -669,211 +874,6 @@
 										"site",
 										"switch",
 										"48190c8c-42c4-46af-8d1a-0cd5db894797"
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "Test DotAsset as titleImage",
-					"item": [
-						{
-							"name": "pre_ImportBundleWithTestPages",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Bundle uploaded sucessfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"",
-											"    var jsonData = pm.response.json();",
-											"    console.log(jsonData);",
-											"",
-											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"titleImageDotAsset.tar.gz\");",
-											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"type": "text",
-										"value": "application/octet-stream",
-										"uuid": "09453c85-59e1-457c-9465-d70d94f0a6b8"
-									},
-									{
-										"key": "Content-Disposition",
-										"type": "text",
-										"value": "attachment",
-										"uuid": "8eb2ebe4-d782-4fc2-a0a4-0a2873e6be3f"
-									}
-								],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "file",
-											"type": "file",
-											"src": "resources/GraphQL/titleImageDotAsset.tar.gz"
-										}
-									]
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/bundle/sync?sync=true",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"bundle",
-										"sync"
-									],
-									"query": [
-										{
-											"key": "sync",
-											"value": "true"
-										},
-										{
-											"key": "AUTH_TOKEN",
-											"value": "",
-											"disabled": true
-										}
-									]
-								},
-								"description": "Imports a Bundle that includes:\n\n*   pp-test page with all the dependencies. pp-test page was created on a demo.dotcms.com site"
-							},
-							"response": []
-						},
-						{
-							"name": "GivenDotAssetAsTitleImage_RequestTitleImage_ShouldReturnInfo",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"'page' element includes the requested titleImage attributes\", function () {",
-											"    var jsonData = pm.response.json();",
-											"    var page = jsonData.data.page;",
-											"    ",
-											"    if (page && page != undefined) {",
-											"    pm.expect(page[\"titleImage\"].name, 'FAILED:[titleImage.name]').equal(\"IMG_1645.PNG\");",
-											"    pm.expect(page[\"titleImage\"].idPath, 'FAILED:[titleImage.idPath]').equal(\"/dA/29b579cf11/asset/IMG_1645.PNG\");",
-											"    pm.expect(page[\"titleImage\"].versionPath, 'FAILED:[titleImage.versionPath]').equal(\"/dA/c443b663b0/asset/IMG_1645.PNG\");",
-											"    }",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"disabledSystemHeaders": {
-									"user-agent": true
-								}
-							},
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "User-Agent",
-										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
-										"uuid": "f2495614-0e5f-4992-86d2-5ee735738fe5"
-									}
-								],
-								"body": {
-									"mode": "graphql",
-									"graphql": {
-										"query": "{\n  page(url:\"/mygraphqlpage\") {\n    \n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n  }\n}",
-										"variables": ""
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/graphql",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"graphql"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "GivenNoImage_RequestTitleImage_ShouldNotFail",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"'page' element includes the requsted titleImage attributes as null\", function () {",
-											"    var jsonData = pm.response.json();",
-											"    var page = jsonData.data.page;",
-											"    ",
-											"    if (page && page != undefined) {",
-											"    pm.expect(page[\"titleImage\"].name, 'FAILED:[titleImage.name]').is.null;",
-											"    pm.expect(page[\"titleImage\"].idPath, 'FAILED:[titleImage.idPath]').is.null;",
-											"    pm.expect(page[\"titleImage\"].versionPath, 'FAILED:[titleImage.versionPath]').is.null;",
-											"    }",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"disabledSystemHeaders": {
-									"user-agent": true
-								}
-							},
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "User-Agent",
-										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
-										"uuid": "f2495614-0e5f-4992-86d2-5ee735738fe5"
-									}
-								],
-								"body": {
-									"mode": "graphql",
-									"graphql": {
-										"query": "{\n  page(url:\"/pagenoimage\") {\n    \n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n  }\n}",
-										"variables": ""
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/graphql",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"graphql"
 									]
 								}
 							},
