@@ -5,6 +5,7 @@ dojo.require("dotcms.dojo.data.TemplateReadStore");
 function templateChanged() {
     var templateSel=dijit.byId("templateSel");
     var value=templateSel.get('value');
+    console.log("temlateChanged", value);
     if(value == "0") {
         var store=window.top._templateStore;
         store.hostId="";
@@ -13,7 +14,17 @@ function templateChanged() {
     }
     else if(value) {
         dojo.byId("template").value=value;
-        TemplateAjax.fetchTemplateImage(value, dojo.hitch(getTemplateCallBack));
+        console.log("templateChanged", value);
+        const response = fetch("/api/v1/templates/image", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                templateId: value
+            })
+        });
+        getTemplateCallBack(response);
     }
 }
 
@@ -62,8 +73,18 @@ dojo.ready(function(){
     },"templateHolder");
     
     var val  = dojo.byId("template").value;
-    if (val != undefined && val != "0"){
-    	TemplateAjax.fetchTemplateImage(val, dojo.hitch(getTemplateCallBack));
+    if (val != undefined && val != "" && val != "0"){
+        console.log("dojo.ready1", val);
+        const response = fetch("/api/v1/templates/image", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                templateId: val
+            })
+        });
+        getTemplateCallBack(response);
     }
 
     var currentTemplateIdElement = dojo.byId("currentTemplateId");
@@ -75,6 +96,7 @@ dojo.ready(function(){
 
     var onTemplateFetchComplete = function(templates, currentRequest){
 
+        console.log("templates", templates);
         var normalizeKey = function (obj) {
             return obj.fullTitle.replace(new RegExp("\\("+obj.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
         }
@@ -92,12 +114,23 @@ dojo.ready(function(){
             var obj = templatesMap[normalizedTemplateName];
             if(obj){
                 var value = obj.identifier;
+                console.log("dojo.ready", value, obj);
                 var fullTitle = obj.fullTitle;
                 // We set the values directly into the components because setting it direcrtly into`templateSel` fires another load operation.
                 dojo.byId("currentTemplateId").value = value;
                 dojo.byId("template").value = value;
                 dijit.byId('templateSel').set("displayedValue", fullTitle);
-                TemplateAjax.fetchTemplateImage(value, dojo.hitch(getTemplateCallBack));
+                console.log("onTemplateFetchComplete", value, fullTitle);
+                const response = fetch("/api/v1/templates/image", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        templateId: value
+                    })
+                });
+                getTemplateCallBack(response);
             }
         }
     };
