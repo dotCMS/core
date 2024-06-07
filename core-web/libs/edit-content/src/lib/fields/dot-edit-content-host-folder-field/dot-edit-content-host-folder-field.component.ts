@@ -69,20 +69,18 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     }
 
     onNodeExpand(event: TreeNodeSelectItem) {
-        const children = event.node.children;
-        if (children && children.length > 0) {
+        const { node } = event;
+        const { children, icon } = node;
+        if ((children && children.length > 0) || icon?.includes('spinner')) {
             return;
         }
 
-        const { hostname, path } = event.node.data;
+        const { hostname, path } = node.data;
+        node.icon = 'pi pi-spin pi-spinner';
         this.#editContentService.getFoldersTreeNode(hostname, path).subscribe((children) => {
-            if (children.length > 0) {
-                event.node.children = children;
-            } else {
-                event.node.leaf = true;
-                event.node.icon = 'pi pi-folder-open';
-            }
-
+            node.leaf = true;
+            node.icon = 'pi pi-folder-open';
+            node.children = children;
             this.treeSelect.cd.detectChanges();
         });
     }

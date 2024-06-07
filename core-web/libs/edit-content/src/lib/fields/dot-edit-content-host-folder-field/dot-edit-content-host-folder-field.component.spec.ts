@@ -175,37 +175,75 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     });
 
     describe('Expand level: onNodeExpand', () => {
-        it('should update the form value with the correct format with root path', () => {
+        it('should not call getFoldersTreeNode when it is a node with children', () => {
             spectator.detectChanges();
             const mockItem = {
-                originalEvent: createFakeEvent('input'),
-                node: { ...TREE_SELECT_MOCK[0] }
+                originalEvent: createFakeEvent('select'),
+                node: {
+                    ...TREE_SELECT_MOCK[0]
+                }
             };
-            component.onNodeSelect(mockItem);
-            const value = component.formControl.value;
-            expect(value).toBe('demo.dotcms.com:/');
+            component.onNodeExpand(mockItem);
+            expect(service.getFoldersTreeNode).not.toHaveBeenCalled();
         });
 
-        it('should update the form value with the correct format with one level', () => {
+        it('should not call getFoldersTreeNode when it is a node is loading', () => {
             spectator.detectChanges();
             const mockItem = {
-                originalEvent: createFakeEvent('input'),
-                node: { ...TREE_SELECT_MOCK[0].children[0] }
+                originalEvent: createFakeEvent('select'),
+                node: {
+                    ...TREE_SELECT_MOCK[0],
+                    icon: 'spinner'
+                }
             };
-            component.onNodeSelect(mockItem);
-            const value = component.formControl.value;
-            expect(value).toBe('demo.dotcms.com:/level1/');
+            component.onNodeExpand(mockItem);
+            expect(service.getFoldersTreeNode).not.toHaveBeenCalled();
         });
 
-        it('should update the form value with the correct format with two level', () => {
+        it('should call getFoldersTreeNode when it is a node with no children', async () => {
+            const response = TREE_SELECT_MOCK[0].children;
+            service.getFoldersTreeNode.mockReturnValue(of(response));
             spectator.detectChanges();
+
+            await spectator.fixture.whenStable();
+
+            const treeDetectChangesSpy = jest.spyOn(component.treeSelect.cd, 'detectChanges');
+            const mockNode = { ...TREE_SELECT_SITES_MOCK[0] };
             const mockItem = {
-                originalEvent: createFakeEvent('input'),
-                node: { ...TREE_SELECT_MOCK[0].children[0].children[0] }
+                originalEvent: createFakeEvent('select'),
+                node: mockNode
             };
-            component.onNodeSelect(mockItem);
-            const value = component.formControl.value;
-            expect(value).toBe('demo.dotcms.com:/level1/child1/');
+            component.onNodeExpand(mockItem);
+            const hostName = mockNode.data.hostname;
+            const path = mockNode.data.path;
+            expect(service.getFoldersTreeNode).toHaveBeenCalledWith(hostName, path);
+            expect(mockNode.children).toBe(response);
+            expect(mockNode.leaf).toBe(true);
+            expect(mockNode.icon).toBe('pi pi-folder-open');
+            expect(treeDetectChangesSpy).toHaveBeenCalled();
+        });
+
+        it('should call getFoldersTreeNode when it is a node with no children and empty response', async () => {
+            const response = [];
+            service.getFoldersTreeNode.mockReturnValue(of(response));
+            spectator.detectChanges();
+
+            await spectator.fixture.whenStable();
+
+            const treeDetectChangesSpy = jest.spyOn(component.treeSelect.cd, 'detectChanges');
+            const mockNode = { ...TREE_SELECT_SITES_MOCK[0] };
+            const mockItem = {
+                originalEvent: createFakeEvent('select'),
+                node: mockNode
+            };
+            component.onNodeExpand(mockItem);
+            const hostName = mockNode.data.hostname;
+            const path = mockNode.data.path;
+            expect(service.getFoldersTreeNode).toHaveBeenCalledWith(hostName, path);
+            expect(mockNode.children).toBe(response);
+            expect(mockNode.leaf).toBe(true);
+            expect(mockNode.icon).toBe('pi pi-folder-open');
+            expect(treeDetectChangesSpy).toHaveBeenCalled();
         });
     });
 });
