@@ -84,6 +84,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	public void remove(WorkflowScheme scheme) {
 		if (scheme != null && UtilMethods.isSet(scheme)) {
 			cache.remove(scheme.getId(), getPrimaryGroup());
+			cache.remove(scheme.getVariableName(), getPrimaryGroup());
 		}
 	}
 
