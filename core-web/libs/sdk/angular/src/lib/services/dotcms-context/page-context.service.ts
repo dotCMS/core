@@ -4,7 +4,8 @@ import { Injectable } from '@angular/core';
 
 import { isInsideEditor } from '@dotcms/client';
 
-import { DotCMSPageAsset, DotCMSPageComponent, DotCMSPageContext } from '../../models';
+import { DotCMSPageComponent, DotCMSPageContext } from '../../models';
+import { DotCMSPageAsset } from '../../models/dotcms.model';
 
 @Injectable({
     providedIn: 'root'

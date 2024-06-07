@@ -1,5 +1,6 @@
 package com.dotcms.ai.rest;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.Marshaller;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
@@ -48,7 +49,7 @@ public class ImageResource {
     public final Response indexByInode(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response) {
 
-        return Response.ok(Map.of("type", "image"), MediaType.APPLICATION_JSON).build();
+        return Response.ok(Map.of(AiKeys.TYPE, AiKeys.IMAGE), MediaType.APPLICATION_JSON).build();
     }
 
     /**
@@ -67,7 +68,6 @@ public class ImageResource {
     public final Response indexByInode(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
                                        @QueryParam("prompt") final String prompt) throws IOException {
-
         final AIImageRequestDTO.Builder dto = new AIImageRequestDTO.Builder();
         dto.prompt(prompt);
         return handleImageRequest(request, response, dto.build());
@@ -88,7 +88,6 @@ public class ImageResource {
     public Response handleImageRequest(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
                                        final AIImageRequestDTO aiImageRequestDTO) throws IOException {
-
         final User user = new WebResource.InitBuilder(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(true)
@@ -103,14 +102,14 @@ public class ImageResource {
         if (UtilMethods.isEmpty(config.getApiKey())) {
             return Response
                     .status(Status.INTERNAL_SERVER_ERROR)
-                    .entity(Map.of("error", "App Config missing"))
+                    .entity(Map.of(AiKeys.ERROR, "App Config missing"))
                     .build();
         }
 
         if (StringUtils.isBlank(aiImageRequestDTO.getPrompt())) {
             return Response
                     .status(Status.BAD_REQUEST)
-                    .entity(Map.of("error", "`prompt` is required"))
+                    .entity(Map.of(AiKeys.ERROR, "`prompt` is required"))
                     .build();
         }
 

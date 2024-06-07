@@ -5,6 +5,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Theme;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
@@ -14,9 +15,12 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.templates.model.TemplateWrapper;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
@@ -70,6 +74,7 @@ public class TemplateHelper {
      * @return The {@link TemplateView} object with the Template data.
      */
     public TemplateView toTemplateView(final Template template, final User user) {
+
         final TemplateLayout layout = UtilMethods.isSet(template.getDrawedBody()) ?
                 DotTemplateTool.getTemplateLayout(template.getDrawedBody()) : null;
         final Theme templateTheme =
@@ -78,7 +83,19 @@ public class TemplateHelper {
         if (null != templateTheme) {
             template.setThemeName(templateTheme.getName());
         }
-        return new TemplateView.Builder()
+
+        Host parentHost = null;
+        if(template instanceof TemplateWrapper) {
+            parentHost = ((TemplateWrapper) template).getHost();
+        } else {
+            try{
+                parentHost = APILocator.getTemplateAPI().getTemplateHost(template);
+            }catch(DotDataException e){
+                Logger.warn(this, "Could not find host for template = " + template.getIdentifier());
+            }
+        }
+
+        final TemplateView.Builder builder = new TemplateView.Builder()
                 .name(template.getName())
                 .friendlyName(template.getFriendlyName())
                 .title(template.getTitle())
@@ -118,8 +135,29 @@ public class TemplateHelper {
                 .sortOrder(template.getSortOrder())
                 .layout(this.toLayoutView(layout))
                 .containers(this.findContainerInLayout(layout))
-                .themeInfo(null != templateTheme ? new ThemeView(templateTheme) : null)
-                .build();
+                .themeInfo(null != templateTheme ? new ThemeView(templateTheme) : null);
+
+        if (template.isAnonymous()){
+            try {
+                final String customLayoutTemplateLabel = LanguageUtil.get("editpage.properties.template.custom.label");
+                builder.fullTitle(customLayoutTemplateLabel);
+                builder.htmlTitle(customLayoutTemplateLabel);
+            } catch (LanguageException e) {
+                Logger.error(this.getClass(),
+                        "Exception on toTemplateView exception message: " + e.getMessage(), e);
+            }
+        } else if(parentHost != null) {
+            builder.hostName(parentHost.getHostname());
+            builder.hostId(parentHost.getIdentifier());
+
+            builder.fullTitle(template.getTitle() + " (" + parentHost.getHostname() + ")" );
+            builder.htmlTitle("<div>" + template.getTitle()  + "</div><small>" + parentHost.getHostname() + "</div></small>" );
+        } else {
+            builder.fullTitle(template.getTitle());
+            builder.htmlTitle(template.getTitle());
+        }
+
+        return builder.build();
     }
 
     public TemplateLayout toTemplateLayout(final TemplateLayoutView templateLayoutView) {

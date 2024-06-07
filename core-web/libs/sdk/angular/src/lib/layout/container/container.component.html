@@ -4,14 +4,12 @@ $index) {
 <dotcms-contentlet-wrapper [contentlet]="contentlet" [container]="$dotContainerAsString()">
     <ng-container
         *ngComponentOutlet="
-            (componentsMap[contentlet.contentType] | async) || NoComponent;
+            (componentsMap[contentlet.contentType] || componentsMap['CustomNoComponent'] | async) ||
+                NoComponent;
             inputs: { contentlet }
         " />
 </dotcms-contentlet-wrapper>
 } } @else { This container is empty. } } @else { @for (contentlet of $contentlets(); track $index) {
 <ng-container
-    *ngComponentOutlet="
-        (componentsMap[contentlet.contentType] | async) || NoComponent;
-        inputs: { contentlet }
-    " />
+    *ngComponentOutlet="componentsMap[contentlet.contentType] | async; inputs: { contentlet }" />
 } }

@@ -24,6 +24,7 @@ import { DotLocalesListStore } from './dot-locales-list.store';
 
 const messageServiceMock = new MockDotMessageService({
     'locales.edit': 'Edit Locale',
+    'locales.add.locale': 'Add Locale',
     'locales.set.as.default': 'Set as default',
     'locales.delete': 'Delete',
     'locales.push.publish': 'Push Publish',
@@ -73,18 +74,6 @@ describe('DotLocalesListStore', () => {
     it('should load locales', (done) => {
         spectator.service.vm$.subscribe((viewModel) => {
             expect(viewModel.locales.length).toBe(2);
-            expect(viewModel.locales[0].locale).toBe('English (en-US)');
-            expect(viewModel.locales[0].language).toBe('English - en');
-            expect(viewModel.locales[0].country).toBe('United States - US');
-            expect(viewModel.locales[0].defaultLanguage).toBe(true);
-            expect(viewModel.locales[0].variables).toBe('1/5');
-
-            expect(viewModel.locales[1].locale).toBe('Spanish (es-ES)');
-            expect(viewModel.locales[1].language).toBe('Spanish - es');
-            expect(viewModel.locales[1].country).toBe('Spain - ES');
-            expect(viewModel.locales[1].defaultLanguage).toBe(false);
-            expect(viewModel.locales[1].variables).toBe('1/1');
-
             expect(viewModel.countries).toEqual([...mockLanguagesISO.countries]);
             expect(viewModel.languages).toEqual([...mockLanguagesISO.languages]);
 

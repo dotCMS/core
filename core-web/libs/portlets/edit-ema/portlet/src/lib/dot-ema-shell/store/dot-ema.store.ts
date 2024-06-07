@@ -366,83 +366,79 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     /**
      * Concurrently loads page and license data to updat the state.
      *
-     * @param {Observable<DotPageApiParams & { clientHost: string }>} params$ - Parameters for HTTP requests.
+     * @param {Observable<DotPageApiParams>} params$ - Parameters for HTTP requests.
      * @returns {Observable<any>} Response of the HTTP requests.
      */
-    readonly load = this.effect(
-        (params$: Observable<DotPageApiParams & { clientHost?: string }>) => {
-            return params$.pipe(
-                switchMap((params) => {
-                    return forkJoin({
-                        pageData: this.dotPageApiService.get(params),
-                        licenseData: this.dotLicenseService
-                            .isEnterprise()
-                            .pipe(take(1), shareReplay()),
-                        currentUser: this.loginService.getCurrentUser()
-                    }).pipe(
-                        tap({
-                            error: ({ status }: HttpErrorResponse) => {
-                                this.createEmptyState({ canEdit: false, canRead: false }, status);
-                            }
-                        }),
-                        switchMap(({ pageData, licenseData, currentUser }) =>
-                            this.getExperiment(params.experimentId).pipe(
-                                tap({
-                                    next: (experiment) => {
-                                        // Can be blocked by an experiment if there is a running experiment or a scheduled one
-                                        const editingBlockedByExperiment = [
-                                            DotExperimentStatus.RUNNING,
-                                            DotExperimentStatus.SCHEDULED
-                                        ].includes(experiment?.status);
+    readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
+        return params$.pipe(
+            switchMap((params) => {
+                return forkJoin({
+                    pageData: this.dotPageApiService.get(params),
+                    licenseData: this.dotLicenseService.isEnterprise().pipe(take(1), shareReplay()),
+                    currentUser: this.loginService.getCurrentUser()
+                }).pipe(
+                    tap({
+                        error: ({ status }: HttpErrorResponse) => {
+                            this.createEmptyState({ canEdit: false, canRead: false }, status);
+                        }
+                    }),
+                    switchMap(({ pageData, licenseData, currentUser }) =>
+                        this.getExperiment(params.experimentId).pipe(
+                            tap({
+                                next: (experiment) => {
+                                    // Can be blocked by an experiment if there is a running experiment or a scheduled one
+                                    const editingBlockedByExperiment = [
+                                        DotExperimentStatus.RUNNING,
+                                        DotExperimentStatus.SCHEDULED
+                                    ].includes(experiment?.status);
 
-                                        const isDefaultVariant = getIsDefaultVariant(
-                                            params.variantName
-                                        );
+                                    const isDefaultVariant = getIsDefaultVariant(
+                                        params.variantName
+                                    );
 
-                                        // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
-                                        const canEditVariant =
-                                            isDefaultVariant || !editingBlockedByExperiment;
+                                    // I can edit the variant if the variant is the default one (default can be undefined as well) or if there is no running experiment
+                                    const canEditVariant =
+                                        isDefaultVariant || !editingBlockedByExperiment;
 
-                                        const isLocked =
-                                            pageData.page.locked &&
-                                            pageData.page.lockedBy !== currentUser.userId;
+                                    const isLocked =
+                                        pageData.page.locked &&
+                                        pageData.page.lockedBy !== currentUser.userId;
 
-                                        const mode = this.getInitialEditorMode({
-                                            isDefaultVariant,
+                                    const mode = this.getInitialEditorMode({
+                                        isDefaultVariant,
+                                        canEditVariant,
+                                        isLocked
+                                    });
+
+                                    return this.setState({
+                                        currentExperiment: experiment,
+                                        clientHost: params.clientHost,
+                                        editor: pageData,
+                                        isEnterpriseLicense: licenseData,
+                                        editorState: EDITOR_STATE.IDLE,
+                                        bounds: [],
+                                        contentletArea: null,
+                                        editorData: {
+                                            mode,
                                             canEditVariant,
-                                            isLocked
-                                        });
-
-                                        return this.setState({
-                                            currentExperiment: experiment,
-                                            clientHost: params.clientHost,
-                                            editor: pageData,
-                                            isEnterpriseLicense: licenseData,
-                                            editorState: EDITOR_STATE.IDLE,
-                                            bounds: [],
-                                            contentletArea: null,
-                                            editorData: {
-                                                mode,
-                                                canEditVariant,
-                                                canEditPage: pageData.page.canEdit,
-                                                variantId: params.variantName,
-                                                page: {
-                                                    isLocked,
-                                                    canLock: pageData.page.canLock,
-                                                    lockedByUser: pageData.page.lockedByName
-                                                }
-                                            },
-                                            shouldReload: true
-                                        });
-                                    }
-                                })
-                            )
+                                            canEditPage: pageData.page.canEdit,
+                                            variantId: params.variantName,
+                                            page: {
+                                                isLocked,
+                                                canLock: pageData.page.canLock,
+                                                lockedByUser: pageData.page.lockedByName
+                                            }
+                                        },
+                                        shouldReload: true
+                                    });
+                                }
+                            })
                         )
-                    );
-                })
-            );
-        }
-    );
+                    )
+                );
+            })
+        );
+    });
 
     readonly reload = this.effect((payload$: Observable<ReloadPagePayload>) => {
         return payload$.pipe(
