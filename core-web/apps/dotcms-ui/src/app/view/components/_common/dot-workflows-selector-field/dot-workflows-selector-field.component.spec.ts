@@ -27,8 +27,7 @@ const messageServiceMock = new MockDotMessageService({
     template: `
         <form [formGroup]="form">
             <dot-workflows-selector-field
-                formControlName="workflows"
-            ></dot-workflows-selector-field>
+                formControlName="workflows"></dot-workflows-selector-field>
             {{ form.value | json }}
         </form>
     `

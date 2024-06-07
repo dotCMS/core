@@ -114,8 +114,7 @@ export class DotTagsComponent {
                     <div
                         aria-describedby={getHintId(this.hint)}
                         tabIndex={this.hint ? 0 : null}
-                        class="dot-tags__container"
-                    >
+                        class="dot-tags__container">
                         <dot-autocomplete
                             class={getErrorClass(this.status.dotValid)}
                             data={this.data}

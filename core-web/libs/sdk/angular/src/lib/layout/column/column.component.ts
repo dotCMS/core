@@ -9,8 +9,8 @@ import { ContainerComponent } from '../container/container.component';
     standalone: true,
     imports: [ContainerComponent],
     template: `
-        @for(container of column.containers; track $index) {
-        <dotcms-container [container]="container" />
+        @for (container of column.containers; track $index) {
+            <dotcms-container [container]="container" />
         }
     `,
     styleUrl: './column.component.css',

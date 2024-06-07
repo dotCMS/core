@@ -5,7 +5,7 @@ export default {
     parameters: {
         docs: {
             page: readme
-        },
+        }
     },
     args: {
         value: '',
@@ -18,7 +18,7 @@ export default {
         disabled: false,
         regexCheck: '',
         type: 'text',
-        hint: 'This is a help message',
+        hint: 'This is a help message'
     }
 };
 

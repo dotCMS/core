@@ -1,7 +1,9 @@
-import { WebSocketProtocol } from './websockets-protocol';
-import { StringUtils } from '../string-utils.service';
-import { LoggerService } from '../logger.service';
 import { Server } from 'mock-socket';
+
+import { WebSocketProtocol } from './websockets-protocol';
+
+import { LoggerService } from '../logger.service';
+import { StringUtils } from '../string-utils.service';
 
 describe('WebSocketProtocol', () => {
     let webSocketProtocol: WebSocketProtocol;

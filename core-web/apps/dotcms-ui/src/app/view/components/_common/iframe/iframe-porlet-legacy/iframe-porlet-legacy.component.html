@@ -1,9 +1,9 @@
 <ng-template [ngIf]="canAccessPortlet" [ngIfElse]="notLicense">
     <dot-iframe
-        #iframe
+        (custom)="onCustomEvent($event)"
         [isLoading]="isLoading"
         [src]="url | async"
-        (custom)="onCustomEvent($event)">
+        #iframe>
     </dot-iframe>
 </ng-template>
 <ng-template #notLicense>

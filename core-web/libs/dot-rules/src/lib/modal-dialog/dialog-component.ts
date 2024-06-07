@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter } from '@angular/core';
+
 import { KeyCode } from '../services/util/key-util';
 
 @Component({
@@ -11,32 +12,28 @@ import { KeyCode } from '../services/util/key-util';
         [modal]="true"
         [dismissableMask]="true"
         [closable]="false"
-        appendTo="body"
         [draggable]="false"
-    >
+        appendTo="body">
         <p-message
             *ngIf="errorMessage"
-            style="margin-bottom: 16px; display: block;"
-            severity="error"
             [text]="errorMessage"
-        ></p-message>
+            style="margin-bottom: 16px; display: block;"
+            severity="error"></p-message>
 
         <ng-content></ng-content>
         <p-footer>
             <button
-                type="button"
-                pButton
                 (click)="ok.emit()"
                 [label]="okButtonText"
                 [disabled]="!okEnabled"
-            ></button>
+                type="button"
+                pButton></button>
             <button
+                (click)="cancel.emit(true)"
                 type="button"
                 pButton
-                (click)="cancel.emit(true)"
                 label="Cancel"
-                class="ui-button-secondary"
-            ></button>
+                class="ui-button-secondary"></button>
         </p-footer>
     </p-dialog> `
 })
@@ -84,6 +81,7 @@ export class ModalDialogComponent {
                     this.ok.emit(true);
                 }
             };
+
             document.body.addEventListener('keyup', this._keyListener);
         }
     }

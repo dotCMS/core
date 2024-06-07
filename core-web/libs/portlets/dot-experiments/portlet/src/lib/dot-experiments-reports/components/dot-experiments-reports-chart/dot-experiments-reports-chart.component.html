@@ -5,13 +5,12 @@
         </div>
         <ng-container *ngIf="!isEmpty; else emptyStateTpl">
             <p-chart
-                id="{{ chartId }}"
                 [data]="data"
                 [options]="options"
                 [plugins]="plugins"
+                id="{{ chartId }}"
                 height="500px"
-                width="100%"
-            ></p-chart>
+                width="100%"></p-chart>
         </ng-container>
     </div>
 </ng-container>
@@ -30,8 +29,7 @@
 <ng-template #emptyStateTpl>
     <div
         class="empty__wrapper flex justify-content-center align-items-center flex-column"
-        data-testId="empty-data-msg"
-    >
+        data-testId="empty-data-msg">
         <i class="empty__icon pi pi-chart-line mb-2"></i>
         <p class="empty__message m-0">{{ 'experiments.reports.chart.empty.title' | dm }}</p>
         <p class="empty__description m-0">

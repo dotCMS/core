@@ -65,8 +65,7 @@ export class DotBinaryUploadButtonComponent {
                     disabled={this.disabled}
                     onClick={() => {
                         this.fileInput.click();
-                    }}
-                >
+                    }}>
                     {this.buttonLabel}
                 </button>
             </Host>
