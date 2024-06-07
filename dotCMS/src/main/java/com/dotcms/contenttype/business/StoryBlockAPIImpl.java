@@ -53,7 +53,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @CloseDBIfOpened
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
         final MutableBoolean refreshed = new MutableBoolean(false);
-        boolean inTransaction = DbConnectionFactory.inTransaction();
+        final boolean inTransaction = DbConnectionFactory.inTransaction();
         if (!inTransaction && null != contentlet && null != contentlet.getContentType() &&
                 contentlet.getContentType().hasStoryBlockFields()) {
             if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(), "refreshReferences", MAX_RECURSION_LEVEL)) {
@@ -398,6 +398,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             final Object value = contentlet.get(field.variable());
             if (null != value) {
                 if (field instanceof StoryBlockField) {
+                    // At this depth, if the Contentlet inside the Block Editor also has a Block
+                    // Editor field, we'll return the raw JSON data of any potential Contentlets it
+                    // is referencing. This will prevent infinite recursion problems.
                     dataMap.put(field.variable(), this.toMap(contentlet.get(field.variable() +
                             "_raw")));
                 } else {
