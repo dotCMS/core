@@ -3,6 +3,8 @@
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
 import Activity from "./content-types/activity";
+import CallToAction from "./content-types/callToAction";
+import CalendarEvent from "./content-types/calendarEvent";
 import Product from "./content-types/product";
 import ImageComponent from "./content-types/image";
 
@@ -26,12 +28,13 @@ const experimentConfig = {
 
 // Mapping of components to DotCMS content types
 const componentsMap = {
-    webPageContent: WebPageContent,
-    Banner: Banner,
-    Activity: Activity,
-    Product: Product,
-    Image: ImageComponent,
-    CustomNoComponent: CustomNoComponent,
+  webPageContent: WebPageContent,
+  Banner: Banner,
+  Activity: Activity,
+  Product: Product,
+  Image: ImageComponent,
+  calendarEvent: CalendarEvent,
+  CallToAction: CallToAction
 };
 
 export function MyPage({ pageAsset, nav }) {
