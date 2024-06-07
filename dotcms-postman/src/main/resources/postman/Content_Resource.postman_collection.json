@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "d7451fa5-daed-445f-9994-5a517a8b763d",
+		"_postman_id": "2d0c1216-5c66-4f24-b32d-e0789e36c44b",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -2358,7 +2358,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{testContentOneId}}\",\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 1\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"attrs\\\":{\\\"charCount\\\":1,\\\"wordCount\\\":0,\\\"readingTime\\\":0},\\\"content\\\":[{\\\"type\\\":\\\"dotContent\\\",\\\"attrs\\\":{\\\"data\\\":{\\\"identifier\\\":\\\"{{testContentTwoId}}\\\",\\\"inode\\\":\\\"{{testContentTwoInode}}\\\",\\\"languageId\\\":1}}},{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    }"
+											"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{testContentOneId}}\",\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 1\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"attrs\\\":{\\\"charCount\\\":1,\\\"wordCount\\\":0,\\\"readingTime\\\":0},\\\"content\\\":[{\\\"type\\\":\\\"dotContent\\\",\\\"attrs\\\":{\\\"data\\\":{\\\"identifier\\\":\\\"{{testContentTwoId}}\\\",\\\"languageId\\\":1}}},{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    }"
 										},
 										"url": {
 											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{testContentOneId}}",
@@ -2414,7 +2414,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{testContentTwoId}}\",\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 2\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"attrs\\\":{\\\"charCount\\\":1,\\\"wordCount\\\":0,\\\"readingTime\\\":0},\\\"content\\\":[{\\\"type\\\":\\\"dotContent\\\",\\\"attrs\\\":{\\\"data\\\":{\\\"identifier\\\":\\\"{{testContentThreeId}}\\\",\\\"inode\\\":\\\"{{testContentThreeInode}}\\\",\\\"languageId\\\":1}}},{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    }"
+											"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{testContentTwoId}}\",\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 2\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"attrs\\\":{\\\"charCount\\\":1,\\\"wordCount\\\":0,\\\"readingTime\\\":0},\\\"content\\\":[{\\\"type\\\":\\\"dotContent\\\",\\\"attrs\\\":{\\\"data\\\":{\\\"identifier\\\":\\\"{{testContentThreeId}}\\\",\\\"languageId\\\":1}}},{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    }"
 										},
 										"url": {
 											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{testContentTwoId}}",
@@ -2470,7 +2470,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{testContentThreeId}}\",\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 3\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"attrs\\\":{\\\"charCount\\\":1,\\\"wordCount\\\":0,\\\"readingTime\\\":0},\\\"content\\\":[{\\\"type\\\":\\\"dotContent\\\",\\\"attrs\\\":{\\\"data\\\":{\\\"identifier\\\":\\\"{{testContentOneId}}\\\",\\\"inode\\\":\\\"{{testContentOneInode}}\\\",\\\"languageId\\\":1}}},{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    }"
+											"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{testContentThreeId}}\",\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 3\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"attrs\\\":{\\\"charCount\\\":1,\\\"wordCount\\\":0,\\\"readingTime\\\":0},\\\"content\\\":[{\\\"type\\\":\\\"dotContent\\\",\\\"attrs\\\":{\\\"data\\\":{\\\"identifier\\\":\\\"{{testContentOneId}}\\\",\\\"languageId\\\":1}}},{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    }"
 										},
 										"url": {
 											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{testContentThreeId}}",
@@ -3013,12 +3013,22 @@
 									"listen": "test",
 									"script": {
 										"exec": [
+											"pm.test(\"Test Parent Contentlet data is correct\", function () {",
+											"    const entity = pm.response.json().contentlets[0];",
+											"    pm.expect(pm.response.json().contentlets.length).to.eql(1, \"One piece of content should have been retrieved\");",
+											"    const testContentId = pm.collectionVariables.get(\"parentContentId\");",
+											"    const testContentInode = pm.collectionVariables.get(\"parentContentInode\");",
+											"    pm.expect(entity.identifier).to.eql(testContentId, \"The 'identifier' value doesn't match the expected one\");",
+											"    pm.expect(entity.inode).to.eql(testContentInode, \"The 'inode' value doesn't match the expected one\");",
+											"});",
+											"",
 											"pm.test(\"Relationship Field data in Contentlet inside Block Editor is correct\", function () {",
-											"    var jsonData = pm.response.json().contentlets;",
-											"    pm.expect(jsonData.length).to.eql(1, \"One piece of content should have been retrieved\");",
-											"    const testContentId = Object.keys(jsonData.results[0])[0];",
-											"    pm.collectionVariables.set(\"innerTestContentId\", testContentId);",
-											"    pm.collectionVariables.set(\"innerTestContentInode\", jsonData.results[0][testContentId].inode);",
+											"    const entity = pm.response.json().contentlets[0];",
+											"    pm.expect(entity.description.content[0].attrs.data.relatedData).to.not.equal(undefined, \"The 'relatedData' property MUST be present\");",
+											"    const relatedContentlet = entity.description.content[0].attrs.data.relatedData[0];",
+											"    const relatedTestContentId = pm.collectionVariables.get(\"relatedTestContentId\");",
+											"    pm.expect(relatedContentlet.title).to.be.equal(\"Test Content\", \"The 'title' value is NOT the expected one\");",
+											"    pm.expect(relatedContentlet.identifier).to.be.equal(relatedTestContentId, \"The 'identifier' value is NOT the expected one\");",
 											"});",
 											""
 										],
@@ -3043,7 +3053,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/content/id/{{parentContentTypeId}}",
+									"raw": "{{serverURL}}/api/content/id/{{parentContentId}}",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -3051,7 +3061,7 @@
 										"api",
 										"content",
 										"id",
-										"{{parentContentTypeId}}"
+										"{{parentContentId}}"
 									]
 								},
 								"description": "Creates a test Contentlet of the previously generated Content Type."
