@@ -114,7 +114,7 @@ jobs:
         if: inputs.publish-npm-package
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL: "log-dotcli"
           SLACK_TITLE: "Important news!"
           SLACK_MESSAGE: "This automated script is happy to announce that a new dotCLI version has been built for *${{ inputs.environment }}* with tags: [ ${{ steps.cli_publish.outputs.npm-package-version }}, ${{ steps.cli_publish.outputs.npm-package-version-tag }} ] is now available on the NPM registry :package:!"
