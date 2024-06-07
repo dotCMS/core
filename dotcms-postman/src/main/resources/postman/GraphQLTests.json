@@ -680,7 +680,7 @@
 					"name": "Test DotAsset as titleImage",
 					"item": [
 						{
-							"name": "pre_ImportBundleWithTestPage",
+							"name": "pre_ImportBundleWithTestPages",
 							"event": [
 								{
 									"listen": "test",
@@ -692,30 +692,16 @@
 											"    var jsonData = pm.response.json();",
 											"    console.log(jsonData);",
 											"",
-											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"test-page-graphql-render.tar.gz\");",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"titleImageDotAsset.tar.gz\");",
 											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [
 									{
@@ -737,7 +723,7 @@
 										{
 											"key": "file",
 											"type": "file",
-											"src": "resources/GraphQL/test-page-graphql-render.tar.gz"
+											"src": "resources/GraphQL/titleImageDotAsset.tar.gz"
 										}
 									]
 								},
@@ -779,61 +765,14 @@
 											"    pm.response.to.have.status(200);",
 											"});",
 											"",
-											"pm.test(\"'page' element includes all properties\", function () {",
+											"pm.test(\"'page' element includes the requested titleImage attributes\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var page = jsonData.data.page;",
 											"    ",
 											"    if (page && page != undefined) {",
-											"    pm.expect(page[\"archived\"], 'FAILED:[archived]').equal(false);",
-											"    pm.expect(page[\"baseType\"]).equal(\"HTMLPAGE\");",
-											"    pm.expect(page[\"cachettl\"]).equal(\"0\");",
-											"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
-											"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
-											"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
-											"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
-											"    pm.expect(page[\"description\"]).equal(\"Costa Rica Rain Forest\");",
-											"    pm.expect(page[\"extension\"]).equal(\"page\");",
-											"    pm.expect(page[\"folder\"].folderId).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
-											"    pm.expect(page[\"folder\"].folderName).equal(\"destinations\");",
-											"    pm.expect(page[\"friendlyName\"]).equal(\"Costa Rica Rain Forest\");",
-											"    pm.expect(page[\"hasLiveVersion\"], 'FAILED:[hasLiveVersion]').equal(true);",
-											"    pm.expect(page[\"hasTitleImage\"], 'FAILED:[hasTitleImage]').equal(true);",
-											"    pm.expect(page[\"host\"].identifier).equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
-											"    pm.expect(page[\"host\"].hostName).equal(\"demo.dotcms.com\");",
-											"    ////",
-											"    pm.expect(page[\"httpsRequired\"], 'FAILED:[httpsRequired]').equal(false);",
-											"    pm.expect(page[\"identifier\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0\");",
-											"    pm.expect(page[\"isContentlet\"], 'FAILED:[isContentlet]').equal(true);",
-											"    pm.expect(page[\"conLanguage\"].id).equal(1);",
-											"    pm.expect(page[\"live\"], 'FAILED:[live]').equal(true);",
-											"    pm.expect(page[\"liveInode\"]).not.equal(null)",
-											"    pm.expect(page[\"locked\"], 'FAILED:[locked]').equal(false);",
-											"    pm.expect(page[\"mimeType\"]).equal(\"application/dotpage\");",
-											"    pm.expect(page[\"modDate\"]).not.equal(null)",
-											"    ///",
-											"    pm.expect(page[\"name\"]).equal(\"costa-rica\");",
-											"    pm.expect(page[\"owner\"].userId).equal(\"dotcms.org.1\");",
-											"    pm.expect(page[\"pageURI\"]).equal(\"/destinations/costa-rica\");",
-											"    pm.expect(page[\"pageUrl\"]).equal(\"costa-rica\");",
-											"    pm.expect(page[\"path\"]).equal(\"/destinations/costa-rica\");",
-											"    pm.expect(page[\"publishDate\"]).not.equal(null)",
-											"    pm.expect(page[\"seoTitle\"]).equal(\"Costa Rica Travel Destinations\");",
-											"    pm.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
-											"    pm.expect(page[\"shortDescription\"]).equal(\"Costa Rica is a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific. Costa Rica is known for its beaches, volcanoes, and biodiversity. Roughly a quarter of its area is made up of protected jungle, teeming with wildlife including spider monkeys and quetzal birds.\");",
-											"    pm.expect(page[\"shortyLive\"]).not.equal(null)",
-											"    //",
-											"    pm.expect(page[\"shortyWorking\"]).not.equal(null)",
-											"    // pm.expect(page[\"sortOrder\"]).equal(0);",
-											"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
-											"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
-											"    pm.expect(page[\"tags\"]).equal(\"diving\");",
-											"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
-											"    pm.expect(page[\"titleImage\"].name).equal(\"costa-rica-tree-frog.jpg\");",
-											"    pm.expect(page[\"titleImage\"].versionPath).not.equal(null)",
-											"    pm.expect(page[\"type\"]).equal(\"htmlpage\");",
-											"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
-											"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
-											"    pm.expect(page[\"workingInode\"]).not.equal(null)",
+											"    pm.expect(page[\"titleImage\"].name, 'FAILED:[titleImage.name]').equal(\"IMG_1645.PNG\");",
+											"    pm.expect(page[\"titleImage\"].idPath, 'FAILED:[titleImage.idPath]').equal(\"/dA/29b579cf11/asset/IMG_1645.PNG\");",
+											"    pm.expect(page[\"titleImage\"].versionPath, 'FAILED:[titleImage.versionPath]').equal(\"/dA/c443b663b0/asset/IMG_1645.PNG\");",
 											"    }",
 											"});"
 										],
@@ -848,21 +787,6 @@
 								}
 							},
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [
 									{
@@ -874,7 +798,70 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    archived\n    baseType\n    cachettl\n    canEdit\n    canLock\n    canRead\n    contentType\n    deleted\n    description\n    extension\n    friendlyName\n    folder {\n      folderId\n      folderName\n    }\n    hasLiveVersion\n    hasTitleImage\n    host {\n      identifier\n      hostName\n    }\n    httpsRequired\n    identifier\n    image\n    imageContentAsset\n    imageVersion\n    inode\n    isContentlet\n    conLanguage {\n      id\n    }\n    live\n    liveInode\n    locked\n    mimeType\n    modDate\n    modUser {\n      userId\n      firstName\n      lastName\n    }\n    name\n    owner {\n      userId\n    }\n    pageURI\n    pageUrl\n    path\n    publishDate\n    seoTitle\n    seodescription\n    shortDescription\n    shortyLive\n    shortyWorking\n    sortOrder\n    stInode \n    statusIcons\n    tags\n    title\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n    type\n    url\n    working\n    workingInode\n  }\n}",
+										"query": "{\n  page(url:\"/mygraphqlpage\") {\n    \n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n  }\n}",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GivenNoImage_RequestTitleImage_ShouldNotFail",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"'page' element includes the requsted titleImage attributes as null\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var page = jsonData.data.page;",
+											"    ",
+											"    if (page && page != undefined) {",
+											"    pm.expect(page[\"titleImage\"].name, 'FAILED:[titleImage.name]').is.null;",
+											"    pm.expect(page[\"titleImage\"].idPath, 'FAILED:[titleImage.idPath]').is.null;",
+											"    pm.expect(page[\"titleImage\"].versionPath, 'FAILED:[titleImage.versionPath]').is.null;",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "User-Agent",
+										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+										"uuid": "f2495614-0e5f-4992-86d2-5ee735738fe5"
+									}
+								],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n  page(url:\"/pagenoimage\") {\n    \n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n  }\n}",
 										"variables": ""
 									}
 								},
