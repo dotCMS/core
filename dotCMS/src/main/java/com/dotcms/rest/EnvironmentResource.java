@@ -7,11 +7,13 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -22,12 +24,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.stream.Streams;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -38,10 +43,12 @@ import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 
 @Path("/environment")
@@ -249,21 +256,7 @@ public class EnvironmentResource {
 
 			final Map<String, Permission> permissionsMap = new HashMap<>();
 
-			for (final String permissionKey : whoCanUseList) {
-
-				if (UtilMethods.isSet(permissionKey)) {
-
-					final Role role = resolveRole(permissionKey, modUser);
-					if (Objects.nonNull(role)) {
-
-						permissionsMap.computeIfAbsent(role.getId(), k -> new Permission(
-								environment.getId(), role.getId(), PermissionAPI.PERMISSION_USE));
-					} else {
-
-						Logger.warn(getClass(), "Role not found for key: " + permissionKey);
-					}
-				}
-			}
+			processRoles(whoCanUseList, modUser, permissionsMap, environment);
 
 			APILocator.getEnvironmentAPI().saveEnvironment(environment,
 					new ArrayList<>(permissionsMap.values()));
@@ -272,8 +265,226 @@ public class EnvironmentResource {
 		}
 
 		throw new ForbiddenException("The user: " + modUser.getUserId() +
-				" does not have permissions to update users");
+				" does not have permissions to create an environment");
 	} // create.
+
+	/**
+	 * Updates an env and its permissions
+	 * If the permission can not be resolved will be just skipped and logged
+	 *
+	 * @param httpServletRequest
+	 * @throws Exception
+	 */
+	@Operation(summary = "Updates an environment",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseEntityEnvironmentView.class)),
+							description = "If success environment information."),
+					@ApiResponse(
+							responseCode = "403",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ForbiddenException.class)),
+							description = "If the user is not an admin or access to the configuration layout or does have permission, it will return a 403."),
+					@ApiResponse(
+							responseCode = "400",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											IllegalArgumentException.class)),
+							description = "If the environment already exits"),
+			})
+	@PUT
+	@Path("/{id}")
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final ResponseEntityEnvironmentView update(@Context final HttpServletRequest httpServletRequest,
+													  @Context final HttpServletResponse httpServletResponse,
+													  @PathParam("id") final String id,
+													  final EnvironmentForm environmentForm) throws DotDataException, DotSecurityException {
+
+		final User modUser = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.requestAndResponse(httpServletRequest, httpServletResponse)
+				.rejectWhenNoUser(true)
+				.init().getUser();
+
+		final boolean isRoleAdministrator = modUser.isAdmin() ||
+				APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(
+						PortletID.CONFIGURATION.toString(), modUser);
+
+		if (isRoleAdministrator) {
+
+			final String environmentName = environmentForm.getName();
+			final Environment existingEnvironment = APILocator.getEnvironmentAPI().
+					findEnvironmentByName(environmentName);
+
+			if (Objects.nonNull(existingEnvironment) && !existingEnvironment.getId().equals(id)) {
+
+				Logger.info(getClass(), "Can't save Environment. An Environment with the given name already exists. ");
+				throw new IllegalArgumentException("An Environment with the given name" + environmentName + " already exist.");
+			}
+
+			Logger.debug(this, ()-> "Updating environment: " + environmentName);
+
+			final List<String> whoCanUseList = environmentForm.getWhoCanSend();
+			final PushMode pushType = environmentForm.getPushMode();
+
+			final Environment environment = new Environment();
+			environment.setName(environmentName);
+			environment.setPushToAll(PushMode.PUSH_TO_ALL == pushType);
+
+			final Map<String, Permission> permissionsMap = new HashMap<>();
+
+			processRoles(whoCanUseList, modUser, permissionsMap, environment);
+
+			APILocator.getEnvironmentAPI().updateEnvironment(environment,
+					new ArrayList<>(permissionsMap.values()));
+
+			//If it was updated successfully lets set the session
+			if (UtilMethods.isSet(httpServletRequest.getSession().getAttribute(
+					WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId()))) {
+
+				//Get the selected environments from the session
+				final List<Environment> lastSelectedEnvironments = (List<Environment>) httpServletRequest.getSession()
+						.getAttribute( WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId() );
+
+				if (Objects.nonNull(lastSelectedEnvironments)) {
+					for (int i = 0; i < lastSelectedEnvironments.size(); ++i) {
+						//Verify if the current env is on the ones stored in session
+						final Environment currentEnv = lastSelectedEnvironments.get(i);
+						if (currentEnv.getId().equals(environment.getId())) {
+							lastSelectedEnvironments.set(i, environment);
+						}
+					}
+				}
+			}
+
+			return new ResponseEntityEnvironmentView(environment);
+		}
+
+		throw new ForbiddenException("The user: " + modUser.getUserId() +
+				" does not have permissions to update an environment");
+	} // update.
+
+	/**
+	 * Updates an env and its permissions
+	 * If the permission can not be resolved will be just skipped and logged
+	 *
+	 * @param httpServletRequest
+	 * @throws Exception
+	 */
+	@Operation(summary = "Updates an environment",
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ResponseEntityBooleanView.class)),
+							description = "If success environment information."),
+					@ApiResponse(
+							responseCode = "403",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											ForbiddenException.class)),
+							description = "If the user is not an admin or access to the configuration layout or does have permission, it will return a 403."),
+					@ApiResponse(
+							responseCode = "404",
+							content = @Content(mediaType = "application/json",
+									schema = @Schema(implementation =
+											DoesNotExistException.class)),
+							description = "If the environment does not exits"),
+			})
+	@DELETE
+	@Path("/{id}")
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final ResponseEntityBooleanView delete(@Context final HttpServletRequest httpServletRequest,
+													  @Context final HttpServletResponse httpServletResponse,
+													  @PathParam("id") final String id) throws DotDataException, DotSecurityException {
+
+		final User modUser = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.requestAndResponse(httpServletRequest, httpServletResponse)
+				.rejectWhenNoUser(true)
+				.init().getUser();
+
+		final boolean isRoleAdministrator = modUser.isAdmin() ||
+				APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(
+						PortletID.CONFIGURATION.toString(), modUser);
+
+		if (isRoleAdministrator) {
+
+			final Environment existingEnvironment = APILocator.getEnvironmentAPI().
+					findEnvironmentById(id);
+
+			if (Objects.isNull(existingEnvironment)) {
+
+				Logger.info(getClass(), "Can't delete Environment: " + id + ". An Environment should exists. ");
+				throw new DoesNotExistException("Can't delete Environment: " + id + ". An Environment should exists. ");
+			}
+
+			Logger.debug(this, ()-> "Deleting environment: " + existingEnvironment.getName());
+
+			APILocator.getEnvironmentAPI().deleteEnvironment(id);
+
+			//If it was updated successfully lets set the session
+			if (UtilMethods.isSet(httpServletRequest.getSession().getAttribute(
+					WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId()))) {
+
+				//Get the selected environments from the session
+				final List<Environment> lastSelectedEnvironments = (List<Environment>) httpServletRequest.getSession()
+						.getAttribute( WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId() );
+
+				if (Objects.nonNull(lastSelectedEnvironments)) {
+					final Iterator<Environment> environmentsIterator = lastSelectedEnvironments.iterator();
+
+					while (environmentsIterator.hasNext()) {
+
+						final Environment currentEnv = environmentsIterator.next();
+						//Verify if the current env is on the ones stored in session
+						if (currentEnv.getId().equals(id) ) {
+							//If we found it lets remove it
+							environmentsIterator.remove();
+						}
+					}
+				}
+			}
+
+			return new ResponseEntityBooleanView(Boolean.TRUE);
+		}
+
+		throw new ForbiddenException("The user: " + modUser.getUserId() +
+				" does not have permissions to delete an environment");
+	} // delete	.
+
+	private void processRoles(final List<String> whoCanUseList,
+							  final User modUser,
+							  final Map<String, Permission> permissionsMap,
+							  final Environment environment) {
+
+		for (final String permissionKey : whoCanUseList) {
+
+			if (UtilMethods.isSet(permissionKey)) {
+
+				final Role role = resolveRole(permissionKey, modUser);
+				if (Objects.nonNull(role)) {
+
+					permissionsMap.computeIfAbsent(role.getId(), k -> new Permission(
+							environment.getId(), role.getId(), PermissionAPI.PERMISSION_USE));
+				} else {
+
+					Logger.warn(getClass(), "Role not found for key: " + permissionKey);
+				}
+			}
+		}
+	}
 
 	/**
 	 * Test by roleIds, roleKeys, userIds and/or user emails
