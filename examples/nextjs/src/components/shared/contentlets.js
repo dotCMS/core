@@ -33,9 +33,10 @@ function Contentlets({ contentlets }) {
                             {contentlet.title}
                         </a>
                         <time className="text-zinc-600">
-                            {new Date(
-                                contentlet.publishDate
-                            ).toLocaleDateString("en-US", dateFormatOptions)}
+                            {new Date(contentlet.modDate).toLocaleDateString(
+                                "en-US",
+                                dateFormatOptions
+                            )}
                         </time>
                     </div>
                 </li>
