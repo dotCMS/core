@@ -46,7 +46,7 @@ export class ContentletsComponent {
   }
 
   getImageUrl(contentlet: Contentlet<GenericContentlet>): string {
-    const host = environment.dotcmsUrl; // Replace with your actual host
+    const host = environment.dotcmsUrl;
     return `${host}${contentlet.image}?language_id=${
       contentlet.languageId || 1
     }`;
