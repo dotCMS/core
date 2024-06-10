@@ -24,7 +24,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang3.stream.Streams;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -48,13 +47,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
 
 
 @Path("/environment")
 public class EnvironmentResource {
 
-    private final WebResource webResource = new WebResource();
+	public static final String THE_USER_KEY = "The user: ";
+	private final WebResource webResource = new WebResource();
 
 	/**
 	 * Returns the environments for the current user
@@ -264,7 +263,7 @@ public class EnvironmentResource {
 			return new ResponseEntityEnvironmentView(environment);
 		}
 
-		throw new ForbiddenException("The user: " + modUser.getUserId() +
+		throw new ForbiddenException(THE_USER_KEY + modUser.getUserId() +
 				" does not have permissions to create an environment");
 	} // create.
 
@@ -319,58 +318,70 @@ public class EnvironmentResource {
 
 		if (isRoleAdministrator) {
 
-			final String environmentName = environmentForm.getName();
-			final Environment existingEnvironment = APILocator.getEnvironmentAPI().
-					findEnvironmentByName(environmentName);
+			return updateEnv(httpServletRequest, id, environmentForm, modUser);
+		}
 
-			if (Objects.nonNull(existingEnvironment) && !existingEnvironment.getId().equals(id)) {
+		throw new ForbiddenException(THE_USER_KEY + modUser.getUserId() +
+				" does not have permissions to update an environment");
+	} // update.
 
-				Logger.info(getClass(), "Can't save Environment. An Environment with the given name already exists. ");
-				throw new IllegalArgumentException("An Environment with the given name" + environmentName + " already exist.");
-			}
+	private ResponseEntityEnvironmentView updateEnv(final HttpServletRequest httpServletRequest, 
+													final String id, 
+													final EnvironmentForm environmentForm, 
+													final User modUser) throws DotDataException, DotSecurityException {
+		
+		final String environmentName = environmentForm.getName();
+		final Environment existingEnvironment = APILocator.getEnvironmentAPI().
+				findEnvironmentByName(environmentName);
 
-			Logger.debug(this, ()-> "Updating environment: " + environmentName);
+		if (Objects.nonNull(existingEnvironment) && !existingEnvironment.getId().equals(id)) {
 
-			final List<String> whoCanUseList = environmentForm.getWhoCanSend();
-			final PushMode pushType = environmentForm.getPushMode();
+			Logger.info(getClass(), "Can't save Environment. An Environment with the given name already exists. ");
+			throw new IllegalArgumentException("An Environment with the given name" + environmentName + " already exist.");
+		}
 
-			final Environment environment = new Environment();
-			environment.setId(id);
-			environment.setName(environmentName);
-			environment.setPushToAll(PushMode.PUSH_TO_ALL == pushType);
+		Logger.debug(this, ()-> "Updating environment: " + environmentName);
 
-			final Map<String, Permission> permissionsMap = new HashMap<>();
+		final List<String> whoCanUseList = environmentForm.getWhoCanSend();
+		final PushMode pushType = environmentForm.getPushMode();
 
-			processRoles(whoCanUseList, modUser, permissionsMap, environment);
+		final Environment environment = new Environment();
+		environment.setId(id);
+		environment.setName(environmentName);
+		environment.setPushToAll(PushMode.PUSH_TO_ALL == pushType);
 
-			APILocator.getEnvironmentAPI().updateEnvironment(environment,
-					new ArrayList<>(permissionsMap.values()));
+		final Map<String, Permission> permissionsMap = new HashMap<>();
 
-			//If it was updated successfully lets set the session
-			if (UtilMethods.isSet(httpServletRequest.getSession().getAttribute(
-					WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId()))) {
+		processRoles(whoCanUseList, modUser, permissionsMap, environment);
 
-				//Get the selected environments from the session
-				final List<Environment> lastSelectedEnvironments = (List<Environment>) httpServletRequest.getSession()
-						.getAttribute( WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId() );
+		APILocator.getEnvironmentAPI().updateEnvironment(environment,
+				new ArrayList<>(permissionsMap.values()));
 
-				if (Objects.nonNull(lastSelectedEnvironments)) {
-					for (int i = 0; i < lastSelectedEnvironments.size(); ++i) {
-						//Verify if the current env is on the ones stored in session
-						final Environment currentEnv = lastSelectedEnvironments.get(i);
-						if (currentEnv.getId().equals(environment.getId())) {
-							lastSelectedEnvironments.set(i, environment);
-						}
+		//If it was updated successfully lets set the session
+		updateSelectEnv(httpServletRequest, modUser, environment);
+
+		return new ResponseEntityEnvironmentView(environment);
+	}
+
+	private static void updateSelectEnv(HttpServletRequest httpServletRequest, User modUser, Environment environment) {
+		if (UtilMethods.isSet(httpServletRequest.getSession().getAttribute(
+				WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId()))) {
+
+			//Get the selected environments from the session
+			final List<Environment> lastSelectedEnvironments = (List<Environment>) httpServletRequest.getSession()
+					.getAttribute( WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId() );
+
+			if (Objects.nonNull(lastSelectedEnvironments)) {
+				for (int i = 0; i < lastSelectedEnvironments.size(); ++i) {
+					//Verify if the current env is on the ones stored in session
+					final Environment currentEnv = lastSelectedEnvironments.get(i);
+					if (currentEnv.getId().equals(environment.getId())) {
+						lastSelectedEnvironments.set(i, environment);
 					}
 				}
 			}
-
-			return new ResponseEntityEnvironmentView(environment);
 		}
-
-		throw new ForbiddenException("The user: " + modUser.getUserId() +
-				" does not have permissions to update an environment");
-	} // update.
+	}
 
 	/**
 	 * Updates an env and its permissions
@@ -379,14 +390,14 @@ public class EnvironmentResource {
 	 * @param httpServletRequest
 	 * @throws Exception
 	 */
-	@Operation(summary = "Updates an environment",
+	@Operation(summary = "Deletes an environment",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseEntityBooleanView.class)),
-							description = "If success environment information."),
+							description = "If deletion is successfully environment."),
 					@ApiResponse(
 							responseCode = "403",
 							content = @Content(mediaType = "application/json",
@@ -407,7 +418,7 @@ public class EnvironmentResource {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final ResponseEntityBooleanView delete(@Context final HttpServletRequest httpServletRequest,
 													  @Context final HttpServletResponse httpServletResponse,
-													  @PathParam("id") final String id) throws DotDataException, DotSecurityException {
+													  @PathParam("id") final String id) throws DotDataException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -422,48 +433,59 @@ public class EnvironmentResource {
 
 		if (isRoleAdministrator) {
 
-			final Environment existingEnvironment = APILocator.getEnvironmentAPI().
-					findEnvironmentById(id);
-
-			if (Objects.isNull(existingEnvironment)) {
-
-				Logger.info(getClass(), "Can't delete Environment: " + id + ". An Environment should exists. ");
-				throw new DoesNotExistException("Can't delete Environment: " + id + ". An Environment should exists. ");
-			}
-
-			Logger.debug(this, ()-> "Deleting environment: " + existingEnvironment.getName());
-
-			APILocator.getEnvironmentAPI().deleteEnvironment(id);
-
-			//If it was updated successfully lets set the session
-			if (UtilMethods.isSet(httpServletRequest.getSession().getAttribute(
-					WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId()))) {
-
-				//Get the selected environments from the session
-				final List<Environment> lastSelectedEnvironments = (List<Environment>) httpServletRequest.getSession()
-						.getAttribute( WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId() );
-
-				if (Objects.nonNull(lastSelectedEnvironments)) {
-					final Iterator<Environment> environmentsIterator = lastSelectedEnvironments.iterator();
-
-					while (environmentsIterator.hasNext()) {
-
-						final Environment currentEnv = environmentsIterator.next();
-						//Verify if the current env is on the ones stored in session
-						if (currentEnv.getId().equals(id) ) {
-							//If we found it lets remove it
-							environmentsIterator.remove();
-						}
-					}
-				}
-			}
+			deleteEnv(httpServletRequest, id, modUser);
 
 			return new ResponseEntityBooleanView(Boolean.TRUE);
 		}
 
-		throw new ForbiddenException("The user: " + modUser.getUserId() +
+		throw new ForbiddenException(THE_USER_KEY + modUser.getUserId() +
 				" does not have permissions to delete an environment");
 	} // delete	.
+
+	private void deleteEnv(final HttpServletRequest httpServletRequest, final String id, final User modUser) throws DotDataException {
+
+		final Environment existingEnvironment = APILocator.getEnvironmentAPI().
+				findEnvironmentById(id);
+
+		if (Objects.isNull(existingEnvironment)) {
+
+			Logger.info(getClass(), "Can't delete Environment: " + id + ". An Environment should exists. ");
+			throw new DoesNotExistException("Can't delete Environment: " + id + ". An Environment should exists. ");
+		}
+
+		Logger.debug(this, ()-> "Deleting environment: " + existingEnvironment.getName());
+
+		APILocator.getEnvironmentAPI().deleteEnvironment(id);
+
+		//If it was updated successfully lets set the session
+		removeSelectedEnv(httpServletRequest, id, modUser);
+	}
+
+	private void removeSelectedEnv(final HttpServletRequest httpServletRequest,
+								   final String id, final User modUser) {
+
+		if (UtilMethods.isSet(httpServletRequest.getSession().getAttribute(
+				WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId()))) {
+
+			//Get the selected environments from the session
+			final List<Environment> lastSelectedEnvironments = (List<Environment>) httpServletRequest.getSession()
+					.getAttribute( WebKeys.SELECTED_ENVIRONMENTS + modUser.getUserId() );
+
+			if (Objects.nonNull(lastSelectedEnvironments)) {
+				final Iterator<Environment> environmentsIterator = lastSelectedEnvironments.iterator();
+
+				while (environmentsIterator.hasNext()) {
+
+					final Environment currentEnv = environmentsIterator.next();
+					//Verify if the current env is on the ones stored in session
+					if (currentEnv.getId().equals(id) ) {
+						//If we found it lets remove it
+						environmentsIterator.remove();
+					}
+				}
+			}
+		}
+	}
 
 	private void processRoles(final List<String> whoCanUseList,
 							  final User modUser,
