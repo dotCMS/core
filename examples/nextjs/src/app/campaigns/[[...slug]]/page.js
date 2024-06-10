@@ -1,7 +1,9 @@
+import { notFound } from "next/navigation";
+
 import { dotcmsClient, graphqlToPageEntity } from "@dotcms/client";
 import { MyPage } from "@/components/my-page";
 
-import { getGraphQLPageData } from "../../utils/gql";
+import { getGraphQLPageData } from "../../../utils/gql";
 
 const client = dotcmsClient.init({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
@@ -13,12 +15,17 @@ const client = dotcmsClient.init({
     },
 });
 
-export default async function Home({ searchParams, params }) {
-    const defaultPath = "/campaigns/colorado-preseason-special";
-    const path = params?.slug
-        ? "/campaigns/" + params.slug.join("/")
-        : defaultPath;
-    const requestData = {
+/**
+ * Get request params
+ *
+ * @param {*} { params, searchParams }
+ * @return {*}
+ */
+export const getRequestParams = ({ params, searchParams }) => {
+    const slug = params?.slug.join("/") || "";
+    const path = "/campaigns/" + slug;
+
+    return {
         path,
         language_id: searchParams.language_id,
         "com.dotmarketing.persona.id":
@@ -26,6 +33,29 @@ export default async function Home({ searchParams, params }) {
         mode: searchParams.mode,
         variantName: searchParams["variantName"],
     };
+};
+
+/**
+ * Generate metadata
+ *
+ * @export
+ * @param {*} { params, searchParams }
+ * @return {*}
+ */
+export async function generateMetadata({ params, searchParams }) {
+    const requestData = getRequestParams({ params, searchParams });
+    const data = await client.page.get(requestData);
+    const page = data.entity?.page;
+
+    const title = page?.friendlyName || page?.title || "not found";
+
+    return {
+        title,
+    };
+}
+
+export default async function Home({ searchParams, params }) {
+    const requestData = getRequestParams({ params, searchParams });
     const nav = await client.nav.get({
         path: "/",
         depth: 2,
@@ -34,6 +64,10 @@ export default async function Home({ searchParams, params }) {
 
     const data = await getGraphQLPageData(requestData);
     const pageAsset = graphqlToPageEntity(data);
+
+    if (!pageAsset) {
+        notFound(); // NextJS 14 way to handle "Not Found" pages
+    }
 
     return <MyPage nav={nav.entity.children} pageAsset={pageAsset}></MyPage>;
 }
