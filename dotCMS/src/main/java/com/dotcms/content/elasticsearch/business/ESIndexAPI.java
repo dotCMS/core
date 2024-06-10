@@ -498,10 +498,7 @@ public class ESIndexAPI {
 	 * @return
 	 */
 	public  boolean indexExists(String indexName) {
-
-		Set<String> indices = listIndices();
-
-
+		
 		if(listIndices().contains(indexName.toLowerCase())){
 			return true;
 		}
