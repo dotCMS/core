@@ -1,6 +1,5 @@
-@if ($isInsideEditor()) { @if($contentlets().length){ @for (contentlet of $contentlets(); track
+@if ($isInsideEditor()) { @if ($contentlets().length) { @for (contentlet of $contentlets(); track
 $index) {
-
 <dotcms-contentlet-wrapper [contentlet]="contentlet" [container]="$dotContainerAsString()">
     <ng-container
         *ngComponentOutlet="

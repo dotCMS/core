@@ -14,8 +14,8 @@
     </div>
     <div class="content-aside__metadata">
         <a
-            class="sidebar-card"
             [routerLink]="'/content-types-angular/edit/' + contentType.variable"
+            class="sidebar-card"
             data-testId="content-type-link"
             aria-label="Edit Content Type">
             <span class="sidebar-card__header">{{ 'Content-Type' | dm }}</span>
@@ -27,31 +27,31 @@
             ></span>
         </button>
         <div class="content-history__container" data-testId="history-container">
-            @if(loading) { @for(title of ['Published','Modified','Created'] ; track $index) {
+            @if (loading) { @for (title of ['Published', 'Modified', 'Created']; track $index) {
             <div class="content-history">
                 <span class="content-history__title">{{ title | dm }}</span>
                 <p-skeleton class="content-history__author" width="89.33px" height="14px" />
                 <p-skeleton class="content-history__date" width="89.33px" height="14px" />
             </div>
-            } } @else { @if(contentlet?.publishDate) {
+            } } @else { @if (contentlet?.publishDate) {
             <button
-                class="content-history"
                 [pTooltip]="contentlet?.publishDate | date : 'MMM dd, yyyy'"
+                class="content-history"
                 tooltipPosition="bottom"
                 data-testId="publish-history"
                 aria-label="Publish History">
                 <span class="content-history__title">{{ 'Published' | dm }}</span>
-                <span class="content-history__author" *ngIf="contentlet?.publishUserName">{{
+                <span *ngIf="contentlet?.publishUserName" class="content-history__author">{{
                     contentlet?.publishUserName
                 }}</span>
                 <span class="content-history__date">{{
                     contentlet?.publishDate | dotRelativeDate : 'MM/dd/yyyy' : null
                 }}</span>
             </button>
-            } @if(contentlet?.modDate) {
+            } @if (contentlet?.modDate) {
             <button
-                class="content-history"
                 [pTooltip]="contentlet?.modDate | date : 'MMM dd, yyyy'"
+                class="content-history"
                 tooltipPosition="bottom"
                 data-testId="mod-history"
                 aria-label="Modification History">
@@ -63,8 +63,8 @@
             </button>
             }
             <button
-                class="content-history"
                 [pTooltip]="contentlet?.createDate || currentDate | date : 'MMM dd, yyyy'"
+                class="content-history"
                 tooltipPosition="bottom"
                 data-testId="create-history"
                 aria-label="Creation History">

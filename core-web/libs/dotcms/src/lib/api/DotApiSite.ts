@@ -1,5 +1,5 @@
-import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSSite, DotCMSError } from '../models';
+import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 
 /**
  * Get information from {@link https://dotcms.com/docs/latest/multi-site-management | DotCMS Sites}
@@ -20,6 +20,7 @@ export class DotApiSite {
                 if (response.status === 200) {
                     const data = await response.json();
                     const { map, ...site } = data.entity;
+
                     return <DotCMSSite>site;
                 }
 

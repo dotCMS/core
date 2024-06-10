@@ -10,8 +10,8 @@
             <th>
                 <div class="dot-content-compare-table__controls">
                     <p-dropdown
-                        [options]="data.versions"
                         (onChange)="changeVersion.emit($event.value)"
+                        [options]="data.versions"
                         data-testid="versions-dropdown"
                         appendTo="body">
                         <ng-template let-selected pTemplate="selectedItem">
@@ -30,16 +30,16 @@
                         </ng-template>
                     </p-dropdown>
                     <p-selectButton
-                        class="p-button-compact"
+                        (onChange)="changeDiff.emit($event.value)"
                         [(ngModel)]="showDiff"
                         [options]="displayOptions"
-                        (onChange)="changeDiff.emit($event.value)"
+                        class="p-button-compact"
                         data-testid="show-diff">
                     </p-selectButton>
                     <button
-                        class="p-button-sm p-button"
-                        [label]="'Bring-Back' | dm"
                         (click)="bringBack.emit(data.compare.inode)"
+                        [label]="'Bring-Back' | dm"
+                        class="p-button-sm p-button"
                         data-testId="table-bring-back"
                         pButton></button>
                 </div>

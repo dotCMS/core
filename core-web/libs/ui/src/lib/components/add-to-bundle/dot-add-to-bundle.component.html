@@ -1,20 +1,20 @@
 <dot-dialog
+    (hide)="close()"
     [(visible)]="dialogShow"
     [actions]="dialogActions"
-    [header]="'contenttypes.content.add_to_bundle' | dm"
-    (hide)="close()">
+    [header]="'contenttypes.content.add_to_bundle' | dm">
     <form
-        class="p-fluid"
-        #formEl="ngForm"
-        [formGroup]="form"
         (ngSubmit)="submitBundle($event)"
         (keyup.enter)="submitBundle($event)"
+        [formGroup]="form"
+        class="p-fluid"
+        #formEl="ngForm"
         novalidate>
         <div class="field">
             <p-dropdown
-                #addBundleDropdown
                 [options]="bundle$ | async"
                 [placeholder]="placeholder"
+                #addBundleDropdown
                 appendTo="body"
                 editable="true"
                 formControlName="addBundle"

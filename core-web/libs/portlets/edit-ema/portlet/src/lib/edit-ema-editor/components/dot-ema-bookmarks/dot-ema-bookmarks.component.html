@@ -1,7 +1,7 @@
 <p-button
+    (onClick)="toggleBookmark()"
     [loading]="loading()"
     [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
     [label]="'editpage.toolbar.bookmark' | dm"
-    (onClick)="toggleBookmark()"
     styleClass="p-button-text p-button-sm"
     data-testId="bookmark-button" />

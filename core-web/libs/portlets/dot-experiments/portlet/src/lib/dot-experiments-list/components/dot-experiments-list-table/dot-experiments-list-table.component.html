@@ -26,13 +26,13 @@
                         </td>
                         <td class="text-right" data-testId="experiment-row__actions">
                             <p-menu
-                                #menu
                                 [model]="experiment.actionsItemsMenu"
                                 [popup]="true"
+                                #menu
                                 appendTo="body"></p-menu>
                             <button
-                                class="p-button-rounded p-button-text"
                                 (click)="menu.toggle($event); $event.stopPropagation()"
+                                class="p-button-rounded p-button-text"
                                 data-testId="experiment-row__action-button"
                                 icon="pi pi-ellipsis-v"
                                 pButton

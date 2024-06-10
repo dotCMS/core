@@ -1,30 +1,27 @@
-<div class="field relationship__type" *ngIf="!editing">
+<div *ngIf="!editing" class="field relationship__type">
     <p-radioButton
+        (click)="clean()"
         [(ngModel)]="status"
         [label]="'contenttypes.field.properties.relationship.new.label' | dm"
-        [value]="STATUS_NEW"
-        (click)="clean()"
-    >
+        [value]="STATUS_NEW">
     </p-radioButton>
 
     <p-radioButton
+        (click)="clean()"
         [(ngModel)]="status"
         [label]="'contenttypes.field.properties.relationship.existing.label' | dm"
-        [value]="STATUS_EXISTING"
-        (click)="clean()"
-    >
+        [value]="STATUS_EXISTING">
     </p-radioButton>
 </div>
 
 <div class="relationship__config">
     <dot-new-relationships
-        class="relationships__new"
         *ngIf="status === STATUS_NEW; else existing"
+        (switch)="handleChange($event)"
         [velocityVar]="group.get(property.name).value.velocityVar"
         [cardinality]="group.get(property.name).value.cardinality"
         [editing]="editing"
-        (switch)="handleChange($event)"
-    >
+        class="relationships__new">
     </dot-new-relationships>
 
     <ng-template #existing>
@@ -33,17 +30,15 @@
                 >Relationship</label
             >
             <dot-edit-relationships
-                class="relationships__existing"
-                [id]="property.name"
                 (switch)="handleChange($event)"
-            >
+                [id]="property.name"
+                class="relationships__existing">
             </dot-edit-relationships>
         </div>
     </ng-template>
 
     <dot-field-validation-message
         [message]="getValidationErrorMessage()"
-        [field]="group.controls[property.name]"
-    >
+        [field]="group.controls[property.name]">
     </dot-field-validation-message>
 </div>

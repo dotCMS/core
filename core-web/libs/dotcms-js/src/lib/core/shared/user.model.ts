@@ -1,4 +1,5 @@
 import { Injectable, Inject, LOCALE_ID } from '@angular/core';
+
 import { LoggerService } from '../logger.service';
 
 @Injectable()
@@ -31,6 +32,7 @@ export class UserModel {
                 locale = q.substring(idx + token.length, end);
             }
         }
+
         return locale;
     }
 }

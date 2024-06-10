@@ -1,24 +1,24 @@
-<div class="dot-mask" *ngIf="showMask()" data-testId="dot-mask"></div>
+<div *ngIf="showMask()" class="dot-mask" data-testId="dot-mask"></div>
 <p-overlayPanel
-    #toolbarAnnouncements
     (onHide)="hideDialog()"
+    #toolbarAnnouncements
     appendTo="body"
     styleClass="toolbar-announcements__container">
     <div class="announcements__main-container">
         <h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
         <ul class="announcements__list">
-            @for (item of announcements(); track item.identifier;) {
+            @for (item of announcements(); track item.identifier) {
             <li
-                class="announcements__list-item"
-                [class.announcements__list-item--active]="!item.hasBeenRead">
-                <span class="announcements__badge" *ngIf="!item.hasBeenRead"></span>
+                [class.announcements__list-item--active]="!item.hasBeenRead"
+                class="announcements__list-item">
+                <span *ngIf="!item.hasBeenRead" class="announcements__badge"></span>
                 <span
-                    class="announcements__image pi"
-                    [ngClass]="typesIcons[item.type | lowercase] || typesIcons['important']"></span>
+                    [ngClass]="typesIcons[item.type | lowercase] || typesIcons['important']"
+                    class="announcements__image pi"></span>
                 <a
-                    class="announcements__url"
-                    [href]="item.url"
                     (click)="toggleDialog($event)"
+                    [href]="item.url"
+                    class="announcements__url"
                     target="_blank"
                     rel="noopener noreferrer"
                     data-testId="announcement_link"
@@ -38,9 +38,9 @@
             <div class="announcements__link-container">
                 <i class="pi pi-external-link"></i>
                 <a
-                    class="announcements__link"
-                    [href]="linkToDotCms()"
                     (click)="toggleDialog($event)"
+                    [href]="linkToDotCms()"
+                    class="announcements__link"
                     target="_blank"
                     data-testId="announcement_link_all"
                     rel="noopener"
@@ -54,9 +54,9 @@
         <div class="announcements__about">
             @for (item of item.items(); track $index) {
             <a
-                class="announcements__about-link"
-                [href]="item.url"
                 (click)="toggleDialog($event)"
+                [href]="item.url"
+                class="announcements__about-link"
                 data-testId="announcements__about-link"
                 target="_blank"
                 rel="noopener"

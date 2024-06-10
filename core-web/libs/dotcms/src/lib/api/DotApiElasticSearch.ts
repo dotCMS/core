@@ -1,7 +1,7 @@
+import { DotCMSElasticSearchResult, DotCMSElasticSearchParams } from '../models';
 import { DotCMSError } from '../models/DotCMSError.model';
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { getEsQuery } from '../utils/getEsQuery';
-import { DotCMSElasticSearchResult, DotCMSElasticSearchParams } from '../models';
 
 /**
  * Request content from DotCMS using the {@link https://dotcms.com/docs/latest/elasticsearch-rest-api | Elastic Search API}

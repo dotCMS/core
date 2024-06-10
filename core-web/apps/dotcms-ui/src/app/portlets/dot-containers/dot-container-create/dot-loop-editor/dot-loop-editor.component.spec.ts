@@ -20,11 +20,10 @@ import { DotLoopEditorComponent } from './dot-loop-editor.component';
 @Component({
     selector: `dot-host-component`,
     template: `<dot-loop-editor
+        (buttonClick)="showLoopInput()"
         [formControl]="editor"
         [label]="label"
-        [isEditorVisible]="isEditorVisible"
-        (buttonClick)="showLoopInput()"
-    ></dot-loop-editor>`
+        [isEditorVisible]="isEditorVisible"></dot-loop-editor>`
 })
 class DotTestHostComponent {
     isEditorVisible = true;

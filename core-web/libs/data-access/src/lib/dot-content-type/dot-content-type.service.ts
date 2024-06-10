@@ -152,9 +152,9 @@ export class DotContentTypeService {
      */
     getByTypes(type: string, per_page = 100): Observable<DotCMSContentType[]> {
         return this.http
-            .get<{ entity: DotCMSContentType[] }>(
-                `/api/v1/contenttype?type=${type}&per_page=${per_page}`
-            )
+            .get<{
+                entity: DotCMSContentType[];
+            }>(`/api/v1/contenttype?type=${type}&per_page=${per_page}`)
             .pipe(pluck('entity'));
     }
 
