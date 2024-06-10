@@ -1,10 +1,12 @@
 import React from "react";
 import Image from "next/image";
+
 const dateFormatOptions = {
     year: "numeric",
     month: "long",
     day: "numeric",
 };
+
 function Contentlets({ contentlets }) {
     return (
         <ul className="flex flex-col gap-7">
