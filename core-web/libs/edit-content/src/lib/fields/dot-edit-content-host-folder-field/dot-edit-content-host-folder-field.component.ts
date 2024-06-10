@@ -25,6 +25,12 @@ import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { createPaths } from '../../utils/functions.util';
 
+/**
+ * Component for editing content site or folder field.
+ *
+ * @export
+ * @class DotEditContentHostFolderFieldComponent
+ */
 @Component({
     selector: 'dot-edit-content-host-folder-field',
     standalone: true,
