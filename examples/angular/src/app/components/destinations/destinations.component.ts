@@ -31,6 +31,9 @@ export class DestinationsComponent {
       ])
       .then((response) => {
         this.destinations.set(response.contentlets);
+      })
+      .catch((error) => {
+        console.error('Error fetching Destinations', error);
       });
   }
 }

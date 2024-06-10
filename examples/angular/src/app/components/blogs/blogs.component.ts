@@ -30,6 +30,9 @@ export class BlogsComponent {
       ])
       .then((response) => {
         this.blogs.set(response.contentlets);
+      })
+      .catch((error) => {
+        console.error('Error fetching Blogs', error);
       });
   }
 }
