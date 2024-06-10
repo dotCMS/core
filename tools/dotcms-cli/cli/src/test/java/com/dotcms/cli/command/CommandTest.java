@@ -53,7 +53,7 @@ public abstract class CommandTest {
     @CanIgnoreReturnValue
     protected ServiceManager resetServiceProfiles() throws IOException {
         return serviceManager.removeAll()
-                .persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
+                .persist(ServiceBean.builder().name("default").url(new URL("http://localhost:58563")).active(true).build());
     }
 
     protected CommandLine createCommand() {

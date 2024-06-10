@@ -18,13 +18,13 @@ import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
@@ -300,5 +300,90 @@ class PushCommandIT extends CommandTest {
             deleteTempDirectory(tempFolder);
         }
     }
+
+
+    @Test
+    void testSimplePushInWatchMode() throws IOException, InterruptedException {
+
+        // Create a temporary folder for the push
+        Path tempFolder = createTempFolder();
+        // And a workspace for it
+        workspaceManager.getOrCreate(tempFolder);
+
+        try {
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                // Latch to signal when the changes are done
+                CountDownLatch changeLatch = new CountDownLatch(1);
+                // Latch to wait for command processing time
+                CountDownLatch commandLatch = new CountDownLatch(1);
+
+                // Start the command execution in a new thread
+                Thread commandThread = new Thread(() -> {
+                    commandLine.setOut(out);
+                    commandLine.setErr(out);
+                    try {
+                        commandLine.execute(PushCommand.NAME,
+                                tempFolder.toAbsolutePath().toString(), "--watch", "1");
+                    } catch (Exception e) {
+                        // Quietly ignore exceptions
+                    } finally {
+                        commandLatch.countDown();
+                    }
+                });
+                commandThread.start();
+
+                // Scheduled executor for introducing delay
+                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+                // Simulate changes in the tempFolder with a delay
+                Runnable changeTask = () -> {
+                    try {
+                        final Path newFile = tempFolder.resolve("newFile.txt");
+                        Files.createFile(newFile);
+                        System.out.println("Creating file " + newFile);
+                        for (int i = 0; i < 5; i++) {
+                            // Create a new file
+                            Files.writeString(newFile, "Hello, world! " + i + "\n");
+                            Thread.sleep(1000);
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        // Quietly ignore exceptions
+                    } finally {
+                        changeLatch.countDown();
+                    }
+                };
+
+                // Schedule the change task to run immediately
+                scheduler.execute(changeTask);
+
+                // Wait for changes to be made
+                changeLatch.await();
+
+                // Allow some time for the command to process the changes
+                commandLatch.await(10, TimeUnit.SECONDS);
+
+                // Interrupt the command thread to simulate sending a signal like CTRL-C
+                commandThread.interrupt();
+                commandThread.join();
+
+                // Terminate the scheduler
+                scheduler.shutdown();
+                scheduler.awaitTermination(10, TimeUnit.SECONDS);
+
+                // Validate the output of the command
+                String output = writer.toString();
+                Assertions.assertTrue(output.contains("No changes in Languages to push"));
+                Assertions.assertTrue(output.contains("No changes in Sites to push"));
+                Assertions.assertTrue(output.contains("No changes in ContentTypes to push"));
+                Assertions.assertTrue(output.contains(" No changes in Files to push"));
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+
 
 }

@@ -80,7 +80,6 @@ public class PushCommand implements Callable<Integer>, DotPush {
 
         // Process each subcommand
         for (var subCommand : pushCommandsSorted) {
-
             var cmdLine = createCommandLine(subCommand);
 
             // Use execute to parse the parameters with the subcommand
@@ -104,6 +103,7 @@ public class PushCommand implements Callable<Integer>, DotPush {
 
         var cmdLine = new CommandLine(command);
         CustomConfigurationUtil.newInstance().customize(cmdLine);
+        cmdLine.setOut(getOutput().out());
 
         // Make sure unmatched arguments pass silently
         cmdLine.setUnmatchedArgumentsAllowed(true);

@@ -5,7 +5,6 @@ import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.model.config.ServiceBean;
-import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -45,7 +44,6 @@ public class DotExecutionStrategy implements IExecutionStrategy {
      *
      * @param underlyingStrategy the underlying strategy to use for execution
      */
-    @VisibleForTesting
     public DotExecutionStrategy(final IExecutionStrategy underlyingStrategy,
             final SubcommandProcessor processor, final DirectoryWatcherService watchService,
             final ServiceManager serviceManager) {

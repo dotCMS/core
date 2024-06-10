@@ -44,9 +44,10 @@ public class PushMixin {
             paramLabel = "watch",
             fallbackValue = "2",
             description = {
-                "When this option is enabled the tool watches for changes int the file system within the push path",
-                "If a change is detected the push command being executed gets triggered. ",
-                "The default watch interval is 2 seconds, but this can be set passing an int value to this option.",
+               "When this option is enabled the tool observes changes in the file system within the push path",
+               "If a change is detected the push command being executed gets triggered. ",
+               "The auto-update feature is disabled when watch mode is on",
+                "The default watch interval is 2 seconds, but it can be specified passing an integer value with this option.",
                 "e.g. --watch 5"
             }
     )
