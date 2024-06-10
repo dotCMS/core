@@ -342,7 +342,6 @@ class PushCommandIT extends CommandTest {
                     try {
                         final Path newFile = tempFolder.resolve("newFile.txt");
                         Files.createFile(newFile);
-                        System.out.println("Creating file " + newFile);
                         for (int i = 0; i < 5; i++) {
                             // Create a new file
                             Files.writeString(newFile, "Hello, world! " + i + "\n");
