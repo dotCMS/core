@@ -51,11 +51,11 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     readonly #controlContainer = inject(ControlContainer);
     readonly #editContentService = inject(DotEditContentService);
 
-    options = signal<TreeNodeItem[]>([]);
-    sitesStatus = signal<StatusRequest>('init');
+    $options = signal<TreeNodeItem[]>([]);
+    $sitesStatus = signal<StatusRequest>('init');
     pathControl = new FormControl();
-    iconClasses = computed(() => {
-        const status = this.sitesStatus();
+    $iconClasses = computed(() => {
+        const status = this.$sitesStatus();
 
         return {
             'pi-spin pi-spinner': status === 'loading',
@@ -64,15 +64,15 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     });
 
     ngOnInit() {
-        this.sitesStatus.set('loading');
+        this.$sitesStatus.set('loading');
         this.#editContentService.getSitesTreePath().subscribe({
             next: (options) => {
-                this.options.set(options);
+                this.$options.set(options);
                 this.setInitialValue();
-                this.sitesStatus.set('success');
+                this.$sitesStatus.set('success');
             },
             error: () => {
-                this.sitesStatus.set('failed');
+                this.$sitesStatus.set('failed');
             }
         });
     }
@@ -117,7 +117,7 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
             if (hasPaths) {
                 this.buildTreeByPaths(value);
             } else {
-                const options = this.options();
+                const options = this.$options();
                 this.pathControl.setValue(options.find((item) => item.key === value));
             }
         }
@@ -127,7 +127,7 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
         const paths = createPaths(path);
         this.#editContentService.buildTreeByPaths(paths).subscribe((rta) => {
             const sitePath = rta.tree.path;
-            this.options.update((options) => {
+            this.$options.update((options) => {
                 return options.map((item) => {
                     if (item.key === sitePath) {
                         return {

@@ -57,7 +57,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
 
     it('should show options', () => {
         spectator.detectChanges();
-        const options = component.options();
+        const options = component.$options();
 
         expect(service.getSitesTreePath).toHaveBeenCalled();
         expect(options).toBe(TREE_SELECT_SITES_MOCK);
