@@ -136,8 +136,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * @return
      * @throws DotDataException
      */
+    @VisibleForTesting
     @CloseDBIfOpened
-    private synchronized boolean indexReady() throws DotDataException {
+    public synchronized boolean indexReady() throws DotDataException {
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
 
