@@ -1,7 +1,7 @@
 describe('dotcms-block-editor', () => {
-  beforeEach(() => cy.visit('/iframe.html?id=appcomponent--primary'));
+    beforeEach(() => cy.visit('/iframe.html?id=appcomponent--primary'));
 
-  it('should render the component', () => {
-    cy.get('dotcms-root').should('exist');
-  });
+    it('should render the component', () => {
+        cy.get('dotcms-root').should('exist');
+    });
 });

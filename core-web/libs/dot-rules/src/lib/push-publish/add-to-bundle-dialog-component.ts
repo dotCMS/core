@@ -6,55 +6,52 @@ import {
     EventEmitter,
     OnChanges
 } from '@angular/core';
-import { IBundle } from '../services/bundle-service';
+
 import { MenuItem } from 'primeng/api';
+
+import { IBundle } from '../services/bundle-service';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-add-to-bundle-dialog-component',
     template: ` <p-dialog
-        width="700"
-        header="Add to Bundle"
         [visible]="!hidden"
         [modal]="true"
         [dismissableMask]="true"
         [closable]="false"
-        appendTo="body"
         [focusOnShow]="false"
         [draggable]="false"
-    >
+        width="700"
+        header="Add to Bundle"
+        appendTo="body">
         <p-message
             *ngIf="errorMessage"
-            style="margin-bottom: 16px; display: block;"
-            severity="error"
             [text]="errorMessage"
-        ></p-message>
+            style="margin-bottom: 16px; display: block;"
+            severity="error"></p-message>
         <cw-input-dropdown
-            flex
+            (onDropDownChange)="setSelectedBundle($event)"
+            (keyup.enter)="addToBundle.emit(selectedBundle)"
             [focus]="!hidden"
             [options]="options"
             [value]="bundleStores ? bundleStores[0]?.id : null"
-            allowAdditions="true"
-            (onDropDownChange)="setSelectedBundle($event)"
-            (keyup.enter)="addToBundle.emit(selectedBundle)"
-        >
+            flex
+            allowAdditions="true">
         </cw-input-dropdown>
         <p-footer>
             <button
+                (click)="cancel.emit()"
                 type="button"
                 pButton
                 secondary
-                (click)="cancel.emit()"
                 label="Cancel"
-                class="ui-button-secondary"
-            ></button>
+                class="ui-button-secondary"></button>
             <button
+                (click)="addToBundle.emit(selectedBundle)"
+                [disabled]="!selectedBundle"
                 type="button"
                 pButton
-                (click)="addToBundle.emit(selectedBundle)"
-                label="Add"
-                [disabled]="!selectedBundle"
-            ></button>
+                label="Add"></button>
         </p-footer>
     </p-dialog>`
 })

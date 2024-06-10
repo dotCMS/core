@@ -19,8 +19,7 @@ const Template = (args) => {
         datetime[item] = args[item];
     }
 
-    return `<dot-error-message>${args.content}</dot-error-message>`;;
+    return `<dot-error-message>${args.content}</dot-error-message>`;
 };
 
 export const ErrorMessage = Template.bind({});
-

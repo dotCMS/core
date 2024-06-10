@@ -5,10 +5,10 @@
             <p class="notification-item__message" id="{{ 'notification-item-message-' + data.id }}">
                 {{ data.notificationData.message }}
                 <a
-                    class="notification-item__link"
-                    id="{{ 'notification-item-link-action' + data.id }}"
                     *ngIf="showLinkAction"
                     [href]="data.notificationData.actions[0].action"
+                    class="notification-item__link"
+                    id="{{ 'notification-item-link-action' + data.id }}"
                     >{{ data.notificationData.actions[0].text }}</a
                 >
                 <dot-custom-time
@@ -18,9 +18,9 @@
             <!--TODO: handle more than one action-->
         </div>
         <p-button
+            (click)="onClear()"
             class="notification-item__close"
             id="{{ 'notification-item-button-close-' + data.id }}"
-            (click)="onClear()"
             icon="pi pi-times"
             title="{{ 'notifications_dismiss' | dm }}"
             styleClass="p-button-rounded p-button-text p-button-sm p-button-primary">

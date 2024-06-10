@@ -1,25 +1,22 @@
 <p-confirmDialog
-    #cd
     *ngIf="dotAlertConfirmService.confirmModel"
     [closable]="false"
     [style]="{width: '400px'}"
->
+    #cd>
     <p-footer>
         <button
+            (click)="onClickConfirm('reject')"
+            [label]="dotAlertConfirmService.confirmModel.footerLabel.reject"
             class="p-button-outlined"
             type="button"
             pButton
-            tabindex="-1"
-            [label]="dotAlertConfirmService.confirmModel.footerLabel.reject"
-            (click)="onClickConfirm('reject')"
-        ></button>
+            tabindex="-1"></button>
         <button
+            (click)="onClickConfirm('accept')"
+            [label]="dotAlertConfirmService.confirmModel.footerLabel.accept"
             type="button"
             pButton
-            #confirmBtn
-            [label]="dotAlertConfirmService.confirmModel.footerLabel.accept"
-            (click)="onClickConfirm('accept')"
-        ></button>
+            #confirmBtn></button>
     </p-footer>
 </p-confirmDialog>
 
@@ -29,25 +26,22 @@
     [draggable]="false"
     [header]="dotAlertConfirmService.alertModel.header"
     [visible]="true"
-    modal="modal"
     [style]="{width: '400px'}"
->
+    modal="modal">
     <div [innerHTML]="dotAlertConfirmService.alertModel.message"></div>
     <p-footer>
         <button
-            class="p-button-outlined"
             *ngIf="dotAlertConfirmService.alertModel.footerLabel.reject"
-            type="button"
-            pButton
             (click)="dotAlertConfirmService.alertReject($event)"
             [label]="dotAlertConfirmService.alertModel.footerLabel.reject"
-        ></button>
-        <button
+            class="p-button-outlined"
             type="button"
-            pButton
-            #acceptBtn
+            pButton></button>
+        <button
             (click)="dotAlertConfirmService.alertAccept($event)"
             [label]="dotAlertConfirmService.alertModel.footerLabel.accept"
-        ></button>
+            type="button"
+            pButton
+            #acceptBtn></button>
     </p-footer>
 </p-dialog>

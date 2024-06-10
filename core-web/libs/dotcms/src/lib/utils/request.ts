@@ -1,5 +1,6 @@
-import { DotCMSConfigurationParams, DotAppHttpRequestParams } from '../models';
 import fetch from 'cross-fetch';
+
+import { DotCMSConfigurationParams, DotAppHttpRequestParams } from '../models';
 
 async function getUrl(
     { params, url }: DotAppHttpRequestParams,
@@ -54,5 +55,6 @@ function getOpts(
 export async function request(options: DotAppHttpRequestParams, config: DotCMSConfigurationParams) {
     const url = await getUrl(options, config);
     const opts = getOpts(options, config);
+
     return fetch(url, opts);
 }

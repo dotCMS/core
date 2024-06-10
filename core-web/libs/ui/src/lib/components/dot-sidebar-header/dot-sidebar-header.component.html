@@ -2,15 +2,15 @@
     <div class="grid dot-sidebar-header">
         <div class="flex col align-items-center">
             <button
-                class="p-button-rounded p-button-text"
                 (click)="closePrimeNgSidebar()"
+                class="p-button-rounded p-button-text"
                 data-testId="header-close-icon"
                 icon="pi pi-times"
                 pButton></button>
             <h2 [innerHTML]="dotTitle" data-testId="header-title"></h2>
         </div>
 
-        <div class="col-fixed" *ngIf="actionButtonTpl">
+        <div *ngIf="actionButtonTpl" class="col-fixed">
             <ng-container *ngTemplateOutlet="actionButtonTpl"></ng-container>
         </div>
     </div>

@@ -52,7 +52,7 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
         this.#editContentService.getSitesTreePath().subscribe({
             next: (options) => {
                 this.options.set(options);
-                this.getInitialValue();
+                this.setInitialValue();
                 this.sitesStatus.set('success');
             },
             error: () => {
@@ -94,7 +94,7 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
         });
     }
 
-    getInitialValue() {
+    setInitialValue() {
         const value = this.formControl.value as string;
         if (value) {
             const hasPaths = value.includes('/');

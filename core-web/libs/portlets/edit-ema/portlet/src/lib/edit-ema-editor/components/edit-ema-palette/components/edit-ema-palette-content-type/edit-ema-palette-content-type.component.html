@@ -2,10 +2,10 @@
     <span class="p-input-icon-right">
         <i class="pi pi-search"></i>
         <input
-            class="p-inputtext-sm"
             [placeholder]="'Search' | dm"
             [formControl]="searchContentType"
             [value]="filter"
+            class="p-inputtext-sm"
             data-testId="content-type-search"
             type="search"
             pInputText />
@@ -20,34 +20,34 @@
 
     <ng-template #content>
         @for (contentType of contentTypes; track contentType.id; let i = $index) {
-        <div
-            class="content-type-card"
-            [attr.data-item]="
-                {
-                    contentType: {
-                        variable: contentType.variable,
-                        name: contentType.name,
-                        baseType: contentType.baseType,
-                    },
-                    move: false
-                } | json
+            <div
+                [attr.data-item]="
+                    {
+                        contentType: {
+                            variable: contentType.variable,
+                            name: contentType.name,
+                            baseType: contentType.baseType
+                        },
+                        move: false
+                    } | json
                 "
-            [attr.data-testId]="'content-type-' + i"
-            data-type="content-type"
-            draggable="true">
-            <button
-                class="button-go-content"
-                [attr.data-testId]="'content-type-' + i + '-button-go-content'"
-                (click)="showContentletsFromContentType(contentType.variable)">
-                <i class="pi pi-angle-right"></i>
-            </button>
+                [attr.data-testId]="'content-type-' + i"
+                class="content-type-card"
+                data-type="content-type"
+                draggable="true">
+                <button
+                    (click)="showContentletsFromContentType(contentType.variable)"
+                    [attr.data-testId]="'content-type-' + i + '-button-go-content'"
+                    class="button-go-content">
+                    <i class="pi pi-angle-right"></i>
+                </button>
 
-            <div class="content-type-card__content">
-                <dot-icon [name]="contentType.icon" [size]="24"></dot-icon>
-                <span>{{ contentType.name }}</span>
+                <div class="content-type-card__content">
+                    <dot-icon [name]="contentType.icon" [size]="24"></dot-icon>
+                    <span>{{ contentType.name }}</span>
+                </div>
+                <dot-icon [size]="20" class="drag-icon" name="drag_indicator"></dot-icon>
             </div>
-            <dot-icon class="drag-icon" [size]="20" name="drag_indicator"></dot-icon>
-        </div>
         }
     </ng-template>
 </div>

@@ -9,21 +9,21 @@
                             >{{ preview.type }} Version</span
                         >
                         <div
-                            class="results-seo-tool__card"
                             [class.results-seo-tool__version--small]="preview.isMobile"
+                            class="results-seo-tool__card"
                             data-testId="seo-preview-mobile">
                             <div class="results-seo-tool__card-title">
                                 <div
-                                    class="results-seo-tool__card-favicon"
                                     *ngIf="noFavicon; else favicon"
+                                    class="results-seo-tool__card-favicon"
                                     data-testId="favicon-default">
                                     <i class="pi pi-globe"></i>
                                 </div>
                                 <ng-template #favicon>
                                     <img
-                                        class="results-seo-tool__card-favicon"
-                                        [src]="seoOGTags.favicon"
                                         (error)="onFaviconError()"
+                                        [src]="seoOGTags.favicon"
+                                        class="results-seo-tool__card-favicon"
                                         data-testId="favicon-image"
                                         alt="favicon" />
                                 </ng-template>
@@ -63,7 +63,7 @@
     </p-card>
 </div>
 
-<p-card class="results-seo-tool__result-card" *ngFor="let result of currentResults$ | async">
+<p-card *ngFor="let result of currentResults$ | async" class="results-seo-tool__result-card">
     <ng-template pTemplate="header">
         <div class="results-seo-tool__result-card-title">
             <span data-testId="result-key"> {{ result.title | titlecase }}</span>
@@ -71,7 +71,7 @@
     </ng-template>
     <ul class="results-seo-tool__result-card-list">
         <li *ngFor="let item of result.items" data-testId="seo-tag">
-            <i class="pi" [ngClass]="[item.color, item.itemIcon]"> </i>
+            <i [ngClass]="[item.color, item.itemIcon]" class="pi"> </i>
             <span [innerHTML]="item.message | safeHtml"></span>
         </li>
     </ul>
@@ -87,8 +87,8 @@
         <li *ngFor="let item of readMoreValues[seoMedia]">
             <i class="results-seo-tool__result-icon pi pi-info-circle"></i>
             <span
-                class="results-seo-tool__read-more-label"
                 [innerHTML]="item | safeHtml"
+                class="results-seo-tool__read-more-label"
                 data-testId="readmore"></span>
         </li>
     </ul>

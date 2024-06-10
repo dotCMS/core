@@ -1,8 +1,8 @@
 <form
-    class="p-fluid"
+    (ngSubmit)="handleSubmit()"
     [ngClass]="{ 'locale-add__edit-form': languageId?.value }"
     [formGroup]="form"
-    (ngSubmit)="handleSubmit()">
+    class="p-fluid">
     @if (languageId?.value) {
         <!--Edit language-->
         <div class="field">
@@ -10,8 +10,8 @@
                 'locale.display.name' | dm
             }}</label>
             <input
-                id="langEdit"
                 [maxlength]="50"
+                id="langEdit"
                 data-testId="langEdit"
                 formControlName="language"
                 pInputText
@@ -21,7 +21,7 @@
         <div class="field">
             <label for="isoCodeEdit">{{ 'locale.id' | dm }}</label>
             <span class="p-input-icon-right">
-                <i class="pi pi-copy" [cdkCopyToClipboard]="localeIDInput.value"></i>
+                <i [cdkCopyToClipboard]="localeIDInput.value" class="pi pi-copy"></i>
                 <input
                     id="isoCodeEdit"
                     #localeIDInput
@@ -34,7 +34,7 @@
         <div class="field">
             <label for="id">{{ 'locale.language.id' | dm }}</label>
             <span class="p-input-icon-right">
-                <i class="pi pi-copy" [cdkCopyToClipboard]="languageIDInput.value"></i>
+                <i [cdkCopyToClipboard]="languageIDInput.value" class="pi pi-copy"></i>
                 <input
                     id="id"
                     #languageIDInput
@@ -49,10 +49,10 @@
         <div class="field">
             <label for="localeType">{{ 'locales.type' | dm }}</label>
             <p-dropdown
+                (onChange)="handleTypeChange()"
+                [options]="localeType"
                 id="localeType"
                 #localeTypeDropdown
-                [options]="localeType"
-                (onChange)="handleTypeChange()"
                 data-testId="localeType"
                 appendTo="body">
             </p-dropdown>
@@ -65,10 +65,10 @@
                     'locales.language' | dm
                 }}</label>
                 <p-dropdown
-                    id="languageDropdown"
                     [filter]="true"
                     [options]="data.languages"
                     [placeholder]="'locales.language.input.placeholder' | dm"
+                    id="languageDropdown"
                     filterBy="name,code"
                     data-testId="languageDropdown"
                     appendTo="body"
@@ -85,10 +85,10 @@
             <div class="field">
                 <label for="countryDropdown">{{ 'locales.country' | dm }}</label>
                 <p-dropdown
-                    id="countryDropdown"
                     [filter]="true"
                     [options]="data.countries"
                     [placeholder]="'locales.language.input.placeholder' | dm"
+                    id="countryDropdown"
                     data-testId="countryDropdown"
                     filterBy="name,code"
                     appendTo="body"
@@ -105,11 +105,11 @@
             <div class="field">
                 <label for="isoCode">{{ 'locale.id' | dm }}</label>
                 <span class="p-input-icon-right">
-                    <i class="pi pi-copy" [cdkCopyToClipboard]="isoCodeInput.value"></i>
+                    <i [cdkCopyToClipboard]="isoCodeInput.value" class="pi pi-copy"></i>
                     <input
+                        [placeholder]="'locale.id.placeholder' | dm"
                         id="isoCode"
                         #isoCodeInput
-                        [placeholder]="'locale.id.placeholder' | dm"
                         data-testId="isoCode"
                         formControlName="isoCode"
                         pInputText
@@ -124,8 +124,8 @@
                     'locale.display.name' | dm
                 }}</label>
                 <input
-                    id="language"
                     [maxlength]="50"
+                    id="language"
                     data-testId="language"
                     formControlName="language"
                     pInputText
@@ -137,8 +137,8 @@
                     'locale.id' | dm
                 }}</label>
                 <input
-                    id="languageCode"
                     [maxlength]="5"
+                    id="languageCode"
                     data-testId="languageCode"
                     formControlName="languageCode"
                     pInputText
@@ -155,9 +155,9 @@
 
     <div class="locale-add__buttons">
         <button
-            class="p-button-text"
-            [label]="'Cancel' | dm"
             (click)="ref.close()"
+            [label]="'Cancel' | dm"
+            class="p-button-text"
             pButton
             type="button"></button>
         <button

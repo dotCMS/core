@@ -1,7 +1,8 @@
+import { DotApiLanguage } from './DotApiLanguage';
+
+import { DotCMSPageAsset, DotCMSError, DotCMSPageFormat } from '../models';
 import { DotCMSPageParams } from '../models/DotCMSPage.model';
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSPageAsset, DotCMSError, DotCMSPageFormat } from '../models';
-import { DotApiLanguage } from './DotApiLanguage';
 
 /**
  * Allow easy interaction with {@link https://dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas | DotCMS Page API}
@@ -41,6 +42,7 @@ export class DotApiPage {
         return this.dotCMSHttpClient.request(params).then(async (res: Response) => {
             if (res.status === 200) {
                 const data = await res.json();
+
                 return <DotCMSPageAsset>data.entity;
             }
 

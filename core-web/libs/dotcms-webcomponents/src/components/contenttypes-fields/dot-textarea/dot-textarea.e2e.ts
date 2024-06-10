@@ -137,7 +137,7 @@ describe('dot-textarea', () => {
             it('should not break hint with invalid hint value', async () => {
                 element.setProperty('hint', { test: 'hint' });
                 await page.waitForChanges();
-                expect((await dotTestUtil.getHint(page))).toBeNull();
+                expect(await dotTestUtil.getHint(page)).toBeNull();
             });
         });
 
@@ -193,7 +193,7 @@ describe('dot-textarea', () => {
                 await textarea.press('a');
                 await textarea.press('Backspace');
                 await page.waitForChanges();
-                expect((await dotTestUtil.getErrorMessage(page))).toBeNull();
+                expect(await dotTestUtil.getErrorMessage(page)).toBeNull();
             });
         });
 
