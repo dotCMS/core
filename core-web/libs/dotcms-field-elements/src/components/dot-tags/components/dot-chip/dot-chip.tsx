@@ -27,8 +27,7 @@ export class DotChipComponent {
                     type="button"
                     aria-label={label}
                     disabled={this.disabled}
-                    onClick={() => this.remove.emit(this.label)}
-                >
+                    onClick={() => this.remove.emit(this.label)}>
                     {this.deleteLabel}
                 </button>
             </Host>

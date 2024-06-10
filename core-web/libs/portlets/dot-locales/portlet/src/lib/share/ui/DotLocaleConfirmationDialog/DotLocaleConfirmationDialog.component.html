@@ -8,16 +8,16 @@
 </div>
 <div class="locale-confirmation__buttons">
     <button
-        class="p-button-outlined"
-        [label]="'Cancel' | dm"
         (click)="ref.close(false)"
+        [label]="'Cancel' | dm"
+        class="p-button-outlined"
         data-testid="cancel-button"
         pButton
         type="button"></button>
     <button
+        (click)="ref.close(true)"
         [label]="data.acceptLabel"
         [disabled]="data.ISOCode !== userKey.value"
-        (click)="ref.close(true)"
         data-testid="confirm-button"
         pButton
         type="button"></button>

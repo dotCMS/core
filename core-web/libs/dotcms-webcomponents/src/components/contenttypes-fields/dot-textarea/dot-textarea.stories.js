@@ -21,7 +21,6 @@ export default {
 };
 
 const Template = (args) => {
-
     const textarea = document.createElement('dot-textarea');
 
     for (const item in args) {

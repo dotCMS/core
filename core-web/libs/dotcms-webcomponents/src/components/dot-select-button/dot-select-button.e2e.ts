@@ -33,12 +33,16 @@ describe('dot-select-button', () => {
 
     describe('@Elements', () => {
         it('should have mwc-icon-button elements', async () => {
-            const buttons: E2EElement[] = await page.findAll('dot-select-button >>> mwc-icon-button');
+            const buttons: E2EElement[] = await page.findAll(
+                'dot-select-button >>> mwc-icon-button'
+            );
             expect(buttons.length).toEqual(3);
         });
 
         it('should set mwc-icon-button attributes', async () => {
-            const buttons: E2EElement[] = await page.findAll('dot-select-button >>> mwc-icon-button');
+            const buttons: E2EElement[] = await page.findAll(
+                'dot-select-button >>> mwc-icon-button'
+            );
             expect(await buttons[1].getProperty('icon')).toEqual('backup');
             expect(await buttons[1].getProperty('label')).toEqual('Backup');
             expect(await buttons[1].getProperty('disabled')).toEqual(true);

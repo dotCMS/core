@@ -1,8 +1,8 @@
 <button
-    class="p-button-text p-button-sm"
+    (click)="op.toggle($event)"
     [label]="value.name"
     [ngClass]="{ selected: value.identifier !== 'modes.persona.no.persona' }"
-    (click)="op.toggle($event)"
+    class="p-button-text p-button-sm"
     pButton
     data-testId="persona-button">
     <p-avatar
@@ -20,9 +20,9 @@
 </button>
 <p-overlayPanel #op styleClass="edit-ema-selector" data-testId="persona-op">
     <p-listbox
-        #listbox
-        [options]="personas"
         (onChange)="onSelect($event); op.toggle($event)"
+        [options]="personas"
+        #listbox
         optionLabel="label"
         data-testId="persona-listbox"
         dataKey="identifier">
@@ -41,11 +41,11 @@
                     styleClass="p-chip-sm"
                     data-testId="persona-chip">
                     <i
-                        class="pi pi-times-circle p-chip-icon"
                         (click)="
                             onRemove($event, persona, value.identifier === persona.identifier);
                             op.toggle($event)
                         "
+                        class="pi pi-times-circle p-chip-icon"
                         data-testId="persona-chip-remove"></i>
                     <span class="p-chip-text">{{ 'modes.persona.personalized' | dm }}</span>
                 </p-chip>

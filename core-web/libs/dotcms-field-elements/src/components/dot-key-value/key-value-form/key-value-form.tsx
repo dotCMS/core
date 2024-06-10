@@ -82,8 +82,7 @@ export class DotKeyValueComponent {
                 <button
                     class="key-value-form__save__button"
                     type="submit"
-                    disabled={buttonDisabled}
-                >
+                    disabled={buttonDisabled}>
                     {this.addButtonLabel}
                 </button>
             </form>

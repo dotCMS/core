@@ -57,7 +57,6 @@ describe('dot-context-menu', () => {
             expect(menu.getAttribute('open')).not.toBeNull();
         });
 
-
         xit('should call passed action', async () => {
             // For some reason the `action` is not passing as a function, you can pass string tho
             const element = await page.find('dot-context-menu');
@@ -65,12 +64,12 @@ describe('dot-context-menu', () => {
             await page.waitForChanges();
 
             const button = await page.find('dot-context-menu >>> button');
-            await button.click()
+            await button.click();
 
             await page.waitForChanges();
 
             const item = await page.find('dot-context-menu >>> mwc-list-item');
-            await item.click()
+            await item.click();
             await page.waitForChanges();
 
             expect(mock[0].action).toBeCalledTimes(2);

@@ -23,8 +23,7 @@ import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflow
         <form [formGroup]="form">
             <dot-workflows-actions-selector-field
                 [workflows]="workfows"
-                formControlName="action"
-            ></dot-workflows-actions-selector-field>
+                formControlName="action"></dot-workflows-actions-selector-field>
             {{ form.value | json }}
         </form>
     `

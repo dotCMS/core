@@ -1,4 +1,3 @@
-
 import readme from './readme.md';
 
 export default {
@@ -28,6 +27,6 @@ const Template = (args) => {
     }
 
     return checkbox;
-}
+};
 
 export const Checkbox = Template.bind({});

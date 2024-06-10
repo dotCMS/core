@@ -13,19 +13,19 @@
 
         <div class="dot-portlet-toolbar__actions" data-testId="actionsWrapper">
             <button
-                class="p-button-outlined"
                 *ngIf="actions?.cancel"
-                [label]="cancelButtonLabel || ('cancel' | dm)"
                 (click)="onCancelClick($event)"
+                [label]="cancelButtonLabel || ('cancel' | dm)"
+                class="p-button-outlined"
                 data-testId="actionsCancelButton"
                 pButton></button>
 
             <ng-container *ngIf="actions?.primary?.length">
                 <button
                     *ngIf="actions?.primary?.length === 1; else elseBlock"
+                    (click)="onPrimaryClick($event)"
                     [label]="actions?.primary[0]?.label || ('save' | dm)"
                     [disabled]="actions?.primary[0]?.disabled"
-                    (click)="onPrimaryClick($event)"
                     data-testId="actionsPrimaryButton"
                     pButton></button>
             </ng-container>
@@ -35,11 +35,11 @@
 
 <ng-template #elseBlock>
     <button
-        [label]="actionsButtonLabel || ('actions' | dm)"
         (click)="menu.toggle($event)"
+        [label]="actionsButtonLabel || ('actions' | dm)"
         data-testId="actionsMenuButton"
         pButton
         icon="pi pi-chevron-down"
         iconPos="right"></button>
-    <p-menu #menu [popup]="true" [model]="actions?.primary" data-testId="actionsMenu"></p-menu>
+    <p-menu [popup]="true" [model]="actions?.primary" #menu data-testId="actionsMenu"></p-menu>
 </ng-template>

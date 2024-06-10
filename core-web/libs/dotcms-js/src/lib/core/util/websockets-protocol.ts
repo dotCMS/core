@@ -1,6 +1,8 @@
 import { Subject } from 'rxjs';
-import { LoggerService } from '../logger.service';
+
 import { Protocol } from './protocol';
+
+import { LoggerService } from '../logger.service';
 
 enum WEB_SOCKET_PROTOCOL_CODE {
     NORMAL_CLOSE_CODE = 1000,
