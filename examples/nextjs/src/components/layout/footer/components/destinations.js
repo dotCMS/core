@@ -7,7 +7,9 @@ export default function Destinations() {
     return (
         <div className="flex flex-col">
             <h2 className="text-2xl font-bold mb-7">Popular Destinations</h2>
-            {destinations.length && <Contentlets contentlets={destinations} />}
+            {!!destinations.length && (
+                <Contentlets contentlets={destinations} />
+            )}
         </div>
     );
 }

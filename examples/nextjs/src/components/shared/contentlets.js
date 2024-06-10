@@ -12,7 +12,10 @@ function Contentlets({ contentlets }) {
         <ul className="flex flex-col gap-7">
             {contentlets.map((contentlet) => (
                 <li key={contentlet.identifier} className="flex gap-7 min-h-16">
-                    <div className="relative min-w-32">
+                    <a
+                        className="relative min-w-32"
+                        href={contentlet.urlMap || contentlet.url}
+                    >
                         <Image
                             src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${
                                 contentlet.image
@@ -21,11 +24,11 @@ function Contentlets({ contentlets }) {
                             fill={true}
                             className="object-cover"
                         />
-                    </div>
+                    </a>
                     <div className="flex flex-col gap-1">
                         <a
                             className="text-sm text-yellow-200 font-bold"
-                            href={contentlet.urlMap}
+                            href={contentlet.urlMap || contentlet.url}
                         >
                             {contentlet.title}
                         </a>
