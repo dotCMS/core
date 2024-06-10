@@ -1,11 +1,12 @@
 import { of as observableOf, Observable, Subject } from 'rxjs';
 
-import { map, mergeMap } from 'rxjs/operators';
+import { HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+
+import { map, mergeMap } from 'rxjs/operators';
 
 import { ApiRoot } from '@dotcms/dotcms-js';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { HttpResponse } from '@angular/common/http';
 
 export interface IUser {
     givenName?: string;
@@ -42,6 +43,7 @@ export class BundleService {
     static fromServerEnvironmentTransformFn(data): IPublishEnvironment[] {
         // Endpoint return extra empty environment
         data.shift();
+
         return data;
     }
 
@@ -97,10 +99,12 @@ export class BundleService {
             obs = this._doLoadPublishEnvironments().pipe(
                 map((environments: IPublishEnvironment[]) => {
                     this._environmentsAry = environments;
+
                     return environments;
                 })
             );
         }
+
         return obs;
     }
 
@@ -168,6 +172,7 @@ export class BundleService {
         const yyyy = date.getFullYear().toString();
         const mm = (date.getMonth() + 1).toString();
         const dd = date.getDate().toString();
+
         return yyyy + '-' + (mm[1] ? mm : '0' + mm[0]) + '-' + (dd[1] ? dd : '0' + dd[0]);
     }
 
@@ -183,6 +188,7 @@ export class BundleService {
         resul += '&bundleName=';
         resul += '&bundleSelect=';
         resul += '&forcePush=false';
+
         return resul;
     }
 }

@@ -9,10 +9,6 @@ on:
         description: 'Release version'
         default: '1.0.0-SNAPSHOT'
         required: false
-      notify_slack:
-        description: 'Notify Slack'
-        default: 'true'
-        required: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
@@ -465,6 +461,7 @@ jobs:
           npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
           
       - name: Slack Notification
+        continue-on-error: true
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
@@ -475,7 +472,6 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-        if: success() && github.event.inputs.notify_slack == 'true'
 
   clean-up:
     name: "Clean Up"

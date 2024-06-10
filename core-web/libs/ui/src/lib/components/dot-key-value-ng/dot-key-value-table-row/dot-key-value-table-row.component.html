@@ -5,26 +5,26 @@
     <td data-testId="dot-key-value-label">{{ passwordPlaceholder }}</td>
     } @else {
     <td
-        #valueCell
         [pEditableColumn]="currentValue"
+        #valueCell
         data-testId="dot-key-value-editable-column"
         pEditableColumnField="value">
         <p-cellEditor>
             <ng-template pTemplate="input">
                 <input
-                    class="field-value-input"
-                    [placeholder]="'keyValue.value_input.placeholder' | dm"
-                    [type]="inputType"
-                    [formControl]="form.get('value')"
                     (focus)="showEditMenu.set(true)"
                     (keydown.enter)="onPressEnter()"
                     (keydown.escape)="$event.stopPropagation(); onCancel()"
+                    [placeholder]="'keyValue.value_input.placeholder' | dm"
+                    [type]="inputType"
+                    [formControl]="form.get('value')"
+                    class="field-value-input"
                     autocomplete="false"
                     data-testId="dot-key-value-input"
                     pInputText />
             </ng-template>
             <ng-template pTemplate="output">
-                @if(isHiddenField || currentHiddenValue) {
+                @if (isHiddenField || currentHiddenValue) {
                 <span data-testId="dot-key-editable-password-placeholder">
                     {{ passwordPlaceholder }}
                 </span>
@@ -40,25 +40,25 @@
     </td>
     }
 
-    <td class="dot-key-value-table-row__variables-hidden" *ngIf="showHiddenField">
+    <td *ngIf="showHiddenField" class="dot-key-value-table-row__variables-hidden">
         <p-inputSwitch
-            [formControl]="form.get('hidden')"
             (onChange)="showEditMenu.set(true)"
+            [formControl]="form.get('hidden')"
             data-testId="dot-key-value-hidden-switch"></p-inputSwitch>
     </td>
 
     <td class="dot-key-value-table-row__variables-actions">
-        @if(showEditMenu()) {
+        @if (showEditMenu()) {
         <p-button
-            [label]="'Cancel' | dm"
             (click)="onCancel()"
+            [label]="'Cancel' | dm"
             styleClass="dot-key-value-table-row__variables-actions-edit-cancel p-button-outlined"
             data-testId="dot-key-value-cancel-button" />
         <p-button
-            #saveButton
+            (click)="saveVariable()"
             [label]="'Save' | dm"
             [disabled]="!form.valid"
-            (click)="saveVariable()"
+            #saveButton
             styleClass="dot-key-value-table-row__variables-actions-edit-save"
             data-testId="dot-key-value-save-button" />
         } @else {
@@ -68,8 +68,8 @@
             icon="pi pi-trash"
             styleClass="p-button-text p-button-danger p-button-rounded" />
         <p-button
-            [disabled]="isHiddenField"
             (click)="focusValueInput($event)"
+            [disabled]="isHiddenField"
             data-testId="dot-key-value-edit-button"
             icon="pi pi-pencil"
             styleClass="p-button-text p-button-rounded" />

@@ -1,8 +1,8 @@
 @if (options(); as op) {
 <p-button
     *ngIf="op.action"
-    [icon]="op.actionIcon"
     (onClick)="op.action()"
+    [icon]="op.actionIcon"
     styleClass="p-button-text p-button-sm p-button-rounded"
     data-testId="info-action"></p-button>
 
@@ -10,5 +10,4 @@
     <i *ngIf="!!op.icon" [class]="op.icon + ' info-container__icon'" data-testId="info-icon"></i>
     <span [innerHTML]="op.info.message | dm : op.info.args" data-testId="info-text"> </span>
 </div>
-
 }

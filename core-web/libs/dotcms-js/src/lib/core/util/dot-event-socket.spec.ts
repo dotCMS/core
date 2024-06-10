@@ -1,13 +1,16 @@
-import { Observable, of, throwError } from 'rxjs';
-import { StringUtils } from '../string-utils.service';
-import { LoggerService } from '../logger.service';
-import { DotEventsSocket } from './dot-event-socket';
-import { DotEventsSocketURL } from './models/dot-event-socket-url';
-import { ConfigParams, DotcmsConfigService } from '../dotcms-config.service';
-import { CoreWebService } from '../core-web.service';
 import { Server } from 'mock-socket';
-import { DotEventMessage } from './models/dot-event-message';
+import { Observable, of, throwError } from 'rxjs';
+
 import { ReflectiveInjector, Injectable } from '@angular/core';
+
+import { DotEventsSocket } from './dot-event-socket';
+import { DotEventMessage } from './models/dot-event-message';
+import { DotEventsSocketURL } from './models/dot-event-socket-url';
+
+import { CoreWebService } from '../core-web.service';
+import { ConfigParams, DotcmsConfigService } from '../dotcms-config.service';
+import { LoggerService } from '../logger.service';
+import { StringUtils } from '../string-utils.service';
 
 @Injectable()
 class CoreWebServiceMock extends CoreWebService {
@@ -148,6 +151,7 @@ describe('DotEventsSocket', () => {
             spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
                 if (firstTime) {
                     firstTime = false;
+
                     return throwError('ERROR');
                 } else {
                     return of({

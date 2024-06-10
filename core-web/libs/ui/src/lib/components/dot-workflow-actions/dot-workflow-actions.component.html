@@ -1,16 +1,16 @@
-@for(action of groupedActions(); track $index; let first = $first) { @if(action.length > 1) {
+@for (action of groupedActions(); track $index; let first = $first) { @if (action.length > 1) {
 <p-splitButton
+    (onClick)="action[0].command()"
     [disabled]="loading"
     [styleClass]="sizeClass + (!first ? ' p-button-outlined' : '')"
     [model]="action | slice : 1"
-    [label]="action[0].label"
-    (onClick)="action[0].command()" />
+    [label]="action[0].label" />
 } @else {
 <p-button
+    (onClick)="action[0].command()"
     [loading]="loading"
     [styleClass]="sizeClass + (!first ? ' p-button-outlined' : '')"
-    [label]="action[0].label"
-    (onClick)="action[0].command()" />
+    [label]="action[0].label" />
 } } @empty {
 <p-button
     [loading]="loading"

@@ -1,15 +1,14 @@
-<div class="dot-layout-designer" [formGroup]="group.control">
-    <div class="dot-layout-designer__header" *ngIf="group.control.get('header').value">
+<div [formGroup]="group.control" class="dot-layout-designer">
+    <div *ngIf="group.control.get('header').value" class="dot-layout-designer__header">
         {{ 'editpage.layout.designer.header' | dm }}
     </div>
     <div class="dot-layout-designer__main">
         <div
-            class="dot-layout-designer__sidebar--left"
+            *ngIf="group.control.get('sidebar')?.value?.location === 'left'"
             [ngClass]="
                 'dot-layout-designer__sidebar--' + group.control.get('sidebar')?.value['width']
             "
-            *ngIf="group.control.get('sidebar')?.value?.location === 'left'"
-        >
+            class="dot-layout-designer__sidebar--left">
             <dot-edit-layout-sidebar formControlName="sidebar"></dot-edit-layout-sidebar>
         </div>
         <div class="dot-layout-designer__body">
@@ -18,16 +17,15 @@
             </div>
         </div>
         <div
-            class="dot-layout-designer__sidebar--right"
+            *ngIf="group.control.get('sidebar')?.value?.location === 'right'"
             [ngClass]="
                 'dot-layout-designer__sidebar--' + group.control.get('sidebar')?.value['width']
             "
-            *ngIf="group.control.get('sidebar')?.value?.location === 'right'"
-        >
+            class="dot-layout-designer__sidebar--right">
             <dot-edit-layout-sidebar formControlName="sidebar"></dot-edit-layout-sidebar>
         </div>
     </div>
-    <div class="dot-layout-designer__footer" *ngIf="group.control.get('footer').value">
+    <div *ngIf="group.control.get('footer').value" class="dot-layout-designer__footer">
         {{ 'editpage.layout.designer.footer' | dm }}
     </div>
 </div>

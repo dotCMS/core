@@ -23,7 +23,7 @@
         {{ contentType.name }}
     </dd>
 
-    @if($workflowStatus()?.task ) {
+    @if ($workflowStatus()?.task) {
     <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
     <dd
         class="workflow-column__description"

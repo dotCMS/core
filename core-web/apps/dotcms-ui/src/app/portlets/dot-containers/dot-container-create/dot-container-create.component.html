@@ -9,8 +9,7 @@
             <p-tabPanel *ngIf="containerId" [header]="'message.containers.tab.permissions' | dm">
                 <ng-template pTemplate="content">
                     <dot-container-permissions
-                        [containerId]="containerId"
-                    ></dot-container-permissions>
+                        [containerId]="containerId"></dot-container-permissions>
                 </ng-template>
             </p-tabPanel>
             <p-tabPanel *ngIf="containerId" [header]="'message.containers.tab.history' | dm">

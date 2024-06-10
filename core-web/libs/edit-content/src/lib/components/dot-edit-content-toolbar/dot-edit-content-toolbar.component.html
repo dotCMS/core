@@ -2,8 +2,8 @@
     <div class="p-toolbar-group-left"></div>
     <div class="p-toolbar-group-right">
         <dot-workflow-actions
+            (actionFired)="actionFired.emit($event)"
             [actions]="actions"
-            [groupAction]="true"
-            (actionFired)="actionFired.emit($event)" />
+            [groupAction]="true" />
     </div>
 </p-toolbar>
