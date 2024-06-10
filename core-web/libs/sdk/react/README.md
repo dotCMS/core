@@ -130,7 +130,6 @@ Always refer to the official [DotCMS documentation](https://www.dotcms.com/docs/
 | Installation    | [Installation](https://dotcms.com/docs/latest/installation)         |
 | Documentation   | [Documentation](https://dotcms.com/docs/latest/table-of-contents)   |
 | Videos          | [Helpful Videos](http://dotcms.com/videos/)                         |
-| Code Examples   | [Codeshare](https://dotcms.com/codeshare/)                          |
 | Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter         | @dotCMS                                                             |
 | Main Site       | [dotCMS.com](https://dotcms.com/)                                   |
