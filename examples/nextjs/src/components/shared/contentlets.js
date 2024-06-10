@@ -27,12 +27,12 @@ function Contentlets({ contentlets }) {
                     </a>
                     <div className="flex flex-col gap-1">
                         <a
-                            className="text-sm text-yellow-200 font-bold"
+                            className="text-sm text-zinc-900 font-bold"
                             href={contentlet.urlMap || contentlet.url}
                         >
                             {contentlet.title}
                         </a>
-                        <time>
+                        <time className="text-zinc-600">
                             {new Date(
                                 contentlet.publishDate
                             ).toLocaleDateString("en-US", dateFormatOptions)}
