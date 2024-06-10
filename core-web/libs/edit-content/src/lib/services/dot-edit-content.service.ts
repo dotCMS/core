@@ -113,7 +113,7 @@ export class DotEditContentService {
      * @memberof DotEditContentService
      */
     getFoldersTreeNode(hostName: string, path: string): Observable<TreeNodeItem[]> {
-        return this.getFolders(`//${hostName}/${path}`).pipe(
+        return this.getFolders(`//${hostName}${path}`).pipe(
             map((folders) => {
                 return folders
                     .filter((folder) => {
@@ -150,7 +150,7 @@ export class DotEditContentService {
             const [hostName] = split;
             const subPath = split.slice(1).join('/');
 
-            return this.getFoldersTreeNode(hostName, subPath).pipe(
+            return this.getFoldersTreeNode(hostName, `/${subPath}`).pipe(
                 map((folders) => ({ path: path.replace(/[/]/g, ''), folders }))
             );
         });
