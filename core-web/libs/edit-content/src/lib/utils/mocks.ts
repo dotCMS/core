@@ -18,7 +18,10 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { EditContentPayload } from '../models/dot-edit-content-form.interface';
-import { TreeNodeItem } from '../models/dot-edit-content-host-folder-field.interface';
+import {
+    CustomTreeNode,
+    TreeNodeItem
+} from '../models/dot-edit-content-host-folder-field.interface';
 
 /* FIELDS MOCK BY TYPE */
 export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
@@ -1273,7 +1276,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
     }
 ];
 
-export const TREE_SELECT_MOCK_NODE = {
+export const TREE_SELECT_MOCK_NODE: CustomTreeNode = {
     node: { ...TREE_SELECT_MOCK[0].children[0] },
     tree: {
         path: 'demo.dotcms.com',

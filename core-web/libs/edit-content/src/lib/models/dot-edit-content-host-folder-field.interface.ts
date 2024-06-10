@@ -11,7 +11,7 @@ export type TreeNodeSelectItem = TreeNodeSelectEvent<TreeNodeData>;
 export type CustomTreeNode = {
     node: null | TreeNodeItem;
     tree: {
-        path: 'string';
+        path: string;
         folders: TreeNodeItem[];
     };
 };
