@@ -883,14 +883,12 @@ public class ESIndexAPI {
 					RestHighLevelClientProvider.getInstance().getClient().indices()
 							.get(request, RequestOptions.DEFAULT).getIndices()));
 
-			List<String> returnVal = indexes.stream()
+			return indexes.stream()
 					.filter(this::hasClusterPrefix)
 					.map(this::removeClusterIdFromName)
 					.sorted(new IndexSortByDate())
 					.collect(Collectors.toList());
 
-
-			return returnVal;
 		} catch (ElasticsearchStatusException | IOException e) {
 			Logger.warnAndDebug(ContentletIndexAPIImpl.class, "The list of indexes cannot be returned. Reason: " + e.getMessage(), e);
 		}
