@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { DOTCMS_CLIENT_TOKEN } from '../../client-token/dotcms-client';
 import { GenericContentlet } from '../../utils';
 import { ContentletsComponent } from '../contentlets/contentlets.component';
@@ -14,12 +14,12 @@ import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
     <app-contentlets [contentlets]="destinations()" /> }
   </div>`,
 })
-export class DestinationsComponent {
+export class DestinationsComponent implements OnInit {
   private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
   readonly destinations = signal<Contentlet<GenericContentlet>[]>([]);
 
-  constructor() {
+  ngOnInit() {
     this.client.content
       .getCollection<GenericContentlet>('Destination')
       .limit(3)

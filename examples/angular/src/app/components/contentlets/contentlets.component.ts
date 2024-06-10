@@ -2,19 +2,21 @@ import { Component, Input } from '@angular/core';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { GenericContentlet } from '../../utils';
 import { environment } from '../../../environments/environment';
+import { NgOptimizedImage } from '@angular/common';
 
 @Component({
   selector: 'app-contentlets',
   standalone: true,
-  imports: [],
+  imports: [NgOptimizedImage],
   template: `<ul class="flex flex-col gap-7">
     @for(contentlet of contentlets; track contentlet.identifier) {
     <li class="flex gap-7 min-h-16">
       <a class="min-w-32 relative" [href]="contentlet.urlMap ?? contentlet.url">
         <img
-          [src]="getImageUrl(contentlet)"
+          [ngSrc]="getImageUrl(contentlet)"
+          [fill]="true"
           [alt]="contentlet.urlTitle ?? contentlet.title"
-          class="object-cover absolute w-full h-full inset-0 text-black"
+          class="object-cover"
         />
       </a>
       <div class="flex flex-col gap-1">

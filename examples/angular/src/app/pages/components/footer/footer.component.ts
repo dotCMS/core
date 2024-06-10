@@ -1,14 +1,14 @@
 import { environment } from '../../../../environments/environment';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
-import { DOTCMS_CLIENT_TOKEN } from '../../../client-token/dotcms-client';
 import { BlogsComponent } from '../../../components/blogs/blogs.component';
 import { DestinationsComponent } from '../../../components/destinations/destinations.component';
+import { NgOptimizedImage } from '@angular/common';
 
 @Component({
   selector: 'app-footer',
   standalone: true,
-  imports: [BlogsComponent, DestinationsComponent],
+  imports: [BlogsComponent, DestinationsComponent, NgOptimizedImage],
   template: `<footer class="p-4 text-white bg-red-100 py-24">
     <div
       class="grid md:grid-cols-3 sm:grid-cols-1 md:grid-rows-1 sm:grid-rows-3 gap-7 mx-24"
@@ -21,9 +21,8 @@ import { DestinationsComponent } from '../../../components/destinations/destinat
           where to go for your travel as well as to give you amazing
           opportunities with free benefits and bonuses for registered clients.
         </p>
-        <img />
         <img
-          [src]="
+          [ngSrc]="
             environment.dotcmsUrl +
             '/contentAsset/image/82da90eb-044d-44cc-a71b-86f79820b61b/fileAsset'
           "
@@ -40,22 +39,5 @@ import { DestinationsComponent } from '../../../components/destinations/destinat
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FooterComponent {
-  protected readonly client = inject(DOTCMS_CLIENT_TOKEN);
-
   protected readonly environment = environment;
-
-  constructor() {
-    this.client.content
-      .getCollection('Blog')
-      .limit(3)
-      .sortBy([
-        {
-          field: 'modDate',
-          order: 'desc',
-        },
-      ])
-      .then((response) => {
-        console.log(response);
-      });
-  }
 }
