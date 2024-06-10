@@ -1,14 +1,14 @@
 <form
-    class="url-mode__form"
     *ngIf="vm$ | async as vm"
-    [formGroup]="form"
     (ngSubmit)="onSubmit()"
+    [formGroup]="form"
+    class="url-mode__form"
     data-testId="form">
     <div class="url-mode__input-container">
         <label for="url-input">{{ 'dot.binary.field.action.import.from.url' | dm }}</label>
         <input
-            id="url-input"
             (focus)="handleFocus()"
+            id="url-input"
             type="text"
             autocomplete="off"
             formControlName="url"
@@ -31,8 +31,8 @@
     </div>
     <div class="url-mode__actions">
         <p-button
-            [label]="'dot.common.cancel' | dm"
             (click)="cancelUpload()"
+            [label]="'dot.common.cancel' | dm"
             styleClass="p-button-outlined"
             type="button"
             aria-label="Cancel button"

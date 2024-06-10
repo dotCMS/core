@@ -1,7 +1,7 @@
 <ng-container *ngIf="vm$ | async as vm; else noContent">
     <p-messages
-        class="topBar"
         *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]"
+        class="topBar"
         styleClass="p-message-border-y"
         severity="success"
         data-testId="topBar">
@@ -20,21 +20,21 @@
     </p-messages>
 
     <dot-edit-content-toolbar
-        class="header"
-        [actions]="vm.actions"
         (actionFired)="
             fireWorkflowAction({
                 actionId: $event.id,
                 inode: vm.contentlet?.inode,
                 contentType: vm.contentType.variable
             })
-        "></dot-edit-content-toolbar>
-    <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
+        "
+        [actions]="vm.actions"
+        class="header"></dot-edit-content-toolbar>
+    <dot-edit-content-form (changeValue)="setFormValue($event)" [formData]="vm" class="body" />
     <dot-edit-content-aside
-        class="sidebar"
         [loading]="vm.loading"
         [contentlet]="vm.contentlet"
-        [contentType]="vm.contentType" />
+        [contentType]="vm.contentType"
+        class="sidebar" />
 </ng-container>
 
 <ng-template #noContent>{{ 'edit.content.layout.no.content.to.show ' | dm }}</ng-template>

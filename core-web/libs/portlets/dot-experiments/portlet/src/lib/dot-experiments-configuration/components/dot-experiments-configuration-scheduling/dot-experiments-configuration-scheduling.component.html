@@ -26,9 +26,9 @@
                     data-testId="tooltip-on-disabled"
                     tooltipPosition="bottom">
                     <button
-                        class="p-button-sm p-button-link"
-                        [disabled]="vm.disabledTooltipLabel"
                         (click)="setupSchedule()"
+                        [disabled]="vm.disabledTooltipLabel"
+                        class="p-button-sm p-button-link"
                         data-testId="scheduling-setup-button"
                         pButton>
                         <ng-container
@@ -50,8 +50,8 @@
             <span>{{ vm.scheduling.startDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
         </span>
         <span
-            class="scheduling-setup-date-spacing"
             *ngIf="vm.scheduling?.startDate && vm.scheduling.endDate"
+            class="scheduling-setup-date-spacing"
             >-</span
         >
         <span *ngIf="!!vm.scheduling?.endDate">

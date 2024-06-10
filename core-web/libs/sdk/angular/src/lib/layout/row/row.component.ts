@@ -7,7 +7,7 @@ import { ColumnComponent } from '../column/column.component';
     selector: 'dotcms-row',
     standalone: true,
     imports: [ColumnComponent],
-    template: `@for(column of row.columns; track $index) {
+    template: `@for (column of row.columns; track $index) {
         <dotcms-column [column]="column" />
         }`,
     styleUrl: './row.component.css',

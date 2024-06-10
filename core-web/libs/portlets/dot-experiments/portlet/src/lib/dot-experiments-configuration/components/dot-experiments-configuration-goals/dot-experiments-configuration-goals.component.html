@@ -79,11 +79,11 @@
         <ng-template pTemplate="footer">
             <div>
                 <button
-                    class="p-button-sm p-button-outlined"
+                    (click)="openSelectGoalSidebar()"
                     [disabled]="!!vm.goals || !vm.isExperimentADraft || vm.disabledTooltipLabel"
                     [pTooltip]="vm.disabledTooltipLabel | dm"
                     [tooltipDisabled]="!vm.disabledTooltipLabel"
-                    (click)="openSelectGoalSidebar()"
+                    class="p-button-sm p-button-outlined"
                     data-testId="goals-add-button"
                     label="{{ 'experiments.configure.goals.add' | dm }}"
                     pButton></button>
@@ -107,11 +107,11 @@
                     data-testId="tooltip-on-disabled"
                     tooltipPosition="bottom">
                     <button
-                        class="p-button-rounded p-button-text p-button-danger"
+                        (click)="deleteGoal($event, 'primary', vm.experimentId)"
                         [disabled]="vm.disabledTooltipLabel"
                         [pTooltip]="'experiments.configure.variants.delete' | dm"
                         [tooltipDisabled]="!!vm.disabledTooltipLabel"
-                        (click)="deleteGoal($event, 'primary', vm.experimentId)"
+                        class="p-button-rounded p-button-text p-button-danger"
                         data-testId="goal-delete-button"
                         icon="pi pi-trash"
                         pButton></button>

@@ -1,3 +1,5 @@
+import * as _ from 'lodash';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -8,7 +10,6 @@ import {
     Optional
 } from '@angular/core';
 import { NgControl, ControlValueAccessor } from '@angular/forms';
-import * as _ from 'lodash';
 
 // @dynamic
 @Component({
@@ -16,16 +17,15 @@ import * as _ from 'lodash';
     // host: { role: 'text' },
     selector: 'cw-input-date',
     template: `<p-calendar
-        [(ngModel)]="modelValue"
-        [showTime]="true"
-        hourFormat="12"
         (onBlur)="onBlur($event)"
         (onSelect)="updateValue($event)"
-        showButtonBar="true"
+        [(ngModel)]="modelValue"
+        [showTime]="true"
         [placeholder]="placeholder"
         [disabled]="disabled"
         [tabindex]="tabIndex || ''"
-    ></p-calendar>`
+        hourFormat="12"
+        showButtonBar="true"></p-calendar>`
 })
 export class InputDate implements ControlValueAccessor {
     private static DEFAULT_VALUE: Date;
@@ -46,7 +46,7 @@ export class InputDate implements ControlValueAccessor {
     modelValue: Date;
 
     private static _defaultValue(): Date {
-        let d = new Date();
+        const d = new Date();
 
         d.setHours(0);
         d.setMinutes(0);
@@ -54,6 +54,7 @@ export class InputDate implements ControlValueAccessor {
         d.setMilliseconds(0);
         d.setMonth(d.getMonth() + 1);
         d.setDate(1);
+
         return d;
     }
 
@@ -69,9 +70,10 @@ export class InputDate implements ControlValueAccessor {
 
     ngOnChanges(change): void {
         if (change.focused) {
-            let f = change.focused.currentValue === true || change.focused.currentValue === 'true';
+            const f =
+                change.focused.currentValue === true || change.focused.currentValue === 'true';
             if (f) {
-                let el = this._elementRef.nativeElement;
+                const el = this._elementRef.nativeElement;
                 el.children[0].children[0].focus();
             }
         }
@@ -104,6 +106,7 @@ export class InputDate implements ControlValueAccessor {
 
     private convertToISOFormat(value: Date): string {
         const offset = new Date().getTimezoneOffset() * 60000;
+
         return new Date(value.getTime() - offset).toISOString().slice(0, -5);
     }
 }

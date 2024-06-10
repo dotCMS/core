@@ -1,18 +1,18 @@
 <dot-dialog
-    #dialog
+    (hide)="close()"
+    (keydown.escape)="close()"
     [visible]="!!data"
     [bindEvents]="false"
     [actions]="dialogActions"
     [header]="data?.title"
-    (hide)="close()"
-    (keydown.escape)="close()">
-    <div class="dot-wizard__view" *ngIf="data?.steps?.length">
+    #dialog>
+    <div *ngIf="data?.steps?.length" class="dot-wizard__view">
         <div
-            class="dot-wizard__container"
-            [ngStyle]="{ transform: transform }"
             (keydown.tab)="handleTab($event)"
-            (keydown.enter)="handleEnter($event)">
-            <div class="dot-wizard__step" *ngFor="let step of data.steps">
+            (keydown.enter)="handleEnter($event)"
+            [ngStyle]="{ transform: transform }"
+            class="dot-wizard__container">
+            <div *ngFor="let step of data.steps" class="dot-wizard__step">
                 <ng-template dotContainerReference></ng-template>
             </div>
         </div>

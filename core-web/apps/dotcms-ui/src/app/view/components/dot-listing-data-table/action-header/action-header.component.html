@@ -1,31 +1,28 @@
-<div class="action-header" [class.selected]="selectedItems.length">
+<div [class.selected]="selectedItems.length" class="action-header">
     <ng-container *ngIf="options && options.primary">
         <dot-action-button
-            class="action-header__primary-button"
-            [model]="options.primary.model"
             (press)="handlePrimaryAction()"
-        ></dot-action-button>
+            [model]="options.primary.model"
+            class="action-header__primary-button"></dot-action-button>
     </ng-container>
-    <div class="action-header__container" [style.overflow]="dynamicOverflow">
+    <div [style.overflow]="dynamicOverflow" class="action-header__container">
         <div class="action-header__global-search">
             <ng-content></ng-content>
         </div>
         <div
-            class="action-header__group-actions"
             *ngIf="(options && options.secondary) || selectedItems.length"
-        >
+            class="action-header__group-actions">
             <span class="action-header__selected-items-counter"
                 >{{ selectedItems.length }} {{ 'selected' | dm }}</span
             >
             <ng-container *ngIf="options && options.secondary">
                 <p-splitButton
-                    class="action-header__secondary-button"
                     *ngFor="let action of options.secondary"
+                    [model]="action.model"
+                    class="action-header__secondary-button"
                     secondary
                     label="{{ action.label }}"
-                    class="inverted"
-                    [model]="action.model"
-                ></p-splitButton>
+                    class="inverted"></p-splitButton>
             </ng-container>
         </div>
     </div>

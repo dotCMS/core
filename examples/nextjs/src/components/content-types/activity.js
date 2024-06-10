@@ -12,7 +12,7 @@ function Activity({ title, description, image, urlTitle }) {
             {image && (
                 <Image
                     className="w-full"
-                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`}
+                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image?.idPath || image}?language_id=${language?.id}`}
                     width={100}
                     height={100}
                     alt="Activity Image"

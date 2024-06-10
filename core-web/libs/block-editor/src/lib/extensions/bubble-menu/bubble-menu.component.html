@@ -1,6 +1,6 @@
-<div class="bubble-menu" id="bubble-menu" (mousedown)="preventDeSelection($event)">
+<div (mousedown)="preventDeSelection($event)" class="bubble-menu" id="bubble-menu">
     <ng-container *ngIf="selected">
-        <button class="btn-dropdown" (click)="toggleChangeTo.emit()">{{ selected }}</button>
+        <button (click)="toggleChangeTo.emit()" class="btn-dropdown">{{ selected }}</button>
         <div class="divider"></div>
     </ng-container>
     <ng-container *ngFor="let item of items; let i = index">

@@ -1,27 +1,27 @@
 <p-scroller
     *ngIf="rows?.length && !loading; else loading ? loadingBlock : emptyBlock"
+    (onScrollIndexChange)="onScrollIndexChange($event)"
     [itemSize]="110"
     [items]="rows"
     [lazy]="true"
-    (onScrollIndexChange)="onScrollIndexChange($event)"
     scrollHeight="20rem">
     <ng-template pTemplate="item" let-contentlet>
         <div class="card-list-row">
             <dot-asset-card
                 *ngIf="contentlet[0]"
-                [contentlet]="contentlet[0]"
-                (click)="selectedItem.emit(contentlet[0])"></dot-asset-card>
+                (click)="selectedItem.emit(contentlet[0])"
+                [contentlet]="contentlet[0]"></dot-asset-card>
             <dot-asset-card
                 *ngIf="contentlet[1]"
-                [contentlet]="contentlet[1]"
-                (click)="selectedItem.emit(contentlet[1])"></dot-asset-card>
+                (click)="selectedItem.emit(contentlet[1])"
+                [contentlet]="contentlet[1]"></dot-asset-card>
         </div>
     </ng-template>
 </p-scroller>
 
 <ng-template #loadingBlock>
     <div class="wrapper justify-start">
-        <div class="card-list-row" *ngFor="let loadingItem of loadingItems">
+        <div *ngFor="let loadingItem of loadingItems" class="card-list-row">
             <dot-asset-card-skeleton></dot-asset-card-skeleton>
             <dot-asset-card-skeleton></dot-asset-card-skeleton>
         </div>

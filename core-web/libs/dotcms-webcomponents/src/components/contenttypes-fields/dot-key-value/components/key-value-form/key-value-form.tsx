@@ -139,8 +139,7 @@ export class DotKeyValueComponent {
                     <button
                         class="key-value-form__save__button"
                         type="submit"
-                        disabled={buttonDisabled}
-                    >
+                        disabled={buttonDisabled}>
                         {this.addButtonLabel}
                     </button>
                 </td>
@@ -159,8 +158,7 @@ export class DotKeyValueComponent {
                     <button
                         class="key-value-form__save__button"
                         type="submit"
-                        disabled={buttonDisabled}
-                    >
+                        disabled={buttonDisabled}>
                         {this.addButtonLabel}
                     </button>
                 </td>
@@ -189,8 +187,7 @@ export class DotKeyValueComponent {
             <select
                 disabled={this.disabled}
                 name="key"
-                onChange={(event: Event) => this.changeWhiteListKey(event)}
-            >
+                onChange={(event: Event) => this.changeWhiteListKey(event)}>
                 <option value="">{this.emptyDropdownOptionLabel}</option>
                 {Object.keys(this.whiteListArray).map((key: string) => {
                     return <option value={key}>{key}</option>;
@@ -204,8 +201,7 @@ export class DotKeyValueComponent {
             <select
                 disabled={this.disabled}
                 name="value"
-                onChange={(event: Event) => this.changeWhiteListValue(event)}
-            >
+                onChange={(event: Event) => this.changeWhiteListValue(event)}>
                 <option value="">{this.emptyDropdownOptionLabel}</option>
                 {this.whiteListArray[this.selectedWhiteListKey].map((item: string) => {
                     return <option value={item}>{item}</option>;
