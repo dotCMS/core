@@ -498,6 +498,10 @@ public class ESIndexAPI {
 	 * @return
 	 */
 	public  boolean indexExists(String indexName) {
+
+		Set<String> indices = listIndices();
+
+
 		if(listIndices().contains(indexName.toLowerCase())){
 			return true;
 		}
@@ -586,30 +590,17 @@ public class ESIndexAPI {
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Trying to create index: " + indexName + " with shards: " + shards);
 
-		shards = getShardsFromConfigIfNeeded(shards);
+		shards = shards > 0 ? shards : Config.getIntProperty("es.index.number_of_shards", 1);
 
-		Map map;
-		//default settings, if null
-		if(settings ==null){
-			map = new HashMap();
-		} else{
-            map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
-        }
+		Map map  = (settings ==null) ? new HashMap<>() : new ObjectMapper().readValue(settings, LinkedHashMap.class);
 
 		map.put("number_of_shards", shards);
 		map.put("index.auto_expand_replicas", "0-all");
-		if (!map.containsKey("index.mapping.total_fields.limit")) {
-			map.put("index.mapping.total_fields.limit", 10000);
-		}
-		if (!map.containsKey("index.mapping.nested_fields.limit")) {
-			map.put("index.mapping.nested_fields.limit", 10000);
-		}
-
-		map.put("index.query.default_field",
-				Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));
+		map.putIfAbsent("index.mapping.total_fields.limit", 10000);
+		map.putIfAbsent("index.mapping.nested_fields.limit", 10000);
+		map.putIfAbsent("index.query.default_field", Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));
 
 		final CreateIndexRequest request = new CreateIndexRequest(getNameWithClusterIDPrefix(indexName));
-
 		request.settings(map);
 		request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 		final CreateIndexResponse createIndexResponse =
@@ -620,28 +611,6 @@ public class ESIndexAPI {
 			"Index created: " + indexName + " with shards: " + shards);
 
 		return createIndexResponse;
-	}
-
-	private int getShardsFromConfigIfNeeded(int shards) {
-		if(shards <1){
-			try{
-				shards = Integer.parseInt(System.getProperty("es.index.number_of_shards"));
-			}catch(Exception e){
-				Logger.warnAndDebug(ESIndexAPI.class, "Unable to parse shards from config", e);
-			}
-		}
-		if(shards <1){
-			try{
-				shards = Config.getIntProperty("es.index.number_of_shards", 2);
-			}catch(Exception e){
-				Logger.warnAndDebug(ESIndexAPI.class, "Unable to parse shards from config", e);
-			}
-		}
-
-		if(shards <0){
-			shards=1;
-		}
-		return shards;
 	}
 
 
