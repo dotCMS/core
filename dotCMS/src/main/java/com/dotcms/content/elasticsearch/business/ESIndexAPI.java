@@ -17,6 +17,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,6 +55,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -386,6 +388,8 @@ public class ESIndexAPI {
 			return true;
 		}
 
+		SecurityLogger.logInfo(this.getClass(), "Deleting Indexes : " + String.join(",", indexNames));
+
 		List<String> indicesWithClusterPrefix = Arrays.stream(indexNames)
 				.map(this::getNameWithClusterIDPrefix).collect(Collectors.toList());
 		try {
@@ -498,7 +502,7 @@ public class ESIndexAPI {
 	 * @return
 	 */
 	public  boolean indexExists(String indexName) {
-		
+
 		if(listIndices().contains(indexName.toLowerCase())){
 			return true;
 		}
@@ -589,7 +593,7 @@ public class ESIndexAPI {
 
 		shards = shards > 0 ? shards : Config.getIntProperty("es.index.number_of_shards", 1);
 
-		Map map  = (settings ==null) ? new HashMap<>() : new ObjectMapper().readValue(settings, LinkedHashMap.class);
+		Map<String,Object> map  = (settings ==null) ? new HashMap<>() : new ObjectMapper().readValue(settings, LinkedHashMap.class);
 
 		map.put("number_of_shards", shards);
 		map.put("index.auto_expand_replicas", "0-all");
