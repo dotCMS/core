@@ -13,7 +13,10 @@ export class NgGridPlaceholder implements OnInit {
     private _ngGrid: NgGrid;
     private _cascadeMode: string;
 
-    constructor(private _ngEl: ElementRef, private _renderer: Renderer2) {}
+    constructor(
+        private _ngEl: ElementRef,
+        private _renderer: Renderer2
+    ) {}
 
     public registerGrid(ngGrid: NgGrid) {
         this._ngGrid = ngGrid;

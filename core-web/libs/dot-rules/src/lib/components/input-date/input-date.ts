@@ -58,7 +58,10 @@ export class InputDate implements ControlValueAccessor {
         return d;
     }
 
-    constructor(@Optional() control: NgControl, private _elementRef: ElementRef) {
+    constructor(
+        @Optional() control: NgControl,
+        private _elementRef: ElementRef
+    ) {
         if (control) {
             control.valueAccessor = this;
         }
