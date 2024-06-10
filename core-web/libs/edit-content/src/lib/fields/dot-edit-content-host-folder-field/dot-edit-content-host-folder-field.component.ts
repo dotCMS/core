@@ -1,9 +1,11 @@
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     Input,
     OnInit,
     ViewChild,
+    computed,
     inject,
     signal
 } from '@angular/core';
@@ -26,7 +28,7 @@ import { createPaths } from '../../utils/functions.util';
 @Component({
     selector: 'dot-edit-content-host-folder-field',
     standalone: true,
-    imports: [TreeSelectModule, ReactiveFormsModule, TruncatePathPipe],
+    imports: [TreeSelectModule, ReactiveFormsModule, TruncatePathPipe, NgClass],
     templateUrl: './dot-edit-content-host-folder-field.component.html',
     styleUrls: ['./dot-edit-content-host-folder-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +48,14 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     options = signal<TreeNodeItem[]>([]);
     sitesStatus = signal<StatusRequest>('init');
     pathControl = new FormControl();
+    iconClasses = computed(() => {
+        const status = this.sitesStatus();
+
+        return {
+            'pi-spin pi-spinner': status === 'loading',
+            'pi-chevron-down': status !== 'loading'
+        };
+    });
 
     ngOnInit() {
         this.sitesStatus.set('loading');

@@ -9,10 +9,6 @@
         <span>{{ node.label | truncatePath }}</span>
     </ng-template>
     <ng-template pTemplate="triggericon">
-        @if (sitesStatus() === 'loading') {
-            <i class="pi pi-spin pi-spinner"></i>
-        } @else {
-            <i class="pi pi-chevron-down"></i>
-        }
+        <i [ngClass]="iconClasses()" class="pi"></i>
     </ng-template>
 </p-treeSelect>

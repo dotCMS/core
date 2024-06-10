@@ -12,7 +12,11 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotFolder, TreeNodeItem } from '../models/dot-edit-content-host-folder-field.interface';
+import {
+    CustomTreeNode,
+    DotFolder,
+    TreeNodeItem
+} from '../models/dot-edit-content-host-folder-field.interface';
 
 @Injectable()
 export class DotEditContentService {
@@ -66,7 +70,9 @@ export class DotEditContentService {
 
     /**
      * Get data for site/folder field and tranform into TreeNode
-     * @returns files
+     *
+     * @return {*}  {Observable<TreeNodeItem[]>}
+     * @memberof DotEditContentService
      */
     getSitesTreePath(): Observable<TreeNodeItem[]> {
         return this.#siteService.getSites().pipe(
@@ -87,10 +93,25 @@ export class DotEditContentService {
         );
     }
 
+    /**
+     *
+     *
+     * @param {string} path
+     * @return {*}  {Observable<DotFolder[]>}
+     * @memberof DotEditContentService
+     */
     getFolders(path: string): Observable<DotFolder[]> {
         return this.#http.post<DotFolder>('/api/v1/folder/byPath', { path }).pipe(pluck('entity'));
     }
 
+    /**
+     *
+     *
+     * @param {string} hostName
+     * @param {string} path
+     * @return {*}  {Observable<TreeNodeItem[]>}
+     * @memberof DotEditContentService
+     */
     getFoldersTreeNode(hostName: string, path: string): Observable<TreeNodeItem[]> {
         return this.getFolders(`//${hostName}/${path}`).pipe(
             map((folders) => {
@@ -116,7 +137,14 @@ export class DotEditContentService {
         );
     }
 
-    buildTreeByPaths(paths: string[]) {
+    /**
+     *
+     *
+     * @param {string[]} paths
+     * @return {*}  {Observable<CustomTreeNode>}
+     * @memberof DotEditContentService
+     */
+    buildTreeByPaths(paths: string[]): Observable<CustomTreeNode> {
         const requests = paths.reverse().map((path) => {
             const split = path.split('/');
             const [hostName] = split;

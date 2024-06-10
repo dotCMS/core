@@ -8,6 +8,14 @@ export type StatusRequest = 'init' | 'loading' | 'success' | 'failed';
 
 export type TreeNodeSelectItem = TreeNodeSelectEvent<TreeNodeData>;
 
+export type CustomTreeNode = {
+    node: null | TreeNodeItem;
+    tree: {
+        path: 'string';
+        folders: TreeNodeItem[];
+    };
+};
+
 export interface TreeNodeSelectEvent<T> {
     originalEvent: Event;
     node: TreeNode<T>;
