@@ -335,6 +335,7 @@ public class EnvironmentResource {
 			final PushMode pushType = environmentForm.getPushMode();
 
 			final Environment environment = new Environment();
+			environment.setId(id);
 			environment.setName(environmentName);
 			environment.setPushToAll(PushMode.PUSH_TO_ALL == pushType);
 
