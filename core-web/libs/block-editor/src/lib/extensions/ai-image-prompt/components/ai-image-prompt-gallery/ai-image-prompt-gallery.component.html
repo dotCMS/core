@@ -27,20 +27,20 @@
     styleClass="ai-image-gallery_skeleton"
     data-testid="ai-image-gallery_skeleton" />
 <p-skeleton
-    class="ai-image-gallery__count-skeleton"
     *ngIf="isLoading"
+    class="ai-image-gallery__count-skeleton"
     data-testid="ai-image-gallery__count-skeleton"
     width="30px"
     height="20px" />
 
 <p-galleria
     *ngIf="!isLoading && images?.length"
+    (activeIndexChange)="activeIndexChange.emit($event)"
     [activeIndex]="activeImageIndex"
     [circular]="true"
     [showItemNavigators]="images?.length > 1"
     [showThumbnails]="false"
     [value]="images"
-    (activeIndexChange)="activeIndexChange.emit($event)"
     visible="true">
     <ng-template pTemplate="item" let-item>
         <p-image
@@ -55,14 +55,14 @@
         </p-image>
         <ng-template #errorMessage>
             <dot-empty-container
+                (buttonAction)="regenerate.emit($event)"
                 [hideContactUsLink]="true"
                 [buttonLabel]="'try-again' | dm"
                 [secondaryButton]="true"
-                [configuration]="emptyConfiguration"
-                (buttonAction)="regenerate.emit($event)" />
+                [configuration]="emptyConfiguration" />
         </ng-template>
     </ng-template>
 </p-galleria>
-<span class="ai-image-gallery__count align-self-center" *ngIf="!isLoading && images?.length">
+<span *ngIf="!isLoading && images?.length" class="ai-image-gallery__count align-self-center">
     {{ activeImageIndex + 1 }} {{ 'of' | dm }} {{ images.length }}
 </span>

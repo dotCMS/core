@@ -1,7 +1,7 @@
 <div class="content-search">
     <p-button
-        [attr.data-testId]="'contentlet-back-button'"
         (click)="showContentTypes.emit()"
+        [attr.data-testId]="'contentlet-back-button'"
         icon="pi pi-angle-left"
         styleClass="p-button-rounded p-button-text p-button-sm"></p-button>
 
@@ -9,9 +9,9 @@
         <i class="pi pi-search"></i>
 
         <input
-            class="p-inputtext-sm"
             [placeholder]="'Search' | dm"
             [formControl]="control"
+            class="p-inputtext-sm"
             type="search"
             data-testId="contentlet-search"
             pInputText />
@@ -27,9 +27,9 @@
     <ng-template #content>
         <ng-container *ngIf="contentlets.items.length > 0; else noContent">
             <div class="contentlets-cards">
-                @for(contentlet of contentlets.items; track contentlet.identifier; let i = $index) {
+                @for ( contentlet of contentlets.items; track contentlet.identifier; let i = $index
+                ) {
                 <div
-                    class="contentlet-card"
                     [attr.data-item]="
                         {
                             contentlet: {
@@ -43,6 +43,7 @@
                         } | json
                     "
                     [attr.data-testId]="'contentlet-' + i"
+                    class="contentlet-card"
                     data-type="contentlet"
                     draggable="true">
                     <dot-icon [size]="20" name="drag_indicator"></dot-icon>
@@ -60,9 +61,9 @@
 
     <p-paginator
         *ngIf="contentlets.totalRecords > 0"
+        (onPageChange)="onPaginate($event, contentlets.filter)"
         [rows]="contentlets.itemsPerPage"
         [showFirstLastIcon]="false"
         [totalRecords]="contentlets.totalRecords"
-        [pageLinkSize]="0"
-        (onPageChange)="onPaginate($event, contentlets.filter)"></p-paginator>
+        [pageLinkSize]="0"></p-paginator>
 </div>

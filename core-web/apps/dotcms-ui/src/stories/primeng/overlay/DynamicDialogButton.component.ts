@@ -14,8 +14,7 @@ import { Product } from './Product.interface';
         type="button"
         pButton
         icon="pi pi-info-circle"
-        label="Show"
-    ></button>`
+        label="Show"></button>`
 })
 export class DynamicDialogButtonComponent implements OnDestroy {
     constructor(public dialogService: DialogService, public messageService: MessageService) {}
