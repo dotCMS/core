@@ -19,7 +19,7 @@ export default function Destinations() {
                 setDestinations(response.contentlets);
             })
             .catch((error) => {
-                console.error(`Error fetching ${contentType}`, error);
+                console.error(`Error fetching Destinations`, error);
             });
     }, []);
 

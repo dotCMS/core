@@ -19,7 +19,7 @@ export default function Blogs() {
                 setBlogs(response.contentlets);
             })
             .catch((error) => {
-                console.error(`Error fetching ${contentType}`, error);
+                console.error(`Error fetching Blogs`, error);
             });
     }, []);
 
