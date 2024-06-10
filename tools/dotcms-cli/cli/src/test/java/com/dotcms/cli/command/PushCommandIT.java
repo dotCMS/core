@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
+import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,6 +72,9 @@ class PushCommandIT extends CommandTest {
     @InjectMocks
     @Spy
     PushCommand pushCommand;
+
+    @Inject
+    Logger logger;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -301,7 +305,13 @@ class PushCommandIT extends CommandTest {
         }
     }
 
-
+    /**
+     * Given scenario: A push command is executed in watch mode. Then we simulate changes in the file system using a separate thread
+     * Expected Result: The command that starts in watch mode remains suspended until changes are made. Then it should process the changes and exit.
+     * We simply verify that the command reports the it
+     * @throws IOException
+     * @throws InterruptedException
+     */
     @Test
     void testSimplePushInWatchMode() throws IOException, InterruptedException {
 
@@ -318,12 +328,15 @@ class PushCommandIT extends CommandTest {
                 CountDownLatch changeLatch = new CountDownLatch(1);
                 // Latch to wait for command processing time
                 CountDownLatch commandLatch = new CountDownLatch(1);
-
+                // Latch to signal that the command has started
+                CountDownLatch commandStartLatch = new CountDownLatch(1);
+                logger.debug("Starting command thread. Command will remain suspended until changes are made in a separate thread");
                 // Start the command execution in a new thread
                 Thread commandThread = new Thread(() -> {
                     commandLine.setOut(out);
                     commandLine.setErr(out);
                     try {
+                        commandStartLatch.countDown(); // Signal that the command has started
                         commandLine.execute(PushCommand.NAME,
                                 tempFolder.toAbsolutePath().toString(), "--watch", "1");
                     } catch (Exception e) {
@@ -334,10 +347,14 @@ class PushCommandIT extends CommandTest {
                 });
                 commandThread.start();
 
+                // Wait for the command to start
+                commandStartLatch.await();
+
                 // Scheduled executor for introducing delay
-                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
                 // Simulate changes in the tempFolder with a delay
+                logger.debug("Starting change task. This will create a new file in the temp folder (workspace) and feed it with content every second. during: a 5 seconds total time");
                 Runnable changeTask = () -> {
                     try {
                         final Path newFile = tempFolder.resolve("newFile.txt");
@@ -345,7 +362,11 @@ class PushCommandIT extends CommandTest {
                         for (int i = 0; i < 5; i++) {
                             // Create a new file
                             Files.writeString(newFile, "Hello, world! " + i + "\n");
-                            Thread.sleep(1000);
+                            // Use a latch to control timing
+                            CountDownLatch innerLatch = new CountDownLatch(1);
+                            logger.debug(" File updated now will be waiting for 1 second");
+                            scheduler.schedule(innerLatch::countDown, 1, TimeUnit.SECONDS);
+                            innerLatch.await();
                         }
                     } catch (IOException | InterruptedException e) {
                         // Quietly ignore exceptions
@@ -364,15 +385,17 @@ class PushCommandIT extends CommandTest {
                 commandLatch.await(10, TimeUnit.SECONDS);
 
                 // Interrupt the command thread to simulate sending a signal like CTRL-C
+                logger.debug("Interrupting command thread. This will simulate a signal like CTRL-C");
                 commandThread.interrupt();
                 commandThread.join();
-
+                logger.debug("Shutting down scheduler");
                 // Terminate the scheduler
                 scheduler.shutdown();
                 scheduler.awaitTermination(10, TimeUnit.SECONDS);
 
+                logger.debug("Running assertions");
                 // Validate the output of the command
-                String output = writer.toString();
+                final String output = writer.toString();
                 Assertions.assertTrue(output.contains("No changes in Languages to push"));
                 Assertions.assertTrue(output.contains("No changes in Sites to push"));
                 Assertions.assertTrue(output.contains("No changes in ContentTypes to push"));
