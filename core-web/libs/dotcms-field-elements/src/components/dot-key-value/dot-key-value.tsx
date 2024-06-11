@@ -176,8 +176,7 @@ export class DotKeyValueComponent {
                     tabIndex={this.hint ? 0 : null}
                     label={this.label}
                     required={this.required}
-                    name={this.name}
-                >
+                    name={this.name}>
                     <key-value-form
                         onLostFocus={this.blurHandler.bind(this)}
                         add-button-label={this.formAddButtonLabel}

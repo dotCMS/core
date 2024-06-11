@@ -4,7 +4,10 @@
 .p-treeselect {
     @extend #form-field-base;
     padding: 0;
-    transition: background-color $basic-speed, border-color $basic-speed, box-shadow $basic-speed;
+    transition:
+        background-color $basic-speed,
+        border-color $basic-speed,
+        box-shadow $basic-speed;
 
     &:not(.p-disabled) {
         &:hover {
@@ -34,7 +37,9 @@
 
     .p-treeselect-label {
         padding: $spacing-1 $spacing-2;
-        transition: background-color $basic-speed, border-color $basic-speed,
+        transition:
+            background-color $basic-speed,
+            border-color $basic-speed,
             box-shadow $basic-speed;
 
         &.p-placeholder {
@@ -62,7 +67,6 @@
 
     .p-treeselect-header {
         @extend #field-panel-header;
-        gap: $spacing-1;
 
         .p-treeselect-filter-container {
             .p-treeselect-filter {
@@ -86,9 +90,7 @@
         }
 
         .p-tree-empty-message {
-            padding: $spacing-2 $spacing-2;
-            color: $black;
-            background: transparent;
+            @extend #field-panel-empty-message;
         }
     }
 }

@@ -3,11 +3,13 @@
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
 import Activity from "./content-types/activity";
+import CallToAction from "./content-types/callToAction";
+import CalendarEvent from "./content-types/calendarEvent";
 import Product from "./content-types/product";
 import ImageComponent from "./content-types/image";
 
 import Header from "./layout/header";
-import Footer from "./layout/footer";
+import Footer from "./layout/footer/footer";
 import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
@@ -31,7 +33,8 @@ const componentsMap = {
     Activity: Activity,
     Product: Product,
     Image: ImageComponent,
-    CustomNoComponent: CustomNoComponent,
+    calendarEvent: CalendarEvent,
+    CallToAction: CallToAction,
 };
 
 export function MyPage({ pageAsset, nav }) {

@@ -23,10 +23,10 @@ export namespace Components {
          */
         "createAssetsText": string;
         "customUploadFiles": (props: {
-        files: File[],
-        onSuccess: () => void,
-        updateProgress: (progress: number) => void,
-        onError: (header: string, message: string) => void
+        files: File[];
+        onSuccess: () => void;
+        updateProgress: (progress: number) => void;
+        onError: (header: string, message: string) => void;
     }) => Promise<any>;
         /**
           * Labels to be shown in error dialog
@@ -1674,10 +1674,10 @@ declare namespace LocalJSX {
          */
         "createAssetsText"?: string;
         "customUploadFiles"?: (props: {
-        files: File[],
-        onSuccess: () => void,
-        updateProgress: (progress: number) => void,
-        onError: (header: string, message: string) => void
+        files: File[];
+        onSuccess: () => void;
+        updateProgress: (progress: number) => void;
+        onError: (header: string, message: string) => void;
     }) => Promise<any>;
         /**
           * Labels to be shown in error dialog

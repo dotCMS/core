@@ -1,4 +1,5 @@
 import { DotApiConfiguration } from './DotApiConfiguration';
+
 import { DotCMSConfigurationItem, DotCMSLanguageItem } from '../models';
 
 /**
@@ -19,6 +20,7 @@ export class DotApiLanguage {
         const language = languages.find(
             (lang: DotCMSLanguageItem) => lang.languageCode === langCode
         );
+
         return language ? `${language.id}` : null;
     }
 

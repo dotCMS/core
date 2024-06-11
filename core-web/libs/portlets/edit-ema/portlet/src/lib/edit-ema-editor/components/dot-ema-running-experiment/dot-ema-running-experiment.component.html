@@ -1,5 +1,4 @@
 <p-tag
-    class="p-tag-success sm"
     *ngIf="runningExperiment"
     [routerLink]="[
         '/edit-page/experiments/',
@@ -12,8 +11,9 @@
         ' ' +
         ('dot.common.until' | dm) +
         ' ' +
-        (runningExperiment.scheduling.endDate | date : runningUntilDateFormat)
+        (runningExperiment.scheduling.endDate | date: runningUntilDateFormat)
     "
+    class="p-tag-success sm"
     data-testId="runningExperimentTag"
     queryParamsHandling="preserve"
     role="button">

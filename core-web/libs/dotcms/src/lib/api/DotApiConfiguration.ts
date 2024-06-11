@@ -1,5 +1,5 @@
-import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSConfigurationItem, DotCMSError } from '../models';
+import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 
 /**
  * Get the information of DotCMS configuration
@@ -21,6 +21,7 @@ export class DotApiConfiguration {
             .then(async (response: Response) => {
                 if (response.status === 200) {
                     const data = await response.json();
+
                     return data.entity;
                 }
 

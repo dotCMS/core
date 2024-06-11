@@ -2,45 +2,48 @@
     <p-toolbar>
         <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
             <dot-device-selector-seo
-                #deviceSelector
-                [apiLink]="es.previewURL"
-                [hideSocialMedia]="!!es.clientHost"
                 (selected)="updateCurrentDevice($event)"
                 (changeSeoMedia)="onSeoMediaChange($event)"
+                [apiLink]="es.previewURL"
+                [hideSocialMedia]="!!es.clientHost"
+                #deviceSelector
                 appendTo="body"
                 data-testId="dot-device-selector" />
 
             <p-button
-                [label]="'editpage.toolbar.preview.page' | dm"
                 (onClick)="deviceSelector.openMenu($event)"
+                [label]="'editpage.toolbar.preview.page' | dm"
                 icon="pi pi-desktop"
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-preview" />
 
-            @if(es.editorData.mode === editorMode.EDIT || es.editorData.mode ===
-            editorMode.EDIT_VARIANT) {
-            <p-button
-                *ngIf="es.editor.urlContentMap as urlContentMap"
-                [label]="'editpage.toolbar.edit.url.map.content' | dm : [urlContentMap.contentType]"
-                (onClick)="editUrlContentMap.emit(urlContentMap)"
-                icon="pi pi-pencil"
-                styleClass="p-button-text p-button-sm"
-                data-testId="edit-url-content-map" />
-
+            @if (
+                es.editorData.mode === editorMode.EDIT ||
+                es.editorData.mode === editorMode.EDIT_VARIANT
+            ) {
+                <p-button
+                    *ngIf="es.editor.urlContentMap as urlContentMap"
+                    (onClick)="editUrlContentMap.emit(urlContentMap)"
+                    [label]="
+                        'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
+                    "
+                    icon="pi pi-pencil"
+                    styleClass="p-button-text p-button-sm"
+                    data-testId="edit-url-content-map" />
             }
 
             <dot-ema-bookmarks [url]="es.favoritePageURL" />
             <p-button
+                (cdkCopyToClipboardCopied)="triggerCopyToast()"
                 [cdkCopyToClipboard]="es.pureURL"
                 [label]="'editpage.header.copy' | dm"
-                (cdkCopyToClipboardCopied)="triggerCopyToast()"
                 icon="pi pi-copy"
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-copy-url" />
             <a
-                class="p-button-sm p-button-text"
                 [href]="es.apiURL"
                 [title]="es.apiURL"
+                class="p-button-sm p-button-text"
                 pButton
                 target="_blank"
                 data-testId="ema-api-link"
@@ -54,28 +57,28 @@
                 [runningExperiment]="es.currentExperiment"
                 data-testId="ema-running-experiment" />
             <dot-edit-ema-language-selector
-                [language]="es.editor.viewAs.language"
                 (selected)="onLanguageSelected($event)"
+                [language]="es.editor.viewAs.language"
                 data-testId="language-selector" />
             <dot-edit-ema-persona-selector
-                #personaSelector
-                [pageId]="es.editor.page.identifier"
-                [value]="es.editor.viewAs.persona"
                 (selected)="onPersonaSelected($event)"
                 (despersonalize)="onDespersonalize($event)"
+                [pageId]="es.editor.page.identifier"
+                [value]="es.editor.viewAs.persona"
+                #personaSelector
                 data-testId="persona-selector" />
             <dot-edit-ema-workflow-actions
                 *ngIf="es.showWorkflowActions"
-                [inode]="es.editor.page.inode"
-                (newPage)="handleNewPage($event)" />
+                (newPage)="handleNewPage($event)"
+                [inode]="es.editor.page.inode" />
 
-            @if(es.editorData.page.isLocked && es.editorData.page.canLock) {
-            <p-button
-                [label]="'Unlock' | dm"
-                [loading]="es.state === editorState.LOADING"
-                (click)="unlockPage(es.editor.page.inode)"
-                styleClass="p-button-sm"
-                data-testId="unlock-button"></p-button>
+            @if (es.editorData.page.isLocked && es.editorData.page.canLock) {
+                <p-button
+                    (click)="unlockPage(es.editor.page.inode)"
+                    [label]="'Unlock' | dm"
+                    [loading]="es.state === editorState.LOADING"
+                    styleClass="p-button-sm"
+                    data-testId="unlock-button"></p-button>
             }
         </div>
     </p-toolbar>

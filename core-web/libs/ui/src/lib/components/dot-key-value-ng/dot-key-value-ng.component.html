@@ -1,7 +1,7 @@
 <p-table
-    #table
-    [value]="variableList()"
     (keydown.enter)="$event.stopPropagation()"
+    [value]="variableList()"
+    #table
     sortField="clazz"
     sortOrder="0"
     dataKey="id">
@@ -21,19 +21,19 @@
             </th>
         </tr>
         <dot-key-value-table-input-row
+            (save)="saveVariable($event)"
             [autoFocus]="autoFocus"
             [showHiddenField]="showHiddenField"
-            [forbiddenkeys]="forbiddenkeys()"
-            (save)="saveVariable($event)">
+            [forbiddenkeys]="forbiddenkeys()">
         </dot-key-value-table-input-row>
     </ng-template>
     <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
         <dot-key-value-table-row
-            #tableRow
+            (delete)="deleteVariable(rowIndex)"
+            (save)="updateKeyValue($event, rowIndex)"
             [showHiddenField]="showHiddenField"
             [variable]="variable"
-            (delete)="deleteVariable(rowIndex)"
-            (save)="updateKeyValue($event, rowIndex)">
+            #tableRow>
         </dot-key-value-table-row>
     </ng-template>
     <ng-template pTemplate="emptymessage" let-variables>

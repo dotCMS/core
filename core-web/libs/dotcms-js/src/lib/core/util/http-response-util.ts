@@ -1,9 +1,13 @@
-import { HttpCode } from './http-code';
 import { HttpRequest, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 
+import { HttpCode } from './http-code';
+
 export const NETWORK_CONNECTION_ERROR = 1;
+
 export const UNKNOWN_RESPONSE_ERROR = 2;
+
 export const SERVER_RESPONSE_ERROR = 3;
+
 export const CLIENTS_ONLY_MESSAGES = {
     1: 'Could not connect to server.'
 };

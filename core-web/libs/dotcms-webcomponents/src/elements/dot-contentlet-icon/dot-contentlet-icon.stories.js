@@ -5,11 +5,11 @@ export default {
     parameters: {
         docs: {
             page: readme
-        },
+        }
     },
     args: {
         icon: 'insert_drive_file',
-        size: '48px',
+        size: '48px'
     }
 };
 

@@ -1,6 +1,8 @@
 import { Subject } from 'rxjs';
-import { LoggerService } from '../logger.service';
+
 import { Protocol } from './protocol';
+
+import { LoggerService } from '../logger.service';
 
 enum WEB_SOCKET_PROTOCOL_CODE {
     NORMAL_CLOSE_CODE = 1000,
@@ -11,7 +13,10 @@ export class WebSocketProtocol extends Protocol {
     private socket: WebSocket;
     private errorThrown: boolean;
 
-    constructor(private url: string, loggerService: LoggerService) {
+    constructor(
+        private url: string,
+        loggerService: LoggerService
+    ) {
         super(loggerService);
 
         const match = new RegExp('wss?://').test(url);

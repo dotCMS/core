@@ -1,5 +1,6 @@
 <!-- TODO: We need to review the tags endpoint and use it here. -->
 <p-autoComplete
+    (completeMethod)="getTags($event)"
     [formControlName]="field.variable"
     [id]="'tag-id-' + field.variable"
     [inputId]="field.variable"
@@ -8,5 +9,4 @@
     [multiple]="true"
     [unique]="true"
     [showClear]="true"
-    (completeMethod)="getTags($event)"
     dotSelectItem />
