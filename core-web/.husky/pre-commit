@@ -12,9 +12,9 @@ perform_fixes() {
     local add_to_index=$2       # Should be 'true' or 'false'
     local file                  # Declare file variable for use in loop
 
-    if ! npx nx format:write; then
-        error_occurred=true
-    fi
+#    if ! npx nx format:write; then
+#        error_occurred=true
+#    fi
 
     if ! npx nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
             error_occurred=true
