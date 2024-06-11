@@ -2,20 +2,25 @@ package com.dotcms.rest.api.v1.temp;
 
 import com.dotcms.content.model.hydration.MetadataDelegate;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.Map;
+
+import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 /**
  * This class represents a temporary file that can be uploaded to dotCMS that is not an actual File
@@ -31,8 +36,11 @@ public class DotTempFile {
   public final Map<String, Serializable> metadata;
 
   private static final String UNKNOWN_FILE_NAME = "unknown";
-  private static final String REFERENCE_URL_FORMAT = "/dA/%s/tmp/%s";
-  private static final String THUMBNAIL_URL_FORMAT = "/contentAsset/image/%s/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/%s";
+  private static final Lazy<String> REFERENCE_URL_FORMAT =
+          Lazy.of(() -> Config.getStringProperty("TEMP_FILE_REFERENCE_URL_FORMAT", "/dA/%s/tmp/%s"));
+  private static final Lazy<String> THUMBNAIL_URL_FORMAT =
+          Lazy.of(() -> Config.getStringProperty("TEMP_FILE_THUMBNAIL_URL_FORMAT", "/contentAsset" +
+                  "/image/%s/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/%s"));
 
   @JsonIgnore
   public final File file;
@@ -51,14 +59,14 @@ public class DotTempFile {
     this.mimeType = (null != initialMetadata && initialMetadata.containsKey(MetadataDelegate.CONTENT_TYPE))
             ? (String) initialMetadata.get(MetadataDelegate.CONTENT_TYPE)
             : FileAsset.UNKNOWN_MIME_TYPE;
-    final String fileName = this.getFileName(file);
-    this.image = this.isImage(fileName);
-    this.referenceUrl = String.format(REFERENCE_URL_FORMAT, id, fileName);
+    final String retrievedFileName = this.getFileName(file);
+    this.image = this.isImage(retrievedFileName);
+    this.referenceUrl = String.format(REFERENCE_URL_FORMAT.get(), id, retrievedFileName);
     this.thumbnailUrl = this.image || this.mimeType.contains(ImageFilterAPI.PDF)
-            ? String.format(THUMBNAIL_URL_FORMAT, id, fileName)
+            ? String.format(THUMBNAIL_URL_FORMAT.get(), id, retrievedFileName)
             : null;
-    this.metadata = this.getUpdatedMetadataOrFallback(file, fileName, initialMetadata);
-    this.fileName = fileName;
+    this.metadata = this.getUpdatedMetadataOrFallback(file, retrievedFileName, initialMetadata);
+    this.fileName = retrievedFileName;
     this.folder = this.resolveFolder();
   }
 
@@ -95,7 +103,12 @@ public class DotTempFile {
   private Map<String, Serializable> getUpdatedMetadataOrFallback(final File file, final String fileName, final Map<String, Serializable> initialMetadata) {
     final String nameFromFile = null != file ? file.getName(): UNKNOWN_FILE_NAME;
     if (!UNKNOWN_FILE_NAME.equals(nameFromFile) && !nameFromFile.equals(fileName)) {
-      final File renamedFile = new File(file.getParentFile(), fileName);
+      final String targetDirectory = file.getParentFile().getAbsolutePath();
+      final Path targetPath = new File(targetDirectory).toPath().normalize();
+      final File renamedFile = new File(targetPath + FORWARD_SLASH + fileName);
+      if (!renamedFile.toPath().normalize().startsWith(targetPath)) {
+        throw new DotRuntimeException(String.format("Cannot create temp file outside target directory: %s", targetPath));
+      }
       if (!file.renameTo(renamedFile)) {
         Logger.warn(this, String.format("Unable to rename file '%s' to '%s'",
                 file.getAbsolutePath(), renamedFile.getAbsolutePath()));
@@ -137,7 +150,7 @@ public class DotTempFile {
     final int begin = file.getPath().indexOf(id)+id.length();
     final int end = file.getPath().lastIndexOf(File.separator);
     final String path = file.getPath().substring(begin,end);
-    return path.startsWith(StringPool.FORWARD_SLASH) ? path.substring(1) : path;
+    return path.startsWith(FORWARD_SLASH) ? path.substring(1) : path;
   }
 
   /**
@@ -152,15 +165,15 @@ public class DotTempFile {
     if (null == file) {
       return UNKNOWN_FILE_NAME;
     }
-    final String fileName = file.getName();
-    String fileExtension = UtilMethods.getFileExtension(fileName);
+    final String nameFromFile = file.getName();
+    String fileExtension = UtilMethods.getFileExtension(nameFromFile);
     if (!FileAsset.UNKNOWN_MIME_TYPE.equals(this.mimeType) && UtilMethods.isNotSet(fileExtension)) {
       fileExtension = FileUtil.getImageExtensionFromMIMEType(this.mimeType);
       if (UtilMethods.isSet(fileExtension)) {
-        return fileName + fileExtension;
+        return nameFromFile + fileExtension;
       }
     }
-    return fileName;
+    return nameFromFile;
   }
 
   /**

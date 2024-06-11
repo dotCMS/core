@@ -48,7 +48,7 @@ public class FileUtil {
 	private static final Set<String> extensions = new HashSet<>();
 	private static final Lazy<Set<String>> EDITABLE_AS_TEXT_FILE_TYPES = Lazy.of(FileUtil::getEditableAsTextFileTypes);
 
-	public static final String[] DEFAULT_IMAGE_EXTENSIONS = {
+	protected static final String[] DEFAULT_IMAGE_EXTENSIONS = {
 			"png", "gif", "webp", "jpeg", ".jpg", "tiff", "bpm", "svg", "avif",
 			"bmp", "tif", "tiff"
 	};
