@@ -503,10 +503,8 @@ public class ESIndexAPI {
 	 */
 	public  boolean indexExists(String indexName) {
 
-		if(listIndices().contains(indexName.toLowerCase())){
-			return true;
-		}
-		return listIndices().contains(removeClusterIdFromName(indexName.toLowerCase()));
+		return listIndices().contains(indexName.toLowerCase())
+				|| listIndices().contains(removeClusterIdFromName(indexName.toLowerCase()));
 	}
 
 	/**
