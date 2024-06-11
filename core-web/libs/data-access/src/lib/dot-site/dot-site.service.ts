@@ -49,7 +49,7 @@ export class DotSiteService {
 
     private siteURL(filter: string, perPage?: number): string {
         const paramPerPage = perPage || this.defaultPerpage;
-        const searchParam = `filter=${filter}&perPage=${paramPerPage}&${this.getQueryParams()}`;
+        const searchParam = `filter=${filter}&per_page=${paramPerPage}&${this.getQueryParams()}`;
 
         return `${this.BASE_SITE_URL}?${searchParam}`;
     }
