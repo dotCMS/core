@@ -78,7 +78,8 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
 
         map.put(MIMETYPE_FIELD, "application/dotpage");
         map.put("name", page.getPageUrl());
-        map.put("description", page.getFriendlyName());
+        Logger.error(this, "PageViewStrategy.transform() - page.getFriendlyName() = " + page.getFriendlyName());
+        //map.put("description", page.getFriendlyName());
         map.put("extension", "page");
         map.put("isContentlet", true);
         map.put("statusIcons", UtilHTML.getStatusIcons(page));
