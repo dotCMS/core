@@ -1,4 +1,4 @@
-<form [formGroup]="form" (ngSubmit)="generate.emit()">
+<form (ngSubmit)="generate.emit()" [formGroup]="form">
     <p-accordion [activeIndex]="0" collapseIcon="pi pi-angle-up" expandIcon="pi pi-angle-down">
         <p-accordionTab
             [disabled]="isLoading"
@@ -43,8 +43,8 @@
             [header]="'block-editor.extension.ai-image.prompt' | dm"
             iconPos="end">
             <div
-                class="ai-image-prompt__text"
-                [class.ai-image-prompt__text--generated]="aiProcessedPrompt && !isLoading">
+                [class.ai-image-prompt__text--generated]="aiProcessedPrompt && !isLoading"
+                class="ai-image-prompt__text">
                 <div class="field">
                     <label
                         *ngIf="requiredPrompt; else labelNotRequired"
@@ -54,25 +54,25 @@
                         {{ promptLabel | dm }}
                     </label>
                     <textarea
+                        [placeholder]="promptTextAreaPlaceholder | dm"
                         class="w-full ai-image-prompt__textarea"
                         id="prompt"
-                        [placeholder]="promptTextAreaPlaceholder | dm"
                         cols="30"
                         formControlName="text"
                         pInputTextarea
                         rows="11">
                     </textarea>
                 </div>
-                <div class="field" *ngIf="aiProcessedPrompt && !isLoading">
+                <div *ngIf="aiProcessedPrompt && !isLoading" class="field">
                     <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten"
                         >{{ 'block-editor.extension.ai-image.rewritten' | dm }}
                     </label>
 
                     <div class="ai-image-prompt__text-wrapper">
                         <textarea
+                            [value]="aiProcessedPrompt"
                             class="w-full ai-image-prompt__rewritten-textarea"
                             id="prompt-rewritten"
-                            [value]="aiProcessedPrompt"
                             cols="30"
                             pInputTextarea
                             readonly
@@ -87,9 +87,9 @@
         </p-accordionTab>
     </p-accordion>
     <button
-        class="align-self-end p-button-outlined"
         [disabled]="form.invalid || isLoading"
         [label]="submitButtonLabel | dm"
+        class="align-self-end p-button-outlined"
         pButton
         type="submit">
         <svg

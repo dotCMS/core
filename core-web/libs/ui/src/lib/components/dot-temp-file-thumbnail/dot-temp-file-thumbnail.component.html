@@ -1,10 +1,10 @@
 <ng-container *ngIf="type" [ngSwitch]="type">
     <img
         *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.image"
+        (error)="handleError()"
         [src]="src"
         [title]="name"
         [alt]="name"
-        (error)="handleError()"
         data-testId="thumbnail-image" />
 
     <video
@@ -17,10 +17,10 @@
 
     <img
         *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.pdf"
+        (error)="handleError()"
         [src]="src"
         [title]="name"
         [alt]="name"
-        (error)="handleError()"
         data-testId="thumbnail-pdf" />
 
     <i

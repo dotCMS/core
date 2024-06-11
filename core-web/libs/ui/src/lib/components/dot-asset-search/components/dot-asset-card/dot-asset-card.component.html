@@ -8,7 +8,7 @@
                 data-testId="dot-contentlet-thumbnail"></dot-contentlet-thumbnail>
         </div>
     </ng-template>
-    <h2 class="title" *pTemplate="'title'" data-testId="dot-card-title">
+    <h2 *pTemplate="'title'" class="title" data-testId="dot-card-title">
         {{ contentlet?.fileName || contentlet?.title }}
     </h2>
     <ng-template pTemplate="footer">

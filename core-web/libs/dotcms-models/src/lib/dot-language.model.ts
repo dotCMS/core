@@ -1,6 +1,6 @@
 export interface DotAddLanguage {
-    country: string;
-    countryCode: string;
+    country?: string;
+    countryCode?: string;
     language: string;
     languageCode: string;
 }

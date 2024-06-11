@@ -496,6 +496,13 @@
                             formValue = (Object) contentletForm.getFieldValueByVar(f.getVelocityVarName());
 
                         }
+
+						if (newField instanceof StoryBlockField) {
+							if (UtilMethods.isSet(formValue)) {
+								formValue = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(formValue, contentlet.getIdentifier()).getValue();
+							}
+						}
+
                         request.setAttribute("value", formValue);
 
                         if (f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {

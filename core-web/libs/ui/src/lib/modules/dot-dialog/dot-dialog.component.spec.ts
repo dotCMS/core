@@ -55,7 +55,7 @@ class TestHostComponent {
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-dialog [(visible)]="show" (beforeClose)="beforeClose($event)">
+        <dot-dialog (beforeClose)="beforeClose($event)" [(visible)]="show">
             <b>Dialog content</b>
         </dot-dialog>
     `

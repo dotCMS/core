@@ -53,6 +53,8 @@ class EmptyMockComponent {}
 @Component({
     selector: 'dot-test-host-component',
     template: ` <dot-listing-data-table
+        (rowWasClicked)="rowWasClicked($event)"
+        (selectedItems)="selectedItems($event)"
         [columns]="columns"
         [url]="url"
         [actionHeaderOptions]="actionHeaderOptions"
@@ -65,9 +67,7 @@ class EmptyMockComponent {}
         [dataKey]="dataKey"
         [checkbox]="checkbox"
         [mapItems]="mapItems"
-        [paginatorExtraParams]="paginatorExtraParams"
-        (rowWasClicked)="rowWasClicked($event)"
-        (selectedItems)="selectedItems($event)">
+        [paginatorExtraParams]="paginatorExtraParams">
         <dot-empty-state></dot-empty-state>
     </dot-listing-data-table>`
 })

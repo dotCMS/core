@@ -20,7 +20,7 @@ public class DotExceptionHandler implements IExecutionExceptionHandler {
         boolean isShowErrors = false;
         final Object object = commandLine.getCommand();
         //This takes the parseResult and unwraps the subcommands to get the command that was executed
-        final Optional<CommandsChain> chain = SubcommandProcessor.process(parseResult);
+        final Optional<CommandsChain> chain = new SubcommandProcessor().process(parseResult);
         if (chain.isPresent()) {
             final CommandsChain commandsChain = chain.get();
             commandName = commandsChain.command();

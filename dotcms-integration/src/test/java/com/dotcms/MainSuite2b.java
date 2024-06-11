@@ -40,6 +40,7 @@ import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.experiments.business.IndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.experiments.business.RootIndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
+import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
@@ -91,6 +92,7 @@ import com.dotmarketing.business.VersionableFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
+import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
@@ -112,6 +114,7 @@ import com.dotmarketing.startup.StartupTasksExecutorDataTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.*;
+import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
@@ -298,7 +301,11 @@ import org.junit.runners.Suite.SuiteClasses;
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
         PruneTimeMachineBackupJobTest.class,
+        CMSUrlUtilIntegrationTest.class,
+        ContentFileAssetIntegrityCheckerTest.class,
+        ITConfigTest.class,
         Task240530AddDotAIPortletToLayoutTest.class
+
 })
 
 public class MainSuite2b {

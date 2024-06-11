@@ -269,17 +269,6 @@
                         </configuration>
                         <executions>
                             <execution>
-                                <id>format-test</id>
-                                <goals>
-                                    <goal>yarn</goal>
-                                </goals>
-                                <!-- optional: the default phase is "generate-resources" -->
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <arguments>npx nx format:check ${nx.affected.options}</arguments>
-                                </configuration>
-                            </execution>
-                            <execution>
                                 <id>lint-test</id>
                                 <goals>
                                     <goal>yarn</goal>

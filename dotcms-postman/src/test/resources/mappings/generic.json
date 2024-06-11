@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\".*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+    }
+  }
+}

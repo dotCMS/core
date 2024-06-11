@@ -51,7 +51,9 @@
     color: $white;
     display: flex;
     transform: translateY(0px);
-    transition: transform 0.2s ease, visibility 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        visibility 0.2s ease;
     visibility: hidden;
 }
 

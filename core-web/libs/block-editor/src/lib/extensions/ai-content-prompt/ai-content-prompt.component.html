@@ -1,100 +1,100 @@
 <ng-container *ngIf="vm$ | async as vm">
     <p-dialog
+        (onHide)="store.hideDialog()"
         [(visible)]="vm.showDialog"
         [dismissableMask]="true"
         [draggable]="false"
         [resizable]="false"
         [style]="{ width: '1040px' }"
-        (onHide)="store.hideDialog()"
         appendTo="body"
         header="{{ 'block-editor.extension.ai-content.header' | dm }}">
         <form
-            class="ai-content__form"
+            (ngSubmit)="store.generateContent(form.value.textPrompt)"
             [formGroup]="form"
-            (ngSubmit)="store.generateContent(form.value.textPrompt)">
+            class="ai-content__form">
             @if (vm.status === ComponentStatus.LOADING) {
-            <p-skeleton width="100%" height="22rem" />
+                <p-skeleton width="100%" height="22rem" />
             } @else if (vm.generatedContent[vm.activeIndex]?.error) {
-            <dot-empty-container
-                [hideContactUsLink]="true"
-                [buttonLabel]="'try-again' | dm"
-                [secondaryButton]="true"
-                [configuration]="emptyConfiguration"
-                (buttonAction)="store.generateContent(form.value.textPrompt)" />
+                <dot-empty-container
+                    (buttonAction)="store.generateContent(form.value.textPrompt)"
+                    [hideContactUsLink]="true"
+                    [buttonLabel]="'try-again' | dm"
+                    [secondaryButton]="true"
+                    [configuration]="emptyConfiguration" />
             } @else {
-            <div class="ai-content__generated-text-wrapper">
-                <textarea
-                    class="ai-content__generated-text"
-                    #generatedText
-                    [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
-                    [readOnly]="true"
-                    formControlName="generatedText"
-                    pInputTextarea>
-                </textarea>
+                <div class="ai-content__generated-text-wrapper">
+                    <textarea
+                        [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
+                        [readOnly]="true"
+                        class="ai-content__generated-text"
+                        #generatedText
+                        formControlName="generatedText"
+                        pInputTextarea>
+                    </textarea>
 
-                <dot-copy-button
-                    *ngIf="generatedText.value"
-                    [copy]="generatedText.value"
-                    customClass="p-button-rounded" />
-            </div>
-
-            } @if (vm.status === ComponentStatus.LOADING) {
-            <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
+                    <dot-copy-button
+                        *ngIf="generatedText.value"
+                        [copy]="generatedText.value"
+                        customClass="p-button-rounded" />
+                </div>
+            }
+            @if (vm.status === ComponentStatus.LOADING) {
+                <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
             } @else {
-            <div class="ai-content__pagination">
-                <button
-                    class="p-button-text p-button-sm p-button-rounded"
-                    [disabled]="vm.activeIndex === 0 || vm.generatedContent?.length === 0"
-                    (click)="store.updateActiveIndex(vm.activeIndex - 1)"
-                    type="button"
-                    icon="pi pi-chevron-left"
-                    pButton></button>
-                <span>
-                    {{ vm.generatedContent?.length ? vm.activeIndex + 1 : 0 }} {{ 'of' | dm }}
-                    {{ vm.generatedContent?.length }}
-                </span>
-                <button
-                    class="p-button-text p-button-sm p-button-rounded"
-                    [disabled]="
-                        vm.activeIndex === vm.generatedContent?.length - 1 ||
-                        vm.generatedContent?.length === 0
-                    "
-                    (click)="store.updateActiveIndex(vm.activeIndex + 1)"
-                    type="button"
-                    icon="pi pi-chevron-right"
-                    pButton></button>
-            </div>
+                <div class="ai-content__pagination">
+                    <button
+                        (click)="store.updateActiveIndex(vm.activeIndex - 1)"
+                        [disabled]="vm.activeIndex === 0 || vm.generatedContent?.length === 0"
+                        class="p-button-text p-button-sm p-button-rounded"
+                        type="button"
+                        icon="pi pi-chevron-left"
+                        pButton></button>
+                    <span>
+                        {{ vm.generatedContent?.length ? vm.activeIndex + 1 : 0 }} {{ 'of' | dm }}
+                        {{ vm.generatedContent?.length }}
+                    </span>
+                    <button
+                        (click)="store.updateActiveIndex(vm.activeIndex + 1)"
+                        [disabled]="
+                            vm.activeIndex === vm.generatedContent?.length - 1 ||
+                            vm.generatedContent?.length === 0
+                        "
+                        class="p-button-text p-button-sm p-button-rounded"
+                        type="button"
+                        icon="pi pi-chevron-right"
+                        pButton></button>
+                </div>
             }
 
             <textarea
+                [placeholder]="'block-editor.extension.ai-content.ask.placeholder' | dm"
                 class="ai-content__input-text"
                 #inputTextarea
-                [placeholder]="'block-editor.extension.ai-content.ask.placeholder' | dm"
                 formControlName="textPrompt"
                 pInputTextarea></textarea>
 
             <div class="ai-content__buttons">
                 <button
-                    class="p-button-text"
-                    [label]="'Cancel' | dm"
                     (click)="closeDialog()"
+                    [label]="'Cancel' | dm"
+                    class="p-button-text"
                     pButton
                     type="button"></button>
                 <button
-                    class="ml-auto"
+                    (click)="store.setSelectedContent(vm.generatedContent[vm.activeIndex]?.content)"
                     [disabled]="
                         vm.status === ComponentStatus.LOADING ||
                         !vm.generatedContent?.length ||
                         vm.generatedContent[vm.activeIndex]?.error
                     "
                     [label]="'block-editor.extension.ai-image.insert' | dm"
-                    (click)="store.setSelectedContent(vm.generatedContent[vm.activeIndex]?.content)"
+                    class="ml-auto"
                     pButton
                     type="button"></button>
                 <button
-                    class="p-button-outlined"
                     [disabled]="form.invalid || vm.status === ComponentStatus.LOADING"
                     [label]="submitButtonLabel | dm"
+                    class="p-button-outlined"
                     pButton
                     type="submit">
                     <svg

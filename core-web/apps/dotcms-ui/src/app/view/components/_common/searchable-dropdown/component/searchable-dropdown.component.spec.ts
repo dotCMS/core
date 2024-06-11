@@ -385,7 +385,6 @@ describe('SearchableDropdownComponent', () => {
 @Component({
     selector: 'dot-host-component',
     template: ` <dot-searchable-dropdown
-        #searchableDropdown
         [action]="action"
         [cssClass]="cssClass"
         [data]="data"
@@ -398,18 +397,19 @@ describe('SearchableDropdownComponent', () => {
         [totalRecords]="totalRecords"
         [valuePropertyName]="valuePropertyName"
         [width]="width"
+        #searchableDropdown
         cssClassDataList="site_selector__data-list">
         <ng-template let-data="item" pTemplate="listItem">
             <div
-                class="searchable-dropdown__data-list-item templateTestItem"
-                (click)="handleClick(item)">
+                (click)="handleClick(item)"
+                class="searchable-dropdown__data-list-item templateTestItem">
                 {{ data.label }}
             </div>
         </ng-template>
         <ng-template let-persona="item" pTemplate="select">
             <div
-                class="dot-persona-selector__testContainer"
-                (click)="searchableDropdown.toggleOverlayPanel($event)">
+                (click)="searchableDropdown.toggleOverlayPanel($event)"
+                class="dot-persona-selector__testContainer">
                 Test
             </div>
         </ng-template>
