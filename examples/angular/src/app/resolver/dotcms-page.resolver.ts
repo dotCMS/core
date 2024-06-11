@@ -22,8 +22,6 @@ export const DotCMSPageResolver = async (
   const url = route.url.map((segment) => segment.path).join('/');
   const queryParams = route.queryParams;
 
-  console.log('DotCMSPageResolver', {...queryParams});
-
   const pageProps = {
     path: url || 'index',
     language_id: queryParams['language_id'],
