@@ -52,8 +52,7 @@ import picocli.CommandLine;
                 "" // empty string here so we can have a new line
         }
 )
-public class FilesPull extends AbstractFilesCommand implements Callable<Integer>, DotCommand,
-        DotPull {
+public class FilesPull extends AbstractFilesCommand implements Callable<Integer>, DotPull {
 
     static final String NAME = "pull";
 
