@@ -1,4 +1,10 @@
-import { Meta, StoryObj } from '@storybook/angular';
+import {
+    Meta,
+    StoryObj,
+    moduleMetadata,
+    componentWrapperDecorator,
+    argsToTemplate
+} from '@storybook/angular';
 
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
@@ -8,8 +14,23 @@ import { TreeSelectModule, TreeSelect } from 'primeng/treeselect';
 
 import { files } from './../data/Tree.stories';
 
-const meta: Meta<TreeSelect> = {
+type ExtraArgs = {
+    invalid: boolean;
+};
+
+type Args = TreeSelect & ExtraArgs;
+
+const meta: Meta<Args> = {
     title: 'PrimeNG/Form/TreeSelect',
+    decorators: [
+        moduleMetadata({
+            imports: [TreeSelectModule, FormsModule, BrowserModule, BrowserAnimationsModule]
+        }),
+        componentWrapperDecorator(
+            (story) =>
+                `<div class="card flex justify-content-center w-25rem h-25rem">${story}</div>`
+        )
+    ],
     component: TreeSelect,
     parameters: {
         layout: 'centered',
@@ -19,213 +40,99 @@ const meta: Meta<TreeSelect> = {
                     'TreeSelect is a form component to choose from hierarchical data.: https://www.primefaces.org/primeng-v15-lts/treeselect'
             }
         }
-    }
+    },
+    args: {
+        placeholder: 'Select Item',
+        options: [...files],
+        showClear: true,
+        invalid: false,
+        selectionMode: 'single'
+    },
+    render: (args: TreeSelect) => ({
+        props: {
+            ...args
+        },
+        template: `
+        <p-treeSelect
+            ${argsToTemplate(args)}
+            containerStyleClass="w-full"
+            class="w-full md:w-20rem"
+            [class.ng-invalid]="invalid"
+            [class.ng-dirty]="invalid"
+        >
+            <ng-template pTemplate="triggericon">
+                <i class="pi pi-chevron-down"></i>
+            </ng-template>
+            <ng-template pTemplate="filtericon">
+                <i class="pi pi-search"></i>
+            </ng-template>
+            <ng-template pTemplate="closeicon">
+                <i class="pi pi-times"></i>
+            </ng-template>
+        </p-treeSelect> `
+    })
 };
 export default meta;
 
-type Story = StoryObj<TreeSelect>;
+type Story = StoryObj<Args>;
 
-const storyConfigBase: Partial<Story['render']> = {
-    moduleMetadata: {
-        imports: [TreeSelectModule, FormsModule, BrowserAnimationsModule, BrowserModule]
-    },
-    props: {
-        files,
-        selectedNodes: ''
+export const Default: Story = {};
+
+export const Invalid: Story = {
+    args: {
+        invalid: true
     }
 };
 
-export const Default: Story = {
-    render: () => ({
-        ...storyConfigBase,
-        template: `
-        <div class="card flex justify-content-center w-25rem h-25rem">
-            <p-treeSelect
-                [(ngModel)]="selectedNodes"
-                class="md:w-20rem w-full" containerStyleClass="w-full"
-                [options]="files"
-                placeholder="Select Item"
-                [showClear]="true"
-            >
-                <ng-template pTemplate="triggericon">
-                    <i class="pi pi-chevron-down"></i>
-                </ng-template>
-            </p-treeSelect> 
-        </div>
-        `
-    })
-};
-
-export const Invalid: Story = {
-    render: () => ({
-        ...storyConfigBase,
-        template: `
-        <div class="card flex justify-content-center w-25rem h-25rem">
-            <p-treeSelect
-                class="md:w-20rem w-full ng-invalid ng-dirty"
-                containerStyleClass="w-full"
-                [(ngModel)]="selectedNodes"
-                [options]="files"
-                placeholder="Select Item"
-                [showClear]="true"
-            >
-                <ng-template pTemplate="triggericon">
-                    <i class="pi pi-chevron-down"></i>
-                </ng-template>
-            </p-treeSelect> 
-        </div>
-        `
-    })
-};
-
-export const WithLabel: Story = {
-    render: () => ({
-        ...storyConfigBase,
-        template: `
-        <div class="card flex justify-content-center w-25rem h-25rem">
-            <span class="md:w-20rem w-full">
-                <label for="treeselect">Label</label>
-                <p-treeSelect
-                    containerStyleClass="w-full"
-                    [(ngModel)]="selectedNodes"
-                    [options]="files"
-                    placeholder="Select Item"
-                    [showClear]="true"
-                >
-                    <ng-template pTemplate="triggericon">
-                        <i class="pi pi-chevron-down"></i>
-                    </ng-template>
-                </p-treeSelect> 
-            </span>
-        </div>
-        `
-    })
-};
-
-export const WithFloatLabel: Story = {
-    render: () => ({
-        ...storyConfigBase,
-        template: `
-        <div class="card flex justify-content-center w-25rem h-25rem">
-            <div class="md:w-20rem w-full">
-                <span class="p-float-label w-full">
-                    <p-treeSelect
-                        containerStyleClass="w-full"
-                        [(ngModel)]="selectedNodes"
-                        [options]="files"
-                        placeholder="Select Item"
-                        [showClear]="true"
-                    >
-                        <ng-template pTemplate="triggericon">
-                            <i class="pi pi-chevron-down"></i>
-                        </ng-template>
-                    </p-treeSelect> 
-                    <label for="treeselect">Float Label</label>
-                </span>
-            </div>
-        </div>
-        `
-    })
-};
-
 export const Disable: Story = {
-    render: () => ({
-        ...storyConfigBase,
-        template: `
-        <div class="card flex justify-content-center w-25rem h-25rem">
-            <p-treeSelect
-                [disabled]="true"
-                [(ngModel)]="selectedNodes"
-                class="md:w-20rem w-full" containerStyleClass="w-full"
-                [options]="files"
-                placeholder="Select Item"
-                [showClear]="true"
-            >
-                <ng-template pTemplate="triggericon">
-                    <i class="pi pi-chevron-down"></i>
-                </ng-template>
-            </p-treeSelect> 
-        </div>
-        `
-    })
+    args: {
+        disabled: true
+    }
 };
 
 export const Multiple: Story = {
-    render: () => ({
-        ...storyConfigBase,
-        template: `  
-        <div class="card flex justify-content-center w-25rem h-25rem">
-            <p-treeSelect
-                class="w-full md:w-20rem"
-                containerStyleClass="w-full"
-                [(ngModel)]="selectedNodes"
-                [options]="files"
-                [metaKeySelection]="false"
-                selectionMode="multiple"
-                placeholder="Select Item"
-                [showClear]="true"
-            >
-                <ng-template pTemplate="triggericon">
-                    <i class="pi pi-chevron-down"></i>
-                </ng-template>
-            </p-treeSelect> 
-        </div>
-        `
-    })
+    args: {
+        selectionMode: 'multiple'
+    }
 };
 
 export const Checkbox: Story = {
-    render: () => ({
-        ...storyConfigBase,
-        template: `  
-        <div class="card flex justify-content-center w-25rem h-25rem">
-            <p-treeSelect
-                class="w-full md:w-20rem"
-                containerStyleClass="w-full"
-                [(ngModel)]="selectedNodes"
-                [options]="files"
-                [showClear]="true"
-                display="chip"
-                [metaKeySelection]="false"
-                selectionMode="checkbox"
-                placeholder="Select Item"
-                [showClear]="true"
-            >
-                <ng-template pTemplate="triggericon">
-                    <i class="pi pi-chevron-down"></i>
-                </ng-template>
-            </p-treeSelect> 
-        </div>
-        `
-    })
+    args: {
+        selectionMode: 'checkbox'
+    }
 };
 
 export const Filter: Story = {
-    render: () => ({
-        ...storyConfigBase,
-        template: `  
-        <div class="card flex justify-content-center w-25rem h-25rem">
-            <p-treeSelect
-                class="md:w-20rem w-full"
-                containerStyleClass="w-full"
-                [(ngModel)]="selectedNodes"
-                [options]="files"
-                placeholder="Select Item"
-                [filter]="true"
-                [filterInputAutoFocus]="true"
-                [showClear]="true"
-            >
-                <ng-template pTemplate="triggericon">
-                    <i class="pi pi-chevron-down"></i>
-                </ng-template>
-                <ng-template pTemplate="filtericon">
-                    <i class="pi pi-search"></i>
-                </ng-template>
-                <ng-template pTemplate="closeicon">
-                    <i class="pi pi-times"></i>
-                </ng-template>
-            </p-treeSelect>
-        </div>
-        `
-    })
+    args: {
+        filter: true,
+        filterInputAutoFocus: true
+    }
+};
+
+export const WithLabel: Story = {
+    decorators: [
+        componentWrapperDecorator(
+            (story) =>
+                `<div class="card flex justify-content-center w-25rem h-25rem">
+                    <span class="md:w-20rem w-full">
+                        <label for="treeselect">Label</label>
+                        ${story}
+                    </span>
+                </div>`
+        )
+    ]
+};
+
+export const WithFloatLabel: Story = {
+    decorators: [
+        componentWrapperDecorator(
+            (story) =>
+                `<div class="md:w-20rem w-full">
+                    <span class="p-float-label w-full">
+                        ${story}
+                        <label for="treeselect">Label</label>
+                    </span>
+                </div>`
+        )
+    ]
 };
