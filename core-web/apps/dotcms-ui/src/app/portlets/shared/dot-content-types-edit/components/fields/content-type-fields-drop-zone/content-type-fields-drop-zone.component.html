@@ -64,24 +64,26 @@
             </div>
         </p-tabPanel>
         @if (!!currentField?.id && isFieldWithSettings) {
-        <p-tabPanel [header]="'Settings'" [disabled]="!currentField?.id" #panel>
-            @switch (this.currentFieldType?.clazz) { @case
-            ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
-            <dot-block-editor-settings
-                (changeControls)="changesDialogActions($event)"
-                (save)="toggleDialog()"
-                (valid)="setDialogOkButtonState($event)"
-                [field]="currentField"
-                [isVisible]="panel.selected"></dot-block-editor-settings>
-            } @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
-            <dot-binary-settings
-                (save)="toggleDialog()"
-                (valid)="setDialogOkButtonState($event)"
-                (changeControls)="changesDialogActions($event)"
-                [field]="currentField"
-                [isVisible]="panel.selected"></dot-binary-settings>
-            } }
-        </p-tabPanel>
+            <p-tabPanel [header]="'Settings'" [disabled]="!currentField?.id" #panel>
+                @switch (this.currentFieldType?.clazz) {
+                    @case ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
+                        <dot-block-editor-settings
+                            (changeControls)="changesDialogActions($event)"
+                            (save)="toggleDialog()"
+                            (valid)="setDialogOkButtonState($event)"
+                            [field]="currentField"
+                            [isVisible]="panel.selected"></dot-block-editor-settings>
+                    }
+                    @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
+                        <dot-binary-settings
+                            (save)="toggleDialog()"
+                            (valid)="setDialogOkButtonState($event)"
+                            (changeControls)="changesDialogActions($event)"
+                            [field]="currentField"
+                            [isVisible]="panel.selected"></dot-binary-settings>
+                    }
+                }
+            </p-tabPanel>
         }
 
         <p-tabPanel

@@ -25,5 +25,6 @@ export enum FIELD_TYPES {
     JSON = 'JSON-Field',
     KEY_VALUE = 'Key-Value',
     WYSIWYG = 'WYSIWYG',
+    HOST_FOLDER = 'Host-Folder',
     CATEGORY = 'Category'
 }

@@ -2,7 +2,7 @@
     (hide)="close()"
     [(visible)]="contentType"
     [actions]="dialogActions"
-    [header]="'contenttypes.content.add_to_menu.header' | dm : [contentType?.name]"
+    [header]="'contenttypes.content.add_to_menu.header' | dm: [contentType?.name]"
     width="592px">
     <form (ngSubmit)="submit()" [formGroup]="form" class="p-fluid" novalidate>
         <div class="field">

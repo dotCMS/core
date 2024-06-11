@@ -177,3 +177,36 @@ export const stringToJson = (value: string) => {
 
     return isValidJson(value) ? JSON.parse(value) : {};
 };
+
+/**
+ * Converts a JSON string into a JavaScript object.
+ * Create all paths based in a Path
+ *
+ * @param {string} path - the path
+ * @return {string[]} - An arrray with all posibles pats
+ *
+ * @usageNotes
+ *
+ * ### Example
+ *
+ * ```ts
+ * const path = 'demo.com/level1/level2';
+ * const paths = createPaths(path);
+ * console.log(paths); // ['demo.com/', 'demo.com/level1/', 'demo.com/level1/level2/']
+ * ```
+ */
+export const createPaths = (path: string): string[] => {
+    const split = path.split('/').filter((item) => item !== '');
+
+    return split.reduce((array, item, index) => {
+        const prev = array[index - 1];
+        let path = `${item}/`;
+        if (prev) {
+            path = `${prev}${path}`;
+        }
+
+        array.push(path);
+
+        return array;
+    }, []);
+};
