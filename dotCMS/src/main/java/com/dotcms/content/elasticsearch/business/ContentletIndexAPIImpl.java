@@ -185,7 +185,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
         } catch (Exception e) {
-            Logger.fatal("ESUil.checkAndInitializeIndex", e.getMessage(),e);
+            Logger.fatal(this.getClass(), "Failed to create new indexes:" + e.getMessage(),e);
 
         }
     }
