@@ -23,8 +23,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentCategoryFieldSidebarComponent } from './components/dot-edit-content-category-field-sidebar/dot-edit-content-category-field-sidebar.component';
-
-const CLOSE_SIDEBAR_CSS_DELAY_MS = 300;
+import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.const';
 
 /**
  * Component for editing content category field.
