@@ -18,6 +18,10 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { EditContentPayload } from '../models/dot-edit-content-form.interface';
+import {
+    CustomTreeNode,
+    TreeNodeItem
+} from '../models/dot-edit-content-host-folder-field.interface';
 
 /* FIELDS MOCK BY TYPE */
 export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
@@ -563,6 +567,30 @@ export const WYSIWYG_MOCK: DotCMSContentTypeField = {
     variable: 'WYSIWYG'
 };
 
+export const HOST_FOLDER_TEXT_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
+    contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
+    dataType: 'SYSTEM',
+    fieldType: 'Host-Folder',
+    fieldTypeLabel: 'Site or Folder',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    forceIncludeInApi: false,
+    iDate: 1717083750000,
+    id: 'b7c41ffd6b6bc1250f2fc85a3637471b',
+    indexed: true,
+    listed: false,
+    modDate: 1717088310000,
+    name: 'Site Or Folder',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    variable: 'siteOrFolder'
+};
+
 export const CATEGORY_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
@@ -610,6 +638,7 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     JSON_FIELD_MOCK,
     KEY_VALUE_MOCK,
     WYSIWYG_MOCK,
+    HOST_FOLDER_TEXT_MOCK,
     CATEGORY_MOCK
 ];
 
@@ -1157,5 +1186,100 @@ export const MockResizeObserver = class {
 
     disconnect() {
         //
+    }
+};
+
+export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
+    {
+        key: 'demo.dotcms.com',
+        label: 'demo.dotcms.com',
+        data: {
+            hostname: 'demo.dotcms.com',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder'
+    },
+    {
+        key: 'nico.dotcms.com',
+        label: 'nico.dotcms.com',
+        data: {
+            hostname: 'nico.dotcms.com',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder'
+    }
+];
+
+export const TREE_SELECT_MOCK: TreeNodeItem[] = [
+    {
+        key: 'demo.dotcms.com',
+        label: 'demo.dotcms.com',
+        data: {
+            hostname: 'demo.dotcms.com',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder',
+        children: [
+            {
+                key: 'demo.dotcms.comlevel1',
+                label: 'demo.dotcms.com/level1/',
+                data: {
+                    hostname: 'demo.dotcms.com',
+                    path: '/level1/',
+                    type: 'folder'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder',
+                children: [
+                    {
+                        key: 'demo.dotcms.comlevel1child1',
+                        label: 'demo.dotcms.com/level1/child1/',
+                        data: {
+                            hostname: 'demo.dotcms.com',
+                            path: '/level1/child1/',
+                            type: 'folder'
+                        },
+                        expandedIcon: 'pi pi-folder-open',
+                        collapsedIcon: 'pi pi-folder'
+                    }
+                ]
+            },
+            {
+                key: 'demo.dotcms.comlevel2',
+                label: 'demo.dotcms.com/level2/',
+                data: {
+                    hostname: 'demo.dotcms.com',
+                    path: '/level2/',
+                    type: 'folder'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder'
+            }
+        ]
+    },
+    {
+        key: 'nico.dotcms.com',
+        label: 'nico.dotcms.com',
+        data: {
+            hostname: 'nico.dotcms.com',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder'
+    }
+];
+
+export const TREE_SELECT_MOCK_NODE: CustomTreeNode = {
+    node: { ...TREE_SELECT_MOCK[0].children[0] },
+    tree: {
+        path: 'demo.dotcms.com',
+        folders: [...TREE_SELECT_MOCK[0].children]
     }
 };

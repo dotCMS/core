@@ -63,7 +63,10 @@
     height: $spacing-5;
     border-radius: 50%;
     background: transparent;
-    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    transition:
+        background-color 0.2s,
+        color 0.2s,
+        box-shadow 0.2s;
 }
 .p-message .p-message-close:hover {
     background: $color-palette-white-op-30;

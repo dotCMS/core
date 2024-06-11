@@ -8,29 +8,29 @@
         <h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
         <ul class="announcements__list">
             @for (item of announcements(); track item.identifier) {
-            <li
-                [class.announcements__list-item--active]="!item.hasBeenRead"
-                class="announcements__list-item">
-                <span *ngIf="!item.hasBeenRead" class="announcements__badge"></span>
-                <span
-                    [ngClass]="typesIcons[item.type | lowercase] || typesIcons['important']"
-                    class="announcements__image pi"></span>
-                <a
-                    (click)="toggleDialog($event)"
-                    [href]="item.url"
-                    class="announcements__url"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-testId="announcement_link"
-                    aria-labelledby="announcement-label date-label">
-                    <div class="announcements__content">
-                        <span class="announcements__label">{{ item.title }}</span>
-                        <span class="announcements__date">{{
-                            item.announcementDateAsISO8601 | date
-                        }}</span>
-                    </div>
-                </a>
-            </li>
+                <li
+                    [class.announcements__list-item--active]="!item.hasBeenRead"
+                    class="announcements__list-item">
+                    <span *ngIf="!item.hasBeenRead" class="announcements__badge"></span>
+                    <span
+                        [ngClass]="typesIcons[item.type | lowercase] || typesIcons['important']"
+                        class="announcements__image pi"></span>
+                    <a
+                        (click)="toggleDialog($event)"
+                        [href]="item.url"
+                        class="announcements__url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-testId="announcement_link"
+                        aria-labelledby="announcement-label date-label">
+                        <div class="announcements__content">
+                            <span class="announcements__label">{{ item.title }}</span>
+                            <span class="announcements__date">{{
+                                item.announcementDateAsISO8601 | date
+                            }}</span>
+                        </div>
+                    </a>
+                </li>
             }
         </ul>
 
@@ -50,20 +50,20 @@
         </div>
 
         @for (item of aboutLinks; track $index) {
-        <h5 class="announcements__title">{{ item.title | dm }}</h5>
-        <div class="announcements__about">
-            @for (item of item.items(); track $index) {
-            <a
-                (click)="toggleDialog($event)"
-                [href]="item.url"
-                class="announcements__about-link"
-                data-testId="announcements__about-link"
-                target="_blank"
-                rel="noopener"
-                >{{ item.label }}</a
-            >
-            }
-        </div>
+            <h5 class="announcements__title">{{ item.title | dm }}</h5>
+            <div class="announcements__about">
+                @for (item of item.items(); track $index) {
+                    <a
+                        (click)="toggleDialog($event)"
+                        [href]="item.url"
+                        class="announcements__about-link"
+                        data-testId="announcements__about-link"
+                        target="_blank"
+                        rel="noopener"
+                        >{{ item.label }}</a
+                    >
+                }
+            </div>
         }
     </div>
 </p-overlayPanel>

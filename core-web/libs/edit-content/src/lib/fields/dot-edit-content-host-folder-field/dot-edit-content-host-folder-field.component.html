@@ -1,0 +1,15 @@
+<p-treeSelect
+    (onNodeSelect)="onNodeSelect($event)"
+    (onNodeExpand)="onNodeExpand($event)"
+    [formControl]="pathControl"
+    [options]="$options()"
+    [filter]="true"
+    [attr.aria-labelledby]="'field-' + field.variable"
+    selectionMode="single">
+    <ng-template let-node pTemplate="default">
+        <span>{{ node.label | truncatePath }}</span>
+    </ng-template>
+    <ng-template pTemplate="triggericon">
+        <i [ngClass]="$iconClasses()" class="pi"></i>
+    </ng-template>
+</p-treeSelect>

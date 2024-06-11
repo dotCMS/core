@@ -47,7 +47,10 @@ export class BundleService {
         return data;
     }
 
-    constructor(public _apiRoot: ApiRoot, private coreWebService: CoreWebService) {
+    constructor(
+        public _apiRoot: ApiRoot,
+        private coreWebService: CoreWebService
+    ) {
         this._bundleStoreUrl = `/api/bundle/getunsendbundles/userid`;
         this._loggedUserUrl = `/api/v1/users/current/`;
         this._addToBundleUrl = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`;

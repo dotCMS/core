@@ -115,7 +115,7 @@
             [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'">
             {{
                 col.textContent
-                    ? (col.textContent | dotStringFormat : [rowData[col.fieldName]])
+                    ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
                     : rowData[col.fieldName]
             }}
         </a>

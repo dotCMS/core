@@ -919,13 +919,13 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
         let newW = resizeRight
             ? mousePos.left - itemPos.left + 1
             : resizeLeft
-            ? endCorner.left - mousePos.left + 1
-            : itemDims.width;
+              ? endCorner.left - mousePos.left + 1
+              : itemDims.width;
         let newH = resizeBottom
             ? mousePos.top - itemPos.top + 1
             : resizeTop
-            ? endCorner.top - mousePos.top + 1
-            : itemDims.height;
+              ? endCorner.top - mousePos.top + 1
+              : itemDims.height;
 
         if (newW < this.minWidth) newW = this.minWidth;
         if (newH < this.minHeight) newH = this.minHeight;

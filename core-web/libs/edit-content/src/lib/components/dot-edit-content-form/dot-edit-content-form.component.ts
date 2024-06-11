@@ -23,6 +23,8 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutTab } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { resolutionValue } from './utils';
+
 import {
     CALENDAR_FIELD_TYPES,
     FLATTENED_FIELD_TYPES
@@ -104,7 +106,7 @@ export class DotEditContentFormComponent implements OnInit {
     private initializeFormControl(field: DotCMSContentTypeField): FormControl {
         const validators = [];
 
-        const value = this.formData.contentlet?.[field.variable] ?? field.defaultValue;
+        const value = resolutionValue[field.fieldType](this.formData.contentlet, field);
 
         if (field.required) validators.push(Validators.required);
         if (field.regexCheck) {

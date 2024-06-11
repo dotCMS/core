@@ -45,7 +45,7 @@ const UNITS = {
             </cw-input-dropdown>
             <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
                 <input
-                    [value]="getRadiusInPreferredUnit() | number : '1.0-0'"
+                    [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
                     [readonly]="true"
                     pInputText
                     class="cw-latLong" />
@@ -87,7 +87,10 @@ export class VisitorsLocationComponent {
     showingMap = false;
     comparisonDropdown: any;
 
-    constructor(public decimalPipe: DecimalPipe, private loggerService: LoggerService) {
+    constructor(
+        public decimalPipe: DecimalPipe,
+        private loggerService: LoggerService
+    ) {
         loggerService.info('VisitorsLocationComponent', 'constructor');
     }
 
