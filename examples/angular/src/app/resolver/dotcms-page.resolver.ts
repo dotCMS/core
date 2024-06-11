@@ -1,4 +1,4 @@
-import { ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { DotCMSPageAsset, DotcmsNavigationItem } from '@dotcms/angular';
 import { inject } from '@angular/core';
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
@@ -11,15 +11,18 @@ import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
  * @return {*}
  */
 export const DotCMSPageResolver = async (
-  route: ActivatedRouteSnapshot,
+  route: ActivatedRouteSnapshot
 ): Promise<{
-  pageAsset: DotCMSPageAsset;
-  nav: DotcmsNavigationItem;
+  pageAsset: DotCMSPageAsset | null;
+  nav: DotcmsNavigationItem | null;
 }> => {
   const client = inject(DOTCMS_CLIENT_TOKEN);
+  const router = inject(Router);
 
   const url = route.url.map((segment) => segment.path).join('/');
   const queryParams = route.queryParams;
+
+  console.log('DotCMSPageResolver', {...queryParams});
 
   const pageProps = {
     path: url || 'index',
