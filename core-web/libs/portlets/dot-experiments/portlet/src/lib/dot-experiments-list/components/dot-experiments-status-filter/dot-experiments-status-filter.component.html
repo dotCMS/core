@@ -1,10 +1,9 @@
 <p-multiSelect
+    (onChange)="switch.emit($event.value)"
     [(ngModel)]="selectedItems"
     [dotOptions]="options"
     [filter]="false"
     [style]="{ width: '15rem' }"
-    (onChange)="switch.emit($event.value)"
     defaultLabel="{{ 'experimentspage.experiment.status.placeholder' | dm }}"
-    dotDropdown
->
+    dotDropdown>
 </p-multiSelect>

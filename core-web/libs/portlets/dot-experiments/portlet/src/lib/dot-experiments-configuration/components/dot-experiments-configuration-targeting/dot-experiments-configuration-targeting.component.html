@@ -8,15 +8,15 @@
 
         <ng-template pTemplate="footer">
             <div
-                class="inline-block"
                 [pTooltip]="vm.disabledTooltipLabel | dm"
                 [tooltipDisabled]="!vm.disabledTooltipLabel"
+                class="inline-block"
                 data-testId="tooltip-on-disabled"
                 tooltipPosition="bottom">
                 <button
-                    class="p-button-sm p-button-text"
-                    [disabled]="vm.disabledTooltipLabel"
                     (click)="setupTargeting()"
+                    [disabled]="vm.disabledTooltipLabel"
+                    class="p-button-sm p-button-text"
                     data-testId="targeting-add-button"
                     label="{{ 'experiments.configure.targeting.add' | dm }}"
                     pButton></button>

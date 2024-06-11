@@ -1,8 +1,8 @@
 <p-card
+    (click)="actionFired.emit(app.key)"
     [ngClass]="{
         'dot-apps-card__disabled': !app.configurationsCount
-    }"
-    (click)="actionFired.emit(app.key)">
+    }">
     <p-header>
         <p-avatar [image]="app.iconUrl" [text]="app.name" size="large" dotAvatar></p-avatar>
         <div class="dot-apps-card__label-container">

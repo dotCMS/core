@@ -70,9 +70,13 @@ dev-run-map-dev-paths:
 dev-run-debug-suspend:
     ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend
 
-# Starts the dotCMS Docker container in the background
+# Starts the dotCMS Docker container in the background, running on random port
 dev-start:
     ./mvnw -pl :dotcms-core -Pdocker-start
+
+# Starts the dotCMS Docker container in the background
+dev-start-on-port port="8082":
+    ./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port={{ port }}
 
 # Stops the development Docker container
 dev-stop:
@@ -107,9 +111,17 @@ test-integration:
 test-integration-debug-suspend:
     ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Pdebug-suspend
 
+# Just rebuild core and its deps without docker, e.g. pickup changes for it tests
+build-core-with-deps:
+    ./mvnw install -pl :dotcms-core --am -DskipTests -Ddocker.skip=true
+
+# Just rebuild core without docker, e.g. pickup changes for it tests
+build-core-only:
+    ./mvnw install -pl :dotcms-core  -DskipTests -Ddocker.skip=true
+
 # Prepares the environment for running integration tests in an IDE
 test-integration-ide:
-    ./mvnw -pl :dotcms-integration -Pdocker-start -Dcoreit.test.skip=false
+    ./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false
 
 # Stops integration test services
 test-integration-stop:

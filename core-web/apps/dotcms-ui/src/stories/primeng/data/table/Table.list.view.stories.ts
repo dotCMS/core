@@ -1,6 +1,6 @@
 import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common';
 
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -36,6 +36,7 @@ const data = [
     {
         assignee: 'Marvin McKinney',
         name: 'collaboration.nsf',
+        default: true,
         status: 'Archived',
         step: 'Draft',
         date: addDays(currentDate, 2).toISOString().split('T')[0]
@@ -102,7 +103,7 @@ export default {
     title: 'PrimeNG/Data/Table/List View',
     decorators: [
         moduleMetadata({
-            imports: [TableModule, CommonModule, TagModule, ButtonModule]
+            imports: [TableModule, CommonModule, TagModule, ButtonModule, NgIf]
         })
     ],
     parameters: {
@@ -123,7 +124,7 @@ export const Default: StoryFn = () => ({
         <p-table [value]="data" styleClass="dotTable">
             <ng-template pTemplate="caption">
                 <span>List of Documents</span>
-            </ng-template>  
+            </ng-template>
             <ng-template pTemplate="header">
                 <tr>
                     <th>
@@ -142,7 +143,7 @@ export const Default: StoryFn = () => ({
                     <td>
                         <p-tableCheckbox [value]="workflowItem"></p-tableCheckbox>
                     </td>
-                    <td><span [attr.data-wont-fit]="workflowItem.name">{{ workflowItem.name }}</span></td>
+                    <td [ngClass]="{'tag-padding': workflowItem.default }" ><span [attr.data-wont-fit]="workflowItem.name">{{ workflowItem.name }}</span> <p-tag *ngIf="workflowItem.default"  class="sm p-tag-success" value="Default"/></td>
                     <td><p-tag  class="sm p-tag-success" [value]="workflowItem.status"/></td>
                     <td><span [attr.data-wont-fit]="workflowItem.assignee" >{{ workflowItem.assignee }}</span></td>
                     <td>{{ workflowItem.step }}</td>

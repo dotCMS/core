@@ -124,9 +124,7 @@ p-dropdown.p-dropdown-sm {
         }
 
         .p-dropdown-empty-message {
-            padding: $spacing-2 $spacing-2;
-            color: $black;
-            background: transparent;
+            @extend #field-panel-empty-message;
         }
 
         .p-dropdown-item-group {

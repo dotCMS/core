@@ -26,6 +26,11 @@
 }
 
 $dot-table-cell-padding: 0.625rem $spacing-1;
+$dot-table-cell-padding-first-child: 0.625rem $spacing-1 $spacing-1 $spacing-3;
+$dot-table-cell-with-tag-padding: $spacing-1;
+$dot-table-cell-with-tag-padding-first-child: $spacing-1 $spacing-1 $spacing-1 $spacing-3;
+$dot-table-header-cell-height: 1.5rem;
+$dot-table-cell-height: 1.25rem;
 
 .dotTable {
     &.p-datatable {
@@ -59,6 +64,7 @@ $dot-table-cell-padding: 0.625rem $spacing-1;
             text-align: left;
             transition: none;
             text-wrap: nowrap;
+            line-height: $dot-table-header-cell-height;
 
             &:has(p-tableHeaderCheckbox) {
                 width: 40px;
@@ -111,6 +117,8 @@ $dot-table-cell-padding: 0.625rem $spacing-1;
             }
 
             &.p-highlight {
+                color: $color-palette-primary-500;
+
                 .p-sortable-column-icon {
                     color: $color-palette-primary-500;
                 }
@@ -139,14 +147,26 @@ $dot-table-cell-padding: 0.625rem $spacing-1;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 max-width: 0;
+                line-height: $dot-table-cell-height;
 
                 span {
                     @include dot-table-tooltip;
                 }
 
-                &:first-child:has(p-tableCheckbox) + td,
-                &:first-child:not(:has(p-tableCheckbox)) {
+                &:first-child:has(p-tableCheckbox) + td {
                     padding: $dot-table-cell-padding;
+
+                    &.tag-padding {
+                        padding: $dot-table-cell-with-tag-padding;
+                    }
+                }
+
+                &:first-child:not(:has(p-tableCheckbox)) {
+                    padding: $dot-table-cell-padding-first-child;
+
+                    &.tag-padding {
+                        padding: $dot-table-cell-with-tag-padding-first-child;
+                    }
                 }
 
                 &:first-child {
@@ -167,7 +187,10 @@ $dot-table-cell-padding: 0.625rem $spacing-1;
                     border: 0 none;
                     background: transparent;
                     border-radius: 50%;
-                    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+                    transition:
+                        background-color 0.2s,
+                        color 0.2s,
+                        box-shadow 0.2s;
 
                     &:enabled:hover {
                         color: $text-color-hover;

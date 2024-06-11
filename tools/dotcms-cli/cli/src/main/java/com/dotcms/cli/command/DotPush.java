@@ -1,6 +1,9 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.cli.common.PushMixin;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
+import java.nio.file.Path;
 import java.util.Optional;
 
 /**
@@ -10,7 +13,7 @@ import java.util.Optional;
  * Furthermore, it can provide the name of a custom mixin it uses, which is useful for custom
  * command line configurations where specific logic may be associated with certain mixin names.
  */
-public interface DotPush {
+public interface DotPush extends DotCommand {
 
     /**
      * Returns the {@link PushMixin} associated with the implementing class. This {@link PushMixin}
@@ -39,6 +42,28 @@ public interface DotPush {
      */
     default int getOrder() {
         return Integer.MAX_VALUE;  // default to the highest possible value
+    }
+
+    /**
+     * Returns whether this push command is a global push command. A global push command is a push
+     * @return true if this push command is a global push command; false otherwise
+     */
+    default boolean isGlobalPush() {
+        return false;
+    }
+
+    WorkspaceManager workspaceManager();
+
+    default Optional<Workspace> workspace(){
+       return workspaceManager().findWorkspace(getPushMixin().path());
+    }
+
+    default Path workingRootDir() {
+        final Optional<Workspace> workspace = workspace();
+        if (workspace.isPresent()) {
+            return workspace.get().root();
+        }
+        throw new IllegalArgumentException("No valid workspace found.");
     }
 
 }

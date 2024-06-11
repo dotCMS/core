@@ -2,7 +2,7 @@
 <div class="add-widget-container">
     <div class="add-widget-container__icon">
         <ng-template [ngIf]="!imageError" [ngIfElse]="materialIcon">
-            <img [src]="icon" (error)="imageError = true" alt="drag-icon" draggable="false" />
+            <img (error)="imageError = true" [src]="icon" alt="drag-icon" draggable="false" />
         </ng-template>
     </div>
     <span class="add-widget-container__label" data-testid="addWidgetLabel">{{ label }}</span>

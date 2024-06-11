@@ -1,5 +1,5 @@
-import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSNavigationItem, DotCMSError } from '../models';
+import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 
 /**
  * Retrieve information about the dotCMS file and folder tree with the  {@link https://dotcms.com/docs/latest/navigation-rest-api | Navigation REST API }
@@ -23,6 +23,7 @@ export class DotApiNavigation {
             .then(async (res: Response) => {
                 if (res.status === 200) {
                     const data = await res.json();
+
                     return <DotCMSNavigationItem>data.entity;
                 }
 

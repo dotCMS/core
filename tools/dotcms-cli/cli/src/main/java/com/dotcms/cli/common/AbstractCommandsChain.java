@@ -27,6 +27,7 @@ public interface AbstractCommandsChain {
 
     boolean isShowErrorsAny();
 
+    boolean isWatchMode();
     /**
      * Marks if the remote URL was set in the command line
      *

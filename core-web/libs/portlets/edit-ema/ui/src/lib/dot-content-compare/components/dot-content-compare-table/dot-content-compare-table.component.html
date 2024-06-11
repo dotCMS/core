@@ -10,36 +10,36 @@
             <th>
                 <div class="dot-content-compare-table__controls">
                     <p-dropdown
-                        [options]="data.versions"
                         (onChange)="changeVersion.emit($event.value)"
+                        [options]="data.versions"
                         data-testid="versions-dropdown"
                         appendTo="body">
                         <ng-template let-selected pTemplate="selectedItem">
                             {{
-                                (selected.modDate | dotRelativeDate : 'MM/dd/yyyy - hh:mm aa') +
+                                (selected.modDate | dotRelativeDate: 'MM/dd/yyyy - hh:mm aa') +
                                     (' by ' | dm) +
                                     selected.modUserName
                             }}
                         </ng-template>
                         <ng-template let-item pTemplate="item">
                             {{
-                                (item.modDate | dotRelativeDate : 'MM/dd/yyyy - hh:mm aa') +
+                                (item.modDate | dotRelativeDate: 'MM/dd/yyyy - hh:mm aa') +
                                     (' by ' | dm) +
                                     item.modUserName
                             }}
                         </ng-template>
                     </p-dropdown>
                     <p-selectButton
-                        class="p-button-compact"
+                        (onChange)="changeDiff.emit($event.value)"
                         [(ngModel)]="showDiff"
                         [options]="displayOptions"
-                        (onChange)="changeDiff.emit($event.value)"
+                        class="p-button-compact"
                         data-testid="show-diff">
                     </p-selectButton>
                     <button
-                        class="p-button-sm p-button"
-                        [label]="'Bring-Back' | dm"
                         (click)="bringBack.emit(data.compare.inode)"
+                        [label]="'Bring-Back' | dm"
+                        class="p-button-sm p-button"
                         data-testId="table-bring-back"
                         pButton></button>
                 </div>
@@ -104,7 +104,7 @@
                         [fileURL]="data.compare[field.variable + 'Version']"
                         [label]="
                             data.working[field.variable + 'Version']
-                                | dotDiff : data.compare[field.variable + 'Version'] : showDiff
+                                | dotDiff: data.compare[field.variable + 'Version'] : showDiff
                         "
                         data-testId="table-binary-compare">
                     </dot-content-compare-preview-field>
@@ -119,7 +119,7 @@
                     [innerHTML]="
                         data.working[field.variable]
                             | json
-                            | dotDiff : (data.compare[field.variable] | json) : showDiff
+                            | dotDiff: (data.compare[field.variable] | json) : showDiff
                     "
                     data-testId="table-json-compare"></td>
             </ng-container>
@@ -145,7 +145,7 @@
                 <td
                     [innerHTML]="
                         data.working[field.variable]
-                            | dotDiff : data.compare[field.variable] : showDiff
+                            | dotDiff: data.compare[field.variable] : showDiff
                     "
                     data-testId="table-field-compare"></td>
             </ng-container>

@@ -1,3 +1,15 @@
+import { Observable } from 'rxjs';
+
+import { ReflectiveInjector } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+import { ApiRoot } from '@dotcms/dotcms-js';
+import { UserModel } from '@dotcms/dotcms-js';
+import { CwError } from '@dotcms/dotcms-js';
+
+import { ActionService } from './Action';
+import { ConditionService } from './Condition';
+import { ConditionGroupService } from './ConditionGroup';
 import {
     RuleModel,
     RuleService,
@@ -8,17 +20,8 @@ import {
     IConditionGroup,
     ConditionGroupModel
 } from './Rule';
-import { ConditionService } from './Condition';
-import { ReflectiveInjector } from '@angular/core';
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { UserModel } from '@dotcms/dotcms-js';
-import { ActionService } from './Action';
-import { ConditionGroupService } from './ConditionGroup';
-import { I18nService } from './system/locale/I18n';
-import { Observable } from 'rxjs';
-import { CwError } from '@dotcms/dotcms-js';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
-import { BrowserModule } from '@angular/platform-browser';
+import { I18nService } from './system/locale/I18n';
 
 const injector = ReflectiveInjector.resolveAndCreate([
     ApiRoot,
@@ -51,6 +54,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
         Observable.from(rulesToRemove)
             .flatMap((ruleId: string) => {
                 console.log('Removing rule: ', ruleId);
+
                 return ruleService.deleteRule(ruleId);
             })
             .subscribe(
@@ -97,6 +101,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
                 expect(serverRule1.key).toBeDefined();
                 expect(serverRule1.name).toBe(clientRule.name);
                 serverRule1.name = name2;
+
                 return ruleService.updateRule(serverRule1.key, serverRule1);
             })
             .subscribe(
@@ -136,6 +141,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             .flatMap((serverRule: RuleModel) => {
                 id = serverRule.key;
                 rulesToRemove.push(serverRule.key);
+
                 return ruleService.loadRule(serverRule.key);
             })
             .subscribe(
@@ -167,6 +173,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
                 ourRules.forEach((r) => {
                     rulesToRemove.push(r.key);
                 });
+
                 return ruleService.loadRules();
             })
             .subscribe(
@@ -313,6 +320,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             .flatMap((rule: RuleModel) => {
                 serverRule = rule;
                 rulesToRemove.push(serverRule.key);
+
                 return ruleActionService.createRuleAction(
                     serverRule.key,
                     new ActionModel(null, null, clientRuleAction.priority)
@@ -351,6 +359,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             .flatMap((rule: RuleModel) => {
                 serverRule = rule;
                 rulesToRemove.push(serverRule.key);
+
                 return ruleActionService.createRuleAction(
                     serverRule.key,
                     new ActionModel(
@@ -398,6 +407,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             .flatMap((rule: RuleModel) => {
                 serverRule = rule;
                 rulesToRemove.push(serverRule.key);
+
                 return conditionGroupService.createConditionGroup(
                     serverRule.key,
                     new ConditionGroupModel(conditionGroup)
@@ -433,6 +443,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             .flatMap((rule: RuleModel) => {
                 serverRule = rule;
                 rulesToRemove.push(serverRule.key);
+
                 return conditionGroupService.createConditionGroup(serverRule.key, aConditionGroup);
             })
             .subscribe((conditionGroup: ConditionGroupModel) => {

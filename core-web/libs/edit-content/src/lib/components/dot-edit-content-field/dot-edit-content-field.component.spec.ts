@@ -21,8 +21,10 @@ import { DotEditContentFieldComponent } from './dot-edit-content-field.component
 
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
+import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
 import { DotEditContentCustomFieldComponent } from '../../fields/dot-edit-content-custom-field/dot-edit-content-custom-field.component';
+import { DotEditContentHostFolderFieldComponent } from '../../fields/dot-edit-content-host-folder-field/dot-edit-content-host-folder-field.component';
 import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-json-field/dot-edit-content-json-field.component';
 import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
@@ -38,7 +40,8 @@ import {
     BINARY_FIELD_CONTENTLET,
     createFormGroupDirectiveMock,
     DOT_MESSAGE_SERVICE_MOCK,
-    FIELDS_MOCK
+    FIELDS_MOCK,
+    TREE_SELECT_MOCK
 } from '../../utils/mocks';
 
 interface DotEditFieldTestBed {
@@ -71,6 +74,14 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     [FIELD_TYPES.DATE]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.DATE_AND_TIME]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
+    [FIELD_TYPES.HOST_FOLDER]: {
+        component: DotEditContentHostFolderFieldComponent,
+        providers: [
+            mockProvider(DotEditContentService, {
+                getSitesTreePath: jest.fn().mockReturnValue(of(TREE_SELECT_MOCK))
+            })
+        ]
+    },
     [FIELD_TYPES.TAG]: {
         component: DotEditContentTagFieldComponent,
         providers: [{ provide: DotEditContentService, useValue: { getTags: () => of([]) } }]
@@ -128,6 +139,9 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     [FIELD_TYPES.WYSIWYG]: {
         component: DotEditContentWYSIWYGFieldComponent,
         declarations: [MockComponent(EditorComponent)]
+    },
+    [FIELD_TYPES.CATEGORY]: {
+        component: DotEditContentCategoryFieldComponent
     }
 };
 

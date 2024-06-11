@@ -33,9 +33,9 @@ jest.mock('../PageProvider/PageProvider', () => {
 
 describe('DotcmsLayout', () => {
     it('renders correctly with PageProvider and rows', () => {
-        render(<DotcmsLayout entity={{ ...mockPageContext, isInsideEditor: true }} />);
+        render(<DotcmsLayout pageContext={{ ...mockPageContext, isInsideEditor: true }} />);
         expect(screen.getAllByTestId('mockRow').length).toBe(
-            mockPageContext.layout.body.rows.length
+            mockPageContext.pageAsset.layout.body.rows.length
         );
     });
 });

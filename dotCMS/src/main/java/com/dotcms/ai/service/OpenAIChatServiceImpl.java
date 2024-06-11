@@ -1,5 +1,6 @@
 package com.dotcms.ai.service;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.util.OpenAIRequest;
@@ -7,10 +8,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 
+import javax.ws.rs.HttpMethod;
 import java.util.List;
 import java.util.Map;
 
 public class OpenAIChatServiceImpl implements OpenAIChatService {
+
     private final AppConfig config;
 
     public OpenAIChatServiceImpl(final AppConfig appConfig) {
@@ -19,19 +22,19 @@ public class OpenAIChatServiceImpl implements OpenAIChatService {
 
     @Override
     public JSONObject sendRawRequest(final JSONObject prompt) {
-        prompt.putIfAbsent("model", config.getModel());
-        prompt.putIfAbsent("temperature", config.getConfigFloat(AppKeys.COMPLETION_TEMPERATURE));
+        prompt.putIfAbsent(AiKeys.MODEL, config.getModel());
+        prompt.putIfAbsent(AiKeys.TEMPERATURE, config.getConfigFloat(AppKeys.COMPLETION_TEMPERATURE));
 
-        if (UtilMethods.isEmpty(prompt.optString("messages"))) {
+        if (UtilMethods.isEmpty(prompt.optString(AiKeys.MESSAGES))) {
             prompt.put(
-                    "messages",
+                    AiKeys.MESSAGES,
                     List.of(
-                            Map.of("role", "system", "content", config.getRolePrompt()),
-                            Map.of("role", "user", "content", prompt.getString("prompt"))
+                            Map.of(AiKeys.ROLE, AiKeys.SYSTEM, AiKeys.CONTENT, config.getRolePrompt()),
+                            Map.of(AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, prompt.getString(AiKeys.PROMPT))
                     ));
         }
 
-        prompt.remove("prompt");
+        prompt.remove(AiKeys.PROMPT);
 
         return new JSONObject(doRequest(config.getApiUrl(), config.getApiKey(), prompt));
     }
@@ -39,13 +42,13 @@ public class OpenAIChatServiceImpl implements OpenAIChatService {
     @Override
     public JSONObject sendTextPrompt(final String textPrompt) {
         final JSONObject newPrompt = new JSONObject();
-        newPrompt.put("prompt", textPrompt);
+        newPrompt.put(AiKeys.PROMPT, textPrompt);
         return sendRawRequest(newPrompt);
     }
 
     @VisibleForTesting
     String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
-        return OpenAIRequest.doRequest(urlIn, "POST", openAiAPIKey, json);
+        return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, openAiAPIKey, json);
     }
 
 }

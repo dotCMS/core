@@ -11,6 +11,9 @@ import {
     DoCheck,
     Renderer2
 } from '@angular/core';
+
+import { NgGrid } from './NgGrid';
+
 import {
     NgGridItemConfig,
     NgGridItemEvent,
@@ -20,7 +23,6 @@ import {
     NgGridItemDimensions,
     ResizeHandle
 } from '../interfaces/INgGrid';
-import { NgGrid } from './NgGrid';
 
 @Directive({
     inputs: ['config: ngGridItem'],
@@ -258,6 +260,7 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
                 targetElem = targetElem.parentElement;
             }
         } catch (err) {} // tslint:disable-line:no-empty
+
         return false;
     }
 
@@ -303,25 +306,34 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
                 let cursor = 'default';
                 switch (resizeDirection) {
                     case 'bottomright':
+
                     case 'topleft':
                         cursor = 'nwse-resize';
                         break;
+
                     case 'topright':
+
                     case 'bottomleft':
                         cursor = 'nesw-resize';
                         break;
+
                     case 'top':
+
                     case 'bottom':
                         cursor = 'ns-resize';
                         break;
+
                     case 'left':
+
                     case 'right':
                         cursor = 'ew-resize';
                         break;
+
                     default:
                         if (this._ngGrid.dragEnable && this.canDrag(e)) {
                             cursor = 'move';
                         }
+
                         break;
                 }
 
@@ -420,7 +432,7 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
         return false;
     }
 
-    public setSize(newSize: NgGridItemSize, update: boolean = true): void {
+    public setSize(newSize: NgGridItemSize, update = true): void {
         newSize = this.fixResize(newSize);
         this._size = newSize;
         if (update) this._recalculateDimensions();
@@ -428,7 +440,7 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
         this.onItemChange.emit(this.getEventOutput());
     }
 
-    public setGridPosition(gridPosition: NgGridItemPosition, update: boolean = true): void {
+    public setGridPosition(gridPosition: NgGridItemPosition, update = true): void {
         this._currentPosition = gridPosition;
         if (update) this._recalculatePosition();
 
@@ -453,15 +465,19 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
     public setPosition(x: number, y: number): void {
         switch (this._cascadeMode) {
             case 'up':
+
             case 'left':
+
             default:
                 this._renderer.setStyle(this._ngEl.nativeElement, 'left', x + 'px');
                 this._renderer.setStyle(this._ngEl.nativeElement, 'top', y + 'px');
                 break;
+
             case 'right':
                 this._renderer.setStyle(this._ngEl.nativeElement, 'right', x + 'px');
                 this._renderer.setStyle(this._ngEl.nativeElement, 'top', y + 'px');
                 break;
+
             case 'down':
                 this._renderer.setStyle(this._ngEl.nativeElement, 'left', x + 'px');
                 this._renderer.setStyle(this._ngEl.nativeElement, 'bottom', y + 'px');
@@ -476,19 +492,23 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
         this._cascadeMode = cascade;
         switch (cascade) {
             case 'up':
+
             case 'left':
+
             default:
                 this._renderer.setStyle(this._ngEl.nativeElement, 'left', this._elemLeft + 'px');
                 this._renderer.setStyle(this._ngEl.nativeElement, 'top', this._elemTop + 'px');
                 this._renderer.removeStyle(this._ngEl.nativeElement, 'right');
                 this._renderer.removeStyle(this._ngEl.nativeElement, 'bottom');
                 break;
+
             case 'right':
                 this._renderer.setStyle(this._ngEl.nativeElement, 'right', this._elemLeft + 'px');
                 this._renderer.setStyle(this._ngEl.nativeElement, 'top', this._elemTop + 'px');
                 this._renderer.removeStyle(this._ngEl.nativeElement, 'left');
                 this._renderer.removeStyle(this._ngEl.nativeElement, 'bottom');
                 break;
+
             case 'down':
                 this._renderer.setStyle(this._ngEl.nativeElement, 'left', this._elemLeft + 'px');
                 this._renderer.setStyle(this._ngEl.nativeElement, 'bottom', this._elemTop + 'px');
@@ -624,8 +644,8 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
             e = oe.touches.length
                 ? oe.touches[0]
                 : oe.changedTouches.length
-                ? oe.changedTouches[0]
-                : e;
+                  ? oe.changedTouches[0]
+                  : e;
         } else if (e.touches) {
             e = e.touches.length ? e.touches[0] : e.changedTouches.length ? e.changedTouches[0] : e;
         }
@@ -646,6 +666,7 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
                 changed = true;
             }
         };
+
         changes.forEachAddedItem(changeCheck);
         changes.forEachChangedItem(changeCheck);
         changes.forEachRemovedItem((record: any) => {
@@ -679,34 +700,42 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
                     mousePos.top < this._elemHeight &&
                     mousePos.top > this._elemHeight - this._borderSize
                 ); // tslint:disable-line:indent
+
             case 'bottomleft':
                 return (
                     mousePos.left < this._borderSize &&
                     mousePos.top < this._elemHeight &&
                     mousePos.top > this._elemHeight - this._borderSize
                 ); // tslint:disable-line:indent
+
             case 'topright':
                 return (
                     mousePos.left < this._elemWidth &&
                     mousePos.left > this._elemWidth - this._borderSize &&
                     mousePos.top < this._borderSize
                 ); // tslint:disable-line:indent
+
             case 'topleft':
                 return mousePos.left < this._borderSize && mousePos.top < this._borderSize;
+
             case 'right':
                 return (
                     mousePos.left < this._elemWidth &&
                     mousePos.left > this._elemWidth - this._borderSize
                 );
+
             case 'left':
                 return mousePos.left < this._borderSize;
+
             case 'bottom':
                 return (
                     mousePos.top < this._elemHeight &&
                     mousePos.top > this._elemHeight - this._borderSize
                 );
+
             case 'top':
                 return mousePos.top < this._borderSize;
+
             default:
                 return false;
         }

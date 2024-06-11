@@ -1,4 +1,5 @@
 <p-dialog
+    (visibleChange)="resetDialog()"
     [visible]="ds.status !== dialogStatus.IDLE"
     [style]="{ height: '90vh', width: '90vw' }"
     [header]="ds.header"
@@ -6,7 +7,6 @@
     [resizable]="false"
     [maximizable]="true"
     [modal]="true"
-    (visibleChange)="resetDialog()"
     appendTo="body"
     data-testId="dialog"
     styleClass="edit-ema-dialog">
@@ -18,14 +18,14 @@
 
         <ng-container *ngSwitchCase="'content'">
             <iframe
-                #iframe
                 *ngIf="ds.url"
+                (load)="onIframeLoad()"
                 [style]="{
                     border: 'none',
                     height: ds.status !== dialogStatus.INIT ? '0' : null
                 }"
                 [src]="ds.url | safeUrl"
-                (load)="onIframeLoad()"
+                #iframe
                 title="dialog"
                 data-testId="dialog-iframe"
                 width="100%"
@@ -38,6 +38,7 @@
     </ng-container>
 
     <p-dialog
+        (visibleChange)="closeCompareDialog()"
         [visible]="this.$compareData()"
         [style]="{ height: '90vh', width: '90vw' }"
         [header]="'Compare'"
@@ -46,11 +47,10 @@
         [maximizable]="true"
         [modal]="true"
         [maskStyleClass]="'p-dialog-mask-transparent-nested'"
-        (visibleChange)="closeCompareDialog()"
         appendTo="body"
         data-testId="dialog-compare">
         <dot-content-compare
-            [data]="$compareData()"
-            (letMeBringBack)="bringBack($event)"></dot-content-compare>
+            (letMeBringBack)="bringBack($event)"
+            [data]="$compareData()"></dot-content-compare>
     </p-dialog>
 </p-dialog>

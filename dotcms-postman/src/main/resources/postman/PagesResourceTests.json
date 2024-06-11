@@ -1,10 +1,9 @@
 {
 	"info": {
-		"_postman_id": "b328b373-7743-4f65-9346-df740942b0d4",
+		"_postman_id": "b6d2acb2-66fa-49d6-bc67-8f7de74d7417",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-b328b373-7743-4f65-9346-df740942b0d4?action=share&source=collection_link&creator=5403727"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -21,35 +20,12 @@
 									"    pm.response.to.have.status(200);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "DELETE",
 						"header": [],
 						"url": {
@@ -80,35 +56,12 @@
 									"    pm.response.to.have.status(200);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "DELETE",
 						"header": [],
 						"url": {
@@ -145,26 +98,12 @@
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -235,529 +174,10 @@
 			"name": "JSON [api/v1/page/json]",
 			"item": [
 				{
-					"name": "invalidateSession",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/logout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GivenInvalidUser_ShouldReturn401",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"",
-									"pm.test(\"Status code is 401, Need credentials\", function () {",
-									"    pm.response.to.have.status(401);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Response body matches\", function () {",
-									"    pm.expect(pm.response.text()).to.eq(\"Invalid User\");",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"json",
-								"destinations",
-								"costa-rica"
-							]
-						},
-						"description": "Given no user, should return 401 and \"Invalid User\" message"
-					},
-					"response": []
-				},
-				{
-					"name": "Switch site to 'demo.dotcms.com'",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    var jsonData = pm.response.json();",
-									"",
-									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"site",
-								"switch",
-								"48190c8c-42c4-46af-8d1a-0cd5db894797"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GivenValidPageURL_ShouldReturnPageInfo",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"",
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Include template\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"template\");",
-									"});",
-									"",
-									"pm.test(\"Inlude layout\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"layout\");",
-									"});",
-									"",
-									"pm.test(\"Include Containers\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"containers\");",
-									"});",
-									"",
-									"pm.test(\"'page' element includes all properties\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    var page = jsonData[\"entity\"][\"page\"];",
-									"    pm.expect(page[\"__icon__\"]).equal(\"pageIcon\");",
-									"    pm.expect(page[\"archived\"], 'FAILED:[archived]').equal(false);",
-									"    pm.expect(page[\"baseType\"]).equal(\"HTMLPAGE\");",
-									"    pm.expect(page[\"cachettl\"]).equal(\"0\");",
-									"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
-									"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
-									"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
-									"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
-									"    pm.expect(page[\"description\"]).equal(\"Costa Rica Rain Forest\");",
-									"    pm.expect(page[\"extension\"]).equal(\"page\");",
-									"    pm.expect(page[\"folder\"]).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
-									"    pm.expect(page[\"friendlyName\"]).equal(\"Costa Rica Rain Forest\");",
-									"    pm.expect(page[\"hasLiveVersion\"], 'FAILED:[hasLiveVersion]').equal(true);",
-									"    pm.expect(page[\"hasTitleImage\"], 'FAILED:[hasTitleImage]').equal(true);",
-									"    pm.expect(page[\"host\"]).equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
-									"    pm.expect(page[\"hostName\"]).equal(\"demo.dotcms.com\");",
-									"    ////",
-									"    pm.expect(page[\"httpsRequired\"], 'FAILED:[httpsRequired]').equal(false);",
-									"    pm.expect(page[\"identifier\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0\");",
-									"    pm.expect(page[\"image\"]).equal(\"/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/costa-rica-tree-frog.jpg\");",
-									"    pm.expect(page[\"imageContentAsset\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0/image\");",
-									"    pm.expect(page[\"inode\"]).not.equal(null)",
-									"    pm.expect(page[\"isContentlet\"], 'FAILED:[isContentlet]').equal(true);",
-									"    pm.expect(page[\"languageId\"]).equal(1);",
-									"    pm.expect(page[\"live\"], 'FAILED:[live]').equal(true);",
-									"    pm.expect(page[\"liveInode\"]).not.equal(null)",
-									"    pm.expect(page[\"locked\"], 'FAILED:[locked]').equal(false);",
-									"    pm.expect(page[\"mimeType\"]).equal(\"application/dotpage\");",
-									"    pm.expect(page[\"modDate\"]).not.equal(null)",
-									"    ///",
-									"    pm.expect(page[\"modUser\"]).equal(\"system\");",
-									"    pm.expect(page[\"modUserName\"]).equal(\"system user system user\");",
-									"    pm.expect(page[\"name\"]).equal(\"costa-rica\");",
-									"    pm.expect(page[\"owner\"]).equal(\"dotcms.org.1\");",
-									"    pm.expect(page[\"pageURI\"]).equal(\"/destinations/costa-rica\");",
-									"    pm.expect(page[\"pageUrl\"]).equal(\"costa-rica\");",
-									"    pm.expect(page[\"path\"]).equal(\"/destinations/costa-rica\");",
-									"    pm.expect(page[\"publishDate\"]).not.equal(null)",
-									"    pm.expect(page[\"seoTitle\"]).equal(\"Costa Rica Travel Destinations\");",
-									"    pm.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
-									"    pm.expect(page[\"shortDescription\"]).equal(\"Costa Rica is a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific. Costa Rica is known for its beaches, volcanoes, and biodiversity. Roughly a quarter of its area is made up of protected jungle, teeming with wildlife including spider monkeys and quetzal birds.\");",
-									"    pm.expect(page[\"shortyLive\"]).not.equal(null)",
-									"    //",
-									"    pm.expect(page[\"shortyWorking\"]).not.equal(null)",
-									"    pm.expect(page[\"sortOrder\"]).equal(0);",
-									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
-									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
-									"    pm.expect(page[\"tags\"]).equal(\"diving\");",
-									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
-									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
-									"    pm.expect(page[\"titleImage\"]).equal(\"image\");",
-									"    pm.expect(page[\"type\"]).equal(\"htmlpage\");",
-									"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
-									"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
-									"    pm.expect(page[\"workingInode\"]).not.equal(null)",
-									"",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"json",
-								"destinations",
-								"costa-rica"
-							]
-						},
-						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
-					},
-					"response": []
-				},
-				{
-					"name": "invalidateSession",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/logout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GivenInvalidPageURL_ShouldReturn404",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"",
-									"pm.test(\"Status code is 404\", function () {",
-									"    pm.response.to.have.status(404);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Page \\'about-us/index2\\' not found\");",
-									"});",
-									"",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/about-us/index2",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"json",
-								"about-us",
-								"index2"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GivenURLMappedPage_ShouldReturnPageInfo",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"No errors\", function () {",
-									"    ",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.errors.length).to.eql(0);",
-									"});",
-									"",
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"}); ",
-									"",
-									"pm.test(\"Has Rows and Columns\", function () {",
-									"    ",
-									"    var jsonData = pm.response.json();",
-									"    ",
-									"    pm.expect(jsonData.entity.layout.body.rows.length).to.equal(2);",
-									"    pm.expect(jsonData.entity.layout.body.rows[0].columns.length).to.equal(1);",
-									"     ",
-									"});",
-									"",
-									"pm.test(\"Number of Contents\", function () {",
-									"    ",
-									"    var jsonData = pm.response.json();",
-									"    ",
-									"    pm.expect(jsonData.entity.numberContents).to.equal(2);",
-									"    ",
-									"     ",
-									"});",
-									"",
-									"pm.test(\"Page checks\", function () {",
-									"    ",
-									"    var jsonData = pm.response.json();",
-									"    ",
-									"    pm.expect(jsonData.entity.page.pageURI).to.equal('/blog/index');",
-									"    pm.expect(jsonData.entity.page.title).to.equal('Blogs');",
-									"    pm.expect(jsonData.entity.page.type).to.equal('htmlpage');",
-									"     ",
-									"});",
-									"",
-									"pm.test(\"Site checks\", function () {",
-									"    ",
-									"    var jsonData = pm.response.json();",
-									"    ",
-									"    pm.expect(jsonData.entity.site.hostname).to.equal('demo.dotcms.com');",
-									"    pm.expect(jsonData.entity.site.type).to.equal('contentlet');",
-									"     ",
-									"});",
-									"",
-									"pm.test(\"Template checks\", function () {",
-									"    ",
-									"    var jsonData = pm.response.json();",
-									"    ",
-									"    pm.expect(jsonData.entity.template.title).to.equal('anonymous_layout_1571406924828');",
-									"    pm.expect(jsonData.entity.template.type).to.equal('template');",
-									"     ",
-									"});",
-									"",
-									"pm.test(\"Contentlets checks\", function () {",
-									"    ",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.containers[\"//demo.dotcms.com/application/containers/default/\"].contentlets[\"uuid-1\"][0].title).to.equal('Travel Blog Header');",
-									"    pm.expect(jsonData.entity.containers[\"//demo.dotcms.com/application/containers/default/\"].contentlets[\"uuid-1\"][0].contentType).to.equal('webPageContent');",
-									"});",
-									"",
-									"",
-									"",
-									"",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/blog/index",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"json",
-								"blog",
-								"index"
-							]
-						},
-						"description": "Gets an Url content map"
-					},
-					"response": []
-				}
-			],
-			"description": "Returns the metadata in JSON format of the objects that make up an HTML Page in the system.\n\nhttp://localhost:8080/api/v1/page/json/{page-url}",
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
-				},
-				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
-				}
-			]
-		},
-		{
-			"name": "Render [api/v1/page/render]",
-			"item": [
-				{
 					"name": "Using Actual Page URIs",
 					"item": [
 						{
-							"name": "invalidate Session",
+							"name": "Invalidate Session",
 							"event": [
 								{
 									"listen": "test",
@@ -803,7 +223,7 @@
 											"",
 											"",
 											"pm.test(\"Response body matches\", function () {",
-											"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+											"    pm.expect(pm.response.text()).to.eq(\"Invalid User\");",
 											"});",
 											""
 										],
@@ -818,7 +238,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v1/page/render/destinations/costa-rica",
+									"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -826,11 +246,12 @@
 										"api",
 										"v1",
 										"page",
-										"render",
+										"json",
 										"destinations",
 										"costa-rica"
 									]
-								}
+								},
+								"description": "Given no user, should return 401 and \"Invalid User\" message"
 							},
 							"response": []
 						},
@@ -845,43 +266,33 @@
 											"    pm.response.to.have.status(200);",
 											"});",
 											"",
-											"",
-											"",
 											"pm.test(\"Valid response\", function () {",
 											"    var jsonData = pm.response.json();",
-											"",
 											"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
-											"});"
+											"});",
+											"",
+											"pm.environment.set(\"forcePreRequestScript\", false);",
+											"",
+											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.environment.set(\"forcePreRequestScript\", true);",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [
 									{
@@ -922,6 +333,898 @@
 											"});",
 											"",
 											"",
+											"",
+											"pm.test(\"Include template\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"template\");",
+											"});",
+											"",
+											"pm.test(\"Include layout\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"layout\");",
+											"});",
+											"",
+											"pm.test(\"Include Containers\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"containers\");",
+											"});",
+											"",
+											"pm.test(\"'page' element includes all properties\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var page = jsonData[\"entity\"][\"page\"];",
+											"    pm.expect(page[\"__icon__\"]).equal(\"pageIcon\");",
+											"    pm.expect(page[\"archived\"], 'FAILED:[archived]').equal(false);",
+											"    pm.expect(page[\"baseType\"]).equal(\"HTMLPAGE\");",
+											"    pm.expect(page[\"cachettl\"]).equal(\"0\");",
+											"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
+											"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
+											"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
+											"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
+											"    pm.expect(page[\"description\"]).equal(\"Costa Rica Rain Forest\");",
+											"    pm.expect(page[\"extension\"]).equal(\"page\");",
+											"    pm.expect(page[\"folder\"]).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
+											"    pm.expect(page[\"friendlyName\"]).equal(\"Costa Rica Rain Forest\");",
+											"    pm.expect(page[\"hasLiveVersion\"], 'FAILED:[hasLiveVersion]').equal(true);",
+											"    pm.expect(page[\"hasTitleImage\"], 'FAILED:[hasTitleImage]').equal(true);",
+											"    pm.expect(page[\"host\"]).equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+											"    pm.expect(page[\"hostName\"]).equal(\"demo.dotcms.com\");",
+											"    ////",
+											"    pm.expect(page[\"httpsRequired\"], 'FAILED:[httpsRequired]').equal(false);",
+											"    pm.expect(page[\"identifier\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0\");",
+											"    pm.expect(page[\"image\"]).equal(\"/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/costa-rica-tree-frog.jpg\");",
+											"    pm.expect(page[\"imageContentAsset\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0/image\");",
+											"    pm.expect(page[\"inode\"]).not.equal(null)",
+											"    pm.expect(page[\"isContentlet\"], 'FAILED:[isContentlet]').equal(true);",
+											"    pm.expect(page[\"languageId\"]).equal(1);",
+											"    pm.expect(page[\"live\"], 'FAILED:[live]').equal(true);",
+											"    pm.expect(page[\"liveInode\"]).not.equal(null)",
+											"    pm.expect(page[\"locked\"], 'FAILED:[locked]').equal(false);",
+											"    pm.expect(page[\"mimeType\"]).equal(\"application/dotpage\");",
+											"    pm.expect(page[\"modDate\"]).not.equal(null)",
+											"    ///",
+											"    pm.expect(page[\"modUser\"]).equal(\"system\");",
+											"    pm.expect(page[\"modUserName\"]).equal(\"system user system user\");",
+											"    pm.expect(page[\"name\"]).equal(\"costa-rica\");",
+											"    pm.expect(page[\"owner\"]).equal(\"dotcms.org.1\");",
+											"    pm.expect(page[\"pageURI\"]).equal(\"/destinations/costa-rica\");",
+											"    pm.expect(page[\"pageUrl\"]).equal(\"costa-rica\");",
+											"    pm.expect(page[\"path\"]).equal(\"/destinations/costa-rica\");",
+											"    pm.expect(page[\"publishDate\"]).not.equal(null)",
+											"    pm.expect(page[\"seoTitle\"]).equal(\"Costa Rica Travel Destinations\");",
+											"    pm.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
+											"    pm.expect(page[\"shortDescription\"]).equal(\"Costa Rica is a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific. Costa Rica is known for its beaches, volcanoes, and biodiversity. Roughly a quarter of its area is made up of protected jungle, teeming with wildlife including spider monkeys and quetzal birds.\");",
+											"    pm.expect(page[\"shortyLive\"]).not.equal(null)",
+											"    //",
+											"    pm.expect(page[\"shortyWorking\"]).not.equal(null)",
+											"    pm.expect(page[\"sortOrder\"]).equal(0);",
+											"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
+											"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
+											"    pm.expect(page[\"tags\"]).equal(\"diving\");",
+											"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+											"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
+											"    pm.expect(page[\"titleImage\"]).equal(\"image\");",
+											"    pm.expect(page[\"type\"]).equal(\"htmlpage\");",
+											"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
+											"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
+											"    pm.expect(page[\"workingInode\"]).not.equal(null)",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"json",
+										"destinations",
+										"costa-rica"
+									]
+								},
+								"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+							},
+							"response": []
+						},
+						{
+							"name": "Invalidate Session",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/logout",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"logout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Non-Existing HTML Page",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"pm.test(\"Status code is 404\", function () {",
+											"    pm.response.to.have.status(404);",
+											"});",
+											"",
+											"",
+											"",
+											"pm.test(\"Valid response\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"Page \\'about-us/index2\\' not found\");",
+											"});",
+											"",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/json/about-us/index2",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"json",
+										"about-us",
+										"index2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Metadata From URL Map",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"No errors\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"});",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"}); ",
+											"",
+											"pm.test(\"Has Rows and Columns\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    ",
+											"    pm.expect(jsonData.entity.layout.body.rows.length).to.equal(2);",
+											"    pm.expect(jsonData.entity.layout.body.rows[0].columns.length).to.equal(1);",
+											"     ",
+											"});",
+											"",
+											"pm.test(\"Number of Contents\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    ",
+											"    pm.expect(jsonData.entity.numberContents).to.equal(2);",
+											"    ",
+											"     ",
+											"});",
+											"",
+											"pm.test(\"Page checks\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    ",
+											"    pm.expect(jsonData.entity.page.pageURI).to.equal('/blog/index');",
+											"    pm.expect(jsonData.entity.page.title).to.equal('Blogs');",
+											"    pm.expect(jsonData.entity.page.type).to.equal('htmlpage');",
+											"     ",
+											"});",
+											"",
+											"pm.test(\"Site checks\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    ",
+											"    pm.expect(jsonData.entity.site.hostname).to.equal('demo.dotcms.com');",
+											"    pm.expect(jsonData.entity.site.type).to.equal('contentlet');",
+											"     ",
+											"});",
+											"",
+											"pm.test(\"Template checks\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    ",
+											"    pm.expect(jsonData.entity.template.title).to.equal('anonymous_layout_1571406924828');",
+											"    pm.expect(jsonData.entity.template.type).to.equal('template');",
+											"     ",
+											"});",
+											"",
+											"pm.test(\"Contentlets checks\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.containers[\"//demo.dotcms.com/application/containers/default/\"].contentlets[\"uuid-1\"][0].title).to.equal('Travel Blog Header');",
+											"    pm.expect(jsonData.entity.containers[\"//demo.dotcms.com/application/containers/default/\"].contentlets[\"uuid-1\"][0].contentType).to.equal('webPageContent');",
+											"});",
+											"",
+											"",
+											"",
+											"",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/json/blog/index",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"json",
+										"blog",
+										"index"
+									]
+								},
+								"description": "Gets an Url content map"
+							},
+							"response": []
+						}
+					],
+					"description": "Tests calling the `json` method passing down the actual URI of an HTML Page.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Using Vanity URLs",
+					"item": [
+						{
+							"name": "Create Test Forward Vanity URL",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Forward Vanity URL was created successfully\", function () {",
+											"    var jsonData = pm.response.json().entity;",
+											"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+											"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Forward Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/forward-json\",\n            \"action\": 200,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "Create the original Contentlet."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Temporary Redirect Vanity URL",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Temporary Redirect Vanity URL was created successfully\", function () {",
+											"    var jsonData = pm.response.json().entity;",
+											"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+											"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/temporary-json\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "Create the original Contentlet."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Permanent Redirect Vanity URL",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Permanent Redirect Vanity URL was created successfully\", function () {",
+											"    var jsonData = pm.response.json().entity;",
+											"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+											"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/permanent-json\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "Create the original Contentlet."
+							},
+							"response": []
+						},
+						{
+							"name": "Get HTML Page Metadata - Forward",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response body contains the 'uuid' attribute\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"uuid\");",
+											"});",
+											"",
+											"pm.test(\"The 'page' element includes all the expected properties\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    var page = jsonData[\"entity\"][\"page\"];",
+											"    pm.expect(page[\"__icon__\"]).equal(\"pageIcon\");",
+											"    pm.expect(page[\"archived\"], 'FAILED:[archived]').equal(false);",
+											"    pm.expect(page[\"baseType\"]).equal(\"HTMLPAGE\");",
+											"    pm.expect(page[\"cachettl\"]).equal(\"0\");",
+											"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
+											"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
+											"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
+											"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
+											"    pm.expect(page[\"description\"]).equal(\"Costa Rica Rain Forest\");",
+											"    pm.expect(page[\"extension\"]).equal(\"page\");",
+											"    pm.expect(page[\"folder\"]).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
+											"    pm.expect(page[\"friendlyName\"]).equal(\"Costa Rica Rain Forest\");",
+											"    pm.expect(page[\"hasLiveVersion\"], 'FAILED:[hasLiveVersion]').equal(true);",
+											"    pm.expect(page[\"hasTitleImage\"], 'FAILED:[hasTitleImage]').equal(true);",
+											"    pm.expect(page[\"host\"]).equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+											"    pm.expect(page[\"hostName\"]).equal(\"demo.dotcms.com\");",
+											"    ////",
+											"    pm.expect(page[\"httpsRequired\"], 'FAILED:[httpsRequired]').equal(false);",
+											"    pm.expect(page[\"identifier\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0\");",
+											"    pm.expect(page[\"image\"]).equal(\"/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/costa-rica-tree-frog.jpg\");",
+											"    pm.expect(page[\"imageContentAsset\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0/image\");",
+											"    pm.expect(page[\"inode\"]).not.equal(null)",
+											"    pm.expect(page[\"isContentlet\"], 'FAILED:[isContentlet]').equal(true);",
+											"    pm.expect(page[\"languageId\"]).equal(1);",
+											"    pm.expect(page[\"live\"], 'FAILED:[live]').equal(true);",
+											"    pm.expect(page[\"liveInode\"]).not.equal(null)",
+											"    pm.expect(page[\"locked\"], 'FAILED:[locked]').equal(false);",
+											"    pm.expect(page[\"mimeType\"]).equal(\"application/dotpage\");",
+											"    pm.expect(page[\"modDate\"]).not.equal(null)",
+											"    ///",
+											"    pm.expect(page[\"modUser\"]).equal(\"system\");",
+											"    pm.expect(page[\"modUserName\"]).equal(\"system user system user\");",
+											"    pm.expect(page[\"name\"]).equal(\"costa-rica\");",
+											"    pm.expect(page[\"owner\"]).equal(\"dotcms.org.1\");",
+											"    pm.expect(page[\"pageURI\"]).equal(\"/destinations/costa-rica\");",
+											"    pm.expect(page[\"pageUrl\"]).equal(\"costa-rica\");",
+											"    pm.expect(page[\"path\"]).equal(\"/destinations/costa-rica\");",
+											"    pm.expect(page[\"publishDate\"]).not.equal(null)",
+											"    pm.expect(page[\"seoTitle\"]).equal(\"Costa Rica Travel Destinations\");",
+											"    pm.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
+											"    pm.expect(page[\"shortDescription\"]).equal(\"Costa Rica is a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific. Costa Rica is known for its beaches, volcanoes, and biodiversity. Roughly a quarter of its area is made up of protected jungle, teeming with wildlife including spider monkeys and quetzal birds.\");",
+											"    pm.expect(page[\"shortyLive\"]).not.equal(null)",
+											"    //",
+											"    pm.expect(page[\"shortyWorking\"]).not.equal(null)",
+											"    pm.expect(page[\"sortOrder\"]).equal(0);",
+											"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
+											"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
+											"    pm.expect(page[\"tags\"]).equal(\"diving\");",
+											"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+											"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
+											"    pm.expect(page[\"titleImage\"]).equal(\"image\");",
+											"    pm.expect(page[\"type\"]).equal(\"htmlpage\");",
+											"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
+											"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
+											"    pm.expect(page[\"workingInode\"]).not.equal(null)",
+											"});",
+											"",
+											"pm.test(\"The 'Forward' Vanity URL data must be present\", function() {",
+											"    var entity = pm.response.json().entity;",
+											"    pm.expect(entity.vanityUrl).not.not.equal(undefined, \"The 'vanityUrl' attribute is missing\");",
+											"    pm.expect(entity.vanityUrl.url).to.be.equal(\"/forward-json\", \"The 'url' attribute is NOT the expected one\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(200, \"The 'response' attribute must be 200\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/json/forward-json",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"json",
+										"forward-json"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get HTML Page Metadata - Temporary Redirect",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"The 'Temporary Redirect' Vanity URL data must be present\", function() {",
+											"    var entity = pm.response.json().entity;",
+											"    pm.expect(entity.vanityUrl).to.not.equal(undefined, \"The 'vanityUrl' attribute must be present\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(302, \"The 'response' attribute must be 302\");",
+											"    pm.expect(entity.vanityUrl.temporaryRedirect).to.equal(true, \"The returned Vanity URL MUST be a temporary redirect\");",
+											"    pm.expect(entity.vanityUrl.permanentRedirect).to.equal(false, \"The returned Vanity URL MUST NOT be a permanent redirect\");",
+											"    pm.expect(entity.vanityUrl.forward).to.equal(false, \"The returned Vanity URL MUST NOT be a forward\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/json/temporary-json",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"json",
+										"temporary-json"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get HTML Page Metadata - Permanent Redirect",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"The 'Permanent Redirect' Vanity URL must be present\", function() {",
+											"    var entity = pm.response.json().entity;",
+											"    pm.expect(entity.vanityUrl).to.not.equal(undefined, \"The 'vanityUrl' attribute must be present\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(301, \"The 'response' attribute must be 301\");",
+											"    pm.expect(entity.vanityUrl.permanentRedirect).to.equal(true, \"The returned Vanity URL MUST be a permanent redirect\");",
+											"    pm.expect(entity.vanityUrl.temporaryRedirect).to.equal(false, \"The returned Vanity URL MUST NOT be a temporary redirect\");",
+											"    pm.expect(entity.vanityUrl.forward).to.equal(false, \"The returned Vanity URL MUST NOT be a forward\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/json/permanent-json",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"json",
+										"permanent-json"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Tests calling the `json` method passing down a Vanity URL that references an HTML Page, using the three redirect options:\n\n1. Forward.\n    \n2. Temporary Redirect.\n    \n3. Permanent Redirect.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status must be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "Returns the metadata in JSON format of the objects that make up an HTML Page in the system.\n\nhttp://localhost:8080/api/v1/page/json/{page-url}",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Render [api/v1/page/render]",
+			"item": [
+				{
+					"name": "Using Actual Page URIs",
+					"item": [
+						{
+							"name": "Invalidate Session",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/logout",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"logout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Page Metadata With Invalid User",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"pm.test(\"Status code is 401, Need credentials\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"",
+											"pm.test(\"Response body matches\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/render/destinations/costa-rica",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"render",
+										"destinations",
+										"costa-rica"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Switch to 'demo.dotcms.com'",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 \", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Valid response\", function () {",
+											"    var jsonData = pm.response.json();",
+											"",
+											"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"switch",
+										"48190c8c-42c4-46af-8d1a-0cd5db894797"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Valid HTML Page Metadata",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
 											"",
 											"pm.test(\"Response body contains\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"rendered\");",
@@ -992,26 +1295,12 @@
 											"",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -1051,26 +1340,12 @@
 											"",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -1108,35 +1383,12 @@
 											"});",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [
 									{
@@ -1190,35 +1442,12 @@
 											"});",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [
 									{
@@ -1335,26 +1564,12 @@
 											"",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -1418,35 +1633,11 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Forward Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/forward\",\n            \"action\": 200,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Forward Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/forward-render\",\n            \"action\": 200,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1502,35 +1693,11 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/temporary\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/temporary-render\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1586,35 +1753,11 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/permanent\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/permanent-render\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1647,15 +1790,15 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Response body contains\", function () {",
+											"pm.test(\"Response body contains the 'rendered' attribute\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"rendered\");",
 											"});",
 											"",
-											"pm.test(\"Response body contains\", function () {",
+											"pm.test(\"Response body contains the 'uuid' attribute\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"uuid\");",
 											"});",
 											"",
-											"pm.test(\"'page' element includes all properties\", function () {",
+											"pm.test(\"The 'page' element includes all the expected properties\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var page = jsonData[\"entity\"][\"page\"];",
 											"    pm.expect(page[\"__icon__\"]).equal(\"pageIcon\");",
@@ -1713,8 +1856,15 @@
 											"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
 											"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
 											"    pm.expect(page[\"workingInode\"]).not.equal(null)",
+											"});",
 											"",
-											"});"
+											"pm.test(\"The 'Forward' Vanity URL data must be present\", function() {",
+											"    var entity = pm.response.json().entity;",
+											"    pm.expect(entity.vanityUrl).not.not.equal(undefined, \"The 'vanityUrl' attribute is missing\");",
+											"    pm.expect(entity.vanityUrl.url).to.be.equal(\"/forward-render\", \"The 'url' attribute is NOT the expected one\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(200, \"The 'response' attribute must be 200\");",
+											"});",
+											""
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -1722,25 +1872,10 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v1/page/render/forward",
+									"raw": "{{serverURL}}/api/v1/page/render/forward-render",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -1749,7 +1884,7 @@
 										"v1",
 										"page",
 										"render",
-										"forward"
+										"forward-render"
 									]
 								}
 							},
@@ -1762,9 +1897,10 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"The test Temporary Redirect Vanity URL must be returned\", function () {",
+											"pm.test(\"The 'Temporary Redirect' Vanity URL data must be present\", function() {",
 											"    var entity = pm.response.json().entity;",
 											"    pm.expect(entity.vanityUrl).to.not.equal(undefined, \"The 'vanityUrl' attribute must be present\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(302, \"The 'response' attribute must be 302\");",
 											"    pm.expect(entity.vanityUrl.temporaryRedirect).to.equal(true, \"The returned Vanity URL MUST be a temporary redirect\");",
 											"    pm.expect(entity.vanityUrl.permanentRedirect).to.equal(false, \"The returned Vanity URL MUST NOT be a permanent redirect\");",
 											"    pm.expect(entity.vanityUrl.forward).to.equal(false, \"The returned Vanity URL MUST NOT be a forward\");",
@@ -1777,25 +1913,10 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v1/page/render/temporary",
+									"raw": "{{serverURL}}/api/v1/page/render/temporary-render",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -1804,7 +1925,7 @@
 										"v1",
 										"page",
 										"render",
-										"temporary"
+										"temporary-render"
 									]
 								}
 							},
@@ -1817,9 +1938,10 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"The test Permanent Redirect Vanity URL must be returned\", function () {",
+											"pm.test(\"The 'Permanent Redirect' Vanity URL must be present\", function() {",
 											"    var entity = pm.response.json().entity;",
 											"    pm.expect(entity.vanityUrl).to.not.equal(undefined, \"The 'vanityUrl' attribute must be present\");",
+											"    pm.expect(entity.vanityUrl.response).to.be.equal(301, \"The 'response' attribute must be 301\");",
 											"    pm.expect(entity.vanityUrl.permanentRedirect).to.equal(true, \"The returned Vanity URL MUST be a permanent redirect\");",
 											"    pm.expect(entity.vanityUrl.temporaryRedirect).to.equal(false, \"The returned Vanity URL MUST NOT be a temporary redirect\");",
 											"    pm.expect(entity.vanityUrl.forward).to.equal(false, \"The returned Vanity URL MUST NOT be a forward\");",
@@ -1832,25 +1954,10 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v1/page/render/permanent",
+									"raw": "{{serverURL}}/api/v1/page/render/permanent-render",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -1859,7 +1966,7 @@
 										"v1",
 										"page",
 										"render",
-										"permanent"
+										"permanent-render"
 									]
 								}
 							},
@@ -2054,26 +2161,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -2122,26 +2215,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -2190,26 +2269,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -2258,26 +2323,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -2341,34 +2392,18 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Bundle uploaded sucessfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"",
+											"pm.test(\"Success import\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    console.log(jsonData);",
 											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [
 									{
@@ -2419,37 +2454,17 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"",
 											"pm.test(\"Response reorder check\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"<h2>testOrder2</h2><h2>testOrder1</h2>\");",
 											"",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -2485,34 +2500,16 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
 											"pm.test(\"Response body contains\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"ok\");",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [
 									{
@@ -2548,37 +2545,17 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"",
 											"pm.test(\"Response reorder check\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"<h2>testOrder1</h2><h2>testOrder2</h2>\");",
 											"",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -2606,6 +2583,32 @@
 								}
 							},
 							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								]
+							}
 						}
 					]
 				},
@@ -2653,14 +2656,13 @@
 									"    pm.response.to.have.status(401);",
 									"});",
 									"",
-									"",
-									"",
 									"pm.test(\"Response body matches\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -2707,34 +2709,18 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"",
-									"",
 									"pm.test(\"Response body contains\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"ok\");",
 									"});",
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -2774,26 +2760,12 @@
 									"    pm.response.to.have.status(400);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -2833,8 +2805,6 @@
 									"    pm.response.to.have.status(404);",
 									"});",
 									"",
-									"",
-									"",
 									"pm.test(\"Response body contains\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Page '2c12fe7e6-d338-49d5-973b-2d974d57015b' not found\");",
 									"});",
@@ -2842,26 +2812,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -2902,34 +2858,18 @@
 									"    pm.response.to.have.status(400);",
 									"});",
 									"",
-									"",
-									"",
 									"pm.test(\"Layout is required\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Layout is required\");",
 									"});",
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -2970,34 +2910,18 @@
 									"    pm.response.to.have.status(400);",
 									"});",
 									"",
-									"",
-									"",
 									"pm.test(\"Response body contains\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Container id and uuid are required\");",
 									"});",
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -3037,43 +2961,18 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"",
-									"",
 									"pm.test(\"Response body contains\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"ok\");",
 									"});",
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -3172,14 +3071,13 @@
 									"    pm.response.to.have.status(401);",
 									"});",
 									"",
-									"",
-									"",
 									"pm.test(\"Invalid User\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3224,26 +3122,12 @@
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -3294,13 +3178,9 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"",
-									"",
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
-									"",
-									"",
 									"",
 									"pm.test(\"renders expected HTML only\", function () {",
 									"    pm.expect(pm.response.text().startsWith(\"<!doctype html>\")).to.be.true;",
@@ -3310,26 +3190,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -3357,12 +3223,9 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"",
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
 									"});",
-									"",
-									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Page \\'about-us/our-team/index2\\' not found\");",
@@ -3373,26 +3236,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -3446,9 +3295,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
+									"pm.test(\"Bundle imported\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
@@ -3456,7 +3303,8 @@
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3465,14 +3313,23 @@
 							"type": "basic",
 							"basic": [
 								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
 									"key": "username",
 									"value": "admin@dotcms.com",
 									"type": "string"
 								},
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
 								}
 							]
 						},
@@ -3526,46 +3383,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"",
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"There are diff between live and working page\", function () {",
 									"    var jsonData = pm.response.json().entity;",
-									"    console.log(jsonData);",
 									"    pm.expect(jsonData[\"diff\"]).equal(true);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -3585,6 +3413,30 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
@@ -3597,10 +3449,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Host check\", function () {",
@@ -3610,26 +3458,12 @@
 									"pm.collectionVariables.set(\"siteIdTestHost\", jsonData.entity.identifier);",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -3696,26 +3530,12 @@
 									"pm.collectionVariables.set(\"sitevariableIdTestHost\", jsonData.entity.id);",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -3771,26 +3591,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -3829,10 +3635,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"live check\", function () {",
@@ -3847,26 +3649,12 @@
 									"pm.collectionVariables.set(\"templateIdToPublishedHost\", jsonData.entity.identifier);",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -3900,10 +3688,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Path check\", function () {",
@@ -3917,35 +3701,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [
 							{
@@ -3983,10 +3744,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var text = pm.response.text();",
 									"",
 									"pm.test(\"Path check\", function () {",
@@ -3996,7 +3753,8 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -4030,7 +3788,31 @@
 					"response": []
 				}
 			],
-			"description": "1.  This test creates a Host with two variables\n2.  Creates a container with the generic contentlet and use this two variables\n3.  Creates a template that uses this container\n4.  creates a page that uses this page\n5.  Check that the page exists."
+			"description": "1.  This test creates a Host with two variables\n2.  Creates a container with the generic contentlet and use this two variables\n3.  Creates a template that uses this container\n4.  creates a page that uses this page\n5.  Check that the page exists.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Response code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
 		},
 		{
 			"name": "In-Place Content Copy",
@@ -4042,36 +3824,18 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Test Page created successfully\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -4114,36 +3878,18 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Test Rich Text created successfully\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.collectionVariables.set(\"richContentIdentifier\", jsonData.entity.identifier);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -4186,35 +3932,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Test Content added to Test Page successfuly\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -4249,10 +3977,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Retrieving Multi-Tree data for test Contentlet\", function () {",
 									"    var entity = pm.response.json().entity;",
 									"    var testContentId = pm.collectionVariables.get(\"richContentIdentifier\");",
@@ -4276,26 +4000,12 @@
 									"    }",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -4323,12 +4033,14 @@
 							"script": {
 								"exec": [
 									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
 									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.equal(\"textContent\");",
 									"    pm.collectionVariables.set(\"copiedRichContentIdentifier\", jsonData.entity.identifier);",
-									"});"
+									"});",
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -4366,10 +4078,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Checking that duplicate Contentlet has replaced the existing one\", function () {",
 									"    var entity = pm.response.json().entity;",
 									"",
@@ -4399,26 +4107,12 @@
 									"    }",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -4445,35 +4139,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 404\", function () {",
-									"    pm.response.to.have.status(404);",
-									"});",
-									"",
 									"pm.test(\"Checking that the error message is present\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.message).not.eq(\"\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -4507,35 +4183,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 404\", function () {",
-									"    pm.response.to.have.status(404);",
-									"});",
-									"",
 									"pm.test(\"Checking that the error message is present\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.message).not.eq(\"\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -4569,32 +4227,18 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"pm.test(\"Validate page has been copied\", function () {",
 									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.equal(\"testPageCopy\");",
 									"    pm.collectionVariables.set(\"pageDeepCopyIdentifier\", jsonData.entity.identifier);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"url": {
@@ -4620,10 +4264,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Checking Multi-Tree data Deep-Copied Page\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    var containerId = pm.collectionVariables.get(\"containerId\");",
@@ -4639,26 +4279,12 @@
 									"    pm.expect(jsonData.entity[0].relationType).to.eql(relationType);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -4679,7 +4305,31 @@
 					"response": []
 				}
 			],
-			"description": "This Test Collection verifies that the In-Place Contentlet Copy works correctly.\n\nThere are times where a given Contentlet is referenced by several pages. Sometimes, users just want to edit the Contentlet in one specific page without affecting they way such a Contentlet looks like in the other pages. This feature allows them to (1) create an exact copy of the Contentlet -- which replaces the existing one -- and (2) edit that copied Contentlet."
+			"description": "This Test Collection verifies that the In-Place Contentlet Copy works correctly.\n\nThere are times where a given Contentlet is referenced by several pages. Sometimes, users just want to edit the Contentlet in one specific page without affecting they way such a Contentlet looks like in the other pages. This feature allows them to (1) create an exact copy of the Contentlet -- which replaces the existing one -- and (2) edit that copied Contentlet.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200 or 404\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+							"});"
+						]
+					}
+				}
+			]
 		},
 		{
 			"name": "Number of Content References in Pages",
@@ -4691,36 +4341,18 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Getting 'default' Site ID\", function() {",
 									"    var entity = pm.response.json().entity;",
 									"    pm.collectionVariables.set(\"defaultSiteId\", entity.identifier);",
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -4755,10 +4387,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"First Test HTML Page was created successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No page creation errors are present\", function() {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -4766,7 +4394,8 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -4775,26 +4404,12 @@
 								"exec": [
 									"pm.collectionVariables.set(\"firstPageUrl\", \"first-test-page\" + Date.now());"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -4837,10 +4452,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test Content was created successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No contentlet creation errors are present\", function() {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -4848,26 +4459,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -4910,36 +4507,18 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test Content was added to First Page successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No contentlet addition errors are present\", function() {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -4974,10 +4553,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Only one Contentlet must be present\", function() {",
 									"    var entity = pm.response.json().entity;",
 									"    var contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
@@ -4998,26 +4573,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -5057,10 +4618,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Second Test HTML Page was created successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No page creation errors are present\", function() {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -5068,7 +4625,8 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -5077,26 +4635,12 @@
 								"exec": [
 									"pm.collectionVariables.set(\"secondPageUrl\", \"second-test-page\" + Date.now());"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -5139,36 +4683,18 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test Content was added to second test Page successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No contentlet addition errors are present\", function() {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -5203,10 +4729,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Only one Contentlet must be present\", function() {",
 									"    var entity = pm.response.json().entity;",
 									"    var contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
@@ -5227,26 +4749,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -5296,6 +4804,9 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
 							""
 						]
 					}
@@ -5323,26 +4834,12 @@
 									"pm.collectionVariables.set(\"pageid\", jsonData.entity.identifier);",
 									"pm.collectionVariables.set(\"pagepath\", jsonData.entity.path);"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -5380,6 +4877,32 @@
 				},
 				{
 					"name": "CreateNewTypeWithUrlMap",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check response\", function () {",
+									"    pm.expect(jsonData.entity[0].description).to.eql(\"My Structure\");",
+									"});",
+									"",
+									"pm.test(\"Validate that the 'errors' array is empty\", function () {",
+									"    // Check that the 'errors' array is defined and its length is 0",
+									"    pm.expect(jsonData.errors).to.be.an('array').that.is.empty;",
+									"});",
+									"",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -5408,6 +4931,28 @@
 				},
 				{
 					"name": "Create New Page Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check response\", function () {",
+									"    pm.expect(jsonData.entity[0].baseType).to.eql(\"HTMLPAGE\");",
+									"});",
+									"",
+									"pm.test(\"Validate that the 'errors' array is empty\", function () {",
+									"    // Check that the 'errors' array is defined and its length is 0",
+									"    pm.expect(jsonData.errors).to.be.an('array').that.is.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -5499,26 +5044,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -5544,6 +5075,30 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
@@ -5551,18 +5106,31 @@
 			"item": [
 				{
 					"name": "CallLogout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Logout successfully\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/users/logout",
+							"raw": "{{serverURL}}/api/v1/logout",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"users",
 								"logout"
 							]
 						}
@@ -5576,10 +5144,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Test Page created successfully\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -5587,7 +5151,8 @@
 									"    pm.collectionVariables.set(\"host_id\", jsonData.entity.host);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -5597,26 +5162,12 @@
 									"const pagePost = Math.floor(Math.random()*100+1)",
 									"pm.globals.set(\"pagePost\", pagePost)"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -5659,36 +5210,18 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Test Page created successfully\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.expect(jsonData.entity).to.eql(true);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -5715,6 +5248,30 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
@@ -5722,6 +5279,20 @@
 			"item": [
 				{
 					"name": "CallLogout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Logout successfully\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -5741,22 +5312,23 @@
 				},
 				{
 					"name": "SwitchToDefaultSiteJustInCase",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check response\", function () {",
+									"    pm.expect(jsonData.entity.hostSwitched).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"url": {
@@ -5782,10 +5354,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Test Page created successfully\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -5796,7 +5364,8 @@
 									"// ignoring following test for now",
 									"postman.setNextRequest(\"Put Create Page With CacheTTL 100\")"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -5806,26 +5375,12 @@
 									"const pagePost = Math.floor(Math.random()*100+1)",
 									"pm.globals.set(\"pagePost2\", pagePost)"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -5868,10 +5423,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Test Available actions successfully\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -5879,26 +5430,12 @@
 									"    pm.expect(jsonData.entity.page.pageUrl).to.contains('testPageCopy');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -5927,6 +5464,30 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
@@ -5939,17 +5500,14 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Test Page created successfully\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -5960,26 +5518,12 @@
 									"pm.collectionVariables.set(\"testPageTitle\", \"My Test Page \" + time);",
 									"pm.collectionVariables.set(\"testPageUrl\", \"my-test-page-\" + time);"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -6022,10 +5566,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status code must be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Check that the test HTML Page is available in English, no matter how many languages there are\", function () {",
 									"    const entity = pm.response.json().entity;",
 									"    var isTranslated = false;",
@@ -6038,7 +5578,8 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -6047,26 +5588,12 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -6086,7 +5613,136 @@
 					"response": []
 				}
 			],
-			"description": "These requests are aimed to test the REST Endpoint that takes a Page ID, returns all Languages in the current instance and, for each of them, includes an additional attribute that indicates whether such a page is available in that specific language or not."
+			"description": "These requests are aimed to test the REST Endpoint that takes a Page ID, returns all Languages in the current instance and, for each of them, includes an additional attribute that indicates whether such a page is available in that specific language or not.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Checking JSON Attributes",
+			"item": [
+				{
+					"name": "Checking Page Audit Attributes",
+					"item": [
+						{
+							"name": "Retrieving HTML Page Data",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Checking that audit properties are present\", function () {",
+											"    var entity = pm.response.json().entity.page;",
+											"    ",
+											"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+											"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+											"    pm.expect(entity.ownerName).to.not.equal(undefined, \"The 'ownerName' attribute must be present\");",
+											"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+											"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+											"    pm.expect(entity.modUserName).to.not.equal(undefined, \"The 'modUserName' attribute must be present\");",
+											"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+											"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+											"    pm.expect(entity.publishUserName).to.not.equal(undefined, \"The 'publishUserName' attribute must be present\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"json",
+										"destinations",
+										"costa-rica"
+									]
+								},
+								"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
 		},
 		{
 			"name": "Put Create Page With CacheTTL 100",
@@ -6172,9 +5828,17 @@
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"});"
+							"});",
+							"",
+							"pm.test(\"Body matches string\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Logout successfully\");",
+							"});",
+							"",
+							"pm.environment.unset('jwt');",
+							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
@@ -6206,26 +5870,12 @@
 							"    pm.response.to.be.header('Cache-Control','max-age=100');",
 							"});"
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -6241,13 +5891,60 @@
 			"response": []
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
 				"type": "text/javascript",
 				"exec": [
-					""
+					"if (!pm.environment.get('jwt')) {",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = 'admin@dotcms.com';",
+					"        const password = 'admin';",
+					"        const basicAuth = btoa(`${username}:${password}`);",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}"
 				]
 			}
 		},

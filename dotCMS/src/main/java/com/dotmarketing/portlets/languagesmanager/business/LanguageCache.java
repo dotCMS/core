@@ -8,6 +8,7 @@ import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 /**
@@ -86,7 +87,7 @@ public abstract class LanguageCache implements Cachable{
      * @return
      */
     public abstract List<LanguageVariable> ifPresentGetOrElseFetch(final long languageId,
-            Callable<List<LanguageVariable>> fetch) throws DotDataException;
+            Callable<List<LanguageVariable>> fetchFunction) throws DotDataException;
 
     /**
      * Removes the language stored under the key LANGUAGE_KEY_PREFIX + languageId
@@ -99,4 +100,23 @@ public abstract class LanguageCache implements Cachable{
      * @param languageId the language id
      */
     public abstract List<LanguageVariable> getVars(final long languageId);
+
+    /**
+     * Removes the language stored under the key LANGUAGE_KEY_PREFIX + languageId
+     * @param languageId the language id
+     * @param key the key
+     * @return the language variable
+     */
+    public abstract Optional<LanguageVariable> getVar(final long languageId, final String key);
+
+    /**
+     * Removes the language stored under the key LANGUAGE_KEY_PREFIX + languageId
+     * @param languageId the language id
+     * @param key  the key
+     * @param fetchFunction the fetch function
+     * @return the language variable
+     * @throws DotDataException if an error occurs
+     */
+    public abstract Optional<LanguageVariable> ifPresentGetOrElseFetch(final long languageId, final String key,
+            final Callable<List<LanguageVariable>> fetchFunction) throws DotDataException;
 }

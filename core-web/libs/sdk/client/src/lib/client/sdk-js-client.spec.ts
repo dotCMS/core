@@ -1,5 +1,6 @@
 /// <reference types="jest" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Content } from './content/content-api';
 import { DotCmsClient, dotcmsClient } from './sdk-js-client';
 global.fetch = jest.fn();
 
@@ -141,6 +142,22 @@ describe('DotCmsClient', () => {
                         headers: { Authorization: 'Bearer ABC' }
                     }
                 );
+            });
+
+            it('should manage error response', () => {
+                const mockResponse = {};
+                mockFetchResponse(mockResponse, false, 401);
+
+                expect(client.page.get({ path: '/home' })).rejects.toEqual({
+                    status: 401,
+                    message: 'Unauthorized. Check the token and try again.'
+                });
+            });
+        });
+
+        describe('content', () => {
+            it('should have an instance of the content API', () => {
+                expect(client.content instanceof Content).toBeTruthy();
             });
         });
 

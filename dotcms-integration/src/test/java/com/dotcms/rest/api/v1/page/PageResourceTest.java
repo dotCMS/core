@@ -97,8 +97,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.nullable;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -181,7 +181,7 @@ public class PageResourceTest {
                     attributes.put(key, value);
                 }
                 return null;
-        }).when(request).setAttribute(Mockito.anyString(), Mockito.anyObject());
+        }).when(request).setAttribute(Mockito.anyString(), Mockito.any());
 
 
         Folder aboutUs = APILocator.getFolderAPI().findFolderByPath(String.format("/%s/",folderName), host, APILocator.systemUser(), false);

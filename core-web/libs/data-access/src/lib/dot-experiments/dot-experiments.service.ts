@@ -34,9 +34,9 @@ export class DotExperimentsService {
      */
     healthCheck(): Observable<HealthStatusTypes> {
         return this.http
-            .get<DotCMSResponseExperiment<{ healthy: HealthStatusTypes }>>(
-                '/api/v1/experiments/health'
-            )
+            .get<
+                DotCMSResponseExperiment<{ healthy: HealthStatusTypes }>
+            >('/api/v1/experiments/health')
             .pipe(pluck('entity', 'health'));
     }
     /**
@@ -74,9 +74,9 @@ export class DotExperimentsService {
      */
     getByStatus(pageId: string, status: DotExperimentStatus): Observable<DotExperiment[]> {
         return this.http
-            .get<DotCMSResponseExperiment<DotExperiment[]>>(
-                `${API_ENDPOINT}?pageId=${pageId}&status=${status}`
-            )
+            .get<
+                DotCMSResponseExperiment<DotExperiment[]>
+            >(`${API_ENDPOINT}?pageId=${pageId}&status=${status}`)
             .pipe(pluck('entity'));
     }
 
@@ -100,9 +100,9 @@ export class DotExperimentsService {
      */
     getResults(experimentId: string): Observable<DotExperimentResults> {
         return this.http
-            .get<DotCMSResponseExperiment<DotExperimentResults>>(
-                `${API_ENDPOINT}/${experimentId}/results`
-            )
+            .get<
+                DotCMSResponseExperiment<DotExperimentResults>
+            >(`${API_ENDPOINT}/${experimentId}/results`)
             .pipe(pluck('entity'));
     }
 
@@ -114,10 +114,9 @@ export class DotExperimentsService {
      */
     archive(experimentId: string): Observable<DotExperiment> {
         return this.http
-            .put<DotCMSResponseExperiment<DotExperiment>>(
-                `${API_ENDPOINT}/${experimentId}/_archive`,
-                {}
-            )
+            .put<
+                DotCMSResponseExperiment<DotExperiment>
+            >(`${API_ENDPOINT}/${experimentId}/_archive`, {})
             .pipe(pluck('entity'));
     }
 
@@ -141,10 +140,9 @@ export class DotExperimentsService {
      */
     start(experimentId: string): Observable<DotExperiment> {
         return this.http
-            .post<DotCMSResponseExperiment<DotExperiment>>(
-                `${API_ENDPOINT}/${experimentId}/_start`,
-                {}
-            )
+            .post<
+                DotCMSResponseExperiment<DotExperiment>
+            >(`${API_ENDPOINT}/${experimentId}/_start`, {})
             .pipe(pluck('entity'));
     }
 
@@ -156,10 +154,9 @@ export class DotExperimentsService {
      */
     stop(experimentId: string): Observable<DotExperiment> {
         return this.http
-            .post<DotCMSResponseExperiment<DotExperiment>>(
-                `${API_ENDPOINT}/${experimentId}/_end`,
-                {}
-            )
+            .post<
+                DotCMSResponseExperiment<DotExperiment>
+            >(`${API_ENDPOINT}/${experimentId}/_end`, {})
             .pipe(pluck('entity'));
     }
 
@@ -171,10 +168,9 @@ export class DotExperimentsService {
      */
     cancelSchedule(experimentId: string): Observable<DotExperiment> {
         return this.http
-            .post<DotCMSResponseExperiment<DotExperiment>>(
-                `${API_ENDPOINT}/scheduled/${experimentId}/_cancel`,
-                {}
-            )
+            .post<
+                DotCMSResponseExperiment<DotExperiment>
+            >(`${API_ENDPOINT}/scheduled/${experimentId}/_cancel`, {})
             .pipe(pluck('entity'));
     }
 
@@ -210,10 +206,9 @@ export class DotExperimentsService {
         changes: { description: string }
     ): Observable<DotExperiment> {
         return this.http
-            .put<DotCMSResponseExperiment<DotExperiment>>(
-                `${API_ENDPOINT}/${experimentId}/variants/${variantId}`,
-                changes
-            )
+            .put<
+                DotCMSResponseExperiment<DotExperiment>
+            >(`${API_ENDPOINT}/${experimentId}/variants/${variantId}`, changes)
             .pipe(pluck('entity'));
     }
 
@@ -227,9 +222,9 @@ export class DotExperimentsService {
 
     removeVariant(experimentId: string, variantId: string): Observable<DotExperiment> {
         return this.http
-            .delete<DotCMSResponseExperiment<DotExperiment>>(
-                `${API_ENDPOINT}/${experimentId}/variants/${variantId}`
-            )
+            .delete<
+                DotCMSResponseExperiment<DotExperiment>
+            >(`${API_ENDPOINT}/${experimentId}/variants/${variantId}`)
             .pipe(pluck('entity'));
     }
 
@@ -242,10 +237,9 @@ export class DotExperimentsService {
      */
     promoteVariant(experimentId: string, variantId: string): Observable<DotExperiment> {
         return this.http
-            .put<DotCMSResponseExperiment<DotExperiment>>(
-                `/api/v1/experiments/${experimentId}/variants/${variantId}/_promote`,
-                {}
-            )
+            .put<
+                DotCMSResponseExperiment<DotExperiment>
+            >(`/api/v1/experiments/${experimentId}/variants/${variantId}/_promote`, {})
             .pipe(pluck('entity'));
     }
 
@@ -342,9 +336,9 @@ export class DotExperimentsService {
      */
     deleteGoal(experimentId: string, goalType: GoalsLevels): Observable<DotExperiment> {
         return this.http
-            .delete<DotCMSResponseExperiment<DotExperiment>>(
-                `${API_ENDPOINT}/${experimentId}/goals/${goalType}`
-            )
+            .delete<
+                DotCMSResponseExperiment<DotExperiment>
+            >(`${API_ENDPOINT}/${experimentId}/goals/${goalType}`)
             .pipe(pluck('entity'));
     }
 }

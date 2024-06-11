@@ -1,7 +1,7 @@
 <div
-    class="dot-persona-selector__container h-full flex-auto flex align-items-center gap-3"
     [pTooltip]="disabled ? ('editpage.personalization.content.add.message' | dm) : null"
-    [tooltipPosition]="disabled ? 'bottom' : null">
+    [tooltipPosition]="disabled ? 'bottom' : null"
+    class="dot-persona-selector__container h-full flex-auto flex align-items-center gap-3">
     <p-avatar
         *ngIf="persona"
         [text]="persona?.name"

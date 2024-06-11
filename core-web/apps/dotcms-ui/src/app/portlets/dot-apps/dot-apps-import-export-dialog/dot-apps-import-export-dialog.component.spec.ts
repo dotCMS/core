@@ -41,11 +41,11 @@ export class DotAppsServiceMock {
     selector: 'dot-host-component',
     template: `
         <dot-apps-import-export-dialog
+            (resolved)="resolveHandler($event)"
             [action]="action"
             [app]="app"
             [site]="site"
-            [show]="true"
-            (resolved)="resolveHandler($event)"></dot-apps-import-export-dialog>
+            [show]="true"></dot-apps-import-export-dialog>
     `
 })
 class HostTestComponent {

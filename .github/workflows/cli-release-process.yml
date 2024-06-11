@@ -459,6 +459,19 @@ jobs:
         run: |
           echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
           npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
+          
+      - name: Slack Notification
+        continue-on-error: true
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+          SLACK_TITLE: "Important news!"
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of *dotCLI* `${{ needs.precheck.outputs.RELEASE_VERSION }}` :package: is available on the `NPM` registry!"
+          SLACK_USERNAME: dotBot
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
 
   clean-up:
     name: "Clean Up"

@@ -2,10 +2,13 @@
 /dist
 /coverage
 /.nx/cache
-
+/target
+/tmp
+/tools
 
 package.json
 package-lock.json
+yarn-error.log.json
 dist
 dist-lib
 dist-doc

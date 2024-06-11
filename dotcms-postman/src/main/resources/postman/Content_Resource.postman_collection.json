@@ -1,312 +1,15 @@
 {
 	"info": {
-		"_postman_id": "e7d6d683-f049-4c68-8712-0f2c8513bda8",
+		"_postman_id": "2d0c1216-5c66-4f24-b32d-e0789e36c44b",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-e7d6d683-f049-4c68-8712-0f2c8513bda8?action=share&creator=5403727&source=collection_link"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
 			"name": "Test Content Search",
 			"item": [
-				{
-					"name": "Story Block Field Tests",
-					"item": [
-						{
-							"name": "Create Content Type with WYSIWYG field",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Test Content Type creation must be successful\", function() {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"var jsonData = pm.response.json();",
-											"var contentType = jsonData.entity[0];",
-											"",
-											"pm.collectionVariables.set(\"contentTypeId\", contentType.id);",
-											"pm.collectionVariables.set(\"contentTypeName\", contentType.name);",
-											"pm.collectionVariables.set(\"fieldId\", contentType.fields[0].id);"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n   \"defaultType\":false,\n   \"fixed\":false,\n   \"system\":false,\n   \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n   \"description\":\"\",\n   \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n   \"folder\":\"SYSTEM_FOLDER\",\n   \"name\":\"TestRichCT\",\n   \"fields\": [{\n       \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableWysiwygField\",\n\t\t\"dataType\": \"LONG_TEXT\",\n\t\t\"fieldVariables\": [],\n\t\t\"fixed\": false,\n\t\t\"iDate\": 1662153603216,\n\t\t\"indexed\": true,\n\t\t\"listed\": false,\n\t\t\"modDate\": 1662153603216,\n\t\t\"name\": \"Description\",\n\t\t\"readOnly\": false,\n\t\t\"required\": false,\n\t\t\"searchable\": true,\n\t\t\"sortOrder\": 1,\n\t\t\"unique\": false,\n\t\t\"variable\": \"description\"\n    }\n   ]\n}"
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/contenttype",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"contenttype"
-									]
-								},
-								"description": "Creates a test Content Type with a single WYSIWYG field, which will be transformed into a Story Block field later on."
-							},
-							"response": []
-						},
-						{
-							"name": "Create Test Content",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Test Content creation must be successful\", function() {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Test contentlet was created successfully\", function () {",
-											"    var jsonData = pm.response.json().entity;",
-											"",
-											"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Content Type\");",
-											"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{contentTypeName}}\",\n            \"description\": \"<h1>My Title</h1><p>This is my test content.</p>\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"workflow",
-										"actions",
-										"default",
-										"fire",
-										"PUBLISH"
-									],
-									"query": [
-										{
-											"key": "indexPolicy",
-											"value": "WAIT_FOR"
-										}
-									]
-								},
-								"description": "Creates a test Contentlet of the previously generated Content Type."
-							},
-							"response": []
-						},
-						{
-							"name": "Transform WYSIWYG field into Story Block",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"WYSIWYG transformation must be successful\", function() {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Checking transformation of WYSIWYG field into Story Block\", function () {",
-											"    var jsonData = pm.response.json().entity;",
-											"",
-											"    pm.expect(jsonData[0].columns[0].fields[0].clazz).to.eql(\"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\", \"Field type is not the expected ImmutableStoryBlockField\");",
-											"    pm.expect(jsonData[0].columns[0].fields[0].variable).to.eql(\"description\", \"Story Block Field does not correspond to expected 'description' field\");",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
-								"method": "PUT",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"field\": {\n        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",\n        \"contentTypeId\": \"{{contentTypeId}}\",\n        \"dataType\": \"LONG_TEXT\",\n        \"fieldType\": \"Story-Block\",\n        \"fieldTypeLabel\": \"Story Block\",\n        \"fieldVariables\": [],\n        \"fixed\": false,\n        \"iDate\": 1662153603000,\n        \"id\": \"{{fieldId}}\",\n        \"indexed\": true,\n        \"listed\": false,\n        \"modDate\": 1662153723000,\n        \"name\": \"Description\",\n        \"readOnly\": false,\n        \"required\": false,\n        \"searchable\": true,\n        \"sortOrder\": 1,\n        \"unique\": false,\n        \"variable\": \"description\"\n    }\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v3/contenttype/{{contentTypeId}}/fields/{{fieldId}}",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v3",
-										"contenttype",
-										"{{contentTypeId}}",
-										"fields",
-										"{{fieldId}}"
-									]
-								},
-								"description": "Transforms the WYSIWYG into the Story Block field. This is NOT a new REST Endpoint, it is the existing Endpoint used to update data for any field."
-							},
-							"response": []
-						},
-						{
-							"name": "Delete Test Content Type",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Test Content Type deletion must be successful\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
-								"method": "DELETE",
-								"header": [],
-								"url": {
-									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}?indexPolicy=WAIT_FOR",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"contenttype",
-										"id",
-										"{{contentTypeId}}"
-									],
-									"query": [
-										{
-											"key": "indexPolicy",
-											"value": "WAIT_FOR"
-										}
-									]
-								},
-								"description": "Deletes the test Content Type with the now-transformed Story Block field."
-							},
-							"response": []
-						}
-					],
-					"description": "This folder contains Postman tests related to the interaction with Story Block fields in dotCMS."
-				},
 				{
 					"name": "Create ContentType with 360 Icon",
 					"event": [
@@ -317,14 +20,12 @@
 									"var jsonData = pm.response.json();",
 									"var contentType = jsonData.entity[0];",
 									"",
-									"pm.test(\"Status code should be 200\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
 									"pm.test(\"Icon should be 360\", function() {",
 									"    pm.expect(contentType.icon).to.eql(\"360\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -333,32 +34,16 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -403,35 +88,12 @@
 									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -474,10 +136,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"",
@@ -487,26 +145,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -526,6 +170,30 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Test Content Type creation must be successful\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
@@ -539,8 +207,6 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
@@ -548,36 +214,20 @@
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -620,10 +270,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"check items\", function () {",
@@ -634,26 +280,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -688,10 +320,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"check items\", function () {",
@@ -701,26 +329,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -755,10 +369,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"check items\", function () {",
@@ -767,26 +377,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -821,10 +417,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"check items\", function () {",
@@ -833,26 +425,12 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -880,6 +458,30 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
@@ -892,8 +494,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);        ",
+									"pm.test(\"Content created\", function () {       ",
 									"    let jsonData = pm.response.json();",
 									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"issue-22756-categories-01GCAK78NPY1JH8TRGX8SWCVN3.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
@@ -901,35 +502,12 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -964,43 +542,19 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200); ",
+									"pm.test(\"Valid identifier\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    const entity = (jsonData.entity);",
 									"    const identifier = entity.jsonObjectView.contentlets[0].identifier;       ",
 									"    pm.collectionVariables.set(\"identifier22756\", identifier);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1034,39 +588,14 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);               ",
-									"});"
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -1101,8 +630,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200); ",
+									"pm.test(\"Update validation\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    const entity = (jsonData.entity);",
 									"    const contentlet = entity.jsonObjectView.contentlets[0];",
@@ -1110,35 +638,12 @@
 									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1172,39 +677,14 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);               ",
-									"});"
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -1239,8 +719,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200); ",
+									"pm.test(\"Update validation\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    const entity = (jsonData.entity);",
 									"    const contentlet = entity.jsonObjectView.contentlets[0];",
@@ -1248,35 +727,12 @@
 									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1310,39 +766,14 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);               ",
-									"});"
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -1377,8 +808,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200); ",
+									"pm.test(\"Update validation\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    const entity = (jsonData.entity);",
 									"    const contentlet = entity.jsonObjectView.contentlets[0];",
@@ -1386,35 +816,12 @@
 									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1448,39 +855,14 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);               ",
-									"});"
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -1515,8 +897,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200); ",
+									"pm.test(\"Update validation\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    const entity = (jsonData.entity);",
 									"    const contentlet = entity.jsonObjectView.contentlets[0];",
@@ -1524,35 +905,12 @@
 									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1579,6 +937,30 @@
 					},
 					"response": []
 				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
 			]
 		},
 		{
@@ -1591,10 +973,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test File created successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No errors must be present\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
@@ -1604,32 +982,17 @@
 									"    pm.collectionVariables.set(\"fileName\", jsonData.entity.fileName);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [
 							{
 								"key": "Origin",
-								"value": "{{serverURL}}",
-								"type": "text"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -1685,10 +1048,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"HTTP Status must be successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Metadata section must be present and not empty\", function () {",
@@ -1704,26 +1063,12 @@
 									"    pm.expect(jsonData.contentlets[0].metaData.path).to.include(\"/\" + expectedFileInode + \"/fileAsset/\" + expectedFileName);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -1749,41 +1094,22 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test File unpublished successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No errors must be present\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [
 							{
 								"key": "Origin",
-								"value": "{{serverURL}}",
-								"type": "text"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -1834,41 +1160,22 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test File archived successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No errors must be present\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [
 							{
 								"key": "Origin",
-								"value": "{{serverURL}}",
-								"type": "text"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -1919,41 +1226,22 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test File deleted successfully\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"No errors must be present\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [
 							{
 								"key": "Origin",
-								"value": "{{serverURL}}",
-								"type": "text"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -1998,7 +1286,31 @@
 					"response": []
 				}
 			],
-			"description": "Verifies that the Metadata section in the JSON response in a File Asset is added."
+			"description": "Verifies that the Metadata section in the JSON response in a File Asset is added.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
 		},
 		{
 			"name": "Auto-Save",
@@ -2010,14 +1322,11 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test Content Type creation HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var contentType = pm.response.json().entity[0];",
 									"pm.collectionVariables.set(\"contentTypeName\", contentType.name);"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -2026,32 +1335,16 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -2081,10 +1374,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test Content creation HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Test contentlet was created successfully\", function () {",
 									"    var jsonData = pm.response.json().entity;",
 									"",
@@ -2097,7 +1386,8 @@
 									"pm.collectionVariables.set(\"contentInode\", entity.results[0][contentId].inode);",
 									"pm.collectionVariables.set(\"contentIdentifier\", entity.results[0][contentId].identifier);"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -2106,35 +1396,12 @@
 								"exec": [
 									"pm.collectionVariables.set(\"originalTitle\", \"My Test Title\");"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -2172,10 +1439,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"First Auto-Save HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"First Auto-Save was issued correctly\", function () {",
 									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when issuing the first Auto-Save\");",
 									"    pm.expect(pm.response.json().entity.title).to.eql(pm.collectionVariables.get(\"firstAutoSaveTitle\"), \"First Auto-Save title is not the expected one.\")",
@@ -2184,7 +1447,8 @@
 									"pm.collectionVariables.set(\"contentInode\", pm.response.json().entity.inode);",
 									"pm.collectionVariables.set(\"contentIdentifier\", pm.response.json().entity.identifier);"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -2193,26 +1457,12 @@
 								"exec": [
 									"pm.collectionVariables.set(\"firstAutoSaveTitle\", \"My Updated Test Title\");"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -2261,16 +1511,13 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Second Auto-Save HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Second Auto-Save was issued correctly\", function () {",
 									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when issuing the second Auto-Save\");",
 									"    pm.expect(pm.response.json().entity.title).to.eql(pm.collectionVariables.get(\"secondAutoSaveTitle\"), \"Second Auto-Save title is not the expected one.\")",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -2279,26 +1526,12 @@
 								"exec": [
 									"pm.collectionVariables.set(\"secondAutoSaveTitle\", \"My Second Updated Test Title\");"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -2347,15 +1580,12 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Third Auto-Save HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Third Auto-Save was issued correctly\", function () {",
 									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when issuing the third Auto-Save\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -2364,26 +1594,12 @@
 								"exec": [
 									"pm.collectionVariables.set(\"thirdAutoSaveTitle\", \"My Third Updated Test Title\");"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -2432,10 +1648,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Version retrieval HTTP Status must be successful\", function() {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"There must be only 2 Content versions\", function () {",
 									"    pm.expect(pm.response.json().errors.length).to.eql(0, \"An error occurred when checking the number of Content versions\");",
 									"    pm.expect(pm.response.json().entity.length).to.eql(2, \"There cannot be less or more than 2 versions for the test Content\");",
@@ -2448,26 +1660,12 @@
 									"    pm.expect(pm.response.json().entity[1].title).to.eql(originalTitle, \"Title for the original content is not correct.\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -2487,7 +1685,1394 @@
 					"response": []
 				}
 			],
-			"description": "The Auto-Save feature allows dotCMS to automatically save any changes made to a given Contentlet by the User after X amount of seconds have passed.\n\nThe new Endpoint method created for this: **`/api/v1/_draft`** , works like this:\n\n- If the User is working **on the live version of the current Contentlet** and make changes to it, the draft request will create a working version in order to auto-save any changes.\n- When a second change is made, the draft method will re-use the previously generated Inode and will overwrite it with the new changes.\n- Finally, any incoming changes will keep overwriting the previous working Inode. This way, dotCMS will overwrite one single working Inode instead of creating hundreds if not thousands of \"useless\" records for any change."
+			"description": "The Auto-Save feature allows dotCMS to automatically save any changes made to a given Contentlet by the User after X amount of seconds have passed.\n\nThe new Endpoint method created for this: **`/api/v1/_draft`** , works like this:\n\n- If the User is working **on the live version of the current Contentlet** and make changes to it, the draft request will create a working version in order to auto-save any changes.\n- When a second change is made, the draft method will re-use the previously generated Inode and will overwrite it with the new changes.\n- Finally, any incoming changes will keep overwriting the previous working Inode. This way, dotCMS will overwrite one single working Inode instead of creating hundreds if not thousands of \"useless\" records for any change.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Checking JSON Attributes",
+			"item": [
+				{
+					"name": "Checking Content Audit Attributes",
+					"item": [
+						{
+							"name": "Creating Test Generic Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test content created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    var contentId = Object.keys(jsonData.entity.results[0]);",
+											"    pm.collectionVariables.set(\"testContentId\", jsonData.entity.results[0][contentId].identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"title\": \"Test Generic Content\",\n            \"contentHost\": \"default\",\n            \"body\": \"This is my Test Generic Content\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Retrieving Test Generic Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Checking that audit properties are present\", function () {",
+											"    var entity = pm.response.json().contentlets[0];",
+											"    ",
+											"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
+											"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
+											"    pm.expect(entity.ownerName).to.not.equal(undefined, \"The 'ownerName' attribute must be present\");",
+											"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
+											"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
+											"    pm.expect(entity.modUserName).to.not.equal(undefined, \"The 'modUserName' attribute must be present\");",
+											"    pm.expect(entity.publishDate).to.not.equal(undefined, \"The 'publishDate' attribute must be present\");",
+											"    pm.expect(entity.publishUser).to.not.equal(undefined, \"The 'publishUser' attribute must be present\");",
+											"    pm.expect(entity.publishUserName).to.not.equal(undefined, \"The 'publishUserName' attribute must be present\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/content/id/{{testContentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"content",
+										"id",
+										"{{testContentId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Content with Block Editor",
+			"item": [
+				{
+					"name": "Transforming WYSIWYG into Block Editor",
+					"item": [
+						{
+							"name": "Create Content Type with WYSIWYG field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content Type creation must be successful\", function() {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var contentType = jsonData.entity[0];",
+											"",
+											"pm.collectionVariables.set(\"contentTypeId\", contentType.id);",
+											"pm.collectionVariables.set(\"contentTypeName\", contentType.name);",
+											"pm.collectionVariables.set(\"fieldId\", contentType.fields[0].id);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"defaultType\":false,\n   \"fixed\":false,\n   \"system\":false,\n   \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n   \"description\":\"\",\n   \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n   \"folder\":\"SYSTEM_FOLDER\",\n   \"name\":\"TestRichCT\",\n   \"fields\": [{\n       \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableWysiwygField\",\n\t\t\"dataType\": \"LONG_TEXT\",\n\t\t\"fieldVariables\": [],\n\t\t\"fixed\": false,\n\t\t\"iDate\": 1662153603216,\n\t\t\"indexed\": true,\n\t\t\"listed\": false,\n\t\t\"modDate\": 1662153603216,\n\t\t\"name\": \"Description\",\n\t\t\"readOnly\": false,\n\t\t\"required\": false,\n\t\t\"searchable\": true,\n\t\t\"sortOrder\": 1,\n\t\t\"unique\": false,\n\t\t\"variable\": \"description\"\n    }\n   ]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Creates a test Content Type with a single WYSIWYG field, which will be transformed into a Story Block field later on."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content creation must be successful\", function() {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Test contentlet was created successfully\", function () {",
+											"    var jsonData = pm.response.json().entity;",
+											"",
+											"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Content Type\");",
+											"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{contentTypeName}}\",\n            \"description\": \"<h1>My Title</h1><p>This is my test content.</p>\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								},
+								"description": "Creates a test Contentlet of the previously generated Content Type."
+							},
+							"response": []
+						},
+						{
+							"name": "Transform WYSIWYG field into Story Block",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"WYSIWYG transformation must be successful\", function() {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking transformation of WYSIWYG field into Story Block\", function () {",
+											"    var jsonData = pm.response.json().entity;",
+											"",
+											"    pm.expect(jsonData[0].columns[0].fields[0].clazz).to.eql(\"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\", \"Field type is not the expected ImmutableStoryBlockField\");",
+											"    pm.expect(jsonData[0].columns[0].fields[0].variable).to.eql(\"description\", \"Story Block Field does not correspond to expected 'description' field\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"field\": {\n        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",\n        \"contentTypeId\": \"{{contentTypeId}}\",\n        \"dataType\": \"LONG_TEXT\",\n        \"fieldType\": \"Story-Block\",\n        \"fieldTypeLabel\": \"Story Block\",\n        \"fieldVariables\": [],\n        \"fixed\": false,\n        \"iDate\": 1662153603000,\n        \"id\": \"{{fieldId}}\",\n        \"indexed\": true,\n        \"listed\": false,\n        \"modDate\": 1662153723000,\n        \"name\": \"Description\",\n        \"readOnly\": false,\n        \"required\": false,\n        \"searchable\": true,\n        \"sortOrder\": 1,\n        \"unique\": false,\n        \"variable\": \"description\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v3/contenttype/{{contentTypeId}}/fields/{{fieldId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v3",
+										"contenttype",
+										"{{contentTypeId}}",
+										"fields",
+										"{{fieldId}}"
+									]
+								},
+								"description": "Transforms the WYSIWYG into the Story Block field. This is NOT a new REST Endpoint, it is the existing Endpoint used to update data for any field."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Test Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content Type deletion must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								},
+								"description": "Deletes the test Content Type with the now-transformed Story Block field."
+							},
+							"response": []
+						}
+					],
+					"description": "Verifies that having a WYSIWYG field and then checking the option to transform it into a Block Editor field works as expected."
+				},
+				{
+					"name": "Checking Block Editor Recursiveness",
+					"item": [
+						{
+							"name": "Create Content Type",
+							"item": [
+								{
+									"name": "Create Test Content Type",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var contentType = pm.response.json().entity[0];",
+													"pm.collectionVariables.set(\"contentTypeId\", contentType.id);",
+													"pm.collectionVariables.set(\"contentTypeName\", contentType.name);",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"defaultType\": false,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\": \"\",\n    \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"TestBlockEditorCT\",\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"iDate\": 1606168746000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1606168746000,\n            \"name\": \"Title\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"title\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"Story-Block\",\n            \"fieldTypeLabel\": \"Description\",\n            \"fieldVariables\": [{\n\t\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFieldVariable\",\n\t\t\t\t\"key\": \"contentTypes\",\n\t\t\t\t\"value\": \"TestBlockEditorCT\"\n\t\t\t}],\n            \"fixed\": false,\n            \"iDate\": 1662153603000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1662153723000,\n            \"name\": \"Description\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"description\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a test Content Type with a single WYSIWYG field, which will be transformed into a Story Block field later on."
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Generate Test Data",
+							"item": [
+								{
+									"name": "Create Test Content One",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Contentlet One was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Content Type\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    const testContentId = Object.keys(jsonData.results[0])[0];",
+													"    pm.collectionVariables.set(\"testContentOneId\", testContentId);",
+													"    pm.collectionVariables.set(\"testContentOneInode\", jsonData.results[0][testContentId].inode);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 1\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"content\\\":[{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								},
+								{
+									"name": "Create Test Content Two",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Contentlet Two was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Content Type\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    const testContentId = Object.keys(jsonData.results[0])[0];",
+													"    pm.collectionVariables.set(\"testContentTwoId\", testContentId);",
+													"    pm.collectionVariables.set(\"testContentTwoInode\", jsonData.results[0][testContentId].inode);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 2\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"content\\\":[{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								},
+								{
+									"name": "Create Test Content Three",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Contentlet Three was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Content Type\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    const testContentId = Object.keys(jsonData.results[0])[0];",
+													"    pm.collectionVariables.set(\"testContentThreeId\", testContentId);",
+													"    pm.collectionVariables.set(\"testContentThreeInode\", jsonData.results[0][testContentId].inode);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 3\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"content\\\":[{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Test Content One",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Check that the Block Editor data is the expected one\", function () {",
+													"    const entity = pm.response.json().entity;",
+													"    const expectedId = pm.collectionVariables.get(\"testContentTwoId\");",
+													"    pm.expect(entity.description.content[0].attrs.data.identifier).to.equal(expectedId, \"The expected ID does NOT belong to test Content Two\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{testContentOneId}}\",\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 1\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"attrs\\\":{\\\"charCount\\\":1,\\\"wordCount\\\":0,\\\"readingTime\\\":0},\\\"content\\\":[{\\\"type\\\":\\\"dotContent\\\",\\\"attrs\\\":{\\\"data\\\":{\\\"identifier\\\":\\\"{{testContentTwoId}}\\\",\\\"languageId\\\":1}}},{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    }"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{testContentOneId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "identifier",
+													"value": "{{testContentOneId}}"
+												}
+											]
+										},
+										"description": "Update parent1 children"
+									},
+									"response": []
+								},
+								{
+									"name": "Update Test Content Two",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Check that the Block Editor data is the expected one\", function () {",
+													"    const entity = pm.response.json().entity;",
+													"    const expectedId = pm.collectionVariables.get(\"testContentThreeId\");",
+													"    pm.expect(entity.description.content[0].attrs.data.identifier).to.equal(expectedId, \"The expected ID does NOT belong to test Content Three\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{testContentTwoId}}\",\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 2\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"attrs\\\":{\\\"charCount\\\":1,\\\"wordCount\\\":0,\\\"readingTime\\\":0},\\\"content\\\":[{\\\"type\\\":\\\"dotContent\\\",\\\"attrs\\\":{\\\"data\\\":{\\\"identifier\\\":\\\"{{testContentThreeId}}\\\",\\\"languageId\\\":1}}},{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    }"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{testContentTwoId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "identifier",
+													"value": "{{testContentTwoId}}"
+												}
+											]
+										},
+										"description": "Update parent1 children"
+									},
+									"response": []
+								},
+								{
+									"name": "Update Test Content Three",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Check that the Block Editor data is the expected one\", function () {",
+													"    const entity = pm.response.json().entity;",
+													"    const expectedId = pm.collectionVariables.get(\"testContentOneId\");",
+													"    pm.expect(entity.description.content[0].attrs.data.identifier).to.equal(expectedId, \"The expected ID does NOT belong to test Content One\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{testContentThreeId}}\",\n            \"contentType\": \"{{contentTypeName}}\",\n            \"title\": \"Test Content 3\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"attrs\\\":{\\\"charCount\\\":1,\\\"wordCount\\\":0,\\\"readingTime\\\":0},\\\"content\\\":[{\\\"type\\\":\\\"dotContent\\\",\\\"attrs\\\":{\\\"data\\\":{\\\"identifier\\\":\\\"{{testContentOneId}}\\\",\\\"languageId\\\":1}}},{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    }"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{testContentThreeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "identifier",
+													"value": "{{testContentThreeId}}"
+												}
+											]
+										},
+										"description": "Update parent1 children"
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"Validate that the 'errors' array is empty\", function () {",
+											"    const response = pm.response.json();",
+											"    pm.expect(response.errors).to.be.an('array').that.is.empty;",
+											"});",
+											""
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Check Test Contentlet One Data",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Check that the final Block Editor data does not return recursive info\", function () {",
+											"    const contentlet = pm.response.json().contentlets[0];",
+											"    var expectedId = pm.collectionVariables.get(\"testContentOneId\");",
+											"    pm.expect(contentlet.identifier).to.equal(expectedId, \"The expected ID does NOT belong to test Content One\");",
+											"    pm.expect(contentlet.title).to.equal(\"Test Content 1\", \"The expected title is NOT correct\");",
+											"    ",
+											"    expectedId = pm.collectionVariables.get(\"testContentTwoId\");",
+											"    pm.expect(contentlet.description.content[0].attrs.data.identifier).to.equal(expectedId, \"The expected ID does NOT belong to test Content Two\");",
+											"    pm.expect(contentlet.description.content[0].attrs.data.title).to.equal(\"Test Content 2\", \"The expected title is NOT correct\");",
+											"",
+											"    // By default, at this level, the 'Test Content 3' contentlet must NOT have all of its properties, but only 2: Identifier, and Language ID. This completely stops the infinite recursiveness and solves the problem. If the UI/client needs the properties in this level, they must call the Content REST Endpoint to retrieve them",
+											"    expectedId = pm.collectionVariables.get(\"testContentThreeId\");",
+											"    pm.expect(contentlet.description.content[0].attrs.data.description.content[0].attrs.data.identifier).to.equal(expectedId, \"The expected ID does NOT belong to test Content Three\");",
+											"    pm.expect(contentlet.description.content[0].attrs.data.description.content[0].attrs.data.title).to.equal(undefined, \"There must be NO 'title' property at this level of the Block Editor\");",
+											"    pm.expect(Object.keys(contentlet.description.content[0].attrs.data.description.content[0].attrs.data).length).to.equal(2, \"There must be ONLY 2 properties at this level of the Block Editor\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/content/id/{{testContentOneId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"content",
+										"id",
+										"{{testContentOneId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "This test makes sure that including Contentlets with circular dependencies inside Block Editor fields won't bring dotCMS down. For instance, if you have 3 Contenlets of type `My Content` with a Block Editor field, and they look like this:\n\n- `Test Contentlet 1` includes `Test Contentlet 2` in the Block Editor field.\n    \n- `Test Contentlet 2` includes `Test Contentlet 3` in the Block Editor field.\n    \n- `Test Contentlet 3` includes `Test Contentlet 1` in the Block Editor field.\n    \n\nAnd you request the `Test Contentlet 1` data via REST, by default, dotCMS will return the information of `Test Contentlet 1` , and `Test Contentlet 2` **will ONLY include the Identifier and Language ID** of the `Test Contentlet 3` . This will prevent further recursiveness, specially in cases where there's a lot of information in the Block Editor, or if there are a lot more related contents in such a field.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status must be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Block Editor and Relationship Fields",
+					"item": [
+						{
+							"name": "Create Content Types",
+							"item": [
+								{
+									"name": "Create Test Content Type",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var contentType = pm.response.json().entity[0];",
+													"pm.collectionVariables.set(\"relatedContentTypeId\", contentType.id);",
+													"pm.collectionVariables.set(\"relatedContentTypeName\", contentType.name);",
+													"pm.collectionVariables.set(\"relatedContentTypeVarName\", contentType.variable);",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"defaultType\": false,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\": \"\",\n    \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"TestCT\",\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ],\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Title\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"title\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a test Content Type with a single WYSIWYG field, which will be transformed into a Story Block field later on."
+									},
+									"response": []
+								},
+								{
+									"name": "Create Test Content Type with Relationship",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var contentType = pm.response.json().entity[0];",
+													"pm.collectionVariables.set(\"innerContentTypeId\", contentType.id);",
+													"pm.collectionVariables.set(\"innerContentTypeName\", contentType.name);",
+													"pm.collectionVariables.set(\"innerContentTypeVarName\", contentType.variable);",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"defaultType\": false,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\": \"\",\n    \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"TestInnerCT\",\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ],\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Title\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"title\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRelationshipField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldType\": \"Relationship\",\n            \"fieldTypeLabel\": \"Relationships Field\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Related Data\",\n            \"readOnly\": false,\n            \"relationships\": {\n                \"cardinality\": 0,\n                \"isParentField\": true,\n                \"velocityVar\": \"{{relatedContentTypeVarName}}\"\n            },\n            \"required\": false,\n            \"searchable\": false,\n            \"skipRelationshipCreation\": false,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"relatedData\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a test Content Type with a single WYSIWYG field, which will be transformed into a Story Block field later on."
+									},
+									"response": []
+								},
+								{
+									"name": "Create Test Content Type with Block Editor",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var contentType = pm.response.json().entity[0];",
+													"pm.collectionVariables.set(\"parentContentTypeId\", contentType.id);",
+													"pm.collectionVariables.set(\"parentContentTypeVarName\", contentType.variable);",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"defaultType\": false,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\": \"\",\n    \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"TestBlockEditorWithCheckboxCT\",\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Title\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"title\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"Story-Block\",\n            \"fieldTypeLabel\": \"Description\",\n            \"fieldVariables\": [{\n\t\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFieldVariable\",\n\t\t\t\t\"key\": \"contentTypes\",\n\t\t\t\t\"value\": \"{{innerContentTypeVarName}}\"\n\t\t\t}],\n            \"fixed\": false,\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Description\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"description\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a test Content Type with a single WYSIWYG field, which will be transformed into a Story Block field later on."
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"HTTP Status must be 200\", function() {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Generate Test Data",
+							"item": [
+								{
+									"name": "Create Test Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Contentlet was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Content Type\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    const testContentId = Object.keys(jsonData.results[0])[0];",
+													"    pm.collectionVariables.set(\"relatedTestContentId\", testContentId);",
+													"    pm.collectionVariables.set(\"relatedTestContentInode\", jsonData.results[0][testContentId].inode);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{relatedContentTypeVarName}}\",\n            \"title\": \"Test Content\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								},
+								{
+									"name": "Create Inner Test Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Inner Test Contentlet was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Content Type\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    const testContentId = Object.keys(jsonData.results[0])[0];",
+													"    pm.collectionVariables.set(\"innerTestContentId\", testContentId);",
+													"    pm.collectionVariables.set(\"innerTestContentInode\", jsonData.results[0][testContentId].inode);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{innerContentTypeVarName}}\",\n            \"title\": \"Inner Test Content\",\n            \"relatedData\": \"+identifier:{{relatedTestContentId}}\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								},
+								{
+									"name": "Create Parent Test Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Parent Test Contentlet was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Content Type\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    const testContentId = Object.keys(jsonData.results[0])[0];",
+													"    pm.collectionVariables.set(\"parentContentId\", testContentId);",
+													"    pm.collectionVariables.set(\"parentContentInode\", jsonData.results[0][testContentId].inode);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{parentContentTypeVarName}}\",\n            \"title\": \"Parent Test Content\",\n            \"description\": \"{\\\"type\\\":\\\"doc\\\",\\\"attrs\\\":{\\\"charCount\\\":1,\\\"wordCount\\\":0,\\\"readingTime\\\":0},\\\"content\\\":[{\\\"type\\\":\\\"dotContent\\\",\\\"attrs\\\":{\\\"data\\\":{\\\"identifier\\\":\\\"{{innerTestContentId}}\\\",\\\"languageId\\\":1}}},{\\\"type\\\":\\\"paragraph\\\",\\\"attrs\\\":{\\\"textAlign\\\":\\\"left\\\"}}]}\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"Validate that the 'errors' array is empty\", function () {",
+											"    const response = pm.response.json();",
+											"    pm.expect(response.errors).to.be.an('array').that.is.empty;",
+											"});",
+											""
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Check Relationship Field Value",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Parent Contentlet data is correct\", function () {",
+											"    const entity = pm.response.json().contentlets[0];",
+											"    pm.expect(pm.response.json().contentlets.length).to.eql(1, \"One piece of content should have been retrieved\");",
+											"    const testContentId = pm.collectionVariables.get(\"parentContentId\");",
+											"    const testContentInode = pm.collectionVariables.get(\"parentContentInode\");",
+											"    pm.expect(entity.identifier).to.eql(testContentId, \"The 'identifier' value doesn't match the expected one\");",
+											"    pm.expect(entity.inode).to.eql(testContentInode, \"The 'inode' value doesn't match the expected one\");",
+											"});",
+											"",
+											"pm.test(\"Relationship Field data in Contentlet inside Block Editor is correct\", function () {",
+											"    const entity = pm.response.json().contentlets[0];",
+											"    pm.expect(entity.description.content[0].attrs.data.relatedData).to.not.equal(undefined, \"The 'relatedData' property MUST be present\");",
+											"    const relatedContentlet = entity.description.content[0].attrs.data.relatedData[0];",
+											"    const relatedTestContentId = pm.collectionVariables.get(\"relatedTestContentId\");",
+											"    pm.expect(relatedContentlet.title).to.be.equal(\"Test Content\", \"The 'title' value is NOT the expected one\");",
+											"    pm.expect(relatedContentlet.identifier).to.be.equal(relatedTestContentId, \"The 'identifier' value is NOT the expected one\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{innerContentTypeVarName}}\",\n            \"title\": \"Inner Test Content\",\n            \"checkboxField\": \"option1\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/content/id/{{parentContentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"content",
+										"id",
+										"{{parentContentId}}"
+									]
+								},
+								"description": "Creates a test Contentlet of the previously generated Content Type."
+							},
+							"response": []
+						}
+					],
+					"description": "This test verifies that Contentlets that are referenced inside a Block Editor field will include their respective related content as well."
+				}
+			],
+			"description": "This folder contains Postman tests related to the interaction of Contentlets with Block Editor fields in dotCMS."
 		},
 		{
 			"name": "invalidateSession",
@@ -2528,7 +3113,9 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"console.log(\"Running test\")",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
 							"",
 							"pm.test(\"No errors\", function () {",
 							"    ",
@@ -2542,35 +3129,12 @@
 							"    pm.expect(jsonData.entity.summary.affected).to.eql(3);",
 							"});"
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -2609,9 +3173,14 @@
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Entity response\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Logout successfully\");",
 							"});"
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
@@ -2677,7 +3246,8 @@
 							" });",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
@@ -2753,35 +3323,12 @@
 							" });",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -2809,49 +3356,6 @@
 			"response": []
 		},
 		{
-			"name": "Admin Request + Invalid User",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n     \t \"query\": \"+structurename:webpagecontent\",\n      \t \"sort\":\"modDate\",\n      \t \"limit\":20,\n      \t \"offset\":1,\n         \"userId\":\"xxx\"  \n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/content/_search",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"content",
-						"_search"
-					]
-				},
-				"description": "using an admin user but with invalid user"
-			},
-			"response": []
-		},
-		{
 			"name": "Admin Request Just Query Param_Success",
 			"event": [
 				{
@@ -2867,35 +3371,12 @@
 							"});",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -2934,29 +3415,17 @@
 							"});",
 							"",
 							"",
-							"",
+							"pm.test(\"Validate response\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Unable to deserialize XML\");",
+							"});",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -2994,30 +3463,21 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
+							"pm.test(\"Validate response\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Unable to deserialize XML\");",
+							"});",
+							"",
+							"",
 							"",
 							"",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
 				"method": "PUT",
 				"header": [],
 				"body": {
@@ -3063,26 +3523,12 @@
 							"});",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -3103,13 +3549,62 @@
 			"response": []
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
 				"type": "text/javascript",
 				"exec": [
-					""
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}"
 				]
 			}
 		},
@@ -3121,60 +3616,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "contentTypeId",
-			"value": ""
-		},
-		{
-			"key": "fieldId",
-			"value": ""
-		},
-		{
-			"key": "contentTypeName",
-			"value": ""
-		},
-		{
-			"key": "identifier22756",
-			"value": ""
-		},
-		{
-			"key": "fileId",
-			"value": ""
-		},
-		{
-			"key": "fileInode",
-			"value": ""
-		},
-		{
-			"key": "fileName",
-			"value": ""
-		},
-		{
-			"key": "originalTitle",
-			"value": ""
-		},
-		{
-			"key": "contentInode",
-			"value": ""
-		},
-		{
-			"key": "contentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "firstAutoSaveTitle",
-			"value": ""
-		},
-		{
-			"key": "secondAutoSaveTitle",
-			"value": ""
-		},
-		{
-			"key": "thirdAutoSaveTitle",
-			"value": ""
 		}
 	]
 }
