@@ -27,32 +27,35 @@
     <ng-template #content>
         <ng-container *ngIf="contentlets.items.length > 0; else noContent">
             <div class="contentlets-cards">
-                @for ( contentlet of contentlets.items; track contentlet.identifier; let i = $index
+                @for (
+                    contentlet of contentlets.items;
+                    track contentlet.identifier;
+                    let i = $index
                 ) {
-                <div
-                    [attr.data-item]="
-                        {
-                            contentlet: {
-                                identifier: contentlet.identifier,
-                                contentType: contentlet.contentType,
-                                baseType: contentlet.baseType,
-                                inode: contentlet.inode,
-                                title: contentlet.title
-                            },
-                            move: false
-                        } | json
-                    "
-                    [attr.data-testId]="'contentlet-' + i"
-                    class="contentlet-card"
-                    data-type="contentlet"
-                    draggable="true">
-                    <dot-icon [size]="20" name="drag_indicator"></dot-icon>
+                    <div
+                        [attr.data-item]="
+                            {
+                                contentlet: {
+                                    identifier: contentlet.identifier,
+                                    contentType: contentlet.contentType,
+                                    baseType: contentlet.baseType,
+                                    inode: contentlet.inode,
+                                    title: contentlet.title
+                                },
+                                move: false
+                            } | json
+                        "
+                        [attr.data-testId]="'contentlet-' + i"
+                        class="contentlet-card"
+                        data-type="contentlet"
+                        draggable="true">
+                        <dot-icon [size]="20" name="drag_indicator"></dot-icon>
 
-                    <dot-contentlet-thumbnail [iconSize]="'24px'" [contentlet]="contentlet">
-                    </dot-contentlet-thumbnail>
+                        <dot-contentlet-thumbnail [iconSize]="'24px'" [contentlet]="contentlet">
+                        </dot-contentlet-thumbnail>
 
-                    <span>{{ contentlet.title }}</span>
-                </div>
+                        <span>{{ contentlet.title }}</span>
+                    </div>
                 }
             </div>
         </ng-container>

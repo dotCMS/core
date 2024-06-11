@@ -13,7 +13,10 @@ import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
     providedIn: 'root'
 })
 export class DotCDNService {
-    constructor(private coreWebService: CoreWebService, private siteService: SiteService) {}
+    constructor(
+        private coreWebService: CoreWebService,
+        private siteService: SiteService
+    ) {}
 
     /**
      * Request stats via Core Web Service

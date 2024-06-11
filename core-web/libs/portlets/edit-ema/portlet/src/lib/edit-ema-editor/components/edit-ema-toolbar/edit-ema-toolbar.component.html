@@ -17,15 +17,19 @@
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-preview" />
 
-            @if ( es.editorData.mode === editorMode.EDIT || es.editorData.mode ===
-            editorMode.EDIT_VARIANT ) {
-            <p-button
-                *ngIf="es.editor.urlContentMap as urlContentMap"
-                (onClick)="editUrlContentMap.emit(urlContentMap)"
-                [label]="'editpage.toolbar.edit.url.map.content' | dm : [urlContentMap.contentType]"
-                icon="pi pi-pencil"
-                styleClass="p-button-text p-button-sm"
-                data-testId="edit-url-content-map" />
+            @if (
+                es.editorData.mode === editorMode.EDIT ||
+                es.editorData.mode === editorMode.EDIT_VARIANT
+            ) {
+                <p-button
+                    *ngIf="es.editor.urlContentMap as urlContentMap"
+                    (onClick)="editUrlContentMap.emit(urlContentMap)"
+                    [label]="
+                        'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
+                    "
+                    icon="pi pi-pencil"
+                    styleClass="p-button-text p-button-sm"
+                    data-testId="edit-url-content-map" />
             }
 
             <dot-ema-bookmarks [url]="es.favoritePageURL" />
@@ -69,12 +73,12 @@
                 [inode]="es.editor.page.inode" />
 
             @if (es.editorData.page.isLocked && es.editorData.page.canLock) {
-            <p-button
-                (click)="unlockPage(es.editor.page.inode)"
-                [label]="'Unlock' | dm"
-                [loading]="es.state === editorState.LOADING"
-                styleClass="p-button-sm"
-                data-testId="unlock-button"></p-button>
+                <p-button
+                    (click)="unlockPage(es.editor.page.inode)"
+                    [label]="'Unlock' | dm"
+                    [loading]="es.state === editorState.LOADING"
+                    styleClass="p-button-sm"
+                    data-testId="unlock-button"></p-button>
             }
         </div>
     </p-toolbar>
