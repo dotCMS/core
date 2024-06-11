@@ -19,19 +19,19 @@
     <ng-container
         *ngTemplateOutlet="
             errorTemplate;
-            context: { error: container | dotError : dragItem, container: container }
+            context: { error: container | dotError: dragItem, container: container }
         "></ng-container>
 </div>
 
 @if (containers.length > 0) {
-<div [ngStyle]="pointerPosition" class="pointer"></div>
+    <div [ngStyle]="pointerPosition" class="pointer"></div>
 }
 
 <ng-template #errorTemplate let-error="error" let-container="container">
     <div
         *ngIf="error.message.length"
-        [ngStyle]="container | dotPosition : true"
+        [ngStyle]="container | dotPosition: true"
         class="drop-zone_error">
-        <span [innerHTML]="error.message | dm : error.args"></span>
+        <span [innerHTML]="error.message | dm: error.args"></span>
     </div>
 </ng-template>

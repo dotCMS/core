@@ -17,7 +17,10 @@ import { Product } from './Product.interface';
         label="Show"></button>`
 })
 export class DynamicDialogButtonComponent implements OnDestroy {
-    constructor(public dialogService: DialogService, public messageService: MessageService) {}
+    constructor(
+        public dialogService: DialogService,
+        public messageService: MessageService
+    ) {}
 
     ref: DynamicDialogRef;
 

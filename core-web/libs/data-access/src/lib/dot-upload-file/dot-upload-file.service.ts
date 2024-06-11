@@ -29,7 +29,10 @@ interface PublishContentProps {
  */
 @Injectable()
 export class DotUploadFileService {
-    constructor(private http: HttpClient, private dotUploadService: DotUploadService) {}
+    constructor(
+        private http: HttpClient,
+        private dotUploadService: DotUploadService
+    ) {}
 
     publishContent({
         data,
