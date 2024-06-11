@@ -1,11 +1,12 @@
-import { expect, it } from '@jest/globals';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
-import { mockProvider } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+
+import { fakeAsync } from '@angular/core/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotEditContentCategoryFieldSidebarComponent } from './components/dot-edit-content-category-field-sidebar/dot-edit-content-category-field-sidebar.component';
 import { DotEditContentCategoryFieldComponent } from './dot-edit-content-category-field.component';
+import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.const';
 
 describe('DotEditContentCategoryFieldComponent', () => {
     let spectator: Spectator<DotEditContentCategoryFieldComponent>;
@@ -71,7 +72,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
             expect(spectator.query(DotEditContentCategoryFieldSidebarComponent)).not.toBeNull();
         });
 
-        it('should remove DotEditContentCategoryFieldSidebarComponent when `closedSidebar` emit', async () => {
+        it('should remove DotEditContentCategoryFieldSidebarComponent when `closedSidebar` emit', fakeAsync(() => {
             const selectBtn = spectator.query(byTestId('show-sidebar-btn')) as HTMLButtonElement;
             expect(selectBtn).not.toBeNull();
             spectator.click(selectBtn);
@@ -86,12 +87,11 @@ describe('DotEditContentCategoryFieldComponent', () => {
             spectator.detectComponentChanges();
 
             // Due to a delay in the pipe of the subscription
-            await new Promise((resolve) => setTimeout(resolve, 400));
+            spectator.tick(CLOSE_SIDEBAR_CSS_DELAY_MS + 100);
 
             expect(spectator.query(DotEditContentCategoryFieldSidebarComponent)).toBeNull();
 
-            spectator.detectComponentChanges();
             expect(selectBtn.disabled).toBe(false);
-        });
+        }));
     });
 });

@@ -1,11 +1,10 @@
 @use "variables" as *;
 
 .category-field__header {
-    height: 60px;
     align-items: center;
     flex-wrap: wrap;
     gap: $spacing-0;
-    padding: 0 $spacing-4;
+    padding: $spacing-2 $spacing-4;
 }
 
 .category-field__header-title {
