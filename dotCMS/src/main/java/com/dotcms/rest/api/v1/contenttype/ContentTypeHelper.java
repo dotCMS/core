@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -14,12 +15,16 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeForm.WorkflowFormEntry;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -31,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 
@@ -119,6 +125,81 @@ public class ContentTypeHelper implements Serializable {
         }
 
         return contentType;
+    }
+
+    /**
+     * Saves the associated schemes for the provided content type.
+     *
+     * @param contentType The content type to save the schemes for.
+     * @param workflows   The list of workflow form entries to save.
+     */
+    @WrapInTransaction
+    public void saveSchemesByContentType(final ContentType contentType,
+            final List<WorkflowFormEntry> workflows) {
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+        final var workflowIds = workflows.stream().
+                map(workflowFormEntry -> {
+                    try {
+                        return resolveWorkflowId(contentType.variable(), workflowFormEntry);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new DotWorkflowException(e.getMessage(), e);
+                    }
+                }).
+                collect(Collectors.toSet());
+
+        try {
+
+            Logger.debug(this, () -> String.format(
+                    "Saving the schemes [%s] by content type [%s]",
+                    String.join(",", workflowIds), contentType.variable())
+            );
+
+            workflowAPI.saveSchemeIdsForContentType(contentType, workflowIds);
+        } catch (DotDataException e) {
+
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+
+    }
+
+    /**
+     * Resolves the workflow id based on the provided workflow form entry.
+     *
+     * @param contentTypeVariable The content type variable name.
+     * @param workflowFormEntry   The workflow form entry to resolve the id for.
+     * @return The resolved workflow id.
+     * @throws DotDataException     If an error occurs while accessing data.
+     * @throws DotSecurityException If there are security restrictions preventing the resolution.
+     */
+    private String resolveWorkflowId(final String contentTypeVariable,
+            final WorkflowFormEntry workflowFormEntry)
+            throws DotDataException, DotSecurityException {
+
+        // Trying to find the workflow by id
+        var existingWorkflowScheme = getWorkflowById(workflowFormEntry.id());
+
+        // Now trying to find by variable if not found by id
+        if (null == existingWorkflowScheme) {
+            existingWorkflowScheme = getWorkflowByVariableName(workflowFormEntry.variableName());
+        }
+
+        if (null == existingWorkflowScheme) {
+
+            final var key = StringUtils.isNotEmpty(workflowFormEntry.id()) ?
+                    workflowFormEntry.id() : workflowFormEntry.variableName();
+
+            final var message = String.format(
+                    "Workflow Scheme [%s] in Content Type [%s] not found.",
+                    key, contentTypeVariable
+            );
+            throw new NotFoundInDbException(message);
+        }
+
+        return existingWorkflowScheme.getId();
     }
 
     /**
@@ -313,6 +394,61 @@ public class ContentTypeHelper implements Serializable {
         }
 
         return existingContentType;
+    }
+
+    /**
+     * Retrieves an existing workflow
+     *
+     * @param workflowId The workflow id to evaluate
+     * @return The existing workflow if found, otherwise null.
+     * @throws DotSecurityException If there are security restrictions preventing the evaluation.
+     * @throws DotDataException     If an error occurs while accessing data.
+     */
+    private WorkflowScheme getWorkflowById(final String workflowId)
+            throws DotSecurityException, DotDataException {
+
+        WorkflowScheme existingWorkflowScheme = null;
+
+        try {
+            if (StringUtils.isNotEmpty(workflowId)) {
+                existingWorkflowScheme = APILocator.getWorkflowAPI().findScheme(workflowId);
+            }
+        } catch (NotFoundInDbException e) {
+            final var message = String.format(
+                    "Workflow Scheme with id [%s] not found.", workflowId
+            );
+            Logger.warn(ContentTypeHelper.class, message);
+        }
+
+        return existingWorkflowScheme;
+    }
+
+    /**
+     * Retrieves an existing workflow
+     *
+     * @param variableName The workflow variable name to evaluate
+     * @return The existing workflow if found, otherwise null.
+     * @throws DotSecurityException If there are security restrictions preventing the evaluation.
+     * @throws DotDataException     If an error occurs while accessing data.
+     */
+    private WorkflowScheme getWorkflowByVariableName(final String variableName)
+            throws DotDataException {
+
+        WorkflowScheme existingWorkflowScheme = null;
+
+        try {
+            if (StringUtils.isNotEmpty(variableName)) {
+                existingWorkflowScheme = APILocator.getWorkflowAPI()
+                        .findSchemeByVariableName(variableName);
+            }
+        } catch (NotFoundInDbException e) {
+            final var message = String.format(
+                    "Workflow Scheme with variable [%s] not found.", variableName
+            );
+            Logger.warn(ContentTypeHelper.class, message);
+        }
+
+        return existingWorkflowScheme;
     }
 
     /**

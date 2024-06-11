@@ -2,26 +2,30 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeForm.ContentTypeFormDeserialize;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
+import com.dotmarketing.util.json.JSONTokener;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * {@link ContentTypeResource}'s form
  */
-@JsonDeserialize(using = ContentTypeForm.ContentTypeFormDeserialize.class)
+@JsonDeserialize(using = ContentTypeFormDeserialize.class)
 public class ContentTypeForm  {
 
     private final List<ContentTypeFormEntry> entries;
@@ -40,11 +44,11 @@ public class ContentTypeForm  {
         return entries.get(0).contentType;
     }
 
-    public List<String> getWorkflowsIds() {
-        return entries.get(0).workflowsIds;
+    public List<WorkflowFormEntry> getWorkflows() {
+        return entries.get(0).workflows;
     }
 
-    public List<Tuple2<WorkflowAPI.SystemAction,String>> getSystemActions() {
+    public List<Tuple2<SystemAction, String>> getSystemActions() {
         return entries.get(0).systemActions;
     }
 
@@ -70,17 +74,19 @@ public class ContentTypeForm  {
         public ContentTypeForm buildForm(final String json) {
 
             final List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
-            final List<List<String>> workflows = getWorkflowIdsFromJson(json);
-            final List<List<Tuple2<WorkflowAPI.SystemAction, String>>> systemActionWorkflowActionIds = systemActionWorkflowActionIdMapFromJson(json);
+            final List<List<WorkflowFormEntry>> workflows = getWorkflowsFromJson(json);
+            final List<List<Tuple2<SystemAction, String>>> systemActionWorkflowActionIds = systemActionWorkflowActionIdMapFromJson(
+                    json);
 
             final List<ContentTypeFormEntry> entries = getContentTypeFormEntries(typesToSave, workflows, systemActionWorkflowActionIds);
 
             return new ContentTypeForm(entries, json);
         }
 
-        private List<List<Tuple2<WorkflowAPI.SystemAction, String>>> systemActionWorkflowActionIdMapFromJson(final String json) {
+        private List<List<Tuple2<SystemAction, String>>> systemActionWorkflowActionIdMapFromJson(
+                final String json) {
 
-            final List<List<Tuple2<WorkflowAPI.SystemAction, String>>> systemActionWorkflowActionIdMapList = new ArrayList<>();
+            final List<List<Tuple2<SystemAction, String>>> systemActionWorkflowActionIdMapList = new ArrayList<>();
 
             try {
 
@@ -102,68 +108,126 @@ public class ContentTypeForm  {
             return systemActionWorkflowActionIdMapList;
         }
 
-        private List<ContentTypeFormEntry> getContentTypeFormEntries(final List<ContentType> typesToSave,
-                                                                     final List<List<String>> workflows,
-                                                                     final List<List<Tuple2<WorkflowAPI.SystemAction, String>>> systemActionWorkflowActionIds) {
+        private List<ContentTypeFormEntry> getContentTypeFormEntries(
+                final List<ContentType> typesToSave,
+                final List<List<WorkflowFormEntry>> workflows,
+                final List<List<Tuple2<SystemAction, String>>> systemActionWorkflowActionIds) {
 
             final List<ContentTypeFormEntry> entries = new ArrayList<>();
 
             for (int i = 0; i < workflows.size(); i++) {
-                final List<String> worflows = workflows.get(i);
+                final List<WorkflowFormEntry> contentTypeWorkflows = workflows.get(i);
                 final ContentType contentType = typesToSave.get(i);
-                final List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActions =
+                final List<Tuple2<SystemAction, String>> systemActionWorkflowActions =
                         i < systemActionWorkflowActionIds.size()?systemActionWorkflowActionIds.get(i):Collections.emptyList();
 
-                final ContentTypeFormEntry entry = new ContentTypeFormEntry(contentType, worflows,
-                        systemActionWorkflowActions);
+                final ContentTypeFormEntry entry = new ContentTypeFormEntry(contentType,
+                        contentTypeWorkflows, systemActionWorkflowActions);
                 entries.add(entry);
             }
             return entries;
         }
 
-        private static List<List<String>> getWorkflowIdsFromJson(final String json) {
-            final List<List<String>> workflows = new ArrayList<>();
+        /**
+         * Extracts the workflows from the json object found in the form
+         *
+         * @param json the json object found in the form
+         * @return a list of workflow entries
+         */
+        private static List<List<WorkflowFormEntry>> getWorkflowsFromJson(final String json) {
 
+            final List<List<WorkflowFormEntry>> workflows = new ArrayList<>();
+
+            final Object jsonStructure;
             try {
-                final JSONArray jarr = new JSONArray(json);
-
-                for (int i = 0; i < jarr.size(); i++) {
-                    final JSONObject fieldJsonObject = (JSONObject) jarr.get(i);
-                    List<String> workflowsIds = getWorkflowsId(fieldJsonObject);
-                    workflows.add(workflowsIds);
-                }
+                jsonStructure = new JSONTokener(json).nextValue();
             } catch (JSONException e) {
-
-                try {
-                    final JSONObject  fieldJsonObject = new JSONObject(json);
-                    List<String> workflowsIds = getWorkflowsId(fieldJsonObject);
-                    workflows.add(workflowsIds);
-                } catch (JSONException e1) {
-                    throw new DotRuntimeException(e1);
-                }
+                throw new DotRuntimeException(e);
             }
+
+            if (jsonStructure instanceof JSONArray) {
+
+                final JSONArray jsonArray = (JSONArray) jsonStructure;
+                for (int i = 0; i < jsonArray.size(); i++) {
+
+                    final JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+                    List<WorkflowFormEntry> foundWorkflows = getWorkflows(jsonObject);
+                    workflows.add(foundWorkflows);
+                }
+
+            } else if (jsonStructure instanceof JSONObject) {
+
+                final JSONObject jsonObject = (JSONObject) jsonStructure;
+
+                List<WorkflowFormEntry> foundWorkflows = getWorkflows(jsonObject);
+                workflows.add(foundWorkflows);
+            } else {
+                throw new DotRuntimeException("Invalid JSON structure");
+            }
+
             return workflows;
         }
 
-        private static List<String> getWorkflowsId(JSONObject fieldJsonObject) throws JSONException {
-            List<String> worflowsArray = new ArrayList<>();
+        /**
+         * Extracts the workflows from the json object found in the form
+         *
+         * @param fieldJsonObject the json object found in the form
+         * @return a list of workflow entries
+         * @throws JSONException if the json object is not well-formed
+         */
+        private static List<WorkflowFormEntry> getWorkflows(JSONObject fieldJsonObject)
+                throws JSONException {
+
+            List<WorkflowFormEntry> workflowsArray = new ArrayList<>();
 
             if (fieldJsonObject.has(WORKFLOW_ATTRIBUTE_NAME)) {
-                final JSONArray workflowsJaonArray = (JSONArray) fieldJsonObject.get(WORKFLOW_ATTRIBUTE_NAME);
 
-                for (int k = 0; k < workflowsJaonArray.size(); k++) {
-                    worflowsArray.add((String) workflowsJaonArray.get(k));
+                final JSONArray workflowsJSONArray = (JSONArray) fieldJsonObject.get(
+                        WORKFLOW_ATTRIBUTE_NAME);
+
+                for (Object entry : workflowsJSONArray) {
+
+                    final WorkflowFormEntry workflowFormEntry;
+
+                    if (entry instanceof String) { // Entry is a workflow id
+
+                        workflowFormEntry = WorkflowFormEntry.builder().
+                                id((String) entry).
+                                build();
+                    } else {
+
+                        final JSONObject workflowJsonObject = (JSONObject) entry;
+
+                        String workflowId = null;
+                        if (workflowJsonObject.has("id")) {
+                            workflowId = workflowJsonObject.getString("id");
+                        }
+
+                        String variableName = null;
+                        if (workflowJsonObject.has("variableName")) {
+                            variableName = workflowJsonObject.getString("variableName");
+                        }
+
+                        workflowFormEntry = WorkflowFormEntry.builder().
+                                id(workflowId).
+                                variableName(variableName).
+                                build();
+                    }
+
+                    workflowsArray.add(workflowFormEntry);
                 }
             }
 
-            return worflowsArray;
+            return workflowsArray;
         }
 
-        private static List<Tuple2<WorkflowAPI.SystemAction, String>> getSystemActionsWorkflowActionIds(final JSONObject fieldJsonObject) throws JSONException {
+        private static List<Tuple2<SystemAction, String>> getSystemActionsWorkflowActionIds(
+                final JSONObject fieldJsonObject) throws JSONException {
 
-            WorkflowAPI.SystemAction systemAction = null;
+            SystemAction systemAction = null;
             String workflowActionId               = null;
-            final List<Tuple2<WorkflowAPI.SystemAction, String>> tuple2List = new ArrayList<>();
+            final List<Tuple2<SystemAction, String>> tuple2List = new ArrayList<>();
 
             if (fieldJsonObject.has(SYSTEM_ACTION_ATTRIBUTE_NAME)) {
 
@@ -173,7 +237,7 @@ public class ContentTypeForm  {
                 while(keys.hasNext())  {
 
                     final String systemActionName = keys.next().toString();
-                    systemAction     = WorkflowAPI.SystemAction.fromString(systemActionName);
+                    systemAction = SystemAction.fromString(systemActionName);
                     workflowActionId = systemActionWorkflowActionIdJSONObject.getString(systemActionName);
                     tuple2List.add(Tuple.of(systemAction, workflowActionId));
                 }
@@ -183,17 +247,63 @@ public class ContentTypeForm  {
         }
     }
 
+    /**
+     * Represents a workflow entry found in the form
+     */
+    public static class WorkflowFormEntry {
+
+        private final String id;
+        private final String variableName;
+
+        private WorkflowFormEntry(Builder builder) {
+            this.id = builder.id;
+            this.variableName = builder.variableName;
+        }
+
+        public String id() {
+            return id;
+        }
+
+        public String variableName() {
+            return variableName;
+        }
+
+        public static class Builder {
+
+            private String id;
+            private String variableName;
+
+            public Builder id(String id) {
+                this.id = id;
+                return this;
+            }
+
+            public Builder variableName(String variableName) {
+                this.variableName = variableName;
+                return this;
+            }
+
+            public WorkflowFormEntry build() {
+                return new WorkflowFormEntry(this);
+            }
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+    }
+
     public static class ContentTypeFormEntry {
         ContentType  contentType;
-        List<String> workflowsIds;
-        List<Tuple2<WorkflowAPI.SystemAction,String>> systemActions;
+        List<WorkflowFormEntry> workflows;
+        List<Tuple2<SystemAction, String>> systemActions;
 
-        ContentTypeFormEntry(final ContentType contentType, final List<String> workflowsIds,
-                             final List<Tuple2<WorkflowAPI.SystemAction,String>> systemActions) {
+        ContentTypeFormEntry(final ContentType contentType, final List<WorkflowFormEntry> workflows,
+                final List<Tuple2<SystemAction, String>> systemActions) {
 
             this.systemActions = systemActions;
             this.contentType   = contentType;
-            this.workflowsIds  = workflowsIds;
+            this.workflows = workflows;
         }
     }
 }

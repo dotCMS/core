@@ -279,6 +279,15 @@ public interface WorkflowAPI {
 
 	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Find a scheme by the scheme variable name
+	 *
+	 * @param variableName the variable name of the scheme
+	 * @return the scheme with the given variable name
+	 * @throws DotDataException if there is an error retrieving the scheme
+	 */
+	WorkflowScheme findSchemeByVariableName(String variableName) throws DotDataException;
+
 	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;
 
 	/**

@@ -61,6 +61,7 @@ public interface Workflow {
     @Nullable
     Date modDate();
 
+    @JsonIgnore
     @Nullable
     String name();
 

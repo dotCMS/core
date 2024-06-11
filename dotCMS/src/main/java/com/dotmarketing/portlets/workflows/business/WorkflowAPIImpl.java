@@ -616,6 +616,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@Override
+	@CloseDBIfOpened
+	public WorkflowScheme findSchemeByVariableName(final String variableName)
+			throws DotDataException {
+
+		validateWorkflowLicense(variableName, "Workflow-Schemes-License-required");
+
+		return workFlowFactory.findScheme(variableName);
+	}
+
+	@Override
 	@WrapInTransaction
 	public void saveSchemesForStruct(final Structure contentType,
 									 final List<WorkflowScheme> schemes) throws DotDataException {
