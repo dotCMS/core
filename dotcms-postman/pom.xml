@@ -32,7 +32,20 @@
         <tomcat.port>8080</tomcat.port>
         <docker.jacoco.skip>false</docker.jacoco.skip>
     </properties>
-
+<dependencies>
+    <dependency>
+        <groupId>commons-logging</groupId>
+        <artifactId>commons-logging</artifactId>
+        <version>1.2</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>com.intuit.karate</groupId>
+        <artifactId>karate-junit5</artifactId>
+        <version>1.4.1</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
     <build>
         <plugins>
             <plugin>

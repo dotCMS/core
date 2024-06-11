@@ -1490,6 +1490,13 @@
             </dependency>
 
             <dependency>
+                <groupId>com.intuit.karate</groupId>
+                <artifactId>karate-junit5</artifactId>
+                <version>1.4.1</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
                 <version>${awaitility.version}</version>
