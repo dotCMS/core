@@ -30,6 +30,8 @@ export class CollectionBuilder<T = unknown> {
     #defaultQuery: Equals;
     #query?: Equals;
     #rawQuery?: string;
+    #languageId: number | string = 1;
+    #draft = false;
 
     #serverUrl: string;
     #requestOptions: ClientOptions;
@@ -76,7 +78,9 @@ export class CollectionBuilder<T = unknown> {
     }
 
     /**
-     * Takes a language id and filters the content by that language
+     * Takes a language id and filters the content by that language.
+     *
+     * The language id defaults to 1
      *
      *
      * @param {number | string} languageId The language id to filter the content by
@@ -84,7 +88,7 @@ export class CollectionBuilder<T = unknown> {
      * @memberof CollectionBuilder
      */
     language(languageId: number | string): this {
-        this.#query = this.currentQuery.field('languageId').equals(languageId.toString());
+        this.#languageId = languageId;
 
         return this;
     }
@@ -212,7 +216,7 @@ export class CollectionBuilder<T = unknown> {
      * @memberof CollectionBuilder
      */
     draft(): this {
-        this.#query = this.currentQuery.field('live').equals(false.toString());
+        this.#draft = true;
 
         return this;
     }
@@ -307,10 +311,14 @@ export class CollectionBuilder<T = unknown> {
 
     // Calls the content API to fetch the content
     private fetch(): Promise<Response> {
-        const sanitizedQuery = sanitizeQueryForContentType(
-            this.currentQuery.build(),
-            this.#contentType
-        );
+        const finalQuery = this.currentQuery
+            .field('languageId')
+            .equals(this.#languageId.toString())
+            .field('live')
+            .equals((!this.#draft).toString())
+            .build();
+
+        const sanitizedQuery = sanitizeQueryForContentType(finalQuery, this.#contentType);
 
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 

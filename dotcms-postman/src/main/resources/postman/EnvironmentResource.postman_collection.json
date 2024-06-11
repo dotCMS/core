@@ -1,0 +1,347 @@
+{
+	"info": {
+		"_postman_id": "0f5e2d91-8cf5-4fd2-84a2-c7657bdd63a0",
+		"name": "EnvironmentResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
+	},
+	"item": [
+		{
+			"name": "CreateEnvironment",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Checking name\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.name).to.be.eql(\"Test Environment\");",
+							"    pm.expect(entity.pushToAll).to.be.eql(true);",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"console.log(\"environmentId\", jsonData.entity.id, \"environmentName\", jsonData.entity.name)",
+							"pm.collectionVariables.set(\"environmentId\", jsonData.entity.id);",
+							"pm.collectionVariables.set(\"environmentName\", jsonData.entity.name);",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"Test Environment\",\n    \"pushMode\":\"PUSH_TO_ALL\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/environment",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateEnvironmentRepeatedEnv",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"Test Environment\",\n    \"pushMode\":\"PUSH_TO_ALL\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/environment",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetEnvironments",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Checking name\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.length).to.be.gt(0);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/environment",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateEnvironment",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Checking name\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.name).to.be.eql(\"Test Environment 4\");",
+							"    pm.expect(entity.pushToAll).to.be.eql(false);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"Test Environment 4\",\n    \"pushMode\":\"PUSH_TO_ONE\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/environment/{{environmentId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment",
+						"{{environmentId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteEnvironment",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/environment/{{environmentId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment",
+						"{{environmentId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = 'admin@dotcms.com';",
+					"        const password = 'admin';",
+					"        const basicAuth = btoa(`${username}:${password}`);",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "environmentId",
+			"value": ""
+		},
+		{
+			"key": "environmentName",
+			"value": ""
+		}
+	]
+}
