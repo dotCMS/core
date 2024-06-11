@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
  */
 public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
-    private HostCache hostCache = CacheLocator.getHostCache();
+    private final HostCache hostCache = CacheLocator.getHostCache();
     private Host systemHost;
     private final SystemEventsAPI systemEventsAPI;
     private HostFactory hostFactory;
@@ -320,7 +320,13 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public List<Host> findAllFromDB(final User user, final boolean respectFrontendRoles) throws DotDataException,
             DotSecurityException {
-        return this.findPaginatedSitesFromDB(user, 0, 0, null, respectFrontendRoles);
+        return this.findAllFromDB(user, true, respectFrontendRoles);
+    }
+
+    @Override
+    public List<Host> findAllFromDB(final User user, final boolean includeSystemHost,
+                                    final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return this.findPaginatedSitesFromDB(user, 0, 0, null, includeSystemHost, respectFrontendRoles);
     }
 
     /**
@@ -345,7 +351,33 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @CloseDBIfOpened
     private List<Host> findPaginatedSitesFromDB(final User user, final int limit, final int offset, final String
             sortBy, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        final List<Host> siteList = this.getHostFactory().findAll(limit, offset, sortBy);
+        return this.findPaginatedSitesFromDB(user, limit, offset, sortBy, true, respectFrontendRoles);
+    }
+
+    /**
+     * Returns an optionally paginated list of all Sites in your dotCMS content repository. This method allows you to
+     * <b>EXCLUDE</b> the System Host from the result list.
+     *
+     * @param user                 The {@link User} performing this action.
+     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
+     *                             lower than zero, this parameter will be ignored.
+     * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
+     *                             lower than zero, this parameter will be ignored.
+     * @param sortBy               Optional sorting criterion, as specified by the available columns in: {@link
+     *                             com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}
+     * @param includeSystemHost    If the System Host should be included in the result list, set to {@code true}.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The list of {@link Host} objects.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    private List<Host> findPaginatedSitesFromDB(final User user, final int limit, final int offset,final String sortBy, final boolean includeSystemHost,
+                                                final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        final List<Host> siteList = this.getHostFactory().findAll(limit, offset, sortBy, includeSystemHost);
         if (null != siteList && !siteList.isEmpty()) {
             return siteList.stream().filter(site -> {
                 try {
@@ -354,11 +386,12 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                                 .doesSystemHostHavePermissions(APILocator.systemHost(), user,
                                         respectFrontendRoles, Host.class.getCanonicalName());
                     }
-                    checkSitePermission(user, respectFrontendRoles, site);
+                    this.checkSitePermission(user, respectFrontendRoles, site);
                     return true;
                 } catch (final DotDataException | DotSecurityException e) {
-                    Logger.warn(this, String.format("An error occurred when checking permissions from User '%s' on " +
-                            "Site '%s': %s", user.getUserId(), site.getInode(), e.getMessage()));
+                    Logger.warn(this,
+                            String.format("An error occurred when checking permissions from User '%s' on " + "Site " +
+                                    "'%s': %s", user.getUserId(), site.getInode(), e.getMessage()));
                 }
                 return false;
             }).collect(Collectors.toList());
@@ -831,7 +864,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
         }
         if (showStopped && !showArchived) {
-            // Return stopped Sites
+            // Return stopped Sites, which include archived Sites as well
             siteListOpt = this.getHostFactory()
                     .findLiveAndStopped(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {

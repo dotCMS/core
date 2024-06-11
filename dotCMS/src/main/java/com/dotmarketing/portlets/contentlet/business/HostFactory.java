@@ -84,6 +84,26 @@ public interface HostFactory {
     List<Host> findAll(final int limit, final int offset, final String orderBy) throws DotDataException, DotSecurityException;
 
     /**
+     * Returns the list of Sites in your dotCMS repository retrieved <b>directly from the data source</b> matching the
+     * specified search criteria.
+     *
+     * @param limit             Limit of results returned in the response, for pagination purposes. If set equal or
+     *                          lower than zero, this parameter will be ignored.
+     * @param offset            Expected offset of results in the response, for pagination purposes. If set equal or
+     *                          lower than zero, this parameter will be ignored.
+     * @param orderBy           Optional sorting criterion
+     * @param includeSystemHost If the System Host should be included in the results, set to {@code true}.
+     *
+     * @return The list of {@link Host} objects.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    List<Host> findAll(final int limit, final int offset, final String orderBy, final boolean includeSystemHost)
+            throws DotDataException, DotSecurityException;
+
+    /**
      * Retrieves the System Host object.
      *
      * @param user                 The {@link User} performing this action.

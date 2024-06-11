@@ -248,3 +248,5 @@ This maintenance release includes the following code fixes:
 194. https://github.com/dotCMS/core/issues/28360 : Move Async Email Actionlet to Core #28360
 
 **Release-23.01.18**
+
+195. https://github.com/dotCMS/core/issues/24908 : Lost ability to select system host #24908

@@ -505,7 +505,7 @@ public class HostAPITest extends IntegrationTestBase  {
 
         try {
             HibernateUtil.startTransaction();
-            host.setIndexPolicy(IndexPolicy.FORCE);
+            host.setIndexPolicy(IndexPolicy.WAIT_FOR);
             APILocator.getHostAPI().unpublish(host, user, false);
             HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
@@ -520,10 +520,13 @@ public class HostAPITest extends IntegrationTestBase  {
      * Archives a given host
      */
     private void archiveHost(final Host host, final User user) throws DotHibernateException {
+        if (null == host || null == user) {
+            return;
+        }
 
         try {
             HibernateUtil.startTransaction();
-            host.setIndexPolicy(IndexPolicy.FORCE);
+            host.setIndexPolicy(IndexPolicy.WAIT_FOR);
             APILocator.getHostAPI().archive(host, user, false);
             HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
@@ -539,11 +542,14 @@ public class HostAPITest extends IntegrationTestBase  {
      */
     private void deleteHost(final Host host, final User user)
             throws DotHibernateException, InterruptedException, ExecutionException {
+        if (null == host || null == user) {
+            return;
+        }
 
         Optional<Future<Boolean>> hostDeleteResult = Optional.empty();
         try {
             HibernateUtil.startTransaction();
-            host.setIndexPolicy(IndexPolicy.FORCE);
+            host.setIndexPolicy(IndexPolicy.WAIT_FOR);
             hostDeleteResult = APILocator.getHostAPI().delete(host, user, false, true);
             HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
@@ -1219,14 +1225,15 @@ public class HostAPITest extends IntegrationTestBase  {
     }
 
     /**
-     * Method to test: {@link HostAPI#searchByStopped(String, boolean, boolean, int, int, User, boolean)}
-     *
-     * Given Scenario: Create a test Site and stop it. Then, create another Site, then stop it and archive it. Finally,
-     * compare the total count of stopped Sites.
-     *
-     * Expected Result: When compared to the initial stopped Sites count, after stopping the new Site, the count must
-     * increase by one. After stopping and archivnig the second Site, the count must be increased by two because
-     * archived Sites are also considered "stopped Sites".
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link HostAPI#searchByStopped(String, boolean, boolean, int, int, User, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Create a test Site and stop it. Then, create another Site, then stop it and
+     *     archive it. Finally, compare the total count of stopped Sites.</li>
+     *     <li><b>Expected Result: </b>When compared to the initial stopped Sites count, after stopping the new Site,
+     *     the count must be increased by one. After stopping AND archiving the second Site, the total count difference
+     *     must be 2 because archived Sites are also considered "stopped Sites" as well.</li>
+     * </ul>
      */
     @Test
     public void searchByStopped() throws DotHibernateException, ExecutionException, InterruptedException {
@@ -1242,7 +1249,7 @@ public class HostAPITest extends IntegrationTestBase  {
             final PaginatedArrayList<Host> stoppedSites = hostAPI.searchByStopped(null, true, false, 0, 0, systemUser,
                     false);
             testSite = siteDataGen.nextPersisted();
-            unpublishHost(testSite, systemUser);
+            this.unpublishHost(testSite, systemUser);
             final PaginatedArrayList<Host> updatedStoppedSites = hostAPI.searchByStopped(null, true, false, 0, 0,
                     systemUser, false);
 
@@ -1253,8 +1260,8 @@ public class HostAPITest extends IntegrationTestBase  {
             // Test data generation #2
             siteDataGen = new SiteDataGen();
             testSiteTwo = siteDataGen.nextPersisted();
-            unpublishHost(testSiteTwo, systemUser);
-            archiveHost(testSiteTwo, systemUser);
+            this.unpublishHost(testSiteTwo, systemUser);
+            this.archiveHost(testSiteTwo, systemUser);
             final PaginatedArrayList<Host> updatedStoppedAndArchivedSites = hostAPI.searchByStopped(null, true,
                     false, 0, 0, systemUser, false);
 
@@ -1364,6 +1371,30 @@ public class HostAPITest extends IntegrationTestBase  {
             archiveHost(testSite, systemUser);
             deleteHost(testSite, systemUser);
         }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link HostAPI#findAllFromDB(User, boolean, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Create a test Site and call the {@findAllFromDB} method that allows you to include
+     *     or exclude the System Host.</li>
+     *     <li><b>Expected Result: </b>When calling the method with the {@code includeSystemHost} parameter as
+     *     {@code true}, the System Host must be included. Otherwise, it must be left out.</li>
+     * </ul>
+     */
+    @Test
+    public void findAllFromDB() throws DotDataException, DotSecurityException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation
+        final List<Host> siteList = hostAPI.findAllFromDB(systemUser, false, false);
+        final List<Host> siteListWithSystemHost = hostAPI.findAllFromDB(systemUser, true, false);
+
+        // Assertions
+        assertEquals("The size difference between both Site lists MUST be 1", 1,
+                siteListWithSystemHost.size() - siteList.size());
     }
 
 }
