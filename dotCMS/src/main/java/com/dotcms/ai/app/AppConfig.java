@@ -1,5 +1,6 @@
 package com.dotcms.ai.app;
 
+import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -8,6 +9,7 @@ import io.vavr.control.Try;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -30,17 +32,17 @@ public class AppConfig implements Serializable {
     private final String imageSize;
     private final Map<String, Secret> configValues;
 
-    public AppConfig(Map<String, Secret> secrets) {
+    public AppConfig(final Map<String, Secret> secrets) {
         this.configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        apiUrl = Try.of(() -> secrets.get(AppKeys.API_URL.key).getString()).getOrElse(StringPool.BLANK);
-        apiImageUrl = Try.of(() -> secrets.get(AppKeys.API_IMAGE_URL.key).getString()).getOrElse(StringPool.BLANK);
-        apiKey = Try.of(() -> secrets.get(AppKeys.API_KEY.key).getString()).getOrElse(StringPool.BLANK);
-        rolePrompt = Try.of(() -> secrets.get(AppKeys.ROLE_PROMPT.key).getString()).getOrElse(StringPool.BLANK);
-        textPrompt = Try.of(() -> secrets.get(AppKeys.TEXT_PROMPT.key).getString()).getOrElse(StringPool.BLANK);
-        imagePrompt = Try.of(() -> secrets.get(AppKeys.IMAGE_PROMPT.key).getString()).getOrElse(StringPool.BLANK);
-        imageSize = Try.of(() -> secrets.get(AppKeys.IMAGE_SIZE.key).getString()).getOrElse(StringPool.BLANK);
-        model = Try.of(() -> secrets.get(AppKeys.MODEL.key).getString()).getOrElse(StringPool.BLANK);
-        imageModel = Try.of(() -> secrets.get(AppKeys.IMAGE_MODEL.key).getString()).getOrElse("dall-e-3");
+        apiUrl = resolveEnvSecret(secrets, AppKeys.API_URL);
+        apiImageUrl = resolveEnvSecret(secrets, AppKeys.API_IMAGE_URL);
+        apiKey = resolveEnvSecret(secrets, AppKeys.API_KEY);
+        rolePrompt = resolveSecretOrBlank(secrets, AppKeys.ROLE_PROMPT);
+        textPrompt = resolveSecretOrBlank(secrets, AppKeys.TEXT_PROMPT);
+        imagePrompt = resolveSecretOrBlank(secrets, AppKeys.IMAGE_PROMPT);
+        imageSize = resolveSecret(secrets, AppKeys.IMAGE_SIZE, AppKeys.IMAGE_SIZE.defaultValue);
+        model = resolveSecretOrBlank(secrets, AppKeys.MODEL);
+        imageModel = resolveSecret(secrets, AppKeys.IMAGE_MODEL, "dall-e-3");
         Logger.debug(this.getClass().getName(), () -> "apiUrl: " + apiUrl);
         Logger.debug(this.getClass().getName(), () -> "apiImageUrl: " + apiImageUrl);
         Logger.debug(this.getClass().getName(), () -> "apiKey: " + apiKey);
@@ -50,6 +52,25 @@ public class AppConfig implements Serializable {
         Logger.debug(this.getClass().getName(), () -> "imageModel: " + imageModel);
         Logger.debug(this.getClass().getName(), () -> "imageSize: " + imageSize);
         Logger.debug(this.getClass().getName(), () -> "model: " + model);
+    }
+
+    private String resolveSecret(final Map<String, Secret> secrets, final AppKeys key, final String defaultValue) {
+        return Try.of(() -> secrets.get(key.key).getString()).getOrElse(defaultValue);
+    }
+
+    private String resolveSecretOrBlank(final Map<String, Secret> secrets, final AppKeys key) {
+        return resolveSecret(secrets, key, StringPool.BLANK);
+    }
+
+    private String resolveEnvSecret(final Map<String, Secret> secrets, final AppKeys key) {
+        final String secret = resolveSecretOrBlank(secrets, key);
+        if (UtilMethods.isSet(secret)) {
+            return secret;
+        }
+
+        return Optional
+                .ofNullable(AppsUtil.discoverEnvVarValue(AppKeys.APP_KEY, key.key, null))
+                .orElse(StringPool.BLANK);
     }
 
     /**
