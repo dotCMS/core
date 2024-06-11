@@ -138,16 +138,20 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @VisibleForTesting
     @CloseDBIfOpened
     public synchronized boolean indexReady() throws DotDataException {
-        IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
 
-        boolean hasWorking  = Try.of(()->APILocator.getESIndexAPI().indexExists(info.getWorking()))
+        final boolean hasWorking  = Try.of(()->APILocator.getESIndexAPI().indexExists(info.getWorking()))
                 .getOrElse(false);
-        boolean hasLive  = Try.of(()->APILocator.getESIndexAPI().indexExists(info.getLive()))
+        final  boolean hasLive  = Try.of(()->APILocator.getESIndexAPI().indexExists(info.getLive()))
                 .getOrElse(false);
 
-        if(!hasWorking)Logger.debug(this.getClass(), "-- WORKING INDEX DOES NOT EXIST");
-        if(!hasLive)Logger.debug(this.getClass(), "-- LIVE INDEX DOES NOT EXIST");
+        if(!hasWorking){
+            Logger.debug(this.getClass(), "-- WORKING INDEX DOES NOT EXIST");
+        }
+        if(!hasLive){
+            Logger.debug(this.getClass(), "-- LIVE INDEX DOES NOT EXIST");
+        }
         return hasWorking && hasLive;
     }
 
