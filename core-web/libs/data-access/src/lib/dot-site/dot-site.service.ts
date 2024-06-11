@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -17,20 +17,19 @@ export interface SiteParams {
     providedIn: 'root'
 })
 export class DotSiteService {
-    private BASE_SITE_URL = '/api/v1/site';
-    private params: SiteParams = {
+    #BASE_SITE_URL = '/api/v1/site';
+    #params: SiteParams = {
         archived: false,
         live: true,
         system: true
     };
+    readonly #http = inject(HttpClient);
 
-    private readonly defaultPerpage = 10;
+    readonly #defaultPerpage = 10;
 
     set searchParam(params: SiteParams) {
-        this.params = params;
+        this.#params = params;
     }
-
-    constructor(private http: HttpClient) {}
 
     /**
      * Get sites by filter
@@ -42,21 +41,21 @@ export class DotSiteService {
      * @memberof DotSiteService
      */
     getSites(filter = '*', perPage?: number): Observable<Site[]> {
-        return this.http
-            .get<{ entity: Site[] }>(this.siteURL(filter, perPage))
+        return this.#http
+            .get<{ entity: Site[] }>(this.getSiteURL(filter, perPage))
             .pipe(pluck('entity'));
     }
 
-    private siteURL(filter: string, perPage?: number): string {
-        const paramPerPage = perPage || this.defaultPerpage;
+    private getSiteURL(filter: string, perPage?: number): string {
+        const paramPerPage = perPage || this.#defaultPerpage;
         const searchParam = `filter=${filter}&per_page=${paramPerPage}&${this.getQueryParams()}`;
 
-        return `${this.BASE_SITE_URL}?${searchParam}`;
+        return `${this.#BASE_SITE_URL}?${searchParam}`;
     }
 
     private getQueryParams(): string {
-        return Object.keys(this.params)
-            .map((key: string) => `${key}=${this.params[key as keyof SiteParams]}`)
+        return Object.entries(this.#params)
+            .map(([key, value]) => `${key}=${value}`)
             .join('&');
     }
 }
