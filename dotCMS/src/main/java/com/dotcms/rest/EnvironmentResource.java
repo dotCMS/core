@@ -57,6 +57,7 @@ public class EnvironmentResource {
 
 	/**
 	 * Returns the environments for the current user
+	 * if it is admin returns all of them, otherwise returns the ones that the user has access to
 	 *
 	 * @throws JSONException
 	 *
@@ -92,7 +93,7 @@ public class EnvironmentResource {
 
 			final List<Environment> environmentList =
 					APILocator.getEnvironmentAPI().findAllEnvironments();
-			for (final Environment environment : environmentList){
+			for (final Environment environment : environmentList) {
 				environments.add(environment);
 			}
 		} else {
@@ -199,7 +200,7 @@ public class EnvironmentResource {
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseEntityEnvironmentView.class)),
-							description = "If success environment information."),
+							description = "If creation is successfully."),
 					@ApiResponse(
 							responseCode = "403",
 							content = @Content(mediaType = "application/json",
@@ -281,7 +282,7 @@ public class EnvironmentResource {
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseEntityEnvironmentView.class)),
-							description = "If success environment information."),
+							description = "If update is success."),
 					@ApiResponse(
 							responseCode = "403",
 							content = @Content(mediaType = "application/json",
@@ -384,7 +385,7 @@ public class EnvironmentResource {
 	}
 
 	/**
-	 * Updates an env and its permissions
+	 * Deletes an env and its permissions
 	 * If the permission can not be resolved will be just skipped and logged
 	 *
 	 * @param httpServletRequest

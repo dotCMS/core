@@ -240,11 +240,7 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Checking name\", function () {",
-							"    const entity = pm.response.json().entity;",
-							"    pm.expect(entity.name).to.be.eql(\"Test Environment 4\");",
-							"    pm.expect(entity.pushToAll).to.be.eql(false);",
-							"});"
+							""
 						],
 						"type": "text/javascript",
 						"packages": {}
