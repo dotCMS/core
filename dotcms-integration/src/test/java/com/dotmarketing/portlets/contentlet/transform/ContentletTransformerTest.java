@@ -31,8 +31,9 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.contentlet.transform.strategy.AbstractTransformStrategy;
+import com.dotmarketing.portlets.contentlet.transform.strategy.BinaryViewStrategy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.DefaultTransformStrategy;
-import com.dotmarketing.portlets.contentlet.transform.strategy.FileAssetViewStrategy;
+import com.dotmarketing.portlets.contentlet.transform.strategy.PageViewStrategy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolverImpl;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
@@ -641,7 +642,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 .withContentHelper(contentHelper).build();
 
         final Map<BaseContentType, Supplier<AbstractTransformStrategy>> strategyTriggeredByBaseType = of(
-                BaseContentType.FILEASSET, () -> new FileAssetViewStrategy(toolBox)
+                BaseContentType.FILEASSET, () -> new BinaryViewStrategy(toolBox)
         );
 
         final Supplier<DefaultTransformStrategy>  supplier = ()-> new DefaultTransformStrategy(toolBox);

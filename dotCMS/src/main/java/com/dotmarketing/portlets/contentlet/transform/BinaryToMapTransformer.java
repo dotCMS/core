@@ -40,14 +40,9 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
     }
 
 
-    @NotNull
-    public static Map<String, Object> transform(final Field field, final Contentlet con) {
-        return BinaryViewStrategy.transform(field, con);
-    }
 
-    public static Map<String, Object> transform(final Metadata file, final Contentlet con,
+    public static Map<String, Object> transform(final Contentlet con,
             final Field field) {
-        return BinaryViewStrategy.transform(file, con, field);
+        return BinaryViewStrategy.transformDeprecated(con, field);
     }
 }
-

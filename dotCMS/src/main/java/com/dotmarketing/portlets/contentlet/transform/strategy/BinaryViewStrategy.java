@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -16,6 +17,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -33,7 +35,8 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
      * Regular constructor takes a toolbox
      * @param toolBox
      */
-    BinaryViewStrategy(final APIProvider toolBox) {
+    @VisibleForTesting
+    public BinaryViewStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
 
@@ -51,6 +54,9 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
     protected Map<String, Object> transform(final Contentlet contentlet,
     final Map<String, Object> map, final Set<TransformOptions> options, final User user) {
 
+        if (!options.contains(BINARIES)) {
+            return map;
+        }
         final List<Field> binaries = contentlet.getContentType().fields(BinaryField.class);
 
         if (!binaries.isEmpty()) {
@@ -59,13 +65,10 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
                     final String sufix = options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS)
                             ? "" : "Map";
 
-                    map.put(field.variable() + sufix, transform(field, contentlet));
-                    final Metadata metadata = contentlet.getBinaryMetadata(field.variable());
-                    if (!options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS) && metadata != null) {
-                        //This clearly replaces the binary by a string which is the expected output on BinaryToMapTransformer.
-                        map.put(field.variable(), metadata.getName());
-                    }
-                } catch (DotDataException e) {
+                    map.put(field.variable(),"/dA" + contentlet.getInode() + "/" + field.variable()  + "/file" );
+                    map.put(field.variable() + sufix, transform(contentlet, field));
+
+                } catch (Exception e) {
                     Logger.warn(this,
                             "Unable to get Binary from field with var " + field.variable());
                 }
@@ -74,38 +77,29 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         return map;
     }
 
-    /**
-     * Transform function
-     */
-    public static Map<String, Object> transform(final Field field, final Contentlet contentlet) {
-        Metadata metadata;
-        try {
-            metadata = contentlet.getBinaryMetadata(field.variable());
-        } catch (Exception e) {
-            throw new DotStateException(e);
-        }
 
-        if (metadata == null) {
-            return emptyMap();
-        }
 
-        return transform(metadata, contentlet, field);
+    public static Map<String, Object> transformDeprecated(final Contentlet con,
+            final Field field) {
+        return new BinaryViewStrategy(null).transform(con, field);
     }
 
+
+
     /**
      * Transform function
      */
-    public static Map<String, Object> transform(final Metadata metadata, final Contentlet contentlet,
+    public Map<String, Object> transform(final Contentlet contentlet,
             final Field field) {
-        DotPreconditions.checkNotNull(metadata, IllegalArgumentException.class, "File can't be null");
+
         final Map<String, Object> map = new HashMap<>();
+        Metadata metadata = Try.of(()->contentlet.getBinaryMetadata(field.variable())).getOrElseThrow(()->new DotStateException("Unable to get Binary from field with var " + field.variable()));
+
+
 
         final Identifier identifier = Try.of(()-> APILocator.getIdentifierAPI().find(contentlet.getIdentifier())).getOrNull();
 
-        String assetName = metadata.getName();
-        if( contentlet.isFileAsset() && null != identifier){
-            assetName = identifier.getAssetName();
-        }
+        String assetName = contentlet.isFileAsset() && null != identifier ? identifier.getAssetName() :   metadata.getName();
 
         map.put("versionPath",
                 "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getInode()) + "/" + field
@@ -127,7 +121,30 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         map.put("title", metadata.getTitle());
         map.put("sha256", metadata.getSha256());
         map.put("modDate", metadata.getModDate());
+        map.remove("path");
         map.put("focalPoint", Try.of(()-> metadata.getCustomMeta().getOrDefault("focalPoint", "0.0").toString()).getOrElse("0.0"));
+        putBinaryLinks(field.variable(), assetName, contentlet, map);
         return map;
     }
+
+    /**
+     * put the version and fields specifics for the binary fields
+     * @param velocityVarName
+     * @param assetName
+     * @param contentlet
+     * @param map
+     */
+    private void putBinaryLinks(final String velocityVarName, final String assetName, final Contentlet contentlet, final Map<String, Object> map){
+        //The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
+        final String dAPath = "/dA/%s/%s/%s";
+        map.put(velocityVarName + "Version",
+                String.format(dAPath, contentlet.getInode(),
+                        velocityVarName, assetName));
+        map.put(velocityVarName,
+                String.format(dAPath, contentlet.getIdentifier(),
+                        velocityVarName, assetName));
+        map.put(velocityVarName + "ContentAsset",
+                contentlet.getIdentifier() + "/" + velocityVarName);
+    }
+
 }

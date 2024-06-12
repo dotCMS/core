@@ -18,6 +18,7 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 import static com.liferay.util.StringPool.BLANK;
 
 import com.dotcms.api.APIProvider;
+import com.dotcms.contenttype.business.DotAssetAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
@@ -29,7 +30,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -71,89 +74,33 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
         final List<Field> fileAndImageFields = contentlet.getContentType().fields(FileField.class);
         fileAndImageFields.addAll(contentlet.getContentType().fields(ImageField.class));
 
-        if (!fileAndImageFields.isEmpty()) {
-            for (final Field field : fileAndImageFields) {
-                try {
-                    final String sufix = options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS)
-                            ? "" : "Map";
-                    map.put(field.variable() + sufix, transform(field, contentlet, options));
-                } catch (DotDataException e) {
-                    Logger.warn(this,
-                            "Unable to get Binary from field with var " + field.variable());
+        for (final Field field : fileAndImageFields) {
+            try {
+                final String relatedContentIndetifier = (String) contentlet.get(field.variable());
+                Optional<Contentlet> optContent = APILocator.getContentletAPI()
+                        .findContentletByIdentifierOrFallback(relatedContentIndetifier, PageMode.get().showLive
+                                , contentlet.getLanguageId(),
+                                APILocator.systemUser(), true);
+
+                if (!optContent.isPresent()) {
+                    map.put(field.variable(), relatedContentIndetifier);
+                    return map;
                 }
+                final String fieldVar = optContent.get().isFileAsset() ? FileAssetAPI.BINARY_FIELD : DotAssetAPI.DOTASSET_FIELD_VAR;
+                    Map<String,Object> fileMap = Try.of(
+                                    () -> new BinaryViewStrategy(toolBox).transform(optContent.get(), new HashMap<>(),
+                                            options, APILocator.systemUser()))
+                            .onFailure(e -> Logger.warn(BinaryViewStrategy.class, e.getMessage(), e))
+                            .getOrElse(Map.of(fieldVar, relatedContentIndetifier));
+                    map.put(field.variable(), fileMap.get(fieldVar));
+
+            } catch (Exception e) {
+                Logger.warn(this,
+                        "Unable to get Binary from field with var " + field.variable(), e);
             }
         }
+
         return map;
     }
 
-    public Map<String, Object> transform(final Field field, final Contentlet contentlet,
-            final Set<TransformOptions> options) throws DotDataException {
-        final String fileAssetIdentifier = (String) contentlet.get(field.variable());
-
-        if (!UtilMethods.isSet(fileAssetIdentifier)) {
-            return null;
-        }
-
-        Optional<Contentlet> fileAsContentOptional = APILocator.getContentletAPI()
-                .findContentletByIdentifierOrFallback(fileAssetIdentifier, Try.of(
-                        contentlet::isLive).getOrElseThrow(()->new DotDataException("can't determine if content is live"))
-                        , contentlet.getLanguageId(),
-                        APILocator.systemUser(), true);
-
-        FileAsset fileAsset = null;
-
-        if(fileAsContentOptional.isPresent()) {
-            fileAsset = APILocator.getFileAssetAPI().fromContentlet(fileAsContentOptional.get());
-        }
-
-        final Map<String, Object> map = new HashMap<>();
-
-        map.put("identifier", fileAssetIdentifier);
-
-        if(isNotSet(fileAsset.getTitle())) {
-            final Identifier identifier = toolBox.identifierAPI.find(fileAsset.getIdentifier());
-            map.put(TITLE_FIELD, identifier.getAssetName());
-        }
-
-        final String fileName = fileAsset.getFileName();
-        final String underlyingFileName = fileAsset.getUnderlyingFileName();
-        final long fileSize = fileAsset.getFileSize();
-        map.put(MIMETYPE_FIELD, fileAsset.getMimeType());
-        map.put("name", fileName);
-        map.put("size", fileSize);
-        final String description = fileAsset.getStringProperty(DESCRIPTION);
-        map.put(DESCRIPTION, isSet(description) ? description : BLANK );
-        map.put(UNDERLYING_FILENAME, underlyingFileName);
-        if(options.contains(LOAD_META)) {
-            map.put(META_DATA_FIELD, fileAsset.getMetaDataMap());
-        }
-        map.put("path", fileAsset.getPath());
-        final String parent = fileAsset.getParent();
-        map.put("parent",  isSet(parent) ? parent : BLANK );
-
-        if(fileAsset.isImage()) {
-            map.put("width", fileAsset.getWidth());
-            map.put("height", fileAsset.getHeight());
-        }
-
-        map.put("extension", getFileExtension(underlyingFileName));
-        try {
-            map.put("__icon__", getIconClass(fileAsset));
-        }catch (Exception e){
-            Logger.warn(FileViewStrategy.class,"Failed to get icon.",e);
-        }
-        try {
-            map.put("statusIcons", getStatusIcons(fileAsset));
-        }catch (Exception e){
-            Logger.warn(FileViewStrategy.class," Failed to get status icon.",e);
-        }
-
-        if(options.contains(USE_ALIAS)) {
-            map.put(FILE_NAME_FIELD, fileName);
-            map.put("fileSize", fileSize);
-        }
-        map.put("type", "file_asset");
-        map.put("isContentlet", true);
-        return map;
-    }
 }

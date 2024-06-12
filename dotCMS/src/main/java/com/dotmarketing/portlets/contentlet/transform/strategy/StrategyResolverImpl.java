@@ -7,16 +7,19 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 
+import io.vavr.Lazy;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.DATETIME_FIELDS_TO_TIMESTAMP;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILE_OR_IMAGE_FIELDS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.JSON_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
@@ -64,33 +67,32 @@ public class StrategyResolverImpl implements StrategyResolver {
         this(
             //These are very specific implementations but most cases will be covered by the default strategy.
             of(
-                BaseContentType.FILEASSET, () -> new FileAssetViewStrategy(toolBox),
                 BaseContentType.HTMLPAGE, () -> new PageViewStrategy(toolBox),
-                BaseContentType.DOTASSET, () -> new DotAssetViewStrategy(toolBox),
                 BaseContentType.WIDGET, () -> new WidgetViewStrategy(toolBox)
                 ),
-                getStrategyTriggeredByOptionMap(toolBox),
+                getStrategyTriggeredByOptionMap(toolBox).get(),
              ()-> new DefaultTransformStrategy(toolBox)
         );
     }
 
-    private static Map<TransformOptions, Supplier<AbstractTransformStrategy>> getStrategyTriggeredByOptionMap(final APIProvider toolBox) {
+    private static Lazy<Map<TransformOptions, Supplier<AbstractTransformStrategy>>> getStrategyTriggeredByOptionMap(final APIProvider toolBox) {
+        return Lazy.of(()->{
+            final Map<TransformOptions, Supplier<AbstractTransformStrategy>> strategyTriggeredByOptionMap = new HashMap<>();
 
-        final Map<TransformOptions, Supplier<AbstractTransformStrategy>> strategyTriggeredByOptionMap = new HashMap<>();
-
-        strategyTriggeredByOptionMap.put(CATEGORIES_VIEW, () -> new CategoryViewStrategy(toolBox));
-        strategyTriggeredByOptionMap.put(BINARIES_VIEW, () -> new BinaryViewStrategy(toolBox));
-        strategyTriggeredByOptionMap.put(IDENTIFIER_VIEW, () -> new IdentifierViewStrategy(toolBox));
-        strategyTriggeredByOptionMap.put(LANGUAGE_VIEW, () -> new LanguageViewStrategy(toolBox));
-        strategyTriggeredByOptionMap.put(KEY_VALUE_VIEW, () -> new KeyValueViewStrategy(toolBox));
-        strategyTriggeredByOptionMap.put(FILEASSET_VIEW, () -> new FileViewStrategy(toolBox));
-        strategyTriggeredByOptionMap.put(SITE_VIEW, () -> new SiteViewStrategy(toolBox));
-        strategyTriggeredByOptionMap.put(STORY_BLOCK_VIEW, () -> new StoryBlockViewStrategy(toolBox));
-        strategyTriggeredByOptionMap.put(RENDER_FIELDS, () -> new RenderFieldStrategy(toolBox));
-        strategyTriggeredByOptionMap.put(JSON_VIEW, () -> new JSONViewStrategy(toolBox));
-        strategyTriggeredByOptionMap.put(DATETIME_FIELDS_TO_TIMESTAMP, () -> new DateTimeFieldsToTimeStampStrategy(toolBox));
-
-        return strategyTriggeredByOptionMap;
+            strategyTriggeredByOptionMap.put(CATEGORIES_VIEW, () -> new CategoryViewStrategy(toolBox));
+            strategyTriggeredByOptionMap.put(BINARIES, () -> new BinaryViewStrategy(toolBox));
+            strategyTriggeredByOptionMap.put(IDENTIFIER_VIEW, () -> new IdentifierViewStrategy(toolBox));
+            strategyTriggeredByOptionMap.put(LANGUAGE_VIEW, () -> new LanguageViewStrategy(toolBox));
+            strategyTriggeredByOptionMap.put(KEY_VALUE_VIEW, () -> new KeyValueViewStrategy(toolBox));
+            strategyTriggeredByOptionMap.put(SITE_VIEW, () -> new SiteViewStrategy(toolBox));
+            strategyTriggeredByOptionMap.put(STORY_BLOCK_VIEW, () -> new StoryBlockViewStrategy(toolBox));
+            strategyTriggeredByOptionMap.put(FILE_OR_IMAGE_FIELDS, () -> new FileViewStrategy(toolBox));
+            strategyTriggeredByOptionMap.put(RENDER_FIELDS, () -> new RenderFieldStrategy(toolBox));
+            strategyTriggeredByOptionMap.put(JSON_VIEW, () -> new JSONViewStrategy(toolBox));
+            strategyTriggeredByOptionMap.put(DATETIME_FIELDS_TO_TIMESTAMP,
+                    () -> new DateTimeFieldsToTimeStampStrategy(toolBox));
+            return strategyTriggeredByOptionMap;
+        });
     }
 
     /**

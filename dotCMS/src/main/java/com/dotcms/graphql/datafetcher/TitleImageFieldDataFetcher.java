@@ -59,12 +59,12 @@ public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Objec
                     final String fileVariable = imageContentlet.isDotAsset() ? ASSET_FIELD_VAR : FILE_ASSET;
                     final Metadata imageFile = imageContentletOptional.get().getBinaryMetadata(fileVariable);
 
-                    titleImageMap = BinaryToMapTransformer.transform(imageFile, imageContentlet, imageContentlet.getTitleImage().get());
+                    titleImageMap = BinaryToMapTransformer.transform(imageContentlet, imageContentlet.getTitleImage().get());
                 }
 
 
             } else if (imageField.get() instanceof BinaryField && contentlet.getTitleImage().isPresent()) {
-                titleImageMap = BinaryToMapTransformer.transform(contentlet.getTitleImage().get(), contentlet);
+                titleImageMap = BinaryToMapTransformer.transform(contentlet,contentlet.getTitleImage().get());
             }
 
             return titleImageMap;

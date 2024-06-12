@@ -46,13 +46,23 @@
 
 
 <div class="contentIdentifier">
-<%= LanguageUtil.get(pageContext, "Identifier") %> : <%=ident.getId() %>
+<%= LanguageUtil.get(pageContext, "Identifier") %> :
+	<a style="text-decoration: none;color:#4e4e4e" target="_blank" href="/api/v1/content/<%=ident.getId() %>" title="/api/v1/content/<%=ident.getId() %>">
+		<%=ident.getId() %>
+	</a>
 
 
 
 	<div style="float:right">
-	(&nbsp;<a href="/api/content/id/<%=ident.getId() %>" target="_blank">json</a> |
-	<a href="/api/content/id/<%=ident.getId() %>/type/xml" target="_blank">xml</a>&nbsp;)
+
+		<dot-api-link>
+			<dot-link label="API" icon="pi-link">
+				<a class="p-element p-button-sm p-button-text p-button p-component ng-star-inserted" target="_blank" href="/api/v1/content/<%=ident.getId() %>" title="/api/v1/content/<%=ident.getId() %>">
+					<i class="pi pi-link"></i><span class="p-button-label">API</span></a>
+			</dot-link>
+		</dot-api-link>
+
+
 	</div>
 </div>
 <table class="listingTable">
@@ -151,5 +161,3 @@
 	<% } %>
 
 </table>
-
-

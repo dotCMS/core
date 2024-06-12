@@ -189,7 +189,7 @@ public class DotTransformerBuilder {
      */
     public DotTransformerBuilder dotAssetOptions(){
         optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS));
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS,FILEASSET_VIEW));
         return this;
     }
 

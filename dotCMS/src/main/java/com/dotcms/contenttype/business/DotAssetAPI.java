@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -14,6 +15,14 @@ import java.util.Optional;
  * @author jsanca
  */
 public interface DotAssetAPI {
+
+
+    /**
+     * Would expect to find these here
+     */
+    public final static String DOTASSET_FIELD_VAR = DotAssetContentType.ASSET_FIELD_VAR;
+    public final static String SITE_OR_FOLDER_FIELD_VAR = DotAssetContentType.SITE_OR_FOLDER_FIELD_VAR;
+    public final static String TAGS_FIELD_VAR = DotAssetContentType.TAGS_FIELD_VAR;
 
     /**
      * Represents a wildcard for all mime types

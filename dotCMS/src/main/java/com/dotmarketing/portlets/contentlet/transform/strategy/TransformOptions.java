@@ -34,6 +34,10 @@ public enum TransformOptions {
      * binaries to still make it into the final contentlet.
      */
     BINARIES(true),
+    /***
+     * Instructs the Strategy to include the FileViewStrategy data as a Map.
+     */
+    FILE_OR_IMAGE_FIELDS(true),
     /**
      * Instructs the Strategy to simply prevent the binaries from making it into the final resulting
      * map.
@@ -70,7 +74,7 @@ public enum TransformOptions {
     /**
      * Instructs the Strategy to emulate the old BinaryToMapTransformer.
      */
-    BINARIES_VIEW,
+    BINARIES_VIEW(true),
     /**
      * Instructs the Strategy to include Key/Value data.
      */
