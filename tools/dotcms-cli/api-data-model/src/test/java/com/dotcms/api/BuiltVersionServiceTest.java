@@ -22,6 +22,9 @@ class BuiltVersionServiceTest {
      */
     @Test
      void testVersion() {
+
+        Assertions.assertTrue(builtVersionService.isBuildPropertiesFileFound(), "The build.properties file was not found");
+
          Optional<BuildVersion> version = builtVersionService.version();
          Assertions.assertTrue(version.isPresent());
          Assertions.assertNotNull(version.get().name());

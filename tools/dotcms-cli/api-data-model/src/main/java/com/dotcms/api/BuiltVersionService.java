@@ -5,6 +5,8 @@ import java.util.Optional;
 
 public interface BuiltVersionService {
 
+    boolean isBuildPropertiesFileFound();
+
     Optional<BuildVersion> version();
 
 }
