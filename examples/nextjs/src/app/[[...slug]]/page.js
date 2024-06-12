@@ -1,6 +1,5 @@
-import { notFound } from "next/navigation";
-
 import { MyPage } from "@/components/my-page";
+import { ErrorPage } from "@/components/error";
 
 import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
 import { client, getRequestParams } from "@/utils/dotcmsClient";
@@ -13,35 +12,51 @@ import { client, getRequestParams } from "@/utils/dotcmsClient";
  * @return {*}
  */
 export async function generateMetadata({ params, searchParams }) {
-    const requestData = getRequestParams({ params, searchParams, defaultPath: '/' });
-    const data = await client.page.get(requestData);
-    const page = data.entity?.page;
+    const requestData = getRequestParams({
+        params,
+        searchParams,
+        defaultPath: "/",
+    });
 
-    const title = page?.friendlyName || page?.title || "not found";
+    try {
+        const data = await client.page.get(requestData);
+        const page = data.entity?.page;
+        const title = page?.friendlyName || page?.title;
 
-    return {
-        title,
-    };
+        return {
+            title,
+        };
+    } catch (e) {
+        return {
+            title: "not found",
+        };
+    }
 }
 
 export default async function Home({ searchParams, params }) {
-    const requestData = getRequestParams({ params, searchParams, defaultPath: '/' });
-    const data = await client.page.get(requestData);
-    const nav = await client.nav.get({
-        path: "/",
-        depth: 2,
-        languageId: searchParams.language_id,
+    const requestData = getRequestParams({
+        params,
+        searchParams,
+        defaultPath: "/",
     });
-    
-    if(!data?.entity) {
-        notFound(); 
+
+    try {
+        const data = await client.page.get(requestData);
+        const nav = await client.nav.get({
+            path: "/",
+            depth: 2,
+            languageId: searchParams.language_id,
+        });
+        const { vanityUrl } = data?.entity;
+
+        if (vanityUrl) {
+            handleVanityUrlRedirect(vanityUrl);
+        }
+
+        return (
+            <MyPage nav={nav.entity.children} pageAsset={data.entity}></MyPage>
+        );
+    } catch (error) {
+        return <ErrorPage error={error} />
     }
-
-    const { vanityUrl } = data?.entity;
-
-    if (vanityUrl) {
-        handleVanityUrlRedirect(vanityUrl);
-    }
-
-    return <MyPage nav={nav.entity.children} pageAsset={data.entity}></MyPage>;
 }
