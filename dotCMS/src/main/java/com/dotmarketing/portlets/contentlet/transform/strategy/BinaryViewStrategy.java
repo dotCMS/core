@@ -100,10 +100,8 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         if(isFromFileField){
             map.put("identifier",contentlet.getIdentifier());
             map.put("inode",contentlet.getInode());
-            map.put("apiLocation", "/api/v1/content/"+contentlet.getInode());
+            map.put("apiPath", "/api/v1/content/"+contentlet.getInode());
         }
-
-
 
         final Identifier identifier = Try.of(()-> APILocator.getIdentifierAPI().find(contentlet.getIdentifier())).getOrNull();
 
@@ -129,30 +127,15 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         map.putIfAbsent("title", metadata.getTitle());
         map.putIfAbsent("sha256", metadata.getSha256());
         map.putIfAbsent("modDate", metadata.getModDate());
-        map.remove("path");
-        map.put("focalPoint", Try.of(()-> metadata.getCustomMeta().getOrDefault("focalPoint", "0.0").toString()).getOrElse("0.0"));
-        putBinaryLinks(field.variable(), assetName, contentlet, map);
+
+        String assetPath = contentlet.isFileAsset() && null != identifier ? identifier.getPath() :   map.get("idPath").toString();
+
+        map.put("path", assetPath);
+        map.putIfAbsent("focalPoint", Try.of(()-> metadata.getCustomMeta().getOrDefault("focalPoint", "0.0").toString()).getOrElse("0.0"));
+
         return map;
     }
 
-    /**
-     * put the version and fields specifics for the binary fields
-     * @param velocityVarName
-     * @param assetName
-     * @param contentlet
-     * @param map
-     */
-    private void putBinaryLinks(final String velocityVarName, final String assetName, final Contentlet contentlet, final Map<String, Object> map){
-        //The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
-        final String dAPath = "/dA/%s/%s/%s";
-        map.put(velocityVarName + "Version",
-                String.format(dAPath, contentlet.getInode(),
-                        velocityVarName, assetName));
-        map.put(velocityVarName,
-                String.format(dAPath, contentlet.getIdentifier(),
-                        velocityVarName, assetName));
-        map.put(velocityVarName + "ContentAsset",
-                contentlet.getIdentifier() + "/" + velocityVarName);
-    }
+
 
 }

@@ -53,7 +53,7 @@
 
 
 
-	<div style="float:right">
+	<div style="float:right;padding-right:10px">
 
 		<dot-api-link>
 			<dot-link label="API" icon="pi-link">

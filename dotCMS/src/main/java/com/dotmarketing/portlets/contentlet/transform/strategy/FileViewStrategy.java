@@ -77,19 +77,21 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
 
         for (final Field field : fileAndImageFields) {
             try {
-                final String relatedContentIndetifier = (String) contentlet.get(field.variable());
+                final String relatedContentIdentifier = (String) contentlet.get(field.variable());
+
                 Optional<Contentlet> optContent = APILocator.getContentletAPI()
-                        .findContentletByIdentifierOrFallback(relatedContentIndetifier, PageMode.get().showLive
+                        .findContentletByIdentifierOrFallback(relatedContentIdentifier, PageMode.get().showLive
                                 , contentlet.getLanguageId(),
                                 APILocator.systemUser(), true);
 
                 if (!optContent.isPresent()) {
-                    map.put(field.variable(), relatedContentIndetifier);
+                    map.put(field.variable(), relatedContentIdentifier);
                     return map;
                 }
                 final String fieldVar = optContent.get().isFileAsset() ? FileAssetAPI.BINARY_FIELD : DotAssetAPI.DOTASSET_FIELD_VAR;
-                    Map<String,Object> fileMap = BinaryToMapTransformer.transform(optContent.get(), optContent.get().getContentType().fieldMap().get(fieldVar), true);
-                    map.put(field.variable(), fileMap);
+
+                Map<String,Object> fileMap = BinaryToMapTransformer.transform(optContent.get(), optContent.get().getContentType().fieldMap().get(fieldVar), true);
+                map.put(field.variable(), fileMap);
 
             } catch (Exception e) {
                 Logger.warn(this,
