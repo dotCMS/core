@@ -882,7 +882,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '&nbsp;<span style="pointer-events: none" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
-                        '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
+                        '   <td class="menuTD" id="' + asset.inode + '-MenuTD" data-url="' +  asset.pageURI +'">\n' +
                         '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
                 }
 
