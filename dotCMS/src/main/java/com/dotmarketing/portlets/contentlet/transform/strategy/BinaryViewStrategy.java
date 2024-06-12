@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.MAP_SUFFIX_FOR_VIEWS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILTER_BINARIES;
 import static java.util.Collections.emptyList;
@@ -66,15 +66,15 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         if (!binaries.isEmpty()) {
             for (final Field field : binaries) {
                 try {
-                    final String sufix = options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS)
-                            ? "" : "Map";
+                    final String sufix = options.contains(MAP_SUFFIX_FOR_VIEWS)
+                            ? "Map" : "";
 
-                    map.put(field.variable(),"/dA/" + contentlet.getInode() + "/" + field.variable()  + "/file" );
-                    map.put(field.variable() + sufix, transform(contentlet, field));
+
+                    map.put(field.variable() + sufix, transform(contentlet, field, false));
 
                 } catch (Exception e) {
-                    Logger.warn(this,
-                            "Unable to get Binary from field with var " + field.variable());
+                    Logger.warnAndDebug(this.getClass(),
+                            "Unable to get Binary from field with var " + field.variable(),e);
                 }
             }
         }
@@ -82,22 +82,26 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
     }
 
 
-
-    public static Map<String, Object> transformDeprecated(final Contentlet con,
-            final Field field) {
-        return new BinaryViewStrategy(null).transform(con, field);
-    }
-
+    ThreadLocal<Map<String,Object>> mapThreadLocal = ThreadLocal.withInitial(HashMap::new);
 
 
     /**
      * Transform function
      */
     public Map<String, Object> transform(final Contentlet contentlet,
-            final Field field) {
+            final Field field, boolean isFromFileField) {
 
-        final Map<String, Object> map = new HashMap<>();
+        final Map<String, Object> map = mapThreadLocal.get();
+        map.clear();
         Metadata metadata = Try.of(()->contentlet.getBinaryMetadata(field.variable())).getOrElseThrow(()->new DotStateException("Unable to get Binary from field with var " + field.variable()));
+
+        map.putAll(metadata.getMap());
+
+        if(isFromFileField){
+            map.put("identifier",contentlet.getIdentifier());
+            map.put("inode",contentlet.getInode());
+            map.put("apiLocation", "/api/v1/content/"+contentlet.getInode());
+        }
 
 
 
@@ -115,16 +119,16 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
                         + field.variable() + "/" + assetName
                         + (contentLanguageSize > 1 ? "?language_id=" + contentlet.getLanguageId()
                         : StringPool.BLANK));
-        map.put("name", assetName);
-        map.put("size", metadata.getSize());
-        map.put("mime", metadata.getContentType());
-        map.put("isImage", metadata.isImage());
-        map.put("width", metadata.getWidth());
-        map.put("height", metadata.getHeight());
-        map.put("path", metadata.getPath());
-        map.put("title", metadata.getTitle());
-        map.put("sha256", metadata.getSha256());
-        map.put("modDate", metadata.getModDate());
+        map.putIfAbsent("name", assetName);
+        map.putIfAbsent("size", metadata.getSize());
+        map.putIfAbsent("mime", metadata.getContentType());
+        map.putIfAbsent("isImage", metadata.isImage());
+        map.putIfAbsent("width", metadata.getWidth());
+        map.putIfAbsent("height", metadata.getHeight());
+        map.putIfAbsent("path", metadata.getPath());
+        map.putIfAbsent("title", metadata.getTitle());
+        map.putIfAbsent("sha256", metadata.getSha256());
+        map.putIfAbsent("modDate", metadata.getModDate());
         map.remove("path");
         map.put("focalPoint", Try.of(()-> metadata.getCustomMeta().getOrDefault("focalPoint", "0.0").toString()).getOrElse("0.0"));
         putBinaryLinks(field.variable(), assetName, contentlet, map);

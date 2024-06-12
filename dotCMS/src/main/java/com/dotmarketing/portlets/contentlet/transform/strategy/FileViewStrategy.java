@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LOAD_META;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.MAP_SUFFIX_FOR_VIEWS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.DESCRIPTION;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.FILE_NAME_FIELD;
@@ -29,6 +29,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
@@ -87,12 +88,8 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
                     return map;
                 }
                 final String fieldVar = optContent.get().isFileAsset() ? FileAssetAPI.BINARY_FIELD : DotAssetAPI.DOTASSET_FIELD_VAR;
-                    Map<String,Object> fileMap = Try.of(
-                                    () -> new BinaryViewStrategy(toolBox).transform(optContent.get(), new HashMap<>(),
-                                            options, APILocator.systemUser()))
-                            .onFailure(e -> Logger.warn(BinaryViewStrategy.class, e.getMessage(), e))
-                            .getOrElse(Map.of(fieldVar, relatedContentIndetifier));
-                    map.put(field.variable(), fileMap.get(fieldVar));
+                    Map<String,Object> fileMap = BinaryToMapTransformer.transform(optContent.get(), optContent.get().getContentType().fieldMap().get(fieldVar), true);
+                    map.put(field.variable(), fileMap);
 
             } catch (Exception e) {
                 Logger.warn(this,

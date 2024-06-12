@@ -87,7 +87,7 @@ public enum TransformOptions {
      * Instructs the Strategy to include Story Block data
      */
     STORY_BLOCK_VIEW,
-    AVOID_MAP_SUFFIX_FOR_VIEWS,
+    MAP_SUFFIX_FOR_VIEWS,
     /**
      * Instructs the Strategy to velocity-render the render-able fields
      */

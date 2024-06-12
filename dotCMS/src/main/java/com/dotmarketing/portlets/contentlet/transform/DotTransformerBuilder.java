@@ -9,7 +9,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.MAP_SUFFIX_FOR_VIEWS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
@@ -172,7 +172,6 @@ public class DotTransformerBuilder {
         optionsHolder.add(CATEGORIES_VIEW);
         optionsHolder.add(BINARIES);
         optionsHolder.add(LOAD_META);
-        optionsHolder.add(AVOID_MAP_SUFFIX_FOR_VIEWS);
         if(transformOptions.length>0) {
             optionsHolder.addAll(Arrays.asList(transformOptions));
         }
