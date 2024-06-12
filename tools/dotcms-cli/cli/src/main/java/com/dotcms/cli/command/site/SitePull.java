@@ -42,8 +42,7 @@ import picocli.CommandLine;
                 "" // empty line left here on purpose to make room at the end
         }
 )
-public class SitePull extends AbstractSiteCommand implements Callable<Integer>, DotCommand,
-        DotPull {
+public class SitePull extends AbstractSiteCommand implements Callable<Integer>, DotPull {
 
     static final String NAME = "pull";
 

@@ -2863,7 +2863,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private void backupDestroyedContentlets(final List<Contentlet> contentlets, final User user) {
-
+        if(!Config.getBooleanProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", false)){
+            return;
+        }
         if (contentlets.size() > 0) {
 
             final XStream xstream = XStreamHandler.newXStreamInstance();
@@ -3216,35 +3218,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
 
-        if (contentlets.size() > 0) {
-            XStream xStreamInstance = XStreamHandler.newXStreamInstance();
-            Date date = new Date();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-            String lastmoddate = sdf.format(date);
-            File _writing = null;
-
-            File backupFolder = new File(backupPath);
-            if (!backupFolder.exists()) {
-                backupFolder.mkdirs();
-            }
-            _writing = new File(
-                    backupPath + File.separator + lastmoddate + "_" + "deletedcontentlets"
-                            + ".xml");
-
-            BufferedOutputStream _bout = null;
-            try {
-                _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-            } catch (IOException e) {
-                Logger.error(this, e.getMessage());
-            } finally {
-                try {
-                    _bout.close();
-                } catch (IOException e) {
-                    Logger.error(this, e.getMessage());
-                }
-            }
-            xStreamInstance.toXML(contentlets, _bout);
-        }
+        backupDestroyedContentlets(contentlets, APILocator.systemUser());
         deleteBinaryFiles(contentletsVersion, null);
 
     }
