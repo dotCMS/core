@@ -21,6 +21,8 @@ import com.dotcms.api.APIProvider;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -32,6 +34,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.API;
 import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.List;
@@ -103,7 +106,17 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
         FileAsset fileAsset = null;
 
         if(fileAsContentOptional.isPresent()) {
-            fileAsset = APILocator.getFileAssetAPI().fromContentlet(fileAsContentOptional.get());
+            //This does always assume we're getting a fileAsset we don't want to miss a dotAsset
+            final Contentlet fileIsh = fileAsContentOptional.get();
+            if(fileIsh.isDotAsset()) {
+            try {
+                fileAsset = asFileAsset(fileIsh);
+            }catch (Exception e){
+                Logger.warn(FileViewStrategy.class,"Failed to get file asset from contentlet.",e);
+            }
+            } else {
+                fileAsset = APILocator.getFileAssetAPI().fromContentlet(fileIsh);
+            }
         }
 
         final Map<String, Object> map = new HashMap<>();
@@ -155,5 +168,13 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
         map.put("type", "file_asset");
         map.put("isContentlet", true);
         return map;
+    }
+
+    private static FileAsset asFileAsset(Contentlet fileIsh)
+            throws DotSecurityException, DotDataException {
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("FileAsset");
+        final Contentlet newCon = new Contentlet(fileIsh.getMap());
+        newCon.setContentType(contentType);
+        return APILocator.getFileAssetAPI().fromContentlet(newCon);
     }
 }
