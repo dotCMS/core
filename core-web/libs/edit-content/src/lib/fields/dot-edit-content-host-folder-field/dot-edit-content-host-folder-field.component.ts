@@ -1,6 +1,7 @@
 import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     Input,
     OnInit,
@@ -11,9 +12,9 @@ import {
 } from '@angular/core';
 import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/forms';
 
-import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
-
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+
+import { TreeSelect, TreeSelectModule } from './componentes/treeselect.component';
 
 import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
 import {
@@ -48,6 +49,7 @@ import { createPaths } from '../../utils/functions.util';
 export class DotEditContentHostFolderFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
     @ViewChild(TreeSelect) treeSelect!: TreeSelect;
+    readonly #changeDetectorRef = inject(ChangeDetectorRef);
     readonly #controlContainer = inject(ControlContainer);
     readonly #editContentService = inject(DotEditContentService);
 
