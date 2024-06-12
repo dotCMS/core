@@ -16,6 +16,7 @@ import java.util.function.Supplier;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.DATETIME_FIELDS_TO_TIMESTAMP;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.DOTASSET;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.JSON_VIEW;
@@ -84,6 +85,7 @@ public class StrategyResolverImpl implements StrategyResolver {
         strategyTriggeredByOptionMap.put(LANGUAGE_VIEW, () -> new LanguageViewStrategy(toolBox));
         strategyTriggeredByOptionMap.put(KEY_VALUE_VIEW, () -> new KeyValueViewStrategy(toolBox));
         strategyTriggeredByOptionMap.put(FILEASSET_VIEW, () -> new FileViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(DOTASSET, () -> new DotAssetViewStrategy(toolBox));
         strategyTriggeredByOptionMap.put(SITE_VIEW, () -> new SiteViewStrategy(toolBox));
         strategyTriggeredByOptionMap.put(STORY_BLOCK_VIEW, () -> new StoryBlockViewStrategy(toolBox));
         strategyTriggeredByOptionMap.put(RENDER_FIELDS, () -> new RenderFieldStrategy(toolBox));

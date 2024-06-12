@@ -97,7 +97,11 @@ public enum TransformOptions {
      */
     RENDER_FIELDS,
     JSON_VIEW,
-    DATETIME_FIELDS_TO_TIMESTAMP;
+    DATETIME_FIELDS_TO_TIMESTAMP,
+
+    DOTASSET;
+
+
 
     // -----------------------------------------------------------------------------------------
     // Plug additional Transform Options to manipulate the outcome as a particular type of view
