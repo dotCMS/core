@@ -27,7 +27,10 @@
     width: 3rem;
     height: 3rem;
     border-radius: $border-radius-circular;
-    transition: background-color $basic-speed, color $basic-speed, box-shadow $basic-speed;
+    transition:
+        background-color $basic-speed,
+        color $basic-speed,
+        box-shadow $basic-speed;
     margin-right: $spacing-1;
 
     &:last-child {

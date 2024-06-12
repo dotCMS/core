@@ -23,7 +23,6 @@ import com.dotcms.util.JsonUtil;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -55,9 +54,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
@@ -132,27 +129,66 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     /**
-     * Tells if at least we have a "working_XXXXXX" index
+     * This checks to make sure that we have good live and working indexes set in the db and that
+     * are available in the ES cluster
      *
      * @return
      * @throws DotDataException
      */
-    private synchronized boolean indexReady() throws DotDataException {
-        IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        return info.getWorking() != null && info.getLive() != null;
+    @VisibleForTesting
+    @CloseDBIfOpened
+    public synchronized boolean indexReady() throws DotDataException {
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+
+
+        final boolean hasWorking  = Try.of(()->APILocator.getESIndexAPI().indexExists(info.getWorking()))
+                .getOrElse(false);
+        final  boolean hasLive  = Try.of(()->APILocator.getESIndexAPI().indexExists(info.getLive()))
+                .getOrElse(false);
+
+        if(!hasWorking){
+            Logger.debug(this.getClass(), "-- WORKING INDEX DOES NOT EXIST");
+        }
+        if(!hasLive){
+            Logger.debug(this.getClass(), "-- LIVE INDEX DOES NOT EXIST");
+        }
+        return hasWorking && hasLive;
     }
 
     /**
-     * Inits the indexs
+     * Inits the indexes and starts the reindex process if no indexes are found
      */
+    @CloseDBIfOpened
     public synchronized void checkAndInitialiazeIndex() {
         try {
             // if we don't have a working index, create it
             if (!indexReady()) {
+                Logger.info(this.getClass(), "No indexes found, creating live and working indexes");
                 initIndex();
             }
+
+
+            // if there are indexes but they are empty, start reindex process
+            if(Config.getBooleanProperty("REINDEX_IF_NO_INDEXES_FOUND", true)
+                    && getIndexDocumentCount(APILocator.getIndiciesAPI().loadIndicies().getWorking())==0
+            ){
+                DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
+                    try {
+                        Logger.info(this.getClass(), "No content found in index, starting reindex process in background thread.");
+                        APILocator.getReindexQueueAPI().deleteFailedRecords();
+                        APILocator.getReindexQueueAPI().addAllToReindexQueue();
+
+                    } catch (Throwable e) { // nosonar
+
+                        Logger.error(this.getClass(), "Error starting reindex process", e);
+                    }
+                });
+
+            }
+
+
         } catch (Exception e) {
-            Logger.fatal("ESUil.checkAndInitializeIndex", e.getMessage());
+            Logger.fatal(this.getClass(), "Failed to create new indexes:" + e.getMessage(),e);
 
         }
     }
@@ -355,7 +391,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 < Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 30) * 1000) {
             if (reindexTimeElapsed().isPresent()) {
                 Logger.info(this.getClass(),
-                        "Reindex has been running only " + reindexTimeElapsed().get()
+                        "Reindex has been running only " + (reindexTimeElapsed().isPresent() ? reindexTimeElapsed().get() : "n/a")
                                 + ". Letting the reindex settle.");
             } else {
                 Logger.info(this.getClass(), "Reindex Time Elapsed not set.");
@@ -393,7 +429,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
                 try {
                     Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
-                    optimize(ImmutableList.of(newInfo.getWorking(), newInfo.getLive()));
+                    optimize(List.of(newInfo.getWorking(), newInfo.getLive()));
                 } catch (Exception e) {
                     Logger.warnAndDebug(this.getClass(),
                             "unable to expand ES replicas:" + e.getMessage(), e);
@@ -515,7 +551,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                         parentContenlet.getIndexPolicyDependencies()))
                                 .collect(Collectors.toList()))
                 .build()
-                : ImmutableList.of(parentContenlet);
+                : List.of(parentContenlet);
 
         if (ElasticReadOnlyCommand.getInstance().isIndexOrClusterReadOnly()) {
             ElasticReadOnlyCommand.getInstance().sendReadOnlyMessage();
@@ -743,7 +779,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                 idx
                                         .getPriority()));
                 contentlet.setIndexPolicy(IndexPolicy.DEFER);
-                addBulkRequest(bulk, ImmutableList.of(contentlet), idx.isReindex());
+                addBulkRequest(bulk, List.of(contentlet), idx.isReindex());
             }
         } catch (final Exception e) {
             // An error occurred when trying to reindex the Contentlet. Flag it as "failed"
@@ -908,7 +944,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     return Arrays.asList(workingInode);
                 })
                 .flatMap(Collection::stream)
-                .filter(inode -> UtilMethods.isSet(inode))
+                .filter(UtilMethods::isSet)
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -1131,7 +1167,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         List<Relationship> relationships = APILocator.getRelationshipAPI()
-                .byContentType(content.getStructure());
+                .byContentType(content.getContentType());
 
         // add a commit listener to index the contentlet if the entire
         // transaction finish clean
@@ -1219,8 +1255,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             IndiciesInfo newinfo = builder.build();
 
-            final String rew = info.getReindexWorking();
-            final String rel = info.getReindexLive();
+            info.getReindexWorking();
+            info.getReindexLive();
 
             APILocator.getIndiciesAPI().point(newinfo);
         } catch (Exception e) {

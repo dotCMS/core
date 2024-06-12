@@ -47,7 +47,7 @@
     <ng-template #dateRange>
         <span *ngIf="!!vm.scheduling?.startDate">
             {{ 'start' | dm | titlecase }}:
-            <span>{{ vm.scheduling.startDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
+            <span>{{ vm.scheduling.startDate | date: 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
         </span>
         <span
             *ngIf="vm.scheduling?.startDate && vm.scheduling.endDate"
@@ -56,7 +56,7 @@
         >
         <span *ngIf="!!vm.scheduling?.endDate">
             {{ 'end' | dm | titlecase }}:
-            <span>{{ vm.scheduling.endDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
+            <span>{{ vm.scheduling.endDate | date: 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
         </span>
     </ng-template>
 </ng-container>

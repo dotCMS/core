@@ -1015,8 +1015,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return experiment?.status !== DotExperimentStatus.DRAFT
             ? EXP_CONFIG_ERROR_LABEL_CANT_EDIT
             : dotPageRenderState.state.lockedByAnotherUser
-            ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED
-            : null;
+              ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED
+              : null;
     }
 
     private getMenuItems(

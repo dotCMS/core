@@ -71,7 +71,10 @@ export class DotcmsConfigService {
      *
      * @param configParams - The configuration properties for the current instance.
      */
-    constructor(private coreWebService: CoreWebService, private loggerService: LoggerService) {
+    constructor(
+        private coreWebService: CoreWebService,
+        private loggerService: LoggerService
+    ) {
         this.configUrl = 'v1/appconfiguration';
         this.loadConfig();
     }

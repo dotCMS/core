@@ -112,7 +112,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     @Override
     public JSONObject raw(final JSONObject jsonObject) {
-        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+        if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(this.getClass(), "OpenAI request:" + jsonObject.toString(2));
         }
 
@@ -121,7 +121,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 HttpMethod.POST,
                 config.get().getApiKey(),
                 jsonObject);
-        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+        if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(this.getClass(), "OpenAI response:" + response);
         }
 
