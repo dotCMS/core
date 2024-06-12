@@ -16,11 +16,16 @@ const canMatchPage: CanMatchFn = async (
 
   const pageProps = { path: url || '/' };
 
-  const { entity } = await (client.page.get(pageProps) as Promise<{
-    entity: DotCMSPageAsset;
-  }>);
+  try {
+    const { entity } = await (client.page.get(pageProps) as Promise<{
+      entity: DotCMSPageAsset;
+    }>);
 
-  return !!entity;
+    return !!entity;
+  } catch (error: any) {
+
+    return !(error?.status === 404);
+  }
 };
 
 export const routes: Routes = [
@@ -37,5 +42,5 @@ export const routes: Routes = [
   {
     path: '**',
     component: NotFoundComponent
-  }
+  },
 ];

@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 
 import { MyPage } from "@/components/my-page";
 
-import { handleVanityUrlRedirect } from "@/app/utils/vanityUrlHandler";
-import { client, getRequestParams } from "@/app/utils/dotcmsClient";
+import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
+import { client, getRequestParams } from "@/utils/dotcmsClient";
 
 /**
  * Generate metadata
