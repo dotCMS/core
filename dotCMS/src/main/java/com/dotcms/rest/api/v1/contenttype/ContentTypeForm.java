@@ -201,12 +201,14 @@ public class ContentTypeForm  {
                         final JSONObject workflowJsonObject = (JSONObject) entry;
 
                         String workflowId = null;
-                        if (UtilMethods.isSet(workflowJsonObject.getString("id"))) {
+                        if (workflowJsonObject.has("id") &&
+                                UtilMethods.isSet(workflowJsonObject.getString("id"))) {
                             workflowId = workflowJsonObject.getString("id");
                         }
 
                         String variableName = null;
-                        if (UtilMethods.isSet(workflowJsonObject.getString("variableName"))) {
+                        if (workflowJsonObject.has("variableName") &&
+                                UtilMethods.isSet(workflowJsonObject.getString("variableName"))) {
                             variableName = workflowJsonObject.getString("variableName");
                         }
 
