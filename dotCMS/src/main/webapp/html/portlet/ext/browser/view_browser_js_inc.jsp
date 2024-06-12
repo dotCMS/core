@@ -863,7 +863,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 }
                 var languageHTML = ((asset.type=='htmlpage' || asset.type=='file_asset') && asset.isContentlet && multipleLanguages)
                     ?"<img src=\"/html/images/languages/"+ langIcon +
-                    ".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+ langCode +")</span>":"";
+                    ".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span data-url='" +  asset.pageURI +"' id='"+asset.inode+"-LangSPAN'>&nbsp;("+ langCode +")</span>":"";
                 if(asset.type == 'file_asset'){
                     var html =  '<tr id="' + asset.inode + '-TR">\n' +
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
