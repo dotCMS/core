@@ -1,4 +1,4 @@
-import { ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { DotCMSPageAsset, DotcmsNavigationItem } from '@dotcms/angular';
 import { inject } from '@angular/core';
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
@@ -15,8 +15,9 @@ export const DotCMSPageResolver = async (
 ): Promise<{
   pageAsset: DotCMSPageAsset;
   nav: DotcmsNavigationItem;
-}> => {
+} | null> => {
   const client = inject(DOTCMS_CLIENT_TOKEN);
+  const router = inject(Router);
 
   const url = route.url.map((segment) => segment.path).join('/');
   const queryParams = route.queryParams;
@@ -48,8 +49,24 @@ export const DotCMSPageResolver = async (
     navRequest,
   ]);
 
-  const pageAsset = pageResponse.entity;
+  let pageAsset = pageResponse.entity;
   const nav = navResponse.entity;
+
+  const { vanityUrl } = pageAsset;
+
+  if (vanityUrl?.permanentRedirect) {
+    router.navigate([vanityUrl.forwardTo]);
+
+    return null;
+  }
+
+  if (vanityUrl) {
+    const vanityPagePros = { ...pageProps, path: vanityUrl.forwardTo };
+    const pageResponse = await (client.page.get(vanityPagePros) as Promise<{
+      entity: DotCMSPageAsset;
+    }>);
+    pageAsset = pageResponse.entity;
+  }
 
   return { pageAsset, nav };
 };
