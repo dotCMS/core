@@ -15,6 +15,7 @@
         .p-field-hint {
             markdown pre {
                 background-color: $color-palette-secondary-100;
+                padding: $spacing-0 $spacing-1;
 
                 // This padding prevents the code to overlap between lines
                 code {
