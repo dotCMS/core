@@ -898,7 +898,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                     '   <td class="statusTD" id="' + asset.inode + '-StatusTD">\n' +
                     getStatusHTML (asset) +
                     '   </td>\n' +
-                    '   <td style="padding:0px" class="descriptionTD" id="' + asset.inode + '-DescriptionTD">' +
+                    '   <td style="padding:0px" class="descriptionTD" data-url="' +  asset.pageURI +'" id="' + asset.inode + '-DescriptionTD">' +
                     '<table style="width:100%;">' +
                     '<tr style="height:15px">' +
                     '<td style="padding:0px; border:0px; width:80px;">'+ languageHTML +
