@@ -57,7 +57,6 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
         OpenAiRequestUtil.get().handleLargePrompt(jsonObject);
         jsonObject.putIfAbsent(AiKeys.MODEL, config.getImageModel());
         jsonObject.putIfAbsent(AiKeys.SIZE, config.getImageSize());
-        jsonObject.putIfAbsent(AiKeys.N, 1);
 
         String responseString = "";
         try {
@@ -91,7 +90,6 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
         jsonRequest.put(AiKeys.MODEL, config.getImageModel());
         jsonRequest.put(AiKeys.PROMPT, dto.getPrompt());
         jsonRequest.put(AiKeys.SIZE, dto.getSize());
-        jsonRequest.put(AiKeys.N, dto.getNumberOfImages());
         return sendRequest(jsonRequest);
     }
 

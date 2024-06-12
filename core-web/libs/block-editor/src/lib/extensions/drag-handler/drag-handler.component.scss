@@ -4,7 +4,9 @@
     z-index: 1;
     opacity: 0;
     color: var(--color-palette-primary-800);
-    transition: opacity 250ms, top 150ms;
+    transition:
+        opacity 250ms,
+        top 150ms;
     pointer-events: none;
 
     &.visible {

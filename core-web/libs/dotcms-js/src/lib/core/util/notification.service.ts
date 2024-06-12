@@ -1,5 +1,6 @@
-import { AppConfig } from './app.config';
 import { Inject, Injectable, NgModule } from '@angular/core';
+
+import { AppConfig } from './app.config';
 
 /**
  * Used by the NotificationService to set Desktop Notifications

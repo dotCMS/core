@@ -1,4 +1,5 @@
 <p-dialog
+    (visibleChange)="visible = $event"
     [visible]="visible"
     [position]="'right'"
     [closable]="false"
@@ -7,18 +8,17 @@
     [dismissableMask]="true"
     [closable]="true"
     [appendTo]="'body'"
-    (visibleChange)="visible = $event"
     maskStyleClass="page-tools-dialog"
     header="{{ 'editpage.toolbar.nav.page.tools' | dm }}">
-    <div class="page-tools" *ngIf="tools$ | async as tools">
+    <div *ngIf="tools$ | async as tools" class="page-tools">
         <ul class="page-tools-list">
             <li
-                class="page-tools-list__item"
                 *ngFor="let tool of tools.pageTools"
+                class="page-tools-list__item"
                 data-testId="page-tools-list-item">
                 <a
-                    class="page-tools-list__link"
                     (click)="toggleDialog()"
+                    class="page-tools-list__link"
                     data-testId="page-tools-list-link"
                     href="{{ tool.runnableLink }}"
                     target="_blank"

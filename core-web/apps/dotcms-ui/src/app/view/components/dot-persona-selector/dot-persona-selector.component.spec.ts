@@ -51,9 +51,9 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
     selector: 'dot-host-component',
     template: `
         <dot-persona-selector
-            [disabled]="disabled"
             (selected)="selectedPersonaHandler($event)"
-            (delete)="deletePersonaHandler($event)"></dot-persona-selector>
+            (delete)="deletePersonaHandler($event)"
+            [disabled]="disabled"></dot-persona-selector>
     `
 })
 class HostTestComponent {

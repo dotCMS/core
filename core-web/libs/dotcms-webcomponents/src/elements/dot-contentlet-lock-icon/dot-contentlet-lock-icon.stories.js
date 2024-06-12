@@ -5,7 +5,7 @@ export default {
     parameters: {
         docs: {
             page: readme
-        },
+        }
     },
     args: {
         locked: true

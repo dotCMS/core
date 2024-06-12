@@ -2,14 +2,12 @@
 </dot-container-selector>
 <ul class="container-selector__list">
     <li
-        class="container-selector__list-item"
         *ngFor="let dotContainerColumnBox of data; let i = index"
-    >
+        class="container-selector__list-item">
         <p-button
             (click)="removeContainerItem(i)"
             icon="pi pi-trash"
-            styleClass="p-button-rounded p-button-text p-button-danger"
-        >
+            styleClass="p-button-rounded p-button-text p-button-danger">
         </p-button>
         <span class="container-selector__list-item-text"
             >{{ dotContainerColumnBox.container?.name }} ({{

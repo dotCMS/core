@@ -59,7 +59,6 @@
         <mvn.environment.name>${ext.mvn.environment.name}</mvn.environment.name>
         <!--suppress UnresolvedMavenProperty -->
         <docker.image.search>${ext.docker.image.search}</docker.image.search>
-        <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
         <!--suppress UnresolvedMavenProperty -->
         <docker.image.postgres>${ext.docker.image.postgres}</docker.image.postgres>
         <!--suppress UnresolvedMavenProperty -->
@@ -333,24 +332,6 @@
                                     </log>
                                 </run>
                             </opensearch>
-                            <wiremock>
-                                <name>${docker.image.wiremock}</name>
-                                <run>
-                                    <ports>
-                                        <port>wiremock.port:50505</port>
-                                    </ports>
-                                    <volumes>
-                                        <bind>
-                                            <volume>./src/test/resources/__files:/home/wiremock/__files</volume>
-                                            <volume>./src/test/resources/mappings:/home/wiremock/mappings</volume>
-                                        </bind>
-                                    </volumes>
-                                    <log>
-                                        <prefix>WireMock:</prefix>
-                                        <color>green</color>
-                                    </log>
-                                </run>
-                            </wiremock>
                             <dotcms>
                                 <name>${dotcms.image.name}</name>
                                 <external>
@@ -391,7 +372,6 @@
                                     <links>
                                         <link>database:db</link>
                                         <link>opensearch:es</link>
-                                        <link>wiremock:wm</link>
                                     </links>
                                     <log>
                                         <prefix>DOTCMS:</prefix>

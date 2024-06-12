@@ -1357,7 +1357,7 @@ export default {
     parameters: {
         docs: {
             page: readme
-        },
+        }
     },
     args: {
         items: contentletsMock
@@ -1366,9 +1366,9 @@ export default {
         items: {
             table: {
                 disable: true
-            },
+            }
         }
-    },
+    }
 };
 
 const Template = ({ items }) => {
@@ -1409,4 +1409,4 @@ const Template = ({ items }) => {
     return cardView;
 };
 
-export const CardView = Template.bind({})
+export const CardView = Template.bind({});

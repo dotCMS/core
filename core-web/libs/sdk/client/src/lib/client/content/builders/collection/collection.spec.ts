@@ -59,7 +59,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:song',
+                    query: '+contentType:song +languageId:1 +live:true',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -117,7 +117,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:ringsOfPower +languageId:13',
+                    query: '+contentType:ringsOfPower +languageId:13 +live:true',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -135,7 +135,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:boringContentType',
+                    query: '+contentType:boringContentType +languageId:1 +live:true',
                     render: true,
                     limit: 10,
                     offset: 0,
@@ -166,7 +166,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:jedi',
+                    query: '+contentType:jedi +languageId:1 +live:true',
                     render: false,
                     sort: 'name asc,force desc,midichlorians desc',
                     limit: 10,
@@ -185,7 +185,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:droid',
+                    query: '+contentType:droid +languageId:1 +live:true',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -203,7 +203,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:ship',
+                    query: '+contentType:ship +languageId:1 +live:true',
                     render: false,
                     limit: 20,
                     offset: 40,
@@ -227,7 +227,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+lightsaber.kyberCrystal:red +contentType:lightsaber +modDate:2024-05-28',
+                    query: '+lightsaber.kyberCrystal:red +contentType:lightsaber +languageId:1 +live:true +modDate:2024-05-28',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -309,7 +309,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:draftContent +live:false',
+                    query: '+contentType:draftContent +languageId:1 +live:false',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -327,7 +327,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+contentType:adventure +variant:dimension-1334-adventure',
+                    query: '+contentType:adventure +variant:dimension-1334-adventure +languageId:1 +live:true',
                     render: false,
                     limit: 10,
                     offset: 0,
@@ -405,7 +405,7 @@ describe('CollectionBuilder', () => {
             expect(fetch).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +languageId:13 +live:false +variant:legends-forceSensitive +modDate:2024-05-28 +conhost:MyCoolSite',
+                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +live:false +modDate:2024-05-28 +conhost:MyCoolSite',
                     render: true,
                     sort: 'name asc,midichlorians desc',
                     limit: 20,
