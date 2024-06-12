@@ -8,30 +8,32 @@ params:
     hidden: false
     type: "STRING"
     label: "Configuration"
-    hint: "Allows you to enter a JSON object that specifies how to match multiple URL patterns via RegExes with different 3rd party servers and rendering options, if required. For instance, in the following JSON object:<br/><br/>
+    required: true
+    hint: |
+    Allows you to enter a JSON object that specifies how to match multiple URL patterns via RegExes with different 3rd party servers and rendering options, if required. For instance, in the following JSON object:<br/><br/>
       ```
       {
-         \"config\":[
+         "config":[
                   {
-                    \"pattern\":\"/blogs/(.*)\",
-                    \"url\":\"https://myspa.blogs.com:3000\",
-                    \"options\": {
-                      \"authenticationToken\":\"123\",
-                      \"depth\":3,
-                      \"X-CONTENT-APP\":\"dotCMS\"
+                    "pattern":"/blogs/(.*)",
+                    "url":"https://myspa.blogs.com:3000",
+                    "options": {
+                      "authenticationToken":"123",
+                      "depth":3,
+                      "X-CONTENT-APP":"dotCMS"
                     }
                   },
                   {
-                    \"pattern\":\".*\",
-                    \"url\":\"https://myspa.com:3000\",
-                    \"options\":{
-                      \"authenticationToken\":\"456\",
-                      \"depth\":1,
-                      \"X-CONTENT-APP\":\"dotCMS\"
+                    "pattern":".*",
+                    "url":"https://myspa.com:3000",
+                    "options":{
+                      "authenticationToken":"456",
+                      "depth":1,
+                      "X-CONTENT-APP":"dotCMS"
                     }
                   }
             ]
       }
       ```<br/><br/>
-      You have a specific configuration for pages that start with '/blogs/' and a generic configuration for all other pages, i.e., '.*'. The 'options' object allows you to specify additional headers to be sent to the EMA Service. The 'authenticationToken' is an optional header in case you need a security layer for EMA requests. So, if the token sent by EMA does not equal the token in your app, the request will fail. The 'depth' attribute indicates dotCMS how many levels of related content must be returned by the API. The 'X-CONTENT-APP' is just an example of a custom header you can send to your app, so you can add your own."
-    required: true
+      You have a specific configuration for pages that start with '/blogs/' and a generic configuration for all other pages, i.e., '.*'. The 'options' object allows you to specify additional headers to be sent to the UVE Service. The 'authenticationToken' is an optional header in case you need a security layer for UVE requests. So, if the token sent by UVE does not equal the token in your app, the request will fail. The 'depth' attribute indicates dotCMS how many levels of related content must be returned by the API. The 'X-CONTENT-APP' is just an example of a custom header you can send to your app, so you can add your own.
+
