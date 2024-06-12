@@ -33,7 +33,7 @@ public interface LanguageAPI {
 
 	String LOCALIZATION_ENHANCEMENTS_ENABLED = "LOCALIZATION_ENHANCEMENTS_ENABLED";
 	Lazy<Boolean> localizationEnhancementsEnabled = Lazy.of(
-			() -> Config.getBooleanProperty(LOCALIZATION_ENHANCEMENTS_ENABLED, true));
+			() -> Config.getBooleanProperty(LOCALIZATION_ENHANCEMENTS_ENABLED, false));
 
 	static boolean isLocalizationEnhancementsEnabled() {
 		//this system property is used to enable/disable the localization enhancements from any integration context
