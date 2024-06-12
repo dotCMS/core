@@ -17,7 +17,6 @@ export const DotCMSPageResolver = async (
   nav: DotcmsNavigationItem | null;
 }> => {
   const client = inject(DOTCMS_CLIENT_TOKEN);
-  const router = inject(Router);
 
   const url = route.url.map((segment) => segment.path).join('/');
   const queryParams = route.queryParams;
@@ -37,6 +36,7 @@ export const DotCMSPageResolver = async (
     languageId: queryParams['language_id'],
   };
 
+  // Second request to get the page data
   const pageRequest = client.page.get(pageProps) as Promise<{
     entity: DotCMSPageAsset;
   }>;

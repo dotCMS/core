@@ -2,8 +2,8 @@ import { dotcmsClient } from "@dotcms/client";
 
 // Client for content fetching
 export const client = dotcmsClient.init({
-    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-    authToken: "NO_TOKEN",
+    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST, // 'http://localhost:8080'
+    authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN,
     siteId: "59bb8831-6706-4589-9ca0-ff74016e02b2",
     requestOptions: {
         // In production you might want to deal with this differently
@@ -18,9 +18,8 @@ export const client = dotcmsClient.init({
  * @param {*} { params, searchParams }
  * @return {*}
  */
-export const getRequestParams = ({ params, searchParams }) => {
-    const slug = params?.slug.join("/") || "";
-    const path = "/campaigns/" + slug;
+export const getRequestParams = ({ params, searchParams, defaultPath }) => {
+    const path = params?.slug?.join("/") || defaultPath;
 
     return {
         path,

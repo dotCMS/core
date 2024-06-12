@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 
 import { MyPage } from "@/components/my-page";
 
-import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
-import { client, getRequestParams } from "@/utils/dotcmsClient";
+import { handleVanityUrlRedirect } from "@/app/utils/vanityUrlHandler";
+import { client, getRequestParams } from "@/app/utils/dotcmsClient";
 
 /**
  * Generate metadata
@@ -13,7 +13,7 @@ import { client, getRequestParams } from "@/utils/dotcmsClient";
  * @return {*}
  */
 export async function generateMetadata({ params, searchParams }) {
-    const requestData = getRequestParams({ params, searchParams });
+    const requestData = getRequestParams({ params, searchParams, defaultPath: '/' });
     const data = await client.page.get(requestData);
     const page = data.entity?.page;
 
@@ -25,16 +25,16 @@ export async function generateMetadata({ params, searchParams }) {
 }
 
 export default async function Home({ searchParams, params }) {
-    const requestData = getRequestParams({ params, searchParams });
+    const requestData = getRequestParams({ params, searchParams, defaultPath: '/' });
     const data = await client.page.get(requestData);
     const nav = await client.nav.get({
         path: "/",
         depth: 2,
         languageId: searchParams.language_id,
     });
-
-    if (!data.entity) {
-        notFound(); // NextJS 14 way to handle "Not Found" pages
+    
+    if(!data?.entity) {
+        notFound(); 
     }
 
     const { vanityUrl } = data?.entity;

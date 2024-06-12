@@ -14,7 +14,11 @@ import { client, getRequestParams } from "@/utils/dotcmsClient";
  * @return {*}
  */
 export async function generateMetadata({ params, searchParams }) {
-    const requestData = getRequestParams({ params, searchParams });
+    const requestData = getRequestParams({
+        params,
+        searchParams,
+        defaultPath: "/campaigns/colorado-preseason-special",
+    });
     const data = await client.page.get(requestData);
     const page = data.entity?.page;
 
@@ -26,7 +30,11 @@ export async function generateMetadata({ params, searchParams }) {
 }
 
 export default async function Home({ searchParams, params }) {
-    const requestData = getRequestParams({ params, searchParams });
+    const requestData = getRequestParams({
+        params,
+        searchParams,
+        defaultPath: "/campaigns/colorado-preseason-special",
+    });
     const nav = await client.nav.get({
         path: "/",
         depth: 2,
