@@ -43,7 +43,7 @@ public class Task240606AddVariableColumnToWorkflow implements StartupTask {
 
         // Populating the variable_name column
         new DotConnect().
-                setSQL("SELECT * FROM workflow_scheme").
+                setSQL("SELECT * FROM workflow_scheme ORDER BY mod_date").
                 loadObjectResults().
                 forEach(this::updateRow);
 
