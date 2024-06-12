@@ -12,7 +12,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"What is the theory of relativity2*"
+        "matches": ".*\"content\":\"What is the theory of relativity.*"
       }
     ]
   },
