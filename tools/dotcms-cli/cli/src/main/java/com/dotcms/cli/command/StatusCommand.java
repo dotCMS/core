@@ -8,7 +8,6 @@ import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.annotation.SecuredPassword;
-import com.dotcms.model.asset.BuildVersion;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.user.User;
 import java.io.IOException;
