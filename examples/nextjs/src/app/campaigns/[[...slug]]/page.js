@@ -17,16 +17,22 @@ export async function generateMetadata({ params, searchParams }) {
     const requestData = getRequestParams({
         params,
         searchParams,
-        defaultPath: "/campaigns/colorado-preseason-special",
+        defaultPath: "/",
     });
-    const data = await client.page.get(requestData);
-    const page = data.entity?.page;
 
-    const title = page?.friendlyName || page?.title || "not found";
+    try {
+        const data = await client.page.get(requestData);
+        const page = data.entity?.page;
+        const title = page?.friendlyName || page?.title;
 
-    return {
-        title,
-    };
+        return {
+            title,
+        };
+    } catch (e) {
+        return {
+            title: "not found",
+        };
+    }
 }
 
 export default async function Home({ searchParams, params }) {
@@ -45,7 +51,7 @@ export default async function Home({ searchParams, params }) {
     const pageAsset = graphqlToPageEntity(data);
 
     if (!pageAsset) {
-        notFound(); // NextJS 14 way to handle "Not Found" pages
+        notFound();
     }
 
     return <MyPage nav={nav.entity.children} pageAsset={pageAsset}></MyPage>;

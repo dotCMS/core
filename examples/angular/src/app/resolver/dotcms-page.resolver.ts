@@ -13,8 +13,8 @@ import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 export const DotCMSPageResolver = async (
   route: ActivatedRouteSnapshot
 ): Promise<{
-  pageAsset: DotCMSPageAsset | null;
-  nav: DotcmsNavigationItem | null;
+  pageAsset: DotCMSPageAsset;
+  nav: DotcmsNavigationItem;
 }> => {
   const client = inject(DOTCMS_CLIENT_TOKEN);
 
@@ -36,7 +36,6 @@ export const DotCMSPageResolver = async (
     languageId: queryParams['language_id'],
   };
 
-  // Second request to get the page data
   const pageRequest = client.page.get(pageProps) as Promise<{
     entity: DotCMSPageAsset;
   }>;
