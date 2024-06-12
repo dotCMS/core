@@ -1,21 +1,24 @@
 @if (values.length) {
-    <div class="dot-category-field__categories" data-testId="category-chip-list">
-        @for (category of values; track category.id) {
-            <p-chip
-                [pTooltip]="category.value"
-                [removable]="true"
-                [label]="category.value"
-                tooltipPosition="top"
-                styleClass="p-chip-sm" />
-        }
-    </div>
+<div class="dot-category-field__categories" data-testId="category-chip-list">
+    @for (category of values; track category.id) {
+    <p-chip
+        [pTooltip]="category.value"
+        [removable]="true"
+        [label]="category.value"
+        tooltipPosition="top"
+        styleClass="p-chip-sm" />
+    }
+</div>
 }
 
 <div class="dot-category-field__select">
-    <p-button
-        (onClick)="showCategories()"
-        [label]="'edit.content.category-field.show-categories-dialog' | dm"
-        data-testId="show-dialog-btn"
-        icon="pi pi-pencil"
-        styleClass="p-button-sm p-button-text p-button-secondary" />
+    <button
+        (click)="showCategoriesSidebar()"
+        [disabled]="disableSelectCategoriesButton()"
+        [label]="'edit.content.category-field.button.show-categories' | dm"
+        class="p-button-sm p-button-text p-button-secondary"
+        data-testId="show-sidebar-btn"
+        pButton></button>
 </div>
+
+<ng-container dotDynamic></ng-container>
