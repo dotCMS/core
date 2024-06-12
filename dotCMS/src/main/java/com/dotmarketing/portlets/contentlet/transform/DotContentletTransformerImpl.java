@@ -23,7 +23,6 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILE_OR_IMAGE_FIELDS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.JSON_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.STORY_BLOCK_VIEW;

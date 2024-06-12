@@ -42,7 +42,7 @@ public enum TransformOptions {
      * Instructs the Strategy to simply prevent the binaries from making it into the final resulting
      * map.
      */
-    FILTER_BINARIES(true),
+    FILTER_BINARIES,
     /**
      * Instructs the Strategy to render only the category name: (key=name)
      */
@@ -72,10 +72,6 @@ public enum TransformOptions {
      */
     LANGUAGE_VIEW,
     /**
-     * Instructs the Strategy to emulate the old BinaryToMapTransformer.
-     */
-    BINARIES_VIEW(true),
-    /**
      * Instructs the Strategy to include Key/Value data.
      */
     KEY_VALUE_VIEW,
@@ -83,10 +79,6 @@ public enum TransformOptions {
      * Instructs the Strategy to emulate the Category To MapTransformer.
      */
     CATEGORIES_VIEW,
-    /**
-     * Instructs the Strategy to include File Asset data.
-     */
-    FILEASSET_VIEW,
     /**
      * Instructs the Strategy to include Site data.
      */

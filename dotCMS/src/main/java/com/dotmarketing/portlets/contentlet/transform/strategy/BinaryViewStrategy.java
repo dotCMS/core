@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILTER_BINARIES;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -54,10 +55,13 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
     protected Map<String, Object> transform(final Contentlet contentlet,
     final Map<String, Object> map, final Set<TransformOptions> options, final User user) {
 
-        if (!options.contains(BINARIES)) {
+        if (!options.contains(BINARIES) || options.contains(FILTER_BINARIES)) {
             return map;
         }
+
+
         final List<Field> binaries = contentlet.getContentType().fields(BinaryField.class);
+
 
         if (!binaries.isEmpty()) {
             for (final Field field : binaries) {
@@ -65,7 +69,7 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
                     final String sufix = options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS)
                             ? "" : "Map";
 
-                    map.put(field.variable(),"/dA" + contentlet.getInode() + "/" + field.variable()  + "/file" );
+                    map.put(field.variable(),"/dA/" + contentlet.getInode() + "/" + field.variable()  + "/file" );
                     map.put(field.variable() + sufix, transform(contentlet, field));
 
                 } catch (Exception e) {

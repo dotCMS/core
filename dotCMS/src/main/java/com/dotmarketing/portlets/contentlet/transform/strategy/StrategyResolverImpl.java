@@ -15,10 +15,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.DATETIME_FIELDS_TO_TIMESTAMP;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILE_OR_IMAGE_FIELDS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.JSON_VIEW;
