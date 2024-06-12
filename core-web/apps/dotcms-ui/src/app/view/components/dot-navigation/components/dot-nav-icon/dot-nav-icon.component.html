@@ -1,9 +1,8 @@
 <i
-    class="fa fa-th-list {{ icon }}"
-    [style.font-size.px]="18"
-    aria-hidden="true"
     *ngIf="isFaIcon(icon); else mdIcon"
-></i>
+    [style.font-size.px]="18"
+    class="fa fa-th-list {{ icon }}"
+    aria-hidden="true"></i>
 <ng-template #mdIcon>
-    <dot-icon [size]="18" inverted [name]="icon.toLocaleLowerCase()" aria-hidden="true"></dot-icon>
+    <dot-icon [size]="18" [name]="icon.toLocaleLowerCase()" inverted aria-hidden="true"></dot-icon>
 </ng-template>

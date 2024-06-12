@@ -1,6 +1,5 @@
 <dot-iframe-dialog
-    [url]="url$ | async"
-    [header]="header$ | async"
     (shutdown)="onClose()"
     (custom)="custom.emit($event)"
-></dot-iframe-dialog>
+    [url]="url$ | async"
+    [header]="header$ | async"></dot-iframe-dialog>

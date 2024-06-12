@@ -5,16 +5,16 @@
             <span>{{ apps.sites[0].name }}</span>
             <div class="dot-apps-configuration-detail-actions">
                 <button
-                    class="p-button-outlined"
-                    [label]="'Cancel' | dm"
                     (click)="goToApps(apps.key)"
+                    [label]="'Cancel' | dm"
+                    class="p-button-outlined"
                     pButton
                     data-testid="cancelBtn"
                     type="button"></button>
                 <button
+                    (click)="onSubmit()"
                     [label]="'Save' | dm"
                     [disabled]="!formValid"
-                    (click)="onSubmit()"
                     pButton
                     data-testid="saveBtn"
                     type="button"></button>
@@ -24,17 +24,17 @@
     <div class="dot-apps-configuration-detail__body">
         <div class="dot-apps-configuration-detail__form-content">
             <dot-apps-configuration-detail-form
-                [appConfigured]="apps.sites[0].configured"
-                [formFields]="formFields"
                 (data)="formData = $event"
-                (valid)="formValid = $event"></dot-apps-configuration-detail-form>
+                (valid)="formValid = $event"
+                [appConfigured]="apps.sites[0].configured"
+                [formFields]="formFields"></dot-apps-configuration-detail-form>
             <div *ngIf="apps.allowExtraParams">
                 <h5>{{ 'apps.custom.properties' | dm }}</h5>
                 <dot-key-value-ng
+                    (updatedList)="updateVariables($event)"
                     [autoFocus]="false"
                     [showHiddenField]="true"
-                    [variables]="dynamicVariables"
-                    (updatedList)="updateVariables($event)" />
+                    [variables]="dynamicVariables" />
             </div>
         </div>
     </div>

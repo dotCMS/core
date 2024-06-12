@@ -90,7 +90,7 @@ public class PullCommand implements Callable<Integer>, DotCommand {
     CommandLine createCommandLine(DotPull command) {
 
         var cmdLine = new CommandLine(command);
-        CustomConfigurationUtil.getInstance().customize(cmdLine);
+        CustomConfigurationUtil.newInstance().customize(cmdLine);
 
         // Make sure unmatched arguments pass silently
         cmdLine.setUnmatchedArgumentsAllowed(true);

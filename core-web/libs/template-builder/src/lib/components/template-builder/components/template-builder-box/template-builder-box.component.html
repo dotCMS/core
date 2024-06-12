@@ -19,21 +19,21 @@
 <!-- Large -->
 <ng-template #largeTemplate>
     <div
-        class="template-builder-box"
         [ngClass]="{
             'template-builder-box--medium': boxVariant === templateBuilderSizes.medium,
             'template-builder-box--large': boxVariant === templateBuilderSizes.large
         }"
+        class="template-builder-box"
         data-testId="template-builder-box">
         <div class="template-builder-box__header-container">
             <p-dropdown
                 *ngIf="actions.includes('add')"
+                (onChange)="onContainerSelect($event)"
                 [showClear]="false"
                 [filter]="true"
                 [placeholder]="dropdownLabel"
                 [formControl]="formControl"
                 [autoDisplayFirst]="false"
-                (onChange)="onContainerSelect($event)"
                 scrollHeight="18.75rem"
                 dotContainerOptions
                 data-testId="btn-plus"
@@ -55,14 +55,14 @@
 
                 <dotcms-remove-confirm-dialog
                     *ngIf="actions.includes('delete')"
-                    [skipConfirmation]="items.length === 0"
                     (deleteConfirmed)="requestColumnDelete()"
-                    (deleteRejected)="deleteColumnRejected.emit()">
+                    (deleteRejected)="deleteColumnRejected.emit()"
+                    [skipConfirmation]="items.length === 0">
                 </dotcms-remove-confirm-dialog>
             </div>
         </div>
         <p-scrollPanel [style]="{ width: '100%', height: '10.9375rem' }">
-            <div class="template-builder-box__item" *ngFor="let item of items; let i = index">
+            <div *ngFor="let item of items; let i = index" class="template-builder-box__item">
                 <p data-testId="container-title">
                     {{ (containerMap && containerMap[item.identifier]?.title) || item.identifier }}
                 </p>
@@ -94,9 +94,9 @@
             styleClass="p-button-rounded  p-button-text p-button-sm"></p-button>
         <dotcms-remove-confirm-dialog
             *ngIf="actions.includes('delete')"
-            [skipConfirmation]="items.length === 0"
             (deleteConfirmed)="deleteColumn.emit()"
-            (deleteRejected)="deleteColumnRejected.emit()">
+            (deleteRejected)="deleteColumnRejected.emit()"
+            [skipConfirmation]="items.length === 0">
         </dotcms-remove-confirm-dialog>
     </div>
 </ng-template>

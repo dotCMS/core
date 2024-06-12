@@ -1,9 +1,9 @@
 import { Check } from './Check';
-var errorMessage = 'The message';
-var errorRegex;
+const errorMessage = 'The message';
+let errorRegex;
 
 describe('Unit.validation.Check.notEmpty', function () {
-    var validCases = [
+    const validCases = [
         { args: ' ', description: 'a single space.' },
         { args: 'some text', description: 'a couple of words' },
         { args: 'null', description: 'the literal string `null`' },
@@ -13,7 +13,7 @@ describe('Unit.validation.Check.notEmpty', function () {
         { args: new String(' '), description: 'a single space as an instance of String.' }
     ];
 
-    var invalidCases = [
+    const invalidCases = [
         { args: '', description: 'an empty string literal' },
         { args: 1, description: 'the number value 1' },
         { args: 0, description: 'the number value zero' },
@@ -55,7 +55,7 @@ describe('Unit.validation.Check.notEmpty', function () {
 });
 
 describe('Unit.validation.Check.Exists', function () {
-    var validCases = [
+    const validCases = [
         { args: ' ', description: 'a single space.' },
         { args: '', description: 'an empty string' },
         { args: 1, description: 'a number' },
@@ -68,7 +68,7 @@ describe('Unit.validation.Check.Exists', function () {
         { args: {}, description: 'An object literal (`{}`)' }
     ];
 
-    var invalidCases = [
+    const invalidCases = [
         { args: null, description: 'a literal null' },
         { args: undefined, description: 'a literal undefined' }
     ];
@@ -93,7 +93,7 @@ describe('Unit.validation.Check.Exists', function () {
 });
 
 describe('Unit.validation.Check.isString', function () {
-    var validCases = [
+    const validCases = [
         { args: '', description: 'an empty string literal' },
         { args: ' ', description: 'a single space.' },
         { args: 'some text', description: 'a couple of words' },
@@ -104,7 +104,7 @@ describe('Unit.validation.Check.isString', function () {
         { args: new String(' '), description: 'a single space as an instance of String.' }
     ];
 
-    var invalidCases = [
+    const invalidCases = [
         { args: 1, description: 'the number value 1' },
         { args: 0, description: 'the number value zero' },
         { args: null, description: 'a literal null' },

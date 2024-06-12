@@ -96,10 +96,11 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         }
     );
 
-    readonly getSuggestedWinner$: Observable<DotResultVariant | null> = this.select(({ results }) =>
-        BayesianNoWinnerStatus.includes(results?.bayesianResult?.suggestedWinner)
-            ? null
-            : results?.goals.primary.variants[results?.bayesianResult?.suggestedWinner]
+    readonly getSuggestedWinner$: Observable<DotResultVariant | null> = this.select(
+        ({ results }) =>
+            BayesianNoWinnerStatus.includes(results?.bayesianResult?.suggestedWinner)
+                ? null
+                : results?.goals.primary.variants[results?.bayesianResult?.suggestedWinner]
     );
 
     readonly getPromotedVariant$: Observable<Variant | null> = this.select(({ experiment }) =>

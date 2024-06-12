@@ -12,13 +12,13 @@ export default {
         data: {
             table: {
                 expanded: true
-            },
+            }
         },
         actions: {
             table: {
                 disable: true
             }
-        },
+        }
     },
     args: {
         data: {
@@ -51,7 +51,7 @@ export default {
 
 const Template = (args) => {
     const cardContentlet = document.createElement('dot-card-contentlet');
-    cardContentlet.item = args
+    cardContentlet.item = args;
 
     const div = document.createElement('div');
     div.style.display = 'flex';
@@ -63,4 +63,4 @@ const Template = (args) => {
     return div;
 };
 
-export const ContentletCard = Template.bind({})
+export const ContentletCard = Template.bind({});
