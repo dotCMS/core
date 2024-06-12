@@ -1,48 +1,51 @@
-name: "EMA APP"
-iconUrl: "https://static.dotcms.com/assets/icons/apps/ema-icon.png"
+name: 'EMA APP'
+iconUrl: 'https://static.dotcms.com/assets/icons/apps/ema-icon.png'
 allowExtraParameters: false
-description: "EMA - or Edit Mode Anywhere, allows you to proxy your edit mode requests to a 3rd party server or web site. If that site is configured to use the dotCMS Page API then EMA enables remote content management of content, layouts and pages that are hosted remotely."
+description: 'EMA - or Edit Mode Anywhere, allows you to proxy your edit mode requests to a 3rd party server or web site. If that site is configured to use the dotCMS Page API then EMA enables remote content management of content, layouts and pages that are hosted remotely.'
 params:
-  proxyEditModeURL:
-    value: ""
-    hidden: false
-    type: "STRING"
-    label: "Configuration"
-    hint: "Allows you to match multiple URL patterns with different 3rd party servers, if required. For instance: 
-      ```[
-            {
-              \"pattern\":\"/blogs/(.*)\",
-              \"urlEndpoint\":\"https://myspa.blogs.com:3000\",
-              \"includeRendered\":false,
-              \"headers\": {
-                \"authenticationToken\": \"123\",
-                \"depth\": 2,
-                \"X-CONTENT-APP\": \"dotCMS\"
-              }
-            },
-            {
-              \"pattern\":\".*\",
-              \"urlEndpoint\":\"https://myspa.com:3000\",
-              \"includeRendered\":false,
-              \"headers\": {
-                \"authenticationToken\": \"456\",
-                \"depth\": 2,
-                \"X-CONTENT-APP\": \"dotCMS\"
-              }
-            }
-      ]```"
-    required: true
-  includeRendered:
-    value: false
-    hidden: false
-    type: "BOOL"
-    label: "[DEPRECATED] Include 'rendered' attribute?"
-    hint: "If enabled, the information that dotCMS sends to the EMA Service via POST will include the 'rendered' attribute. This 'rendered' attribute is NOT sent by default."
-    required: false
-  authenticationToken:
-    value: ""
-    hidden: false
-    type: "STRING"
-    label: "[DEPRECATED] Authentication Token"
-    hint: "This token will verify the EMA URL. For example: https://demospa.dotcms.com/ema?token={EMA_ACCESS_TOKEN} . If the token sent by EMA does not equal the token in the App, the EMA request will fail."
-    required: false
+    proxyEditModeURL:
+        value: ''
+        hidden: false
+        type: 'STRING'
+        label: 'Configuration'
+        hint: |
+            Allows you to match multiple URL patterns with different 3rd party servers, if required. For instance:
+            ```
+            [
+                  {
+                    "pattern":"/blogs/(.*)",
+                    "urlEndpoint":"https://myspa.blogs.com:3000",
+                    "includeRendered":false,
+                    "headers": {
+                      "authenticationToken": "123",
+                      "depth": 2,
+                      "X-CONTENT-APP": "dotCMS"
+                    }
+                  },
+                  {
+                    "pattern":".*",
+                    "urlEndpoint":"https://myspa.com:3000",
+                    "includeRendered":false,
+                    "headers": {
+                      "authenticationToken": "456",
+                      "depth": 2,
+                      "X-CONTENT-APP": "dotCMS"
+                    }
+                  }
+            ]
+            ```
+        required: true
+    includeRendered:
+        value: false
+        hidden: false
+        type: 'BOOL'
+        label: "[DEPRECATED] Include 'rendered' attribute?"
+        hint: "If enabled, the information that dotCMS sends to the EMA Service via POST will include the 'rendered' attribute. This 'rendered' attribute is NOT sent by default."
+        required: false
+    authenticationToken:
+        value: ''
+        hidden: false
+        type: 'STRING'
+        label: '[DEPRECATED] Authentication Token'
+        hint: 'This token will verify the EMA URL. For example: https://demospa.dotcms.com/ema?token={EMA_ACCESS_TOKEN} . If the token sent by EMA does not equal the token in the App, the EMA request will fail.'
+        required: false

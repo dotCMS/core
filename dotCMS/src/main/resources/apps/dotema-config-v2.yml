@@ -29,11 +29,16 @@ params:
                           "options": {
                               "authenticationToken": "456",
                               "depth": 1,
-                              "X-CONTENT-APP": "dotCMS"
+                              "X-CONTENT-APP": "dotCMS",
+                              "devURLWhitelist": [
+                                  "http://localhost:3000",
+                                  "http://localhost:3001",
+                                  "https://myspa.dev.com"
+                                ]
                           }
                       }
                   ]
               }
-
-              ```<br/><br/>
+              ```
+              <br/><br/>
               You have a specific configuration for pages that start with '/blogs/' and a generic configuration for all other pages, i.e., '.*'. The 'options' object allows you to specify additional headers to be sent to the UVE Service. The 'authenticationToken' is an optional header in case you need a security layer for UVE requests. So, if the token sent by UVE does not equal the token in your app, the request will fail. The 'depth' attribute indicates dotCMS how many levels of related content must be returned by the API. The 'X-CONTENT-APP' is just an example of a custom header you can send to your app, so you can add your own.
