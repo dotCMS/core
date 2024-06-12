@@ -1,8 +1,8 @@
 package com.dotcms.rest.api.v1.temp;
 
 import com.dotcms.content.model.hydration.MetadataDelegate;
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
@@ -17,7 +17,6 @@ import io.vavr.control.Try;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
-import java.nio.file.Path;
 import java.util.Map;
 
 import static com.liferay.util.StringPool.FORWARD_SLASH;
@@ -44,6 +43,8 @@ public class DotTempFile {
 
   @JsonIgnore
   public final File file;
+  @JsonIgnore
+  private static final SecurityUtils securityUtils = new SecurityUtils();
 
   /**
    * Creates an instance of a Temporary File.
@@ -103,12 +104,8 @@ public class DotTempFile {
   private Map<String, Serializable> getUpdatedMetadataOrFallback(final File file, final String fileName, final Map<String, Serializable> initialMetadata) {
     final String nameFromFile = null != file ? file.getName(): UNKNOWN_FILE_NAME;
     if (!UNKNOWN_FILE_NAME.equals(nameFromFile) && !nameFromFile.equals(fileName)) {
-      final String targetDirectory = file.getParentFile().getAbsolutePath();
-      final Path targetPath = new File(targetDirectory).toPath().normalize();
-      final File renamedFile = new File(targetPath + FORWARD_SLASH + fileName);
-      if (!renamedFile.toPath().normalize().startsWith(targetPath)) {
-        throw new DotRuntimeException(String.format("Cannot create temp file outside target directory: %s", targetPath));
-      }
+      final File renamedFile = new File(file.getParentFile(), fileName);
+      securityUtils.validateFile(renamedFile.getAbsolutePath());
       if (!file.renameTo(renamedFile)) {
         Logger.warn(this, String.format("Unable to rename file '%s' to '%s'",
                 file.getAbsolutePath(), renamedFile.getAbsolutePath()));
