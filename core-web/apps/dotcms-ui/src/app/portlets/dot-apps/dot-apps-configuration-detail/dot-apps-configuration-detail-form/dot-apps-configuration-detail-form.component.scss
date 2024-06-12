@@ -10,6 +10,19 @@
         max-height: 21.5rem;
         overflow: auto !important;
     }
+
+    ::ng-deep {
+        .p-field-hint {
+            markdown pre {
+                background-color: $color-palette-secondary-100;
+
+                // This padding prevents the code to overlap between lines
+                code {
+                    padding: 0;
+                }
+            }
+        }
+    }
 }
 
 .p-field {
