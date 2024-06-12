@@ -16,7 +16,11 @@ import io.vavr.control.Try;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import static com.liferay.util.StringPool.FORWARD_SLASH;
@@ -104,13 +108,17 @@ public class DotTempFile {
   private Map<String, Serializable> getUpdatedMetadataOrFallback(final File file, final String fileName, final Map<String, Serializable> initialMetadata) {
     final String nameFromFile = null != file ? file.getName(): UNKNOWN_FILE_NAME;
     if (!UNKNOWN_FILE_NAME.equals(nameFromFile) && !nameFromFile.equals(fileName)) {
-      final File renamedFile = new File(file.getParentFile(), fileName);
-      securityUtils.validateFile(renamedFile.getAbsolutePath());
-      if (!file.renameTo(renamedFile)) {
+      final String targetDirectory = file.getParentFile().getAbsolutePath();
+      final Path targetPathStr = new File(targetDirectory).toPath().normalize();
+      final Path fileToMovePath = Paths.get(file.getAbsolutePath());
+      final Path targetPath = Paths.get(targetPathStr.toString(), fileName);
+      try {
+        final Path renamedFile = Files.move(fileToMovePath, targetPath);
+        return this.getMetadata(new File(renamedFile.toString()));
+      } catch (final IOException e) {
         Logger.warn(this, String.format("Unable to rename file '%s' to '%s'",
-                file.getAbsolutePath(), renamedFile.getAbsolutePath()));
+                file.getAbsolutePath(), fileName));
       }
-      return this.getMetadata(renamedFile);
     }
     return initialMetadata;
   }
