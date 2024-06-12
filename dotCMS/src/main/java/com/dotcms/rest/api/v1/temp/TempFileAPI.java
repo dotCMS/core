@@ -69,7 +69,7 @@ public class TempFileAPI {
 
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
   private static final String TEMP_RESOURCE_BY_URL_ADMIN_ONLY="TEMP_RESOURCE_BY_URL_ADMIN_ONLY";
-  
+  private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
   
 
   /**
