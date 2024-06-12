@@ -417,7 +417,7 @@ public class ContentTypeHelper implements Serializable {
             final var message = String.format(
                     "Workflow Scheme with id [%s] not found.", workflowId
             );
-            Logger.warn(ContentTypeHelper.class, message);
+            Logger.debug(ContentTypeHelper.class, message);
         }
 
         return existingWorkflowScheme;
@@ -445,7 +445,7 @@ public class ContentTypeHelper implements Serializable {
             final var message = String.format(
                     "Workflow Scheme with variable [%s] not found.", variableName
             );
-            Logger.warn(ContentTypeHelper.class, message);
+            Logger.debug(ContentTypeHelper.class, message);
         }
 
         return existingWorkflowScheme;

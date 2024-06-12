@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeForm.ContentTypeFormDeserialize;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -200,12 +201,12 @@ public class ContentTypeForm  {
                         final JSONObject workflowJsonObject = (JSONObject) entry;
 
                         String workflowId = null;
-                        if (workflowJsonObject.has("id")) {
+                        if (UtilMethods.isSet(workflowJsonObject.getString("id"))) {
                             workflowId = workflowJsonObject.getString("id");
                         }
 
                         String variableName = null;
-                        if (workflowJsonObject.has("variableName")) {
+                        if (UtilMethods.isSet(workflowJsonObject.getString("variableName"))) {
                             variableName = workflowJsonObject.getString("variableName");
                         }
 
