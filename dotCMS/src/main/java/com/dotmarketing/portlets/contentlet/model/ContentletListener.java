@@ -19,13 +19,6 @@ public interface ContentletListener<T extends Contentlet> {
         return this.getClass().getName();
     }
 
-
-    /**
-     * When a contentlet is being modified or created this event is triggered
-     * @param contentletCheckinEvent {@link ContentletCheckinEvent}
-     */
-    //default void onValidation(ContentletCheckinEvent<T> contentletCheckinEvent) {}
-
     /**
      * When a contentlet is being modified or created this event is triggered
      * @param contentletCheckinEvent {@link ContentletCheckinEvent}
@@ -49,4 +42,5 @@ public interface ContentletListener<T extends Contentlet> {
      * @param contentletDeletedEvent {@link ContentletDeletedEvent}
      */
     default void onDeleted(ContentletDeletedEvent<T> contentletDeletedEvent) { }
+
 }

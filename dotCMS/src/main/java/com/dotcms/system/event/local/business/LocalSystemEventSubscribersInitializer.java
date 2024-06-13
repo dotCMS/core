@@ -1,5 +1,6 @@
 package com.dotcms.system.event.local.business;
 
+import com.dotcms.ai.listener.EmbeddingContentListener;
 import com.dotcms.analytics.listener.AnalyticsAppListener;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
@@ -68,6 +69,8 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         APILocator.getLocalSystemEventsAPI().subscribe(APILocator.getContainerAPI());
 
         APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AnalyticsAppListener.Instance.get());
+
+        APILocator.getLocalSystemEventsAPI().subscribe(new EmbeddingContentListener());
 
         this.initDotVelocityMacrosVtlFiles();
     }
