@@ -63,12 +63,4 @@ public class BuiltVersionServiceImpl implements BuiltVersionService {
         return props;
     }
 
-    public boolean isBuildPropertiesFileFound(){
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
-            return input != null;
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
 }
