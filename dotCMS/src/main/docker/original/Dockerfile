@@ -1,46 +1,32 @@
 # ----------------------------------------------
-# Stage 2:  Construct our container using the minimal-java image
-#           and copying the prebuilt dotcms
+# Stage 1: Construct our container using the minimal-java image and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base:ms-jdk-11 as container-base
-
+ARG SDKMAN_JAVA_VERSION="11.0.22-ms"
+FROM dotcms/java-base:${SDKMAN_JAVA_VERSION} as container-base
+ARG SDKMAN_JAVA_VERSION="11.0.22-ms"
 WORKDIR /srv
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Installing basic packages 
-RUN apt update \
-    && apt upgrade -y
-
-# Cleanup
-RUN apt purge --allow-remove-essential -y \
-    && apt autoremove -y \
-    && apt clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Defining default non-root user UID, GID, and name 
+# Defining default non-root user UID, GID, and name
 ARG USER_UID="65001"
 ARG USER_GID="65001"
 ARG USER_GROUP="dotcms"
 ARG USER_NAME="dotcms"
 
-RUN groupadd -f -g $USER_GID $USER_GROUP
-# Creating default non-user
-# the useradd
-RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
-
-RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
+RUN groupadd -g $USER_GID $USER_GROUP && \
+    useradd -l -d /srv -u $USER_UID -g $USER_GROUP -s /bin/bash $USER_NAME && \
+    mkdir -p /srv/utils /srv/templates /srv/config /srv/home
 
 # Copy our build
 COPY --chown=$USER_NAME:$USER_GROUP maven /srv/
 COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
 
-RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat
-
-# Make scripts runable
-RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
+RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat && \
+    # Make scripts runnable
+    find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
     # Make plugin merging directories writable
-    find /srv/templates -type d -exec chmod 770 {} \;  && \
+    find /srv/templates -type d -exec chmod 770 {} \; && \
     # Make dotcms user owner
     mkdir -p /data/shared/assets && \
     mkdir -p /data/shared/felix/load && \
@@ -49,26 +35,32 @@ RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
     chown -R $USER_NAME:$USER_NAME /data
 
 # ----------------------------------------------
-# Stage 3:  Flatten everything to 1 layer
+# Stage 3: Final stage for minimal runtime image
 # ----------------------------------------------
-FROM scratch
+FROM ubuntu:20.04
 
-LABEL com.dotcms.contact "support@dotcms.com"
-LABEL com.dotcms.vendor "dotCMS LLC"
-LABEL com.dotcms.description "dotCMS Content Management System"
+LABEL com.dotcms.contact="support@dotcms.com" \
+      com.dotcms.vendor="dotCMS LLC" \
+      com.dotcms.description="dotCMS Content Management System"
+
+# Install tini
+RUN apt-get update && apt-get install -y --no-install-recommends tini && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ARG USER_UID="65001"
 ARG USER_GID="65001"
 
-COPY --from=container-base / /
+# Copy the Java runtime environment first
+COPY --from=container-base /java /java
+# Copy the application files and data
+COPY --from=container-base /srv /srv
+COPY --from=container-base /data /data
 
-# Switching to non-root user to install SDKMAN!
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
 
-ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
-CMD ["dotcms"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["/srv/entrypoint.sh"]
 
 ## Ports
 # Glowroot profiler - must be configured via CMS_JAVA_OPTS
