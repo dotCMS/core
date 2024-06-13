@@ -1,8 +1,10 @@
 import { inject } from '@angular/core';
 import { CanMatchFn, Route, Router, UrlSegment } from '@angular/router';
 
-import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
+import { getPageRequestParams } from '@dotcms/client';
 import { DotCMSPageAsset } from '@dotcms/angular';
+
+import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 
 export const canMatchPage: CanMatchFn = async (
   route: Route,
@@ -11,22 +13,14 @@ export const canMatchPage: CanMatchFn = async (
   const router = inject(Router);
   const client = inject(DOTCMS_CLIENT_TOKEN);
 
-  const path = segments?.map((segment) => segment.path)?.join('/') || '/';
-  const initialUrl = router.getCurrentNavigation()?.initialUrl;
-  const queryParams = initialUrl?.queryParams || {};
-
-  const { mode, variantName, language_id } = queryParams;
-  const personaId = queryParams['com.dotmarketing.persona.id'] || '';
-
-  const pageProps = {
-    path,
-    mode,
-    language_id,
-    variantName,
-    'com.dotmarketing.persona.id': personaId,
-  };
-
   try {
+    const { queryParams } = router.getCurrentNavigation()?.initialUrl || {};
+    const path = segments?.map((segment) => segment.path)?.join('/') || '/';
+    const pageProps = getPageRequestParams({
+      path,
+      params: queryParams,
+    });
+
     const { entity } = (await client.page.get(pageProps)) as {
       entity: DotCMSPageAsset;
     };

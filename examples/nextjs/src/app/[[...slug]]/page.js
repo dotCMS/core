@@ -3,6 +3,7 @@ import { ErrorPage } from "@/components/error";
 
 import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
 import { client, getRequestParams } from "@/utils/dotcmsClient";
+import { getPageRequestParams } from "@dotcms/client";
 
 /**
  * Generate metadata
@@ -12,14 +13,11 @@ import { client, getRequestParams } from "@/utils/dotcmsClient";
  * @return {*}
  */
 export async function generateMetadata({ params, searchParams }) {
-    const requestData = getRequestParams({
-        params,
-        searchParams,
-        defaultPath: "/",
-    });
+    const path = params?.slug?.join("/") || '/';
+    const pageRequestParams = getPageRequestParams({ path, params: searchParams })
 
     try {
-        const data = await client.page.get(requestData);
+        const data = await client.page.get(pageRequestParams);
         const page = data.entity?.page;
         const title = page?.friendlyName || page?.title;
 
@@ -31,17 +29,13 @@ export async function generateMetadata({ params, searchParams }) {
             title: "not found",
         };
     }
-}
+};
 
 export default async function Home({ searchParams, params }) {
-    const requestData = getRequestParams({
-        params,
-        searchParams,
-        defaultPath: "/",
-    });
-
     try {
-        const data = await client.page.get(requestData);
+        const path = params?.slug?.join("/") || '/';
+        const pageRequestParams = getPageRequestParams({ path, params: searchParams })
+        const data = await client.page.get(pageRequestParams);
         const nav = await client.nav.get({
             path: "/",
             depth: 2,

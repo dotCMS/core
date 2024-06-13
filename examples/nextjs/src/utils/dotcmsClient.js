@@ -10,24 +10,3 @@ export const client = dotcmsClient.init({
         cache: "no-cache",
     }
 });
-
-
-/**
- * Get request params
- *
- * @param {*} { params, searchParams }
- * @return {*}
- */
-export const getRequestParams = ({ params, searchParams, defaultPath }) => {
-    const path = params?.slug?.join("/") || defaultPath;
-    const personaId = searchParams["com.dotmarketing.persona.id"]  || "";
-    const { language_id, mode, variantName } = searchParams;
-
-    return {
-        path,
-        mode,
-        language_id,
-        variantName,
-        "com.dotmarketing.persona.id": personaId,
-    };
-};
