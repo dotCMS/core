@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
+import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.SYSTEM_WORKFLOW_VARIABLE_NAME;
 
 import com.dotcms.ai.workflow.DotEmbeddingsActionlet;
 import com.dotcms.ai.workflow.OpenAIAutoTagActionlet;
@@ -606,23 +607,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
-	public WorkflowScheme findScheme(final String id) throws DotDataException, DotSecurityException {
+	public WorkflowScheme findScheme(final String idOrVar) throws DotDataException, DotSecurityException {
 
-		final String schemeId = this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
+		final String schemeIdOrVar = this.getLongId(idOrVar, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
 
-		validateWorkflowLicense(schemeId, "Workflow-Schemes-License-required");
+		validateWorkflowLicense(schemeIdOrVar, "Workflow-Schemes-License-required");
 
-		return workFlowFactory.findScheme(schemeId);
-	}
-
-	@Override
-	@CloseDBIfOpened
-	public WorkflowScheme findSchemeByVariableName(final String variableName)
-			throws DotDataException {
-
-		validateWorkflowLicense(variableName, "Workflow-Schemes-License-required");
-
-		return workFlowFactory.findScheme(variableName);
+		return workFlowFactory.findScheme(schemeIdOrVar);
 	}
 
 	@Override
@@ -1589,7 +1580,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	} // findActions.
 
 	private void validateWorkflowLicense(String scheme, String message) {
-		if (!SYSTEM_WORKFLOW_ID.equals(scheme)) {
+		if (!SYSTEM_WORKFLOW_ID.equals(scheme) && !SYSTEM_WORKFLOW_VARIABLE_NAME.equals(scheme)) {
 			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
 				throw new InvalidLicenseException(message);
 			}

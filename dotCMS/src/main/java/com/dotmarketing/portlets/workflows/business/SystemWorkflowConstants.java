@@ -7,6 +7,7 @@ package com.dotmarketing.portlets.workflows.business;
 public interface SystemWorkflowConstants {
 
     String SYSTEM_WORKFLOW_ID               = "d61a59e1-a49c-46f2-a929-db2b4bfa88b2";
+    String SYSTEM_WORKFLOW_VARIABLE_NAME    = "SystemWorkflow";
 
     String WORKFLOW_NEW_STEP_ID             = "6cb7e3bd-1710-4eed-8838-d3db60f78f19";
     String WORKFLOW_UNPUBLISHED_STEP_ID     = "ee24a4cb-2d15-4c98-b1bd-6327126451f3";

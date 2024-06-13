@@ -2912,20 +2912,21 @@ public class WorkflowResource {
     } // importScheme.
 
     /**
-     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
-     * in addition the permission (who can use) will be also returned.
-     * @param httpServletRequest  HttpServletRequest
-     * @param schemeId String
+     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions) in
+     * addition the permission (who can use) will be also returned.
+     *
+     * @param httpServletRequest HttpServletRequest
+     * @param schemeIdOrVariable String (scheme id or variable)
      * @return Response
      */
     @GET
-    @Path("/schemes/{schemeId}/export")
+    @Path("/schemes/{schemeIdOrVariable}/export")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response exportScheme(@Context final HttpServletRequest  httpServletRequest,
                                        @Context final HttpServletResponse httpServletResponse,
-                                       @PathParam("schemeId") final String schemeId) {
+            @PathParam("schemeIdOrVariable") final String schemeIdOrVariable) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, httpServletRequest, httpServletResponse,true, null);
@@ -2936,10 +2937,10 @@ public class WorkflowResource {
 
         try {
 
-            Logger.debug(this, "Exporting the workflow scheme: " + schemeId);
+            Logger.debug(this, "Exporting the workflow scheme: " + schemeIdOrVariable);
             this.workflowAPI.isUserAllowToModifiedWorkflow(initDataObject.getUser());
 
-            scheme       = this.workflowAPI.findScheme(schemeId);
+            scheme = this.workflowAPI.findScheme(schemeIdOrVariable);
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
             response     = Response.ok(new ResponseEntityView(

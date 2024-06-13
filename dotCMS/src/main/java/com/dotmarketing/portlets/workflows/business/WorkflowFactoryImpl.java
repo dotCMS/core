@@ -2566,7 +2566,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (results.isEmpty()) {
             throw new NotFoundInDbException(
                     String.format(
-                            "Workflow scheme with variable name [%s] not found", variableName
+                            "Workflow scheme [%s] not found", variableName
                     )
             );
         }
@@ -2594,7 +2594,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (results.isEmpty()) {
             throw new NotFoundInDbException(
                     String.format(
-                            "Workflow scheme with id [%s] not found", id
+                            "Workflow scheme [%s] not found", id
                     )
             );
         }

@@ -277,16 +277,15 @@ public interface WorkflowAPI {
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
 
-	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException;
-
 	/**
-	 * Find a scheme by the scheme variable name
+	 * Find a scheme by the scheme id or variable name
 	 *
-	 * @param variableName the variable name of the scheme
-	 * @return the scheme with the given variable name
-	 * @throws DotDataException if there is an error retrieving the scheme
+	 * @param idOrVar the id or variable name of the scheme
+	 * @return the scheme with the given id or variable name
+	 * @throws DotDataException     if there is an error retrieving the scheme
+	 * @throws DotSecurityException if the user does not have permission to access the scheme
 	 */
-	WorkflowScheme findSchemeByVariableName(String variableName) throws DotDataException;
+	public WorkflowScheme findScheme(String idOrVar) throws DotDataException, DotSecurityException;
 
 	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;
 

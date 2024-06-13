@@ -180,11 +180,11 @@ public class ContentTypeHelper implements Serializable {
             throws DotDataException, DotSecurityException {
 
         // Trying to find the workflow by id
-        var existingWorkflowScheme = getWorkflowById(workflowFormEntry.id());
+        var existingWorkflowScheme = getWorkflow(workflowFormEntry.id());
 
         // Now trying to find by variable if not found by id
         if (null == existingWorkflowScheme) {
-            existingWorkflowScheme = getWorkflowByVariableName(workflowFormEntry.variableName());
+            existingWorkflowScheme = getWorkflow(workflowFormEntry.variableName());
         }
 
         if (null == existingWorkflowScheme) {
@@ -399,51 +399,23 @@ public class ContentTypeHelper implements Serializable {
     /**
      * Retrieves an existing workflow
      *
-     * @param workflowId The workflow id to evaluate
+     * @param workflowIdOrVar The workflow id or variable to search for.
      * @return The existing workflow if found, otherwise null.
      * @throws DotSecurityException If there are security restrictions preventing the evaluation.
      * @throws DotDataException     If an error occurs while accessing data.
      */
-    private WorkflowScheme getWorkflowById(final String workflowId)
+    private WorkflowScheme getWorkflow(final String workflowIdOrVar)
             throws DotSecurityException, DotDataException {
 
         WorkflowScheme existingWorkflowScheme = null;
 
         try {
-            if (StringUtils.isNotEmpty(workflowId)) {
-                existingWorkflowScheme = APILocator.getWorkflowAPI().findScheme(workflowId);
+            if (StringUtils.isNotEmpty(workflowIdOrVar)) {
+                existingWorkflowScheme = APILocator.getWorkflowAPI().findScheme(workflowIdOrVar);
             }
         } catch (NotFoundInDbException e) {
             final var message = String.format(
-                    "Workflow Scheme with id [%s] not found.", workflowId
-            );
-            Logger.debug(ContentTypeHelper.class, message);
-        }
-
-        return existingWorkflowScheme;
-    }
-
-    /**
-     * Retrieves an existing workflow
-     *
-     * @param variableName The workflow variable name to evaluate
-     * @return The existing workflow if found, otherwise null.
-     * @throws DotSecurityException If there are security restrictions preventing the evaluation.
-     * @throws DotDataException     If an error occurs while accessing data.
-     */
-    private WorkflowScheme getWorkflowByVariableName(final String variableName)
-            throws DotDataException {
-
-        WorkflowScheme existingWorkflowScheme = null;
-
-        try {
-            if (StringUtils.isNotEmpty(variableName)) {
-                existingWorkflowScheme = APILocator.getWorkflowAPI()
-                        .findSchemeByVariableName(variableName);
-            }
-        } catch (NotFoundInDbException e) {
-            final var message = String.format(
-                    "Workflow Scheme with variable [%s] not found.", variableName
+                    "Workflow Scheme [%s] not found.", workflowIdOrVar
             );
             Logger.debug(ContentTypeHelper.class, message);
         }
