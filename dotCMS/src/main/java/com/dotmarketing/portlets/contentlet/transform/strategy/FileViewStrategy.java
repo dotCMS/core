@@ -91,7 +91,7 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
                 final String fieldVar = optContent.get().isFileAsset() ? FileAssetAPI.BINARY_FIELD : DotAssetAPI.DOTASSET_FIELD_VAR;
 
                 Map<String,Object> fileMap = BinaryToMapTransformer.transform(optContent.get(), optContent.get().getContentType().fieldMap().get(fieldVar), true);
-                map.put(field.variable(), fileMap);
+                map.put(field.variable(), fileMap.get(fieldVar));
 
             } catch (Exception e) {
                 Logger.warn(this,

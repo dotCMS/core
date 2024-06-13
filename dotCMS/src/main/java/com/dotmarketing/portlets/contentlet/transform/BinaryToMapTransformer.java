@@ -56,7 +56,7 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
     public static Map<String, Object> transform(final Contentlet con,
             final Field field, boolean fileOrImageField) {
 
-        return binaryViewStrategy.get().transform(con, field, true);
+       return  new DotTransformerBuilder().binaryToMapTransformer().content(con).build().toMaps().get(0);
 
     }
 
