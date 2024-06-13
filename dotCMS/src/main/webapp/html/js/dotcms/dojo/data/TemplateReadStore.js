@@ -15,11 +15,6 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 		this.hostId = options.hostId;
 		this.templateSelected = options.templateSelected;
 		window.top._dotTemplateStore = this;
-		let url = "/api/v1/templates/?filter=*&host=" + options.hostId;
-
-		console.log("url", url);
-
-		this.fetch({ query: '*', queryOptions: {}, start: 0, count: 10, sort: '', scope: this });
 	},
 
 	getValue: function (item, attribute, defaultValue) {
@@ -88,7 +83,6 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 			keywordArgs.query.templateSelected = this.templateSelected;
 		}
 
-		console.log("keywordArgs:",keywordArgs.query, keywordArgs.queryOptions, keywordArgs.start, keywordArgs.count, keywordArgs.sort)
 
 		if((keywordArgs.query.fullTitle == '' ||
 				keywordArgs.query.fullTitle=='undefined' ||
@@ -108,14 +102,11 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 				url += "&host=" + keywordArgs.query.hostId;
 			}
 
-			console.log("url", url);
-
 			fetch(url)
 				.then((fetchResp) => fetchResp.json())
 				.then(responseEntity => {
 
-						console.log("responseEntity", responseEntity);
-						this.fetchCallbackVar(responseEntity, keywordArgs);
+						this.fetchTemplatesCallback(keywordArgs, responseEntity);
 					}
 				);
 
@@ -127,11 +118,9 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 
 	fetchTemplatesCallback: function (keywordArgs, templatesEntity) {
 
-		console.log("fetchTemplatesCallback, templatesEntity",keywordArgs, templatesEntity);
 		var scope = keywordArgs.scope;
 		if(keywordArgs.onBegin) {
 
-			console.log("onBegin -> templatesEntity.pagination.totalEntries",templatesEntity.pagination.totalEntries, this.currentRequest);
 			keywordArgs.onBegin.call(scope?scope:dojo.global, templatesEntity.pagination.totalEntries, this.currentRequest);
 		}
 
@@ -139,23 +128,19 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 
 			let templatesArray = templatesEntity.entity;
 
-			console.log('onItem templatesArray', templatesArray);
 			dojo.forEach(templatesArray, function (template) {
-				console.log('onItem template', template);
 				keywordArgs.onItem.call(scope?scope:dojo.global, template, this.currentRequest);
 			}, this);
 		}
 
 		if(keywordArgs.onComplete) {
 
-			console.log('onComplete templatesEntity.entity', templatesEntity.entity, this.currentRequest);
 			keywordArgs.onComplete.call(scope?scope:dojo.global, templatesEntity.entity, this.currentRequest);
 		}
 	},
 
 	fetchCallback: function (keywordArgs, templatesEntity) {
 
-		console.log("fetchCallback, keywordArgs",keywordArgs, "templatesEntity", templatesEntity);
 		var scope = keywordArgs.scope;
 		if(keywordArgs.onBegin) {
 			keywordArgs.onBegin.call(scope?scope:dojo.global, templatesEntity.pagination.totalEntries, this.currentRequest);
@@ -187,7 +172,6 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 	},
 
 	fetchItemByIdentityCallback: function (request, template) {
-		console.log("fetchItemByIdentityCallback", "request", request, "template", template)
 		var scope = request.scope;
 		if(request.onItem) {
 			request.onItem.call(scope?scope:dojo.global, template, this.currentRequest);

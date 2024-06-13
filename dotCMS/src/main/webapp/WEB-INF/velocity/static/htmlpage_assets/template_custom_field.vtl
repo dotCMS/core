@@ -5,7 +5,6 @@ dojo.require("dotcms.dojo.data.TemplateReadStore");
 function templateChanged() {
     var templateSel=dijit.byId("templateSel");
     var value=templateSel.get('value');
-    console.log("temlateChanged", value);
     if(value == "0") {
         var store=window.top._templateStore;
         store.hostId="";
@@ -14,7 +13,6 @@ function templateChanged() {
     }
     else if(value) {
         dojo.byId("template").value=value;
-        console.log("templateChanged", value);
         const response = fetch("/api/v1/templates/image", {
             method: "POST",
             headers: {
@@ -60,7 +58,6 @@ function getTemplateCallBack(data) {
 dojo.ready(function(){
     var hostId = "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
     var templateId = dojo.byId("template").value;
-    console.log("dojo.ready0", "hostId",hostId, "templateId",templateId);
     var templateStore = new dotcms.dojo.data.TemplateReadStore({
         hostId: hostId,
         templateSelected: templateId
@@ -89,7 +86,6 @@ dojo.ready(function(){
 
     var val  = dojo.byId("template").value;
     if (val != undefined && val != "" && val != "0"){
-        console.log("dojo.ready1", val);
         const response = fetch("/api/v1/templates/image", {
             method: "POST",
             headers: {
@@ -114,28 +110,26 @@ dojo.ready(function(){
             imageEl.style.border = "0px";
         });
 
-        console.log("dojo.ready2", val);
         var templateSel=dijit.byId("templateSel");
         templateSel.set("value",val);
-        console.log("dojo.ready3", templateSel);
     }
 
     var currentTemplateIdElement = dojo.byId("currentTemplateId");
     currentTemplateIdElement.value = val;
 
 
+
     // try to preload the default template.
-    var defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "Default Template")';
+    var defaultTemplateName = '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "System Template")';
 
     var onTemplateFetchComplete = function(templates, currentRequest){
 
-        console.log("onTemplateFetchComplete, templates", templates);
         var normalizeKey = function (obj) {
             return obj.fullTitle.replace(new RegExp("\\("+obj.hostName+"\\)"), '').replace(/\s+/g,'').toLowerCase();
         }
 
         if((templates) && (templates.length > 0)){
-            var templatesMap = templates.reduce(function(map, obj) {
+            var templatesMapByName = templates.reduce(function(map, obj) {
                 var key = normalizeKey(obj);
                 if (!(key in map)){
                     map[key] = obj;
@@ -143,17 +137,25 @@ dojo.ready(function(){
                 return map;
             }, {});
 
-            var normalizedTemplateName = defaultTemplateName.replace(/\s+/g,'').toLowerCase();
-            var obj = templatesMap[normalizedTemplateName];
+            var templatesMapById = templates.reduce(function(map, obj) {
+                map[obj.identifier] = obj;
+                return map;
+            }, {});
+
+            var obj = val != undefined && val != "" && val != "0"? templatesMapById[val]:null;
+
+            if (!obj) {
+                var normalizedTemplateName = defaultTemplateName.replace(/\s+/g,'').toLowerCase();
+                var obj = templatesMap[normalizedTemplateName];
+            }
+
             if(obj){
                 var value = obj.identifier;
-                console.log("dojo.ready", value, obj);
                 var fullTitle = obj.fullTitle;
                 // We set the values directly into the components because setting it direcrtly into`templateSel` fires another load operation.
                 dojo.byId("currentTemplateId").value = value;
                 dojo.byId("template").value = value;
                 dijit.byId('templateSel').set("displayedValue", fullTitle);
-                console.log("onTemplateFetchComplete", value, fullTitle);
                 const response = fetch("/api/v1/templates/image", {
                     method: "POST",
                     headers: {
@@ -181,22 +183,19 @@ dojo.ready(function(){
         }
     };
 
-    //We fire the fetch action if there isn't a template already set.
-    if(defaultTemplateName && (val == undefined || val == "" || val == "0" )) {
-        var templateFetchParams = {
-            query: {
-                fullTitle: '*',
-                hostId: hostId
-            },
-            queryOptions: {},
-            start: 0,
-            count: 1000,
-            sort: [],
-            onComplete: onTemplateFetchComplete
-        };
+    var templateFetchParams = {
+        query: {
+            fullTitle: '*',
+            hostId: hostId
+        },
+        queryOptions: {},
+        start: 0,
+        count: 1000,
+        sort: [],
+        onComplete: onTemplateFetchComplete
+    };
 
-        window.top._templateStore.fetch(templateFetchParams);
-    }
+    window.top._templateStore.fetch(templateFetchParams);
 });
 </script>
 
