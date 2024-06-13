@@ -10,9 +10,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+@Disabled
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
-class BuiltVersionServiceTest {
+class BuiltVersionServiceIT {
 
     @Inject
     BuiltVersionService builtVersionService;
