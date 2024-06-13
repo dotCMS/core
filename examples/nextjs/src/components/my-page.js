@@ -35,6 +35,7 @@ const componentsMap = {
     Image: ImageComponent,
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
+    CustomNoComponent: CustomNoComponent,
 };
 
 export function MyPage({ pageAsset, nav }) {
