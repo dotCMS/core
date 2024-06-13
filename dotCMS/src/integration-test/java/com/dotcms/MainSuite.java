@@ -124,6 +124,7 @@ import com.dotmarketing.portlets.rules.actionlet.StopProcessingActionletTest;
 import com.dotmarketing.portlets.rules.conditionlet.*;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
@@ -584,7 +585,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
         Task230701AddHashIndicesToWorkflowTablesTest.class,
         Task231109AddPublishDateToContentletVersionInfoTest.class,
-        Task240102AlterVarcharLengthOfRelationTypeTest.class
+        Task240102AlterVarcharLengthOfRelationTypeTest.class,
+        EmailActionletTest.class
 
 })
 public class MainSuite {

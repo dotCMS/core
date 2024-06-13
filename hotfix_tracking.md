@@ -252,3 +252,4 @@ This maintenance release includes the following code fixes:
 195. https://github.com/dotCMS/core/issues/24908 : Lost ability to select system host #24908
 196. https://github.com/dotCMS/core/issues/28089 : Pound char not decoded when using Rules or Vanity URLs #28089
 197. https://github.com/dotCMS/core/issues/28306 : Can't Import Page Assets using the export file #28306
+198. https://github.com/dotCMS/core/issues/28352 : Send Email sub-action doesn't set the current user to $dotcontent viewtool #28352
