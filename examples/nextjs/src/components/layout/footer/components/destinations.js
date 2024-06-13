@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Contentlets from "@/components/shared/contentlets";
-import { client } from "@/app/utils/dotcmsClient";
+import { client } from "@/utils/dotcmsClient";
 
 export default function Destinations() {
     const [destinations, setDestinations] = useState([]);

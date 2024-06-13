@@ -1,6 +1,11 @@
 // For now, we are not typing the functions in this file
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const graphqlToPageEntity = ({ page }: { page: Record<string, unknown> }) => {
+    // If there is no page, return null
+    if (!page) {
+        return null;
+    }
+
     const { layout, template, containers, urlContentMap, viewAs, ...pageAsset } = page;
 
     return {
