@@ -159,16 +159,17 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 
 	fetchItemByIdentity: function (request) {
 		const templateId = request.identity;
-		let response =
-			fetch("/api/v1/templates/" + templateId + "/working")
-				.then(async () => {
-					// The ok value represents the result of the response status 200 codes
-					if (response.ok) {
-						const result = await response.json();
+		fetch("/api/v1/templates/" + templateId + "/working")
+			.then(async (response) => {
+				// The ok value represents the result of the response status 200 codes
+				if (response.ok) {
+					const result = await response.json();
 
-						fetchItemByIdentityCallback(request, result.entity); // here we pass the result of the json response to the callback function
-					}
-				});
+					fetchItemByIdentityCallback(request, result.entity); // here we pass the result of the json response to the callback function
+				}
+			}).catch((e) => {
+				console.log(e) // Here we can catch the error
+			});
 	},
 
 	fetchItemByIdentityCallback: function (request, template) {
