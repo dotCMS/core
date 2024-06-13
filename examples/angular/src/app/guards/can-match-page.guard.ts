@@ -32,6 +32,6 @@ export const canMatchPage: CanMatchFn = async (
     return !!entity;
   } catch (error: any) {
     console.error(error); // Log the error
-    return false; // If there is an error, the page does not exist.
+    return !(error?.status === 404); // If the page is not found, return false.
   }
 };
