@@ -227,7 +227,7 @@ public class TempFileAPI {
         throw new DotRuntimeException("Only Admin Users can import files by URL via the Temp API.");
       }
       // If url requested is on a private subnet, block by default
-      if(IPUtils.isIpPrivateSubnet(url.getHost())) {
+      if(IPUtils.isIpPrivateSubnet(url.getHost()) && !Optional.ofNullable(allowAccessToPrivateSubnets.get()).orElse(false)) {
         throw new DotRuntimeException(String.format("Failed to download file by URL: %s as it is in a private subnet", url));
       }
       final String fileName = resolveFileName(incomingFileName, url);
