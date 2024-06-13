@@ -2,7 +2,7 @@ import { dotcmsClient } from "@dotcms/client";
 
 // Client for content fetching
 export const client = dotcmsClient.init({
-    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST, // 'http://localhost:8080'
+    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
     authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN,
     siteId: "59bb8831-6706-4589-9ca0-ff74016e02b2",
     requestOptions: {
@@ -20,13 +20,14 @@ export const client = dotcmsClient.init({
  */
 export const getRequestParams = ({ params, searchParams, defaultPath }) => {
     const path = params?.slug?.join("/") || defaultPath;
+    const personaId = searchParams["com.dotmarketing.persona.id"]  || "";
+    const { language_id, mode, variantName } = searchParams;
 
     return {
         path,
-        language_id: searchParams.language_id,
-        "com.dotmarketing.persona.id":
-            searchParams["com.dotmarketing.persona.id"] || "",
-        mode: searchParams.mode,
-        variantName: searchParams["variantName"],
+        mode,
+        language_id,
+        variantName,
+        "com.dotmarketing.persona.id": personaId,
     };
 };

@@ -17,25 +17,18 @@ export const DotCMSPageResolver = async (
   nav: DotcmsNavigationItem;
 }> => {
   const client = inject(DOTCMS_CLIENT_TOKEN);
-  const queryParams = route.queryParams;
-
-  const pageAsset = route.data?.['pageAsset'] as DotCMSPageAsset;
-
+  const pageAsset = route.data['pageAsset'] as DotCMSPageAsset;
+  
+  const { language_id } = route.queryParams;
+  
   const navProps = {
     path: '/',
     depth: 2,
-    languageId: queryParams['language_id'],
+    languageId: language_id,
   };
 
-  const navRequest = client.nav.get(navProps) as Promise<{
-    entity: DotcmsNavigationItem;
-  }>;
-
-  const [navResponse] = await Promise.all([
-    navRequest,
-  ]);
-
-  const nav = navResponse.entity;
+  const navResponse = (await client.nav.get(navProps)) as { entity: DotcmsNavigationItem; };
+  const nav = navResponse?.entity;
 
   return { pageAsset, nav };
 };
