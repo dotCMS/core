@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/i",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.prompt == 'Generate image of a turtle training for a marathon')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "created": 1718057627,
+      "data": [
+        {
+          "revised_prompt": "Visualize a humorous scene where a determined brown turtle with a numbered bib as if participating in a marathon is in a training scenario. The turtle is in a jogging motion with a sweatband around its head. It's a sunny day and the surrounding is filled with lush green grass. In the background, there are spectators composed of an equal mix of Caucasian, Black and Hispanic men and women. Some of them hold encouraging banners, while others are clapping and cheering for the adorable turtle.",
+          "url": "http://wm:8080/s/turtle-marathon"
+        }
+      ]
+    }
+  }
+}

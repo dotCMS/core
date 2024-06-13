@@ -77,7 +77,6 @@ public class TextResource {
         }
 
         final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
-        ConfigService.INSTANCE.config();
 
         return Response.ok(CompletionsAPI.impl().raw(generateRequest(formIn, config)).toString()).build();
     }
