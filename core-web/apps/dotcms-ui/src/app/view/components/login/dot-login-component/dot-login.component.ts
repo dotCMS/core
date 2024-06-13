@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpCode, LoggerService, LoginService, User, DotLoginParams } from '@dotcms/dotcms-js';
 import { SelectItem } from 'primeng/api';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormControl, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { take, takeUntil, tap } from 'rxjs/operators';
 import { Observable, Subject } from 'rxjs';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -123,11 +123,15 @@ export class DotLoginComponent implements OnInit, OnDestroy {
         this.setInitialMessage(loginInfo);
     }
 
+    private isEmail(potentialEmail: string): boolean {
+        return !!new FormControl(potentialEmail, Validators.email).errors?.email;
+    }
+
     private setInitialMessage(loginInfo: DotLoginInformation): void {
         this.route.queryParams.pipe(take(1)).subscribe((params: Params) => {
             if (params['changedPassword']) {
                 this.setMessage(loginInfo.i18nMessagesMap['reset-password-success']);
-            } else if (params['resetEmailSent']) {
+            } else if (params['resetEmailSent'] && !this.isEmail(params['resetEmail'])) {
                 this.setMessage(
                     loginInfo.i18nMessagesMap['a-new-password-has-been-sent-to-x'].replace(
                         '{0}',
