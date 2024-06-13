@@ -2,7 +2,6 @@ package com.dotcms.ai.app;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.security.apps.AppSecrets;
-import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -27,15 +26,12 @@ public class ConfigService {
      * by dotCMS.
      */
     public AppConfig config(final Host host) {
-
         final Optional<AppSecrets> appSecrets = Try.of(() -> APILocator
                 .getAppsAPI()
                 .getSecrets(AppKeys.APP_KEY, true, resolveHost(host), APILocator.systemUser()))
                 .getOrElse(Optional.empty());
 
-        final Map<String, Secret> secrets = appSecrets.isPresent() ? appSecrets.get().getSecrets() : Map.of();
-
-        return new AppConfig(secrets);
+        return new AppConfig(appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
     }
 
     /**
@@ -44,14 +40,14 @@ public class ConfigService {
      * @param incoming
      * @return Host to use
      */
-    private Host resolveHost(Host incoming){
-        if (incoming != null){
-            return incoming;
-        }
-        return Try.of(() -> WebAPILocator
-                .getHostWebAPI()
-                .getCurrentHostNoThrow(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
-                .getOrElse(APILocator.systemHost());
+    private Host resolveHost(final Host incoming){
+        return Optional
+                .ofNullable(incoming)
+                .orElseGet(() -> Try
+                        .of(() -> WebAPILocator
+                                .getHostWebAPI()
+                                .getCurrentHostNoThrow(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+                        .getOrElse(APILocator.systemHost()));
     }
 
 }

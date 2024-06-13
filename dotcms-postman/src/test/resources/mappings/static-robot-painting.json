@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/s/robot-painting.*"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "image/png"
+    },
+    "bodyFileName": "robot-painting.png"
+  }
+}
