@@ -15,6 +15,11 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 		this.hostId = options.hostId;
 		this.templateSelected = options.templateSelected;
 		window.top._dotTemplateStore = this;
+		let url = "/api/v1/templates/?filter=*&host=" + options.hostId;
+
+		console.log("url", url);
+
+		this.fetch({ query: '*', queryOptions: {}, start: 0, count: 10, sort: '', scope: this });
 	},
 
 	getValue: function (item, attribute, defaultValue) {
@@ -61,7 +66,7 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 	},
 
 	fetch: function (keywordArgs) {
-		var fetchCallback = dojo.hitch(this, this.fetchCallback, keywordArgs);
+		var fetchCallbackVar = dojo.hitch(this, this.fetchTemplatesCallback, keywordArgs);
 
 		if(dojo.isString(keywordArgs.query)) {
 			keywordArgs.query = { fullTitle: keywordArgs.query };
@@ -83,6 +88,8 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 			keywordArgs.query.templateSelected = this.templateSelected;
 		}
 
+		console.log("keywordArgs:",keywordArgs.query, keywordArgs.queryOptions, keywordArgs.start, keywordArgs.count, keywordArgs.sort)
+
 		if((keywordArgs.query.fullTitle == '' ||
 				keywordArgs.query.fullTitle=='undefined' ||
 				keywordArgs.query.fullTitle.indexOf('*')===-1)
@@ -94,7 +101,6 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 
 		} else {
 
-			console.log("keywordArgs:",keywordArgs.query, keywordArgs.queryOptions, keywordArgs.start, keywordArgs.count, keywordArgs.sort)
 			let url = "/api/v1/templates/?filter=" + keywordArgs.query.fullTitle.replace('*','') + "&page=" + keywordArgs.start + "&per_page=" + keywordArgs.count +
 				(keywordArgs.sort == undefined || keywordArgs.sort != ""? "": "&orderby=" + keywordArgs.sort);
 
@@ -108,10 +114,10 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 				.then((fetchResp) => fetchResp.json())
 				.then(responseEntity => {
 
-					console.log("responseEntity", responseEntity);
-					this.fetchTemplatesCallback(keywordArgs, responseEntity);
-				}
-			);
+						console.log("responseEntity", responseEntity);
+						this.fetchCallbackVar(responseEntity, keywordArgs);
+					}
+				);
 
 			this.currentRequest = keywordArgs;
 			this.currentRequest.abort = function () { };
@@ -121,9 +127,11 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 
 	fetchTemplatesCallback: function (keywordArgs, templatesEntity) {
 
-		console.log("templatesEntity",keywordArgs, templatesEntity);
+		console.log("fetchTemplatesCallback, templatesEntity",keywordArgs, templatesEntity);
 		var scope = keywordArgs.scope;
 		if(keywordArgs.onBegin) {
+
+			console.log("onBegin -> templatesEntity.pagination.totalEntries",templatesEntity.pagination.totalEntries, this.currentRequest);
 			keywordArgs.onBegin.call(scope?scope:dojo.global, templatesEntity.pagination.totalEntries, this.currentRequest);
 		}
 
@@ -131,20 +139,23 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 
 			let templatesArray = templatesEntity.entity;
 
-			console.log('templatesArray', templatesArray);
+			console.log('onItem templatesArray', templatesArray);
 			dojo.forEach(templatesArray, function (template) {
+				console.log('onItem template', template);
 				keywordArgs.onItem.call(scope?scope:dojo.global, template, this.currentRequest);
 			}, this);
 		}
 
 		if(keywordArgs.onComplete) {
+
+			console.log('onComplete templatesEntity.entity', templatesEntity.entity, this.currentRequest);
 			keywordArgs.onComplete.call(scope?scope:dojo.global, templatesEntity.entity, this.currentRequest);
 		}
 	},
 
 	fetchCallback: function (keywordArgs, templatesEntity) {
 
-		console.log("templatesEntity",keywordArgs, templatesEntity);
+		console.log("fetchCallback, keywordArgs",keywordArgs, "templatesEntity", templatesEntity);
 		var scope = keywordArgs.scope;
 		if(keywordArgs.onBegin) {
 			keywordArgs.onBegin.call(scope?scope:dojo.global, templatesEntity.pagination.totalEntries, this.currentRequest);
@@ -163,12 +174,20 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 
 	fetchItemByIdentity: function (request) {
 		const templateId = request.identity;
-		const responseEntity = fetch("/api/v1/templates/" + templateId + "/working");
-		const template = responseEntity.entity;
-		this.fetchItemByIdentityCallback(request, template);
+		let response =
+			fetch("/api/v1/templates/" + templateId + "/working")
+				.then(async () => {
+					// The ok value represents the result of the response status 200 codes
+					if (response.ok) {
+						const result = await response.json();
+
+						fetchItemByIdentityCallback(request, result.entity); // here we pass the result of the json response to the callback function
+					}
+				});
 	},
 
 	fetchItemByIdentityCallback: function (request, template) {
+		console.log("fetchItemByIdentityCallback", "request", request, "template", template)
 		var scope = request.scope;
 		if(request.onItem) {
 			request.onItem.call(scope?scope:dojo.global, template, this.currentRequest);
