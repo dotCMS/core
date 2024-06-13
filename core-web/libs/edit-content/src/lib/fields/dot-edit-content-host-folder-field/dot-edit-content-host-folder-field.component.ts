@@ -1,30 +1,22 @@
 import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     Input,
     OnInit,
     ViewChild,
-    computed,
-    inject,
-    signal
+    effect,
+    inject
 } from '@angular/core';
 import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { TreeSelect, TreeSelectModule } from './componentes/treeselect.component';
+import { HostFolderFiledStore } from './store/host-folder-field.store';
 
-import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
-import {
-    StatusRequest,
-    TreeNodeItem,
-    TreeNodeSelectItem
-} from '../../models/dot-edit-content-host-folder-field.interface';
+import { TreeNodeSelectItem } from '../../models/dot-edit-content-host-folder-field.interface';
 import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
-import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { createPaths } from '../../utils/functions.util';
 
 /**
  * Component for editing content site or folder field.
@@ -44,45 +36,39 @@ import { createPaths } from '../../utils/functions.util';
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ]
+    ],
+    providers: [HostFolderFiledStore]
 })
 export class DotEditContentHostFolderFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
     @ViewChild(TreeSelect) treeSelect!: TreeSelect;
-    readonly #changeDetectorRef = inject(ChangeDetectorRef);
     readonly #controlContainer = inject(ControlContainer);
-    readonly #editContentService = inject(DotEditContentService);
+    readonly store = inject(HostFolderFiledStore);
 
-    $options = signal<TreeNodeItem[]>([]);
-    $sitesStatus = signal<StatusRequest>('init');
     pathControl = new FormControl();
-    $iconClasses = computed(() => {
-        const status = this.$sitesStatus();
 
-        return {
-            'pi-spin pi-spinner': status === 'loading',
-            'pi-chevron-down': status !== 'loading'
-        };
-    });
-
-    ngOnInit() {
-        this.$sitesStatus.set('loading');
-        this.#editContentService.getSitesTreePath().subscribe({
-            next: (options) => {
-                this.$options.set(options);
-                this.setInitialValue();
-                this.$sitesStatus.set('success');
-            },
-            error: () => {
-                this.$sitesStatus.set('failed');
+    constructor() {
+        effect(() => {
+            this.store.nodeExpaned();
+            if (this.treeSelect.treeViewChild) {
+                this.treeSelect.treeViewChild.updateSerializedValue();
+                this.treeSelect.cd.detectChanges();
             }
+        });
+
+        effect(() => {
+            const nodeSelected = this.store.nodeSelected();
+            this.pathControl.setValue(nodeSelected);
         });
     }
 
+    ngOnInit() {
+        const currentPath = this.formControl.value;
+        this.store.loadSites(currentPath);
+    }
+
     get formControl(): FormControl {
-        return this.#controlContainer.control.get(
-            this.field.variable
-        ) as FormControl<DotEditContentFieldSingleSelectableDataTypes>;
+        return this.#controlContainer.control.get(this.field.variable) as FormControl<string>;
     }
 
     onNodeSelect(event: TreeNodeSelectItem) {
@@ -93,55 +79,5 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
 
         const path = `${data.hostname}:${data.path ? data.path : '/'}`;
         this.formControl.setValue(path);
-    }
-
-    onNodeExpand(event: TreeNodeSelectItem) {
-        const { node } = event;
-        const { children, icon } = node;
-        if ((children && children.length > 0) || icon?.includes('spinner')) {
-            return;
-        }
-
-        const { hostname, path } = node.data;
-        node.icon = 'pi pi-spin pi-spinner';
-        this.#editContentService.getFoldersTreeNode(hostname, path).subscribe((children) => {
-            node.leaf = true;
-            node.icon = 'pi pi-folder-open';
-            node.children = children;
-            this.treeSelect.cd.detectChanges();
-        });
-    }
-
-    setInitialValue() {
-        const value = this.formControl.value as string;
-        if (value) {
-            const hasPaths = value.includes('/');
-            if (hasPaths) {
-                this.buildTreeByPaths(value);
-            } else {
-                const options = this.$options();
-                this.pathControl.setValue(options.find((item) => item.key === value));
-            }
-        }
-    }
-
-    private buildTreeByPaths(path: string) {
-        const paths = createPaths(path);
-        this.#editContentService.buildTreeByPaths(paths).subscribe((rta) => {
-            const sitePath = rta.tree.path;
-            this.$options.update((options) => {
-                return options.map((item) => {
-                    if (item.key === sitePath) {
-                        return {
-                            ...item,
-                            children: [...rta.tree.folders]
-                        };
-                    }
-
-                    return item;
-                });
-            });
-            this.pathControl.setValue(rta.node);
-        });
     }
 }

@@ -199,6 +199,7 @@ export const TREESELECT_VALUE_ACCESSOR = {
                                 [virtualScrollItemSize]="virtualScrollItemSize"
                                 [virtualScrollOptions]="virtualScrollOptions"
                                 [_templateMap]="templateMap"
+                                [lazy]="true"
                                 [loading]="loading"
                                 #tree>
                                 <ng-container *ngIf="emptyTemplate">
