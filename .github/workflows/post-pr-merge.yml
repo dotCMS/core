@@ -1,20 +1,5 @@
 name: Post PR Merge
 on:
-  workflow_dispatch:
-    inputs:
-        pr_number:
-            description: 'Pull Request number'
-            type: number
-            required: true
-        pr_branch:
-            description: 'Pull Request branch'
-            type: string
-            required: true
-        validate_merge:
-            description: 'Validate merge'
-            type: boolean
-            required: false
-            default: true
   pull_request:
     types:
       [closed]
@@ -23,9 +8,8 @@ jobs:
   post-pr-merge:
     name: Post Merge PR
     if: github.event.pull_request.merged == true
-    continue-on-error: true
     uses: ./.github/workflows/link-pr-to-issue.yml
     with:
       pr_number: ${{ github.event.pull_request.number }}
       pr_branch: ${{ github.event.pull_request.head.ref }}
-      validate_merge: false
+      validate_merge: true
