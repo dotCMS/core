@@ -250,3 +250,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.18**
 
 195. https://github.com/dotCMS/core/issues/24908 : Lost ability to select system host #24908
+196. https://github.com/dotCMS/core/issues/28089 : Pound char not decoded when using Rules or Vanity URLs #28089

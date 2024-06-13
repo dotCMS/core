@@ -429,6 +429,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           }
         }
       }
+      if (UtilMethods.isSet(urlToEncode.getFragment())) {
+        uriBuilder.setFragment(urlToEncode.getFragment());
+      }
       return uriBuilder.build().toASCIIString();
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
