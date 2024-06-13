@@ -146,7 +146,7 @@ dojo.ready(function(){
 
             if (!obj) {
                 var normalizedTemplateName = defaultTemplateName.replace(/\s+/g,'').toLowerCase();
-                var obj = templatesMap[normalizedTemplateName];
+                var obj = templatesMapByName[normalizedTemplateName];
             }
 
             if(obj){
