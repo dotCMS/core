@@ -282,9 +282,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof DotEmaShellComponent
      */
-    private checkClientHostAccess(devURLWhitelist = [], clientHost: string) {
+    private checkClientHostAccess(devURLWhitelist: string[] = [], clientHost: string): boolean {
         // If we don't have a whitelist or a clientHost we can't access it
-        if (!clientHost || !devURLWhitelist.length) {
+        if (!clientHost || !Array.isArray(devURLWhitelist) || !devURLWhitelist.length) {
             return false;
         }
 
