@@ -52,9 +52,10 @@ import java.util.function.Predicate;
 public interface WorkflowAPI {
 
 	/**
-	 * Id of the System Workflow
+	 * Id and variable name of the System Workflow
 	 */
 	public static final String SYSTEM_WORKFLOW_ID           = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
+	public static final String SYSTEM_WORKFLOW_VARIABLE_NAME = WorkFlowFactory.SYSTEM_WORKFLOW_VARIABLE_NAME;
 
 	/**
 	 * Default show on

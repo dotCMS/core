@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
-import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.SYSTEM_WORKFLOW_VARIABLE_NAME;
 
 import com.dotcms.ai.workflow.DotEmbeddingsActionlet;
 import com.dotcms.ai.workflow.OpenAIAutoTagActionlet;

@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 public interface WorkFlowFactory {
 
 	String SYSTEM_WORKFLOW_ID           = SystemWorkflowConstants.SYSTEM_WORKFLOW_ID;
+	String SYSTEM_WORKFLOW_VARIABLE_NAME = SystemWorkflowConstants.SYSTEM_WORKFLOW_VARIABLE_NAME;
 
 	public void deleteComment(WorkflowComment comment) throws DotDataException;
 
