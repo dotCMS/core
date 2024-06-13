@@ -271,7 +271,7 @@ dependencies {
 
     felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '24.02.29'
 
-    felixsystem group: 'com.dotcms.core.plugins', name: 'com.dotcms.telemetry', version: '24.4.1'
+    felixsystem group: 'com.dotcms.core.plugins', name: 'com.dotcms.telemetry', version: '24.05.29'
 
     //// starter config
 
