@@ -1412,7 +1412,6 @@ public class ContentResource {
         final Set<String> jsonFields = getJSONFields(type);
 
         for (final String key : map.keySet()) {
-            Logger.error(ContentResource.class, "Key: " + key + " Value: " + map.get(key));
             if (Arrays.binarySearch(ignoreFields, key) < 0) {
                 if (jsonFields.contains(key)) {
                     Logger.debug(ContentResource.class,
