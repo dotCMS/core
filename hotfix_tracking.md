@@ -256,3 +256,4 @@ This maintenance release includes the following code fixes:
 199. https://github.com/dotCMS/core/issues/28689 : Update LTS Telemetry plugin #28689
 200. https://github.com/dotCMS/private-issues/issues/34
 201. https://github.com/dotCMS/core/issues/28695 : UT210901 UpdateDateTimezones has wrong DST query #28695
+202. https://github.com/dotCMS/core/issues/28760 : Template Evaluation for Non-Default Language Pages #28760
