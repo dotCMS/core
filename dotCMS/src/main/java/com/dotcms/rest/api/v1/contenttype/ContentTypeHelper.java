@@ -413,7 +413,7 @@ public class ContentTypeHelper implements Serializable {
             if (StringUtils.isNotEmpty(workflowIdOrVar)) {
                 existingWorkflowScheme = APILocator.getWorkflowAPI().findScheme(workflowIdOrVar);
             }
-        } catch (NotFoundInDbException e) {
+        } catch (DoesNotExistException e) {
             final var message = String.format(
                     "Workflow Scheme [%s] not found.", workflowIdOrVar
             );

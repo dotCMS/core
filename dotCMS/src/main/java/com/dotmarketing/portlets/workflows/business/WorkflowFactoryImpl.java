@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotcms.rendering.velocity.util.VelocityUtil.convertToVelocityVariable;
 
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
@@ -890,7 +889,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             } else {
                 try {
                     scheme = dbFindSchemeByVariable(idOrVar);
-                } catch (NotFoundInDbException e) {
+                } catch (DoesNotExistException e) {
                     scheme = dbFindSchemeById(idOrVar);
                 }
 
@@ -2564,7 +2563,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         List<Map<String, Object>> results;
         results = dc.loadObjectResults();
         if (results.isEmpty()) {
-            throw new NotFoundInDbException(
+            throw new DoesNotExistException(
                     String.format(
                             "Workflow scheme [%s] not found", variableName
                     )
@@ -2580,7 +2579,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
      * @param id The ID of the workflow scheme to be retrieved.
      * @return The workflow scheme with the specified ID.
      * @throws DotDataException      If there is an error while performing the database operation.
-     * @throws NotFoundInDbException If the workflow scheme with the specified ID is not found in
+     * @throws DoesNotExistException If the workflow scheme with the specified ID is not found in
      *                               the database.
      */
     private WorkflowScheme dbFindSchemeById(String id) throws DotDataException {
@@ -2592,7 +2591,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         List<Map<String, Object>> results;
         results = dc.loadObjectResults();
         if (results.isEmpty()) {
-            throw new NotFoundInDbException(
+            throw new DoesNotExistException(
                     String.format(
                             "Workflow scheme [%s] not found", id
                     )
@@ -2900,7 +2899,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         try {
             final var workflowScheme = findScheme(variableName);
             exist = UtilMethods.isSet(workflowScheme);
-        } catch (NotFoundInDbException e) {
+        } catch (DoesNotExistException e) {
             // nothing to do - moving on
         }
 
