@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.MAP_SUFFIX_FOR_VIEWS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILTER_BINARIES;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -16,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -33,7 +36,8 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
      * Regular constructor takes a toolbox
      * @param toolBox
      */
-    BinaryViewStrategy(final APIProvider toolBox) {
+    @VisibleForTesting
+    public BinaryViewStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
 
@@ -51,61 +55,57 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
     protected Map<String, Object> transform(final Contentlet contentlet,
     final Map<String, Object> map, final Set<TransformOptions> options, final User user) {
 
+        if (!options.contains(BINARIES) || options.contains(FILTER_BINARIES)) {
+            return map;
+        }
+
+
         final List<Field> binaries = contentlet.getContentType().fields(BinaryField.class);
+
 
         if (!binaries.isEmpty()) {
             for (final Field field : binaries) {
                 try {
-                    final String sufix = options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS)
-                            ? "" : "Map";
+                    final String sufix = options.contains(MAP_SUFFIX_FOR_VIEWS)
+                            ? "Map" : "";
 
-                    map.put(field.variable() + sufix, transform(field, contentlet));
-                    final Metadata metadata = contentlet.getBinaryMetadata(field.variable());
-                    if (!options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS) && metadata != null) {
-                        //This clearly replaces the binary by a string which is the expected output on BinaryToMapTransformer.
-                        map.put(field.variable(), metadata.getName());
-                    }
-                } catch (DotDataException e) {
-                    Logger.warn(this,
-                            "Unable to get Binary from field with var " + field.variable());
+
+                    map.put(field.variable() + sufix, transform(contentlet, field, false));
+
+                } catch (Exception e) {
+                    Logger.warnAndDebug(this.getClass(),
+                            "Unable to get Binary from field with var " + field.variable(),e);
                 }
             }
         }
         return map;
     }
 
-    /**
-     * Transform function
-     */
-    public static Map<String, Object> transform(final Field field, final Contentlet contentlet) {
-        Metadata metadata;
-        try {
-            metadata = contentlet.getBinaryMetadata(field.variable());
-        } catch (Exception e) {
-            throw new DotStateException(e);
-        }
 
-        if (metadata == null) {
-            return emptyMap();
-        }
+    ThreadLocal<Map<String,Object>> mapThreadLocal = ThreadLocal.withInitial(HashMap::new);
 
-        return transform(metadata, contentlet, field);
-    }
 
     /**
      * Transform function
      */
-    public static Map<String, Object> transform(final Metadata metadata, final Contentlet contentlet,
-            final Field field) {
-        DotPreconditions.checkNotNull(metadata, IllegalArgumentException.class, "File can't be null");
-        final Map<String, Object> map = new HashMap<>();
+    public Map<String, Object> transform(final Contentlet contentlet,
+            final Field field, boolean isFromFileField) {
+
+        final Map<String, Object> map = mapThreadLocal.get();
+        map.clear();
+        Metadata metadata = Try.of(()->contentlet.getBinaryMetadata(field.variable())).getOrElseThrow(()->new DotStateException("Unable to get Binary from field with var " + field.variable()));
+
+        map.putAll(metadata.getMap());
+
+        if(isFromFileField){
+            map.put("identifier",contentlet.getIdentifier());
+            map.put("inode",contentlet.getInode());
+            map.put("apiPath", "/api/v1/content/"+contentlet.getInode());
+        }
 
         final Identifier identifier = Try.of(()-> APILocator.getIdentifierAPI().find(contentlet.getIdentifier())).getOrNull();
 
-        String assetName = metadata.getName();
-        if( contentlet.isFileAsset() && null != identifier){
-            assetName = identifier.getAssetName();
-        }
+        String assetName = contentlet.isFileAsset() && null != identifier ? identifier.getAssetName() :   metadata.getName();
 
         map.put("versionPath",
                 "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getInode()) + "/" + field
@@ -117,17 +117,25 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
                         + field.variable() + "/" + assetName
                         + (contentLanguageSize > 1 ? "?language_id=" + contentlet.getLanguageId()
                         : StringPool.BLANK));
-        map.put("name", assetName);
-        map.put("size", metadata.getSize());
-        map.put("mime", metadata.getContentType());
-        map.put("isImage", metadata.isImage());
-        map.put("width", metadata.getWidth());
-        map.put("height", metadata.getHeight());
-        map.put("path", metadata.getPath());
-        map.put("title", metadata.getTitle());
-        map.put("sha256", metadata.getSha256());
-        map.put("modDate", metadata.getModDate());
-        map.put("focalPoint", Try.of(()-> metadata.getCustomMeta().getOrDefault("focalPoint", "0.0").toString()).getOrElse("0.0"));
+        map.putIfAbsent("name", assetName);
+        map.putIfAbsent("size", metadata.getSize());
+        map.putIfAbsent("mime", metadata.getContentType());
+        map.putIfAbsent("isImage", metadata.isImage());
+        map.putIfAbsent("width", metadata.getWidth());
+        map.putIfAbsent("height", metadata.getHeight());
+        map.putIfAbsent("path", metadata.getPath());
+        map.putIfAbsent("title", metadata.getTitle());
+        map.putIfAbsent("sha256", metadata.getSha256());
+        map.putIfAbsent("modDate", metadata.getModDate());
+
+        String assetPath = contentlet.isFileAsset() && null != identifier ? identifier.getPath() :   map.get("idPath").toString();
+
+        map.put("path", assetPath);
+        map.putIfAbsent("focalPoint", Try.of(()-> metadata.getCustomMeta().getOrDefault("focalPoint", "0.0").toString()).getOrElse("0.0"));
+
         return map;
     }
+
+
+
 }

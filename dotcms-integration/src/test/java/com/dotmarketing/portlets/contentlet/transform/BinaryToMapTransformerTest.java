@@ -153,7 +153,7 @@ public class BinaryToMapTransformerTest {
             final Metadata metadata = contentWithBinaries.getBinaryMetadata("bin1");
 
             final Map<String, Object>  map = BinaryToMapTransformer
-                    .transform(metadata, contentWithBinaries, contentWithBinaries.getContentType().fieldMap().get("bin1"));
+                    .transform(contentWithBinaries, contentWithBinaries.getContentType().fieldMap().get("bin1"));
 
             Assert.assertNotNull(map);
             Assert.assertTrue(map.containsKey("versionPath"));

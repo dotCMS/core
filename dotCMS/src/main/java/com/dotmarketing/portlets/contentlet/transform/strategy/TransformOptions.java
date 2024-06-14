@@ -34,11 +34,15 @@ public enum TransformOptions {
      * binaries to still make it into the final contentlet.
      */
     BINARIES(true),
+    /***
+     * Instructs the Strategy to include the FileViewStrategy data as a Map.
+     */
+    FILE_OR_IMAGE_FIELDS(true),
     /**
      * Instructs the Strategy to simply prevent the binaries from making it into the final resulting
      * map.
      */
-    FILTER_BINARIES(true),
+    FILTER_BINARIES,
     /**
      * Instructs the Strategy to render only the category name: (key=name)
      */
@@ -68,10 +72,6 @@ public enum TransformOptions {
      */
     LANGUAGE_VIEW,
     /**
-     * Instructs the Strategy to emulate the old BinaryToMapTransformer.
-     */
-    BINARIES_VIEW,
-    /**
      * Instructs the Strategy to include Key/Value data.
      */
     KEY_VALUE_VIEW,
@@ -80,10 +80,6 @@ public enum TransformOptions {
      */
     CATEGORIES_VIEW,
     /**
-     * Instructs the Strategy to include File Asset data.
-     */
-    FILEASSET_VIEW,
-    /**
      * Instructs the Strategy to include Site data.
      */
     SITE_VIEW,
@@ -91,7 +87,7 @@ public enum TransformOptions {
      * Instructs the Strategy to include Story Block data
      */
     STORY_BLOCK_VIEW,
-    AVOID_MAP_SUFFIX_FOR_VIEWS,
+    MAP_SUFFIX_FOR_VIEWS,
     /**
      * Instructs the Strategy to velocity-render the render-able fields
      */

@@ -105,9 +105,10 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         addLanguage(contentlet, map, options);
         addVersionProperties(contentlet, map, options);
         addConstants(contentlet, map, options);
-        addBinaries(contentlet, map, options);
         addCategories(contentlet, map, options, user);
         addTags(contentlet, map, options, user);
+
+
         return map;
     }
 
@@ -161,6 +162,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             }
         }
         this.addAuditProperties(contentlet, map);
+
     }
 
     /**
@@ -227,93 +229,6 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
     }
 
 
-    /**
-     * This method includes binaries in the resulting view if so is indicated
-     * After the execution of this method if the BINARIES flag is turned on
-     * all the binary fields will be replaced and transformed by a /dA/.. path.
-     */
-    private void addBinaries(final Contentlet contentlet, final Map<String, Object> map,
-            final Set<TransformOptions> options) {
-
-        final List<Field> binaries = contentlet.getContentType().fields(BinaryField.class);
-
-        if (binaries.isEmpty()) {
-            return;
-        }
-
-        //If we dont want any binaries making it into the final map
-        if (options.contains(FILTER_BINARIES)) {
-            binaries.forEach(field -> 
-                map.remove(field.variable())
-            );
-            Logger.info(DefaultTransformStrategy.class,
-                    () -> "Transformer was instructed to exclude binaries.");
-            return;
-        }
-
-        
-        if (!options.contains(BINARIES)) {
-            return;
-        }
-        
-        // if we want to include binaries as they are (java.io.File) this is the flag you should turn on.
-        for (final Field field : binaries) {
-
-            try {
-                final String velocityVarName = field.variable();
-                if (contentlet.isFileAsset() && FILE_ASSET.equals(velocityVarName)) {
-                    final Optional<Identifier> identifier =
-                                    Optional.of(Try.of(() -> toolBox.identifierAPI.find(contentlet.getIdentifier())).getOrNull());
-                    String name = identifier.isPresent()
-                        ? identifier.get().getAssetName()
-                        : contentlet.getBinaryMetadata(FILE_ASSET).getName();
-
-                    putBinaryLinks(FILE_ASSET, name, contentlet, map);
-                    continue;
-                }
-
-
-                
-                // Extra precaution in case we are attempting to process a contentlet that has already been
-                // transformed.
-
-                final Metadata metadata = contentlet.getBinaryMetadata(velocityVarName);
-                if (null != metadata) {
-                    Map<String, Serializable> metaMap = new HashMap<>(metadata.getMap());
-                    metaMap.remove("path");
-                    map.put(velocityVarName + "MetaData", metaMap);
-                    putBinaryLinks(velocityVarName, metadata.getName(), contentlet, map);
-                } 
-            } catch (final Exception e) {
-                Logger.warn(this,
-                                String.format("An error occurred when retrieving the Binary file from field"
-                                                + " '%s' in Contentlet with ID '%s': %s", field.variable(),
-                                                contentlet.getIdentifier(), e.getMessage()));
-            }
-
-
-        }
-    }
-
-    /**
-     * put the version and fields specifics for the binary fields
-     * @param velocityVarName
-     * @param assetName
-     * @param contentlet
-     * @param map
-     */
-    private void putBinaryLinks(final String velocityVarName, final String assetName, final Contentlet contentlet, final Map<String, Object> map){
-         //The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
-         final String dAPath = "/dA/%s/%s/%s";
-         map.put(velocityVarName + "Version",
-                 String.format(dAPath, contentlet.getInode(),
-                         velocityVarName, assetName));
-         map.put(velocityVarName,
-                 String.format(dAPath, contentlet.getIdentifier(),
-                         velocityVarName, assetName));
-         map.put(velocityVarName + "ContentAsset",
-                 contentlet.getIdentifier() + "/" + velocityVarName);
-    }
 
     /**
      * return categories as a list of key/values where the key is the categoryKey and the value is

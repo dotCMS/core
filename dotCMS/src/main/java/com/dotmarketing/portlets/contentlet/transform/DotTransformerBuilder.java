@@ -1,17 +1,15 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.DATETIME_FIELDS_TO_TIMESTAMP;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.MAP_SUFFIX_FOR_VIEWS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
@@ -87,7 +85,7 @@ public class DotTransformerBuilder {
      */
     public DotTransformerBuilder binaryToMapTransformer(){
        optionsHolder.clear();
-       optionsHolder.add(BINARIES_VIEW);
+       optionsHolder.add(BINARIES);
        return this;
     }
 
@@ -172,10 +170,8 @@ public class DotTransformerBuilder {
         optionsHolder.add(KEY_VALUE_VIEW);
         optionsHolder.add(LANGUAGE_VIEW);
         optionsHolder.add(CATEGORIES_VIEW);
-        optionsHolder.add(BINARIES_VIEW);
-        optionsHolder.add(FILEASSET_VIEW);
+        optionsHolder.add(BINARIES);
         optionsHolder.add(LOAD_META);
-        optionsHolder.add(AVOID_MAP_SUFFIX_FOR_VIEWS);
         if(transformOptions.length>0) {
             optionsHolder.addAll(Arrays.asList(transformOptions));
         }
@@ -189,7 +185,7 @@ public class DotTransformerBuilder {
      */
     public DotTransformerBuilder dotAssetOptions(){
         optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS));
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS,BINARIES));
         return this;
     }
 

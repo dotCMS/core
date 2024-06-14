@@ -5,6 +5,7 @@ import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.strategy.BinaryViewStrategy;
+import io.vavr.Lazy;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
@@ -17,6 +18,11 @@ import org.jetbrains.annotations.NotNull;
 public class BinaryToMapTransformer implements FieldsToMapTransformer {
 
     final Map<String, Object> mapOfMaps;
+
+    final static Lazy<BinaryViewStrategy> binaryViewStrategy = Lazy.of(() -> new BinaryViewStrategy(null));
+
+
+
 
     public BinaryToMapTransformer(final Contentlet contentlet) {
 
@@ -40,14 +46,19 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
     }
 
 
-    @NotNull
-    public static Map<String, Object> transform(final Field field, final Contentlet con) {
-        return BinaryViewStrategy.transform(field, con);
-    }
 
-    public static Map<String, Object> transform(final Metadata file, final Contentlet con,
+    public static Map<String, Object> transform(final Contentlet con,
             final Field field) {
-        return BinaryViewStrategy.transform(file, con, field);
-    }
-}
 
+            return binaryViewStrategy.get().transform(con, field, false);
+
+    }
+    public static Map<String, Object> transform(final Contentlet con,
+            final Field field, boolean fileOrImageField) {
+
+       return  new DotTransformerBuilder().binaryToMapTransformer().content(con).build().toMaps().get(0);
+
+    }
+
+
+}

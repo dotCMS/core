@@ -170,7 +170,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         for (GraphQLTypesProvider typesProvider : typesProviders) {
             try {
                 graphQLTypes.addAll(typesProvider.getTypes());
-            } catch (DotDataException e) {
+            } catch (Throwable e) {
                 Logger.error("Unable to get types for type provider:" + typesProvider
                         .getClass(), e);
             }
@@ -197,7 +197,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         for (GraphQLFieldsProvider fieldsProvider : fieldsProviders) {
             try {
                 fieldDefinitions.addAll(fieldsProvider.getFields());
-            } catch (DotDataException e) {
+            } catch (Throwable e) {
                 Logger.error("Unable to get types for type provider:" + fieldsProvider.getClass(), e);
             }
         }

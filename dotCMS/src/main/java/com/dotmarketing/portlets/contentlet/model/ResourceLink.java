@@ -253,8 +253,8 @@ public class ResourceLink {
         Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
                                                                                 final Metadata binaryMeta) throws DotDataException {
 
-            final Map<String, Object> properties = BinaryToMapTransformer.transform(binaryMeta, contentlet,
-                    APILocator.getContentTypeFieldAPI().byContentTypeAndVar(contentlet.getContentType(), velocityVarName));
+            final Map<String, Object> properties = BinaryToMapTransformer.transform(contentlet,
+                    contentlet.getContentType().fieldMap().get(velocityVarName));
 
             final String versionPath = (String)properties.get("versionPath");
             final String idPath      = (String)properties.get("idPath");
