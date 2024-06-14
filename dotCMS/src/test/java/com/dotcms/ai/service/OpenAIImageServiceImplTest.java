@@ -7,6 +7,7 @@ import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.RandomStringUtils;
@@ -218,6 +219,7 @@ public class OpenAIImageServiceImplTest {
         when(config.getImageModel()).thenReturn("some-image-model");
         when(config.getImageSize()).thenReturn("some-image-size");
         final File file = mock(File.class);
+        when(file.getName()).thenReturn(UUIDGenerator.shorty());
         when(file.getPath()).thenReturn("/some/path/here");
         final DotTempFile tempFile = new DotTempFile("some-id", file);
 

@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
@@ -432,9 +433,31 @@ public class StringUtilsTest {
     @Test
     public void testHashText() {
         String input = "Hello, World!";
-        String expectedOutput = "315F5BDB76D078C43B8AC0064E4A0164612B1FCE77C869345BFC94C75894EDD3"; // This is the SHA-256 hash of "Hello, World!"
         String actualOutput = StringUtils.hashText(input);
         assertEquals(64, actualOutput.length());
+    }
+
+    /**
+     * Given a text input
+     * When calling the joinOneCharElements method
+     * Then verify that one-length elements in an underscore delimited String are joined together in the new string.
+     */
+    @Test
+    public void testJoinOneCharElements() {
+        String input = "a_b_c_d_e_f";
+        String expectedOutput = "abcdef";
+        String actualOutput = StringUtils.joinOneCharElements(input);
+        Assertions.assertEquals(expectedOutput, actualOutput);
+
+        input = "abc_def_ghi";
+        expectedOutput = "abc_def_ghi";
+        actualOutput = StringUtils.joinOneCharElements(input);
+        Assertions.assertEquals(expectedOutput, actualOutput);
+
+        input = "";
+        expectedOutput = "";
+        actualOutput = StringUtils.joinOneCharElements(input);
+        Assertions.assertEquals(expectedOutput, actualOutput);
     }
 
 }
