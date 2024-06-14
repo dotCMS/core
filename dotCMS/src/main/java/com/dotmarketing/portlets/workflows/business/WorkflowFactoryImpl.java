@@ -1987,19 +1987,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     @Override
     public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException {
 
-        boolean isNew = true;
-        if (UtilMethods.isSet(scheme.getId())) {
-            try {
-                final WorkflowScheme foundWorkflow = this.findScheme(scheme.getId());
-                if (foundWorkflow != null) {
-                    isNew = false;
-                }
-            } catch (final Exception e) {
-                Logger.debug(this.getClass(), e.getMessage(), e);
-            }
-        }
-
-        scheme.setModDate(new Date());
+        boolean isNew = isNewScheme(scheme);
 
         final DotConnect db = new DotConnect();
         try {
@@ -2048,7 +2036,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 db.addParam(scheme.isArchived());
                 db.addParam(false);
                 db.addParam(scheme.isDefaultScheme());
-                db.addParam(scheme.getModDate());
+                db.addParam(new Date());
                 db.loadResult();
             } else {
                 db.setSQL(WorkflowSQL.UPDATE_SCHEME);
@@ -2056,11 +2044,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 db.addParam(scheme.getDescription());
                 db.addParam(scheme.isArchived());
                 db.addParam(false);
-                db.addParam(scheme.getModDate());
+                db.addParam(new Date());
                 db.addParam(scheme.getId());
                 db.loadResult();
 
             }
+
             cache.remove(scheme);
         } catch (final Exception e) {
             throw new DotDataException(e.getMessage(), e);
@@ -2851,6 +2840,29 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             dc.addParam(true);
         }
         return dc.getInt("mycount");
+    }
+
+    /**
+     * Simple method to check if a workflow scheme, based on its id, already exists in the database
+     *
+     * @param scheme WorkflowScheme to be checked
+     * @return boolean true if the scheme already exists, false otherwise
+     */
+    private boolean isNewScheme(WorkflowScheme scheme) {
+
+        boolean isNew = true;
+        if (UtilMethods.isSet(scheme.getId())) {
+            try {
+                final WorkflowScheme foundWorkflow = this.findScheme(scheme.getId());
+                if (foundWorkflow != null) {
+                    isNew = false;
+                }
+            } catch (final Exception e) {
+                Logger.debug(this.getClass(), e.getMessage(), e);
+            }
+        }
+
+        return isNew;
     }
 
     /**
