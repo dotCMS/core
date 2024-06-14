@@ -30,6 +30,7 @@ public class AppConfig implements Serializable {
     private final String textPrompt;
     private final String imagePrompt;
     private final String imageSize;
+    private final String listenerIndexer;
     private final Map<String, Secret> configValues;
 
     public AppConfig(final Map<String, Secret> secrets) {
@@ -43,6 +44,7 @@ public class AppConfig implements Serializable {
         imageSize = resolveSecret(secrets, AppKeys.IMAGE_SIZE, AppKeys.IMAGE_SIZE.defaultValue);
         model = resolveSecretOrBlank(secrets, AppKeys.MODEL);
         imageModel = resolveSecret(secrets, AppKeys.IMAGE_MODEL, "dall-e-3");
+        listenerIndexer = resolveSecretOrBlank(secrets, AppKeys.LISTENER_INDEXER);
         Logger.debug(this.getClass().getName(), () -> "apiUrl: " + apiUrl);
         Logger.debug(this.getClass().getName(), () -> "apiImageUrl: " + apiImageUrl);
         Logger.debug(this.getClass().getName(), () -> "apiKey: " + apiKey);
@@ -52,6 +54,7 @@ public class AppConfig implements Serializable {
         Logger.debug(this.getClass().getName(), () -> "imageModel: " + imageModel);
         Logger.debug(this.getClass().getName(), () -> "imageSize: " + imageSize);
         Logger.debug(this.getClass().getName(), () -> "model: " + model);
+        Logger.debug(this.getClass().getName(), () -> "listerIndexer: " + listenerIndexer);
     }
 
     private String resolveSecret(final Map<String, Secret> secrets, final AppKeys key, final String defaultValue) {
@@ -150,6 +153,15 @@ public class AppConfig implements Serializable {
      */
     public String getModel() {
         return model;
+    }
+
+    /**
+     * Retrieves the Listener Indexer.
+     *
+     * @return the Listener Indexer
+     */
+    public String getListenerIndexer() {
+        return listenerIndexer;
     }
 
     /**

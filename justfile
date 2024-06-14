@@ -23,7 +23,6 @@ home_dir := env_var('HOME')
 default:
     @just --list --unsorted --justfile {{ justfile() }}
 
-
 # Builds the project without running tests, useful for quick iterations
 build:
     ./mvnw -DskipTests clean install
