@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "2d0c1216-5c66-4f24-b32d-e0789e36c44b",
+		"_postman_id": "6d6b0491-9a4b-49cd-990c-4e408951f7c8",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "17413400",
+		"_collection_link": "https://blue-shuttle-729384.postman.co/workspace/a7eabadb-1add-48d7-ad79-8cc45ee194f4/collection/17413400-6d6b0491-9a4b-49cd-990c-4e408951f7c8?action=share&source=collection_link&creator=17413400"
 	},
 	"item": [
 		{
@@ -3075,6 +3076,415 @@
 			"description": "This folder contains Postman tests related to the interaction of Contentlets with Block Editor fields in dotCMS."
 		},
 		{
+			"name": "Description field",
+			"item": [
+				{
+					"name": "Create New Page Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
+									"pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
+									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[0].id);",
+									"",
+									"pm.test(\"Check response\", function () {",
+									"    pm.expect(jsonData.entity[0].baseType).to.eql(\"HTMLPAGE\");",
+									"});",
+									"",
+									"pm.test(\"Validate that the 'errors' array is empty\", function () {",
+									"    // Check that the 'errors' array is defined and its length is 0",
+									"    pm.expect(jsonData.errors).to.be.an('array').that.is.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"if (!pm.environment.get('jwt')) {\r",
+									"   console.log(\"generating....\")\r",
+									"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable\r",
+									"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL\r",
+									"\r",
+									"// If we are unable to get the JWT we need to generate a new one\r",
+									"   if (!pm.environment.get('jwt')) {\r",
+									"       const username = pm.environment.get(\"user\");\r",
+									"       const password = pm.environment.get(\"password\");\r",
+									"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');\r",
+									"\r",
+									"\r",
+									"       const requestOptions = {\r",
+									"           url: apiUrl,\r",
+									"           method: \"POST\",\r",
+									"           header: {\r",
+									"               \"accept\": \"*/*\",\r",
+									"               \"content-type\": \"application/json\",\r",
+									"               \"Authorization\": `Basic ${basicAuth}`\r",
+									"           },\r",
+									"           body: {\r",
+									"               mode: \"raw\",\r",
+									"               raw: JSON.stringify({\r",
+									"                   \"expirationSeconds\": 7200,\r",
+									"                   \"userId\": \"dotcms.org.1\",\r",
+									"                   \"network\": \"0.0.0.0/0\",\r",
+									"                   \"claims\": {\"label\": \"postman-tests\"}\r",
+									"               })\r",
+									"           }\r",
+									"       };\r",
+									"\r",
+									"\r",
+									"       pm.sendRequest(requestOptions, function (err, response) {\r",
+									"           if (err) {\r",
+									"               console.log(err);\r",
+									"           } else {\r",
+									"               const jwt = response.json().entity.jwt;\r",
+									"               pm.environment.set('jwt', jwt);\r",
+									"               console.log(jwt);\r",
+									"           }\r",
+									"       });\r",
+									"   }\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"defaultType\": false,\n    \"icon\": null,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutablePageContentType\",\n    \"description\": \"\",\n    \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"TestTypePage{{$randomBankAccount}}\",\n    \"variable\": \"TestTypePage{{$randomBankAccount}}\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Content Type add description field",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"description field check\", function () {",
+									"    pm.expect(jsonData.entity.fields[2].name).to.eql('description');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"if (!pm.environment.get('jwt')) {\r",
+									"   console.log(\"generating....\")\r",
+									"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable\r",
+									"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL\r",
+									"\r",
+									"// If we are unable to get the JWT we need to generate a new one\r",
+									"   if (!pm.environment.get('jwt')) {\r",
+									"       const username = pm.environment.get(\"user\");\r",
+									"       const password = pm.environment.get(\"password\");\r",
+									"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');\r",
+									"\r",
+									"\r",
+									"       const requestOptions = {\r",
+									"           url: apiUrl,\r",
+									"           method: \"POST\",\r",
+									"           header: {\r",
+									"               \"accept\": \"*/*\",\r",
+									"               \"content-type\": \"application/json\",\r",
+									"               \"Authorization\": `Basic ${basicAuth}`\r",
+									"           },\r",
+									"           body: {\r",
+									"               mode: \"raw\",\r",
+									"               raw: JSON.stringify({\r",
+									"                   \"expirationSeconds\": 7200,\r",
+									"                   \"userId\": \"dotcms.org.1\",\r",
+									"                   \"network\": \"0.0.0.0/0\",\r",
+									"                   \"claims\": {\"label\": \"postman-tests\"}\r",
+									"               })\r",
+									"           }\r",
+									"       };\r",
+									"\r",
+									"\r",
+									"       pm.sendRequest(requestOptions, function (err, response) {\r",
+									"           if (err) {\r",
+									"               console.log(err);\r",
+									"           } else {\r",
+									"               const jwt = response.json().entity.jwt;\r",
+									"               pm.environment.set('jwt', jwt);\r",
+									"               console.log(jwt);\r",
+									"           }\r",
+									"       });\r",
+									"   }\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"baseType\": \"HTMLPAGE\",\n            \"clazz\": \"com.dotcms.contenttype.model.type.ImmutablePageContentType\",\n            \"defaultType\": false,\n            \"fields\": [\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableCustomField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Custom-Field\",\n                    \"fieldTypeLabel\": \"Custom Field\",\n                    \"fieldVariables\": [],\n                    \"fixed\": true,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": true,\n                    \"modDate\": 1718296025000,\n                    \"name\": \"Title\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": false,\n                    \"sortOrder\": 0,\n                    \"unique\": false,\n                    \"values\": \"$velutil.mergeTemplate('/static/htmlpage_assets/title_custom_field.vtl')\",\n                    \"variable\": \"title\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Text\",\n                    \"fieldTypeLabel\": \"Text\",\n                    \"fieldVariables\": [],\n                    \"fixed\": true,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": true,\n                    \"modDate\": 1718296025000,\n                    \"name\": \"Url\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": true,\n                    \"sortOrder\": 1,\n                    \"unique\": false,\n                    \"variable\": \"url\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Text\",\n                    \"fieldTypeLabel\": \"Text\",\n                    \"fieldVariables\": [],\n                    \"fixed\": true,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": true,\n                    \"modDate\": 1718296025000,\n                    \"name\": \"description\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": true,\n                    \"sortOrder\": 2,\n                    \"unique\": false,\n                    \"variable\": \"description\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"SYSTEM\",\n                    \"fieldType\": \"Host-Folder\",\n                    \"fieldTypeLabel\": \"Site or Folder\",\n                    \"fieldVariables\": [],\n                    \"fixed\": true,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": false,\n                    \"modDate\": 1718296025000,\n                    \"name\": \"Site or Folder\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": false,\n                    \"sortOrder\": 3,\n                    \"unique\": false,\n                    \"variable\": \"hostFolder\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableCustomField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Custom-Field\",\n                    \"fieldTypeLabel\": \"Custom Field\",\n                    \"fieldVariables\": [],\n                    \"fixed\": true,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": false,\n                    \"modDate\": 1718296025000,\n                    \"name\": \"Template\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": true,\n                    \"sortOrder\": 4,\n                    \"unique\": false,\n                    \"values\": \"$velutil.mergeTemplate('/static/htmlpage_assets/template_custom_field.vtl')\",\n                    \"variable\": \"template\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableCheckboxField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"defaultValue\": \"false\",\n                    \"fieldType\": \"Checkbox\",\n                    \"fieldTypeLabel\": \"Checkbox\",\n                    \"fieldVariables\": [],\n                    \"fixed\": false,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": false,\n                    \"modDate\": 1718296025000,\n                    \"name\": \"Show on Menu\",\n                    \"readOnly\": false,\n                    \"required\": false,\n                    \"searchable\": false,\n                    \"sortOrder\": 5,\n                    \"unique\": false,\n                    \"values\": \"|true\",\n                    \"variable\": \"showOnMenu\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"INTEGER\",\n                    \"defaultValue\": \"0\",\n                    \"fieldType\": \"Text\",\n                    \"fieldTypeLabel\": \"Text\",\n                    \"fieldVariables\": [],\n                    \"fixed\": false,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": false,\n                    \"modDate\": 1718296025000,\n                    \"name\": \"Sort Order\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": true,\n                    \"sortOrder\": 6,\n                    \"unique\": false,\n                    \"variable\": \"sortOrder\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableCustomField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Custom-Field\",\n                    \"fieldTypeLabel\": \"Custom Field\",\n                    \"fieldVariables\": [],\n                    \"fixed\": false,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": true,\n                    \"modDate\": 1718296025000,\n                    \"name\": \"Cache TTL\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": false,\n                    \"sortOrder\": 7,\n                    \"unique\": false,\n                    \"values\": \"$velutil.mergeTemplate('/static/htmlpage_assets/cachettl_custom_field.vtl')\",\n                    \"variable\": \"cachettl\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Text\",\n                    \"fieldTypeLabel\": \"Text\",\n                    \"fieldVariables\": [],\n                    \"fixed\": false,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": false,\n                    \"modDate\": 1718296026000,\n                    \"name\": \"Friendly Name\",\n                    \"readOnly\": false,\n                    \"required\": false,\n                    \"searchable\": false,\n                    \"sortOrder\": 8,\n                    \"unique\": false,\n                    \"variable\": \"friendlyName\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTabDividerField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"SYSTEM\",\n                    \"fieldType\": \"Tab_divider\",\n                    \"fieldTypeLabel\": \"Tab Divider\",\n                    \"fieldVariables\": [],\n                    \"fixed\": false,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": false,\n                    \"listed\": false,\n                    \"modDate\": 1718296026000,\n                    \"name\": \"Advanced Properties\",\n                    \"readOnly\": false,\n                    \"required\": false,\n                    \"searchable\": false,\n                    \"sortOrder\": 9,\n                    \"unique\": false,\n                    \"variable\": \"advancedtab\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableCustomField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Custom-Field\",\n                    \"fieldTypeLabel\": \"Custom Field\",\n                    \"fieldVariables\": [],\n                    \"fixed\": false,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": true,\n                    \"modDate\": 1718296026000,\n                    \"name\": \"Redirect URL\",\n                    \"readOnly\": false,\n                    \"required\": false,\n                    \"searchable\": false,\n                    \"sortOrder\": 10,\n                    \"unique\": false,\n                    \"values\": \"$velutil.mergeTemplate('/static/htmlpage_assets/redirect_custom_field.vtl')\",\n                    \"variable\": \"redirecturl\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableCheckboxField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"defaultValue\": \"false\",\n                    \"fieldType\": \"Checkbox\",\n                    \"fieldTypeLabel\": \"Checkbox\",\n                    \"fieldVariables\": [],\n                    \"fixed\": false,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": false,\n                    \"listed\": false,\n                    \"modDate\": 1718296026000,\n                    \"name\": \"HTTPS Required\",\n                    \"readOnly\": false,\n                    \"required\": false,\n                    \"searchable\": false,\n                    \"sortOrder\": 11,\n                    \"unique\": false,\n                    \"values\": \"|true\",\n                    \"variable\": \"httpsreq\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextAreaField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"LONG_TEXT\",\n                    \"fieldType\": \"Textarea\",\n                    \"fieldTypeLabel\": \"Textarea\",\n                    \"fieldVariables\": [],\n                    \"fixed\": false,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": false,\n                    \"modDate\": 1718296026000,\n                    \"name\": \"SEO Description\",\n                    \"readOnly\": false,\n                    \"required\": false,\n                    \"searchable\": false,\n                    \"sortOrder\": 12,\n                    \"unique\": false,\n                    \"variable\": \"seodescription\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextAreaField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"LONG_TEXT\",\n                    \"fieldType\": \"Textarea\",\n                    \"fieldTypeLabel\": \"Textarea\",\n                    \"fieldVariables\": [],\n                    \"fixed\": false,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": true,\n                    \"listed\": false,\n                    \"modDate\": 1718296026000,\n                    \"name\": \"SEO Keywords\",\n                    \"readOnly\": false,\n                    \"required\": false,\n                    \"searchable\": false,\n                    \"sortOrder\": 13,\n                    \"unique\": false,\n                    \"variable\": \"seokeywords\"\n                },\n                {\n                    \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextAreaField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"LONG_TEXT\",\n                    \"fieldType\": \"Textarea\",\n                    \"fieldTypeLabel\": \"Textarea\",\n                    \"fieldVariables\": [],\n                    \"fixed\": false,\n                    \"forceIncludeInApi\": false,\n                    \"iDate\": 1718296025000,\n                    \"indexed\": false,\n                    \"listed\": false,\n                    \"modDate\": 1718296026000,\n                    \"name\": \"Page Metadata\",\n                    \"readOnly\": false,\n                    \"required\": false,\n                    \"searchable\": false,\n                    \"sortOrder\": 14,\n                    \"unique\": false,\n                    \"variable\": \"pagemetadata\"\n                }\n            ],\n            \"fixed\": false,\n            \"folder\": \"SYSTEM_FOLDER\",\n            \"folderPath\": \"/\",\n            \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n            \"iDate\": 1718296025000,\n            \"icon\": \"description\",\n            \"id\": \"{{contentTypeID}}\",\n            \"metadata\": {},\n            \"modDate\": 1718296026000,\n            \"multilingualable\": false,\n            \"name\": \"TestTypePage47930924\",\n            \"siteName\": \"demo.dotcms.com\",\n            \"sortOrder\": 0,\n            \"system\": false,\n            \"systemActionMappings\": {},\n            \"variable\": \"{{contentTypeVAR}}\",\n            \"versionable\": true,\n            \"workflows\": [\n                {\n                    \"archived\": false,\n                    \"creationDate\": 1718293865484,\n                    \"defaultScheme\": false,\n                    \"description\": \"\",\n                    \"entryActionId\": null,\n                    \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n                    \"mandatory\": false,\n                    \"modDate\": 1717698934375,\n                    \"name\": \"System Workflow\",\n                    \"system\": true\n                }\n            ]\n        }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeID}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{contentTypeID}}"
+							]
+						},
+						"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+					},
+					"response": []
+				},
+				{
+					"name": "Create page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"page_id\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"if (!pm.environment.get('jwt')) {\r",
+									"   console.log(\"generating....\")\r",
+									"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable\r",
+									"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL\r",
+									"\r",
+									"// If we are unable to get the JWT we need to generate a new one\r",
+									"   if (!pm.environment.get('jwt')) {\r",
+									"       const username = pm.environment.get(\"user\");\r",
+									"       const password = pm.environment.get(\"password\");\r",
+									"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');\r",
+									"\r",
+									"\r",
+									"       const requestOptions = {\r",
+									"           url: apiUrl,\r",
+									"           method: \"POST\",\r",
+									"           header: {\r",
+									"               \"accept\": \"*/*\",\r",
+									"               \"content-type\": \"application/json\",\r",
+									"               \"Authorization\": `Basic ${basicAuth}`\r",
+									"           },\r",
+									"           body: {\r",
+									"               mode: \"raw\",\r",
+									"               raw: JSON.stringify({\r",
+									"                   \"expirationSeconds\": 7200,\r",
+									"                   \"userId\": \"dotcms.org.1\",\r",
+									"                   \"network\": \"0.0.0.0/0\",\r",
+									"                   \"claims\": {\"label\": \"postman-tests\"}\r",
+									"               })\r",
+									"           }\r",
+									"       };\r",
+									"\r",
+									"\r",
+									"       pm.sendRequest(requestOptions, function (err, response) {\r",
+									"           if (err) {\r",
+									"               console.log(err);\r",
+									"           } else {\r",
+									"               const jwt = response.json().entity.jwt;\r",
+									"               pm.environment.set('jwt', jwt);\r",
+									"               console.log(jwt);\r",
+									"           }\r",
+									"       });\r",
+									"   }\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"page_description_field\",\n        \"languageId\" : 1,\n        \"stInode\": \"{{contentTypeID}}\",\n        \"url\": \"page_description_field\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\",\n        \"description\": \"description\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get content by identifier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"\r",
+									"pm.test(\"Status code should be ok 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"description field check\", function () {\r",
+									"    pm.expect(jsonData.contentlets[0].description).to.eql('description');\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"if (!pm.environment.get('jwt')) {\r",
+									"   console.log(\"generating....\")\r",
+									"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable\r",
+									"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL\r",
+									"\r",
+									"// If we are unable to get the JWT we need to generate a new one\r",
+									"   if (!pm.environment.get('jwt')) {\r",
+									"       const username = pm.environment.get(\"user\");\r",
+									"       const password = pm.environment.get(\"password\");\r",
+									"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');\r",
+									"\r",
+									"\r",
+									"       const requestOptions = {\r",
+									"           url: apiUrl,\r",
+									"           method: \"POST\",\r",
+									"           header: {\r",
+									"               \"accept\": \"*/*\",\r",
+									"               \"content-type\": \"application/json\",\r",
+									"               \"Authorization\": `Basic ${basicAuth}`\r",
+									"           },\r",
+									"           body: {\r",
+									"               mode: \"raw\",\r",
+									"               raw: JSON.stringify({\r",
+									"                   \"expirationSeconds\": 7200,\r",
+									"                   \"userId\": \"dotcms.org.1\",\r",
+									"                   \"network\": \"0.0.0.0/0\",\r",
+									"                   \"claims\": {\"label\": \"postman-tests\"}\r",
+									"               })\r",
+									"           }\r",
+									"       };\r",
+									"\r",
+									"\r",
+									"       pm.sendRequest(requestOptions, function (err, response) {\r",
+									"           if (err) {\r",
+									"               console.log(err);\r",
+									"           } else {\r",
+									"               const jwt = response.json().entity.jwt;\r",
+									"               pm.environment.set('jwt', jwt);\r",
+									"               console.log(jwt);\r",
+									"           }\r",
+									"       });\r",
+									"   }\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/content/id/{{page_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"id",
+								"{{page_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "[https://github.com/dotCMS/core/issues/28785](https://github.com/dotCMS/core/issues/28785)\n\n1. Create Content Type\n2. Create a \"description\" field\n3. Create content (page) from the content type\n    \n4. Request to the endpoint and get content\n5. Check \"description\" field value\n    \n\nExpected:\n\nThe value of the field \"description\" should be the same that was set when creating the page"
+		},
+		{
 			"name": "invalidateSession",
 			"event": [
 				{
@@ -3616,6 +4026,24 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "contentTypeID",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVAR",
+			"value": ""
+		},
+		{
+			"key": "contentTypeFieldID",
+			"value": ""
+		},
+		{
+			"key": "page_id",
+			"value": ""
 		}
 	]
 }
