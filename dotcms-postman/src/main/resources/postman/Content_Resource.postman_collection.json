@@ -3108,49 +3108,6 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"if (!pm.environment.get('jwt')) {\r",
-									"   console.log(\"generating....\")\r",
-									"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable\r",
-									"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL\r",
-									"\r",
-									"// If we are unable to get the JWT we need to generate a new one\r",
-									"   if (!pm.environment.get('jwt')) {\r",
-									"       const username = pm.environment.get(\"user\");\r",
-									"       const password = pm.environment.get(\"password\");\r",
-									"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');\r",
-									"\r",
-									"\r",
-									"       const requestOptions = {\r",
-									"           url: apiUrl,\r",
-									"           method: \"POST\",\r",
-									"           header: {\r",
-									"               \"accept\": \"*/*\",\r",
-									"               \"content-type\": \"application/json\",\r",
-									"               \"Authorization\": `Basic ${basicAuth}`\r",
-									"           },\r",
-									"           body: {\r",
-									"               mode: \"raw\",\r",
-									"               raw: JSON.stringify({\r",
-									"                   \"expirationSeconds\": 7200,\r",
-									"                   \"userId\": \"dotcms.org.1\",\r",
-									"                   \"network\": \"0.0.0.0/0\",\r",
-									"                   \"claims\": {\"label\": \"postman-tests\"}\r",
-									"               })\r",
-									"           }\r",
-									"       };\r",
-									"\r",
-									"\r",
-									"       pm.sendRequest(requestOptions, function (err, response) {\r",
-									"           if (err) {\r",
-									"               console.log(err);\r",
-									"           } else {\r",
-									"               const jwt = response.json().entity.jwt;\r",
-									"               pm.environment.set('jwt', jwt);\r",
-									"               console.log(jwt);\r",
-									"           }\r",
-									"       });\r",
-									"   }\r",
-									"}\r",
 									""
 								],
 								"type": "text/javascript"
@@ -3179,7 +3136,8 @@
 								"v1",
 								"contenttype"
 							]
-						}
+						},
+						"description": "Create a new content type page"
 					},
 					"response": []
 				},
@@ -3208,49 +3166,6 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"if (!pm.environment.get('jwt')) {\r",
-									"   console.log(\"generating....\")\r",
-									"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable\r",
-									"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL\r",
-									"\r",
-									"// If we are unable to get the JWT we need to generate a new one\r",
-									"   if (!pm.environment.get('jwt')) {\r",
-									"       const username = pm.environment.get(\"user\");\r",
-									"       const password = pm.environment.get(\"password\");\r",
-									"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');\r",
-									"\r",
-									"\r",
-									"       const requestOptions = {\r",
-									"           url: apiUrl,\r",
-									"           method: \"POST\",\r",
-									"           header: {\r",
-									"               \"accept\": \"*/*\",\r",
-									"               \"content-type\": \"application/json\",\r",
-									"               \"Authorization\": `Basic ${basicAuth}`\r",
-									"           },\r",
-									"           body: {\r",
-									"               mode: \"raw\",\r",
-									"               raw: JSON.stringify({\r",
-									"                   \"expirationSeconds\": 7200,\r",
-									"                   \"userId\": \"dotcms.org.1\",\r",
-									"                   \"network\": \"0.0.0.0/0\",\r",
-									"                   \"claims\": {\"label\": \"postman-tests\"}\r",
-									"               })\r",
-									"           }\r",
-									"       };\r",
-									"\r",
-									"\r",
-									"       pm.sendRequest(requestOptions, function (err, response) {\r",
-									"           if (err) {\r",
-									"               console.log(err);\r",
-									"           } else {\r",
-									"               const jwt = response.json().entity.jwt;\r",
-									"               pm.environment.set('jwt', jwt);\r",
-									"               console.log(jwt);\r",
-									"           }\r",
-									"       });\r",
-									"   }\r",
-									"}\r",
 									""
 								],
 								"type": "text/javascript"
@@ -3282,7 +3197,7 @@
 								"{{contentTypeID}}"
 							]
 						},
-						"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+						"description": "Given a content type ID and a payload containing content type properties.  \nExpect that code is 200.  \nExpect content type is updated without issues.\n\nAdd a new field \"description\""
 					},
 					"response": []
 				},
@@ -3310,49 +3225,6 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"if (!pm.environment.get('jwt')) {\r",
-									"   console.log(\"generating....\")\r",
-									"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable\r",
-									"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL\r",
-									"\r",
-									"// If we are unable to get the JWT we need to generate a new one\r",
-									"   if (!pm.environment.get('jwt')) {\r",
-									"       const username = pm.environment.get(\"user\");\r",
-									"       const password = pm.environment.get(\"password\");\r",
-									"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');\r",
-									"\r",
-									"\r",
-									"       const requestOptions = {\r",
-									"           url: apiUrl,\r",
-									"           method: \"POST\",\r",
-									"           header: {\r",
-									"               \"accept\": \"*/*\",\r",
-									"               \"content-type\": \"application/json\",\r",
-									"               \"Authorization\": `Basic ${basicAuth}`\r",
-									"           },\r",
-									"           body: {\r",
-									"               mode: \"raw\",\r",
-									"               raw: JSON.stringify({\r",
-									"                   \"expirationSeconds\": 7200,\r",
-									"                   \"userId\": \"dotcms.org.1\",\r",
-									"                   \"network\": \"0.0.0.0/0\",\r",
-									"                   \"claims\": {\"label\": \"postman-tests\"}\r",
-									"               })\r",
-									"           }\r",
-									"       };\r",
-									"\r",
-									"\r",
-									"       pm.sendRequest(requestOptions, function (err, response) {\r",
-									"           if (err) {\r",
-									"               console.log(err);\r",
-									"           } else {\r",
-									"               const jwt = response.json().entity.jwt;\r",
-									"               pm.environment.set('jwt', jwt);\r",
-									"               console.log(jwt);\r",
-									"           }\r",
-									"       });\r",
-									"   }\r",
-									"}\r",
 									""
 								],
 								"type": "text/javascript"
@@ -3385,7 +3257,8 @@
 								"fire",
 								"PUBLISH"
 							]
-						}
+						},
+						"description": "Create a content with previous field \"description\" with value \"description\" also"
 					},
 					"response": []
 				},
@@ -3414,49 +3287,6 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"if (!pm.environment.get('jwt')) {\r",
-									"   console.log(\"generating....\")\r",
-									"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable\r",
-									"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL\r",
-									"\r",
-									"// If we are unable to get the JWT we need to generate a new one\r",
-									"   if (!pm.environment.get('jwt')) {\r",
-									"       const username = pm.environment.get(\"user\");\r",
-									"       const password = pm.environment.get(\"password\");\r",
-									"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');\r",
-									"\r",
-									"\r",
-									"       const requestOptions = {\r",
-									"           url: apiUrl,\r",
-									"           method: \"POST\",\r",
-									"           header: {\r",
-									"               \"accept\": \"*/*\",\r",
-									"               \"content-type\": \"application/json\",\r",
-									"               \"Authorization\": `Basic ${basicAuth}`\r",
-									"           },\r",
-									"           body: {\r",
-									"               mode: \"raw\",\r",
-									"               raw: JSON.stringify({\r",
-									"                   \"expirationSeconds\": 7200,\r",
-									"                   \"userId\": \"dotcms.org.1\",\r",
-									"                   \"network\": \"0.0.0.0/0\",\r",
-									"                   \"claims\": {\"label\": \"postman-tests\"}\r",
-									"               })\r",
-									"           }\r",
-									"       };\r",
-									"\r",
-									"\r",
-									"       pm.sendRequest(requestOptions, function (err, response) {\r",
-									"           if (err) {\r",
-									"               console.log(err);\r",
-									"           } else {\r",
-									"               const jwt = response.json().entity.jwt;\r",
-									"               pm.environment.set('jwt', jwt);\r",
-									"               console.log(jwt);\r",
-									"           }\r",
-									"       });\r",
-									"   }\r",
-									"}\r",
 									""
 								],
 								"type": "text/javascript"
@@ -3477,12 +3307,35 @@
 								"id",
 								"{{page_id}}"
 							]
-						}
+						},
+						"description": "Get content to validate that the field \"description\" has the value \"description\""
 					},
 					"response": []
 				}
 			],
-			"description": "[https://github.com/dotCMS/core/issues/28785](https://github.com/dotCMS/core/issues/28785)\n\n1. Create Content Type\n2. Create a \"description\" field\n3. Create content (page) from the content type\n    \n4. Request to the endpoint and get content\n5. Check \"description\" field value\n    \n\nExpected:\n\nThe value of the field \"description\" should be the same that was set when creating the page"
+			"description": "[https://github.com/dotCMS/core/issues/28785](https://github.com/dotCMS/core/issues/28785)\n\n1. Create Content Type\n2. Create a \"description\" field\n3. Create content (page) from the content type\n4. Request to the endpoint and get content\n5. Check \"description\" field value\n    \n\nExpected:\n\nThe value of the field \"description\" should be the same that was set when creating the page",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
 		},
 		{
 			"name": "invalidateSession",
