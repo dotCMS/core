@@ -241,6 +241,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private static final String BULK_ACTIONS_CONTENTLET_FETCH_STEP = "workflow.action.bulk.fetch.step";
 
+	private static final String LICENSE_REQUIRED_MESSAGE_KEY = "Workflow-Schemes-License-required";
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
 
@@ -408,7 +410,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         // if the class calling the workflow api is not friend, so checks the validation
         if (!this.getFriendClass().isFriend()) {
             if (!hasValidLicense()) {
-                throw new InvalidLicenseException("Workflow-Schemes-License-required");
+                throw new InvalidLicenseException(LICENSE_REQUIRED_MESSAGE_KEY);
             }
 
             boolean hasAccessToPortlet = false;
@@ -610,7 +612,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final String schemeIdOrVar = this.getLongId(idOrVar, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
 
-		validateWorkflowLicense(schemeIdOrVar, "Workflow-Schemes-License-required");
+		validateWorkflowLicense(schemeIdOrVar, LICENSE_REQUIRED_MESSAGE_KEY);
 
 		return workFlowFactory.findScheme(schemeIdOrVar);
 	}
@@ -730,7 +732,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<ContentType> findContentTypesForScheme(final WorkflowScheme workflowScheme) {
 
-		validateWorkflowLicense(workflowScheme.getId(), "Workflow-Schemes-License-required");
+		validateWorkflowLicense(workflowScheme.getId(), LICENSE_REQUIRED_MESSAGE_KEY);
 		try {
 			return workFlowFactory.findContentTypesByScheme(workflowScheme);
 		}catch(Exception e){
@@ -1579,10 +1581,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	} // findActions.
 
 	private void validateWorkflowLicense(String scheme, String message) {
-		if (!SYSTEM_WORKFLOW_ID.equals(scheme) && !SYSTEM_WORKFLOW_VARIABLE_NAME.equals(scheme)) {
-			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-				throw new InvalidLicenseException(message);
-			}
+		if (!SYSTEM_WORKFLOW_ID.equals(scheme) && !SYSTEM_WORKFLOW_VARIABLE_NAME.equals(scheme)
+				&& (!hasValidLicense() && !this.getFriendClass().isFriend())) {
+			throw new InvalidLicenseException(message);
 		}
 	}
 

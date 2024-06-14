@@ -63,6 +63,9 @@ public class ContentTypeForm  {
         public static final String WORKFLOW_ATTRIBUTE_NAME = "workflow";
         public static final String SYSTEM_ACTION_ATTRIBUTE_NAME = "systemActionMappings";
 
+        private static final String WORKFLOW_SCHEME_ID_ATTRIBUTE = "id";
+        private static final String WORKFLOW_SCHEME_VARIABLE_NAME_ATTRIBUTE = "variableName";
+
         @Override
         public ContentTypeForm deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
                 throws IOException {
@@ -199,23 +202,7 @@ public class ContentTypeForm  {
                     } else {
 
                         final JSONObject workflowJsonObject = (JSONObject) entry;
-
-                        String workflowId = null;
-                        if (workflowJsonObject.has("id") &&
-                                UtilMethods.isSet(workflowJsonObject.getString("id"))) {
-                            workflowId = workflowJsonObject.getString("id");
-                        }
-
-                        String variableName = null;
-                        if (workflowJsonObject.has("variableName") &&
-                                UtilMethods.isSet(workflowJsonObject.getString("variableName"))) {
-                            variableName = workflowJsonObject.getString("variableName");
-                        }
-
-                        workflowFormEntry = WorkflowFormEntry.builder().
-                                id(workflowId).
-                                variableName(variableName).
-                                build();
+                        workflowFormEntry = mapToWorkflowFormEntry(workflowJsonObject);
                     }
 
                     workflowsArray.add(workflowFormEntry);
@@ -223,6 +210,34 @@ public class ContentTypeForm  {
             }
 
             return workflowsArray;
+        }
+
+        /**
+         * Maps a json object to a {@link WorkflowFormEntry}
+         *
+         * @param workflowJsonObject the json object to map
+         * @return a {@link WorkflowFormEntry}
+         * @throws JSONException if the json object is not well-formed
+         */
+        private static WorkflowFormEntry mapToWorkflowFormEntry(final JSONObject workflowJsonObject)
+                throws JSONException {
+
+            String workflowId = null;
+            if (workflowJsonObject.has(WORKFLOW_SCHEME_ID_ATTRIBUTE) &&
+                    UtilMethods.isSet(workflowJsonObject.getString(WORKFLOW_SCHEME_ID_ATTRIBUTE))) {
+                workflowId = workflowJsonObject.getString(WORKFLOW_SCHEME_ID_ATTRIBUTE);
+            }
+
+            String variableName = null;
+            if (workflowJsonObject.has(WORKFLOW_SCHEME_VARIABLE_NAME_ATTRIBUTE) &&
+                    UtilMethods.isSet(workflowJsonObject.getString(WORKFLOW_SCHEME_VARIABLE_NAME_ATTRIBUTE))) {
+                variableName = workflowJsonObject.getString(WORKFLOW_SCHEME_VARIABLE_NAME_ATTRIBUTE);
+            }
+
+            return WorkflowFormEntry.builder().
+                    id(workflowId).
+                    variableName(variableName).
+                    build();
         }
 
         private static List<Tuple2<SystemAction, String>> getSystemActionsWorkflowActionIds(

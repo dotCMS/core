@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "d88471a0-6f70-45d4-af88-2a20fc277279",
+		"_postman_id": "e23a58a0-1aff-4c1e-8ef1-5891723135ca",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -568,10 +568,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [ad61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -1903,12 +1904,13 @@
 									"//Validate that returns the schemes included in the starter site ",
 									"",
 									"pm.test(\"Valid Response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [ad61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});",
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3498,10 +3500,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [d123] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -4424,10 +4427,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [e61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -7277,10 +7281,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [a85c1515c-c4f3-463c-bac2-860b8fcacc34] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -9859,10 +9864,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exis\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [ad61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -11935,10 +11941,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [123] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
