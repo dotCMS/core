@@ -310,6 +310,88 @@ describe('DotEmaShellComponent', () => {
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
             });
+
+            it('should trigger a load when changing the clientHost and it is on the devURLWhitelist with a slash at the end', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                devURLWhitelist: ['http://localhost:1111/']
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:1111',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should trigger a load when changing the clientHost has an slash at the and it is on the devURLWhitelist without the slash at the end', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111/',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                devURLWhitelist: ['http://localhost:1111']
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:1111/',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should trigger a load when changing the clientHost has an slash at the and it is on the devURLWhitelist with the slash at the end', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111/',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                devURLWhitelist: ['http://localhost:1111/']
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:1111/',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
             it('should trigger a navigate without the clientHost queryParam when the url is not in the devURLWhitelist', () => {
                 spectator.triggerNavigation({
                     url: [],

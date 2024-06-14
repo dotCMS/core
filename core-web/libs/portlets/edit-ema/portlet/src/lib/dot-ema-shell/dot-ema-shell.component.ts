@@ -291,7 +291,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         // Most IDEs and terminals add a / at the end of the URL, so we need to sanitize it
         const sanitizedClientHost = clientHost.endsWith('/') ? clientHost.slice(0, -1) : clientHost;
 
+        // We need to sanitize the whitelist as well
+        const sanitizedDevURLWhitelist = devURLWhitelist.map((url) =>
+            url.endsWith('/') ? url.slice(0, -1) : url
+        );
+
         // If the clientHost is in the whitelist we can access it
-        return devURLWhitelist.includes(sanitizedClientHost);
+        return sanitizedDevURLWhitelist.includes(sanitizedClientHost);
     }
 }
