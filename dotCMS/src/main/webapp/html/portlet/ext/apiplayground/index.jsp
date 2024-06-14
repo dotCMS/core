@@ -37,6 +37,7 @@
                     ],
                     plugins: [HideSchemes],
                     layout: "BaseLayout",
+                    operationsSorter: 'alpha',
                 })
 
                 window.ui = ui
