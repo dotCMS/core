@@ -106,3 +106,4 @@ This maintenance release includes the following code fixes:
 99. https://github.com/dotCMS/core/issues/26283 : Relationship throwing error when the child content is a copy of original child content #26283
 100. https://github.com/dotCMS/core/issues/26597 : Textareas need to be embiggened. #26597
 101. https://github.com/dotCMS/core/issues/28360 : Move Async Email Actionlet to Core #28360
+102. https://github.com/dotCMS/core/issues/28089 : Pound char not decoded when using Rules or Vanity URLs #28089
