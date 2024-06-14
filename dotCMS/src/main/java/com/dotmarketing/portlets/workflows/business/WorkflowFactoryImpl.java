@@ -2035,12 +2035,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                     scheme.setVariableName(generatedVariableName);
                 }
 
-                // Generate a deterministic ID if the scheme does not already have an ID
+                // Generate an ID if the scheme does not already have one
                 if (UtilMethods.isEmpty(scheme.getId())) {
-                    final DeterministicIdentifierAPI generator = APILocator.getDeterministicIdentifierAPI();
-                    scheme.setId(
-                            generator.generateDeterministicIdBestEffort(scheme)
-                    );
+                    scheme.setId(generateSchemaId(scheme));
                 }
 
                 db.setSQL(WorkflowSQL.INSERT_SCHEME);
@@ -2854,6 +2851,24 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             dc.addParam(true);
         }
         return dc.getInt("mycount");
+    }
+
+    /**
+     * Generates the scheme id, using a deterministic id generator, the deterministic id generator
+     * uses the scheme variable name as the seed for the generation. After the generation, the id is
+     * converted to a UUID format to keep compatibility with the short ids.
+     *
+     * @param scheme the scheme to generate the id
+     * @return the generated id
+     */
+    private String generateSchemaId(final WorkflowScheme scheme) {
+
+        // Generate a deterministic ID for the scheme
+        final DeterministicIdentifierAPI generator = APILocator.getDeterministicIdentifierAPI();
+        final String deterministicId = generator.generateDeterministicIdBestEffort(scheme);
+
+        // For legacy reasons, mainly because of short IDs we should keep using the UUID format (-)
+        return UUIDUtil.uuidIfy(deterministicId);
     }
 
     /**

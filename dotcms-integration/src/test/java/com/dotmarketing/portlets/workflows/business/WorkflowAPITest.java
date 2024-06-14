@@ -959,6 +959,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         final WorkflowAction workflowAction       = new WorkflowAction();
         workflowAction.setId("non-existing");
+        workflowAction.setSchemeId("non-existing");
         final Optional<WorkflowStep> workflowStep = workflowAPI.findFirstStepForAction(workflowAction);
         Assert.assertFalse(workflowStep.isPresent());
     }
