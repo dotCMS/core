@@ -15,58 +15,22 @@ export const DotCMSPageResolver = async (
 ): Promise<{
   pageAsset: DotCMSPageAsset;
   nav: DotcmsNavigationItem;
-} | null> => {
+}> => {
   const client = inject(DOTCMS_CLIENT_TOKEN);
-  const router = inject(Router);
+  const pageAsset = route.data['pageAsset'] as DotCMSPageAsset;
 
-  const url = route.url.map((segment) => segment.path).join('/');
-  const queryParams = route.queryParams;
-
-  const pageProps = {
-    path: url || 'index',
-    language_id: queryParams['language_id'],
-    mode: queryParams['mode'],
-    variantName: queryParams['variantName'],
-    'com.dotmarketing.persona.id':
-      queryParams['com.dotmarketing.persona.id'] || '',
-  };
+  const { language_id } = route.queryParams;
 
   const navProps = {
     path: '/',
     depth: 2,
-    languageId: queryParams['language_id'],
+    languageId: language_id,
   };
 
-  const pageRequest = client.page.get(pageProps) as Promise<{
-    entity: DotCMSPageAsset;
-  }>;
-  const navRequest = client.nav.get(navProps) as Promise<{
+  const navResponse = (await client.nav.get(navProps)) as {
     entity: DotcmsNavigationItem;
-  }>;
-
-  const [pageResponse, navResponse] = await Promise.all([
-    pageRequest,
-    navRequest,
-  ]);
-
-  let pageAsset = pageResponse.entity;
-  const nav = navResponse.entity;
-
-  const { vanityUrl } = pageAsset;
-
-  if (vanityUrl?.permanentRedirect) {
-    router.navigate([vanityUrl.forwardTo]);
-
-    return null;
-  }
-
-  if (vanityUrl) {
-    const vanityPagePros = { ...pageProps, path: vanityUrl.forwardTo };
-    const pageResponse = await (client.page.get(vanityPagePros) as Promise<{
-      entity: DotCMSPageAsset;
-    }>);
-    pageAsset = pageResponse.entity;
-  }
+  };
+  const nav = navResponse?.entity;
 
   return { pageAsset, nav };
 };
