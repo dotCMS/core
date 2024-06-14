@@ -5854,7 +5854,7 @@
 							"response": []
 						}
 					],
-					"description": "The `detailPage` attributte supports id and URI for updates, these tests validate both cases are working as expected.",
+					"description": "The `detailPage` attribute supports id and URI for updates, these tests validate both cases are working as expected.",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -6553,7 +6553,7 @@
 							"response": []
 						}
 					],
-					"description": "The `detailPage` attributte supports id and URI for updates, these tests validate both cases are working as expected.",
+					"description": "The `detailPage` attribute supports id and URI for updates, these tests validate both cases are working as expected.",
 					"event": [
 						{
 							"listen": "prerequest",
