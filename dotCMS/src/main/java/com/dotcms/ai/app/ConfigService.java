@@ -2,6 +2,7 @@ package com.dotcms.ai.app;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
