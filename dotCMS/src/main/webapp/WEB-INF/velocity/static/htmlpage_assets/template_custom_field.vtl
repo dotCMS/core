@@ -13,7 +13,7 @@ function templateChanged() {
     }
     else if(value) {
         dojo.byId("template").value=value;
-        const response = fetch("/api/v1/templates/image", {
+        fetch("/api/v1/templates/image", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -21,7 +21,7 @@ function templateChanged() {
             body: JSON.stringify({
                 templateId: value
             })
-        }).then(async () => {
+        }).then(async (response) => {
             // The ok value represents the result of the response status 200 codes
             if (response.ok) {
                 const result = await response.json();
@@ -86,7 +86,7 @@ dojo.ready(function(){
 
     var val  = dojo.byId("template").value;
     if (val != undefined && val != "" && val != "0"){
-        const response = fetch("/api/v1/templates/image", {
+        fetch("/api/v1/templates/image", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -94,7 +94,7 @@ dojo.ready(function(){
             body: JSON.stringify({
                 templateId: val
             })
-        }).then(async () => {
+        }).then(async (response) => {
             // The ok value represents the result of the response status 200 codes
             if (response.ok) {
                 const result = await response.json();
@@ -156,7 +156,7 @@ dojo.ready(function(){
                 dojo.byId("currentTemplateId").value = value;
                 dojo.byId("template").value = value;
                 dijit.byId('templateSel').set("displayedValue", fullTitle);
-                const response = fetch("/api/v1/templates/image", {
+                fetch("/api/v1/templates/image", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -164,7 +164,7 @@ dojo.ready(function(){
                     body: JSON.stringify({
                         templateId: value
                     })
-                }).then(async () => {
+                }).then(async (response) => {
                     // The ok value represents the result of the response status 200 codes
                     if (response.ok) {
                         const result = await response.json();
