@@ -382,6 +382,7 @@ public class TaskLocatorUtil {
 		ret.add(Task231109AddPublishDateToContentletVersionInfo.class);
 		ret.add(Task240102AlterVarcharLengthOfRelationType.class);
 		ret.add(Task240131UpdateLanguageVariableContentType.class);
+		ret.add(Task240513UpdateContentTypesSystemField.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

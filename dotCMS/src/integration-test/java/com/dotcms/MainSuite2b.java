@@ -274,7 +274,8 @@ import org.junit.runners.Suite.SuiteClasses;
         SiteViewPaginatorIntegrationTest.class,
         Task230523CreateVariantFieldInContentletIntegrationTest.class,
         DropOldContentVersionsJobTest.class,
-        Task231109AddPublishDateToContentletVersionInfoTest.class
+        Task231109AddPublishDateToContentletVersionInfoTest.class,
+        Task240513UpdateContentTypesSystemFieldTest.class
 })
 
 public class MainSuite2b {
