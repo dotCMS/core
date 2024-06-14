@@ -20,6 +20,7 @@ import java.util.UUID;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import picocli.CommandLine;
 
@@ -50,10 +51,13 @@ public abstract class CommandTest {
     @Inject
     RestClientFactory clientFactory;
 
+    @ConfigProperty(name = "test.dotcms.service.url", defaultValue = "http://localhost:8080")
+    String dotcmsServiceURL;
+
     @CanIgnoreReturnValue
     protected ServiceManager resetServiceProfiles() throws IOException {
         return serviceManager.removeAll()
-                .persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
+                .persist(ServiceBean.builder().name("default").url(new URL(dotcmsServiceURL)).active(true).build());
     }
 
     protected CommandLine createCommand() {
