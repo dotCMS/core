@@ -86,7 +86,10 @@ export class ConditionGroupComponent implements OnChanges {
     private resources: I18nService;
     private _rsrcCache: { [key: string]: Observable<string> };
 
-    constructor(resources: I18nService, private loggerService: LoggerService) {
+    constructor(
+        resources: I18nService,
+        private loggerService: LoggerService
+    ) {
         this.resources = resources;
         this._rsrcCache = {};
     }

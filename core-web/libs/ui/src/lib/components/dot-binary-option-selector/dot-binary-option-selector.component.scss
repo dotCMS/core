@@ -37,7 +37,9 @@ p {
     width: 145px;
     height: 145px;
     gap: $spacing-2;
-    transition: border-color $basic-speed ease, color $basic-speed ease;
+    transition:
+        border-color $basic-speed ease,
+        color $basic-speed ease;
 
     &:hover {
         color: $color-palette-gray-700;

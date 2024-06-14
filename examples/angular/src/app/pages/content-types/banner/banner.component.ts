@@ -22,7 +22,7 @@ import { DotCMSContentlet } from '@dotcms/angular';
       </h2>
       <p class="mb-4 text-xl text-shadow">{{ contentlet['caption'] }}</p>
       <a
-        class="p-4 text-xl transition duration-300 bg-red-400 rounded hover:bg-purple-600"
+        class="p-4 text-xl transition duration-300 bg-red-400 rounded hover:bg-red-500"
         [routerLink]="contentlet['link']"
       >
         {{ contentlet['buttonText'] }}

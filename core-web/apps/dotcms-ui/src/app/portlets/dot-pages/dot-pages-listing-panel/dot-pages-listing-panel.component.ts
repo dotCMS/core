@@ -46,7 +46,10 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
         draft: this.dotMessageService.get('Draft')
     };
 
-    constructor(private store: DotPageStore, private dotMessageService: DotMessageService) {}
+    constructor(
+        private store: DotPageStore,
+        private dotMessageService: DotMessageService
+    ) {}
 
     ngOnInit() {
         this.store.actionMenuDomId$

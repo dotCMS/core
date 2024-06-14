@@ -93,26 +93,7 @@
         }
 
         .p-multiselect-close {
-            margin-left: $spacing-1;
-            width: $spacing-5;
-            height: $spacing-5;
-            color: $color-palette-primary;
-            border: 0 none;
-            background: transparent;
-            border-radius: 50%;
-
-            &:hover {
-                background-color: $color-palette-primary-op-10;
-            }
-
-            &:active {
-                background-color: $color-palette-primary-op-20;
-            }
-
-            &:focus {
-                background-color: transparent;
-                @include field-focus;
-            }
+            @extend #field-panel-icon-close;
         }
     }
 
@@ -141,9 +122,7 @@
         }
 
         .p-multiselect-empty-message {
-            padding: $spacing-2 $spacing-2;
-            color: $black;
-            background: transparent;
+            @extend #field-panel-empty-message;
         }
     }
 }

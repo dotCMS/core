@@ -1,57 +1,56 @@
-import { dotcmsClient } from "@dotcms/client";
 import { MyPage } from "@/components/my-page";
+import { ErrorPage } from "@/components/error";
 
-import { handleVanityUrlRedirect } from "../utils";
+import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
+import { client, getRequestParams } from "@/utils/dotcmsClient";
+import { getPageRequestParams } from "@dotcms/client";
 
-const client = dotcmsClient.init({
-    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-    authToken: process.env.DOTCMS_AUTH_TOKEN,
-    siteId: '59bb8831-6706-4589-9ca0-ff74016e02b2',
-    requestOptions: {
-        // In production you might want to deal with this differently
-        cache: 'no-cache'
-    }
-});
-
+/**
+ * Generate metadata
+ *
+ * @export
+ * @param {*} { params, searchParams }
+ * @return {*}
+ */
 export async function generateMetadata({ params, searchParams }) {
-    const requestData = {
-        path: params?.slug ? params.slug.join('/') : 'index',
-        language_id: searchParams.language_id,
-        "com.dotmarketing.persona.id":
-            searchParams['com.dotmarketing.persona.id'] || '',
-        mode: searchParams.mode,
-        variantName: searchParams['variantName']
-    };
+    const path = params?.slug?.join("/") || '/';
+    const pageRequestParams = getPageRequestParams({ path, params: searchParams })
 
-    const data = await client.page.get(requestData);
+    try {
+        const data = await client.page.get(pageRequestParams);
+        const page = data.entity?.page;
+        const title = page?.friendlyName || page?.title;
 
-    return {
-        title: data.entity.page.friendlyName || data.entity.page.title
-    };
+        return {
+            title,
+        };
+    } catch (e) {
+        return {
+            title: "not found",
+        };
+    }
 };
 
 export default async function Home({ searchParams, params }) {
-    const requestData = {
-        path: params?.slug ? params.slug.join('/') : 'index',
-        language_id: searchParams.language_id,
-        'com.dotmarketing.persona.id':
-            searchParams['com.dotmarketing.persona.id'] || '',
-        mode: searchParams.mode,
-        variantName: searchParams['variantName']
-    };
+    try {
+        const path = params?.slug?.join("/") || '/';
+        const pageRequestParams = getPageRequestParams({ path, params: searchParams })
+        const data = await client.page.get(pageRequestParams);
+        const nav = await client.nav.get({
+            path: "/",
+            depth: 2,
+            languageId: searchParams.language_id,
+        });
+        const { vanityUrl } = data?.entity;
 
-    const data = await client.page.get(requestData);
-    const nav = await client.nav.get({
-        path: '/',
-        depth: 2,
-        languageId: searchParams.language_id,
-    });
+        if (vanityUrl) {
+            handleVanityUrlRedirect(vanityUrl);
+        }
 
-    const { vanityUrl } = data.entity;
-
-    if (vanityUrl) {
-        handleVanityUrlRedirect(vanityUrl);
+        return (
+            <MyPage nav={nav.entity.children} pageAsset={data.entity}></MyPage>
+        );
+    } catch (error) {
+        return <ErrorPage error={error} />
     }
-
-    return <MyPage nav={nav.entity.children} pageAsset={data.entity}></MyPage>;
 }

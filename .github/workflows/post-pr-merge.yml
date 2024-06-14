@@ -1,10 +1,8 @@
 name: Post PR Merge
 on:
   pull_request:
-    branches:
-      - 28716-test
     types:
-      - closed
+      [closed]
 
 jobs:
   post-pr-merge:
@@ -14,4 +12,4 @@ jobs:
     with:
       pr_number: ${{ github.event.pull_request.number }}
       pr_branch: ${{ github.event.pull_request.head.ref }}
-      validate_merge: false
+      validate_merge: true
