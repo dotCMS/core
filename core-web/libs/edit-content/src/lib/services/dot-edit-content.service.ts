@@ -75,7 +75,7 @@ export class DotEditContentService {
      * @return {*}  {Observable<TreeNodeItem[]>}
      * @memberof DotEditContentService
      */
-    getSitesTreePath(data = { filter: '*', perPage: 7000 }): Observable<TreeNodeItem[]> {
+    getSitesTreePath(data: { filter: string; perPage: number }): Observable<TreeNodeItem[]> {
         const { filter, perPage } = data;
 
         return this.#siteService.getSites(filter, perPage).pipe(

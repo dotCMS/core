@@ -13,22 +13,23 @@ export interface SiteParams {
     system: boolean;
 }
 
+export const BASE_SITE_URL = '/api/v1/site';
+
+export const DEFAULT_PER_PAGE = 10;
+
 @Injectable({
     providedIn: 'root'
 })
 export class DotSiteService {
-    #BASE_SITE_URL = '/api/v1/site';
-    #params: SiteParams = {
+    #defaultParams: SiteParams = {
         archived: false,
         live: true,
         system: true
     };
     readonly #http = inject(HttpClient);
 
-    readonly #defaultPerpage = 10;
-
     set searchParam(params: SiteParams) {
-        this.#params = params;
+        this.#defaultParams = params;
     }
 
     /**
@@ -47,15 +48,14 @@ export class DotSiteService {
     }
 
     private getSiteURL(filter: string, perPage?: number): string {
-        const paramPerPage = perPage || this.#defaultPerpage;
-        const searchParam = `filter=${filter}&per_page=${paramPerPage}&${this.getQueryParams()}`;
+        const searchParams = new URLSearchParams({
+            filter,
+            per_page: `${perPage || DEFAULT_PER_PAGE}`,
+            archived: `${this.#defaultParams.archived}`,
+            live: `${this.#defaultParams.live}`,
+            system: `${this.#defaultParams.system}`
+        });
 
-        return `${this.#BASE_SITE_URL}?${searchParam}`;
-    }
-
-    private getQueryParams(): string {
-        return Object.entries(this.#params)
-            .map(([key, value]) => `${key}=${value}`)
-            .join('&');
+        return `${BASE_SITE_URL}?${searchParams.toString()}`;
     }
 }

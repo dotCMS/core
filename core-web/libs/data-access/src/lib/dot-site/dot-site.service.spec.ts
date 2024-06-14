@@ -2,15 +2,13 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/
 
 import { mockSites } from '@dotcms/utils-testing';
 
-import { DotSiteService, SiteParams } from './dot-site.service';
+import { DotSiteService, SiteParams, BASE_SITE_URL } from './dot-site.service';
 
 describe('DotSiteService', () => {
     let spectator: SpectatorHttp<DotSiteService>;
     let service: DotSiteService;
 
     const createHttp = createHttpFactory(DotSiteService);
-
-    const BASE_SITE_URL = '/api/v1/site';
 
     beforeEach(() => {
         spectator = createHttp();

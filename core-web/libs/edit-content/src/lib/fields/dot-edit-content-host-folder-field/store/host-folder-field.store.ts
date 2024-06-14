@@ -14,18 +14,23 @@ import {
 } from '../../../models/dot-edit-content-host-folder-field.interface';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 
+export const PEER_PAGE_LIMIT = 7000;
+
+type ComponentStatus = 'INIT' | 'LOADING' | 'LOADED' | 'SAVING' | 'IDLE' | 'FAILED';
 type HostFolderFiledState = {
     nodeSelected: TreeNodeItem | null;
     nodeExpaned: TreeNodeSelectItem['node'] | null;
     tree: TreeNodeItem[];
-    status: 'idle' | 'pending' | 'fulfilled' | { error: string };
+    status: ComponentStatus;
+    error: string | null;
 };
 
 const initialState: HostFolderFiledState = {
     nodeSelected: null,
     nodeExpaned: null,
     tree: [],
-    status: 'idle'
+    status: 'INIT',
+    error: null
 };
 
 export const HostFolderFiledStore = signalStore(
@@ -35,23 +40,23 @@ export const HostFolderFiledStore = signalStore(
             const currentStatus = status();
 
             return {
-                'pi-spin pi-spinner': currentStatus === 'pending',
-                'pi-chevron-down': currentStatus !== 'pending'
+                'pi-spin pi-spinner': currentStatus === 'LOADING',
+                'pi-chevron-down': currentStatus !== 'LOADING'
             };
         })
     })),
     withMethods((store, dotEditContentService = inject(DotEditContentService)) => ({
         loadSites: rxMethod<string | null>(
             pipe(
-                tap(() => patchState(store, { status: 'pending' })),
+                tap(() => patchState(store, { status: 'LOADING' })),
                 switchMap((path) => {
                     return dotEditContentService
-                        .getSitesTreePath({ perPage: 7000, filter: '*' })
+                        .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
                         .pipe(
                             tapResponse({
                                 next: (sites) => patchState(store, { tree: sites }),
-                                error: () => patchState(store, { status: { error: 'fail' } }),
-                                finalize: () => patchState(store, { status: 'fulfilled' })
+                                error: () => patchState(store, { status: 'FAILED', error: '' }),
+                                finalize: () => patchState(store, { status: 'LOADED' })
                             }),
                             map((sites) => ({
                                 path,
