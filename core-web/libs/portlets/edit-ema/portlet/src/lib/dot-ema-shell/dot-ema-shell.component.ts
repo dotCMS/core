@@ -198,8 +198,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 // If we have a clientHost we need to check if it's in the whitelist
                 if (queryParams.clientHost) {
                     const canAccessClientHost = this.checkClientHostAccess(
-                        data?.options?.devURLWhitelist,
-                        queryParams.clientHost
+                        queryParams.clientHost,
+                        data?.options?.devURLWhitelist
                     ); // If we don't have a whitelist we can't access the clientHost;
 
                     // If we can't access the clientHost we need to navigate to the default page
@@ -277,12 +277,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Check if the clientHost is in the whitelist provided by the app
      *
      * @private
-     * @param {*} [devURLWhitelist=[]]
      * @param {string} clientHost
+     * @param {*} [devURLWhitelist=[]]
      * @return {*}
      * @memberof DotEmaShellComponent
      */
-    private checkClientHostAccess(devURLWhitelist: string[] = [], clientHost: string): boolean {
+    private checkClientHostAccess(clientHost: string, devURLWhitelist: string[] = []): boolean {
         // If we don't have a whitelist or a clientHost we can't access it
         if (!clientHost || !Array.isArray(devURLWhitelist) || !devURLWhitelist.length) {
             return false;
