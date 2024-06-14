@@ -5,7 +5,7 @@ describe('Common Utils', () => {
         const pageRequestParams = getPageRequestParams({
             path: 'test',
             params: {
-                'com.dotmarketing.persona.id': '123',
+                personaId: '123',
                 language_id: '1',
                 mode: 'LIVE',
                 variantName: 'default'
@@ -17,7 +17,7 @@ describe('Common Utils', () => {
             mode: 'LIVE',
             language_id: '1',
             variantName: 'default',
-            'com.dotmarketing.persona.id': '123'
+            personaId: '123'
         });
     });
 
@@ -25,7 +25,7 @@ describe('Common Utils', () => {
         const pageRequestParams = getPageRequestParams({
             path: 'test',
             params: {
-                'com.dotmarketing.persona.id': '',
+                personaId: '',
                 language_id: '',
                 mode: '',
                 variantName: ''
@@ -37,7 +37,7 @@ describe('Common Utils', () => {
             mode: '',
             language_id: '',
             variantName: '',
-            'com.dotmarketing.persona.id': ''
+            personaId: ''
         });
     });
 });
