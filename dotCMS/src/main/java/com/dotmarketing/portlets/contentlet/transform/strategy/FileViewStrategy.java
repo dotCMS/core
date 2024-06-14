@@ -90,7 +90,8 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
         final String fileAssetIdentifier = (String) contentlet.get(field.variable());
 
         if (!UtilMethods.isSet(fileAssetIdentifier)) {
-            return null;
+            Logger.warn(this, "FileAsset identifier is empty for field: " + field.variable());
+            return Map.of();
         }
 
         Optional<Contentlet> fileAsContentOptional = APILocator.getContentletAPI()
@@ -99,17 +100,20 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
                         , contentlet.getLanguageId(),
                         APILocator.systemUser(), true);
 
-        FileAsset fileAsset = null;
+        if(fileAsContentOptional.isEmpty()) {
+            //Prevent NPE
+            Logger.warn(this, "Live FileAsset not found for identifier: " + fileAssetIdentifier);
+            return Map.of();
+        }
 
-        if(fileAsContentOptional.isPresent()) {
-            final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
-            //This does always assume we're getting a fileAsset we don't want to miss a dotAsset
-            final Contentlet fileLikeContentlet = fileAsContentOptional.get();
-            if(fileLikeContentlet.isDotAsset()){
-                fileAsset = fileAsset(fileLikeContentlet, fileAssetAPI);
-            } else {
-                fileAsset = fileAssetAPI.fromContentlet(fileLikeContentlet);
-            }
+        final FileAsset fileAsset;
+        final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
+        //This does always assume we're getting a fileAsset we don't want to miss a dotAsset
+        final Contentlet incoming = fileAsContentOptional.get();
+        if(incoming.isDotAsset()){
+            fileAsset = convertToFileAsset(incoming, fileAssetAPI);
+        } else {
+            fileAsset = fileAssetAPI.fromContentlet(incoming);
         }
 
         final Map<String, Object> map = new HashMap<>();
@@ -158,7 +162,7 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
             map.put(FILE_NAME_FIELD, fileName);
             map.put("fileSize", fileSize);
         }
-        map.put("type", "file_asset");
+        map.put("type", assetType(incoming));
         map.put("isContentlet", true);
         return map;
     }
@@ -170,7 +174,7 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
      * @return the fileAsset
      * @throws DotDataException if the content type is not found
      */
-    private  FileAsset fileAsset(final Contentlet dotAsset, final FileAssetAPI api) throws DotDataException {
+    private  FileAsset convertToFileAsset(final Contentlet dotAsset, final FileAssetAPI api) throws DotDataException {
         final ContentType contentType =
                Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find("FileAsset")).getOrNull();
 
@@ -179,7 +183,18 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
         }
 
         final Contentlet newCon = new Contentlet(dotAsset);
+        //here we're simply replacing the content type with the fileAsset content type to bypass a check that takes place in the fromContentlet method
+        //No big deal since we're not going to save this contentlet
         newCon.setContentType(contentType);
         return api.fromContentlet(newCon);
+    }
+
+    /**
+     * This method will return the asset type
+     * @param contentlet the contentlet
+     * @return the asset type
+     */
+    String assetType(final Contentlet contentlet){
+        return contentlet.isDotAsset() ? "dot_asset" : "file_asset";
     }
 }
