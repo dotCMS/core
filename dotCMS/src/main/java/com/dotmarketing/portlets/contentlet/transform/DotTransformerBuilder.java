@@ -194,13 +194,13 @@ public class DotTransformerBuilder {
     }
 
     /**
-     * Fine Tuned to be consumed from ContentResource
+     * Fine-Tuned to be consumed from ContentResource
      * @return
      */
     public DotTransformerBuilder contentResourceOptions(final boolean allCategoriesInfo){
         optionsHolder.clear();
         optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME,
-                DATETIME_FIELDS_TO_TIMESTAMP));
+                DATETIME_FIELDS_TO_TIMESTAMP, FILEASSET_VIEW, AVOID_MAP_SUFFIX_FOR_VIEWS));
         if(allCategoriesInfo){
           optionsHolder.remove(CATEGORIES_NAME);
           optionsHolder.add(CATEGORIES_INFO);
