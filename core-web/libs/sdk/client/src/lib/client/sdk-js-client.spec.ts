@@ -143,6 +143,16 @@ describe('DotCmsClient', () => {
                     }
                 );
             });
+
+            it('should manage error response', () => {
+                const mockResponse = {};
+                mockFetchResponse(mockResponse, false, 401);
+
+                expect(client.page.get({ path: '/home' })).rejects.toEqual({
+                    status: 401,
+                    message: 'Unauthorized. Check the token and try again.'
+                });
+            });
         });
 
         describe('content', () => {
