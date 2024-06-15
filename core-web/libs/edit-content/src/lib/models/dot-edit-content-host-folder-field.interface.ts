@@ -13,7 +13,7 @@ export type CustomTreeNode = {
     tree: {
         path: string;
         folders: TreeNodeItem[];
-    };
+    } | null;
 };
 
 export interface TreeNodeSelectEvent<T> {
