@@ -8,7 +8,7 @@ import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 
 export const canMatchPage: CanMatchFn = async (
   route: Route,
-  segments: UrlSegment[]
+  segments: UrlSegment[],
 ) => {
   const router = inject(Router);
   const client = inject(DOTCMS_CLIENT_TOKEN);
@@ -25,9 +25,27 @@ export const canMatchPage: CanMatchFn = async (
       entity: DotCMSPageAsset;
     };
 
+    const { vanityUrl } = entity;
+
+    if (vanityUrl?.permanentRedirect) {
+      router.navigate([vanityUrl.forwardTo]);
+
+      return false;
+    }
+
     // Add the page asset to the route data
     // so it can be used by the DotCMSPageResolver and avoid fetching it again.
     route.data = { ...route.data, pageAsset: entity };
+
+    if (vanityUrl) {
+      const vanityPagePros = { ...pageProps, path: vanityUrl.forwardTo };
+      const pageResponse = await (client.page.get(vanityPagePros) as Promise<{
+        entity: DotCMSPageAsset;
+      }>);
+      // Add the page asset to the route data
+      // so it can be used by the DotCMSPageResolver and avoid fetching it again.
+      route.data = { ...route.data, pageAsset: pageResponse.entity };
+    }
 
     return !!entity;
   } catch (error: any) {

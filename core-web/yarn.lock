@@ -3492,6 +3492,20 @@
   dependencies:
     tslib "^2.3.0"
 
+"@ngrx/operators@^17.2.0":
+  version "17.2.0"
+  resolved "https://registry.yarnpkg.com/@ngrx/operators/-/operators-17.2.0.tgz#aa449cbd8565b50353715c568ba38488d4495069"
+  integrity sha512-W7SrGK4VQSJlCtMrkxNChVBDgJGSCdZ4yLBi80xoE9CmhTMMhu9J+8BbDDhZ+PPbTHylKJobkwHq+tJ8mkf4eQ==
+  dependencies:
+    tslib "^2.3.0"
+
+"@ngrx/signals@^17.2.0":
+  version "17.2.0"
+  resolved "https://registry.yarnpkg.com/@ngrx/signals/-/signals-17.2.0.tgz#30d2e75cf3786111356115bf3cdb10e81517ac23"
+  integrity sha512-tkkxifeOVPOhpTqbHyK1WOx4qz49HLR/h0vhaa/MRGRIZoOR/6gR4KB3hbC8FD3FdnuNqOgOZ2lGsTfWPB/6BQ==
+  dependencies:
+    tslib "^2.3.0"
+
 "@ngtools/webpack@17.3.8":
   version "17.3.8"
   resolved "https://registry.npmjs.org/@ngtools/webpack/-/webpack-17.3.8.tgz#96c0f99055910dd21438d7697d625fdeb7261015"

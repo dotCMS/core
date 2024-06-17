@@ -71,6 +71,19 @@ export interface DotCMSPageContext {
             // variant requested
             variantId: string;
         };
+        vanityUrl?: {
+            pattern: string;
+            vanityUrlId: string;
+            url: string;
+            siteId: string;
+            languageId: number;
+            forwardTo: string;
+            response: number;
+            order: number;
+            temporaryRedirect: boolean;
+            permanentRedirect: boolean;
+            forward: boolean;
+        };
     };
     isInsideEditor: boolean;
 }
