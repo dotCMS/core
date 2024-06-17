@@ -6,6 +6,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.SystemException;
@@ -45,7 +47,7 @@ public class LanguageUtilTest {
     }
 
     @Test
-    public void getLanguageId_weirdlang_expected_negative_lang_Test() throws DotSecurityException, DotDataException, SystemException {
+    public void getLanguageId_weirdlang_expected_negative_lang_Test() {
 
         final long languageId = LanguageUtil.getLanguageId("owdaldlksdllakd");
         Assert.assertEquals(-1, languageId);
@@ -55,15 +57,42 @@ public class LanguageUtilTest {
     public void getLanguageId_valid_default_long_expected_same_lang_id_Test() throws DotSecurityException, DotDataException, SystemException {
 
         final long languageId = LanguageUtil.getLanguageId("-1");
-        Assert.assertEquals(-1l, languageId);
+        Assert.assertEquals(-1L, languageId);
     }
 
+    /**
+     * Given Scenario: A numeric value of a non-existing languages is passed to the getLanguageId method.
+     * Expected Result: The method should return the 404 language.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws SystemException
+     */
     @Test
     public void getLanguageId_valid_long_expected_same_lang_id_Test() throws DotSecurityException, DotDataException, SystemException {
 
         final long languageId = LanguageUtil.getLanguageId("99999999999");
-        Assert.assertEquals(99999999999l, languageId);
+        Assert.assertEquals(99999999999L, languageId);
     }
+
+     @Test
+     public void Test_Lookup_UsingLang_Code_Makes_It_Into_Cache(){
+
+        final LanguageCacheImpl languageCache = (LanguageCacheImpl)CacheLocator.getLanguageCache();
+        final Language languageByCodeBefore = languageCache.getLanguageByCode("eo", "CR");
+        Assert.assertNull(languageByCodeBefore);
+        //Esperanto language in CR
+        final Language newLanguage = new LanguageDataGen().languageCode("eo").country("CR").nextPersisted();
+        try {
+            final long expectedId = newLanguage.getId();
+            final long languageId = LanguageUtil.getLanguageId(newLanguage.toString());
+            Assert.assertEquals(expectedId, languageId);
+            //Test language made into cache
+            final Language languageByCodeAfter = languageCache.getLanguageByCode(newLanguage.getLanguageCode(), newLanguage.getCountryCode());
+            Assert.assertEquals(newLanguage.getId(), languageByCodeAfter.getId());
+        } finally {
+            APILocator.getLanguageAPI().deleteLanguage(newLanguage);
+        }
+     }
 
 
 
