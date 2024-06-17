@@ -92,6 +92,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
@@ -275,7 +276,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230523CreateVariantFieldInContentletIntegrationTest.class,
         DropOldContentVersionsJobTest.class,
         Task231109AddPublishDateToContentletVersionInfoTest.class,
-        Task240513UpdateContentTypesSystemFieldTest.class
+        Task240513UpdateContentTypesSystemFieldTest.class,
+        EmailActionletTest.class
 })
 
 public class MainSuite2b {

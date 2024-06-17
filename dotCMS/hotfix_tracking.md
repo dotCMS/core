@@ -109,3 +109,4 @@ This maintenance release includes the following code fixes:
 102. https://github.com/dotCMS/core/issues/28089 : Pound char not decoded when using Rules or Vanity URLs #28089
 103. https://github.com/dotCMS/core/issues/28284 : Content Types not Showing if System is true #28284
 104. https://github.com/dotCMS/core/issues/28306 : Can't Import Page Assets using the export file #28306
+105. https://github.com/dotCMS/core/issues/28352 : Send Email sub-action doesn't set the current user to $dotcontent viewtool #28352
