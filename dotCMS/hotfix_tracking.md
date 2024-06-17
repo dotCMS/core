@@ -112,3 +112,4 @@ This maintenance release includes the following code fixes:
 105. https://github.com/dotCMS/core/issues/28352 : Send Email sub-action doesn't set the current user to $dotcontent viewtool #28352
 106. https://github.com/dotCMS/core/issues/28689 : Update LTS Telemetry plugin #28689
 107. https://github.com/dotCMS/private-issues/issues/34
+108. https://github.com/dotCMS/core/issues/28785 : APIs return incorrect information for pages with fields using the variable name "description" #28785
