@@ -15501,10 +15501,10 @@
 									"",
 									"pm.test(\"Valid JSON field in response\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.fileAsset).to.include(\"greatings.txt\");",
+									"    pm.expect(jsonData.entity.fileAsset).to.include(\"greetings.txt\");",
 									"    pm.expect(jsonData.entity.contentType).to.be.eql(\"FileAsset\");",
-									"    pm.expect(jsonData.entity.metaData.name).to.be.eql(\"greatings.txt\");",
-									"    pm.expect(jsonData.entity.metaData.title).to.be.eql(\"greatings.txt\");",
+									"    pm.expect(jsonData.entity.metaData.name).to.be.eql(\"greetings.txt\");",
+									"    pm.expect(jsonData.entity.metaData.title).to.be.eql(\"greetings.txt\");",
 									"});",
 									"",
 									"",
@@ -15535,7 +15535,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"hostFolder\":\"default\",\n        \"title\": \"greatings.txt\",\n        \"fileName\": \"greatings.txt\",\n        \"fileAsset\": {\n            \"fileName\": \"greatings.txt\",\n           \"content\": \"Hello dotCMS\"\n         },\n        \"contentType\": \"FileAsset\"\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n        \"hostFolder\":\"default\",\n        \"title\": \"greetings.txt\",\n        \"fileName\": \"greetings.txt\",\n        \"fileAsset\": {\n            \"fileName\": \"greetings.txt\",\n           \"content\": \"Hello dotCMS\"\n         },\n        \"contentType\": \"FileAsset\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
