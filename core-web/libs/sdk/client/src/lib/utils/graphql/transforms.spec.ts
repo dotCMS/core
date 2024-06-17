@@ -1,4 +1,4 @@
-import { graphqlToPageEntity } from './graphql-parser';
+import { graphqlToPageEntity } from './transforms';
 
 const GRAPHQL_RESPONSE_MOCK = {
     page: {

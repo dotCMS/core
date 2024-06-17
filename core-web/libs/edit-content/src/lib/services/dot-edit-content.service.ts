@@ -17,6 +17,7 @@ import {
     DotFolder,
     TreeNodeItem
 } from '../models/dot-edit-content-host-folder-field.interface';
+import { createPaths } from '../utils/functions.util';
 
 @Injectable()
 export class DotEditContentService {
@@ -74,8 +75,10 @@ export class DotEditContentService {
      * @return {*}  {Observable<TreeNodeItem[]>}
      * @memberof DotEditContentService
      */
-    getSitesTreePath(): Observable<TreeNodeItem[]> {
-        return this.#siteService.getSites('*', 7000).pipe(
+    getSitesTreePath(data: { filter: string; perPage: number }): Observable<TreeNodeItem[]> {
+        const { filter, perPage } = data;
+
+        return this.#siteService.getSites(filter, perPage).pipe(
             map((sites) => {
                 return sites.map((site) => ({
                     key: site.hostname,
@@ -140,11 +143,12 @@ export class DotEditContentService {
     /**
      *
      *
-     * @param {string[]} paths
+     * @param {string} fullPath
      * @return {*}  {Observable<CustomTreeNode>}
      * @memberof DotEditContentService
      */
-    buildTreeByPaths(paths: string[]): Observable<CustomTreeNode> {
+    buildTreeByPaths(fullPath: string): Observable<CustomTreeNode> {
+        const paths = createPaths(fullPath);
         const requests = paths.reverse().map((path) => {
             const split = path.split('/');
             const [hostName] = split;

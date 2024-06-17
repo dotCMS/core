@@ -9,7 +9,7 @@ import Product from "./content-types/product";
 import ImageComponent from "./content-types/image";
 
 import Header from "./layout/header";
-import Footer from "./layout/footer";
+import Footer from "./layout/footer/footer";
 import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
@@ -28,13 +28,14 @@ const experimentConfig = {
 
 // Mapping of components to DotCMS content types
 const componentsMap = {
-  webPageContent: WebPageContent,
-  Banner: Banner,
-  Activity: Activity,
-  Product: Product,
-  Image: ImageComponent,
-  calendarEvent: CalendarEvent,
-  CallToAction: CallToAction
+    webPageContent: WebPageContent,
+    Banner: Banner,
+    Activity: Activity,
+    Product: Product,
+    Image: ImageComponent,
+    calendarEvent: CalendarEvent,
+    CallToAction: CallToAction,
+    CustomNoComponent: CustomNoComponent,
 };
 
 export function MyPage({ pageAsset, nav }) {

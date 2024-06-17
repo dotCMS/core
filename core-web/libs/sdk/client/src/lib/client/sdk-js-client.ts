@@ -1,4 +1,5 @@
 import { Content } from './content/content-api';
+import { ErrorMessages } from './models';
 
 export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
@@ -223,7 +224,17 @@ export class DotCmsClient {
             const url = `${this.config.dotcmsUrl}/api/v1/page/json${formattedPath}${
                 queryParams ? `?${queryParams}` : ''
             }`;
+
             const response = await fetch(url, this.requestOptions);
+            if (!response.ok) {
+                const error = {
+                    status: response.status,
+                    message: ErrorMessages[response.status] || response.statusText
+                };
+
+                console.error(error);
+                throw error;
+            }
 
             return response.json();
         }

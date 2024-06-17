@@ -509,6 +509,34 @@ public class StringUtils {
                 .toString();
     }
 
+    /**
+     * Joins one-character length elements with other one-character length elements in an underscore-delimited string.
+     * If a part and the next part are both one-character length, they are joined without an underscore.
+     * Otherwise, the part is kept as is.
+     *
+     * @param input The underscore-delimited string to process.
+     * @return The processed string where one-character length elements are joined with other one-character length elements.
+     */
+    public static String joinOneCharElements(final String input) {
+        if (UtilMethods.isEmpty(input)) {
+            return input;
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        Arrays.stream(input.split(StringPool.UNDERLINE))
+                .forEach(element -> {
+                    if (sb.length() == 0) {
+                        sb.append(element);
+                    } else if (element.length() > 1) {
+                        sb.append(StringPool.UNDERLINE).append(element);
+                    } else {
+                        sb.append(element);
+                    }
+                });
+
+        return sb.toString();
+    }
+
     private static char[] toCharArray(final String value, final char[] defaultChars) {
         return Optional.ofNullable(value).map(String::toCharArray).orElse(defaultChars);
     }
