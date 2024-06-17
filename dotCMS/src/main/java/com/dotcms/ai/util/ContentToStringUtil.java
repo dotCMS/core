@@ -164,20 +164,12 @@ public class ContentToStringUtil {
             return List.of();
         }
 
-        final String ignoreUrlMapFields = org.apache.commons.lang3.StringUtils.defaultIfBlank(
-                contentlet.getContentType().urlMapPattern(),
-                StringPool.BLANK);
+        final String ignoreUrlMapFields = (contentlet.getContentType().urlMapPattern() != null) ? contentlet.getContentType().urlMapPattern() : "";
 
         contentlet.getContentType()
                 .fields()
-                .stream()
-                .filter(f -> !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
-                .filter(f -> f instanceof StoryBlockField
-                        || f instanceof WysiwygField
-                        || f instanceof BinaryField
-                        || f instanceof TextAreaField
-                        || f instanceof FileField)
-                .forEach(embedMe::add);
+                .stream().filter(f -> !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
+                .filter(f -> f instanceof StoryBlockField || f instanceof WysiwygField || f instanceof BinaryField ||  f instanceof TextAreaField || f instanceof FileField);
 
         if (!embedMe.isEmpty()) {
             return embedMe;
@@ -186,8 +178,9 @@ public class ContentToStringUtil {
         return contentlet.getContentType()
                 .fields()
                 .stream().filter(f -> !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
-                .filter(f -> f.dataType().equals(DataTypes.LONG_TEXT))
-                .collect(Collectors.toList());
+                .filter(f ->
+                        f.dataType().equals(DataTypes.LONG_TEXT)
+                ).collect(Collectors.toList());
     }
 
     private boolean shouldIndex(File file) {

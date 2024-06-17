@@ -101,7 +101,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
     private JSONObject getConfigJson(final String hostId) {
         return Try
                 .of(() -> new JSONObject(getAppConfig(hostId).getConfig(AppKeys.LISTENER_INDEXER)))
-                .onFailure(e -> Logger.warn(getClass(), "error in json config from app: " + e.getMessage()))
+                .onFailure(e -> Logger.debug(getClass(), "error in json config from app: " + e.getMessage()))
                 .getOrElse(new JSONObject());
     }
 
@@ -125,7 +125,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
                     EmbeddingsAPI.impl().parseTypesAndFields((String) entry.getValue());
             typesAndFields.entrySet()
                     .stream()
-                    .filter(e -> contentType.equalsIgnoreCase(e.getKey()))
+                    .filter(typeFields -> contentType.equalsIgnoreCase(typeFields.getKey()))
                     .forEach(e -> EmbeddingsAPI.impl()
                             .generateEmbeddingsForContent(
                                     contentlet,

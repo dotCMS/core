@@ -82,15 +82,9 @@ class EmbeddingsRunner implements Runnable {
             }
         } catch (Exception e) {
             if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-                Logger.warn(
-                        this.getClass(),
-                        "unable to embed content:" + contentlet.getIdentifier() + " error:" + e.getMessage(),
-                        e);
+                Logger.warn(this.getClass(), "unable to embed content:" + contentlet.getIdentifier() + " error:" + e.getMessage(), e);
             } else {
-                Logger.warnAndDebug(
-                        this.getClass(),
-                        "unable to embed content:" + contentlet.getIdentifier() + " error:" + e.getMessage(),
-                        e);
+                Logger.warnAndDebug(this.getClass(), "unable to embed content:" + contentlet.getIdentifier() + " error:" + e.getMessage(), e);
             }
         }
     }

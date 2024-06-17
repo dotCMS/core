@@ -90,7 +90,6 @@ public interface AiTest {
                 Secret.builder()
                         .withType(Type.STRING)
                         .withValue("{\"default\":\"blog\"}".toCharArray())
-//                        .withValue("{\"default\":\"blog\",\"blogsOnly\":\"blog.body\"}".toCharArray())
                         .build());
     }
 }
