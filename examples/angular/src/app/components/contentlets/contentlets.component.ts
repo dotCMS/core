@@ -18,6 +18,7 @@ import { DatePipe, NgOptimizedImage } from '@angular/common';
             [ngSrc]="contentlet.image"
             [fill]="true"
             [alt]="contentlet.urlTitle ?? contentlet.title"
+            [loaderParams]="{ languageId: contentlet.languageId || 1 }" 
             class="object-cover"
           />
         </a>
