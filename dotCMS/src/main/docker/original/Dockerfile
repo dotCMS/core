@@ -14,6 +14,7 @@ ARG USER_GID="65001"
 ARG USER_GROUP="dotcms"
 ARG USER_NAME="dotcms"
 
+# Ensure group and user are created with proper permissions
 RUN groupadd -g $USER_GID $USER_GROUP && \
     useradd -l -d /srv -u $USER_UID -g $USER_GROUP -s /bin/bash $USER_NAME && \
     mkdir -p /srv/utils /srv/templates /srv/config /srv/home
@@ -43,17 +44,26 @@ LABEL com.dotcms.contact="support@dotcms.com" \
       com.dotcms.vendor="dotCMS LLC" \
       com.dotcms.description="dotCMS Content Management System"
 
-# Install tini
-RUN apt-get update && apt-get install -y --no-install-recommends tini && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install tini and PostgreSQL client (for pg_dump)
+RUN apt-get update && apt-get install -y --no-install-recommends tini postgresql-client-16 && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ARG USER_UID="65001"
 ARG USER_GID="65001"
+ARG USER_GROUP="dotcms"
+ARG USER_NAME="dotcms"
 
+# Ensure the group and user are created in the final image as well
+RUN groupadd -g $USER_GID $USER_GROUP && \
+    useradd -l -d /srv -u $USER_UID -g $USER_GROUP -s /bin/bash $USER_NAME
+
+# Ensure pg_dump is copied over
+COPY --from=container-base /usr/bin/pg_dump /usr/bin/pg_dump
 # Copy the Java runtime environment first
 COPY --from=container-base /java /java
 # Copy the application files and data
 COPY --from=container-base /srv /srv
 COPY --from=container-base /data /data
+
 
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
