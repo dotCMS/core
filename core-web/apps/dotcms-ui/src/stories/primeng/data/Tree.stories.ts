@@ -1,10 +1,28 @@
-import { TreeNode } from 'primeng/api';
+import {
+    Meta,
+    StoryObj,
+    moduleMetadata,
+    componentWrapperDecorator,
+    argsToTemplate
+} from '@storybook/angular';
+
+import { FormsModule } from '@angular/forms';
+
 import { Tree, TreeModule } from 'primeng/tree';
 
-import type { Meta, StoryObj } from '@storybook/angular';
+import { files } from '../../utils/tree-node-files';
 
 const meta: Meta<Tree> = {
     title: 'PrimeNG/Data/Tree',
+    decorators: [
+        moduleMetadata({
+            imports: [TreeModule, FormsModule]
+        }),
+        componentWrapperDecorator(
+            (story) =>
+                `<div class="card flex justify-content-center w-25rem h-25rem">${story}</div>`
+        )
+    ],
     component: Tree,
     parameters: {
         layout: 'centered',
@@ -14,101 +32,34 @@ const meta: Meta<Tree> = {
                     'Tree is used to display hierarchical data: https://www.primefaces.org/primeng-v15-lts/tree'
             }
         }
-    }
+    },
+    args: {
+        value: [...files]
+    },
+    render: (args: Tree) => ({
+        props: {
+            ...args
+        },
+        template: `
+        <p-tree ${argsToTemplate(args)} />`
+    })
 };
 export default meta;
 
 type Story = StoryObj<Tree>;
 
-export const files: TreeNode[] = [
-    {
-        label: 'Documents',
-        data: 'Documents Folder',
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder',
-        children: [
-            {
-                label: 'Work',
-                data: 'Work Folder',
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
-                children: [
-                    {
-                        label: 'Expenses.doc',
-                        icon: 'pi pi-file',
-                        data: 'Expenses Document'
-                    },
-                    { label: 'Resume.doc', icon: 'pi pi-file', data: 'Resume Document' }
-                ]
-            },
-            {
-                label: 'Home',
-                data: 'Home Folder',
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
-                children: [
-                    {
-                        label: 'Invoices.txt',
-                        icon: 'pi pi-file',
-                        data: 'Invoices for this month'
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        label: 'Pictures',
-        data: 'Pictures Folder',
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder',
-        children: [
-            { label: 'barcelona.jpg', icon: 'pi pi-image', data: 'Barcelona Photo' },
-            { label: 'logo.jpg', icon: 'pi pi-image', data: 'PrimeFaces Logo' },
-            { label: 'primeui.png', icon: 'pi pi-image', data: 'PrimeUI Logo' }
-        ]
-    },
-    {
-        label: 'Movies',
-        data: 'Movies Folder',
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder',
-        children: [
-            {
-                label: 'Al Pacino',
-                data: 'Pacino Movies',
-                children: [
-                    { label: 'Scarface', icon: 'pi pi-video', data: 'Scarface Movie' },
-                    { label: 'Serpico', icon: 'pi pi-video', data: 'Serpico Movie' }
-                ]
-            },
-            {
-                label: 'Robert De Niro',
-                data: 'De Niro Movies',
-                children: [
-                    {
-                        label: 'Goodfellas',
-                        icon: 'pi pi-video',
-                        data: 'Goodfellas Movie'
-                    },
-                    {
-                        label: 'Untouchables',
-                        icon: 'pi pi-video',
-                        data: 'Untouchables Movie'
-                    }
-                ]
-            }
-        ]
-    }
-];
+export const Default: Story = {};
 
-export const Default: Story = {
-    render: () => ({
-        moduleMetadata: {
-            imports: [TreeModule]
-        },
-        props: {
-            files
-        },
-        template: `<p-tree [value]="files"></p-tree>`
-    })
+export const VirtualScroll: Story = {
+    args: {
+        virtualScroll: true,
+        virtualScrollItemSize: 30,
+        virtualScrollOptions: {
+            autoSize: true,
+            style: {
+                width: '200px',
+                height: '200px'
+            }
+        }
+    }
 };
