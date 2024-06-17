@@ -3,6 +3,7 @@ package com.dotcms.filters.interceptor.saml;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -41,7 +42,7 @@ public class SamlWebUtils {
 
 
     public static final String BY_PASS_KEY   = "native";
-    public static final String BY_PASS_VALUE = "true";
+    public static final String BY_PASS_VALUE = Config.getStringProperty("SAML_BY_PASS_VALUE","true");
     public static final String AUTH_RELAYSTATE_KEY = "auth.relaystate";
 
     protected     final UserWebAPI userWebAPI;
