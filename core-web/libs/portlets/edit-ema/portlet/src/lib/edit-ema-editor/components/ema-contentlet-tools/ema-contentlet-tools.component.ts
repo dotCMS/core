@@ -55,45 +55,44 @@ export class EmaContentletToolsComponent implements OnChanges {
     @Output() editVTL = new EventEmitter<VTLFile>();
     @Output() delete = new EventEmitter<ActionPayload>();
 
-    private dotMessageService = inject(DotMessageService);
-    private buttonPosition: 'after' | 'before' = 'after';
-    private readonly comunityItems: MenuItem[] = [
+    #dotMessageService = inject(DotMessageService);
+    ACTIONS_CONTAINER_WIDTH = INITIAL_ACTIONS_CONTAINER_WIDTH; // Now is dynamic based on the page type (Headless - VTL)
+    vtlFiles: MenuItem[] = [];
+    #buttonPosition: 'after' | 'before' = 'after';
+
+    readonly #comunityItems: MenuItem[] = [
         {
-            label: this.dotMessageService.get('content'),
+            label: this.#dotMessageService.get('content'),
             command: () => {
                 this.addContent.emit({
                     ...this.contentletArea.payload,
-                    position: this.buttonPosition
+                    position: this.#buttonPosition
                 });
             }
         },
         {
-            label: this.dotMessageService.get('Widget'),
+            label: this.#dotMessageService.get('Widget'),
             command: () => {
                 this.addWidget.emit({
                     ...this.contentletArea.payload,
-                    position: this.buttonPosition
+                    position: this.#buttonPosition
                 });
             }
         }
     ];
-
-    private readonly enterpriseItems: MenuItem[] = [
+    readonly #enterpriseItems: MenuItem[] = [
         {
-            label: this.dotMessageService.get('form'),
+            label: this.#dotMessageService.get('form'),
             command: () => {
                 this.addForm.emit({
                     ...this.contentletArea.payload,
-                    position: this.buttonPosition
+                    position: this.#buttonPosition
                 });
             }
         }
     ];
 
-    readonly items = signal<MenuItem[]>(this.comunityItems);
-    vtlFiles: MenuItem[] = [];
-    ACTIONS_CONTAINER_WIDTH = INITIAL_ACTIONS_CONTAINER_WIDTH; // Now is dynamic based on the page type (Headless - VTL)
-
+    readonly items = signal<MenuItem[]>(this.#comunityItems);
     protected styles: Record<string, { [klass: string]: unknown }> = {};
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -103,7 +102,7 @@ export class EmaContentletToolsComponent implements OnChanges {
 
         // If the contentlet is enterprise, we need to add the form option
         if (changes.isEnterprise?.currentValue) {
-            this.items.update((items) => [...items, ...this.enterpriseItems]);
+            this.items.update((items) => [...items, ...this.#enterpriseItems]);
         }
 
         this.hideMenus(); // We need to hide the menu if the contentlet changes
@@ -147,7 +146,7 @@ export class EmaContentletToolsComponent implements OnChanges {
      * @memberof EmaContentletToolsComponent
      */
     setPositionFlag(position: 'before' | 'after'): void {
-        this.buttonPosition = position;
+        this.#buttonPosition = position;
     }
 
     /**
