@@ -426,11 +426,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.quartz-all</artifactId>
-            <scope>compile</scope>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
         </dependency>
-
 
         <dependency>
             <groupId>com.dotcms.lib</groupId>

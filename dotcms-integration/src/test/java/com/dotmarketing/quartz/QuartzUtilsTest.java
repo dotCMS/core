@@ -12,6 +12,7 @@ import org.quartz.*;
 
 import java.util.Calendar;
 import java.util.Date;
+import org.quartz.impl.StdSchedulerFactory;
 
 public class QuartzUtilsTest {
 
@@ -42,43 +43,43 @@ public class QuartzUtilsTest {
 
 
     @Test
-    public void test_schedule_delete_job() throws Exception{
-        JobDetail job =new JobDetail(TEST_JOB_NAME, TEST_JOB_GROUP, TestJob.class);
-        Trigger trigger=new CronTrigger(TEST_JOB_TRIGGER_NAME, TEST_JOB_TRIGGER_GROUP, TEST_JOB_NAME, TEST_JOB_GROUP, new Date(), null, DotInitScheduler.CRON_EXPRESSION_EVERY_5_MINUTES);
-        QuartzUtils.getScheduler().addJob(job, true);
-        QuartzUtils.getScheduler().scheduleJob(trigger);
+    public void test_schedule_delete_job() throws Exception {
+        Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+        scheduler.start();
 
+        JobDetail job = JobBuilder.newJob(TestJob.class)
+                .withIdentity(TEST_JOB_NAME, TEST_JOB_GROUP)
+                .build();
 
-        job = QuartzUtils.getScheduler().getJobDetail(TEST_JOB_NAME, TEST_JOB_GROUP);
-        trigger=QuartzUtils.getScheduler().getTrigger(TEST_JOB_TRIGGER_NAME,TEST_JOB_TRIGGER_GROUP);
+        Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity(TEST_JOB_TRIGGER_NAME, TEST_JOB_TRIGGER_GROUP)
+                .forJob(job)
+                .withSchedule(CronScheduleBuilder.cronSchedule(DotInitScheduler.CRON_EXPRESSION_EVERY_5_MINUTES))
+                .startAt(new Date())
+                .build();
 
+        scheduler.addJob(job, true);
+        scheduler.scheduleJob(trigger);
+
+        JobKey jobKey = new JobKey(TEST_JOB_NAME, TEST_JOB_GROUP);
+        TriggerKey triggerKey = new TriggerKey(TEST_JOB_TRIGGER_NAME, TEST_JOB_TRIGGER_GROUP);
+
+        job = scheduler.getJobDetail(jobKey);
+        trigger = scheduler.getTrigger(triggerKey);
 
         Assert.assertNotNull(job);
         Assert.assertNotNull(trigger);
 
+        scheduler.deleteJob(jobKey);
 
-
-
-        QuartzUtils.deleteJobDB(TEST_JOB_NAME,TEST_JOB_GROUP);
-
-        job   = Try.of(()-> QuartzUtils.getScheduler().getJobDetail(TEST_JOB_NAME, TEST_JOB_GROUP)).getOrNull();
-        trigger   = Try.of(()-> QuartzUtils.getScheduler().getTrigger(TEST_JOB_TRIGGER_NAME,TEST_JOB_TRIGGER_GROUP)).getOrNull();
-
-
+        job = Try.of(() -> scheduler.getJobDetail(jobKey)).getOrNull();
+        trigger = Try.of(() -> scheduler.getTrigger(triggerKey)).getOrNull();
 
         Assert.assertNull(job);
-
         Assert.assertNull(trigger);
+
+        scheduler.shutdown();
     }
-
-
-
-
-
-
-
-
-
 
 
 }

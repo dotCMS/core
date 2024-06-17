@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -28,6 +29,9 @@ import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
 
 /**
  * Should be run after a change in a host's name, it update all the file asset templates of pages
@@ -102,8 +106,10 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
         } finally {
             try {
                 QuartzUtils.getScheduler().unscheduleJob(
-                        jobContext.getJobDetail().getName(),
-                        jobContext.getTrigger().getName()
+                        TriggerKey.triggerKey(
+                                jobContext.getTrigger().getKey().getName(),
+                                jobContext.getTrigger().getKey().getGroup()
+                        )
                 );
             } catch (SchedulerException e) {
                 Logger.error(UpdatePageTemplatePathJob.class, e.getMessage());
@@ -190,23 +196,19 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
 
         final String randomID = UUID.randomUUID().toString();
 
-        final JobDetail jobDetail = new JobDetail(
-                "updatePageTemplatePathJob-" + randomID,
-                "update_page_template_path_job",
-                UpdatePageTemplatePathJob.class
-        );
-
-        jobDetail.setJobDataMap(jobDataMap);
-        jobDetail.setDurability(false);
-        jobDetail.setVolatility(false);
-        jobDetail.setRequestsRecovery(true);
+        final JobDetail jobDetail = JobBuilder.newJob(UpdatePageTemplatePathJob.class)
+                .withIdentity("updatePageTemplatePathJob-" + randomID, "update_page_template_path_job")
+                .setJobData(jobDataMap)
+                .storeDurably(false)
+                .requestRecovery(true)
+                .build();
 
         long startTime = System.currentTimeMillis();
-        final SimpleTrigger trigger = new SimpleTrigger(
-                "updatePageTemplatePathTrigger-" + randomID,
-                "update_page_template_path_job_triggers",
-                new Date(startTime)
-        );
+        final Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity("updatePageTemplatePathTrigger-" + randomID, "update_page_template_path_job_triggers")
+                .startAt(new Date(startTime))
+                .forJob(jobDetail)
+                .build();
 
         try {
             Scheduler scheduler = QuartzUtils.getScheduler();

@@ -57,6 +57,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
+import org.quartz.JobKey;
 import org.quartz.Trigger;
 
 import java.util.HashMap;
@@ -233,7 +234,7 @@ public class HostAPITest extends IntegrationTestBase  {
                 APILocator.getLanguageAPI().getDefaultLanguage().getId(),
                 source);
 
-        //Create a new test host
+        // Create a new test host
         Host host = createHost("copy" + System.currentTimeMillis() + ".demo.dotcms.com", user);
 
         Thread.sleep(5000);
@@ -244,12 +245,12 @@ public class HostAPITest extends IntegrationTestBase  {
         final JobDetail jobDetail = mock(JobDetail.class);
         final JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
         final Trigger trigger = mock(Trigger.class);
-        when(jobExecutionContext.getJobDetail()).thenReturn(jobDetail);
-        when(jobExecutionContext.getJobDetail().getName())
-                .thenReturn("setup-host-" + host.getIdentifier());
-        when(jobExecutionContext.getJobDetail().getGroup()).thenReturn("setup-host-group");
+        JobKey jobKey = new JobKey("setup-host-" + host.getIdentifier(), "setup-host-group");
 
-        final Map dataMap = new HashMap<>();
+        when(jobExecutionContext.getJobDetail()).thenReturn(jobDetail);
+        when(jobDetail.getKey()).thenReturn(jobKey);
+
+        final Map<String, Object> dataMap = new HashMap<>();
         dataMap.put(HostAssetsJobProxy.USER_ID, user.getUserId());
         dataMap.put(HostAssetsJobProxy.SOURCE_HOST_ID, source.getIdentifier());
         dataMap.put(HostAssetsJobProxy.DESTINATION_HOST_ID, host.getIdentifier());
@@ -262,13 +263,13 @@ public class HostAPITest extends IntegrationTestBase  {
 
         Thread.sleep(600); // wait a bit for the index
 
-        //Archive the just created host in order to be able to delete it
+        // Archive the just created host in order to be able to delete it
         archiveHost(host, user);
 
-        //Delete the just created host
+        // Delete the just created host
         deleteHost(host, user);
 
-        //Make sure the host was deleted properly
+        // Make sure the host was deleted properly
         hostDoesNotExistCheck(newHostIdentifier, newHostName, user);
     }
 

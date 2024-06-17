@@ -8,37 +8,34 @@ import java.sql.SQLException;
 
 import com.dotmarketing.util.Logger;
 
-public class DotMSSQLDelegate extends MSSQLDelegate{
+public class DotMSSQLDelegate extends MSSQLDelegate {
 
-	public DotMSSQLDelegate(com.dotcms.repackage.org.slf4j.Logger log, String tablePrefix, String instanceId) {
-		super(log, tablePrefix, instanceId);
-	}
-	protected Object getObjectFromBlob(ResultSet rs, String colName)
-	throws ClassNotFoundException, IOException, SQLException
-	{
-	InputStream binaryInput = rs.getBinaryStream(colName);
-	if (binaryInput == null || binaryInput.available()== 0)
-	{
-	return null;
+	public DotMSSQLDelegate() {
+		super();
 	}
 
-	Object obj = null;
-	ObjectInputStream in =null;
-	
-	try
-	{
-	  in= new ObjectInputStream(binaryInput);
-	  obj = in.readObject();
-	}catch(Exception e){
-		Logger.error(this, e.getMessage());
-		e.printStackTrace();
-	}
-	finally
-	{
-	if(in!=null)	
-	  in.close();
-	}
+	@Override
+	protected Object getObjectFromBlob(ResultSet rs, String colName) throws ClassNotFoundException, IOException, SQLException {
+		InputStream binaryInput = rs.getBinaryStream(colName);
+		if (binaryInput == null || binaryInput.available() == 0) {
+			return null;
+		}
 
-	return obj;
+		Object obj = null;
+		ObjectInputStream in = null;
+
+		try {
+			in = new ObjectInputStream(binaryInput);
+			obj = in.readObject();
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage());
+			e.printStackTrace();
+		} finally {
+			if (in != null) {
+				in.close();
+			}
+		}
+
+		return obj;
 	}
 }

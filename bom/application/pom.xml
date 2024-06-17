@@ -476,12 +476,6 @@
                 <version>1.1.4c_2</version>
             </dependency>
 
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.quartz-all</artifactId>
-                <version>1.8.6_2</version>
-            </dependency>
-
 
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
@@ -524,7 +518,7 @@
                 <!-- replaces dot.quartz-all -->
                 <groupId>org.quartz-scheduler</groupId>
                 <artifactId>quartz</artifactId>
-                <version>1.8.6</version>
+                <version>2.3.2</version>
             </dependency>
 
 
