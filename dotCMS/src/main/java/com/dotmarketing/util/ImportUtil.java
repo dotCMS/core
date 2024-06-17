@@ -3,6 +3,9 @@ package com.dotmarketing.util;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
@@ -38,6 +41,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -66,6 +70,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -86,6 +91,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ImportUtil {
 
+    public static final String LINE_NO = "Line #";
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final static ContentletAPI conAPI = APILocator.getContentletAPI();
     private final static CategoryAPI catAPI = APILocator.getCategoryAPI();
@@ -692,6 +698,7 @@ public class ImportUtil {
             HashMap<Integer, Object> values = new HashMap<>();
             Set<Category> categories = new HashSet<>();
             Pair<Host, Folder> siteAndFolder = null;
+            Pair<Integer, String> urlValue = null;
             for ( Integer column : headers.keySet() ) {
                 Field field = headers.get( column );
                 if ( line.length < column ) {
@@ -809,6 +816,39 @@ public class ImportUtil {
                     bean.setLanguageId(language);
                     uniqueFieldBeans.add(bean);
                 }
+
+                if (valueObj != null
+                        && field.getVelocityVarName().equals(HTMLPageAssetAPI.URL_FIELD)) {
+                    final String uri = StringUtils.stripEnd(
+                            StringUtils.strip(valueObj.toString()), StringPool.FORWARD_SLASH);
+                    final StringBuilder uriBuilder = new StringBuilder();
+                    if (!uri.startsWith(StringPool.FORWARD_SLASH)) {
+                        uriBuilder.append(StringPool.FORWARD_SLASH);
+                    }
+                    uriBuilder.append(uri);
+                    urlValue = Pair.of(column, uriBuilder.toString());
+                }
+            }
+
+            // Check if the content type is HTMLPage and the URL field is set
+            final Pair<Pair<Host, Folder>, String> pathAndAssetNameForURL =
+                    urlValue != null ?
+                            checkURLFieldForHTMLPage(contentType,
+                                    urlValue.getRight(), siteAndFolder, user) :
+                            null;
+            if (pathAndAssetNameForURL != null) {
+                final String assetNameForURL = pathAndAssetNameForURL.getRight();
+                if (UtilMethods.isSet(assetNameForURL)) {
+                    values.put(urlValue.getLeft(), assetNameForURL);
+                    final Pair<Host, Folder> parentPathForURL = pathAndAssetNameForURL.getLeft();
+                    if (parentPathForURL == null) {
+                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors. Column: '"
+                                + HTMLPageAssetAPI.URL_FIELD + "', value: '" + urlValue.getRight()
+                                + "', invalid parent folder for URL. Line will be ignored.");
+                    } else {
+                        siteAndFolder = parentPathForURL;
+                    }
+                }
             }
 
             //Find the relationships and their related contents
@@ -880,26 +920,49 @@ public class ImportUtil {
             if ( UtilMethods.isSet( identifier ) ) {
                 buffy.append(" +identifier:").append(identifier);
 
-                List<ContentletSearch> contentsSearch = conAPI.searchIndex( buffy.toString(), 0, -1, null, user, true );
+                List<ContentletSearch> contentsSearch = conAPI.searchIndex(buffy.toString(), 0, -1, null, user, true);
 
-                if ( (contentsSearch == null) || (contentsSearch.size() == 0) ) {
+                if ((contentsSearch == null) || (contentsSearch.size() == 0)) {
 
-                    Logger.warn(ImportUtil.class, "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
-                    throw new DotRuntimeException( "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n" );
+                    Logger.warn(ImportUtil.class, LINE_NO + lineNumber + ": Content not found with identifier " + identifier + "\n");
+                    throw new DotRuntimeException(LINE_NO + lineNumber + ": Content not found with identifier " + identifier + "\n");
                 } else {
 
                     Contentlet contentlet;
-                    for ( ContentletSearch contentSearch : contentsSearch ) {
-                        contentlet = conAPI.find( contentSearch.getInode(), user, true );
-                        if ( (contentlet != null) && InodeUtils.isSet( contentlet.getInode() ) ) {
-                            contentlets.add( contentlet );
+                    for (ContentletSearch contentSearch : contentsSearch) {
+                        contentlet = conAPI.find(contentSearch.getInode(), user, true);
+                        if ((contentlet != null) && InodeUtils.isSet(contentlet.getInode())) {
+                            contentlets.add(contentlet);
                         } else {
-                            Logger.warn(ImportUtil.class, "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
-                            throw new DotRuntimeException( "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n" );
+                            Logger.warn(ImportUtil.class, LINE_NO + lineNumber + ": Content not found with identifier " + identifier + "\n");
+                            throw new DotRuntimeException(LINE_NO + lineNumber + ": Content not found with identifier " + identifier + "\n");
+                        }
+                    }
+                }
+            } else if (pathAndAssetNameForURL != null && keyFields.isEmpty()) {
+                // For HTMLPageAsset, we need to search by URL to math existing pages
+                buffy.append( " +languageId:" ).append( language );
+                buffy.append(addSiteAndFolderToESQuery(siteAndFolder, null));
+                buffy.append(" +").append(contentType.getVelocityVarName()).append(StringPool.PERIOD)
+                        .append(HTMLPageAssetAPI.URL_FIELD).append(StringPool.COLON)
+                        .append(pathAndAssetNameForURL.getRight());
+                List<ContentletSearch> contentsSearch = conAPI.searchIndex(
+                        buffy.toString(), 0, -1, null, user, true);
+                if (contentsSearch != null && !contentsSearch.isEmpty()) {
+                    Contentlet contentlet;
+                    for (ContentletSearch contentSearch : contentsSearch) {
+                        contentlet = conAPI.find(contentSearch.getInode(), user, true);
+                        if ((contentlet != null) && InodeUtils.isSet(contentlet.getInode())) {
+                            contentlets.add(contentlet);
+                        } else {
+                            Logger.warn(ImportUtil.class, LINE_NO + lineNumber + ": Content not found with URL " + urlValue.getRight() + "\n");
+                            throw new DotRuntimeException(LINE_NO + lineNumber + ": Content not found with URL " + urlValue.getRight() + "\n");
                         }
                     }
                 }
             } else if (keyFields.size() > 0) {
+                boolean appendSiteToQuery = false;
+                String siteFieldValue = null;
                 for (Integer column : keyFields.keySet()) {
                     Field field = keyFields.get(column);
                     Object value = values.get(column);
@@ -923,10 +986,18 @@ public class ImportUtil {
                         text = value.toString();
                     }
                     if(!UtilMethods.isSet(text)){
-                        throw new DotRuntimeException("Line #" + lineNumber + " key field " + field.getVelocityVarName() + " is required since it was defined as a key\n");
+                        throw new DotRuntimeException(LINE_NO + lineNumber + " key field " + field.getVelocityVarName() + " is required since it was defined as a key\n");
                     }else{
-                        if(field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                            buffy.append(addSiteAndFolderToESQuery(siteAndFolder, text));
+                        if (field.getVelocityVarName().equals(HTMLPageAssetAPI.URL_FIELD)
+                                && pathAndAssetNameForURL != null) {
+                            appendSiteToQuery = true;
+                            buffy.append(" +").append(contentType.getVelocityVarName()).append(StringPool.PERIOD)
+                                    .append(HTMLPageAssetAPI.URL_FIELD).append(StringPool.COLON)
+                                    .append(pathAndAssetNameForURL.getRight());
+                            value = getURLFromFolderAndAssetName(pathAndAssetNameForURL);
+                        } else if(new LegacyFieldTransformer(field).from() instanceof HostFolderField) {
+                            appendSiteToQuery = true;
+                            siteFieldValue = text;
                         } else {
                             buffy.append(" +").append(contentType.getVelocityVarName()).append(StringPool.PERIOD)
                                     .append(field.getVelocityVarName()).append(field.isUnique()? ESUtils.SHA_256: "_dotraw")
@@ -958,6 +1029,10 @@ public class ImportUtil {
                         }
                     }
 
+                }
+
+                if (appendSiteToQuery) {
+                    buffy.append(addSiteAndFolderToESQuery(siteAndFolder, siteFieldValue));
                 }
 
                 String noLanguageQuery = buffy.toString();
@@ -1015,6 +1090,11 @@ public class ImportUtil {
                                     break;
                                 }
                             }else{
+                                if (field.getVelocityVarName().equals(HTMLPageAssetAPI.URL_FIELD)
+                                        && pathAndAssetNameForURL != null) {
+                                    value = getURLFromFolderAndAssetName(pathAndAssetNameForURL);
+                                    conValue = getURLFromContentId(con.getIdentifier());
+                                }
                                 Logger.debug(ImportUtil.class,"conValue: " + conValue.toString());
                                 Logger.debug(ImportUtil.class,"Value: " + value.toString());
                                 if(conValue.toString().equalsIgnoreCase(value.toString())){
@@ -1058,6 +1138,11 @@ public class ImportUtil {
 
                                 //Ok, comparing our keys with the contentlets we found trying to see if there is a contentlet to update with the specified keys
                                 Object conValue = conAPI.getFieldValue( contentlet, field );
+                                if (field.getVelocityVarName().equals(HTMLPageAssetAPI.URL_FIELD)
+                                        && pathAndAssetNameForURL != null) {
+                                    value = getURLFromFolderAndAssetName(pathAndAssetNameForURL);
+                                    conValue = getURLFromContentId(contentlet.getIdentifier());
+                                }
                                 if ( !conValue.equals( value ) ) {
                                     match = false;
                                 }
@@ -1559,11 +1644,142 @@ public class ImportUtil {
                 final Folder folder = siteAndFolder.getRight();
                 siteAndFolderQuery.append(" +conFolder:").append(folder.getInode());
             }
-        } else {
+        } else if (UtilMethods.isSet(fieldValue)) {
             siteAndFolderQuery.append(" +(conhost:").append(fieldValue).append(" conFolder:")
                     .append(fieldValue).append(")");
         }
         return siteAndFolderQuery.toString();
+    }
+
+    /**
+     * Check if the URL field for an HTMLPage content type is set correctly
+     * @param contentType the content type
+     * @param urlValue the URL field value
+     * @param siteAndFolderFromLine the site and folder from the site field in the import line
+     *                              it can be null if the site field is not set
+     * @param user the current user
+     */
+    private static Pair<Pair<Host,Folder>, String> checkURLFieldForHTMLPage(
+            final Structure contentType, final String urlValue,
+            final Pair<Host, Folder> siteAndFolderFromLine, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final ContentType targetContentType = new StructureTransformer(contentType).from();
+        if (UtilMethods.isSet(urlValue) &&
+                BaseContentType.HTMLPAGE.getType() == targetContentType.baseType().getType()) {
+
+            // Check if the URL field value includes parent folder and asset name
+            String assetName = urlValue;
+            String parentPath = null;
+            if (StringUtils.lastIndexOf(urlValue, StringPool.FORWARD_SLASH) >= 0) {
+                assetName = StringUtils.substringAfterLast(urlValue, StringPool.FORWARD_SLASH);
+                parentPath = StringUtils.substringBeforeLast(urlValue, StringPool.FORWARD_SLASH);
+            }
+
+            // If there is parent path and also a site without folder was already read
+            // from the site field in the import line, check if the parent folder exists and return it
+            // If there is a parent path and a site was not read from the site field,
+            // check if the parent folder exists in the default site instead
+            final Host site = siteAndFolderFromLine == null ?
+                    hostAPI.findDefaultHost(user, false) :
+                    siteAndFolderFromLine.getLeft();
+            final Folder folder = siteAndFolderFromLine == null ?
+                    folderAPI.findSystemFolder() : siteAndFolderFromLine.getRight();
+            final Pair<Host, Folder> siteAndFolder = ImmutablePair.of(site, folder);
+
+            if (UtilMethods.isSet(parentPath)) {
+                return ImmutablePair.of(
+                        getHostAndFolderFromParentPathOrSiteField(
+                                siteAndFolder, user, parentPath),
+                        assetName);
+            }
+
+            // If there is no parent path, return the site and folder from the site field
+            return ImmutablePair.of(siteAndFolder, assetName);
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the host and folder from given parent path.
+     * Returns the host and folder from the site field in the import line if already set
+     * @param siteAndFolder the site and folder from the site field in the import line
+     * @param user the current user
+     * @param parentPath the parent path for the URL field value
+     * @return the host and folder from the parent path or the site field
+     */
+    private static Pair<Host, Folder> getHostAndFolderFromParentPathOrSiteField(
+            final Pair<Host, Folder> siteAndFolder,
+            final User user, final String parentPath)
+            throws DotDataException, DotSecurityException {
+
+        final Host site = siteAndFolder.getLeft();
+        final Folder siteFolder = siteAndFolder.getRight();
+        final Folder parentFolder = folderAPI.findFolderByPath(
+                parentPath, site, user, false);
+        if (isFolderSet(parentFolder)) {
+            if ((siteFolder == null || siteFolder.isSystemFolder())) {
+                return ImmutablePair.of(site, parentFolder);
+            } else {
+                if (isFolderSet(siteFolder) && !parentFolder.getInode().equals(siteFolder.getInode())) {
+                    Logger.warn(ImportUtil.class, String.format(
+                            "Folder from site field %s doesn't match parent folder for URL: %s",
+                            siteFolder.getPath(), parentFolder.getPath()));
+                }
+                return siteAndFolder;
+            }
+        } else {
+            Logger.warn(ImportUtil.class, String.format(
+                    "Parent folder not found for URL field value: %s", parentPath));
+            return null;
+        }
+
+    }
+
+    /**
+     * Get the URL from the folder path and asset name
+     * @param folderAndAssetName the folder and asset name pair
+     * @return the URL for the given folder path and asset name
+     */
+    private static String getURLFromFolderAndAssetName(
+            final Pair<Pair<Host, Folder>,String> folderAndAssetName) {
+        final Pair<Host, Folder> siteAndFolder = folderAndAssetName.getLeft();
+        final String assetName = folderAndAssetName.getRight();
+        final StringBuilder url = new StringBuilder();
+        if (siteAndFolder != null) {
+            final Folder folder = siteAndFolder.getRight();
+            if (isFolderSet(folder)) {
+                url.append(folder.getPath());
+                if (UtilMethods.isSet(folder.getPath())
+                        && !folder.getPath().endsWith(StringPool.FORWARD_SLASH)) {
+                    url.append(StringPool.FORWARD_SLASH);
+                }
+            }
+        }
+        url.append(assetName);
+        return url.toString();
+    }
+
+    /**
+     * Get the URL from the content identifier
+     * @param contentId the content identifier
+     * @return the URL for the given content identifier
+     */
+    private static String getURLFromContentId(final String contentId) {
+        StringBuilder url = new StringBuilder();
+        if (contentId != null ) {
+            try {
+                final Identifier identifier = APILocator.getIdentifierAPI().find(contentId);
+                if (UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getId())) {
+                    url.append(identifier.getURI());
+                }
+            } catch (DotDataException e) {
+                Logger.error(ImportUtil.class, "Unable to get Identifier with id ["
+                        + contentId + "]. Could not get the url", e );
+            }
+        }
+        return url.toString();
     }
 
     /**

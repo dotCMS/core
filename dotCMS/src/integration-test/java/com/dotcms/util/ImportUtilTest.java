@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
@@ -20,6 +21,8 @@ import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.templates.model.Template;
 import org.apache.commons.io.FileUtils;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -2480,6 +2483,119 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             } catch (Exception e) {
                 Logger.error("Error deleting content type", e);
             }
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile}
+     * Case: Import file including a page with URL field set to a valid URL
+     * @throws DotSecurityException when there is a security exception
+     * @throws DotDataException when there is a dotCMS data exception
+     * @throws IOException when there is an IO exception
+     */
+    @Test
+    public void importFile_PagesWithURL_success()
+            throws DotSecurityException, DotDataException, IOException {
+
+        Host site = null;
+        Template template = null;
+        ContentType pageType = null;
+        Folder parentFolder = null;
+        try {
+            site = new SiteDataGen().nextPersisted();
+
+            // create test template
+            template = new TemplateDataGen()
+                    .site(APILocator.systemHost())
+                    .nextPersisted();
+            final String templateId = template.getIdentifier();
+
+            long time = System.currentTimeMillis();
+            final String pageTypeName = "TestPageTypeWithURL_" + time;
+            final String pageTypeVarName = "velocityVarNameTestPageTypeWithURL_" + time;
+
+            // create test page type
+            pageType = new ContentTypeDataGen()
+                    .baseContentType(BaseContentType.HTMLPAGE)
+                    .host(APILocator.systemHost())
+                    .name(pageTypeName)
+                    .velocityVarName(pageTypeVarName)
+                    .nextPersisted();
+
+            // create test folder
+            final String parentFolderName = "test-base-folder_" + time;
+            parentFolder = new FolderDataGen()
+                    .name(parentFolderName)
+                    .site(site)
+                    .nextPersisted();
+            final Folder subFolder = new FolderDataGen()
+                    .name("test-sub-folder")
+                    .parent(parentFolder)
+                    .nextPersisted();
+
+            final String testPageURL = StringPool.FORWARD_SLASH
+                    + parentFolderName + "/test-sub-folder/test-page-1";
+            final Reader reader = createTempFile(
+                    HTMLPageAssetAPI.TITLE_FIELD
+                            + "," + HTMLPageAssetAPI.URL_FIELD
+                            + ",hostFolder"
+                            + "," + HTMLPageAssetAPI.TEMPLATE_FIELD
+                            + "," + HTMLPageAssetAPI.FRIENDLY_NAME_FIELD
+                            + "," + HTMLPageAssetAPI.SORT_ORDER_FIELD
+                            + "," + HTMLPageAssetAPI.CACHE_TTL_FIELD
+                            + "\r\n" +
+                            "Test Page 1," + testPageURL + ","
+                            + site.getIdentifier() + "," + templateId
+                            + ",Test Page 1,0,300\r\n");
+
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+
+            final String[] csvHeaders = csvreader.getHeaders();
+
+            final Map<String, List<String>> results = ImportUtil
+                    .importFile(0L, defaultSite.getInode(), pageType.inode(),
+                            new String[]{}, false, false,
+                            user, defaultLanguage.getId(), csvHeaders, csvreader,
+                            -1, -1,
+                            reader, null, getHttpRequest());
+
+            Logger.info(ImportUtilTest.class, "page errors: " + results.get("errors"));
+            validate(results, false, false, true);
+
+            final List<Contentlet> savedData = contentletAPI
+                    .findByStructure(pageType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertEquals(1, savedData.size());
+
+            final Contentlet contentlet = savedData.get(0);
+            final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+            assertNotNull(identifier);
+            assertEquals(testPageURL, identifier.getURI());
+
+        } finally {
+            try {
+                if (parentFolder != null) {
+                    FolderDataGen.remove(parentFolder);
+                }
+
+                if (pageType != null) {
+                    contentTypeApi.delete(pageType);
+                }
+
+                if (template != null) {
+                    TemplateDataGen.remove(template);
+                }
+
+                if (null != site) {
+                    APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+                    APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+                }
+
+            } catch (Exception e) {
+                Logger.error("Error deleting test page type", e);
+            }
+
         }
     }
 }
