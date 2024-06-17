@@ -101,7 +101,7 @@ public class EmbeddingContentListenerTest {
         final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog");
         contentTypes.add(blogContentType);
         final String text = "OpenAI has developed a new AI model that surpasses previous benchmarks in natural language understanding and generation. This model, GPT-4, can perform complex tasks such as writing essays, creating code, and understanding nuanced prompts with unprecedented accuracy.";
-        final Contentlet blogContent = TestDataUtils.getBlogContentWithEmbeddings(
+        final Contentlet blogContent = TestDataUtils.withEmbeddings(
                 true,
                 languageApi.getDefaultLanguage().getId(),
                 blogContentType.id(),
@@ -134,7 +134,7 @@ public class EmbeddingContentListenerTest {
         final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog");
         contentTypes.add(blogContentType);
         final String text = "In the latest NBA finals, the Golden State Warriors clinched the championship title after a thrilling seven-game series against the Boston Celtics. Stephen Curry was named the MVP for his outstanding performance.";
-        final Contentlet blogContent = TestDataUtils.getBlogContentWithEmbeddings(
+        final Contentlet blogContent = TestDataUtils.withEmbeddings(
                 true,
                 languageApi.getDefaultLanguage().getId(),
                 blogContentType.id(),
@@ -160,7 +160,7 @@ public class EmbeddingContentListenerTest {
         final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog");
         contentTypes.add(blogContentType);
         final String text = "The latest Marvel movie, 'Avengers: Endgame,' has broken box office records with its stunning visual effects and compelling storyline. Critics praise the film for its emotional depth and action-packed scenes.";
-        final Contentlet blogContent = TestDataUtils.getBlogContentWithEmbeddings(
+        final Contentlet blogContent = TestDataUtils.withEmbeddings(
                 true,
                 languageApi.getDefaultLanguage().getId(),
                 blogContentType.id(),

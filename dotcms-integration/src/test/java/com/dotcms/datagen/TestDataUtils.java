@@ -71,7 +71,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -1260,10 +1259,10 @@ public class TestDataUtils {
         return getBlogContent(persist, languageId, contentTypeId, null);
     }
 
-    public static Contentlet getBlogContentWithEmbeddings(final boolean persist,
-                                                          final long languageId,
-                                                          final String contentTypeId,
-                                                          final String text) {
+    public static Contentlet withEmbeddings(final boolean persist,
+                                            final long languageId,
+                                            final String contentTypeId,
+                                            final String text) {
 
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
                 .languageId(languageId)
