@@ -12,7 +12,6 @@ import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -38,7 +37,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
@@ -267,7 +265,7 @@ public class ContentResource {
                                @DefaultValue("-1") @QueryParam("depth") final int depth
 
 
-    ) throws DotDataException, DotSecurityException {
+    ) {
 
         final User user =
                 new WebResource.InitBuilder(this.webResource)
@@ -316,8 +314,8 @@ public class ContentResource {
 
         final Map<String, Object> resultMap = new HashMap<>();
 
-        if(UtilMethods.isEmpty(()->contentlet.getIdentifier())) {
-            throw new DoesNotExistException("The contentlet " + inodeOrIdentifier + " does not exists");
+        if(UtilMethods.isEmpty(contentlet::getIdentifier)) {
+            throw new DoesNotExistException(getDoesNotExistMessage(inodeOrIdentifier));
         }
 
         final boolean canLock = Try.of(()->this.contentletAPI.canLock( contentlet, user)).getOrElse(false);
@@ -340,6 +338,10 @@ public class ContentResource {
         return Response.ok(new ResponseEntityView<>(resultMap)).build();
     }
 
+    private static String getDoesNotExistMessage(String inodeOrIdentifier) {
+        return String.format("The contentlet %s does not exists", inodeOrIdentifier);
+    }
+
     /**
      * Given an inode or identifier, this method will return the contentlet object
      * internally relies on the shorty api to resolve the type of identifier we are dealing with
@@ -349,15 +351,14 @@ public class ContentResource {
      * @param languageId the language id
      * @param user the user
      * @return the contentlet object
-     * @throws DotDataException
      */
-    private Contentlet resolveContentlet (final String inodeOrIdentifier, PageMode mode, long languageId, User user) throws DotDataException {
+    private Contentlet resolveContentlet (final String inodeOrIdentifier, PageMode mode, long languageId, User user) {
 
 
         final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
 
         if (shortyId.isEmpty()) {
-            throw new DoesNotExistException("The contentlet " + inodeOrIdentifier + " does not exists");
+            throw new DoesNotExistException(getDoesNotExistMessage(inodeOrIdentifier));
         }
 
         String testInode = inodeOrIdentifier;
@@ -370,7 +371,11 @@ public class ContentResource {
             }
         }
         final String finalInode = testInode;
-        return Try.of(()->APILocator.getContentletAPI().find(finalInode, user, mode.respectAnonPerms)).getOrElseThrow(()->new DoesNotExistException("The contentlet " + inodeOrIdentifier + " does not exists"));
+        return Try.of(
+                        () -> APILocator.getContentletAPI().find(finalInode, user, mode.respectAnonPerms))
+                .getOrElseThrow(() -> new DoesNotExistException(
+                        getDoesNotExistMessage(inodeOrIdentifier))
+                );
     }
 
 
