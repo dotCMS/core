@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.quartz.Job;
+import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -35,143 +36,107 @@ import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
+import org.quartz.TriggerBuilder;
 
 /**
  * @author Oscar Arrieta
- *
  */
 public class IdentifierDateJob implements Job {
 
-	/* (non-Javadoc)
-	 * @see org.quartz.Job#execute(org.quartz.JobExecutionContext)
-	 */
 	@Override
 	public void execute(final JobExecutionContext jobContext) throws JobExecutionException {
 		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-
 		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
 		final ContentType type = (ContentType) map.get("contenttype");
 		final User user = (User) map.get("user");
 
-		try{
-			//Lucene query to be sure that I will get all fields of the contentlet
+		try {
 			final String luceneQuery = "+structureName:" + type.variable() +
-								" +working:true" +
-								" +languageId:" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
-
-			//Identifiers will be updated 500 at a time
+					" +working:true" +
+					" +languageId:" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
 			Integer limit = 500;
 			Integer offset = 0;
-
-			//Get all the ContentletSearch
 			List<ContentletSearch> contenletSearchList = contentletAPI.searchIndex(luceneQuery, limit, offset, "random", user, false);
 
-			//If the query result is not empty
-			while(!contenletSearchList.isEmpty()){
-				//Start 500 (limit) transaction
+			while (!contenletSearchList.isEmpty()) {
 				HibernateUtil.startTransaction();
 
-				//Iterates all the ContentletSearch of the query
-				for(ContentletSearch contentletSearch : contenletSearchList){
-					//Get the identifier of each contentlet
-					final Identifier identifier= APILocator.getIdentifierAPI().find(contentletSearch.getIdentifier());
+				for (ContentletSearch contentletSearch : contenletSearchList) {
+					final Identifier identifier = APILocator.getIdentifierAPI().find(contentletSearch.getIdentifier());
+					final Contentlet contentlet = contentletAPI.find(contentletSearch.getInode(), user, false);
 
-					//Gets contentlet info
-                    final Contentlet contentlet = contentletAPI.find(contentletSearch.getInode(), user, false);
-
-					//Check if the new Publish Date Var is not null
-					if(UtilMethods.isSet(type.publishDateVar())){
-						//Sets the identifier SysPublishDate to the new Structure/Content Publish Date Var
-						identifier.setSysPublishDate((Date)contentlet.getMap().get(type.publishDateVar()));
-					}else{
+					if (UtilMethods.isSet(type.publishDateVar())) {
+						identifier.setSysPublishDate((Date) contentlet.getMap().get(type.publishDateVar()));
+					} else {
 						identifier.setSysPublishDate(null);
 					}
 
-					//Check if the new Expire Date Var is not null
-					if(UtilMethods.isSet(type.expireDateVar())){
-						//Sets the identifier SysExpireDate to the new Structure/Content Expire Date Var
-						identifier.setSysExpireDate((Date)contentlet.getMap().get(type.expireDateVar()));
-					}else{
+					if (UtilMethods.isSet(type.expireDateVar())) {
+						identifier.setSysExpireDate((Date) contentlet.getMap().get(type.expireDateVar()));
+					} else {
 						identifier.setSysExpireDate(null);
 					}
 
-					//Saves the update
 					APILocator.getIdentifierAPI().save(identifier);
-					//Clears Identifier Cache
 					CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentletSearch.getIdentifier());
-					//Clears Contentlet Cache for each language and version
-					for(Language lan : APILocator.getLanguageAPI().getLanguages()) {
-						Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), lan.getId()) ;
-						if(versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getIdentifier())) {
-							CacheLocator.getContentletCache().remove(versionInfo.get().getWorkingInode());
-							if(UtilMethods.isSet(versionInfo.get().getLiveInode())) {
-								CacheLocator.getContentletCache().remove(versionInfo.get().getLiveInode());
 
+					for (Language lan : APILocator.getLanguageAPI().getLanguages()) {
+						Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), lan.getId());
+						if (versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getIdentifier())) {
+							CacheLocator.getContentletCache().remove(versionInfo.get().getWorkingInode());
+							if (UtilMethods.isSet(versionInfo.get().getLiveInode())) {
+								CacheLocator.getContentletCache().remove(versionInfo.get().getLiveInode());
 							}
 						}
 					}
 				}
-				//Commit 500 (limit) transaction
-				HibernateUtil.closeAndCommitTransaction();
 
-				//Next 500
-				limit += limit;
+				HibernateUtil.closeAndCommitTransaction();
 				offset += limit;
 				contenletSearchList = contentletAPI.searchIndex(luceneQuery, limit, offset, "random", user, false);
 			}
 
-			//Send Notification
 			APILocator.getNotificationAPI().generateNotification(
-					new I18NMessage("notification.identifier.datejob.info.title"), // title = Identifier Notification
+					new I18NMessage("notification.identifier.datejob.info.title"),
 					new I18NMessage("notifications_structure_identifiers_updated"),
-					null, // no actions
+					null,
 					NotificationLevel.INFO,
 					NotificationType.GENERIC,
 					user.getUserId(),
 					user.getLocale()
 			);
-		} catch (DotDataException e) {
+		} catch (DotDataException | DotSecurityException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(CascadePermissionsJob.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
 		} finally {
-		    try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
-            }
+			try {
+				HibernateUtil.closeSession();
+			} catch (DotHibernateException e) {
+				Logger.warn(this, e.getMessage(), e);
+			} finally {
+				DbConnectionFactory.closeConnection();
+			}
 		}
 	}
-	
-	/**
-	 * Setup the job and trigger it immediately
-	 * 
-	 * @param type {@link ContentType}
-	 * @param user      {@link User}
 
-	 */
-	public static void triggerJobImmediately (ContentType type, User user) {
-
+	public static void triggerJobImmediately(ContentType type, User user) {
 		String randomID = UUID.randomUUID().toString();
 		JobDataMap dataMap = new JobDataMap();
-		
 		dataMap.put("contenttype", type);
 		dataMap.put("user", user);
-		
-		JobDetail jd = new JobDetail("IdentifierDateJob-" + randomID, "identifier_date_job", IdentifierDateJob.class);
-		jd.setJobDataMap(dataMap);
-		jd.setDurability(false);
-		jd.setVolatility(false);
-		jd.setRequestsRecovery(true);
-		
-		long startTime = System.currentTimeMillis();
-		SimpleTrigger trigger = new SimpleTrigger("IdentifierDateTrigger-" + randomID, "identifier_data_triggers",  new Date(startTime));
-		
+
+		JobDetail jd = JobBuilder.newJob(IdentifierDateJob.class)
+				.withIdentity("IdentifierDateJob-" + randomID, "identifier_date_job")
+				.usingJobData(dataMap)
+				.storeDurably(false)
+				.requestRecovery(true)
+				.build();
+
+		SimpleTrigger trigger = (SimpleTrigger) TriggerBuilder.newTrigger()
+				.withIdentity("IdentifierDateTrigger-" + randomID, "identifier_data_triggers")
+				.startNow()
+				.build();
+
 		try {
 			Scheduler sched = QuartzUtils.getScheduler();
 			sched.scheduleJob(jd, trigger);
@@ -179,7 +144,6 @@ public class IdentifierDateJob implements Job {
 			Logger.error(IdentifierDateJob.class, "Error scheduling the Identifier Date Job", e);
 			throw new DotRuntimeException("Error scheduling the Identifier Date Job", e);
 		}
-		AdminLogger.log(IdentifierDateJob.class, "triggerJobImmediately", "Updating Identifiers Dates of: "+ type.name());
-	
+		AdminLogger.log(IdentifierDateJob.class, "triggerJobImmediately", "Updating Identifiers Dates of: " + type.name());
 	}
 }

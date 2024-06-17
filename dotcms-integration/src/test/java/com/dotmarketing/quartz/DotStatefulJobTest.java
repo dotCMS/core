@@ -115,7 +115,7 @@ public class DotStatefulJobTest extends IntegrationTestBase {
             final List<JobExecutionContext> executingJobs = sequentialScheduler.getCurrentlyExecutingJobs();
             return executingJobs.stream().filter(jobExecutionContext -> {
                 final JobDetail jobDetail = jobExecutionContext.getJobDetail();
-                return jobDetail != null && jobName.equals(jobDetail.getName());
+                return jobDetail != null && jobName.equals(jobDetail.getKey().getName());
             }).findFirst();
         } catch (Exception e) {
             Logger.error(DotStatefulJobTest.class, "Error retrieving execution context. " , e);

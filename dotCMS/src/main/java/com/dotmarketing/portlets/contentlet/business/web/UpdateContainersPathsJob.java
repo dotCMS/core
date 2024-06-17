@@ -79,8 +79,10 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
         } finally {
             try {
                 QuartzUtils.getScheduler().unscheduleJob(
-                        jobContext.getJobDetail().getName(),
-                        jobContext.getTrigger().getName()
+                        TriggerKey.triggerKey(
+                                jobContext.getTrigger().getKey().getName(),
+                                jobContext.getTrigger().getKey().getGroup()
+                        )
                 );
             } catch (SchedulerException e) {
                Logger.error(UpdateContainersPathsJob.class, e.getMessage());
@@ -132,19 +134,19 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
         final String jobName  = "updateContainersPathsJob-" + randomID;
         final String groupName = "update_containers_paths_job";
 
-        final JobDetail jobDetail = new JobDetail(
-                jobName, groupName, UpdateContainersPathsJob.class
-        );
-
-        jobDetail.setJobDataMap(jobDataMap);
-        jobDetail.setDurability(false);
-        jobDetail.setVolatility(false);
-        jobDetail.setRequestsRecovery(true);
+        final JobDetail jobDetail = JobBuilder.newJob(UpdateContainersPathsJob.class)
+                .withIdentity(jobName, groupName)
+                .usingJobData(jobDataMap)
+                .storeDurably(false)
+                .requestRecovery(true)
+                .build();
 
         long startTime = System.currentTimeMillis();
-        final SimpleTrigger trigger = new SimpleTrigger(
-                jobName, groupName, new Date(startTime)
-        );
+        final Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity(jobName, groupName)
+                .startAt(new Date(startTime))
+                .forJob(jobDetail)
+                .build();
 
         try {
             Scheduler scheduler = QuartzUtils.getScheduler();

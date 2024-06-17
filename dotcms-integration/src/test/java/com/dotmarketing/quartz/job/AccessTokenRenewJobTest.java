@@ -19,17 +19,21 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.job.TestJobExecutor.TriggerFiredBundleTest;
 import com.dotmarketing.util.Config;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
+import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 
 import java.time.Instant;
+import org.quartz.impl.JobExecutionContextImpl;
 
 import static com.dotcms.analytics.AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL;
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_JOB;
@@ -89,8 +93,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
     @Test
     public void test_schedule() throws SchedulerException, DotDataException {
         assertNotNull(QuartzUtils.getScheduler().getJobDetail(
-            ANALYTICS_ACCESS_TOKEN_RENEW_JOB,
-            DotInitScheduler.DOTCMS_JOB_GROUP_NAME));
+                JobKey.jobKey(ANALYTICS_ACCESS_TOKEN_RENEW_JOB, DotInitScheduler.DOTCMS_JOB_GROUP_NAME)));
         deleteJob();
     }
 
@@ -251,25 +254,22 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
 
     private static void unscheduleJob() throws SchedulerException {
         QuartzUtils.getScheduler().deleteJob(
-            ANALYTICS_ACCESS_TOKEN_RENEW_JOB,
-            DotInitScheduler.DOTCMS_JOB_GROUP_NAME);
+                JobKey.jobKey(ANALYTICS_ACCESS_TOKEN_RENEW_JOB, DotInitScheduler.DOTCMS_JOB_GROUP_NAME));
     }
 
     private JobExecutionContext getJobContext() throws SchedulerException {
         final JobDataMap jobDataMap = new JobDataMap();
-        final JobDetail jobDetail = new JobDetail(
-            ANALYTICS_ACCESS_TOKEN_RENEW_JOB,
-            DotInitScheduler.DOTCMS_JOB_GROUP_NAME,
-            AccessTokenRenewJob.class);
-        jobDetail.setJobDataMap(jobDataMap);
-        jobDetail.setDurability(false);
-        jobDetail.setVolatility(false);
-        jobDetail.setRequestsRecovery(true);
+        final JobDetail jobDetail = JobBuilder.newJob(AccessTokenRenewJob.class)
+                .withIdentity(ANALYTICS_ACCESS_TOKEN_RENEW_JOB, DotInitScheduler.DOTCMS_JOB_GROUP_NAME)
+                .setJobData(jobDataMap)
+                .storeDurably(false)
+                .requestRecovery(true)
+                .build();
 
-        return new JobExecutionContext(
-            AccessTokenRenewJob.getJobScheduler(),
-            new TestJobExecutor.TriggerFiredBundleTest(jobDetail),
-            accessTokenRenewJob);
+        return new JobExecutionContextImpl(
+                AccessTokenRenewJob.getJobScheduler(),
+                new TriggerFiredBundleTest(jobDetail),
+                accessTokenRenewJob);
     }
 
     private static void deleteJob() throws DotDataException, SchedulerException {

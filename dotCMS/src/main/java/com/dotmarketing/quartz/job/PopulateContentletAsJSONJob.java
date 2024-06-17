@@ -11,6 +11,10 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.quartz.*;
 
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+
 /**
  * Job created to populate in the Contentlet table missing contentlet_as_json columns.
  */
@@ -103,7 +107,7 @@ public class PopulateContentletAsJSONJob extends DotStatefulJob {
         final var scheduler = QuartzUtils.getScheduler();
 
         // Checking if the job already exists
-        var jobDetail = Try.of(() -> scheduler.getJobDetail(jobName, groupName))
+        var jobDetail = Try.of(() -> scheduler.getJobDetail(new JobKey(jobName, groupName)))
                 .onFailure(e -> {
                     Logger.error(PopulateContentletAsJSONJob.class,
                             String.format("Error retrieving job detail [%s, %s]", jobName, groupName), e);
@@ -116,22 +120,21 @@ public class PopulateContentletAsJSONJob extends DotStatefulJob {
         }
 
         // Creating the job
-        jobDetail = new JobDetail(
-                jobName, groupName, PopulateContentletAsJSONJob.class
-        );
-
-        jobDetail.setJobDataMap(jobDataMap);
-        jobDetail.setDurability(false);
-        jobDetail.setVolatility(false);
-        jobDetail.setRequestsRecovery(true);
+        jobDetail = newJob(PopulateContentletAsJSONJob.class)
+                .withIdentity(jobName, groupName)
+                .setJobData(jobDataMap)
+                .storeDurably(false)
+                .requestRecovery(true)
+                .build();
 
         // This trigger will fire the job every 4 hours
-        final var trigger = TriggerUtils.makeHourlyTrigger(HOURS_INTERVAL.get());
-        trigger.setName(jobName);
-        trigger.setGroup(groupName);
-        trigger.setJobName(jobName);
-        trigger.setJobGroup(groupName);
-        trigger.setMisfireInstruction(SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW);
+        final var trigger = newTrigger()
+                .withIdentity(jobName, groupName)
+                .startNow()
+                .withSchedule(simpleSchedule()
+                        .withIntervalInHours(HOURS_INTERVAL.get())
+                        .repeatForever())
+                .build();
 
         try {
             scheduler.scheduleJob(jobDetail, trigger);

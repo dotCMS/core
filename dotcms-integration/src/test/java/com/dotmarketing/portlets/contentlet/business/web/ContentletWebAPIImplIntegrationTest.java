@@ -40,6 +40,11 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.util.Logger;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
+import org.quartz.JobKey;
 import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
@@ -48,11 +53,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.quartz.SchedulerException;
+import org.quartz.impl.matchers.GroupMatcher;
 
 public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
 
@@ -367,20 +374,24 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
         return container;
     }
 
-    private void waitUntilJobIsFinish() throws InterruptedException, SchedulerException {
-        Thread.sleep(500);
+    private void waitUntilJobIsFinish() throws SchedulerException {
+        Awaitility.await()
+                .atMost(5, TimeUnit.MINUTES) // Specify the maximum wait time
+                .pollInterval(500, TimeUnit.MILLISECONDS) // Specify the polling interval
+                .until(() -> {
+                    // Fetch all job keys and group names
+                    Set<String> jobGroupNames = QuartzUtils.getScheduler()
+                            .getJobKeys(GroupMatcher.anyGroup())
+                            .stream()
+                            .map(JobKey::getGroup)
+                            .collect(Collectors.toSet());
 
-        while(true){
-            final String[] jobGroupNames = QuartzUtils.getScheduler().getJobGroupNames();
+                    // Check if the job group "update_containers_paths_job" exists and there are currently executing jobs
+                    boolean isJobGroupExists = jobGroupNames.contains("update_containers_paths_job");
+                    boolean areJobsExecuting = !QuartzUtils.getScheduler().getCurrentlyExecutingJobs().isEmpty();
 
-            if ((jobGroupNames.length > 0 &&
-                    Arrays.asList(jobGroupNames).contains("update_containers_paths_job")) &&
-                    !QuartzUtils.getScheduler().getCurrentlyExecutingJobs().isEmpty()){
-                Thread.sleep(500);
-            } else {
-                break;
-            }
-        }
+                    return !(isJobGroupExists && areJobsExecuting);
+                });
     }
 
     /**

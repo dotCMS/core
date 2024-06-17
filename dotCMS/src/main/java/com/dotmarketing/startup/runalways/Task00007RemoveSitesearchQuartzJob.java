@@ -23,18 +23,19 @@ public class Task00007RemoveSitesearchQuartzJob implements StartupTask {
 	@Override
 	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
-		
 		try {
-			if (QuartzUtils.isJobSequentiallyScheduled("site-search-execute-once", "site-search-execute-once-group")) {
-				QuartzUtils.removeJob("site-search-execute-once", "site-search-execute-once-group");	
+			if (QuartzUtils.isJobScheduled("site-search-execute-once", "site-search-execute-once-group")) {
+				QuartzUtils.removeJob("site-search-execute-once", "site-search-execute-once-group");
 			}
 		} catch (SchedulerException e) {
-			Logger.error(this, e.getMessage(),e);
+			Logger.error(this, e.getMessage(), e);
 		}
+
 		DotConnect dc = new DotConnect();
 		dc.setSQL(siteSearchTriggerCount);
 		int trigger_count = dc.getInt("trigger_count");
-		if(trigger_count > 0){
+
+		if (trigger_count > 0) {
 			dc.setSQL(deleteExclSimpleTrigger);
 			dc.loadResult();
 			dc.setSQL(deleteExclTrigger);
@@ -42,7 +43,6 @@ public class Task00007RemoveSitesearchQuartzJob implements StartupTask {
 			dc.setSQL(deleteJobDetails);
 			dc.loadResult();
 		}
-		
 	}
 
 	public boolean forceRun() {

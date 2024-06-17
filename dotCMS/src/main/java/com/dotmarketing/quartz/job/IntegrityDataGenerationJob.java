@@ -9,13 +9,8 @@ import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Logger;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import org.quartz.InterruptableJob;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
+import org.quartz.*;
+import org.quartz.impl.triggers.SimpleTriggerImpl;
 
 import java.util.Date;
 
@@ -85,23 +80,26 @@ public class IntegrityDataGenerationJob extends DotStatefulJob {
      * @param integrityDataRequestId integrity data request id
      */
     public static void triggerIntegrityDataGeneration(final String key,
-                                                      final String integrityDataRequestId) {
+            final String integrityDataRequestId) {
         final JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put(IntegrityUtil.REQUESTER_KEY, key);
         jobDataMap.put(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID, integrityDataRequestId);
 
-        final JobDetail jobDetail = new JobDetail(JOB_NAME, JOB_GROUP, IntegrityDataGenerationJob.class);
-        jobDetail.setJobDataMap(jobDataMap);
-        jobDetail.setDurability(false);
-        jobDetail.setVolatility(false);
-        jobDetail.setRequestsRecovery(true);
+        final JobDetail jobDetail = JobBuilder.newJob(IntegrityDataGenerationJob.class)
+                .withIdentity(JOB_NAME, JOB_GROUP)
+                .setJobData(jobDataMap)
+                .storeDurably(false)
+                .requestRecovery(true)
+                .build();
 
-        final SimpleTrigger trigger = new SimpleTrigger(
-                TRIGGER_NAME,
-                TRIGGER_GROUP,
-                new Date(System.currentTimeMillis()));
+        final Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity(TRIGGER_NAME, TRIGGER_GROUP)
+                .startAt(new Date(System.currentTimeMillis()))
+                .forJob(jobDetail)
+                .build();
+
         HibernateUtil.addCommitListenerNoThrow(Sneaky.sneaked(() -> {
-           getJobScheduler().scheduleJob(jobDetail, trigger);
+            getJobScheduler().scheduleJob(jobDetail, trigger);
         }));
     }
 
@@ -109,7 +107,7 @@ public class IntegrityDataGenerationJob extends DotStatefulJob {
      * Encapsulates Scheduler to use.
      *
      * @return a scheduler
-     *  @throws SchedulerException when getting scheduler
+     * @throws SchedulerException when getting scheduler
      */
     public static Scheduler getJobScheduler() throws SchedulerException {
         return QuartzUtils.getScheduler();

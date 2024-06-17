@@ -38,8 +38,11 @@ import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 
@@ -52,6 +55,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.quartz.TriggerBuilder;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
@@ -349,22 +353,30 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 
-    @Override
-    public void firePublisherQueueNow(Map<String, Object> dataMap){
+	@Override
+	public void firePublisherQueueNow(Map<String, Object> dataMap) {
 		try {
-		    Scheduler sched = QuartzUtils.getScheduler();
-		    JobDetail job = sched.getJobDetail("PublishQueueJob"  , "dotcms_jobs");
-			if(job==null) {
+			Scheduler sched = QuartzUtils.getScheduler();
+			JobKey jobKey = new JobKey("PublishQueueJob", "dotcms_jobs");
+			JobDetail job = sched.getJobDetail(jobKey);
+
+			if (job == null) {
 				return;
 			}
-			job.setJobDataMap(new JobDataMap(dataMap));
+
+			job.getJobDataMap().putAll(dataMap);
+
 			Calendar calendar = Calendar.getInstance();
 			calendar.add(Calendar.SECOND, Config.getIntProperty("PUSH_PUBLISHING_FIRING_DELAY_SEC", 2));
-			//SCHEDULE PUBLISH QUEUE JOB for NOW
-			Trigger trigger = new SimpleTrigger("PublishQueueJob"+ System.currentTimeMillis(),calendar.getTime() );
-			trigger.setJobName(job.getName());
-			trigger.setJobGroup(job.getGroup());
-			trigger.setJobDataMap(job.getJobDataMap());
+
+			Trigger trigger = TriggerBuilder.newTrigger()
+					.withIdentity("PublishQueueJob" + System.currentTimeMillis(), "dotcms_jobs")
+					.forJob(job)
+					.startAt(calendar.getTime())
+					.withSchedule(SimpleScheduleBuilder.simpleSchedule())
+					.usingJobData(new JobDataMap(dataMap))
+					.build();
+
 			sched.scheduleJob(trigger);
 		} catch (ObjectAlreadyExistsException e) {
 			// Quartz will throw this error if it is already running
@@ -372,7 +384,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		} catch (Exception e) {
 		    Logger.error(this.getClass(), e.getMessage(),e);
 		}
-    }
+	}
 
     /**
      * 
