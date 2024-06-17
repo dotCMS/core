@@ -8,28 +8,31 @@ import { DatePipe, NgOptimizedImage } from '@angular/common';
   standalone: true,
   imports: [NgOptimizedImage, DatePipe],
   template: `<ul class="flex flex-col gap-7">
-    @for(contentlet of contentlets; track contentlet.identifier) {
-    <li class="flex gap-7 min-h-16">
-      <a class="min-w-32 relative" [href]="contentlet.urlMap ?? contentlet.url">
-        <img
-          [ngSrc]="contentlet.image"
-          [fill]="true"
-          [alt]="contentlet.urlTitle ?? contentlet.title"
-          class="object-cover"
-        />
-      </a>
-      <div class="flex flex-col gap-1">
+    @for (contentlet of contentlets; track contentlet.identifier) {
+      <li class="flex gap-7 min-h-16">
         <a
-          class="text-sm text-zinc-900 font-bold"
+          class="min-w-32 relative"
           [href]="contentlet.urlMap ?? contentlet.url"
         >
-          {{ contentlet.title }}
+          <img
+            [ngSrc]="contentlet.image"
+            [fill]="true"
+            [alt]="contentlet.urlTitle ?? contentlet.title"
+            class="object-cover"
+          />
         </a>
-        <time class="text-zinc-600">
-          {{ contentlet.modDate | date:'mediumDate' }}
-        </time>
-      </div>
-    </li>
+        <div class="flex flex-col gap-1">
+          <a
+            class="text-sm text-zinc-900 font-bold"
+            [href]="contentlet.urlMap ?? contentlet.url"
+          >
+            {{ contentlet.title }}
+          </a>
+          <time class="text-zinc-600">
+            {{ contentlet.modDate | date: 'mediumDate' }}
+          </time>
+        </div>
+      </li>
     }
   </ul> `,
 })

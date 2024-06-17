@@ -29,12 +29,15 @@ export const appConfig: ApplicationConfig = {
     {
       provide: IMAGE_LOADER,
       useValue: (config: ImageLoaderConfig) => {
-        let url = config.loaderParams?.['isOutsideSRC']
-          ? config.src
-          : `${environment.dotcmsUrl}${config.src}`;
-        if (config.loaderParams?.['languageId']) {
-          url = `${url}/${config.width}?language_id=${config.loaderParams['languageId']}`;
-        }
+        const { loaderParams, src, width } = config;
+        const isOutsideSRC = loaderParams?.['isOutsideSRC'];
+        if (isOutsideSRC) return src;
+
+        const languageId = loaderParams?.['languageId'];
+        let url = `${environment.dotcmsUrl}${src}`;
+
+        url = `${url}/${width}?language_id=${languageId || '1'}`;
+
         return url;
       },
     },
