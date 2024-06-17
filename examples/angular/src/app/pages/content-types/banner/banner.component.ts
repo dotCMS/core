@@ -1,19 +1,24 @@
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DotCMSContentlet } from '@dotcms/angular';
 
-
-
 @Component({
   selector: 'app-banner',
   standalone: true,
-  imports: [RouterLink],
-  template: `<div class="relative w-full bg-gray-200 h-96 flex justify-center items-center overflow-hidden">
-    <img
-      class="object-cover w-full"
-      [src]="contentlet.image + '?language_id' + contentlet.languageId"
-      [alt]="contentlet.title"
-    />
+  imports: [RouterLink, NgOptimizedImage],
+  template: `<div
+    class="relative w-full bg-gray-200 h-96 flex justify-center items-center overflow-hidden"
+  >
+    @if (contentlet.image; as image) {
+      <img
+        class="object-cover w-full"
+        [ngSrc]="image"
+        [alt]="contentlet.title"
+        fill
+        priority
+      />
+    }
     <div
       class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white"
     >
