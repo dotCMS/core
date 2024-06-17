@@ -63,7 +63,8 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentletArea: contentletAreaMock
+                        contentletArea: contentletAreaMock,
+                        isEnterprise: false
                     }
                 }))
         );
@@ -140,14 +141,10 @@ describe('EmaContentletToolsComponent', () => {
                     } as ActionPayload);
                 });
 
-                it('should call addForm on Form option click', () => {
-                    const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
-                    spectator.click('[data-testId="add-top-button"]');
-                    spectator.click(byText('Form'));
-                    expect(addSpy).toHaveBeenCalledWith({
-                        ...contentletAreaMock.payload,
-                        position: 'before'
-                    } as ActionPayload);
+                it('should not call addForm on Form option click', () => {
+                    spectator.click('[data-testId="add-bottom-button"]');
+                    const formOption = spectator.query(byText('Form'));
+                    expect(formOption).toBeNull();
                 });
 
                 it('should call addWidget on Widget option click', () => {
@@ -158,6 +155,33 @@ describe('EmaContentletToolsComponent', () => {
                         ...contentletAreaMock.payload,
                         position: 'before'
                     } as ActionPayload);
+                });
+
+                describe('isEnterprise', () => {
+                    beforeEach(
+                        () =>
+                            (spectator = createComponent({
+                                props: {
+                                    contentletArea: contentletAreaMock,
+                                    isEnterprise: true
+                                }
+                            }))
+                    );
+
+                    it('should render form option', () => {
+                        spectator.click('[data-testId="add-top-button"]');
+                        expect(spectator.query(byText('Form'))).toBeDefined();
+                    });
+
+                    it('should call addForm on Form option click', () => {
+                        const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
+                        spectator.click('[data-testId="add-top-button"]');
+                        spectator.click(byText('Form'));
+                        expect(addSpy).toHaveBeenCalledWith({
+                            ...contentletAreaMock.payload,
+                            position: 'before'
+                        } as ActionPayload);
+                    });
                 });
             });
 
@@ -176,15 +200,13 @@ describe('EmaContentletToolsComponent', () => {
                         position: 'after'
                     } as ActionPayload);
                 });
-                it('should call addForm on Form option click', () => {
-                    const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
+
+                it('should not call addForm on Form option click', () => {
                     spectator.click('[data-testId="add-bottom-button"]');
-                    spectator.click(byText('Form'));
-                    expect(addSpy).toHaveBeenCalledWith({
-                        ...contentletAreaMock.payload,
-                        position: 'after'
-                    } as ActionPayload);
+                    const formOption = spectator.query(byText('Form'));
+                    expect(formOption).toBeNull();
                 });
+
                 it('should call addWidget on Widget option click', () => {
                     const addSpy = jest.spyOn(spectator.component.addWidget, 'emit');
                     spectator.click('[data-testId="add-bottom-button"]');
@@ -193,6 +215,33 @@ describe('EmaContentletToolsComponent', () => {
                         ...contentletAreaMock.payload,
                         position: 'after'
                     } as ActionPayload);
+                });
+
+                describe('isEnterprise', () => {
+                    beforeEach(
+                        () =>
+                            (spectator = createComponent({
+                                props: {
+                                    contentletArea: contentletAreaMock,
+                                    isEnterprise: true
+                                }
+                            }))
+                    );
+
+                    it('should render form option', () => {
+                        spectator.click('[data-testId="add-bottom-button"]');
+                        expect(spectator.query(byText('Form'))).toBeDefined();
+                    });
+
+                    it('should call addForm on Form option click', () => {
+                        const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
+                        spectator.click('[data-testId="add-bottom-button"]');
+                        spectator.click(byText('Form'));
+                        expect(addSpy).toHaveBeenCalledWith({
+                            ...contentletAreaMock.payload,
+                            position: 'after'
+                        } as ActionPayload);
+                    });
                 });
             });
         });

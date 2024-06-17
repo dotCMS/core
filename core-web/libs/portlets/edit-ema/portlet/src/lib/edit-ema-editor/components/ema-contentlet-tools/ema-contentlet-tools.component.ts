@@ -102,7 +102,7 @@ export class EmaContentletToolsComponent implements OnChanges {
         }
 
         // If the contentlet is enterprise, we need to add the form option
-        if (changes.isEnterprise.currentValue) {
+        if (changes.isEnterprise?.currentValue) {
             this.items.update((items) => [...items, ...this.enterpriseItems]);
         }
 

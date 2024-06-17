@@ -524,6 +524,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             }
         ]
     });
+
 describe('EditEmaEditorComponent', () => {
     describe('with queryParams and permission', () => {
         let spectator: SpectatorRouting<EditEmaEditorComponent>;
