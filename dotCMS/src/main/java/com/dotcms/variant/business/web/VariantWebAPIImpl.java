@@ -238,6 +238,7 @@ public class VariantWebAPIImpl implements VariantWebAPI{
 
         return Boolean.TRUE.equals(contentlet.isHTMLPage()) ||
                 forceFallbackByContentType(type) ||
+                isFileFallback(type) ||
                 isContentletFallback(type) ||
                 isWidgetFallback(type);
     }
@@ -245,6 +246,11 @@ public class VariantWebAPIImpl implements VariantWebAPI{
     private static boolean isWidgetFallback(ContentType type) {
         return type.baseType() == BaseContentType.WIDGET
                 && APILocator.getLanguageAPI().canDefaultWidgetToDefaultLanguage();
+    }
+
+    private static boolean isFileFallback(ContentType type) {
+        return type.baseType() == BaseContentType.FILEASSET
+                && APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage();
     }
 
     private static boolean isContentletFallback(ContentType type) {
