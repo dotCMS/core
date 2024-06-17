@@ -11,23 +11,25 @@ import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
  * @return {*}
  */
 export const DotCMSPageResolver = async (
-  route: ActivatedRouteSnapshot
+  route: ActivatedRouteSnapshot,
 ): Promise<{
   pageAsset: DotCMSPageAsset;
   nav: DotcmsNavigationItem;
 }> => {
   const client = inject(DOTCMS_CLIENT_TOKEN);
   const pageAsset = route.data['pageAsset'] as DotCMSPageAsset;
-  
+
   const { language_id } = route.queryParams;
-  
+
   const navProps = {
     path: '/',
     depth: 2,
     languageId: language_id,
   };
 
-  const navResponse = (await client.nav.get(navProps)) as { entity: DotcmsNavigationItem; };
+  const navResponse = (await client.nav.get(navProps)) as {
+    entity: DotcmsNavigationItem;
+  };
   const nav = navResponse?.entity;
 
   return { pageAsset, nav };
