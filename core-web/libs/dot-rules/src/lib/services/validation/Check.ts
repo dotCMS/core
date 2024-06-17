@@ -1,17 +1,19 @@
 import { Verify } from './Verify';
 
-let createCheckError = function (validation, value, message): Error {
-    let e = new Error('Check.' + validation + " failed: '" + message + "'.");
+const createCheckError = function (validation, value, message): Error {
+    const e = new Error('Check.' + validation + " failed: '" + message + "'.");
     e['validation'] = validation;
     e['validatedValue'] = value;
+
     return e;
 };
 
-export let Check = {
+export const Check = {
     exists(value, message = 'Value does not exist'): any {
         if (!Verify.exists(value)) {
             throw createCheckError('exists', value, message);
         }
+
         return value;
     },
 
@@ -19,6 +21,7 @@ export let Check = {
         if (!Verify.isString(value)) {
             throw createCheckError('isString', value, message);
         }
+
         return value;
     },
 
@@ -26,6 +29,7 @@ export let Check = {
         if (!Verify.minLength(value, 1)) {
             throw createCheckError('notEmpty', value, message);
         }
+
         return value;
     }
 };

@@ -1,6 +1,6 @@
 <div class="dialog__auto-complete-container field">
     <p-autoComplete
-        class="p-fluid"
+        (completeMethod)="filterClasses($event)"
         [(ngModel)]="selectedClasses"
         [unique]="true"
         [suggestions]="filteredSuggestions"
@@ -8,7 +8,7 @@
         [multiple]="true"
         [dropdown]="isJsonClasses$ | async"
         [autofocus]="true"
-        (completeMethod)="filterClasses($event)"
+        class="p-fluid"
         dotSelectItem
         data-testId="autocomplete"
         inputId="auto-complete-input"

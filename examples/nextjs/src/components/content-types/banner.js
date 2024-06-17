@@ -9,10 +9,11 @@ function Banner({ title, image, caption, buttonText, link }) {
         },
     } = useDotcmsPageContext();
 
+
     return (
         <div className="relative w-full p-4 bg-gray-200 h-96">
             <Image
-                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`}
+                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image?.idPath || image}?language_id=${language?.id || 1}`}
                 fill={true}
                 className="object-cover"
                 alt={title}

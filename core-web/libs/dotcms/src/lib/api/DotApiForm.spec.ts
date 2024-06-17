@@ -1,5 +1,6 @@
-import { DotApiForm } from './DotApiForm';
 import { DotCMSContentType } from 'dotcms-models';
+
+import { DotApiForm } from './DotApiForm';
 
 const EMPTY = {
     contentTypeId: null,

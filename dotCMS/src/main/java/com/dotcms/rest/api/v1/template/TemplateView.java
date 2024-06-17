@@ -57,6 +57,11 @@ public class TemplateView {
     private final Set<ContainerView> containers;
     private final ThemeView themeInfo;
 
+    private final String hostName;
+    private final String hostId;
+    private final String fullTitle;
+    private final String htmlTitle;
+
     private TemplateView(final Builder builder) {
         this.identifier = builder.identifier;
         this.inode = builder.inode;
@@ -94,6 +99,26 @@ public class TemplateView {
         this.layout = builder.layout;
         this.containers = builder.containers;
         this.themeInfo = builder.themeInfo;
+        this.hostName = builder.hostName;
+        this.hostId = builder.hostId;
+        this.fullTitle = builder.fullTitle;
+        this.htmlTitle = builder.htmlTitle;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public String getHostId() {
+        return hostId;
+    }
+
+    public String getFullTitle() {
+        return fullTitle;
+    }
+
+    public String getHtmlTitle() {
+        return htmlTitle;
     }
 
     public Map<String, ContainerView> getContainers() {
@@ -289,6 +314,31 @@ public class TemplateView {
         private  TemplateLayoutView layout;
         private  Set<ContainerView> containers;
         private ThemeView themeInfo;
+
+        private String hostName;
+        private String hostId;
+        private String fullTitle;
+        private String htmlTitle;
+
+        public Builder hostName(final String hostName) {
+            this.hostName = hostName;
+            return this;
+        }
+
+        public Builder hostId(final String hostId) {
+            this.hostId = hostId;
+            return this;
+        }
+
+        public Builder fullTitle(final String fullTitle) {
+            this.fullTitle = fullTitle;
+            return this;
+        }
+
+        public Builder htmlTitle(final String htmlTitle) {
+            this.htmlTitle = htmlTitle;
+            return this;
+        }
 
         public Builder containers (final Set<ContainerView> containers) {
 

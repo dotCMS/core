@@ -155,9 +155,9 @@ export class DotPageApiService {
      */
     getFormIndetifier(containerId: string, formId: string): Observable<string> {
         return this.http
-            .get<{ entity: { content: { idenfitier: string } } }>(
-                `/api/v1/containers/form/${formId}?containerId=${containerId}`
-            )
+            .get<{
+                entity: { content: { idenfitier: string } };
+            }>(`/api/v1/containers/form/${formId}?containerId=${containerId}`)
             .pipe(pluck('entity', 'content', 'identifier'));
     }
 

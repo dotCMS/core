@@ -1,5 +1,6 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
@@ -26,6 +27,7 @@ import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.HttpMethod;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,14 +40,6 @@ import java.util.Map;
  */
 public class CompletionsAPIImpl implements CompletionsAPI {
 
-    private static final String TEMPERATURE_KEY = "temperature";
-    private static final String CONTENT_KEY = "content";
-    private static final String MESSAGES_KEY = "messages";
-    private static final String MAX_TOKENS_KEY = "max_tokens";
-    private static final String MODEL_KEY = "model";
-    private static final String STREAM_KEY = "stream";
-    private static final String ROLE_KEY = "role";
-
     private final Lazy<AppConfig> config;
 
     final Lazy<AppConfig> defaultConfig =
@@ -57,9 +51,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     );
 
     public CompletionsAPIImpl(final Lazy<AppConfig> config) {
-        this.config = (config != null)
-                ? config
-                : defaultConfig;
+        this.config = (config != null) ? config : defaultConfig;
     }
 
     @Override
@@ -71,14 +63,14 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final OpenAIModel model = OpenAIModel.resolveModel(modelIn);
         final JSONObject json = new JSONObject();
 
-        json.put(TEMPERATURE_KEY, temperature);
+        json.put(AiKeys.TEMPERATURE, temperature);
         buildMessages(systemPrompt, userPrompt, json);
 
         if (maxTokens > 0) {
-            json.put(MAX_TOKENS_KEY, maxTokens);
+            json.put(AiKeys.MAX_TOKENS, maxTokens);
         }
 
-        json.put(MODEL_KEY, model.modelName);
+        json.put(AiKeys.MODEL, model.modelName);
 
         return raw(json);
     }
@@ -90,21 +82,21 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         // send all this as a json blob to OpenAI
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
-        if (json.optBoolean(STREAM_KEY, false)) {
+        if (json.optBoolean(AiKeys.STREAM, false)) {
             throw new DotRuntimeException("Please use the summarizeStream method to stream results");
         }
 
-        json.put(STREAM_KEY, false);
+        json.put(AiKeys.STREAM, false);
         final String openAiResponse =
                 Try.of(() -> OpenAIRequest.doRequest(
                         config.get().getApiUrl(),
-                        "post",
+                        HttpMethod.POST,
                         config.get().getApiKey(),
                         json))
                 .getOrElseThrow(DotRuntimeException::new);
         final JSONObject dotCMSResponse = EmbeddingsAPI.impl().reduceChunksToContent(searcher, localResults);
 
-        dotCMSResponse.put("openAiResponse", new JSONObject(openAiResponse));
+        dotCMSResponse.put(AiKeys.OPEN_AI_RESPONSE, new JSONObject(openAiResponse));
         return dotCMSResponse;
     }
 
@@ -114,8 +106,26 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final List<EmbeddingsDTO> localResults = EmbeddingsAPI.impl().getEmbeddingResults(searcher);
 
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
-        json.put(STREAM_KEY, true);
+        json.put(AiKeys.STREAM, true);
         OpenAIRequest.doPost(config.get().getApiUrl(), config.get().getApiKey(), json, out);
+    }
+
+    @Override
+    public JSONObject raw(final JSONObject jsonObject) {
+        if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+            Logger.info(this.getClass(), "OpenAI request:" + jsonObject.toString(2));
+        }
+
+        final String response = OpenAIRequest.doRequest(
+                config.get().getApiUrl(),
+                HttpMethod.POST,
+                config.get().getApiKey(),
+                jsonObject);
+        if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+            Logger.info(this.getClass(), "OpenAI response:" + response);
+        }
+
+        return new JSONObject(response);
     }
 
     @Override
@@ -125,33 +135,19 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     @Override
-    public JSONObject raw(final JSONObject jsonObject) {
-        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-            Logger.info(this.getClass(), "OpenAI request:" + jsonObject.toString(2));
-        }
-
-        final String response = OpenAIRequest.doRequest(config.get().getApiUrl(), "POST", config.get().getApiKey(), jsonObject);
-        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-            Logger.info(this.getClass(), "OpenAI response:" + response);
-        }
-
-        return new JSONObject(response);
-    }
-
-    @Override
     public void rawStream(final CompletionsForm promptForm, final OutputStream out) {
         final JSONObject jsonObject = buildRequestJson(promptForm);
-        jsonObject.put(STREAM_KEY, true);
-        OpenAIRequest.doRequest(config.get().getApiUrl(), "POST", config.get().getApiKey(), jsonObject, out);
+        jsonObject.put(AiKeys.STREAM, true);
+        OpenAIRequest.doRequest(config.get().getApiUrl(), HttpMethod.POST, config.get().getApiKey(), jsonObject, out);
     }
 
     private void buildMessages(final String systemPrompt, final String userPrompt, final JSONObject json) {
         final List<Map<String, Object>> messages = new ArrayList<>();
         if (UtilMethods.isSet(systemPrompt)) {
-            messages.add(Map.of(ROLE_KEY, "system", CONTENT_KEY, systemPrompt));
+            messages.add(Map.of(AiKeys.ROLE, AiKeys.SYSTEM, AiKeys.CONTENT, systemPrompt));
         }
-        messages.add(Map.of(ROLE_KEY, "user", CONTENT_KEY, userPrompt));
-        json.put(MESSAGES_KEY, messages);
+        messages.add(Map.of(AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, userPrompt));
+        json.put(AiKeys.MESSAGES, messages);
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form, final List<EmbeddingsDTO> searchResults) {
@@ -164,20 +160,21 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         String textPrompt = getTextPrompt(form.prompt, supportingContent.toString());
 
         final int systemPromptTokens = countTokens(systemPrompt);
-        textPrompt = reduceStringToTokenSize(textPrompt, model.maxTokens - form.responseLengthTokens - systemPromptTokens);
-
+        textPrompt = reduceStringToTokenSize(
+                textPrompt,
+                model.maxTokens - form.responseLengthTokens - systemPromptTokens);
 
         final JSONObject json = new JSONObject();
-        json.put(STREAM_KEY, form.stream);
-        json.put(TEMPERATURE_KEY, form.temperature);
+        json.put(AiKeys.STREAM, form.stream);
+        json.put(AiKeys.TEMPERATURE, form.temperature);
 
         buildMessages(systemPrompt, textPrompt, json);
 
         if (UtilMethods.isSet(form.model)) {
-            json.put(MODEL_KEY, model.modelName);
+            json.put(AiKeys.MODEL, model.modelName);
         }
 
-        json.put(MAX_TOKENS_KEY, form.responseLengthTokens);
+        json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
 
         return json;
     }
@@ -192,8 +189,8 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final HttpServletResponse responseProxy = new BaseResponse().response();
 
         final Context ctx = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
-        ctx.put("prompt", prompt);
-        ctx.put("supportingContent", supportingContent);
+        ctx.put(AiKeys.PROMPT, prompt);
+        ctx.put(AiKeys.SUPPORTING_CONTENT, supportingContent);
 
         return Try.of(() -> VelocityUtil.eval(resolvedPrompt, ctx)).getOrElseThrow(DotRuntimeException::new);
     }
@@ -251,17 +248,19 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final int promptTokens = countTokens(form.prompt);
 
         final JSONArray messages = new JSONArray();
-        final String textPrompt = reduceStringToTokenSize(form.prompt, maxTokenSize - form.responseLengthTokens - promptTokens);
+        final String textPrompt = reduceStringToTokenSize(
+                form.prompt,
+                maxTokenSize - form.responseLengthTokens - promptTokens);
 
-        messages.add(Map.of("role", "user", CONTENT_KEY, textPrompt));
+        messages.add(Map.of(AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, textPrompt));
 
         final JSONObject json = new JSONObject();
-        json.put(MESSAGES_KEY, messages);
-        json.putIfAbsent(MODEL_KEY, config.get().getConfig(AppKeys.MODEL));
+        json.put(AiKeys.MESSAGES, messages);
+        json.putIfAbsent(AiKeys.MODEL, config.get().getConfig(AppKeys.MODEL));
 
-        json.put(TEMPERATURE_KEY, form.temperature);
-        json.put(MAX_TOKENS_KEY, form.responseLengthTokens);
-        json.put(STREAM_KEY, form.stream);
+        json.put(AiKeys.TEMPERATURE, form.temperature);
+        json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
+        json.put(AiKeys.STREAM, form.stream);
 
         return json;
     }

@@ -1,3 +1,3 @@
-export * from "./utils";
+export * from './utils';
 // export * from '../test/utils';
-export * from "./checkProp";
+export * from './checkProp';

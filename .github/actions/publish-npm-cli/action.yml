@@ -30,6 +30,13 @@ inputs:
   reuse-previous-build:
     description: 'Indicates if the workflow should reuse the previous build'
     required: false
+outputs:
+  npm-package-version:
+    description: 'NPM package version'
+    value: ${{ steps.npm-version-tag.outputs.npm-package-version }}
+  npm-package-version-tag:
+    description: 'NPM package version tag'
+    value: ${{ steps.npm-version-tag.outputs.npm-package-version-tag }}
 
 runs:
   using: "composite"

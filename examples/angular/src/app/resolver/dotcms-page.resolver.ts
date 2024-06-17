@@ -1,4 +1,4 @@
-import { ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { DotCMSPageAsset, DotcmsNavigationItem } from '@dotcms/angular';
 import { inject } from '@angular/core';
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
@@ -17,39 +17,20 @@ export const DotCMSPageResolver = async (
   nav: DotcmsNavigationItem;
 }> => {
   const client = inject(DOTCMS_CLIENT_TOKEN);
+  const pageAsset = route.data['pageAsset'] as DotCMSPageAsset;
 
-  const url = route.url.map((segment) => segment.path).join('/');
-  const queryParams = route.queryParams;
-
-  const pageProps = {
-    path: url || 'index',
-    language_id: queryParams['language_id'],
-    mode: queryParams['mode'],
-    variantName: queryParams['variantName'],
-    'com.dotmarketing.persona.id':
-      queryParams['com.dotmarketing.persona.id'] || '',
-  };
+  const { language_id } = route.queryParams;
 
   const navProps = {
     path: '/',
     depth: 2,
-    languageId: queryParams['language_id'],
+    languageId: language_id,
   };
 
-  const pageRequest = client.page.get(pageProps) as Promise<{
-    entity: DotCMSPageAsset;
-  }>;
-  const navRequest = client.nav.get(navProps) as Promise<{
+  const navResponse = (await client.nav.get(navProps)) as {
     entity: DotcmsNavigationItem;
-  }>;
-
-  const [pageResponse, navResponse] = await Promise.all([
-    pageRequest,
-    navRequest,
-  ]);
-
-  const pageAsset = pageResponse.entity;
-  const nav = navResponse.entity;
+  };
+  const nav = navResponse?.entity;
 
   return { pageAsset, nav };
 };

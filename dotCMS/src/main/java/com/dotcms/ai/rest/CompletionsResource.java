@@ -1,5 +1,6 @@
 package com.dotcms.ai.rest;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
@@ -118,7 +119,7 @@ public class CompletionsResource {
 
 
         final Map<String, Object> map = new HashMap<>();
-        map.put("configHost", host.getHostname() + " (falls back to system host)");
+        map.put(AiKeys.CONFIG_HOST, host.getHostname() + " (falls back to system host)");
         for (final AppKeys config : AppKeys.values()) {
             map.put(config.key, app.getConfig(config));
         }
@@ -130,13 +131,13 @@ public class CompletionsResource {
                 .filter(m->m.completionModel)
                 .map(m-> m.modelName)
                 .collect(Collectors.toList());
-        map.put("availableModels", models);
+        map.put(AiKeys.AVAILABLE_MODELS, models);
 
         return Response.ok(map).build();
     }
 
     private static Response badRequestResponse() {
-        return Response.status(Response.Status.BAD_REQUEST).entity(Map.of("error", "query required")).build();
+        return Response.status(Response.Status.BAD_REQUEST).entity(Map.of(AiKeys.ERROR, "query required")).build();
     }
 
     private static CompletionsForm resolveForm(final HttpServletRequest request,
@@ -162,7 +163,7 @@ public class CompletionsResource {
 
         if (!form.stream) {
             final JSONObject jsonResponse = noStream.get();
-            jsonResponse.put("totalTime", System.currentTimeMillis() - startTime + "ms");
+            jsonResponse.put(AiKeys.TOTAL_TIME, System.currentTimeMillis() - startTime + "ms");
             return Response.ok(jsonResponse.toString(), MediaType.APPLICATION_JSON).build();
         }
 

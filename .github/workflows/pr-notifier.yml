@@ -34,6 +34,7 @@ jobs:
     steps:
       - name: Resolve User
         id: resolve-user
+        continue-on-error: true
         shell: bash
         env:
           DEFAULT_CHANNEL: eng
@@ -46,6 +47,7 @@ jobs:
 
       - name: Resolve Channel
         id: resolve-channel
+        continue-on-error: true
         shell: bash
         env:
           DEFAULT_CHANNEL_ID: C028Z3R2D # eng channel id
@@ -111,6 +113,7 @@ jobs:
 
       - name: Resolve Message
         id: resolve-message
+        continue-on-error: true
         shell: bash
         run: |
             pr_status=${{ inputs.pr_status }}
@@ -140,6 +143,7 @@ jobs:
             echo "message=${message}"
 
       - name: Notify PR Status
+        continue-on-error: true
         shell: bash
         run: |
           channel=${{ steps.resolve-channel.outputs.channel_id }}

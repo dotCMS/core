@@ -3,14 +3,14 @@
         class="message__principal-wrapper flex align-items-center flex-column gap-2"
         data-Testid="message-principal">
         <i
-            class="message__icon pi"
             *ngIf="configuration?.icon"
             [ngClass]="[configuration.icon]"
+            class="message__icon pi"
             data-Testid="message-icon"></i>
         <h1 class="message__title" data-Testid="message-title">{{ configuration?.title }}</h1>
         <h2
-            class="message__subtitle"
             *ngIf="configuration?.subtitle"
+            class="message__subtitle"
             data-Testid="message-subtitle">
             {{ configuration?.subtitle }}
         </h2>
@@ -22,9 +22,9 @@
             data-Testid="message-extra">
             <button
                 *ngIf="buttonLabel"
+                (click)="buttonAction.emit()"
                 [label]="buttonLabel"
                 [class.p-button-outlined]="secondaryButton"
-                (click)="buttonAction.emit()"
                 pButton
                 data-Testid="message-button"></button>
             <ng-container *ngIf="!hideContactUsLink">

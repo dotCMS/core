@@ -1,4 +1,5 @@
 import { Observable, Subject } from 'rxjs';
+
 import { LoggerService } from '../logger.service';
 
 export abstract class Protocol {

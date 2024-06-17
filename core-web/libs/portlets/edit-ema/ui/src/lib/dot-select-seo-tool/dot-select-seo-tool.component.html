@@ -1,8 +1,8 @@
 <ng-container *ngIf="socialMedia; else deviceBlock">
     <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
         <i
-            class="dot-select-seo-tool__icon"
             [ngClass]="socialMediaIconClass"
+            class="dot-select-seo-tool__icon"
             data-testId="select-seo-tool-icon"></i>
         <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
             {{ socialMediaTiles[socialMedia]?.label }}
@@ -15,8 +15,8 @@
 <ng-template #deviceBlock>
     <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
         <i
-            class="dot-select-seo-tool__icon"
             [ngClass]="device?.icon"
+            class="dot-select-seo-tool__icon"
             data-testId="select-seo-tool-icon"></i>
         <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
             {{ device?.name }}

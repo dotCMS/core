@@ -29,9 +29,9 @@ import { RowComponent } from '../row/row.component';
     selector: 'dotcms-layout',
     standalone: true,
     imports: [RowComponent],
-    template: `@for(row of pageAsset.layout.body.rows; track $index) {
+    template: `@for (row of pageAsset.layout.body.rows; track $index) {
         <dotcms-row [row]="row" />
-        }`,
+    }`,
     styleUrl: './dotcms-layout.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

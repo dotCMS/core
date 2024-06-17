@@ -179,7 +179,7 @@
         <docker.container.name.pattern>${docker.run.context}_%a</docker.container.name.pattern>
         <license.user.path>${user.home}/.dotcms/license/license.dat</license.user.path>
         <license.use>false</license.use>
-        <dotcms.startup.timeout>120000</dotcms.startup.timeout>
+        <dotcms.startup.timeout>150000</dotcms.startup.timeout>
         <docker.license.volume.internal>/data/local/dotsecure/license/license.dat</docker.license.volume.internal>
         <docker.starter.volume.internal>/data/starter</docker.starter.volume.internal>
         <docker.db.volume>${docker.run.context}_db</docker.db.volume>
@@ -1526,7 +1526,6 @@
                             </excludes>
                         </configuration>
                         <executions>
-
                             <execution>
                                 <id>prepare-agent</id>
                                 <goals>

@@ -1,12 +1,11 @@
 <ng-container *ngFor="let message of messages">
     <dot-dialog
+        (hide)="close(message)"
         [visible]="!!message.title"
         [header]="message.title"
         [width]="message.width || '500px'"
-        [height]="message.height || '400px'"
-        (hide)="close(message)"
-    >
-        <div class="dialog-message__body" *ngIf="message.body"></div>
+        [height]="message.height || '400px'">
+        <div *ngIf="message.body" class="dialog-message__body"></div>
 
         <div *ngIf="message.code">
             <pre class="dialog-message__code">
