@@ -10,7 +10,8 @@ import {
     Output,
     SimpleChanges,
     ViewChild,
-    inject
+    inject,
+    signal
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -41,12 +42,12 @@ export class EmaContentletToolsComponent implements OnChanges {
     @ViewChild('menu') menu: Menu;
     @ViewChild('menuVTL') menuVTL: Menu;
     @ViewChild('dragImage') dragImage: ElementRef;
-    private dotMessageService = inject(DotMessageService);
 
-    private buttonPosition: 'after' | 'before' = 'after';
+    @HostBinding('class.hide') @Input() hide = false;
 
     @Input() contentletArea: ContentletArea;
-    @HostBinding('class.hide') @Input() hide = false;
+    @Input() isEnterprise: boolean;
+
     @Output() addContent = new EventEmitter<ActionPayload>();
     @Output() addForm = new EventEmitter<ActionPayload>();
     @Output() addWidget = new EventEmitter<ActionPayload>();
@@ -54,7 +55,9 @@ export class EmaContentletToolsComponent implements OnChanges {
     @Output() editVTL = new EventEmitter<VTLFile>();
     @Output() delete = new EventEmitter<ActionPayload>();
 
-    items: MenuItem[] = [
+    private dotMessageService = inject(DotMessageService);
+    private buttonPosition: 'after' | 'before' = 'after';
+    private readonly comunityItems: MenuItem[] = [
         {
             label: this.dotMessageService.get('content'),
             command: () => {
@@ -72,7 +75,10 @@ export class EmaContentletToolsComponent implements OnChanges {
                     position: this.buttonPosition
                 });
             }
-        },
+        }
+    ];
+
+    private readonly enterpriseItems: MenuItem[] = [
         {
             label: this.dotMessageService.get('form'),
             command: () => {
@@ -84,8 +90,8 @@ export class EmaContentletToolsComponent implements OnChanges {
         }
     ];
 
+    readonly items = signal<MenuItem[]>(this.comunityItems);
     vtlFiles: MenuItem[] = [];
-
     ACTIONS_CONTAINER_WIDTH = INITIAL_ACTIONS_CONTAINER_WIDTH; // Now is dynamic based on the page type (Headless - VTL)
 
     protected styles: Record<string, { [klass: string]: unknown }> = {};
@@ -93,6 +99,11 @@ export class EmaContentletToolsComponent implements OnChanges {
     ngOnChanges(changes: SimpleChanges): void {
         if (!changes.contentletArea) {
             return;
+        }
+
+        // If the contentlet is enterprise, we need to add the form option
+        if (changes.isEnterprise.currentValue) {
+            this.items.update((items) => [...items, ...this.enterpriseItems]);
         }
 
         this.hideMenus(); // We need to hide the menu if the contentlet changes
