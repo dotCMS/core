@@ -19,3 +19,4 @@ This maintenance release includes the following code fixes:
 13. https://github.com/dotCMS/core/issues/28695 : UT210901 UpdateDateTimezones has wrong DST query #28695
 14. https://github.com/dotCMS/core/issues/28760 : Template Evaluation for Non-Default Language Pages #28760
 15. https://github.com/dotCMS/core/issues/28769 : Language Fallback not working. #28769
+16. https://github.com/dotCMS/core/issues/28785 : APIs return incorrect information for pages with fields using the variable name "description" #28785
