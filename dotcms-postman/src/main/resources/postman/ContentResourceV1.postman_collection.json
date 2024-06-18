@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "da5582a8-f046-4c8e-ab40-bb8e06c57e5e",
+		"_postman_id": "ddc34e79-b221-402b-81ef-15ef00a2bd07",
 		"name": "ContentResourceV1",
 		"description": "This folder contains a comprehensive set of API requests related to the `ContentResourceV1` API endpoints. These requests cover various operations such as creating, retrieving and updating content. The folder is organized to help developers and testers efficiently validate and interact with the content resource endpoints in the system.\n\n#### Objectives:\n\n1. **Create Content**:\n    \n    - Test the creation of new content items with valid and invalid data.\n        \n    - Ensure that the response includes all necessary details for the created content.\n        \n2. **Retrieve Content**:\n    \n    - Validate the retrieval of content items by ID.\n        \n    - Ensure the response contains accurate and complete content details.\n        \n3. **Update Content**:\n    \n    - Test updating existing content items with valid and invalid data.\n        \n    - Verify that the response reflects the updated content accurately.\n        \n    - Ensure that only authorized users can update content.\n        \n4. **Error Handling**:\n    \n    - Verify that the API returns appropriate error messages for invalid requests.\n        \n    - Ensure the correct HTTP status codes are used for different error scenarios.\n        \n5. **Security**:\n    \n    - Validate that only authorized users can perform operations on the content.\n        \n    - Ensure that all security protocols are enforced during API interactions.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "3028555"
+		"_exporter_id": "10041132",
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/dot~b1c5dc44-8278-4b11-92c8-b3cd3fb935d3/collection/10041132-ddc34e79-b221-402b-81ef-15ef00a2bd07?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
@@ -307,7 +308,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Response message\", function () {",
-											"    pm.expect(pm.response.json().message).to.include('The contentlet wrongID does not exists');",
+											"    pm.expect(pm.response.json().message).to.include('The contentlet wrongID and language 1 does not exists');",
 											"});"
 										],
 										"type": "text/javascript",
@@ -747,7 +748,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Body matches string\", function () {",
-											"    pm.expect(pm.response.text()).to.include(\"The contentlet 6faf3063-5478-4e0a-a44b-dba540ec79 does not exists\");",
+											"    pm.expect(pm.response.text()).to.include(\"The contentlet 6faf3063-5478-4e0a-a44b-dba540ec79 and language 1 does not exists\");",
 											"});",
 											""
 										],
@@ -789,7 +790,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Body matches string\", function () {",
-											"    pm.expect(pm.response.text()).to.contains(\"The contentlet 21b19188-bd85-4baa-bba2-5b54cd1cb3ea does not exists\");",
+											"    pm.expect(pm.response.text()).to.contains(\"The contentlet 21b19188-bd85-4baa-bba2-5b54cd1cb3ea and language 1 does not exists\");",
 											"});",
 											""
 										],

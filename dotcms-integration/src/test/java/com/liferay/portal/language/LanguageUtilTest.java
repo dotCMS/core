@@ -66,7 +66,7 @@ public class LanguageUtilTest {
     @Test
     public void getLanguageId_valid_default_long_expected_same_lang_id_Test() {
 
-        testGetLanguageId("1", -1L);
+        testGetLanguageId("-1", -1L);
     }
 
     /**
