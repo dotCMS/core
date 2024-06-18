@@ -11,14 +11,33 @@ import type { HostFolderFiledState } from './../host-folder-field.store';
 
 const PEER_PAGE_LIMIT = 7000;
 
+type Props = {
+    path: string | null;
+    isRequired: boolean;
+};
+
+export const SYSTEM_HOST_NAME = 'System Host';
+
 export const loadSites = (store, dotEditContentService: DotEditContentService) => {
-    return rxMethod<string | null>(
+    return rxMethod<Props>(
         pipe(
             tap(() => patchState(store, { status: 'LOADING' })),
-            switchMap((path) => {
+            switchMap(({ path, isRequired }) => {
                 return dotEditContentService
                     .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
                     .pipe(
+                        map((sites) => {
+                            if (isRequired) {
+                                const index = sites.findIndex(
+                                    (item) => item.label === SYSTEM_HOST_NAME
+                                );
+                                if (index !== -1) {
+                                    sites.splice(index, 1);
+                                }
+                            }
+
+                            return sites;
+                        }),
                         tapResponse({
                             next: (sites) => patchState(store, { tree: sites }),
                             error: () => patchState(store, { status: 'FAILED', error: '' }),
