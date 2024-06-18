@@ -384,6 +384,7 @@ public class TaskLocatorUtil {
 	 */
 	public static List<Class<?>> getBackportedUpgradeTaskClasses() {
 		final List<Class<?>> ret = new ArrayList<>();
+		ret.add(Task240513UpdateContentTypesSystemField.class);
 		ret.add(Task240530AddDotAIPortletToLayout.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}

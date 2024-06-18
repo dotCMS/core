@@ -285,6 +285,7 @@ import org.junit.runners.Suite.SuiteClasses;
         AnnouncementsHelperIntegrationTest.class,
         RemoteAnnouncementsLoaderIntegrationTest.class,
         Task240112AddMetadataColumnToStructureTableTest.class,
+        Task240513UpdateContentTypesSystemFieldTest.class,
         Task240530AddDotAIPortletToLayoutTest.class
 })
 

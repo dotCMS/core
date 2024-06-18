@@ -11,3 +11,4 @@ This maintenance release includes the following code fixes:
 5. https://github.com/dotCMS/core/issues/28360 : Move Async Email Actionlet to Core #28360
 6. https://github.com/dotCMS/core/issues/28089 : Pound char not decoded when using Rules or Vanity URLs #28089
 7. https://github.com/dotCMS/core/issues/28121 : Include AI portlet by default #28121
+8. https://github.com/dotCMS/core/issues/28284 : Content Types not Showing if System is true #28284
