@@ -43,7 +43,7 @@ public class SamlWebUtils {
 
 
     public static final String BY_PASS_KEY   = "native";
-    public static final Lazy<String> BY_PASS_VALUE = Lazy.of(()->Config.getStringProperty("SAML_BY_PASS_VALUE","true"));
+    public static final Lazy<String> BY_PASS_VALUE = Lazy.of(()->Config.getStringProperty("SAML_BYPASS_VALUE","true"));
     public static final String AUTH_RELAYSTATE_KEY = "auth.relaystate";
 
     protected     final UserWebAPI userWebAPI;
