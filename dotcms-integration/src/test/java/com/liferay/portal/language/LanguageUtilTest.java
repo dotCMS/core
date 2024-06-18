@@ -39,41 +39,60 @@ public class LanguageUtilTest {
         Assert.assertEquals(-1, languageId);
     }
 
+    /*
+     * Given Scenario: An empty string is passed to the getLanguageId method.
+     * Expected Result: The method should return negative 1.
+     */
     @Test
     public void getLanguageId_empty_expected_negative_lang_Test() throws DotSecurityException, DotDataException, SystemException {
 
-        final long languageId = LanguageUtil.getLanguageId("");
-        Assert.assertEquals(-1, languageId);
+        testGetLanguageId("", -1);
     }
 
+    /**
+     * Given Scenario: A random string is passed to the getLanguageId method.
+     * Expected Result: The method should return negative 1
+     */
     @Test
-    public void getLanguageId_weirdlang_expected_negative_lang_Test() {
+    public void getLanguageId_Random_Chars_Expected_negative_lang_Test() {
 
-        final long languageId = LanguageUtil.getLanguageId("owdaldlksdllakd");
-        Assert.assertEquals(-1, languageId);
-    }
-
-    @Test
-    public void getLanguageId_valid_default_long_expected_same_lang_id_Test() throws DotSecurityException, DotDataException, SystemException {
-
-        final long languageId = LanguageUtil.getLanguageId("-1");
-        Assert.assertEquals(-1L, languageId);
+        testGetLanguageId("owdaldlksdllakd", -1);
     }
 
     /**
      * Given Scenario: A numeric value of a non-existing languages is passed to the getLanguageId method.
-     * Expected Result: The method should return the 404 language.
-     * @throws DotSecurityException
-     * @throws DotDataException
-     * @throws SystemException
+     * Expected Result: The method should return negative 1
      */
     @Test
-    public void getLanguageId_valid_long_expected_same_lang_id_Test() throws DotSecurityException, DotDataException, SystemException {
+    public void getLanguageId_valid_default_long_expected_same_lang_id_Test() {
 
-        final long languageId = LanguageUtil.getLanguageId("99999999999");
-        Assert.assertEquals(99999999999L, languageId);
+        testGetLanguageId("1", -1L);
     }
 
+    /**
+     * Given Scenario: A numeric value of a non-existing languages is passed to the getLanguageId method.
+     * Expected Result: The method should return negative 1
+     */
+    @Test
+    public void getLanguageId_valid_long_expected_same_lang_id_Test()  {
+
+        testGetLanguageId("99999999999", 99999999999L);
+    }
+
+    /**
+     * Test Utility method to test the getLanguageId method.
+     * @param languageId passed to the getLanguageId method.
+     * @param expectedId expected result.
+     */
+    private void testGetLanguageId(final String languageId, final long expectedId) {
+        final long languageIdResult = LanguageUtil.getLanguageId(languageId);
+        Assert.assertEquals(expectedId, languageIdResult);
+    }
+
+    /**
+     * Given Scenario: A language code is passed to the getLanguageId method.
+     * Expected Result: We make sure that the language is in the cache.
+     */
      @Test
      public void Test_Lookup_UsingLang_Code_Makes_It_Into_Cache(){
 

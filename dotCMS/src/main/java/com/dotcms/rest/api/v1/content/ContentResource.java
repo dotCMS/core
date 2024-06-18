@@ -285,10 +285,10 @@ public class ContentResource {
         Logger.debug(this, () -> "Finding the contentlet: " + inodeOrIdentifier);
 
         final LanguageWebAPI languageWebAPI = WebAPILocator.getLanguageWebAPI();
-        final Supplier<Long> sessionLanguageSupplier = ()-> languageWebAPI.getLanguage(request).getId();
+        final LongSupplier sessionLanguageSupplier = ()-> languageWebAPI.getLanguage(request).getId();
         final PageMode mode   = PageMode.get(request);
         final long testLangId = LanguageUtil.getLanguageId(language);
-        final long languageId = testLangId <=0 ? sessionLanguageSupplier.get() : testLangId;
+        final long languageId = testLangId <=0 ? sessionLanguageSupplier.getAsLong() : testLangId;
 
         Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
 
