@@ -185,4 +185,27 @@ export class DotEditContentService {
             })
         );
     }
+
+    /**
+     *
+     *
+     * @return {*}  {Observable<TreeNodeItem>}
+     * @memberof DotEditContentService
+     */
+    getCurrentSite(): Observable<TreeNodeItem> {
+        return this.#siteService.getCurrentSite().pipe(
+            map((site) => ({
+                key: site.hostname,
+                label: `${site.hostname}`,
+                data: {
+                    hostname: site.hostname,
+                    path: '',
+                    type: 'site'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder',
+                leaf: false
+            }))
+        );
+    }
 }
