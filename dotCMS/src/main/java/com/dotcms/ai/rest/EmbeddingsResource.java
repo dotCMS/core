@@ -1,16 +1,16 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.api.BulkEmbeddingsRunner;
 import com.dotcms.ai.api.EmbeddingsAPI;
+import com.dotcms.ai.api.EmbeddingsCallStrategy;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.rest.forms.EmbeddingsForm;
-import com.dotcms.ai.util.OpenAIThreadPool;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -36,6 +36,12 @@ import java.util.stream.Collectors;
  */
 @Path("/v1/ai/embeddings")
 public class EmbeddingsResource {
+
+    private final ContentletAPI contentletAPI;
+
+    public EmbeddingsResource() {
+        this.contentletAPI = APILocator.getContentletAPI();
+    }
 
     /**
      * Test endpoint for the EmbeddingsResource.
@@ -83,8 +89,7 @@ public class EmbeddingsResource {
             int newOffset = embeddingsForm.offset;
             for (int i = 0; i < 10000; i++) {
                 // searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)
-                final List<ContentletSearch> searchResults = APILocator
-                        .getContentletAPI()
+                final List<ContentletSearch> searchResults = contentletAPI
                         .searchIndex(
                                 embeddingsForm.query + " +live:true",
                                 embeddingsForm.limit,
@@ -100,15 +105,17 @@ public class EmbeddingsResource {
                 final List<String> inodes = searchResults
                         .stream()
                         .map(ContentletSearch::getInode)
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toUnmodifiableList());
                 added += inodes.size();
-                OpenAIThreadPool.submit(new BulkEmbeddingsRunner(inodes,embeddingsForm));
+
+                EmbeddingsCallStrategy.resolveStrategy().bulkEmbed(inodes, embeddingsForm);
             }
 
             final long totalTime = System.currentTimeMillis() - startTime;
             final Map<String, Object> map = Map.of(
                     AiKeys.TIME_TO_EMBEDDINGS, totalTime + "ms",
-                    AiKeys.TOTAL_TO_EMBED, added, AiKeys.INDEX_NAME, embeddingsForm.indexName);
+                    AiKeys.TOTAL_TO_EMBED, added,
+                    AiKeys.INDEX_NAME, embeddingsForm.indexName);
             final ResponseBuilder builder = Response.ok(map, MediaType.APPLICATION_JSON);
 
             return builder.build();
@@ -124,7 +131,7 @@ public class EmbeddingsResource {
      * @param request the HttpServletRequest object.
      * @param response the HttpServletResponse object.
      * @param json the JSON object containing the data for the embeddings to be deleted.
-     * @return a Response object containing the result of the embeddings deletion.
+     * @return a Response object containing the result of the embeddings' deletion.
      */
     @DELETE
     @JSONP
@@ -138,8 +145,10 @@ public class EmbeddingsResource {
 
         if (UtilMethods.isSet(() -> json.optString(AiKeys.DELETE_QUERY))){
             final int numberDeleted =
-                    EmbeddingsAPI.impl().deleteByQuery(json.optString(AiKeys.DELETE_QUERY),
-                            Optional.ofNullable(json.optString(AiKeys.INDEX_NAME)), user);
+                    EmbeddingsAPI.impl().deleteByQuery(
+                            json.optString(AiKeys.DELETE_QUERY),
+                            Optional.ofNullable(json.optString(AiKeys.INDEX_NAME)),
+                            user);
             return Response.ok(Map.of(AiKeys.DELETED, numberDeleted)).build();
         }
 
@@ -152,6 +161,7 @@ public class EmbeddingsResource {
                 .withHost(json.optString(AiKeys.SITE))
                 .build();
         int deleted = EmbeddingsAPI.impl().deleteEmbedding(dto);
+
         return Response.ok(Map.of(AiKeys.DELETED, deleted)).build();
     }
 

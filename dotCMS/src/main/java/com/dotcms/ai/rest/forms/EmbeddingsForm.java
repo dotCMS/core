@@ -38,6 +38,7 @@ public class EmbeddingsForm {
     public List<String> fieldsAsList(){
         return Arrays.asList(fields);
     }
+
     private EmbeddingsForm(Builder builder) {
         this.query = validateBuilderQuery(builder.query);
         this.limit = builder.limit;
