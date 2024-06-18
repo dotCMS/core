@@ -14,6 +14,7 @@ import {
     dotcmsContentletMock
 } from '@dotcms/utils-testing';
 
+import { EDITOR_MODE, EDITOR_STATE } from './enums';
 import { ActionPayload } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
@@ -381,4 +382,42 @@ export const URL_CONTENT_MAP_MOCK = {
     identifier: '123',
     inode: '1234',
     title: 'hello world'
+};
+
+export const SHOW_CONTENTLET_TOOLS_PATCH_MOCK = {
+    editorState: EDITOR_STATE.IDLE,
+    editorData: {
+        mode: EDITOR_MODE.EDIT,
+        canEditVariant: true,
+        device: null,
+        page: {
+            lockedByUser: '',
+            canLock: true,
+            isLocked: false
+        }
+    },
+    contentletArea: {
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        payload: {
+            language_id: '',
+            pageContainers: [],
+            pageId: '',
+            container: {
+                acceptTypes: '',
+                identifier: '',
+                maxContentlets: 0,
+                variantId: '',
+                uuid: ''
+            },
+            contentlet: {
+                identifier: '123',
+                inode: '',
+                title: '',
+                contentType: ''
+            }
+        }
+    }
 };
