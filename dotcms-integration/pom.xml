@@ -357,10 +357,6 @@
                             <reuseForks>true</reuseForks>
                             <rerunFailingTestsCount>3</rerunFailingTestsCount>
                             <!--<skipAfterFailureCount>2</skipAfterFailureCount>-->
-                            <environmentVariables>
-                                <SOME_APP_ENV_VAR>overriddenValue</SOME_APP_ENV_VAR>
-                                <DOT_APP_TEST_APP_PARAM_TEST_PARAM>overriddenValue</DOT_APP_TEST_APP_PARAM_TEST_PARAM>
-                            </environmentVariables>
                             <systemPropertyVariables>
                                 <!-- Following is a hack to make Intellij pick up the fork number in systemProperites
                                     for tests correctly
@@ -415,6 +411,7 @@
                                 <DOT_VELOCITY_ROOT>${test.webapp.root}/WEB-INF/velocity</DOT_VELOCITY_ROOT>
                                 <DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>${test.webapp.root}/WEB-INF/geoip2/GeoLite2-City.mmdb</DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>
                                 <DOT_DARTSASS_COMPILER_LOCATION>${test.webapp.root}/WEB-INF/bin</DOT_DARTSASS_COMPILER_LOCATION>
+                                <DOT_OPEN_AI_EMBEDDINGS_URL>http://localhost:50505/e</DOT_OPEN_AI_EMBEDDINGS_URL>
                                 <!--suppress UnresolvedMavenProperty -->
                                 <java.io.tmpdir>${it.test.fork-folder}${surefire.forkNumber}/${test.temp.folder}</java.io.tmpdir>
                                 <!--suppress UnresolvedMavenProperty -->

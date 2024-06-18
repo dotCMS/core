@@ -12,7 +12,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { TreeSelectModule, TreeSelect } from 'primeng/treeselect';
 
-import { files } from './../data/Tree.stories';
+import { files } from '../../utils/tree-node-files';
 
 type ExtraArgs = {
     invalid: boolean;

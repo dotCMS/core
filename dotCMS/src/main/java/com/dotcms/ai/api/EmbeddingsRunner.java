@@ -4,6 +4,7 @@ import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.util.EncodingUtil;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -38,6 +39,7 @@ class EmbeddingsRunner implements Runnable {
     }
 
     @Override
+    @WrapInTransaction
     public void run() {
         try {
             if (embeddingsAPI.config.getConfigBoolean(AppKeys.EMBEDDINGS_DB_DELETE_OLD_ON_UPDATE)) {
@@ -66,18 +68,17 @@ class EmbeddingsRunner implements Runnable {
                 totalTokens += tokenCount;
 
                 if (totalTokens < splitAtTokens) {
-                    buffer.append(sentence).append(" ");
+                    buffer.append(sentence.trim()).append(" ");
                 } else {
-                    saveEmbedding(buffer.toString(), contentlet, indexName);
+                    save(buffer);
                     buffer.setLength(0);
-                    buffer.append(sentence).append(" ");
+                    buffer.append(sentence.trim()).append(" ");
                     totalTokens = tokenCount;
                 }
-
             }
 
             if (buffer.toString().split("\\s+").length > 0) {
-                saveEmbedding(buffer.toString(), contentlet, indexName);
+                save(buffer);
             }
         } catch (Exception e) {
             if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
@@ -86,6 +87,10 @@ class EmbeddingsRunner implements Runnable {
                 Logger.warnAndDebug(this.getClass(), "unable to embed content:" + contentlet.getIdentifier() + " error:" + e.getMessage(), e);
             }
         }
+    }
+
+    private void save(StringBuilder buffer) {
+        saveEmbedding(buffer.toString().trim(), contentlet, indexName);
     }
 
     private void saveEmbedding(@NotNull final String content,
