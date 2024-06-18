@@ -9,3 +9,4 @@ This maintenance release includes the following code fixes:
 3. https://github.com/dotCMS/core/issues/28230 : spike(performance): test short lived permission cache #28230
 4. https://github.com/dotCMS/core/issues/28173 : System objects should not be push published #28173
 5. https://github.com/dotCMS/core/issues/28360 : Move Async Email Actionlet to Core #28360
+6. https://github.com/dotCMS/core/issues/28089 : Pound char not decoded when using Rules or Vanity URLs #28089
