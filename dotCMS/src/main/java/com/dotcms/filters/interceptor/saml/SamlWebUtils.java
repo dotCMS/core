@@ -11,6 +11,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import io.vavr.Lazy;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,7 +43,7 @@ public class SamlWebUtils {
 
 
     public static final String BY_PASS_KEY   = "native";
-    public static final String BY_PASS_VALUE = Config.getStringProperty("SAML_BY_PASS_VALUE","true");
+    public static final Lazy<String> BY_PASS_VALUE = Lazy.of(()->Config.getStringProperty("SAML_BY_PASS_VALUE","true"));
     public static final String AUTH_RELAYSTATE_KEY = "auth.relaystate";
 
     protected     final UserWebAPI userWebAPI;
@@ -85,7 +86,7 @@ public class SamlWebUtils {
             }
         }
 
-        return BY_PASS_VALUE.equalsIgnoreCase(byPass);
+        return BY_PASS_VALUE.get().equalsIgnoreCase(byPass);
     }
 
     /**
