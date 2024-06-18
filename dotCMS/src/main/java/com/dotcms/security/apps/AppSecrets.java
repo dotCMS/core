@@ -48,7 +48,7 @@ public class AppSecrets implements Serializable {
             return false;
         }
         final AppSecrets that = (AppSecrets) object;
-        return key.equals(that.key) && this.secrets.equals(that.secrets); //areEqual(this.secrets, that.secrets);
+        return key.equals(that.key) && this.secrets.equals(that.secrets);
     }
 
     public static Builder builder(){
@@ -62,7 +62,7 @@ public class AppSecrets implements Serializable {
 
     public static class Builder {
 
-        private final Map<String,Secret> secretMap = new HashMap<>();
+        private final Map<String, Secret> secretMap = new HashMap<>();
         private String key;
 
         public AppSecrets build(){
@@ -105,6 +105,11 @@ public class AppSecrets implements Serializable {
 
         public Builder withSecret(final String name, final boolean value) {
             return withSecret(name, String.valueOf(value));
+        }
+
+        public Builder withSecrets(final Map<String, Secret> secrets) {
+            secretMap.putAll(secrets);
+            return this;
         }
 
     }
