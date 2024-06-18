@@ -174,7 +174,7 @@ public class VariantWebAPIImpl implements VariantWebAPI{
     @Override
     public ContentletVersionInfo getContentletVersionInfoByFallback(final long tryingLang, final String identifier,
             final PageMode pageMode, final User user) {
-        return getContentletVersionInfoByFallback(tryingLang, identifier, pageMode, user, true);
+        return getContentletVersionInfoByFallback(tryingLang, identifier, pageMode, user, false);
     }
 
     public ContentletVersionInfo getContentletVersionInfoByFallback(final long tryingLang, final String identifier,
