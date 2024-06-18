@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "79dc7a80-4564-43c5-8b9a-f46caecd5985",
+		"_postman_id": "e48ada2d-189e-48a7-87a2-c97346e5ce83",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "3028555"
 	},
 	"item": [
 		{
@@ -15556,7 +15556,8 @@
 								"fire",
 								"PUBLISH"
 							]
-						}
+						},
+						"description": "This endpoint allows you to trigger the PUBLISH action for a default workflow. The HTTP PUT request should be made to {{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH.\n\n### Request Body\n\nThe request should include a JSON payload with the following structure:\n\n``` json\n{\n    \"contentlet\": {\n        \"hostFolder\": \"\",\n        \"title\": \"\",\n        \"fileName\": \"\",\n        \"fileAsset\": {\n            \"fileName\": \"\",\n            \"content\": \"\"\n        },\n        \"contentType\": \"\"\n    }\n}\n\n ```\n\n### Response\n\nUpon successful execution, the endpoint returns a 200 status with a JSON response containing the entity details, errors, i18n messages map, messages, pagination, and permissions.\n\nThe \"entity\" object provides information about the content, including metadata, file details, status, and ownership.\n\nAny errors encountered during the execution will be listed in the \"errors\" array.\n\nThe \"i18nMessagesMap\" and \"messages\" fields may contain internationalization messages and general messages, respectively.\n\nThe \"pagination\" field, if present, provides pagination details.\n\nThe \"permissions\" array includes information about the permissions associated with the content.\n\n### **Validations**\n\n- Validate the 200 response code\n    \n- Validating we are returnign the proper metadata in the response"
 					},
 					"response": []
 				}
