@@ -19,6 +19,8 @@ import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -275,12 +277,13 @@ public class ContentResource {
 
         Logger.debug(this, () -> "Finding the contentlet: " + inodeOrIdentifier);
 
+        final LanguageWebAPI languageWebAPI = WebAPILocator.getLanguageWebAPI();
+        final Supplier<Long> sessionLanguageSupplier = ()-> languageWebAPI.getLanguage(request).getId();
         final PageMode mode   = PageMode.get(request);
         final long testLangId = LanguageUtil.getLanguageId(language);
-        final long languageId = testLangId <=0 ? WebAPILocator.getLanguageWebAPI().getLanguage(request).getId() : testLangId;
+        final long languageId = testLangId <=0 ? sessionLanguageSupplier.get() : testLangId;
 
-        Contentlet contentlet    = this.resolveContentlet(inodeOrIdentifier, mode, languageId, user);
-
+        Contentlet contentlet = this.resolveContentlet(inodeOrIdentifier, mode, languageId, user);
 
         if (-1 != depth) {
             ContentUtils.addRelationships(contentlet, user, mode,
@@ -354,7 +357,6 @@ public class ContentResource {
      */
     private Contentlet resolveContentlet (final String inodeOrIdentifier, PageMode mode, long languageId, User user) {
 
-
         final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
 
         if (shortyId.isEmpty()) {
@@ -363,19 +365,26 @@ public class ContentResource {
 
         String testInode = inodeOrIdentifier;
 
-
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
         if(ShortType.IDENTIFIER == shortyId.get().type) {
-            Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(shortyId.get().longId, languageId);
+            Optional<ContentletVersionInfo> cvi = versionableAPI.getContentletVersionInfo(shortyId.get().longId, languageId);
             if (cvi.isPresent()) {
                 testInode =  mode.showLive ? cvi.get().getLiveInode() : cvi.get().getWorkingInode();
             }
         }
+
         final String finalInode = testInode;
-        return Try.of(
-                        () -> APILocator.getContentletAPI().find(finalInode, user, mode.respectAnonPerms))
+        final Contentlet contentlet = Try.of(
+                        () -> contentletAPI.find(finalInode, user, mode.respectAnonPerms))
                 .getOrElseThrow(() -> new DoesNotExistException(
                         getDoesNotExistMessage(inodeOrIdentifier))
                 );
+
+
+        DotPreconditions.notNull(contentlet, () -> String.format("Contentlet with ID '%s' and language '%d' was not found", inodeOrIdentifier, languageId)
+                , DoesNotExistException.class);
+
+        return contentlet;
     }
 
 
