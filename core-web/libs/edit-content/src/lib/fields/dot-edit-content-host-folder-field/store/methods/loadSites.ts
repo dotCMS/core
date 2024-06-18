@@ -28,12 +28,7 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
                     .pipe(
                         map((sites) => {
                             if (isRequired) {
-                                const index = sites.findIndex(
-                                    (item) => item.label === SYSTEM_HOST_NAME
-                                );
-                                if (index !== -1) {
-                                    sites.splice(index, 1);
-                                }
+                                return sites.filter((site) => site.label !== SYSTEM_HOST_NAME);
                             }
 
                             return sites;
