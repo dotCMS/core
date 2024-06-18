@@ -3,7 +3,7 @@ import { patchState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { of, pipe } from 'rxjs';
 
-import { switchMap, tap, map } from 'rxjs/operators';
+import { switchMap, tap, map, filter } from 'rxjs/operators';
 
 import type { CustomTreeNode } from './../../../../models/dot-edit-content-host-folder-field.interface';
 import type { DotEditContentService } from './../../../../services/dot-edit-content.service';
@@ -35,17 +35,29 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
                     return of({ path, sites });
                 }
 
-                return dotEditContentService.getCurrentSite().pipe(
-                    switchMap((currentSite) => {
-                        const node = sites.find((item) => item.label === currentSite.label);
+                const isRequired = false;
 
-                        return of({
-                            path: node?.label,
-                            sites
-                        });
-                    })
-                );
+                if (isRequired) {
+                    return dotEditContentService.getCurrentSite().pipe(
+                        switchMap((currentSite) => {
+                            const node = sites.find((item) => item.label === currentSite.label);
+
+                            return of({
+                                path: node?.label,
+                                sites
+                            });
+                        })
+                    );
+                }
+
+                const node = sites.find((item) => item.label === 'System Host');
+
+                return of({
+                    path: node?.label,
+                    sites
+                });
             }),
+            filter(({ path }) => !!path),
             switchMap(({ path, sites }) => {
                 const hasPaths = path.includes('/');
                 if (!hasPaths) {
