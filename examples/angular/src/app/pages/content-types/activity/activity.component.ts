@@ -1,19 +1,17 @@
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DotCMSContentlet } from '@dotcms/angular';
 
-
 @Component({
   selector: 'app-activity',
   standalone: true,
-  imports: [RouterLink],
-  template: ` <article
-    class="p-4 overflow-hidden bg-white rounded shadow-lg"
-  >
-    @if(contentlet.image; as image ) {
+  imports: [RouterLink, NgOptimizedImage],
+  template: ` <article class="p-4 overflow-hidden bg-white rounded shadow-lg">
+    @if (contentlet.image; as image) {
       <img
         class="w-full"
-        [src]="image + '?language_id=' + contentlet.languageId"
+        [ngSrc]="image"
         width="100"
         height="100"
         alt="Activity Image"

@@ -237,7 +237,8 @@ public class TestDataUtils {
                         new FieldDataGen()
                                 .name("body")
                                 .velocityVarName("body")
-                                .searchable(true).indexed(true)
+                                .searchable(true)
+                                .indexed(true)
                                 .next()
                 );
                 fields.add(
@@ -246,6 +247,16 @@ public class TestDataUtils {
                                 .velocityVarName("sysPublishDate")
                                 .defaultValue(null)
                                 .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("seo")
+                                .velocityVarName("seo")
+                                .defaultValue(null)
+                                .dataType(DataTypes.LONG_TEXT)
+                                .searchable(true)
+                                .indexed(true)
                                 .next()
                 );
 
@@ -1248,6 +1259,23 @@ public class TestDataUtils {
         return getBlogContent(persist, languageId, contentTypeId, null);
     }
 
+    public static Contentlet withEmbeddings(final boolean persist,
+                                            final long languageId,
+                                            final String contentTypeId,
+                                            final String text) {
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+                .languageId(languageId)
+                .setProperty("title", "blogContent")
+                .setProperty("urlTitle", "blogContent")
+                .setProperty("author", "systemUser")
+                .setProperty("sysPublishDate", new Date())
+                .setProperty("body", "blogBody")
+                .setProperty("seo", text);
+
+        return getBlogContent(persist, null, contentletDataGen);
+    }
+
     public static Contentlet getBlogContent(Boolean persist, long languageId,
             String contentTypeId, final Host site) {
 
@@ -1262,6 +1290,13 @@ public class TestDataUtils {
                 .setProperty("author", "systemUser")
                 .setProperty("sysPublishDate", new Date())
                 .setProperty("body", "blogBody");
+
+        return getBlogContent(persist, site, contentletDataGen);
+    }
+
+    public static Contentlet getBlogContent(final boolean persist,
+                                            final Host site,
+                                            ContentletDataGen contentletDataGen) {
 
         if (null != site) {
             contentletDataGen = contentletDataGen.host(site)

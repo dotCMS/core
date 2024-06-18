@@ -10,7 +10,9 @@ import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
   imports: [ContentletsComponent],
   template: ` <div class="flex flex-col">
     <h2 class="text-2xl font-bold mb-7 text-black">Latest Blog Posts</h2>
-    @if(!!blogs().length) { <app-contentlets [contentlets]="blogs()" /> }
+    @if (!!blogs().length) {
+      <app-contentlets [contentlets]="blogs()" />
+    }
   </div>`,
 })
 export class BlogsComponent implements OnInit {
