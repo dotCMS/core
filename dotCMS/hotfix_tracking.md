@@ -15,3 +15,4 @@ This maintenance release includes the following code fixes:
 9. https://github.com/dotCMS/core/issues/28306 : Can't Import Page Assets using the export file #28306
 10. https://github.com/dotCMS/core/issues/28352 : Send Email sub-action doesn't set the current user to $dotcontent viewtool #28352
 11. https://github.com/dotCMS/core/issues/28689 : Update LTS Telemetry plugin #28689
+12. https://github.com/dotCMS/private-issues/issues/34
