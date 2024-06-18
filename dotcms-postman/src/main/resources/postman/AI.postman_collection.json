@@ -88,7 +88,7 @@
 									"pm.test('Text is generated', function () {",
 									"    pm.expect(jsonData.choices, 'Choices are included in dotAI response').not.undefined;",
 									"    pm.expect(jsonData.choices, 'Choices are included in dotAI respons are not empty').not.empty;",
-									"    pm.expect(jsonData.choices[0].text).contains('The theory of relativity, developed by Albert Einstein, consists of')",
+									"    pm.expect(jsonData.choices[0].text).contains('The FIFA World Cup in 2018 was won by the French national football team')",
 									"});",
 									""
 								],
@@ -122,7 +122,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"prompt\": \"What is the theory of relativity?\"\n}",
+							"raw": "{\n    \"prompt\": \"Who won the FIFA World Cup in 2018?\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -469,6 +469,303 @@
 								"ai",
 								"image",
 								"generate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Search",
+			"item": [
+				{
+					"name": "Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Type is returned', function () {",
+									"    pm.expect(jsonData.type, 'Type is \"search\"').equals('search');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search/test",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"/*{",
+									"    \"timeToEmbeddings\": \"430436ms\",",
+									"    \"total\": 0,",
+									"    \"query\": \"The stock market has shown significant volatility over the past few months. Analysts attribute this to geopolitical tensions and economic uncertainty. Investors are advised to diversify their portfolios to mitigate risks.\",",
+									"    \"threshold\": 0.25,",
+									"    \"dotCMSResults\": [],",
+									"    \"operator\": \"<=>\",",
+									"    \"offset\": 0,",
+									"    \"limit\": 50,",
+									"    \"count\": 0",
+									"}*/",
+									"",
+									"pm.test('Text is generated', function () {",
+									"    pm.expect(jsonData.timeToEmbeddings, 'Time to embeddings must be present').not.undefined;",
+									"    pm.expect(jsonData.total, 'Total must be present').not.undefined;",
+									"    pm.expect(jsonData.query, 'Query must be kept').equals(\"The stock market has shown significant volatility over the past few months. Analysts attribute this to geopolitical tensions and economic uncertainty. Investors are advised to diversify their portfolios to mitigate risks.\");",
+									"    pm.expect(jsonData.operator).equals('<=>');",
+									"    pm.expect(typeof jsonData.dotCMSResults.length).equals('number');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"The stock market has shown significant volatility over the past few months. Analysts attribute this to geopolitical tensions and economic uncertainty. Investors are advised to diversify their portfolios to mitigate risks.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"/*{",
+									"    \"timeToEmbeddings\": \"430436ms\",",
+									"    \"total\": 0,",
+									"    \"query\": \"The stock market has shown significant volatility over the past few months. Analysts attribute this to geopolitical tensions and economic uncertainty. Investors are advised to diversify their portfolios to mitigate risks.\",",
+									"    \"threshold\": 0.25,",
+									"    \"dotCMSResults\": [],",
+									"    \"operator\": \"<=>\",",
+									"    \"offset\": 0,",
+									"    \"limit\": 50,",
+									"    \"count\": 0",
+									"}*/",
+									"",
+									"pm.test('Text is generated', function () {",
+									"    pm.expect(jsonData.timeToEmbeddings, 'Time to embeddings must be present').not.undefined;",
+									"    pm.expect(jsonData.total, 'Total must be present').not.undefined;",
+									"    pm.expect(jsonData.query, 'Query must be kept').equals(\"The stock market has shown significant volatility over the past few months. Analysts attribute this to geopolitical tensions and economic uncertainty. Investors are advised to diversify their portfolios to mitigate risks.\");",
+									"    pm.expect(jsonData.operator).equals('<=>');",
+									"    pm.expect(typeof jsonData.dotCMSResults.length).equals('number');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search?query=To%20make%20a%20classic%20homemade%20pizza%2C%20start%20with%20a%20fresh%20dough%20base%2C%20spread%20a%20layer%20of%20tomato%20sauce%2C%20and%20add%20your%20favorite%20toppings%20such%20as%20mozzarella%20cheese%2C%20pepperoni%2C%20bell%20peppers%2C%20and%20olives.%20Bake%20in%20a%20preheated%20oven%20at%20475%C2%B0F%20for%20about%2015%20minutes%20until%20the%20crust%20is%20golden%20brown%20and%20the%20cheese%20is%20bubbly.",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "To%20make%20a%20classic%20homemade%20pizza%2C%20start%20with%20a%20fresh%20dough%20base%2C%20spread%20a%20layer%20of%20tomato%20sauce%2C%20and%20add%20your%20favorite%20toppings%20such%20as%20mozzarella%20cheese%2C%20pepperoni%2C%20bell%20peppers%2C%20and%20olives.%20Bake%20in%20a%20preheated%20oven%20at%20475%C2%B0F%20for%20about%2015%20minutes%20until%20the%20crust%20is%20golden%20brown%20and%20the%20cheese%20is%20bubbly."
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search without query",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code should be ok 500', function () {",
+									"    pm.response.to.have.status(500);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.message, 'Error message is included in response').equals('query/prompt cannot be null');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ai/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"search"
 							]
 						}
 					},
