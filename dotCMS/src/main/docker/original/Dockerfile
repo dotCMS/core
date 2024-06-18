@@ -42,8 +42,17 @@ RUN apt update && \
     apt upgrade -y && \
     apt install -y --no-install-recommends \
         wget \
+        curl \
         gnupg \
-        tini && \
+        tini \
+        zip \
+        unzip \
+        libtcnative-1 \
+        tzdata \
+        ca-certificates \
+        openssl \
+        libapr1 \
+        libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Install PostgreSQL client and pg_dump

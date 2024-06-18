@@ -43,7 +43,13 @@ jobs:
           echo "pr_merged=${pr_merged}"
           
           pr_branch=${{ inputs.pr_branch }}
-          [[ ${pr_branch} =~ ^[0-9]+- ]] && issue_number=${pr_branch%%-*} || issue_number=${pr_branch}
+          issue_number=
+          if [[ ${pr_branch} =~ ^[0-9]+- ]]; then
+            issue_number=${pr_branch%%-*}
+          elif [[ ${pr_branch} =~ ^issue-[0-9]+- ]]; then
+            issue_number=${pr_branch#*-}
+            issue_number=${issue_number%%-*}
+          fi
           [[ -z "${issue_number}" ]] && echo 'Issue number could not be resolved' && exit 2
           echo "issue_number=${issue_number}"
           
