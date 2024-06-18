@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.ai.listener.EmbeddingContentListenerTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
@@ -304,7 +305,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSUrlUtilIntegrationTest.class,
         ContentFileAssetIntegrityCheckerTest.class,
         ITConfigTest.class,
-        Task240530AddDotAIPortletToLayoutTest.class
+        Task240530AddDotAIPortletToLayoutTest.class,
+        EmbeddingContentListenerTest.class
 
 })
 

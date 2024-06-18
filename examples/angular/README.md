@@ -1,26 +1,48 @@
-# Angular
+DotCMS provides an Angular example that shows how to build dotCMS pages heedlessly with Angular JavaScript framework.
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.0.7.
+## What do you need?
 
-## Development server
+1. A dotCMS instance or you can use https://demo.dotcms.com
+2. [Node.js](https://nodejs.org) and npm installed
+3. Terminal
+4. And a code editor.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+### Get the Angular example code
 
-## Code scaffolding
+Get the code from the next directory
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+```bash
+https://github.com/dotCMS/core/tree/master/examples/angular
+```
 
-## Build
+## Add the dotCMS configuration
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Now we need to tell the Angular app what dotCMS instance is going to use to get the data to build its pages.
 
-## Running unit tests
+1. Open the folder `YOUR_NAME` in your code editor
+2. Go to `src/environments`
+3. Open the `environment.development.ts` file and update the environment variable:
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+- `authToken` this is the auth token for dotCMS, you can use the dotCMS UI to create one.
+- `dotcmsUrl` this is the instance of dotCMS where your pages and content lives (license needed) if you don’t have one, you can use [https://demo.dotcms.com](https://demo.dotcms.com) (be careful it restarts every 24h)
 
-## Running end-to-end tests
+## Run the app
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+Once all the configuration is in place, it is time to run the web app.
+
+1. Go back to your terminal and from the folder YOUR_NAME
+2. Run `ng serve`
+3. Open http://localhost:3000 in your browser
+
+🎉 And that’s it.
+
+Consider that if you go to `localhost:4200/about`, the page `/about` needs to exist in your dotCMS instance.
+
+## Handling Vanity URLs
+
+In dotCMS, Vanity URLs serve as alternative reference paths to internal or external URLs. They are simple yet powerful tools that can significantly aid in site maintenance and SEO.
+
+Next.js is a robust framework that provides the capability to handle vanity URLs. It allows you to redirect or forward users to the appropriate content based on predefined logic. You can seamlessly integrate this feature of Next.js with dotCMS. For an implementation example, refer to this [link](https://github.com/dotCMS/core/blob/master/examples/nextjs/src/app/utils/index.js).
 
 ## Further help
 
