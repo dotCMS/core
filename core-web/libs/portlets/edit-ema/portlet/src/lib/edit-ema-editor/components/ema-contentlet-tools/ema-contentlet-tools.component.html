@@ -16,7 +16,7 @@
 
 <div *ngIf="!isContainerEmpty" [ngStyle]="styles.actions" class="actions" data-testId="actions">
     @if (contentletArea.payload.vtlFiles?.length) {
-    <p-menu [model]="vtlFiles" [popup]="true" #menuVTL appendTo="body" />
+    <p-menu [model]="vtlFiles" [popup]="true" #menuVTL appendTo="body" data-testId="menu-vtl" />
     <p-button
         (click)="menuVTL.toggle($event)"
         data-testId="edit-vtl-button"
