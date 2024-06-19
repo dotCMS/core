@@ -4675,11 +4675,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Tests the creation of variable names for workflows with the same base name and a different
-     * base name.
+     * Method to test: N/A
      * <p>
-     * This test ensures that variable names are correctly created and incremented for workflows
-     * with duplicate names and also handles workflows with different names.
+     * Given Scenario: Workflows with the same and different names are created
+     * <p>
+     * ExpectedResult: Variable names are correctly created and incremented for workflows with
+     * duplicate names and properly created for workflows with different names
      *
      * @throws DotDataException      if a data access error occurs.
      * @throws DotSecurityException  if a security error occurs.
@@ -4723,10 +4724,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Tests the search functionality for workflow schemes.
+     * Method to test: {@link WorkflowAPI#findScheme(String)}
      * <p>
-     * This test ensures that workflow schemes can be found by their ID and variable name, and that
-     * the appropriate error is thrown for non-existent schemes.
+     * Given Scenario: Workflow schemes are searched by their ID and variable name
+     * <p>
+     * ExpectedResult: Workflow schemes are found by their ID and variable name, and an appropriate
+     * error is thrown for non-existent schemes
      *
      * @throws DotDataException      if a data access error occurs.
      * @throws DotSecurityException  if a security error occurs.

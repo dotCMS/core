@@ -32,10 +32,11 @@ public class Task240606AddVariableColumnToWorkflowTest {
     }
 
     /**
-     * Tests the successful execution of the upgrade task which adds the variable column to the
-     * workflow_scheme table.
+     * Method to test: {@link Task240606AddVariableColumnToWorkflow#executeUpgrade()}
      * <p>
-     * This test ensures that the column is added and populated correctly.
+     * Given Scenario: The column does not exist in the workflow_scheme table
+     * <p>
+     * ExpectedResult: The column variable_name is added and populated correctly
      *
      * @throws DotDataException if a data access error occurs.
      */
@@ -53,13 +54,16 @@ public class Task240606AddVariableColumnToWorkflowTest {
     }
 
     /**
-     * Tests the upgrade task for handling workflows with duplicate names.
+     * Method to test: {@link Task240606AddVariableColumnToWorkflow#executeUpgrade()}
      * <p>
-     * This test creates multiple workflows with the same name, executes the upgrade task, and
-     * validates that the variable names are generated correctly (e.g., testScheme, testScheme1,
-     * testScheme2, testScheme3).
+     * Given Scenario: Multiple workflows with the same name exist
+     * <p>
+     * ExpectedResult: The variable names are generated correctly as testScheme, testScheme1,
+     * testScheme2, and testScheme3
      *
-     * @throws DotDataException if a data access error occurs.
+     * @throws DotDataException      if a data access error occurs.
+     * @throws DotSecurityException  if a security error occurs.
+     * @throws AlreadyExistException if an existing entity conflicts with the operation.
      */
     @Test
     public void test_validate_duplicated_names()
