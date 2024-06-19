@@ -63,7 +63,7 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
                     );
                 }
 
-                const node = sites.find((item) => item.label === 'System Host');
+                const node = sites.find((item) => item.label === SYSTEM_HOST_NAME);
 
                 return of({
                     path: node?.label,
