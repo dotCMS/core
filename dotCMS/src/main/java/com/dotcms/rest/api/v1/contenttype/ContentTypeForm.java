@@ -265,52 +265,6 @@ public class ContentTypeForm  {
         }
     }
 
-    /**
-     * Represents a workflow entry found in the form
-     */
-    public static class WorkflowFormEntry {
-
-        private final String id;
-        private final String variableName;
-
-        private WorkflowFormEntry(Builder builder) {
-            this.id = builder.id;
-            this.variableName = builder.variableName;
-        }
-
-        public String id() {
-            return id;
-        }
-
-        public String variableName() {
-            return variableName;
-        }
-
-        public static class Builder {
-
-            private String id;
-            private String variableName;
-
-            public Builder id(String id) {
-                this.id = id;
-                return this;
-            }
-
-            public Builder variableName(String variableName) {
-                this.variableName = variableName;
-                return this;
-            }
-
-            public WorkflowFormEntry build() {
-                return new WorkflowFormEntry(this);
-            }
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-    }
-
     public static class ContentTypeFormEntry {
         ContentType  contentType;
         List<WorkflowFormEntry> workflows;

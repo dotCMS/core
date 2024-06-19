@@ -15,7 +15,6 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.contenttype.ContentTypeForm.WorkflowFormEntry;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
