@@ -8,7 +8,7 @@ import {
     effect,
     inject
 } from '@angular/core';
-import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
@@ -64,7 +64,11 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
 
     ngOnInit() {
         const currentPath = this.formControl.value;
-        this.store.loadSites(currentPath);
+        const isRequired = this.formControl.hasValidator(Validators.required);
+        this.store.loadSites({
+            path: currentPath,
+            isRequired
+        });
     }
 
     get formControl(): FormControl {

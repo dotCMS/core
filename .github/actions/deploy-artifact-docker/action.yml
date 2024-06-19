@@ -60,7 +60,7 @@ inputs:
 outputs:
   tags:
     description: "The tags that were used to build the image"
-    value: ${{ steps.meta.outputs.tags }}
+    value: ${{ steps.convert_tags.outputs.space_separated_tags }}
 runs:
   using: "composite"
   steps:
@@ -87,7 +87,6 @@ runs:
             tar -xvf docker-build.tar -C ${CONTEXT_TMP_PATH}
             echo "docker_context=${CONTEXT_TMP_PATH}" >> $GITHUB_OUTPUT
         fi
-
       shell: bash
     - name: Set Common Vars
       shell: bash
@@ -131,7 +130,6 @@ runs:
           echo "type=raw,value=${RESULT},enable=true" >> $GITHUB_ENV
           echo "type=raw,value=latest,enable=${enable_latest}" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
-
     - name: Docker.io login
       uses: docker/login-action@v3.0.0
       with:
@@ -162,6 +160,11 @@ runs:
         tags: ${{ env.FULL_TAGS_OUTPUT }}
       if: success()
 
+    - name: Convert tags to space-separated string
+      id: convert_tags
+      shell: bash
+      run: echo "space_separated_tags=$(echo '${{ steps.meta.outputs.tags }}' | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
     - name: Debug Docker Metadata
       shell: bash
       run: |
@@ -177,9 +180,6 @@ runs:
         platforms: ${{ inputs.docker_platforms }}
         driver-opts: |
           image=moby/buildkit:v0.12.2
-
-
-
     - name: Build/Push Docker Image
       uses: docker/build-push-action@v5
       with:

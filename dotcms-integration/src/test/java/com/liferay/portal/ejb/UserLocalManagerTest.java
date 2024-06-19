@@ -2,6 +2,9 @@ package com.liferay.portal.ejb;
 
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.UserDataGen;
+import com.dotmarketing.business.Role;
+import com.liferay.portal.UserPasswordException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -114,8 +117,69 @@ public class UserLocalManagerTest {
         assertTrue(UUIDUtil.isUUID(uuidPart));
 
     }
-    
-    
-    
-    
+
+    @Test
+    public void testValidPassword() throws Exception {
+
+        User testUser = null;
+        try {
+            final Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
+            testUser = new UserDataGen().roles(backendRole).nextPersisted();
+            final String userId = testUser.getUserId();
+
+            final String testPassword = "p4ss!word";
+            UserLocalManager userManager = UserLocalManagerFactory.getManager();
+            userManager.validate(userId, testPassword, testPassword);
+
+        } finally {
+            if (null != testUser) {
+                UserDataGen.remove(testUser);
+            }
+        }
+
+    }
+
+    @Test(expected = UserPasswordException.class)
+    public void testInvalidCharacterInPassword() throws Exception {
+
+        User testUser = null;
+        try {
+            final Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
+            testUser = new UserDataGen().roles(backendRole).nextPersisted();
+            final String userId = testUser.getUserId();
+
+            final String testPassword = "p4ss$word";
+            UserLocalManager userManager = UserLocalManagerFactory.getManager();
+            userManager.validate(userId, testPassword, testPassword);
+
+        } finally {
+            if (null != testUser) {
+                UserDataGen.remove(testUser);
+            }
+        }
+
+    }
+
+
+    @Test (expected = UserPasswordException.class)
+    public void testNotEnoughCharsInPassword() throws Exception {
+
+        User testUser = null;
+        try {
+            final Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
+            testUser = new UserDataGen().roles(backendRole).nextPersisted();
+            final String userId = testUser.getUserId();
+
+            final String testPassword = "p4ss!";
+            UserLocalManager userManager = UserLocalManagerFactory.getManager();
+            userManager.validate(userId, testPassword, testPassword);
+
+        } finally {
+            if (null != testUser) {
+                UserDataGen.remove(testUser);
+            }
+        }
+
+    }
+
 }
