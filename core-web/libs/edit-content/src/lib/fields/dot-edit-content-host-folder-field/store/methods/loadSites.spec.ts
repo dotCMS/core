@@ -57,7 +57,7 @@ describe('rxMethod: loadSites', () => {
                 isRequired: false
             };
             rxMethod(props);
-            expect(service.getCurrentSite).not.toHaveBeenCalled();
+            expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
             expect(store.nodeSelected().key).toBe(node.key);
         });
 
@@ -70,7 +70,7 @@ describe('rxMethod: loadSites', () => {
                 isRequired: true
             };
             rxMethod(props);
-            expect(service.getCurrentSite).not.toHaveBeenCalled();
+            expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
             expect(store.nodeSelected().key).toBe(node.key);
         });
     });
@@ -84,21 +84,21 @@ describe('rxMethod: loadSites', () => {
                 isRequired: false
             };
             rxMethod(props);
-            expect(service.getCurrentSite).not.toHaveBeenCalled();
+            expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
             expect(store.nodeSelected().label).toBe(SYSTEM_HOST_NAME);
         });
 
         it('should select current site if the path is not empty and is required', () => {
             const hostNode = TREE_SELECT_SITES_MOCK[1];
             service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
-            service.getCurrentSite.mockReturnValue(of(hostNode));
+            service.getCurrentSiteAsTreeNodeItem.mockReturnValue(of(hostNode));
             const rxMethod = TestBed.runInInjectionContext(() => loadSites(store, service));
             const props = {
                 path: null,
                 isRequired: true
             };
             rxMethod(props);
-            expect(service.getCurrentSite).toHaveBeenCalled();
+            expect(service.getCurrentSiteAsTreeNodeItem).toHaveBeenCalled();
             expect(store.nodeSelected().label).toBe(hostNode.label);
         });
     });

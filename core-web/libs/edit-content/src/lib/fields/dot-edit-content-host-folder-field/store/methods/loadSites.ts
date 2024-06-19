@@ -51,7 +51,7 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
                 }
 
                 if (isRequired) {
-                    return dotEditContentService.getCurrentSite().pipe(
+                    return dotEditContentService.getCurrentSiteAsTreeNodeItem().pipe(
                         switchMap((currentSite) => {
                             const node = sites.find((item) => item.label === currentSite.label);
 

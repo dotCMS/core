@@ -192,7 +192,7 @@ export class DotEditContentService {
      * @return {*}  {Observable<TreeNodeItem>}
      * @memberof DotEditContentService
      */
-    getCurrentSite(): Observable<TreeNodeItem> {
+    getCurrentSiteAsTreeNodeItem(): Observable<TreeNodeItem> {
         return this.#siteService.getCurrentSite().pipe(
             map((site) => ({
                 key: site.hostname,
