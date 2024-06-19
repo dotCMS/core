@@ -44,7 +44,7 @@ export const HostFolderFiledStore = signalStore(
         pathToSave: computed(() => {
             const node = nodeSelected();
 
-            if (node && node.data) {
+            if (node?.data) {
                 const { data } = node;
 
                 return `${data.hostname}:${data.path ? data.path : '/'}`;
