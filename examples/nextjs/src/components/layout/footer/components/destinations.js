@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Contentlets from "@/components/shared/contentlets";
 import { client } from "@/utils/dotcmsClient";
 
-export default function Destinations() {
+export default function Destinations({ pageAsset }) {
     const [destinations, setDestinations] = useState([]);
 
     useEffect(() => {
@@ -21,7 +21,7 @@ export default function Destinations() {
             .catch((error) => {
                 console.error(`Error fetching Destinations`, error);
             });
-    }, []);
+    }, [pageAsset]);
 
     return (
         <div className="flex flex-col">
