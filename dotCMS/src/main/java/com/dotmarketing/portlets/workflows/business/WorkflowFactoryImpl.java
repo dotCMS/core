@@ -11,7 +11,6 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DeterministicIdentifierAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -2867,20 +2866,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
     /**
      * Generates the scheme id, using a deterministic id generator, the deterministic id generator
-     * uses the scheme variable name as the seed for the generation. After the generation, the id is
-     * converted to a UUID format to keep compatibility with the short ids.
+     * uses the scheme variable name as the seed for the generation.
      *
      * @param scheme the scheme to generate the id
      * @return the generated id
      */
     private String generateSchemaId(final WorkflowScheme scheme) {
-
-        // Generate a deterministic ID for the scheme
-        final DeterministicIdentifierAPI generator = APILocator.getDeterministicIdentifierAPI();
-        final String deterministicId = generator.generateDeterministicIdBestEffort(scheme);
-
-        // For legacy reasons, mainly because of short IDs we should keep using the UUID format (-)
-        return UUIDUtil.uuidIfy(deterministicId);
+        return APILocator.getDeterministicIdentifierAPI().generateDeterministicIdBestEffort(scheme);
     }
 
     /**

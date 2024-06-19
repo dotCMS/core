@@ -44,10 +44,11 @@ public interface DeterministicIdentifierAPI {
     String generateDeterministicIdBestEffort(ContentType contentType, Supplier<String> contentTypeVarName);
 
     /**
-     * Entry point for Workflow Schemes
+     * Generates the scheme id using the scheme variable name as the seed for the generation. The
+     * generated id is converted to a UUID format to keep compatibility with the short ids.
      *
      * @param scheme Workflow to generate the id for
-     * @return generated deterministic id
+     * @return generated deterministic id with UUID format
      */
     String generateDeterministicIdBestEffort(WorkflowScheme scheme);
 
