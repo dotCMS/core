@@ -8,6 +8,7 @@ import io.vavr.control.Try;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 
 import static org.junit.Assert.assertNotNull;
@@ -52,7 +53,7 @@ public class PopulateContentletAsJSONJobTest extends IntegrationTestBase {
         final var scheduler = QuartzUtils.getScheduler();
 
         // Checking the job was created
-        var jobDetail = Try.of(() -> scheduler.getJobDetail(jobName, groupName))
+        var jobDetail = Try.of(() -> scheduler.getJobDetail(new JobKey(jobName, groupName)))
                 .onFailure(e -> {
                     fail(String.format("Error retrieving job detail [%s, %s]: %s", jobName, groupName, e.getMessage()));
                 }).getOrNull();

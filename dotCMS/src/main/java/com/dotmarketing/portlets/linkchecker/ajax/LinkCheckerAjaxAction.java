@@ -8,11 +8,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.UUID;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -33,6 +35,7 @@ import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import org.quartz.TriggerBuilder;
 
 public class LinkCheckerAjaxAction extends AjaxAction {
 
@@ -108,18 +111,22 @@ public class LinkCheckerAjaxAction extends AjaxAction {
             throw new ServletException(e);
         }
     }
-    
+
     public void runCheckNow(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
-            String randomID=UUIDGenerator.generateUuid();
-            JobDetail jd = new JobDetail("linkCheckerJob-" + randomID, "dotcms_jobs", LinkCheckerJob.class);
-            jd.setJobDataMap(new JobDataMap());
-            jd.setDurability(false);
-            jd.setVolatility(false);
-            jd.setRequestsRecovery(true);
-            
-            Trigger trigger=new SimpleTrigger("linkCheckerTrigger-"+randomID, "group20", new Date());
-            
+            String randomID = UUID.randomUUID().toString();
+
+            JobDetail jd = JobBuilder.newJob(LinkCheckerJob.class)
+                    .withIdentity("linkCheckerJob-" + randomID, "dotcms_jobs")
+                    .storeDurably(false)
+                    .requestRecovery(true)
+                    .build();
+
+            Trigger trigger = TriggerBuilder.newTrigger()
+                    .withIdentity("linkCheckerTrigger-" + randomID, "group20")
+                    .startNow()
+                    .build();
+
             Scheduler sched = QuartzUtils.getScheduler();
             sched.scheduleJob(jd, trigger);
         } catch (SchedulerException e) {

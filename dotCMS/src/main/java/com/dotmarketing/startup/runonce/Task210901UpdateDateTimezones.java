@@ -140,7 +140,6 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
             TimeZone.setDefault(defaultTz);
             updateDateFieldsToUTC();
         } catch (final Exception e) {
-            Logger.error(this.getClass(), e.getMessage());
             throw new DotRuntimeException(e);
         }
     }

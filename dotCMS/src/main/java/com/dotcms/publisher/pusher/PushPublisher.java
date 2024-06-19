@@ -60,6 +60,7 @@ import com.liferay.portal.language.LanguageUtil;
 import org.apache.logging.log4j.ThreadContext;
 import org.glassfish.jersey.client.ClientProperties;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.ObjectAlreadyExistsException;
 import org.quartz.Scheduler;
 
@@ -81,6 +82,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.quartz.SchedulerException;
 
 /**
  * This is the main content publishing class in the Push Publishing process.
@@ -548,7 +550,8 @@ public class PushPublisher extends Publisher {
 	private void updateJobDataMap(DeliveryStrategy deliveryStrategy) {
 		try {
 			Scheduler sched = QuartzUtils.getScheduler();
-			JobDetail job = sched.getJobDetail("PublishQueueJob", "dotcms_jobs");
+			JobKey jobKey = JobKey.jobKey("PublishQueueJob", "dotcms_jobs");
+			JobDetail job = sched.getJobDetail(jobKey);
 			if (job == null) {
 				return;
 			}
@@ -556,8 +559,8 @@ public class PushPublisher extends Publisher {
 			job.getJobDataMap().put("deliveryStrategy", deliveryStrategy);
 			sched.addJob(job, true);
 		} catch (ObjectAlreadyExistsException e) {
-			// Quartz will throw this error if it is already running
-			Logger.debug(this.getClass(), e.getMessage(), e);
+				// Quartz will throw this error if it is already running
+				Logger.debug(this.getClass(), e.getMessage(), e);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 		}

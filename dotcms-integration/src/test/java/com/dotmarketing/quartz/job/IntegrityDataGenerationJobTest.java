@@ -10,20 +10,21 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import java.util.Date;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.SchedulerException;
+import org.quartz.*;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.UUID;
+import org.quartz.impl.JobExecutionContextImpl;
+import org.quartz.impl.triggers.SimpleTriggerImpl;
+import org.quartz.spi.TriggerFiredBundle;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -94,10 +95,33 @@ public class IntegrityDataGenerationJobTest extends IntegrationTestBase {
     }
 
     private JobExecutionContext getJobContext() throws SchedulerException {
-        return new JobExecutionContext(
-                IntegrityDataGenerationJob.getJobScheduler(),
-                new TestJobExecutor.TriggerFiredBundleTest(getJobDetail(endpoint, requestId)),
-                integrityDataGenerationJob);
+        JobDetail jobDetail = getJobDetail(endpoint, requestId);
+
+        // Create a simple trigger
+        SimpleTriggerImpl trigger = new SimpleTriggerImpl();
+        trigger.setName("testTrigger");
+        trigger.setGroup("testGroup");
+        trigger.setStartTime(new Date());
+        trigger.setRepeatCount(0);
+        trigger.setRepeatInterval(0);
+
+        // Create the TriggerFiredBundle
+        TriggerFiredBundle bundle = new TriggerFiredBundle(
+                jobDetail,
+                trigger,
+                null,
+                false,
+                null,
+                null,
+                null,
+                null
+        );
+
+        // Get the scheduler
+        Scheduler scheduler = IntegrityDataGenerationJob.getJobScheduler();
+
+        // Return the JobExecutionContext
+        return new JobExecutionContextImpl(scheduler, bundle, integrityDataGenerationJob);
     }
 
     private JobDetail getJobDetail(PublishingEndPoint endpoint, String requestId) {
@@ -105,15 +129,12 @@ public class IntegrityDataGenerationJobTest extends IntegrationTestBase {
         jobDataMap.put(IntegrityUtil.REQUESTER_KEY, endpoint.getId());
         jobDataMap.put(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID, requestId);
 
-        final JobDetail jobDetail = new JobDetail(
-                IntegrityDataGenerationJob.JOB_NAME,
-                IntegrityDataGenerationJob.JOB_GROUP, IntegrityDataGenerationJob.class);
-        jobDetail.setJobDataMap(jobDataMap);
-        jobDetail.setDurability(false);
-        jobDetail.setVolatility(false);
-        jobDetail.setRequestsRecovery(true);
-
-        return jobDetail;
+        return JobBuilder.newJob(IntegrityDataGenerationJob.class)
+                .withIdentity(IntegrityDataGenerationJob.JOB_NAME, IntegrityDataGenerationJob.JOB_GROUP)
+                .usingJobData(jobDataMap)
+                .storeDurably(false)
+                .requestRecovery(true)
+                .build();
     }
 
     private void assertStatus(String status) throws IOException {
@@ -123,5 +144,4 @@ public class IntegrityDataGenerationJobTest extends IntegrationTestBase {
                 IntegrityUtil.INTEGRITY_DATA_STATUS_FILENAME)));
         assertEquals(status, properties.getProperty(IntegrityUtil.INTEGRITY_DATA_STATUS));
     }
-
 }
