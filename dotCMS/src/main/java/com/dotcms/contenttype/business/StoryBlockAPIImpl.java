@@ -83,7 +83,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @CloseDBIfOpened
     @Override
     @SuppressWarnings("unchecked")
-    public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
+    public StoryBlockReferenceResult x(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed = false;
         if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(),
                 "refreshStoryBlockValueReferences", MAX_RECURSION_LEVEL)) {
