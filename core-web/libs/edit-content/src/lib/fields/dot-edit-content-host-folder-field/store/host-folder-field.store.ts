@@ -21,7 +21,7 @@ export type HostFolderFiledState = {
     error: string | null;
 };
 
-const initialState: HostFolderFiledState = {
+export const initialState: HostFolderFiledState = {
     nodeSelected: null,
     nodeExpaned: null,
     tree: [],
