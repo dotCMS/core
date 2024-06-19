@@ -563,6 +563,51 @@
 							"response": []
 						},
 						{
+							"name": "Content exists by identifier (Default Content to Default Language)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"var identifier = pm.collectionVariables.get(\"contentletIdentifier\");",
+											"pm.test(\"Id check\", function () {",
+											"    pm.expect(jsonData.entity.identifier).to.eql(identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/{{contentletIdentifier}}?language=2",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"{{contentletIdentifier}}"
+									],
+									"query": [
+										{
+											"key": "language",
+											"value": "2"
+										}
+									]
+								},
+								"description": "## API Request Description\n\nThis endpoint makes an HTTP GET request to retrieve content identified by the `contentletIdentifier`.\n\n## Request Body\n\nThis request does not require a request body.\n\n## Response Body\n\nThe response is a JSON object with the following schema:\n\n``` json\n{\n  \"entity\": {\n    \"archived\": \"boolean\",\n    \"baseType\": \"string\",\n    \"contentType\": \"string\",\n    \"creationDate\": \"number\",\n    \"folder\": \"string\",\n    \"hasLiveVersion\": \"boolean\",\n    \"hasTitleImage\": \"boolean\",\n    \"host\": \"string\",\n    \"hostName\": \"string\",\n    \"identifier\": \"string\",\n    \"inode\": \"string\",\n    \"key\": \"string\",\n    \"languageId\": \"number\",\n    \"live\": \"boolean\",\n    \"locked\": \"boolean\",\n    \"modDate\": \"number\",\n    \"modUser\": \"string\",\n    \"modUserName\": \"string\",\n    \"owner\": \"string\",\n    \"ownerName\": \"string\",\n    \"publishDate\": \"number\",\n    \"publishUser\": \"string\",\n    \"publishUserName\": \"string\",\n    \"sortOrder\": \"number\",\n    \"stInode\": \"string\",\n    \"title\": \"string\",\n    \"titleImage\": \"string\",\n    \"url\": \"string\",\n    \"value\": \"string\",\n    \"working\": \"boolean\"\n  },\n  \"errors\": [],\n  \"i18nMessagesMap\": {},\n  \"messages\": [],\n  \"pagination\": null,\n  \"permissions\": []\n}\n\n ```"
+							},
+							"response": []
+						},
+						{
 							"name": "Content exists by inode",
 							"event": [
 								{
@@ -595,6 +640,51 @@
 										"v1",
 										"content",
 										"{{contentletInode}}"
+									]
+								},
+								"description": "### Get Contentlet by Inode\n\nThis endpoint retrieves the contentlet with the specified inode.\n\n#### Response\n\nThe response will be a JSON object with the following properties:\n\n- `entity` (object):\n    - `archived` (boolean): Indicates if the contentlet is archived.\n        \n    - `baseType` (string): The base type of the contentlet.\n        \n    - `contentType` (string): The type of content.\n        \n    - `creationDate` (number): The creation date of the contentlet.\n        \n    - `folder` (string): The folder where the contentlet is located.\n        \n    - `hasLiveVersion` (boolean): Indicates if the contentlet has a live version.\n        \n    - `hasTitleImage` (boolean): Indicates if the contentlet has a title image.\n        \n    - `host` (string): The host of the contentlet.\n        \n    - `hostName` (string): The name of the host.\n        \n    - `identifier` (string): The identifier of the contentlet.\n        \n    - `inode` (string): The inode of the contentlet.\n        \n    - `key` (string): The key of the contentlet.\n        \n    - `languageId` (number): The language ID of the contentlet.\n        \n    - `live` (boolean): Indicates if the contentlet is live.\n        \n    - `locked` (boolean): Indicates if the contentlet is locked.\n        \n    - `modDate` (number): The modification date of the contentlet.\n        \n    - `modUser` (string): The user who modified the contentlet.\n        \n    - `modUserName` (string): The name of the user who modified the contentlet.\n        \n    - `owner` (string): The owner of the contentlet.\n        \n    - `ownerName` (string): The name of the owner.\n        \n    - `publishDate` (number): The publish date of the contentlet.\n        \n    - `publishUser` (string): The user who published the contentlet.\n        \n    - `publishUserName` (string): The name of the user who published the contentlet.\n        \n    - `sortOrder` (number): The sort order of the contentlet.\n        \n    - `stInode` (string): The inode of the contentlet.\n        \n    - `title` (string): The title of the contentlet.\n        \n    - `titleImage` (string): The title image of the contentlet.\n        \n    - `url` (string): The URL of the contentlet.\n        \n    - `value` (string): The value of the contentlet.\n        \n    - `working` (boolean): Indicates if the contentlet is in working state.\n        \n- `errors` (array): An array of errors, if any.\n    \n- `i18nMessagesMap` (object): Internationalization messages map.\n    \n- `messages` (array): An array of messages.\n    \n- `pagination` (null): Pagination information, if applicable.\n    \n- `permissions` (array): An array of permissions."
+							},
+							"response": []
+						},
+						{
+							"name": "Content exists by inode (Default Content to Default Language)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"var inode = pm.collectionVariables.get(\"contentletInode\");",
+											"pm.test(\"Id check\", function () {",
+											"    pm.expect(jsonData.entity.inode).to.eql(inode);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/{{contentletInode}}?language=2",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"{{contentletInode}}"
+									],
+									"query": [
+										{
+											"key": "language",
+											"value": "2"
+										}
 									]
 								},
 								"description": "### Get Contentlet by Inode\n\nThis endpoint retrieves the contentlet with the specified inode.\n\n#### Response\n\nThe response will be a JSON object with the following properties:\n\n- `entity` (object):\n    - `archived` (boolean): Indicates if the contentlet is archived.\n        \n    - `baseType` (string): The base type of the contentlet.\n        \n    - `contentType` (string): The type of content.\n        \n    - `creationDate` (number): The creation date of the contentlet.\n        \n    - `folder` (string): The folder where the contentlet is located.\n        \n    - `hasLiveVersion` (boolean): Indicates if the contentlet has a live version.\n        \n    - `hasTitleImage` (boolean): Indicates if the contentlet has a title image.\n        \n    - `host` (string): The host of the contentlet.\n        \n    - `hostName` (string): The name of the host.\n        \n    - `identifier` (string): The identifier of the contentlet.\n        \n    - `inode` (string): The inode of the contentlet.\n        \n    - `key` (string): The key of the contentlet.\n        \n    - `languageId` (number): The language ID of the contentlet.\n        \n    - `live` (boolean): Indicates if the contentlet is live.\n        \n    - `locked` (boolean): Indicates if the contentlet is locked.\n        \n    - `modDate` (number): The modification date of the contentlet.\n        \n    - `modUser` (string): The user who modified the contentlet.\n        \n    - `modUserName` (string): The name of the user who modified the contentlet.\n        \n    - `owner` (string): The owner of the contentlet.\n        \n    - `ownerName` (string): The name of the owner.\n        \n    - `publishDate` (number): The publish date of the contentlet.\n        \n    - `publishUser` (string): The user who published the contentlet.\n        \n    - `publishUserName` (string): The name of the user who published the contentlet.\n        \n    - `sortOrder` (number): The sort order of the contentlet.\n        \n    - `stInode` (string): The inode of the contentlet.\n        \n    - `title` (string): The title of the contentlet.\n        \n    - `titleImage` (string): The title image of the contentlet.\n        \n    - `url` (string): The URL of the contentlet.\n        \n    - `value` (string): The value of the contentlet.\n        \n    - `working` (boolean): Indicates if the contentlet is in working state.\n        \n- `errors` (array): An array of errors, if any.\n    \n- `i18nMessagesMap` (object): Internationalization messages map.\n    \n- `messages` (array): An array of messages.\n    \n- `pagination` (null): Pagination information, if applicable.\n    \n- `permissions` (array): An array of permissions."
@@ -1995,11 +2085,16 @@
 		}
 	],
 	"auth": {
-		"type": "bearer",
-		"bearer": [
+		"type": "basic",
+		"basic": [
 			{
-				"key": "token",
-				"value": "{{jwt}}",
+				"key": "password",
+				"value": "admin",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "admin@dotCMS.com",
 				"type": "string"
 			}
 		]
