@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeForm.ContentTypeFormDeserialize;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
@@ -191,6 +192,11 @@ public class ContentTypeForm  {
                         WORKFLOW_ATTRIBUTE_NAME);
 
                 for (Object entry : workflowsJSONArray) {
+
+                    Logger.debug(
+                            ContentTypeFormDeserialize.class,
+                            String.format("Content Type Workflow form entry [%s]", entry.toString())
+                    );
 
                     final WorkflowFormEntry workflowFormEntry;
 
