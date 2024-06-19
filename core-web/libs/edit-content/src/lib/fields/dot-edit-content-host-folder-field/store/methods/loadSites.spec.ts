@@ -18,6 +18,7 @@ describe('StoreMethod: loadSites', () => {
             DotEditContentService,
             mockProvider(DotEditContentService)
         ).runInInjectionContext(() => new HostFolderFiledStore());
+
         service = TestBed.inject(DotEditContentService) as SpyObject<DotEditContentService>;
     });
 
