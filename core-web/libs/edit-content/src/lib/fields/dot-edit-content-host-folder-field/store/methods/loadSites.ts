@@ -40,9 +40,35 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
                         }),
                         map((sites) => ({
                             path,
-                            sites
+                            sites,
+                            isRequired
                         }))
                     );
+            }),
+            switchMap(({ path, sites, isRequired }) => {
+                if (path) {
+                    return of({ path, sites });
+                }
+
+                if (isRequired) {
+                    return dotEditContentService.getCurrentSiteAsTreeNodeItem().pipe(
+                        switchMap((currentSite) => {
+                            const node = sites.find((item) => item.label === currentSite.label);
+
+                            return of({
+                                path: node?.label,
+                                sites
+                            });
+                        })
+                    );
+                }
+
+                const node = sites.find((item) => item.label === SYSTEM_HOST_NAME);
+
+                return of({
+                    path: node?.label,
+                    sites
+                });
             }),
             filter(({ path }) => !!path),
             switchMap(({ path, sites }) => {

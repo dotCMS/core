@@ -58,4 +58,16 @@ export class DotSiteService {
 
         return `${BASE_SITE_URL}?${searchParams.toString()}`;
     }
+
+    /**
+     * Get current site
+     *
+     * @return {*}  {Observable<Site>}
+     * @memberof DotSiteService
+     */
+    getCurrentSite(): Observable<Site> {
+        return this.#http
+            .get<{ entity: Site }>(`${BASE_SITE_URL}/currentSite`)
+            .pipe(pluck('entity'));
+    }
 }
