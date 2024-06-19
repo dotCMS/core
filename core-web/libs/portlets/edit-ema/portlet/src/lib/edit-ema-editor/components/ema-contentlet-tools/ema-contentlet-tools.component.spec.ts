@@ -283,7 +283,8 @@ describe('EmaContentletToolsComponent', () => {
                     position: 'absolute',
                     left: '464px',
                     top: '80px',
-                    zIndex: '1'
+                    zIndex: '1',
+                    width: '128px'
                 });
             });
         });
