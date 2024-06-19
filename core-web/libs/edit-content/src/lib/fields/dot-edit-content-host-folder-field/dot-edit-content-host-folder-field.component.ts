@@ -15,7 +15,6 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { TreeSelect, TreeSelectModule } from './componentes/treeselect.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
-import { TreeNodeSelectItem } from '../../models/dot-edit-content-host-folder-field.interface';
 import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
 
 /**
@@ -60,6 +59,11 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
             const nodeSelected = this.store.nodeSelected();
             this.pathControl.setValue(nodeSelected);
         });
+
+        effect(() => {
+            const pathToSave = this.store.pathToSave();
+            this.formControl.setValue(pathToSave);
+        });
     }
 
     ngOnInit() {
@@ -73,15 +77,5 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
 
     get formControl(): FormControl {
         return this.#controlContainer.control.get(this.field.variable) as FormControl<string>;
-    }
-
-    onNodeSelect(event: TreeNodeSelectItem) {
-        const data = event.node.data;
-        if (!data) {
-            return;
-        }
-
-        const path = `${data.hostname}:${data.path ? data.path : '/'}`;
-        this.formControl.setValue(path);
     }
 }
