@@ -15,11 +15,20 @@
         <sha1/>
         <flatten.mode>oss</flatten.mode>
         <flatten.skip>false</flatten.skip>
+        <!-- default load from .sdkmanrc file -->
+        <!--suppress UnresolvedMavenProperty -->
+        <sdkman.java.version>${ext.java}</sdkman.java.version>
+        <!-- allows for override version of base for docker container separate from build -->
+        <runtime.docker.sdkman.java.version>${sdkman.java.version}</runtime.docker.sdkman.java.version>
 
-        <java.version>11</java.version>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <!-- this is the version of source we support in source must be same or less that running version
+         run version is set by .sdkmanrc file in project root should update only after downstream plugins and projects
+         support new version default in environments/environment.properties and can be changed for local developer in
+        environments/dev/user-dev.properties -->
+        <!--suppress UnresolvedMavenProperty -->
+        <maven.compiler.release>${ext.java.compat.version}</maven.compiler.release>
+        <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
         <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
         <java.module.args>
@@ -645,7 +654,7 @@
                     <version>${version.compiler.plugin}</version>
                     <configuration>
                         <fork>true</fork>
-                        <release>${java.version}</release>
+                        <release>${maven.compiler.release}</release>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
@@ -963,6 +972,7 @@
                             <useDefaultValues>true</useDefaultValues>
                             <files>
                                 <file>${environment.properties.defaults}</file>
+                                <file>${maven.multiModuleProjectDirectory}/.sdkmanrc</file>
                             </files>
                             <keyPrefix>ext.</keyPrefix>
                         </configuration>

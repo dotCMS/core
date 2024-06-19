@@ -87,6 +87,21 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         expect(spyloadSites).toHaveBeenCalled();
     });
 
+    it('should tree selection height and virtual scroll height be the same', async () => {
+        spectator.detectChanges();
+
+        const triggerElement = spectator.query('.p-treeselect-trigger');
+        spectator.click(triggerElement);
+
+        await spectator.fixture.whenStable();
+
+        const treeSelectHeight = spectator.component.treeSelect.scrollHeight;
+        const treeVirtualScrollHeight =
+            spectator.component.treeSelect.virtualScrollOptions.style['height'];
+
+        expect(treeSelectHeight).toBe(treeVirtualScrollHeight);
+    });
+
     describe('The init value with the root path', () => {
         it('should show a root path', () => {
             store.tree.set(TREE_SELECT_SITES_MOCK);

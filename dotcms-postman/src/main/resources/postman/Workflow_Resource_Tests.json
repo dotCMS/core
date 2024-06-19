@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "e23a58a0-1aff-4c1e-8ef1-5891723135ca",
+		"_postman_id": "79dc7a80-4564-43c5-8b9a-f46caecd5985",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "31066048"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -15589,14 +15589,17 @@
 									"",
 									"pm.test(\"Valid JSON field in response\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.fileAsset).to.include(\"greatings.txt\");",
+									"    pm.expect(jsonData.entity.fileAsset).to.include(\"greetings.txt\");",
 									"    pm.expect(jsonData.entity.contentType).to.be.eql(\"FileAsset\");",
+									"    pm.expect(jsonData.entity.metaData.name).to.be.eql(\"greetings.txt\");",
+									"    pm.expect(jsonData.entity.metaData.title).to.be.eql(\"greetings.txt\");",
 									"});",
 									"",
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -15620,7 +15623,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"hostFolder\":\"default\",\n        \"title\": \"greatings.txt\",\n        \"fileName\": \"greatings.txt\",\n        \"fileAsset\": {\n            \"fileName\": \"greatings.txt\",\n           \"content\": \"Hello dotCMS\"\n         },\n        \"contentType\": \"FileAsset\"\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n        \"hostFolder\":\"default\",\n        \"title\": \"greetings.txt\",\n        \"fileName\": \"greetings.txt\",\n        \"fileAsset\": {\n            \"fileName\": \"greetings.txt\",\n           \"content\": \"Hello dotCMS\"\n         },\n        \"contentType\": \"FileAsset\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"

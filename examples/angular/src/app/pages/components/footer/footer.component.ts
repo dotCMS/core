@@ -23,7 +23,6 @@ import { NgOptimizedImage } from '@angular/common';
         </p>
         <img
           [ngSrc]="
-            environment.dotcmsUrl +
             '/contentAsset/image/82da90eb-044d-44cc-a71b-86f79820b61b/fileAsset'
           "
           height="53"
