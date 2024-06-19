@@ -40,16 +40,15 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
                         }),
                         map((sites) => ({
                             path,
-                            sites
+                            sites,
+                            isRequired
                         }))
                     );
             }),
-            switchMap(({ path, sites }) => {
+            switchMap(({ path, sites, isRequired }) => {
                 if (path) {
                     return of({ path, sites });
                 }
-
-                const isRequired = false;
 
                 if (isRequired) {
                     return dotEditContentService.getCurrentSite().pipe(
