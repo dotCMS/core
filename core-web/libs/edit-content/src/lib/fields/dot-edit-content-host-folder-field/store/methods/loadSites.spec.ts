@@ -26,7 +26,7 @@ describe('rxMethod: loadSites', () => {
             service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
             const rxMethod = TestBed.runInInjectionContext(() => loadSites(store, service));
             const props = {
-                path: '',
+                path: null,
                 isRequired: false
             };
             rxMethod(props);
@@ -38,7 +38,7 @@ describe('rxMethod: loadSites', () => {
             service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
             const rxMethod = TestBed.runInInjectionContext(() => loadSites(store, service));
             const props = {
-                path: '',
+                path: null,
                 isRequired: true
             };
             rxMethod(props);
