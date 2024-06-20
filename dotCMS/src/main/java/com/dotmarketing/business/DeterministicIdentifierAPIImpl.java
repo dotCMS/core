@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import static com.dotmarketing.util.UUIDUtil.isUUID;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -9,6 +11,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -22,25 +25,24 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.codec.digest.DigestUtils;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.util.UUIDUtil.isUUID;
+import org.apache.commons.codec.digest.DigestUtils;
 
 /**
  * This class is an implementation of the {@link DeterministicIdentifierAPI} interface.
@@ -410,6 +412,22 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
                 this::isContentTypeInode, uuidSupplier) : uuidSupplier.get();
     }
 
+    @CloseDBIfOpened
+    @Override
+    public String generateDeterministicIdBestEffort(final WorkflowScheme scheme) {
+
+        if (isEnabled()) {
+
+            final var hash = hash(scheme.getVariableName());
+            // For legacy reasons, mainly because of short IDs we should keep using the UUID format (-)
+            final var deterministicUUID = UUIDUtil.uuidIfy(hash);
+
+            return bestEffortDeterministicId(deterministicUUID, this::isWorkflowId, uuidSupplier);
+        }
+
+        return uuidSupplier.get();
+    }
+
     /**
      * Entry point for field id generation
      * @param throwAwayField a field that might or might not has been initialized
@@ -558,6 +576,29 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
                 .setSQL("SELECT count(*) as test  FROM inode, category WHERE inode.inode = category.inode AND inode.type = 'category' AND inode.inode =?")
                 .addParam(hash)
                 .getInt("test")>0;
+    }
+
+    /**
+     * Test the calculated hash has already been used as a workflow identifier
+     *
+     * @param hash the hash to test
+     * @return true if the hash has been used as a workflow identifier
+     */
+    private boolean isWorkflowId(final String hash) {
+
+        try {
+            final var result = APILocator.getWorkflowAPI().findScheme(hash);
+            return result != null &&
+                    org.apache.commons.lang.StringUtils.isNotEmpty(result.getId());
+        } catch (DoesNotExistException e) {
+            return false;
+        } catch (DotDataException | DotSecurityException e) {
+            final var message = String.format(
+                    "Error validating if the hash [%s] is an existing workflow scheme ID", hash
+            );
+            Logger.error(this.getClass(), message, e);
+            throw new DotRuntimeException(message, e);
+        }
     }
 
     /**
