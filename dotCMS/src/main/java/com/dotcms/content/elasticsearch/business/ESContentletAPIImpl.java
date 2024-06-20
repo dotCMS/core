@@ -7211,8 +7211,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void setContentletProperty(Contentlet contentlet, Field field, Object value)
             throws DotContentletStateException {
 
-        final String[] dateFormats = Config.getStringArrayProperty("dotcontentlet_dateformats",
-                DEFAULT_DATE_FORMATS);
+        final String[] dateFormats = this.getContentletDateFormats();
 
         if (contentlet == null) {
             throw new DotContentletValidationException("The contentlet must not be null");
@@ -7376,7 +7375,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param value
      * @param dateFormats
      */
-    private static void parseDate(final Contentlet contentlet,
+    public static void parseDate(final Contentlet contentlet,
                                   final Field field,
                                   final Object value,
                                   final String... dateFormats) {
