@@ -123,7 +123,7 @@
         <version.deploy.plugin>3.1.1</version.deploy.plugin>
         <version.docker-compose.plugin>4.0.0</version.docker-compose.plugin>
         <!-- version.* properties are defined in jboss-parent and are overridden/updated here: -->
-        <version.enforcer.plugin>3.0.0</version.enforcer.plugin>
+        <version.enforcer.plugin>3.5.0</version.enforcer.plugin>
         <version.exec.plugin>3.0.0</version.exec.plugin>
         <version.surefire.plugin>3.2.5</version.surefire.plugin>
         <version.failsafe.plugin>${version.surefire.plugin}</version.failsafe.plugin>
