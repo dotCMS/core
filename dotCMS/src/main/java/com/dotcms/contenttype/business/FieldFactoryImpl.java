@@ -350,7 +350,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
                 if (org.apache.commons.lang.StringUtils.isNotEmpty(field.variable())) {
 
-                    Logger.warn(this.getClass(), String.format(
+                    Logger.debug(this.getClass(), String.format(
                             "Failed to find field by ID [%s]. Falling back to lookup by variable [%s].",
                             field.id(), field.variable()
                     ));

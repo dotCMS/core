@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "7b7931a7-d546-4f77-b4de-6cd7c851686b",
+		"_postman_id": "617b5d0d-55d0-48e0-9a41-23d6f364b41b",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "3028555"
+		"_exporter_id": "31066048"
 	},
 	"item": [
 		{
@@ -8035,6 +8035,2920 @@
 					}
 				]
 			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Test Workflows",
+			"item": [
+				{
+					"name": "Simple workflows array",
+					"item": [
+						{
+							"name": "Creation",
+							"item": [
+								{
+									"name": "Create Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing workflow data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"schemeId\", jsonData.entity.id);",
+													"    pm.collectionVariables.set(\"schemeName\", jsonData.entity.name);",
+													"    pm.collectionVariables.set(\"schemeVariableName\", jsonData.entity.variableName);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"schemeName\": \"Test Schema {{$timestamp}}\", \"schemeDescription\": \"Test sechema\", \"schemeArchived\": \"false\"}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes"
+											]
+										},
+										"description": "Creates a new test scheme"
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with workflow id",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type using a workflow id."
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content Type",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Delete ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with workflow variable name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"systemworkflow\"]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type using a workflow variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Delete ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with workflow variable name and id",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var testSchemeId = pm.collectionVariables.get(\"schemeId\");",
+													"    var testSchemeVariableName = pm.collectionVariables.get(\"schemeVariableName\");",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    workflows = workflows.sort(compareBy);",
+													"    pm.expect(2).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"    pm.expect(workflows[1].id).to.eql(testSchemeId);",
+													"    pm.expect(workflows[1].variableName).to.eql(testSchemeVariableName);",
+													"});",
+													"",
+													"function compareBy(a, b) {",
+													"  if (a.variableName < b.variableName) { return -1; }",
+													"  if (a.variableName > b.variableName) { return  1; }",
+													"  return 0;",
+													"}",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"{{schemeId}}\",\"systemworkflow\"]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type using a workflow id and a workflow variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Delete ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with wrong workflow #1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be 400\", function () {",
+													"    pm.response.to.have.status(400);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"doesNotExist\",\"systemworkflow\"]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Validates the proper error handling when a wrong workflow is used."
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with wrong workflow #2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be 400\", function () {",
+													"    pm.response.to.have.status(400);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"doesNotExist\"]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Validates the proper error handling when a wrong workflow is used."
+									},
+									"response": []
+								},
+								{
+									"name": "Archive Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"schemeName\": \"{{schemeName}}\", \"schemeArchived\": \"true\"}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes",
+												"{{schemeId}}"
+											]
+										},
+										"description": "\n### Update Workflow Scheme\n\nUpdates an existing workflow scheme.\n\n#### Request Body\n- `schemeName` (string, optional): The name of the scheme.\n- `schemeArchived` (boolean, optional): Indicates if the scheme is archived.\n\n#### Response\nThe response for this request is documented as a JSON schema.\n"
+									},
+									"response": []
+								},
+								{
+									"name": "Delete Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes",
+												"{{schemeId}}"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Covering different save scenarios for saving workflows in a content type.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Update",
+							"item": [
+								{
+									"name": "Create Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing workflow data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"schemeId\", jsonData.entity.id);",
+													"    pm.collectionVariables.set(\"schemeName\", jsonData.entity.name);",
+													"    pm.collectionVariables.set(\"schemeVariableName\", jsonData.entity.variableName);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"schemeName\": \"Test Schema {{$timestamp}}\", \"schemeDescription\": \"Test sechema\", \"schemeArchived\": \"false\"}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes"
+											]
+										},
+										"description": "Creates a test scheme"
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[0].id);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type using a workflow id."
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content Type",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with workflow id",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var jsonData = pm.response.json();",
+													"",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates a content type using a workflow id."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with workflow variable name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var jsonData = pm.response.json();",
+													"",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"systemworkflow\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates a content type using a workflow variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with workflow variable name and id",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var testSchemeId = pm.collectionVariables.get(\"schemeId\");",
+													"    var testSchemeVariableName = pm.collectionVariables.get(\"schemeVariableName\");",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity.workflows;",
+													"    workflows = workflows.sort(compareBy);",
+													"    pm.expect(2).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"    pm.expect(workflows[1].id).to.eql(testSchemeId);",
+													"    pm.expect(workflows[1].variableName).to.eql(testSchemeVariableName);",
+													"});",
+													"",
+													"function compareBy(a, b) {",
+													"  if (a.variableName < b.variableName) { return -1; }",
+													"  if (a.variableName > b.variableName) { return  1; }",
+													"  return 0;",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"systemworkflow\", \"{{schemeId}}\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates a content type using a workflow variable name and a workflow id."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with wrong workflow #1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be 400\", function () {",
+													"    pm.response.to.have.status(400);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"systemworkflow\", \"doestNotExist\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Validates the proper error handling when a wrong workflow is used."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with wrong workflow #2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be 400\", function () {",
+													"    pm.response.to.have.status(400);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"doestNotExist\"]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Validates the proper error handling when a wrong workflow is used."
+									},
+									"response": []
+								},
+								{
+									"name": "Delete ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Archive Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"schemeName\": \"{{schemeName}}\", \"schemeArchived\": \"true\"}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes",
+												"{{schemeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Delete Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes",
+												"{{schemeId}}"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Covering different update scenarios for saving workflows in a content type.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								}
+							]
+						}
+					],
+					"description": "The content type allows to pass a simple array of workflows ids or variables, these tests cases will cover diferent escenarios for this workflows list."
+				},
+				{
+					"name": "Structured workflows array",
+					"item": [
+						{
+							"name": "Creation",
+							"item": [
+								{
+									"name": "Create Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing workflow data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"schemeId\", jsonData.entity.id);",
+													"    pm.collectionVariables.set(\"schemeName\", jsonData.entity.name);",
+													"    pm.collectionVariables.set(\"schemeVariableName\", jsonData.entity.variableName);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"schemeName\": \"Test Schema {{$timestamp}}\", \"schemeDescription\": \"Test sechema\", \"schemeArchived\": \"false\"}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes"
+											]
+										},
+										"description": "Creates a new test scheme"
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with workflow id and variable name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"Test Content Type\",\n    \"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"unique\": false,\n            \"name\": \"Name\",\n            \"variable\": \"name\",\n            \"fixed\": true\n        }\n    ],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n            \"variableName\": \"SystemWorkflow\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type specifying a workflow id and variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content Type",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Delete ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with workflow variable name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"variableName\": \"SystemWorkflow\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type using just the workflow variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Delete ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with workflow id",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type using just the workflow id."
+									},
+									"response": []
+								},
+								{
+									"name": "Delete ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with multiple workflows",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var testSchemeId = pm.collectionVariables.get(\"schemeId\");",
+													"    var testSchemeVariableName = pm.collectionVariables.get(\"schemeVariableName\");",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    workflows = workflows.sort(compareBy);",
+													"    pm.expect(2).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"    pm.expect(workflows[1].id).to.eql(testSchemeId);",
+													"    pm.expect(workflows[1].variableName).to.eql(testSchemeVariableName);",
+													"});",
+													"",
+													"function compareBy(a, b) {",
+													"  if (a.variableName < b.variableName) { return -1; }",
+													"  if (a.variableName > b.variableName) { return  1; }",
+													"  return 0;",
+													"}",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n            \"variableName\": \"SystemWorkflow\"\n        },\n        {\n            \"id\": \"{{schemeId}}\",\n            \"variableName\": \"{{schemeVariableName}}\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type with multiple workflows"
+									},
+									"response": []
+								},
+								{
+									"name": "Delete ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with non existing id but valid variable",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bf12345\",\n            \"variableName\": \"SystemWorkflow\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type with with a workflow using a non existing id but with a valid variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with non existing variable but valid id",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n            \"variableName\": \"doesNotExit\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type with with a workflow using a non existing variable but with a valid id."
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with wrong workflow #1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be 400\", function () {",
+													"    pm.response.to.have.status(400);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"doesNotExist\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Validates the proper error handling when a wrong workflow is used."
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType with wrong workflow #2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be 400\", function () {",
+													"    pm.response.to.have.status(400);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"variableName\": \"doesNotExist\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Validates the proper error handling when a wrong workflow is used."
+									},
+									"response": []
+								},
+								{
+									"name": "Archive Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"schemeName\": \"{{schemeName}}\", \"schemeArchived\": \"true\"}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes",
+												"{{schemeId}}"
+											]
+										},
+										"description": "\n### Update Workflow Scheme\n\nUpdates an existing workflow scheme.\n\n#### Request Body\n- `schemeName` (string, optional): The name of the scheme.\n- `schemeArchived` (boolean, optional): Indicates if the scheme is archived.\n\n#### Response\nThe response for this request is documented as a JSON schema.\n"
+									},
+									"response": []
+								},
+								{
+									"name": "Delete Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes",
+												"{{schemeId}}"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Covering different save scenarios for saving workflows in a content type.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Update",
+							"item": [
+								{
+									"name": "Create Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing workflow data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"schemeId\", jsonData.entity.id);",
+													"    pm.collectionVariables.set(\"schemeName\", jsonData.entity.name);",
+													"    pm.collectionVariables.set(\"schemeVariableName\", jsonData.entity.variableName);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"schemeName\": \"Test Schema {{$timestamp}}\", \"schemeDescription\": \"Test sechema\", \"schemeArchived\": \"false\"}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes"
+											]
+										},
+										"description": "Creates a test scheme"
+									},
+									"response": []
+								},
+								{
+									"name": "Create ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Storing content type data\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[0].id);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity[0].workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$randomAlphaNumeric}}{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n            \"variableName\": \"SystemWorkflow\"\n        }\n    ]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										},
+										"description": "Creates a content type with a workflow using an id and variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content Type",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with workflow id and variable name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var jsonData = pm.response.json();",
+													"",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n            \"variableName\": \"SystemWorkflow\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates a content type using a workflow with id and variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with workflow variable name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var jsonData = pm.response.json();",
+													"",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"variableName\": \"SystemWorkflow\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates a content type using a workflow with just a variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with workflow id",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var jsonData = pm.response.json();",
+													"",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates a content type using a workflow with just an id."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with with multiple workflows",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var testSchemeId = pm.collectionVariables.get(\"schemeId\");",
+													"    var testSchemeVariableName = pm.collectionVariables.get(\"schemeVariableName\");",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    ",
+													"    var workflows = jsonData.entity.workflows;",
+													"    workflows = workflows.sort(compareBy);",
+													"    pm.expect(2).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"    pm.expect(workflows[1].id).to.eql(testSchemeId);",
+													"    pm.expect(workflows[1].variableName).to.eql(testSchemeVariableName);",
+													"});",
+													"",
+													"function compareBy(a, b) {",
+													"  if (a.variableName < b.variableName) { return -1; }",
+													"  if (a.variableName > b.variableName) { return  1; }",
+													"  return 0;",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n            \"variableName\": \"SystemWorkflow\"\n        },\n        {\n            \"id\": \"{{schemeId}}\",\n            \"variableName\": \"{{schemeVariableName}}\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates a content type with multiple workflow."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with non existing id but valid variable",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var jsonData = pm.response.json();",
+													"",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bf12345\",\n            \"variableName\": \"SystemWorkflow\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates a content type with a workflow where the id is invalid but with a valid variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with non existing variable but valid id",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Validate response\", function () {",
+													"",
+													"    var jsonData = pm.response.json();",
+													"",
+													"    var workflows = jsonData.entity.workflows;",
+													"    pm.expect(1).to.eql(workflows.length);",
+													"    pm.expect(workflows[0].id).to.eql(\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
+													"    pm.expect(workflows[0].variableName).to.eql(\"SystemWorkflow\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n            \"variableName\": \"doesNotExit\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates a content type with a workflow where the id valid but with an invalid variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with wrong workflow #1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be 400\", function () {",
+													"    pm.response.to.have.status(400);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"id\": \"doesNotExist\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Validates the proper error handling when a wrong workflow id is used."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with wrong workflow #2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be 400\", function () {",
+													"    pm.response.to.have.status(400);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\": [\n        {\n            \"variableName\": \"doesNotExist\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Validates the proper error handling when a wrong workflow variable name is used."
+									},
+									"response": []
+								},
+								{
+									"name": "Delete ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Archive Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"schemeName\": \"{{schemeName}}\", \"schemeArchived\": \"true\"}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes",
+												"{{schemeId}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Delete Scheme",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 200 \", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												},
+												{
+													"key": "saveHelperData",
+													"type": "any"
+												},
+												{
+													"key": "showPassword",
+													"value": false,
+													"type": "boolean"
+												}
+											]
+										},
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"schemes",
+												"{{schemeId}}"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Covering different update scenarios for saving workflows in a content type.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								}
+							]
+						}
+					],
+					"description": "The content type allows to pass also a more estructured array of workflows where you can specify the id and variable for each workflow, these tests cases will cover diferent escenarios for this workflows list."
+				}
+			],
+			"description": "Testing the diferent scenarios for saving workflows in a Content Type",
 			"event": [
 				{
 					"listen": "prerequest",

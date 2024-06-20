@@ -58,7 +58,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -302,7 +301,6 @@ public class ContentTypeResource implements Serializable {
 				final ContentType type = contentTypeHelper.evaluateContentTypeRequest(
 						entry.contentType, user, true
 				);
-				final Set<String> workflowsIds = new HashSet<>(entry.workflowsIds);
 
 				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
 					return ExceptionMapperUtil.createResponse(null, String.format("Content Type ID " +
@@ -310,7 +308,8 @@ public class ContentTypeResource implements Serializable {
 				}
 
 				final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>>  tuple2 =
-						this.saveContentTypeAndDependencies(type, initData.getUser(), workflowsIds,
+						this.saveContentTypeAndDependencies(type, initData.getUser(),
+								entry.workflows,
 							form.getSystemActions(), APILocator.getContentTypeAPI(user, true), true);
 				final ContentType contentTypeSaved = tuple2._1;
 				final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
@@ -388,7 +387,7 @@ public class ContentTypeResource implements Serializable {
 
 			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
 					this.saveContentTypeAndDependencies(contentType, user,
-							new HashSet<>(form.getWorkflowsIds()), form.getSystemActions(),
+							form.getWorkflows(), form.getSystemActions(),
 							contentTypeAPI, false);
 			final ImmutableMap.Builder<Object, Object> builderMap =
 					ImmutableMap.builder()
@@ -448,14 +447,14 @@ public class ContentTypeResource implements Serializable {
 	@WrapInTransaction
 	private Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> saveContentTypeAndDependencies (final ContentType contentType,
 																								   final User user,
-																								   final Set<String> workflowsIds,
+																								   final List<WorkflowFormEntry> workflows,
 																								   final List<Tuple2<WorkflowAPI.SystemAction,String>> systemActionMappings,
 																								   final ContentTypeAPI contentTypeAPI,
 																								   final boolean isNew) throws DotSecurityException, DotDataException {
 
 		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = new ArrayList<>();
 		final ContentType contentTypeSaved = contentTypeAPI.save(contentType);
-		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
+		this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
 
 		if (!isNew) {
 			this.handleFields(contentTypeSaved.id(), contentType.fieldMap(), user, contentTypeAPI);
