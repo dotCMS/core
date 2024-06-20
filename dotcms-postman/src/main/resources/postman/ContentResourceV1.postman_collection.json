@@ -308,7 +308,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Response message\", function () {",
-											"    pm.expect(pm.response.json().message).to.include('The contentlet wrongID and language 1 does not exists');",
+											"    pm.expect(pm.response.json().message).to.include('The contentlet wrongID and language 1 does not exist');",
 											"});"
 										],
 										"type": "text/javascript",
@@ -1216,7 +1216,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Body matches string\", function () {",
-											"    pm.expect(pm.response.text()).to.include(\"The contentlet 6faf3063-5478-4e0a-a44b-dba540ec79 and language 1 does not exists\");",
+											"    pm.expect(pm.response.text()).to.include(\"The contentlet 6faf3063-5478-4e0a-a44b-dba540ec79 and language 1 does not exist\");",
 											"});",
 											""
 										],
@@ -1258,7 +1258,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Body matches string\", function () {",
-											"    pm.expect(pm.response.text()).to.contains(\"The contentlet 21b19188-bd85-4baa-bba2-5b54cd1cb3ea and language 1 does not exists\");",
+											"    pm.expect(pm.response.text()).to.contains(\"The contentlet 21b19188-bd85-4baa-bba2-5b54cd1cb3ea and language 1 does not exist\");",
 											"});",
 											""
 										],

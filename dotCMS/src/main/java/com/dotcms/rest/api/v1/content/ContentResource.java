@@ -355,7 +355,7 @@ public class ContentResource {
      * @return the contentlet object
      */
     private static String getDoesNotExistMessage(final String inodeOrIdentifier, final long languageId){
-        return String.format("The contentlet %s and language %d does not exists", inodeOrIdentifier, languageId);
+        return String.format("The contentlet %s and language %d does not exist", inodeOrIdentifier, languageId);
     }
 
     /**
