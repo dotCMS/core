@@ -1,5 +1,22 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.ARCHIVED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.EDITING;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.LISTING;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.LOCKED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.NEW;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.PUBLISHED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNLOCKED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNPUBLISHED;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
@@ -81,35 +98,28 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.ARCHIVED;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.EDITING;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.LISTING;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.LOCKED;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.NEW;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.PUBLISHED;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNLOCKED;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNPUBLISHED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Test the workflowAPI
@@ -959,6 +969,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         final WorkflowAction workflowAction       = new WorkflowAction();
         workflowAction.setId("non-existing");
+        workflowAction.setSchemeId("non-existing");
         final Optional<WorkflowStep> workflowStep = workflowAPI.findFirstStepForAction(workflowAction);
         Assert.assertFalse(workflowStep.isPresent());
     }
@@ -4661,6 +4672,133 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertTrue(comments1.get(0).createdDate().after(comments1.get(1).createdDate()) );
         //the comment 1 should be the first one
         assertEquals("comment test 1", comments1.get(0).commentDescription());
+    }
+
+    /**
+     * Method to test: N/A
+     * <p>
+     * Given Scenario: Workflows with the same and different names are created
+     * <p>
+     * ExpectedResult: Variable names are correctly created and incremented for workflows with
+     * duplicate names and properly created for workflows with different names
+     *
+     * @throws DotDataException      if a data access error occurs.
+     * @throws DotSecurityException  if a security error occurs.
+     * @throws AlreadyExistException if an existing entity conflicts with the operation.
+     */
+    @Test
+    public void test_variableName_creation()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        final long currentTimeMilis = System.currentTimeMillis();
+        final String schemeName = "TestScheme" + currentTimeMilis;
+
+        // Creating test workflows, some with the same name
+        final var workflow1 = new WorkflowDataGen().name(schemeName).nextPersisted();
+        final var workflow2 = new WorkflowDataGen().name(schemeName).nextPersisted();
+        final var workflow3 = new WorkflowDataGen().name(schemeName).nextPersisted();
+        final var workflow4 = new WorkflowDataGen().name(schemeName).nextPersisted();
+        final var workflow5 = new WorkflowDataGen().name("AnotherTestScheme" + currentTimeMilis).
+                nextPersisted();
+
+        try {
+            // Validate we created properly the variable name
+            var expectedVariableNames = new String[]{
+                    "TestScheme" + currentTimeMilis,
+                    "TestScheme" + currentTimeMilis + "1",
+                    "TestScheme" + currentTimeMilis + "2",
+                    "TestScheme" + currentTimeMilis + "3",
+                    "AnotherTestScheme" + currentTimeMilis
+            };
+
+            for (String variableName : expectedVariableNames) {
+                final DotConnect dotConnect = new DotConnect();
+                dotConnect.setSQL("SELECT count(*) FROM workflow_scheme WHERE variable_name = ?");
+                dotConnect.addParam(variableName);
+
+                assertEquals(1, dotConnect.getInt("count"));
+            }
+        } finally {
+            cleanUpWorkflows(workflow1, workflow2, workflow3, workflow4, workflow5);
+        }
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPI#findScheme(String)}
+     * <p>
+     * Given Scenario: Workflow schemes are searched by their ID and variable name
+     * <p>
+     * ExpectedResult: Workflow schemes are found by their ID and variable name, and an appropriate
+     * error is thrown for non-existent schemes
+     *
+     * @throws DotDataException      if a data access error occurs.
+     * @throws DotSecurityException  if a security error occurs.
+     * @throws AlreadyExistException if an existing entity conflicts with the operation.
+     */
+    @Test
+    public void test_findScheme()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        final long currentTimeMilis = System.currentTimeMillis();
+
+        // Creating test workflows, some with the same name
+        final var workflow1 = new WorkflowDataGen().name("testScheme" + currentTimeMilis).
+                nextPersisted();
+        final var workflow2 = new WorkflowDataGen().name("anotherTestScheme" + currentTimeMilis).
+                nextPersisted();
+
+        try {
+            // Searching the system workflow by id
+            var systemWorkflow = workflowAPI.findScheme(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID);
+            assertNotNull(systemWorkflow);
+            assertEquals(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID, systemWorkflow.getId());
+            assertEquals(SystemWorkflowConstants.SYSTEM_WORKFLOW_VARIABLE_NAME,
+                    systemWorkflow.getVariableName());
+
+            // Searching the system workflow by variable name
+            systemWorkflow = workflowAPI.findScheme(
+                    SystemWorkflowConstants.SYSTEM_WORKFLOW_VARIABLE_NAME);
+            assertNotNull(systemWorkflow);
+            assertEquals(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID, systemWorkflow.getId());
+            assertEquals(SystemWorkflowConstants.SYSTEM_WORKFLOW_VARIABLE_NAME,
+                    systemWorkflow.getVariableName());
+
+            // Searching for the just created test workflows
+            var result = workflowAPI.findScheme("testscheme" + currentTimeMilis);
+            assertNotNull(result);
+            assertEquals(workflow1.getId(), result.getId());
+
+            result = workflowAPI.findScheme("tesTscheME" + currentTimeMilis);
+            assertNotNull(result);
+            assertEquals(workflow1.getId(), result.getId());
+
+            result = workflowAPI.findScheme(workflow2.getId());
+            assertNotNull(result);
+            assertEquals(workflow2.getId(), result.getId());
+
+            // Searching a non-existing workflow scheme and validate the proper error handling
+            try {
+                workflowAPI.findScheme("does-not-exist");
+                fail("Expected DoesNotExistException not thrown");
+            } catch (Exception e) {
+                assertTrue(e instanceof DoesNotExistException);
+            }
+        } finally {
+            cleanUpWorkflows(workflow1, workflow2);
+        }
+    }
+
+    /**
+     * Cleans up the test workflows created during the test cases.
+     *
+     * @param workflowSchemes the workflows to be removed.
+     */
+    private void cleanUpWorkflows(final WorkflowScheme... workflowSchemes)
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+        for (WorkflowScheme testScheme : workflowSchemes) {
+            APILocator.getWorkflowAPI().archive(testScheme, APILocator.systemUser());
+            APILocator.getWorkflowAPI().deleteScheme(testScheme, APILocator.systemUser());
+        }
     }
 
 }

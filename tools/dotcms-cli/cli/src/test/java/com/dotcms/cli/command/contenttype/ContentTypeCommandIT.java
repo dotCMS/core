@@ -1,5 +1,7 @@
 package com.dotcms.cli.command.contenttype;
 
+import static com.dotcms.cli.common.ContentTypesTestHelperService.SYSTEM_WORKFLOW_ID;
+import static com.dotcms.cli.common.ContentTypesTestHelperService.SYSTEM_WORKFLOW_VARIABLE_NAME;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.dotcms.DotCMSITProfile;
@@ -21,6 +23,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.workflow.ImmutableWorkflow;
 import com.dotcms.model.config.Workspace;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
@@ -789,6 +792,159 @@ class ContentTypeCommandIT extends CommandTest {
                     ContentType.class
             );
             Assertions.assertEquals(detailPage2URL, updatedContentType.detailPage());
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Testing the Content Type push command modifying the workflows
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_With_Workflows() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).id(),
+                    updatedContentType.workflows().get(0).id()
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).variableName(),
+                    updatedContentType.workflows().get(0).variableName()
+            );
+
+            // ╔══════════════════════════════════════════════════════════════════════════════╗
+            // ║  Modifying the workflows of the content type -> With just the variable name  ║
+            // ╚══════════════════════════════════════════════════════════════════════════════╝
+            updatedContentType = ImmutableSimpleContentType.builder().from(updatedContentType)
+                    .workflows(
+                            List.of(
+                                    ImmutableWorkflow.builder()
+                                            .variableName(SYSTEM_WORKFLOW_VARIABLE_NAME)
+                                            .build()
+                            )
+                    ).build();
+            var jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentType);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔════════════════════════════════╗
+            // ║  Pushing again the descriptor  ║
+            // ╚════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).id(),
+                    updatedContentType.workflows().get(0).id()
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).variableName(),
+                    updatedContentType.workflows().get(0).variableName()
+            );
+
+            // ╔═══════════════════════════════════════════════════════════════════╗
+            // ║  Modifying the workflows of the content type -> With just the id  ║
+            // ╚═══════════════════════════════════════════════════════════════════╝
+            updatedContentType = ImmutableSimpleContentType.builder().from(updatedContentType)
+                    .workflows(
+                            List.of(
+                                    ImmutableWorkflow.builder()
+                                            .id(SYSTEM_WORKFLOW_ID)
+                                            .build()
+                            )
+                    ).build();
+            jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentType);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔════════════════════════════════╗
+            // ║  Pushing again the descriptor  ║
+            // ╚════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).id(),
+                    updatedContentType.workflows().get(0).id()
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).variableName(),
+                    updatedContentType.workflows().get(0).variableName()
+            );
         } finally {
             deleteTempDirectory(tempFolder);
         }
