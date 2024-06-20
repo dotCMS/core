@@ -1211,6 +1211,17 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         },
         expandedIcon: 'pi pi-folder-open',
         collapsedIcon: 'pi pi-folder'
+    },
+    {
+        key: 'System Host',
+        label: 'System Host',
+        data: {
+            hostname: 'System Host',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder'
     }
 ];
 

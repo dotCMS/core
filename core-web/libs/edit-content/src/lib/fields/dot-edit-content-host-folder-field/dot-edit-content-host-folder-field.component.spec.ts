@@ -1,4 +1,3 @@
-import { createFakeEvent } from '@ngneat/spectator';
 import { Spectator, SpyObject, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { signal } from '@angular/core';
@@ -31,6 +30,7 @@ class MockHostFolderFiledStore {
 
     loadSites = newFakeRxMethod();
     loadChildren = newFakeRxMethod();
+    chooseNode = newFakeRxMethod();
 }
 
 type TypeMock = SpyObject<MockHostFolderFiledStore>;
@@ -140,41 +140,6 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             expect(component.formControl.value).toBe('demo.dotcms.com/level1/child1/');
             expect(component.pathControl.value.key).toBe(nodeSelected.key);
             expect(component.treeSelect.value.label).toBe(nodeSelected.label);
-        });
-    });
-
-    describe('Select levels: onNodeSelect', () => {
-        it('should update the form value with the correct format with root path', () => {
-            spectator.detectChanges();
-            const mockItem = {
-                originalEvent: createFakeEvent('input'),
-                node: { ...TREE_SELECT_MOCK[0] }
-            };
-            component.onNodeSelect(mockItem);
-            const value = component.formControl.value;
-            expect(value).toBe('demo.dotcms.com:/');
-        });
-
-        it('should update the form value with the correct format with one level', () => {
-            spectator.detectChanges();
-            const mockItem = {
-                originalEvent: createFakeEvent('input'),
-                node: { ...TREE_SELECT_MOCK[0].children[0] }
-            };
-            component.onNodeSelect(mockItem);
-            const value = component.formControl.value;
-            expect(value).toBe('demo.dotcms.com:/level1/');
-        });
-
-        it('should update the form value with the correct format with two level', () => {
-            spectator.detectChanges();
-            const mockItem = {
-                originalEvent: createFakeEvent('input'),
-                node: { ...TREE_SELECT_MOCK[0].children[0].children[0] }
-            };
-            component.onNodeSelect(mockItem);
-            const value = component.formControl.value;
-            expect(value).toBe('demo.dotcms.com:/level1/child1/');
         });
     });
 });
