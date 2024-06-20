@@ -1,4 +1,5 @@
-name: Build SDKMan Base java image
+name: Build SDKMan Base Java Image
+run-name: Base Image for ${{ inputs.sdkman_java_version }} by @${{ github.actor }}
 on:
   workflow_dispatch:
     inputs:
@@ -51,7 +52,7 @@ jobs:
         with:
           context: ./docker/java-base
           push: ${{ github.event.inputs.push }}
-          tags: ${{ github.event.inputs.tags }}
+          tags: ${{ github.event.inputs.sdkman_java_version }}
           platforms: ${{ env.PLATFORMS }}
           build-args:
             SDKMAN_JAVA_VERSION=${{ github.event.inputs.sdkman_java_version }}
