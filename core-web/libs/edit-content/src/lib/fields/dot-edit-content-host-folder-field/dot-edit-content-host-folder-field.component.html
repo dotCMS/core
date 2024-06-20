@@ -1,5 +1,5 @@
 <p-treeSelect
-    (onNodeSelect)="onNodeSelect($event)"
+    (onNodeSelect)="store.chooseNode($event)"
     (onNodeExpand)="store.loadChildren($event)"
     [formControl]="pathControl"
     [filter]="true"
