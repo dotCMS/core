@@ -193,20 +193,28 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
     readonly deleteLocale = this.effect<number>((languageId$) =>
         languageId$.pipe(
             tap(() => this.setStatus(ComponentStatus.LOADING)),
-            switchMap((languageId) => this.languageService.delete(languageId)),
+            switchMap((languageId) =>
+                this.languageService.delete(languageId).pipe(
+                    tap(() =>
+                        this.messageService.add({
+                            severity: 'info',
+                            summary: this.dotMessageService.get(
+                                'locale.delete.confirmation.notification.title'
+                            ),
+                            detail: this.dotMessageService.get(
+                                'locale.delete.confirmation.notification.message'
+                            )
+                        })
+                    ),
+                    catchError((error: HttpErrorResponse) =>
+                        this.dotHttpErrorManagerService.handle(error)
+                    )
+                )
+            ),
             switchMap(() => this.languageService.get()),
             tap((languages) => {
                 this.setStatus(ComponentStatus.IDLE);
                 this.setLocales(languages);
-                this.messageService.add({
-                    severity: 'info',
-                    summary: this.dotMessageService.get(
-                        'locale.delete.confirmation.notification.title'
-                    ),
-                    detail: this.dotMessageService.get(
-                        'locale.delete.confirmation.notification.message'
-                    )
-                });
             }),
             catchError((error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error))
         )
