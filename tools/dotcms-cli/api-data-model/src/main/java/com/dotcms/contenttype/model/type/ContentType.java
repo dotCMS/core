@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
 import com.dotcms.contenttype.model.workflow.Workflow;
 import com.dotcms.model.views.CommonViews;
+import com.dotcms.model.views.CommonViews.ContentTypeInternalView;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -173,6 +174,7 @@ public abstract class ContentType {
         return Collections.emptyMap();
     }
 
+    @JsonView({ContentTypeInternalView.class})
     @Value.Default
     public List<Workflow> workflows() {
         return Collections.emptyList();

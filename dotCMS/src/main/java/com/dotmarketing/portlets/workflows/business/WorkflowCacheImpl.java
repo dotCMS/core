@@ -6,16 +6,18 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 //This interface should have default package access
 public class WorkflowCacheImpl extends WorkflowCache {
@@ -40,16 +42,13 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		return schemes;
 		
 	}
-	
+
 	protected WorkflowScheme add(WorkflowScheme scheme) {
 
-		String key = scheme.getId();
+		cache.put(scheme.getId(), scheme, getPrimaryGroup());
+		cache.put(scheme.getVariableName(), scheme, getPrimaryGroup());
 
-		// Add the key to the cache
-		cache.put(key, scheme, getPrimaryGroup());
-
-			return scheme;
-		
+		return scheme;
 	}
 
 	public WorkflowScheme getScheme(String key) {
@@ -85,6 +84,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	public void remove(WorkflowScheme scheme) {
 		if (scheme != null && UtilMethods.isSet(scheme)) {
 			cache.remove(scheme.getId(), getPrimaryGroup());
+			cache.remove(scheme.getVariableName(), getPrimaryGroup());
 		}
 	}
 

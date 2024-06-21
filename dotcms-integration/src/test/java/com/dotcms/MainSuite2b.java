@@ -306,8 +306,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentFileAssetIntegrityCheckerTest.class,
         ITConfigTest.class,
         Task240530AddDotAIPortletToLayoutTest.class,
-        EmbeddingContentListenerTest.class
-
+        EmbeddingContentListenerTest.class,
+        Task240606AddVariableColumnToWorkflowTest.class
 })
 
 public class MainSuite2b {
