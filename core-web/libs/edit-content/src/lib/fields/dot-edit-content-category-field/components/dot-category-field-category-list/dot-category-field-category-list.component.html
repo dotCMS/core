@@ -3,28 +3,28 @@
     [ngClass]="{ 'no-overflow-x-yet': emptyColumns().length }"
     class="flex-1 category-list__category-list">
     @for (column of categories(); let index = $index; track categories()[index]) {
-    <!--dynamic columns-->
-    <div #categoryColumn class="category-list__category-column">
-        @for (item of column; track item.inode) {
-        <div
-            class="flex align-content-center align-items-center category-list__item"
-            [ngClass]="{ 'category-list__item--selected': item.checked }"
-            (click)="itemClicked.emit({ index, item })">
-            <p-checkbox [(ngModel)]="itemsSelected" [value]="item.key" />
+        <!--dynamic columns-->
+        <div #categoryColumn class="category-list__category-column">
+            @for (item of column; track item.inode) {
+                <div
+                    class="flex align-content-center align-items-center category-list__item"
+                    [ngClass]="{ 'category-list__item--selected': item.checked }"
+                    (click)="itemClicked.emit({ index, item })">
+                    <p-checkbox [(ngModel)]="itemsSelected" [value]="item.key" />
 
-            <label
-                class="flex flex-grow-1 category-list__item-label"
-                [ngClass]="{ 'cursor-pointer': item.childrenCount > 0 }"
-                [for]="item.key"
-                >{{ item.categoryName }}</label
-            >
+                    <label
+                        class="flex flex-grow-1 category-list__item-label"
+                        [ngClass]="{ 'cursor-pointer': item.childrenCount > 0 }"
+                        [for]="item.key"
+                        >{{ item.categoryName }}</label
+                    >
 
-            @if (item.childrenCount > 0) {
-            <i class="pi pi-chevron-right category-list__item-icon"></i>
+                    @if (item.childrenCount > 0) {
+                        <i class="pi pi-chevron-right category-list__item-icon"></i>
+                    }
+                </div>
             }
         </div>
-        }
-    </div>
     }
 
     <!--Fake empty columns-->

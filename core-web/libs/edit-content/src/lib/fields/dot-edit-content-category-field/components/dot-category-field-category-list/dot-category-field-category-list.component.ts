@@ -94,16 +94,32 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
     }
 
     private scrollHandler() {
-        const columnsArray = this.categoryColumns.toArray();
-        if (
-            columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING] &&
-            columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING].nativeElement.children.length > 0
-        ) {
-            columnsArray[columnsArray.length - 1].nativeElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-                inline: 'start'
-            });
+        try {
+            const columnsArray = this.categoryColumns.toArray();
+
+            if (columnsArray.length === 0) {
+                return;
+            }
+
+            if (
+                columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1] &&
+                columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1].nativeElement.children.length >
+                    0
+            ) {
+                columnsArray[columnsArray.length - 1].nativeElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'end',
+                    inline: 'end'
+                });
+            } else {
+                columnsArray[0].nativeElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                    inline: 'start'
+                });
+            }
+        } catch (error) {
+            console.error('Error during scrollHandler execution:', error);
         }
     }
 }
