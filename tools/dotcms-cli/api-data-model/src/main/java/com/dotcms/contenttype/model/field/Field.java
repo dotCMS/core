@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 

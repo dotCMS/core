@@ -6,7 +6,6 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.contenttype.model.workflow.Workflow;
 import com.dotcms.model.annotation.ValueType;
-import com.dotcms.model.views.CommonViews.ContentTypeExternalView;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -21,6 +20,8 @@ import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 

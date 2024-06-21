@@ -4,7 +4,7 @@ import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 @ValueType
 @Value.Immutable

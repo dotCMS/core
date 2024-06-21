@@ -13,9 +13,11 @@ import com.dotcms.cli.exception.ExceptionHandlerImpl;
 import com.dotcms.model.annotation.SecuredPassword;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 @TopCommand

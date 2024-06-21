@@ -5,15 +5,16 @@ import com.dotcms.cli.exception.ExceptionHandlerImpl;
 import com.dotcms.cli.exception.ExceptionMappingConfig;
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.concurrent.CompletionException;
-import javax.inject.Inject;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.NotAllowedException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.WebApplicationException;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotAllowedException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import org.jboss.resteasy.specimpl.BuiltResponse;
 import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
