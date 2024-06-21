@@ -52,9 +52,10 @@ import java.util.function.Predicate;
 public interface WorkflowAPI {
 
 	/**
-	 * Id of the System Workflow
+	 * Id and variable name of the System Workflow
 	 */
 	public static final String SYSTEM_WORKFLOW_ID           = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
+	public static final String SYSTEM_WORKFLOW_VARIABLE_NAME = WorkFlowFactory.SYSTEM_WORKFLOW_VARIABLE_NAME;
 
 	/**
 	 * Default show on
@@ -277,7 +278,15 @@ public interface WorkflowAPI {
 
 	public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException;
 
-	public WorkflowScheme findScheme(String id) throws DotDataException, DotSecurityException;
+	/**
+	 * Find a scheme by the scheme id or variable name
+	 *
+	 * @param idOrVar the id or variable name of the scheme
+	 * @return the scheme with the given id or variable name
+	 * @throws DotDataException     if there is an error retrieving the scheme
+	 * @throws DotSecurityException if the user does not have permission to access the scheme
+	 */
+	public WorkflowScheme findScheme(String idOrVar) throws DotDataException, DotSecurityException;
 
 	public List<WorkflowScheme> findSchemesForStruct(Structure struct) throws DotDataException;
 

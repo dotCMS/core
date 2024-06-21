@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "79dc7a80-4564-43c5-8b9a-f46caecd5985",
+		"_postman_id": "e48ada2d-189e-48a7-87a2-c97346e5ce83",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "3028555"
 	},
 	"item": [
 		{
@@ -117,11 +117,19 @@
 									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"REST Schema\\\"\");",
 									"});",
 									"",
+									"pm.test(\"Response includes variable name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.variableName).to.eql(\"RestSchema\");",
+									"});",
+									"",
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"schemeId\", jsonData.entity.id);",
-									"pm.collectionVariables.set(\"schemeIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+									"pm.collectionVariables.set(\"schemeIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));",
+									"pm.collectionVariables.set(\"schemeVariableName\", jsonData.entity.variableName);",
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -560,10 +568,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [ad61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -1895,12 +1904,13 @@
 									"//Validate that returns the schemes included in the starter site ",
 									"",
 									"pm.test(\"Valid Response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [ad61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});",
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3490,10 +3500,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [d123] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -4416,10 +4427,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [e61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -6322,6 +6334,79 @@
 						"description": "Validate you can export schemes as admin user"
 					},
 					"response": []
+				},
+				{
+					"name": "Variable name validation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Includes scheme\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"REST Schema\\\"\");",
+									"});",
+									"",
+									"pm.test(\"Includes step\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"My REST step\\\"\");",
+									"});",
+									"",
+									"pm.test(\"Includes action\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW\\\"\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeVariableName}}/export",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"{{schemeVariableName}}",
+								"export"
+							]
+						},
+						"description": "Validate you can export schemes as admin user using the scheme variable name"
+					},
+					"response": []
 				}
 			]
 		},
@@ -7196,10 +7281,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [a85c1515c-c4f3-463c-bac2-860b8fcacc34] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -9778,10 +9864,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exis\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [ad61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -11854,10 +11941,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [123] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -15556,7 +15644,8 @@
 								"fire",
 								"PUBLISH"
 							]
-						}
+						},
+						"description": "This endpoint allows you to trigger the PUBLISH action for a default workflow. The HTTP PUT request should be made to {{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH.\n\n### Request Body\n\nThe request should include a JSON payload with the following structure:\n\n``` json\n{\n    \"contentlet\": {\n        \"hostFolder\": \"\",\n        \"title\": \"\",\n        \"fileName\": \"\",\n        \"fileAsset\": {\n            \"fileName\": \"\",\n            \"content\": \"\"\n        },\n        \"contentType\": \"\"\n    }\n}\n\n ```\n\n### Response\n\nUpon successful execution, the endpoint returns a 200 status with a JSON response containing the entity details, errors, i18n messages map, messages, pagination, and permissions.\n\nThe \"entity\" object provides information about the content, including metadata, file details, status, and ownership.\n\nAny errors encountered during the execution will be listed in the \"errors\" array.\n\nThe \"i18nMessagesMap\" and \"messages\" fields may contain internationalization messages and general messages, respectively.\n\nThe \"pagination\" field, if present, provides pagination details.\n\nThe \"permissions\" array includes information about the permissions associated with the content.\n\n### **Validations**\n\n- Validate the 200 response code\n    \n- Validating we are returnign the proper metadata in the response"
 					},
 					"response": []
 				}
@@ -17182,6 +17271,18 @@
 		},
 		{
 			"key": "englishidentifier",
+			"value": ""
+		},
+		{
+			"key": "schemeId",
+			"value": ""
+		},
+		{
+			"key": "schemeIdShorty",
+			"value": ""
+		},
+		{
+			"key": "schemeVariableName",
 			"value": ""
 		}
 	]

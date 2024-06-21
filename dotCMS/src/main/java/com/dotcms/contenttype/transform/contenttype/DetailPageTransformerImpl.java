@@ -131,7 +131,7 @@ public class DetailPageTransformerImpl implements DetailPageTransformer {
             }
 
             throw new IllegalArgumentException(
-                    String.format("Detail page [%s] in Content Type [%s] does not exit.",
+                    String.format("Detail page [%s] in Content Type [%s] does not exist.",
                             detailPage, contentType.name()));
         }
     }

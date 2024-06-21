@@ -49,4 +49,19 @@ describe('DotSiteService', () => {
             spectator.flushAll([req], [{ entity: mockSites }]);
         });
     });
+
+    describe('getCurrentSite()', () => {
+        it('should return a list of sites', (doneFn) => {
+            const mockSite = mockSites[0];
+
+            service.getCurrentSite().subscribe((site) => {
+                expect(site).toEqual(mockSite);
+                doneFn();
+            });
+
+            const url = `${BASE_SITE_URL}/currentSite`;
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            spectator.flushAll([req], [{ entity: mockSite }]);
+        });
+    });
 });
