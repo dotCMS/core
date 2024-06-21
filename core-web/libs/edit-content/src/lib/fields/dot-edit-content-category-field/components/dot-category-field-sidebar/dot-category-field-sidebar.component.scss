@@ -14,16 +14,8 @@
 }
 
 .category-field__content {
-    //display: grid;
-    //grid-template-columns: 2fr 1fr;
-    //margin: auto;
-    //background-color: $color-palette-gray-300;
-    //padding: $spacing-4;
-    //gap: $spacing-1;
-
     display: flex;
     flex-direction: row;
-
     margin: auto;
     background-color: $color-palette-gray-300;
     padding: $spacing-4;
