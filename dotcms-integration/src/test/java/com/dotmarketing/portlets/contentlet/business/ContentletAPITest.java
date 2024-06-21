@@ -5,6 +5,8 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.model.type.text.FloatTextFieldType;
+import com.dotcms.content.model.type.text.LongTextFieldType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -8524,5 +8526,239 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         assertNotNull(mostRecentPublishedContent);
         assertEquals(contentInode, mostRecentPublishedContent.getInode());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with key value and title and sets to it
+     * Should: should be properly set, taking a Map as an input
+     */
+    @Test
+    public void test_setContentletProperty_key_value() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyValuePropName = "mykeyvalue";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName(keyValuePropName)
+                .contentTypeId(contentType.id())
+                .type(KeyValueField.class)
+                .nextPersisted());
+
+        // publish contentlet
+        final Map<String, Object> keyValueObj = Map.of("key1", "value2");
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        contentletDataGen.setProperty(keyValuePropName, keyValueObj);
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        final Map keyValueRetrieved = (Map) contentRetrieved.get(keyValuePropName);
+        assertEquals(keyValueRetrieved, keyValueObj);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with json field and title and sets to it
+     * Should: should be properly set, taking a Map as an input
+     */
+    @Test
+    public void test_setContentletProperty_json_field() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyValuePropName = "mykeyvalue";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName(keyValuePropName)
+                .contentTypeId(contentType.id())
+                .type(JSONField.class)
+                .nextPersisted());
+
+        // publish contentlet
+        final Map<String, Object> keyValueObj = Map.of("key1", "value2");
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        contentletDataGen.setProperty(keyValuePropName, keyValueObj);
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        final Map keyValueRetrieved = (Map) contentRetrieved.get(keyValuePropName);
+        assertEquals(keyValueRetrieved, keyValueObj);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with long text and title and sets to it
+     * Should: should be properly set, taking a String as an input
+     */
+    @Test
+    public void test_setContentletProperty_long_text() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "description";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(LongTextFieldType.class)
+                .nextPersisted());
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final String value = "LOoooooooooooooooooooooooong teeeeeeeeeeeeext";
+        contentletDataGen.setProperty(keyPropName, value);
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        final String valueRetrieved = (String) contentRetrieved.get(keyPropName);
+        assertEquals(value, valueRetrieved);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with date and title and sets to it
+     * Should: should be properly set, taking a Date as an input
+     */
+    @Test
+    public void test_setContentletProperty_date() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "date";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(DateField.class)
+                .nextPersisted());
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final Date value = new Date();
+        contentletDataGen.setProperty(keyPropName, value);
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        final Date valueRetrieved = (Date) contentRetrieved.get(keyPropName);
+        assertEquals(value, valueRetrieved);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with float and title and sets to it
+     * Should: should be properly set, taking a float as an input
+     */
+    @Test
+    public void test_setContentletProperty_float() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "number";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(FloatTextFieldType.class)
+                .nextPersisted());
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final Float value = 3.14f;
+        contentletDataGen.setProperty(keyPropName, value);
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        final Number valueRetrieved = (Number) contentRetrieved.get(keyPropName);
+        assertEquals(value, valueRetrieved);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with binary and title and sets to it
+     * Should: should be properly set, taking a file as an input
+     */
+    @Test
+    public void test_setContentletProperty_file() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "file";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(BinaryField.class)
+                .nextPersisted());
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final File value = com.dotmarketing.util.FileUtil.createTemporaryFile("test", ".txt");
+        contentletDataGen.setProperty(keyPropName, value);
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        final File valueRetrieved = (File) contentRetrieved.get(keyPropName);
+        assertEquals(value, valueRetrieved);
     }
 }
