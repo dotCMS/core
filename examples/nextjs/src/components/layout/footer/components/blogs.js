@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Contentlets from "@/components/shared/contentlets";
 import { client } from "@/utils/dotcmsClient";
 
-export default function Blogs({ pageAsset }) {
+export default function Blogs() {
     const [blogs, setBlogs] = useState([]);
 
     useEffect(() => {
@@ -21,7 +21,7 @@ export default function Blogs({ pageAsset }) {
             .catch((error) => {
                 console.error(`Error fetching Blogs`, error);
             });
-    }, [pageAsset]); // I need to listen to the pageAsset to re-fetch the blogs when the pageAsset changes
+    }, []);
 
     return (
         <div className="flex flex-col">
