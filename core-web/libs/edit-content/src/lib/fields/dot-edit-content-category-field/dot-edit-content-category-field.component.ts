@@ -1,11 +1,13 @@
-import { NgClass } from '@angular/common';
+import { KeyValuePipe, NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     ComponentRef,
+    computed,
     DestroyRef,
     inject,
     input,
+    OnInit,
     signal,
     ViewChild
 } from '@angular/core';
@@ -19,11 +21,13 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { delay } from 'rxjs/operators';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { DotEditContentCategoryFieldSidebarComponent } from './components/dot-edit-content-category-field-sidebar/dot-edit-content-category-field-sidebar.component';
+import { DotCategoryFieldSidebarComponent } from './components/dot-category-field-sidebar/dot-category-field-sidebar.component';
 import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.const';
+import { CategoriesService } from './services/categories.service';
+import { CategoryFieldStore } from './store/content-category-field.store';
 
 /**
  * Component for editing content category field.
@@ -42,7 +46,8 @@ import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.co
         NgClass,
         TooltipModule,
         DotMessagePipe,
-        DotDynamicDirective
+        DotDynamicDirective,
+        KeyValuePipe
     ],
     templateUrl: './dot-edit-content-category-field.component.html',
     styleUrl: './dot-edit-content-category-field.component.scss',
@@ -55,11 +60,12 @@ import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.co
     ],
     // eslint-disable-next-line @angular-eslint/no-host-metadata-property
     host: {
-        '[class.dot-category-field__container--has-categories]': 'hasCategories()',
-        '[class.dot-category-field__container]': '!hasCategories()'
-    }
+        '[class.dot-category-field__container--has-categories]': 'hasSelectedCategories()',
+        '[class.dot-category-field__container]': '!hasSelectedCategories()'
+    },
+    providers: [CategoriesService, CategoryFieldStore]
 })
-export class DotEditContentCategoryFieldComponent {
+export class DotEditContentCategoryFieldComponent implements OnInit {
     disableSelectCategoriesButton = signal(false);
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
 
@@ -71,18 +77,20 @@ export class DotEditContentCategoryFieldComponent {
      */
     field = input.required<DotCMSContentTypeField>();
 
-    // TODO: Replace with the content of the selected categories
-    values = [];
-    readonly #destroyRef = inject(DestroyRef);
-    #componentRef: ComponentRef<DotEditContentCategoryFieldSidebarComponent>;
-
     /**
-     * Checks if the object has categories.
-     * @returns {boolean} - True if the object has categories, false otherwise.
+     * Represents a DotCMS contentlet.
+     *
      */
-    hasCategories(): boolean {
-        return this.values.length > 0;
-    }
+    contentlet = input.required<DotCMSContentlet>();
+
+    readonly store = inject(CategoryFieldStore);
+
+    hasSelectedCategories = computed(() => {
+        return !!this.store.selectedCategories().length;
+    });
+
+    readonly #destroyRef = inject(DestroyRef);
+    #componentRef: ComponentRef<DotCategoryFieldSidebarComponent>;
 
     /**
      * Open the "DotEditContentCategoryFieldDialogComponent" dialog to show categories.
@@ -92,10 +100,14 @@ export class DotEditContentCategoryFieldComponent {
     showCategoriesSidebar(): void {
         this.disableSelectCategoriesButton.set(true);
         this.#componentRef = this.sidebarHost.viewContainerRef.createComponent(
-            DotEditContentCategoryFieldSidebarComponent
+            DotCategoryFieldSidebarComponent
         );
 
         this.setSidebarListener();
+    }
+
+    ngOnInit(): void {
+        this.store.load(this.field(), this.contentlet());
     }
 
     private setSidebarListener() {

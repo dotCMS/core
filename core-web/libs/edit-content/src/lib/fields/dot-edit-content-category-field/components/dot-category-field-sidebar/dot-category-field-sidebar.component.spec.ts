@@ -4,13 +4,13 @@ import { mockProvider } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
-import { DotEditContentCategoryFieldSidebarComponent } from './dot-edit-content-category-field-sidebar.component';
+import { DotCategoryFieldSidebarComponent } from './dot-category-field-sidebar.component';
 
 describe('DotEditContentCategoryFieldSidebarComponent', () => {
-    let spectator: Spectator<DotEditContentCategoryFieldSidebarComponent>;
+    let spectator: Spectator<DotCategoryFieldSidebarComponent>;
 
     const createComponent = createComponentFactory({
-        component: DotEditContentCategoryFieldSidebarComponent,
+        component: DotCategoryFieldSidebarComponent,
         providers: [mockProvider(DotMessageService)]
     });
 
