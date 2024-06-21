@@ -18,6 +18,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -186,7 +187,8 @@ public class SearchResource {
         final String identifier = json.optString(AiKeys.IDENTIFIER);
         final long language = json.optLong(AiKeys.LANGUAGE, APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-        final User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true)
+        final User user = new WebResource.InitBuilder(request, response)
+                .requiredBackendUser(true)
                 .requiredFrontendUser(true)
                 .init()
                 .getUser();
@@ -203,10 +205,13 @@ public class SearchResource {
                                     user,
                                     true);
 
+        if (!UtilMethods.isSet(contentlet)) {
+            Logger.warn(this.getClass(), getFailMessage(identifier, inode, language));
+            return Response.status(404).build();
+        }
+
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
-            Logger.warn(
-                    this.getClass(),
-                    "unable to find matching contentlet for id:" + identifier + " inode:" + inode + " language:" + language);
+            Logger.warn(this.getClass(), getFailMessage(identifier, inode, language));
             return Response.status(404).build();
         }
 
@@ -234,6 +239,10 @@ public class SearchResource {
         return Response
                 .ok(EmbeddingsAPI.impl(host).searchForContent(searcher).toString(), MediaType.APPLICATION_JSON)
                 .build();
+    }
+
+    private static String getFailMessage(final String identifier, final String inode, final long language) {
+        return "unable to find matching contentlet for id:" + identifier + " inode:" + inode + " language:" + language;
     }
 
 }
