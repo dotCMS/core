@@ -217,8 +217,8 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test('Status code should be 500', function () {",
-									"    pm.response.to.have.status(500);",
+									"pm.test('Status code should be 400', function () {",
+									"    pm.response.to.have.status(400);",
 									"});",
 									"",
 									"const jsonData = pm.response.json();",
@@ -906,8 +906,8 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test('Status code should be ok 500', function () {",
-									"    pm.response.to.have.status(500);",
+									"pm.test('Status code should be ok 400', function () {",
+									"    pm.response.to.have.status(400);",
 									"});",
 									"",
 									"const jsonData = pm.response.json();",
@@ -919,6 +919,13 @@
 								],
 								"type": "text/javascript",
 								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"packages": {},
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1096,8 +1103,8 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test('Status code should be ok 500', function () {",
-									"    pm.response.to.have.status(500);",
+									"pm.test('Status code should be ok 400', function () {",
+									"    pm.response.to.have.status(400);",
 									"});",
 									"",
 									"const jsonData = pm.response.json();",

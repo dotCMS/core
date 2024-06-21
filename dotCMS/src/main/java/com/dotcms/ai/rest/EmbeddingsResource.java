@@ -80,10 +80,6 @@ public class EmbeddingsResource {
         final User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true).init().getUser();
         long startTime = System.currentTimeMillis();
 
-        if (UtilMethods.isEmpty(embeddingsForm.query)) {
-            return Response.ok("query is required").build();
-        }
-
         try {
             int added = 0;
             int newOffset = embeddingsForm.offset;
