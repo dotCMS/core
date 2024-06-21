@@ -4,6 +4,7 @@ export enum CATEGORY_SOURCE {
 }
 
 export interface DotCategory {
+    active: boolean;
     categoryId?: string;
     categoryName: string;
     key: string;
@@ -19,6 +20,11 @@ export interface DotCategory {
     source?: CATEGORY_SOURCE;
     live?: boolean;
     working?: boolean;
+    childrenCount: number;
+    description: string;
+    iDate: number;
+    keywords: string;
+    owner: string;
     parentPermissionable?: {
         hostname: string;
     };

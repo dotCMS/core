@@ -4,7 +4,7 @@ import { fakeAsync } from '@angular/core/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
 
-import { DotEditContentCategoryFieldSidebarComponent } from './components/dot-edit-content-category-field-sidebar/dot-edit-content-category-field-sidebar.component';
+import { DotCategoryFieldSidebarComponent } from './components/dot-category-field-sidebar/dot-category-field-sidebar.component';
 import { DotEditContentCategoryFieldComponent } from './dot-edit-content-category-field.component';
 import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.const';
 
@@ -66,10 +66,10 @@ describe('DotEditContentCategoryFieldComponent', () => {
         it('should create a DotEditContentCategoryFieldSidebarComponent instance when the `Select` button is clicked', () => {
             const selectBtn = spectator.query(byTestId('show-sidebar-btn')) as HTMLButtonElement;
             expect(selectBtn).not.toBeNull();
-            expect(spectator.query(DotEditContentCategoryFieldSidebarComponent)).toBeNull();
+            expect(spectator.query(DotCategoryFieldSidebarComponent)).toBeNull();
 
             spectator.click(selectBtn);
-            expect(spectator.query(DotEditContentCategoryFieldSidebarComponent)).not.toBeNull();
+            expect(spectator.query(DotCategoryFieldSidebarComponent)).not.toBeNull();
         });
 
         it('should remove DotEditContentCategoryFieldSidebarComponent when `closedSidebar` emit', fakeAsync(() => {
@@ -77,9 +77,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
             expect(selectBtn).not.toBeNull();
             spectator.click(selectBtn);
 
-            const sidebarComponentRef = spectator.query(
-                DotEditContentCategoryFieldSidebarComponent
-            );
+            const sidebarComponentRef = spectator.query(DotCategoryFieldSidebarComponent);
             expect(sidebarComponentRef).not.toBeNull();
 
             sidebarComponentRef.closedSidebar.emit();
@@ -89,7 +87,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
             // Due to a delay in the pipe of the subscription
             spectator.tick(CLOSE_SIDEBAR_CSS_DELAY_MS + 100);
 
-            expect(spectator.query(DotEditContentCategoryFieldSidebarComponent)).toBeNull();
+            expect(spectator.query(DotCategoryFieldSidebarComponent)).toBeNull();
 
             expect(selectBtn.disabled).toBe(false);
         }));
