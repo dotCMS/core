@@ -6,6 +6,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.SystemException;
@@ -37,33 +39,79 @@ public class LanguageUtilTest {
         Assert.assertEquals(-1, languageId);
     }
 
+    /*
+     * Given Scenario: An empty string is passed to the getLanguageId method.
+     * Expected Result: The method should return negative 1.
+     */
     @Test
     public void getLanguageId_empty_expected_negative_lang_Test() throws DotSecurityException, DotDataException, SystemException {
 
-        final long languageId = LanguageUtil.getLanguageId("");
-        Assert.assertEquals(-1, languageId);
+        testGetLanguageId("", -1);
     }
 
+    /**
+     * Given Scenario: A random string is passed to the getLanguageId method.
+     * Expected Result: The method should return negative 1
+     */
     @Test
-    public void getLanguageId_weirdlang_expected_negative_lang_Test() throws DotSecurityException, DotDataException, SystemException {
+    public void getLanguageId_Random_Chars_Expected_negative_lang_Test() {
 
-        final long languageId = LanguageUtil.getLanguageId("owdaldlksdllakd");
-        Assert.assertEquals(-1, languageId);
+        testGetLanguageId("owdaldlksdllakd", -1);
     }
 
+    /**
+     * Given Scenario: A numeric value of a non-existing languages is passed to the getLanguageId method.
+     * Expected Result: The method should return negative 1
+     */
     @Test
-    public void getLanguageId_valid_default_long_expected_same_lang_id_Test() throws DotSecurityException, DotDataException, SystemException {
+    public void getLanguageId_valid_default_long_expected_same_lang_id_Test() {
 
-        final long languageId = LanguageUtil.getLanguageId("-1");
-        Assert.assertEquals(-1l, languageId);
+        testGetLanguageId("-1", -1L);
     }
 
+    /**
+     * Given Scenario: A numeric value of a non-existing languages is passed to the getLanguageId method.
+     * Expected Result: The method should return negative 1
+     */
     @Test
-    public void getLanguageId_valid_long_expected_same_lang_id_Test() throws DotSecurityException, DotDataException, SystemException {
+    public void getLanguageId_valid_long_expected_same_lang_id_Test()  {
 
-        final long languageId = LanguageUtil.getLanguageId("99999999999");
-        Assert.assertEquals(99999999999l, languageId);
+        testGetLanguageId("99999999999", 99999999999L);
     }
+
+    /**
+     * Test Utility method to test the getLanguageId method.
+     * @param languageId passed to the getLanguageId method.
+     * @param expectedId expected result.
+     */
+    private void testGetLanguageId(final String languageId, final long expectedId) {
+        final long languageIdResult = LanguageUtil.getLanguageId(languageId);
+        Assert.assertEquals(expectedId, languageIdResult);
+    }
+
+    /**
+     * Given Scenario: A language code is passed to the getLanguageId method.
+     * Expected Result: We make sure that the language is in the cache.
+     */
+     @Test
+     public void Test_Lookup_UsingLang_Code_Makes_It_Into_Cache(){
+
+        final LanguageCacheImpl languageCache = (LanguageCacheImpl)CacheLocator.getLanguageCache();
+        final Language languageByCodeBefore = languageCache.getLanguageByCode("eo", "CR");
+        Assert.assertNull(languageByCodeBefore);
+        //Esperanto language in CR
+        final Language newLanguage = new LanguageDataGen().languageCode("eo").country("CR").nextPersisted();
+        try {
+            final long expectedId = newLanguage.getId();
+            final long languageId = LanguageUtil.getLanguageId(newLanguage.toString());
+            Assert.assertEquals(expectedId, languageId);
+            //Test language made into cache
+            final Language languageByCodeAfter = languageCache.getLanguageByCode(newLanguage.getLanguageCode(), newLanguage.getCountryCode());
+            Assert.assertEquals(newLanguage.getId(), languageByCodeAfter.getId());
+        } finally {
+            APILocator.getLanguageAPI().deleteLanguage(newLanguage);
+        }
+     }
 
 
 
