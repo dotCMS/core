@@ -2,7 +2,6 @@ package com.dotcms.api.provider;
 
 import com.dotcms.model.ResponseEntityView;
 import com.fasterxml.jackson.databind.JsonNode;
-import io.quarkus.arc.Priority;
 import io.quarkus.security.UnauthorizedException;
 import jakarta.annotation.Priority;
 import jakarta.validation.ValidationException;

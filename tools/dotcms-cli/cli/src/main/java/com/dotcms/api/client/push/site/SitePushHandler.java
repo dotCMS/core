@@ -329,7 +329,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
      * @return A completable future with the site view
      */
     @ActivateRequestContext
-    private CompletableFuture<SiteView> verifyAndReturnSiteAfterCompletion(
+    CompletableFuture<SiteView> verifyAndReturnSiteAfterCompletion(
             final String siteName, final boolean isSiteLive, final boolean isArchived
     ) {
 
