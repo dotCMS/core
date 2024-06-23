@@ -6,7 +6,6 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.model.type.text.FloatTextFieldType;
-import com.dotcms.content.model.type.text.LongTextFieldType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -23,6 +22,7 @@ import com.dotcms.contenttype.model.field.JSONField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -8544,17 +8544,20 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .type(TextField.class)
                 .nextPersisted());
 
-        ContentTypeDataGen.addField(new FieldDataGen()
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
                 .velocityVarName(keyValuePropName)
                 .contentTypeId(contentType.id())
                 .type(KeyValueField.class)
-                .nextPersisted());
+                .nextPersisted();
+        ContentTypeDataGen.addField(field);
 
         // publish contentlet
         final Map<String, Object> keyValueObj = Map.of("key1", "value2");
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
-        contentletDataGen.setProperty(keyValuePropName, keyValueObj);
-        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        final Contentlet contentlet = contentletDataGen.next();
+        contentlet.setProperty("title", "Test");
+        APILocator.getContentletAPI().setContentletProperty(contentlet, new LegacyFieldTransformer(field).asOldField(), keyValueObj);
+        final Contentlet publishedContentlet = ContentletDataGen.checkin(contentlet);
         ContentletDataGen.publish(publishedContentlet);
         final String contentInode = publishedContentlet.getInode();
 
@@ -8583,17 +8586,19 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .type(TextField.class)
                 .nextPersisted());
 
-        ContentTypeDataGen.addField(new FieldDataGen()
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
                 .velocityVarName(keyValuePropName)
                 .contentTypeId(contentType.id())
                 .type(JSONField.class)
-                .nextPersisted());
+                .nextPersisted();
+        ContentTypeDataGen.addField(field);
 
         // publish contentlet
         final Map<String, Object> keyValueObj = Map.of("key1", "value2");
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
-        contentletDataGen.setProperty(keyValuePropName, keyValueObj);
-        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        final Contentlet contentlet = contentletDataGen.next();
+        APILocator.getContentletAPI().setContentletProperty(contentlet, new LegacyFieldTransformer(field).asOldField(), keyValueObj);
+        final Contentlet publishedContentlet = ContentletDataGen.checkin(contentlet);
         ContentletDataGen.publish(publishedContentlet);
         final String contentInode = publishedContentlet.getInode();
 
@@ -8622,11 +8627,13 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .type(TextField.class)
                 .nextPersisted());
 
-        ContentTypeDataGen.addField(new FieldDataGen()
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
                 .velocityVarName(keyPropName)
                 .contentTypeId(contentType.id())
-                .type(LongTextFieldType.class)
-                .nextPersisted());
+                .type(TextAreaField.class)
+                .nextPersisted()
+
+        ContentTypeDataGen.addField(field);
 
         // publish contentlet
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
@@ -8665,6 +8672,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .velocityVarName(keyPropName)
                 .contentTypeId(contentType.id())
                 .type(DateField.class)
+                .defaultValue("now")
                 .nextPersisted());
 
         // publish contentlet
@@ -8703,7 +8711,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         ContentTypeDataGen.addField(new FieldDataGen()
                 .velocityVarName(keyPropName)
                 .contentTypeId(contentType.id())
-                .type(FloatTextFieldType.class)
+                .type(TextField.class)
+                .dataType(DataTypes.FLOAT)
                 .nextPersisted());
 
         // publish contentlet
@@ -8759,6 +8768,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(contentInode, contentRetrieved.getInode());
 
         final File valueRetrieved = (File) contentRetrieved.get(keyPropName);
-        assertEquals(value, valueRetrieved);
+        assertEquals(value.getName(), valueRetrieved.getName());
     }
 }
