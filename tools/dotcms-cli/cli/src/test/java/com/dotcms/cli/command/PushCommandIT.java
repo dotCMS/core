@@ -351,7 +351,7 @@ class PushCommandIT extends CommandTest {
                 commandStartLatch.await();
 
                 // Scheduled executor for introducing delay
-                try(final java.util.concurrent.ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2)) {
+                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
                     // Simulate changes in the tempFolder with a delay
                     logger.debug(
@@ -402,7 +402,7 @@ class PushCommandIT extends CommandTest {
                     Assertions.assertTrue(output.contains("No changes in Sites to push"));
                     Assertions.assertTrue(output.contains("No changes in ContentTypes to push"));
                     Assertions.assertTrue(output.contains(" No changes in Files to push"));
-                }
+
             }
         } finally {
             deleteTempDirectory(tempFolder);
