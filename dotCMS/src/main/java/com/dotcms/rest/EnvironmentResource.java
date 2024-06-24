@@ -355,7 +355,9 @@ public class EnvironmentResource {
 
 		final Map<String, Permission> permissionsMap = new HashMap<>();
 
-		processRoles(whoCanUseList, modUser, permissionsMap, environment);
+		if (Objects.nonNull(whoCanUseList)) {
+			processRoles(whoCanUseList, modUser, permissionsMap, environment);
+		}
 
 		APILocator.getEnvironmentAPI().updateEnvironment(environment,
 				new ArrayList<>(permissionsMap.values()));
