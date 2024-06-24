@@ -146,12 +146,13 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
 
         if (isNotDefaultVariant) {
             this.store.updateEditorData({
+                device: null,
                 mode: this.editorData.canEditVariant
                     ? this.editorMode.EDIT_VARIANT
                     : this.editorMode.PREVIEW_VARIANT
             });
         } else {
-            this.store.updateEditorData({ mode: this.editorMode.EDIT });
+            this.store.updateEditorData({ device: null, mode: this.editorMode.EDIT });
         }
     }
 }
