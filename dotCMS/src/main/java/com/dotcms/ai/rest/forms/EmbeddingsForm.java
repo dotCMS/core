@@ -4,7 +4,6 @@ import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
@@ -38,6 +37,7 @@ public class EmbeddingsForm {
     public List<String> fieldsAsList(){
         return Arrays.asList(fields);
     }
+
     private EmbeddingsForm(Builder builder) {
         this.query = validateBuilderQuery(builder.query);
         this.limit = builder.limit;
@@ -51,7 +51,7 @@ public class EmbeddingsForm {
 
     String validateBuilderQuery(String query) {
         if (UtilMethods.isEmpty(query)) {
-            throw new DotRuntimeException("query cannot be null");
+            throw new IllegalArgumentException("query cannot be null");
         }
         return String.join(" ", query.trim().split("\\s+"));
     }
