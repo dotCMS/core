@@ -1,6 +1,5 @@
 import React from "react";
 import Image from "next/image";
-import imageLoaderByConfig from "@/utils/imageLoader";
 
 const dateFormatOptions = {
     year: "numeric",
@@ -19,9 +18,6 @@ function Contentlets({ contentlets }) {
                     >
                         {contentlet.image && (
                             <Image
-                                loader={imageLoaderByConfig({
-                                    language: contentlet.language?.id ?? 1,
-                                })}
                                 src={
                                     contentlet.image?.idPath ?? contentlet.image
                                 }

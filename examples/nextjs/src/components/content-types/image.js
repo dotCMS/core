@@ -1,22 +1,11 @@
-import { useDotcmsPageContext } from "@dotcms/react";
 import Image from "next/image";
-import imageLoaderByConfig from "@/utils/imageLoader";
 
 function ImageComponent({ fileAsset, title, description }) {
-    const {
-        pageAsset: {
-            viewAs: { language },
-        },
-    } = useDotcmsPageContext();
-
     return (
         <div className="relative overflow-hidden bg-white rounded shadow-lg group">
             <div className="relative w-full bg-gray-200 h-96">
                 {fileAsset && (
                     <Image
-                        loader={imageLoaderByConfig({
-                            language: language?.id ?? 1,
-                        })}
                         src={fileAsset?.idPath ?? fileAsset}
                         fill={true}
                         className="object-cover"

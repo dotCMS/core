@@ -1,15 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useDotcmsPageContext } from "@dotcms/react";
-import imageLoaderByConfig from "@/utils/imageLoader";
 
 function Product({ image, title, salePrice, retailPrice, urlTitle }) {
-    const {
-        pageAsset: {
-            viewAs: { language },
-        },
-    } = useDotcmsPageContext();
-
     const formatPrice = (price) => {
         return new Intl.NumberFormat("en-US", {
             style: "currency",
@@ -23,9 +15,6 @@ function Product({ image, title, salePrice, retailPrice, urlTitle }) {
                 {image && (
                     <Image
                         className="w-full"
-                        loader={imageLoaderByConfig({
-                            language: language?.id ?? 1,
-                        })}
                         src={image?.idPath ?? image}
                         width={100}
                         height={100}

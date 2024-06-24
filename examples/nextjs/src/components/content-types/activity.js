@@ -1,23 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useDotcmsPageContext } from "@dotcms/react";
-import imageLoaderByConfig from "@/utils/imageLoader";
 
 function Activity({ title, description, image, urlTitle }) {
-    const {
-        pageAsset: {
-            viewAs: { language },
-        },
-    } = useDotcmsPageContext();
-
     return (
         <article className="p-4 overflow-hidden bg-white rounded shadow-lg">
             {image && (
                 <Image
                     className="w-full"
-                    loader={imageLoaderByConfig({
-                        language: language?.id ?? 1,
-                    })}
                     src={image?.idPath ?? image}
                     width={100}
                     height={100}

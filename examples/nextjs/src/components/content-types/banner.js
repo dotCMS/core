@@ -1,22 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useDotcmsPageContext } from "@dotcms/react";
-import imageLoaderByConfig from "@/utils/imageLoader";
 
 function Banner({ title, image, caption, buttonText, link }) {
-    const {
-        pageAsset: {
-            viewAs: { language },
-        },
-    } = useDotcmsPageContext();
-
     return (
         <div className="relative w-full p-4 bg-gray-200 h-96">
             {image && (
                 <Image
-                    loader={imageLoaderByConfig({
-                        language: language?.id ?? 1,
-                    })}
                     src={image?.idPath ?? image}
                     fill={true}
                     className="object-cover"

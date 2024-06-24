@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import imageLoaderByConfig from "@/utils/imageLoader";
 
 function extractLocationsAndActivities(contentlet) {
     return contentlet.reduce(
@@ -22,9 +21,6 @@ function CalendarEvent({ image, title, urlMap, description, location }) {
             <div className="relative w-2/5 m-0 overflow-hidden bg-slate-100 rounded-r-none bg-clip-border rounded-xl shrink-0">
                 {image && (
                     <Image
-                        loader={imageLoaderByConfig({
-                            language: language?.id ?? 1,
-                        })}
                         src={image?.idPath ?? image}
                         alt={title}
                         fill={true}
