@@ -22,6 +22,7 @@ import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import picocli.CommandLine;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 public abstract class CommandTest {
 
