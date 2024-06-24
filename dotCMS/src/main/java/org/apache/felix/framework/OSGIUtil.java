@@ -27,6 +27,8 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.MathUtil;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -613,14 +615,41 @@ public class OSGIUtil {
         }
     }
 
-    private static void sendOSGIBundlesLoadedMessage(final String[] pathnames) {
+    private static void sendOSGIBundlesLoadedMessage(final String[] pathnamesIn) {
 
+        final Tuple2<Boolean, String []> result = containsFragments(pathnamesIn);
+        if (result._1()) {
+
+            final String successMessage  =  "The packages in the fragment have been added to the exported packages list.";
+            SystemMessageEventUtil.getInstance().pushMessage("OSGI_BUNDLES_LOADED",new SystemMessageBuilder().setMessage(successMessage)
+                    .setLife(DateUtil.FIVE_SECOND_MILLIS)
+                    .setSeverity(MessageSeverity.SUCCESS).create(), null);
+        }
+
+        final String[] pathnames = result._2();
         final String messageKey      = pathnames.length > 1? "new-osgi-plugins-installed":"new-osgi-plugin-installed";
         final String successMessage  = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI()
                 .getDefaultCompany().getLocale(), messageKey)).getOrElse(()-> "New OSGi Plugin(s) have been installed");
         SystemMessageEventUtil.getInstance().pushMessage("OSGI_BUNDLES_LOADED",new SystemMessageBuilder().setMessage(successMessage)
                 .setLife(DateUtil.FIVE_SECOND_MILLIS)
                 .setSeverity(MessageSeverity.SUCCESS).create(), null);
+    }
+
+
+    private static Tuple2<Boolean, String[]> containsFragments(final String[] pathnamesIn) {
+
+        boolean hasFragments = false;
+        final List<String> pathnames = new ArrayList<>();
+        for (final String pathname : pathnamesIn) {
+
+            if (pathname.contains("fragment")) {
+                hasFragments = true;
+            } else {
+                pathnames.add(pathname);
+            }
+        }
+
+        return Tuple.of(hasFragments, pathnames.toArray(new String []{}));
     }
 
     /**
