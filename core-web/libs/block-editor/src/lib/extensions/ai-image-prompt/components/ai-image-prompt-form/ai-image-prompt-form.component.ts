@@ -35,15 +35,12 @@ import {
     DotCopyButtonComponent,
     DotFieldRequiredDirective,
     DotMessagePipe,
-    DotValidators
-} from '@dotcms/ui';
-
-import {
+    DotValidators,
     AIImagePrompt,
     DotAIImageOrientation,
-    DotGeneratedAIImage
-} from '../../../../shared/services/dot-ai/dot-ai.models';
-import { PromptType } from '../../ai-image-prompt.models';
+    DotGeneratedAIImage,
+    PromptType
+} from '@dotcms/ui';
 
 @Component({
     selector: 'dot-ai-image-prompt-form',

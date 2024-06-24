@@ -1,16 +1,15 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotAiService } from '@dotcms/ui';
 
 import { AiContentPromptState, AiContentPromptStore } from './ai-content-prompt.store';
-
-import { DotAiService } from '../../../shared';
 
 describe('AiContentPromptStore', () => {
     let spectator: SpectatorService<AiContentPromptStore>;
     let store: AiContentPromptStore;
-    let dotAiService: jest.Mocked<DotAiService>;
+    let dotAiService: SpyObject<DotAiService>;
 
     const createStoreService = createServiceFactory({
         service: AiContentPromptStore,
@@ -20,7 +19,7 @@ describe('AiContentPromptStore', () => {
     beforeEach(() => {
         spectator = createStoreService();
         store = spectator.service;
-        dotAiService = spectator.inject(DotAiService) as jest.Mocked<DotAiService>;
+        dotAiService = spectator.inject(DotAiService);
     });
 
     it('should set open state', (done) => {

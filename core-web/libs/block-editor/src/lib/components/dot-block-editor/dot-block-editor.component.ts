@@ -39,6 +39,7 @@ import {
     IMPORT_RESULTS,
     RemoteCustomExtensions
 } from '@dotcms/dotcms-models';
+import { DotAiService } from '@dotcms/ui';
 
 import {
     ActionsMenu,
@@ -63,7 +64,6 @@ import {
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
-    DotAiService,
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,

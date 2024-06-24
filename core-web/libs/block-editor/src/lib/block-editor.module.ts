@@ -21,7 +21,8 @@ import {
     DotAssetSearchComponent,
     DotFieldRequiredDirective,
     DotMessagePipe,
-    DotSpinnerModule
+    DotSpinnerModule,
+    DotAiService
 } from '@dotcms/ui';
 
 //Editor
@@ -41,7 +42,7 @@ import {
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
-import { DotAiService, EditorDirective } from './shared';
+import { EditorDirective } from './shared';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
 
@@ -87,11 +88,11 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotUploadFileService,
         LoggerService,
         StringUtils,
-        DotAiService,
         ConfirmationService,
         DotPropertiesService,
         DotContentSearchService,
         DotLanguagesService,
+        DotAiService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,

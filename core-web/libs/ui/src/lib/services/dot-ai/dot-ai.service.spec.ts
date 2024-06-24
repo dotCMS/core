@@ -62,7 +62,7 @@ describe('DotAiService', () => {
             } as unknown as DotAIImageContent;
             const mockPublishResponse = {
                 entity: {
-                    results: [{ '123': 'testContent' }]
+                    results: [{ key: { attr: 'testContent' } }]
                 }
             };
             const expectedPublishRequest = {
@@ -79,7 +79,7 @@ describe('DotAiService', () => {
 
             spectator.service.generateAndPublishImage(mockPrompt, size).subscribe((response) => {
                 expect(response).toEqual({
-                    contentlet: { ...mockPublishResponse.entity.results[0] },
+                    contentlet: { ...mockPublishResponse.entity.results[0]['key'] },
                     ...mockGenerateResponse
                 });
             });

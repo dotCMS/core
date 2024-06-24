@@ -15,12 +15,13 @@ import { ImageModule } from 'primeng/image';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
-
 import {
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    PrincipalConfiguration,
     DotAIImageOrientation,
     DotGeneratedAIImage
-} from '../../../../shared/services/dot-ai/dot-ai.models';
+} from '@dotcms/ui';
 
 @Component({
     selector: 'dot-ai-image-prompt-gallery',

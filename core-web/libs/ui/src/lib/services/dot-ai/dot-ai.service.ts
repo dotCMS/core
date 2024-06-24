@@ -142,7 +142,10 @@ export class DotAiService {
                         throw new Error('contentlets is empty.');
                     }
 
-                    const contentlet = { ...contentlets[0] };
+                    const item = contentlets[0];
+                    const values = Object.values(item);
+
+                    const contentlet = { ...values[0] };
 
                     // under errorMessage is how the backend returns an error.
                     if (contentlet?.errorMessage) {
