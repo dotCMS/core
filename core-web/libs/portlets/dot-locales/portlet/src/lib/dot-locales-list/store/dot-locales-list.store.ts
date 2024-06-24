@@ -1,4 +1,4 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,7 +7,7 @@ import { inject, Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { catchError, filter, map, switchMap, take, tap, withLatestFrom } from 'rxjs/operators';
+import { filter, map, switchMap, take, tap, withLatestFrom } from 'rxjs/operators';
 
 import {
     DotHttpErrorManagerService,
@@ -163,30 +163,45 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
     readonly addLocale = this.effect<DotAddLanguage>((locale$) => {
         return locale$.pipe(
             tap(() => this.setStatus(ComponentStatus.LOADING)),
-            switchMap((locale) => this.languageService.add(locale)),
-            switchMap(() => this.languageService.get()),
-            tap((languages) => this.updateListAndNotify(languages)),
-            catchError((error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error))
+            switchMap((locale) =>
+                this.languageService.add(locale).pipe(
+                    take(1),
+                    tapResponse(
+                        () => this.updateListAndNotify(),
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
+                    )
+                )
+            )
         );
     });
 
     readonly updateLocale = this.effect<DotLanguage>((locale$) => {
         return locale$.pipe(
             tap(() => this.setStatus(ComponentStatus.LOADING)),
-            switchMap((locale) => this.languageService.update(locale)),
-            switchMap(() => this.languageService.get()),
-            tap((languages) => this.updateListAndNotify(languages)),
-            catchError((error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error))
+            switchMap((locale) =>
+                this.languageService.update(locale).pipe(
+                    take(1),
+                    tapResponse(
+                        () => this.updateListAndNotify(),
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
+                    )
+                )
+            )
         );
     });
 
     readonly makeDefaultLocale = this.effect<number>((localeId$) => {
         return localeId$.pipe(
             tap(() => this.setStatus(ComponentStatus.LOADING)),
-            switchMap((localeId) => this.languageService.makeDefault(localeId)),
-            switchMap(() => this.languageService.get()),
-            tap((languages) => this.updateListAndNotify(languages)),
-            catchError((error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error))
+            switchMap((localeId) =>
+                this.languageService.makeDefault(localeId).pipe(
+                    take(1),
+                    tapResponse(
+                        () => this.updateListAndNotify(),
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
+                    )
+                )
+            )
         );
     });
 
@@ -195,28 +210,13 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             tap(() => this.setStatus(ComponentStatus.LOADING)),
             switchMap((languageId) =>
                 this.languageService.delete(languageId).pipe(
-                    tap(() =>
-                        this.messageService.add({
-                            severity: 'info',
-                            summary: this.dotMessageService.get(
-                                'locale.delete.confirmation.notification.title'
-                            ),
-                            detail: this.dotMessageService.get(
-                                'locale.delete.confirmation.notification.message'
-                            )
-                        })
-                    ),
-                    catchError((error: HttpErrorResponse) =>
-                        this.dotHttpErrorManagerService.handle(error)
+                    take(1),
+                    tapResponse(
+                        () => this.updateListAndNotify(true),
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
                     )
                 )
-            ),
-            switchMap(() => this.languageService.get()),
-            tap((languages) => {
-                this.setStatus(ComponentStatus.IDLE);
-                this.setLocales(languages);
-            }),
-            catchError((error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error))
+            )
         )
     );
 
@@ -239,6 +239,8 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
         isEnterprise: boolean,
         pushPublishEnvironments: DotEnvironment[]
     ): DotLocaleRow[] {
+        const defaultLocale = this.getDefaultLocale(locales);
+
         return locales.map((locale) => ({
             ...locale,
             actions: [
@@ -270,6 +272,7 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                         command: () => {
                             this.callDynamicDialog(
                                 locale,
+                                defaultLocale,
                                 'locale.set.default.confirmation.title',
                                 'locale.set.default.confirmation.message',
                                 'locale.set.default.confirmation.accept.button',
@@ -287,6 +290,7 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                         command: () => {
                             this.callDynamicDialog(
                                 locale,
+                                defaultLocale,
                                 'locale.delete.confirmation.title',
                                 'locale.delete.confirmation.message',
                                 'delete',
@@ -304,6 +308,7 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
 
     private callDynamicDialog(
         locale: DotLanguage,
+        defaultLocale: DotLanguage,
         headerLabel: string,
         messageLabel: string,
         acceptLabel: string,
@@ -322,7 +327,11 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                     icon: 'pi pi-exclamation-triangle',
                     ISOCode: getLocaleISOCode(locale),
                     locale,
-                    message: this.dotMessageService.get(messageLabel)
+                    message: this.dotMessageService.get(
+                        messageLabel,
+                        `${defaultLocale.language} (${getLocaleISOCode(defaultLocale)})`,
+                        `${locale.language} (${getLocaleISOCode(locale)})`
+                    )
                 }
             }
         );
@@ -335,13 +344,45 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
             .subscribe(action);
     }
 
-    private updateListAndNotify(locales: DotLanguage[]) {
-        this.setLocales(locales);
-        this.messageService.add({
-            severity: 'success',
-            summary: this.dotMessageService.get('locale.notification.success.title'),
-            detail: this.dotMessageService.get('locale.notification.success.message')
-        });
-        this.setStatus(ComponentStatus.IDLE);
+    private updateListAndNotify(isDelete = false) {
+        this.languageService
+            .get()
+            .pipe(
+                take(1),
+                tapResponse(
+                    (languages) => {
+                        this.setLocales(languages);
+                        if (isDelete) {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'locale.delete.confirmation.notification.title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'locale.delete.confirmation.notification.message'
+                                )
+                            });
+                        } else {
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: this.dotMessageService.get(
+                                    'locale.notification.success.title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'locale.notification.success.message'
+                                )
+                            });
+                        }
+
+                        this.setStatus(ComponentStatus.IDLE);
+                    },
+                    (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
+                )
+            )
+            .subscribe();
+    }
+
+    private getDefaultLocale(locales: DotLanguage[]): DotLanguage {
+        return locales.find((locale) => locale.defaultLanguage) as DotLanguage;
     }
 }
