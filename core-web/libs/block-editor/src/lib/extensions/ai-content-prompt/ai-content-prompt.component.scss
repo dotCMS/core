@@ -27,3 +27,51 @@ form {
         }
     }
 }
+
+.ai-content__generated-text-wrapper {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    .p-inputtext.p-inputtextarea {
+        padding: $spacing-1 $spacing-6 $spacing-1 $spacing-4;
+        min-height: $spacing-8;
+    }
+
+    dot-copy-button {
+        position: absolute;
+        right: $spacing-3;
+        bottom: $spacing-1;
+    }
+}
+
+.ai-content__generated-text,
+dot-empty-container {
+    height: 22rem;
+}
+
+.ai-content__pagination {
+    display: flex;
+    justify-content: center;
+    gap: $spacing-1;
+    align-items: center;
+}
+
+.ai-content__input-text {
+    height: $spacing-8;
+}
+
+.ai-content__buttons {
+    display: flex;
+    gap: $spacing-1;
+}
+
+.ai-content__form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+}
+
+dot-empty-container ::ng-deep .message__icon {
+    color: $red;
+}

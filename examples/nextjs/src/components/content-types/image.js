@@ -3,14 +3,14 @@ import Image from 'next/image';
 
 function ImageComponent({ fileAsset, title, description }) {
     const {
-        viewAs: { language }
+        pageAsset: {viewAs: { language }}
     } = useDotcmsPageContext();
 
     return (
         <div className="relative overflow-hidden bg-white rounded shadow-lg group">
             <div className="relative w-full bg-gray-200 h-96">
                 <Image
-                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${fileAsset}?language_id=${language.id}`}
+                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${fileAsset?.idPath || fileAsset}?language_id=${language?.id}`}
                     fill={true}
                     className="object-cover"
                     alt={title}

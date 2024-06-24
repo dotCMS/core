@@ -42,7 +42,6 @@ import {
 
 import {
     ActionsMenu,
-    AIContentActionsExtension,
     AIContentPromptExtension,
     AIImagePromptExtension,
     AssetUploader,
@@ -459,8 +458,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         if (isAIPluginInstalled) {
             extensions.push(
                 AIContentPromptExtension(this.viewContainerRef),
-                AIImagePromptExtension(this.viewContainerRef),
-                AIContentActionsExtension(this.viewContainerRef)
+                AIImagePromptExtension(this.viewContainerRef)
             );
         }
 

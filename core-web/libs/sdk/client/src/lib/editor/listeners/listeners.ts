@@ -3,9 +3,10 @@ import { DotCMSPageEditorConfig } from '../models/editor.model';
 import { DotCMSPageEditorSubscription, NOTIFY_CUSTOMER } from '../models/listeners.model';
 import {
     findVTLData,
-    findContentletElement,
+    findDotElement,
     getClosestContainerData,
-    getPageElementBound
+    getPageElementBound,
+    scrollIsInBottom
 } from '../utils/editor.utils';
 
 declare global {
@@ -80,6 +81,24 @@ export function listenEditorMessages() {
                 break;
             }
         }
+
+        if (event.data.name === NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME) {
+            const direction = event.data.direction;
+
+            if (
+                (window.scrollY === 0 && direction === 'up') ||
+                (scrollIsInBottom() && direction === 'down')
+            ) {
+                /**
+                 * If the iframe scroll is in the top of bottom, we dont send anything.
+                 * This to avoid the lost of scrollend event
+                 **/
+                return;
+            }
+
+            const scrollY = direction === 'up' ? -120 : 120;
+            window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
+        }
     };
 
     window.addEventListener('message', messageCallback);
@@ -99,25 +118,43 @@ export function listenEditorMessages() {
  */
 export function listenHoveredContentlet() {
     const pointerMoveCallback = (event: PointerEvent) => {
-        const target = findContentletElement(event.target as HTMLElement);
-        if (!target) return;
-        const { x, y, width, height } = target.getBoundingClientRect();
+        const foundElement = findDotElement(event.target as HTMLElement);
 
-        const vtlFiles = findVTLData(target);
+        if (!foundElement) return;
+
+        const { x, y, width, height } = foundElement.getBoundingClientRect();
+
+        const isContainer = foundElement.dataset?.['dotObject'] === 'container';
+
+        const contentletForEmptyContainer = {
+            identifier: 'TEMP_EMPTY_CONTENTLET',
+            title: 'TEMP_EMPTY_CONTENTLET',
+            contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
+            inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
+            widgetTitle: 'TEMP_EMPTY_CONTENTLET',
+            baseType: 'TEMP_EMPTY_CONTENTLET',
+            onNumberOfPages: 1
+        };
+
+        const contentlet = {
+            identifier: foundElement.dataset?.['dotIdentifier'],
+            title: foundElement.dataset?.['dotTitle'],
+            inode: foundElement.dataset?.['dotInode'],
+            contentType: foundElement.dataset?.['dotType'],
+            baseType: foundElement.dataset?.['dotBasetype'],
+            widgetTitle: foundElement.dataset?.['dotWidgetTitle'],
+            onNumberOfPages: foundElement.dataset?.['dotOnNumberOfPages']
+        };
+
+        const vtlFiles = findVTLData(foundElement);
         const contentletPayload = {
             container:
                 // Here extract dot-container from contentlet if is Headless
                 // or search in parent container if is VTL
-                target.dataset?.['dotContainer']
-                    ? JSON.parse(target.dataset?.['dotContainer'])
-                    : getClosestContainerData(target),
-            contentlet: {
-                identifier: target.dataset?.['dotIdentifier'],
-                title: target.dataset?.['dotTitle'],
-                inode: target.dataset?.['dotInode'],
-                contentType: target.dataset?.['dotType'],
-                onNumberOfPages: target.dataset?.['dotOnNumberOfPages']
-            },
+                foundElement.dataset?.['dotContainer']
+                    ? JSON.parse(foundElement.dataset?.['dotContainer'])
+                    : getClosestContainerData(foundElement),
+            contentlet: isContainer ? contentletForEmptyContainer : contentlet,
             vtlFiles
         };
 
@@ -157,7 +194,20 @@ export function scrollHandler() {
         window.lastScrollYPosition = window.scrollY;
     };
 
+    const scrollEndCallback = () => {
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.IFRAME_SCROLL_END
+        });
+    };
+
     window.addEventListener('scroll', scrollCallback);
+    window.addEventListener('scrollend', scrollEndCallback);
+
+    subscriptions.push({
+        type: 'listener',
+        event: 'scroll',
+        callback: scrollEndCallback
+    });
 
     subscriptions.push({
         type: 'listener',

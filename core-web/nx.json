@@ -64,6 +64,11 @@
             "library": {
                 "unitTestRunner": "jest"
             }
+        },
+        "@nx/react": {
+            "library": {
+                "unitTestRunner": "jest"
+            }
         }
     },
     "$schema": "./node_modules/nx/schemas/nx-schema.json",
@@ -113,6 +118,11 @@
             "inputs": ["production", "^production"]
         },
         "@nx/vite:build": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        },
+        "@nx/angular:package": {
             "cache": true,
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]

@@ -1,26 +1,29 @@
-import { map } from 'rxjs/operators';
+import * as _ from 'lodash';
+import { Observable } from 'rxjs';
+
 import { Component, EventEmitter, OnChanges, Optional } from '@angular/core';
 import { AfterViewInit, Output, Input, ChangeDetectionStrategy } from '@angular/core';
 import { NgControl, ControlValueAccessor } from '@angular/forms';
+
+import { map } from 'rxjs/operators';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
+
 import { Verify } from '../../services/validation/Verify';
-import { Observable } from 'rxjs';
-import * as _ from 'lodash';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-input-rest-dropdown',
     template: `
         <cw-input-dropdown
+            (onDropDownChange)="fireChange($event)"
+            (touch)="fireTouch($event)"
             [value]="modelValue"
-            placeholder="{{ placeholder }}"
             [maxSelections]="maxSelections"
             [minSelections]="minSelections"
             [allowAdditions]="allowAdditions"
-            (onDropDownChange)="fireChange($event)"
-            (touch)="fireTouch($event)"
             [options]="options | async"
-        >
+            placeholder="{{ placeholder }}">
         </cw-input-dropdown>
     `
 })
@@ -40,7 +43,10 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
     private _modelValue: string[] | string;
     private _options: Observable<any[]>;
 
-    constructor(private coreWebService: CoreWebService, @Optional() public control: NgControl) {
+    constructor(
+        private coreWebService: CoreWebService,
+        @Optional() public control: NgControl
+    ) {
         if (control) {
             control.valueAccessor = this;
         }
@@ -121,6 +127,7 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
                 return this.jsonEntryToOption(valuesJson[key], key);
             });
         }
+
         return ary;
     }
 
@@ -131,7 +138,9 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
         } else {
             opt.value = json[this.optionValueField];
         }
+
         opt.label = json[this.optionLabelField];
+
         return opt;
     }
 }

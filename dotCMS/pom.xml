@@ -4,20 +4,20 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-build-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dotcms-core</artifactId>
     <packaging>jar</packaging>
     <properties>
+        <maven.deploy.skip>false</maven.deploy.skip>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
         <test.src.dir>${project.basedir}/src/test/java</test.src.dir>
         <version.spotless.plugin>2.36.0</version.spotless.plugin>
-        <jackson.version>2.13.4</jackson.version>
         <batik.version>1.16</batik.version>
-        <glowroot.version>0.13.1</glowroot.version>
+        <glowroot.version>0.14.1</glowroot.version>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
         <assembly-directory>${basedir}/target/dist</assembly-directory>
         <docker.skip.build>${docker.skip}</docker.skip.build>
@@ -63,7 +63,7 @@
         <test.felix.undeployed.folder>felix/core/undeployed</test.felix.undeployed.folder>
         <test.felix.system.undeployed.folder>felix/system/undeployed</test.felix.system.undeployed.folder>
         <!-- <docker.platforms>linux/arm64,linux/amd64</docker.platforms>-->
-        <tomcat.redis-session-manager.version>1.1</tomcat.redis-session-manager.version>
+        <tomcat.redis-session-manager.version>1.2</tomcat.redis-session-manager.version>
         <commons-pool2.version>2.11.1</commons-pool2.version>
         <org.slfj4.version>1.7.36</org.slfj4.version>
         <jedis.version>4.4.6</jedis.version>
@@ -73,11 +73,26 @@
         <sonar.sources>src/main/java,src/enterprise/java</sonar.sources>
     </properties>
     <dependencies>
+        <!-- Force dependency resolution when using also-make option even though these do not provide jar dependencies -->
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-core-web</artifactId>
             <version>${project.version}</version>
             <type>war</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms.plugins</groupId>
+            <artifactId>dotcms-core-bundles</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms.plugins</groupId>
+            <artifactId>dotcms-system-bundles</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -813,6 +828,10 @@
         </dependency>
         -->
         <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-guava</artifactId>
             <scope>compile</scope>
@@ -1260,8 +1279,33 @@
 
         <!-- Test Dependencies -->
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -1278,18 +1322,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- Deprecated need to remove replace with core mockito-->
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- Deprecated need to remove replace with core mockito-->
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -1744,6 +1776,9 @@
                                     <descriptor>original/docker-descriptor.xml</descriptor>
                                     <targetDir>/maven</targetDir>
                                 </assembly>
+                                <args>
+                                    <SDKMAN_JAVA_VERSION>${runtime.docker.sdkman.java.version}</SDKMAN_JAVA_VERSION>
+                                </args>
                             </build>
                         </dotcms>
                     </imagesMap>

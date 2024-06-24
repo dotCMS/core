@@ -15,11 +15,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
+    DotAlertConfirmService,
     DotContentTypeService,
+    DotContentletLockerService,
     DotContentletService,
     DotCopyContentService,
     DotCurrentUserService,
@@ -28,44 +31,55 @@ import {
     DotExperimentsService,
     DotFavoritePageService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
     DotPersonalizeService,
     DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
+    DotSeoMetaTagsUtilService,
+    DotTempFileUploadService,
+    DotWorkflowActionsFireService,
+    PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import {
+    CoreWebService,
+    CoreWebServiceMock,
+    DotcmsConfigService,
+    DotcmsEventsService,
+    LoginService
+} from '@dotcms/dotcms-js';
+import { DotCMSContentlet, DEFAULT_VARIANT_ID, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
-    DotPersonalizeServiceMock,
     DotDevicesServiceMock,
     mockDotDevices,
     LoginServiceMock,
     DotCurrentUserServiceMock,
-    dotcmsContentletMock,
     seoOGTagsResultMock,
     URL_MAP_CONTENTLET,
     getRunningExperimentMock,
     getScheduleExperimentMock,
-    getDraftExperimentMock
+    getDraftExperimentMock,
+    DotcmsConfigServiceMock,
+    DotcmsEventsServiceMock,
+    DotPersonalizeServiceMock,
+    MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
 import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
-import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
-import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
-import { CUSTOM_PERSONA } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component.spec';
+import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
+import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
-import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
-import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
+import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
@@ -81,11 +95,11 @@ import {
     URL_CONTENT_MAP_MOCK,
     newContentlet,
     dotPageContainerStructureMock,
-    dragAddEventMock,
-    dragMoveEventMock
+    SHOW_CONTENTLET_TOOLS_PATCH_MOCK
 } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
-import { ActionPayload } from '../shared/models';
+import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
+import { SDK_EDITOR_SCRIPT_SOURCE } from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -101,22 +115,52 @@ const messagesMock = {
     'editpage.content.add.already.message': 'This content is already added to this container'
 };
 
+const IFRAME_MOCK = {
+    nativeElement: {
+        contentDocument: {
+            getElementsByTagName: () => [],
+            querySelectorAll: () => [],
+            write: function (html) {
+                this.body.innerHTML = html;
+            },
+            body: {
+                innerHTML: ''
+            },
+            open: jest.fn(),
+            close: jest.fn()
+        }
+    }
+};
+
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe],
+        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
             MockComponent(DotEditEmaWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
-            MockComponent(DotEmaRunningExperimentComponent)
+            MockComponent(DotEmaRunningExperimentComponent),
+            MockComponent(EditEmaToolbarComponent)
         ],
         detectChanges: false,
         componentProviders: [
+            ConfirmationService,
             MessageService,
             EditEmaStore,
-            ConfirmationService,
             DotFavoritePageService,
             DotESContentService,
+            {
+                provide: DotAlertConfirmService,
+                useValue: {
+                    confirm: () => of({})
+                }
+            },
+            {
+                provide: DotIframeService,
+                useValue: {
+                    run: () => of({})
+                }
+            },
             {
                 provide: DotExperimentsService,
                 useValue: {
@@ -171,21 +215,48 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             {
                 provide: WINDOW,
                 useValue: window
-            },
-            {
-                provide: DotPersonalizeService,
-                useValue: new DotPersonalizeServiceMock()
             }
         ],
         providers: [
-            {
-                provide: DotSeoMetaTagsService,
-                useValue: { getMetaTagsResults: () => of(seoOGTagsResultMock) }
-            },
             DotSeoMetaTagsUtilService,
             DialogService,
             DotCopyContentService,
             DotCopyContentModalService,
+            DotWorkflowActionsFireService,
+            DotTempFileUploadService,
+            {
+                provide: DotHttpErrorManagerService,
+                useValue: new MockDotHttpErrorManagerService()
+            },
+            {
+                provide: DotcmsConfigService,
+                useValue: new DotcmsConfigServiceMock()
+            },
+            {
+                provide: DotcmsEventsService,
+                useValue: new DotcmsEventsServiceMock()
+            },
+            {
+                provide: PushPublishService,
+                useValue: {
+                    getEnvironments() {
+                        return of([
+                            {
+                                id: '123',
+                                name: 'Environment 1'
+                            },
+                            {
+                                id: '456',
+                                name: 'Environment 2'
+                            }
+                        ]);
+                    }
+                }
+            },
+            {
+                provide: DotSeoMetaTagsService,
+                useValue: { getMetaTagsResults: () => of(seoOGTagsResultMock) }
+            },
             { provide: ActivatedRoute, useValue: { snapshot: { queryParams: QUERY_PARAMS_MOCK } } },
             {
                 provide: DotPageApiService,
@@ -193,6 +264,62 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                     get({ language_id }) {
                         // We use the language_id to determine the response, use this to test different behaviors
                         return {
+                            // Locked without unlock permission
+                            8: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    canEdit: true,
+                                    canLock: false,
+                                    isLocked: true,
+                                    lockedByUser: 'user'
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 2,
+                                        language: 'Spanish',
+                                        countryCode: 'ES',
+                                        languageCode: 'es',
+                                        country: 'España'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                containers: dotPageContainerStructureMock
+                            }),
+                            //Locked  with unlock permission
+                            7: of({
+                                page: {
+                                    title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
+                                    identifier: '123',
+                                    ...permissions,
+                                    pageURI: 'page-one',
+                                    canEdit: true,
+                                    canLock: true,
+                                    locked: true,
+                                    lockedByName: 'user'
+                                },
+                                site: {
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 2,
+                                        language: 'Spanish',
+                                        countryCode: 'ES',
+                                        languageCode: 'es',
+                                        country: 'España'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                },
+                                containers: dotPageContainerStructureMock
+                            }),
                             6: of({
                                 page: {
                                     title: 'hello world',
@@ -358,9 +485,13 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                 page: 1
                             }
                         });
+                    },
+                    saveContentlet() {
+                        return of({});
                     }
                 }
             },
+
             {
                 provide: DotDevicesService,
                 useValue: new DotDevicesServiceMock()
@@ -385,9 +516,16 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
             },
-            mockProvider(DotContentTypeService)
+            mockProvider(DotContentTypeService),
+            {
+                provide: DotContentletLockerService,
+                useValue: {
+                    unlock: (_inode: string) => of({})
+                }
+            }
         ]
     });
+
 describe('EditEmaEditorComponent', () => {
     describe('with queryParams and permission', () => {
         let spectator: SpectatorRouting<EditEmaEditorComponent>;
@@ -399,6 +537,8 @@ describe('EditEmaEditorComponent', () => {
         let dotCopyContentService: DotCopyContentService;
         let dotContentletService: DotContentletService;
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
+        let dotTempFileUploadService: DotTempFileUploadService;
+        let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
 
         const createComponent = createRouting({ canEdit: true, canRead: true });
 
@@ -427,6 +567,8 @@ describe('EditEmaEditorComponent', () => {
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
             dotContentletService = spectator.inject(DotContentletService, true);
+            dotTempFileUploadService = spectator.inject(DotTempFileUploadService, true);
+            dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
 
             addMessageSpy = jest.spyOn(messageService, 'add');
 
@@ -440,73 +582,6 @@ describe('EditEmaEditorComponent', () => {
             spectator.detectChanges();
 
             store.updateEditorState(EDITOR_STATE.IDLE);
-        });
-
-        describe('toast', () => {
-            it('should trigger messageService when clicking on ema-copy-url', () => {
-                const messageService = spectator.inject(MessageService, true);
-                const messageServiceSpy = jest.spyOn(messageService, 'add');
-                spectator.detectChanges();
-
-                const button = spectator.debugElement.query(By.css('[data-testId="ema-copy-url"]'));
-
-                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
-
-                expect(messageServiceSpy).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: 'Copied',
-                    life: 3000
-                });
-            });
-        });
-
-        describe('API URL', () => {
-            it('should have the url setted with the current language and persona', () => {
-                spectator.detectChanges();
-
-                const button = spectator.debugElement.query(By.css('[data-testId="ema-api-link"]'));
-
-                expect(button.nativeElement.href).toBe(
-                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
-                );
-            });
-
-            it('should open a new tab', () => {
-                spectator.detectChanges();
-
-                const button = spectator.debugElement.query(By.css('[data-testId="ema-api-link"]'));
-
-                expect(button.nativeElement.target).toBe('_blank');
-            });
-        });
-
-        describe('language selector', () => {
-            it('should have a language selector', () => {
-                spectator.detectChanges();
-                expect(spectator.query(byTestId('language-selector'))).not.toBeNull();
-            });
-
-            it("should have the current language as label in the language selector's button", () => {
-                spectator.detectChanges();
-                expect(spectator.query(byTestId('language-button')).textContent).toBe(
-                    'English - US'
-                );
-            });
-
-            it('should call navigate when selecting a language', () => {
-                spectator.detectChanges();
-                const router = spectator.inject(Router);
-
-                jest.spyOn(router, 'navigate');
-
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { language_id: 2 },
-                    queryParamsHandling: 'merge'
-                });
-            });
         });
 
         describe('Preview mode', () => {
@@ -527,15 +602,10 @@ describe('EditEmaEditorComponent', () => {
                     'confirm-dialog'
                 ]; // Test id of components that should hide when entering preview modes
 
-                spectator.detectChanges();
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
                 const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
 
-                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                store.setDevice(iphone);
+
                 spectator.detectChanges();
 
                 componentsToHide.forEach((testId) => {
@@ -593,268 +663,11 @@ describe('EditEmaEditorComponent', () => {
                     ).not.toBeNull();
                 });
             });
-
-            it('should show the components that need showed on preview mode', () => {
-                const componentsToShow = ['info-display']; // Test id of components that should show when entering preview modes
-
-                spectator.detectChanges();
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
-
-                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
-                spectator.detectChanges();
-
-                componentsToShow.forEach((testId) => {
-                    expect(spectator.query(byTestId(testId))).not.toBeNull();
-                });
-            });
-
-            it('should call setDevice from the store', () => {
-                const setDeviceMock = jest.spyOn(store, 'setDevice');
-
-                spectator.detectChanges();
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
-
-                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
-                spectator.detectChanges();
-
-                expect(setDeviceMock).toHaveBeenCalledWith(iphone);
-            });
-
-            // REMOVED THE `SKIP` WHEN THIS PR [https://github.com/dotCMS/core/pull/27866] IS MERGED
-            it('should open seo results when clicking on a social media tile', () => {
-                const setSocialMediaMock = jest.spyOn(store, 'setSocialMedia');
-
-                store.load({
-                    url: 'index',
-                    language_id: '3',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-
-                jest.runOnlyPendingTimers();
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                spectator.triggerEventHandler(deviceSelector, 'changeSeoMedia', 'Facebook');
-
-                expect(spectator.query(byTestId('results-seo-tool'))).not.toBeNull(); // This components share the same logic as the preview by device
-
-                expect(setSocialMediaMock).toHaveBeenCalledWith('Facebook');
-            });
-        });
-
-        describe('persona selector', () => {
-            it('should have a persona selector', () => {
-                spectator.detectChanges();
-                expect(spectator.query(byTestId('persona-selector'))).not.toBeNull();
-            });
-
-            it('should call navigate when selecting a persona', () => {
-                spectator.detectChanges();
-                const router = spectator.inject(Router);
-
-                jest.spyOn(router, 'navigate');
-
-                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    ...DEFAULT_PERSONA,
-                    identifier: '123',
-                    pageId: '123',
-                    personalized: true
-                });
-                spectator.detectChanges();
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { 'com.dotmarketing.persona.id': '123' },
-                    queryParamsHandling: 'merge'
-                });
-            });
-
-            it("should open a confirmation dialog when selecting a persona that it's not personalized", () => {
-                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    ...DEFAULT_PERSONA,
-                    identifier: '123',
-                    pageId: '123',
-                    personalized: false
-                });
-                spectator.detectChanges();
-
-                expect(confirmDialogOpen).toHaveBeenCalled();
-            });
-
-            it('should fetchPersonas and navigate when confirming the personalization', () => {
-                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    ...DEFAULT_PERSONA,
-                    identifier: '123',
-                    pageId: '123',
-                    personalized: false
-                });
-                spectator.detectChanges();
-
-                expect(confirmDialogOpen).toHaveBeenCalled();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-                const personaSelector = spectator.debugElement.query(
-                    By.css('[data-testId="persona-selector"]')
-                ).componentInstance;
-                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
-                const fetchPersonasSpy = jest.spyOn(personaSelector, 'fetchPersonas');
-
-                spectator.detectChanges();
-
-                expect(confirmDialogOpen).toHaveBeenCalled();
-
-                confirmDialog
-                    .querySelector('.p-confirm-dialog-accept')
-                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
-
-                spectator.detectChanges();
-
-                expect(routerSpy).toBeCalledWith([], {
-                    queryParams: { 'com.dotmarketing.persona.id': '123' },
-                    queryParamsHandling: 'merge'
-                });
-                expect(fetchPersonasSpy).toHaveBeenCalled();
-            });
-
-            it('should reset the value on personalization rejection', () => {
-                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    ...DEFAULT_PERSONA,
-                    identifier: '123',
-                    pageId: '123',
-                    personalized: false
-                });
-                spectator.detectChanges();
-
-                expect(confirmDialogOpen).toHaveBeenCalled();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-                const personaSelector = spectator.debugElement.query(
-                    By.css('[data-testId="persona-selector"]')
-                ).componentInstance;
-
-                const resetValueSpy = jest.spyOn(personaSelector, 'resetValue');
-
-                spectator.detectChanges();
-
-                expect(confirmDialogOpen).toHaveBeenCalled();
-
-                confirmDialog
-                    .querySelector('.p-confirm-dialog-reject')
-                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
-
-                spectator.detectChanges();
-
-                expect(resetValueSpy).toHaveBeenCalled();
-            });
-
-            it('should open a confirmation dialog when despersonalize is triggered', () => {
-                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
-                    ...DEFAULT_PERSONA,
-                    pageId: '123',
-                    selected: false
-                });
-                spectator.detectChanges();
-
-                expect(confirmDialogOpen).toHaveBeenCalled();
-            });
-
-            it('should fetchPersonas when confirming the despersonalization', () => {
-                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
-                    ...DEFAULT_PERSONA,
-                    pageId: '123',
-                    selected: false
-                });
-                spectator.detectChanges();
-
-                expect(confirmDialogOpen).toHaveBeenCalled();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-                const personaSelector = spectator.debugElement.query(
-                    By.css('[data-testId="persona-selector"]')
-                ).componentInstance;
-
-                const fetchPersonasSpy = jest.spyOn(personaSelector, 'fetchPersonas');
-
-                spectator.detectChanges();
-
-                expect(confirmDialogOpen).toHaveBeenCalled();
-
-                confirmDialog
-                    .querySelector('.p-confirm-dialog-accept')
-                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
-
-                spectator.detectChanges();
-
-                expect(fetchPersonasSpy).toHaveBeenCalled();
-            });
-
-            it('should navigate with default persona as current persona when the selected is the same as the despersonalized', () => {
-                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
-                    ...CUSTOM_PERSONA,
-                    pageId: '123',
-                    selected: true
-                });
-                spectator.detectChanges();
-
-                expect(confirmDialogOpen).toHaveBeenCalled();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
-
-                spectator.detectChanges();
-
-                expect(confirmDialogOpen).toHaveBeenCalled();
-
-                confirmDialog
-                    .querySelector('.p-confirm-dialog-accept')
-                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
-
-                spectator.detectChanges();
-
-                expect(routerSpy).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    },
-                    queryParamsHandling: 'merge'
-                });
-            });
         });
 
         describe('customer actions', () => {
             describe('delete', () => {
                 it('should open a confirm dialog and save on confirm', () => {
-                    spectator.detectChanges();
-
                     const payload: ActionPayload = {
                         pageId: '123',
                         language_id: '1',
@@ -883,7 +696,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -899,7 +712,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.triggerEventHandler(EmaContentletToolsComponent, 'delete', payload);
 
-                    spectator.detectChanges();
+                    spectator.detectComponentChanges();
 
                     expect(confirmDialogOpen).toHaveBeenCalled();
 
@@ -935,6 +748,25 @@ describe('EditEmaEditorComponent', () => {
                     payload: EDIT_ACTION_PAYLOAD_MOCK
                 };
 
+                it('should edit urlContentMap page', () => {
+                    const dialog = spectator.query(DotEmaDialogComponent);
+
+                    jest.spyOn(dialog, 'editUrlContentMapContentlet');
+
+                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'editUrlContentMap', {
+                        identifier: '123',
+                        inode: '456',
+                        title: 'Hello World'
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    } as any);
+
+                    expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith({
+                        identifier: '123',
+                        inode: '456',
+                        title: 'Hello World'
+                    });
+                });
+
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
 
@@ -942,7 +774,7 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    spectator.setInput('contentlet', baseContentletPayload);
+                    store.setContentletArea(baseContentletPayload);
 
                     spectator.detectComponentChanges();
 
@@ -978,7 +810,127 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
-                describe('reload', () => {
+                describe('reorder navigation', () => {
+                    it('should open a dialog to reorder the navigation', () => {
+                        window.dispatchEvent(
+                            new MessageEvent('message', {
+                                origin: HOST,
+                                data: {
+                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    payload: {
+                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                    }
+                                }
+                            })
+                        );
+
+                        spectator.detectComponentChanges();
+
+                        const dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        const pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+                    });
+
+                    it('should reload the page after saving the new navigation order', () => {
+                        const reloadSpy = jest.spyOn(store, 'reload');
+                        const messageSpy = jest.spyOn(messageService, 'add');
+                        const dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.SAVE_MENU_ORDER
+                                }
+                            })
+                        });
+
+                        expect(reloadSpy).toHaveBeenCalledWith({
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            }
+                        });
+
+                        expect(messageSpy).toHaveBeenCalledWith({
+                            severity: 'success',
+                            summary: 'editpage.content.contentlet.menu.reorder.title',
+                            detail: 'message.menu.reordered',
+                            life: 2000
+                        });
+
+                        const pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
+                    });
+
+                    it('should advice the users when they can not save the new order', () => {
+                        const messageSpy = jest.spyOn(messageService, 'add');
+                        const dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER
+                                }
+                            })
+                        });
+
+                        expect(messageSpy).toHaveBeenCalledWith({
+                            severity: 'error',
+                            summary: 'editpage.content.contentlet.menu.reorder.title',
+                            detail: 'error.menu.reorder.user_has_not_permission',
+                            life: 2000
+                        });
+                    });
+
+                    it('should close the dialog if the users cancel the reorder action', () => {
+                        window.dispatchEvent(
+                            new MessageEvent('message', {
+                                origin: HOST,
+                                data: {
+                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    payload: {
+                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                    }
+                                }
+                            })
+                        );
+
+                        spectator.detectComponentChanges();
+
+                        let dialog = spectator.debugElement.query(
+                            By.css("[data-testId='ema-dialog']")
+                        );
+
+                        let pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+
+                        dialog = spectator.debugElement.query(By.css("[data-testId='ema-dialog']"));
+
+                        triggerCustomEvent(dialog, 'action', {
+                            event: new CustomEvent('ng-event', {
+                                detail: {
+                                    name: NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER
+                                }
+                            })
+                        });
+
+                        pDialog = dialog.query(By.css('p-dialog'));
+
+                        expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
+                    });
+                });
+
+                xdescribe('reload', () => {
                     let spyContentlet: jest.SpyInstance;
                     let spyDialog: jest.SpyInstance;
                     let spyReloadIframe: jest.SpyInstance;
@@ -993,8 +945,10 @@ describe('EditEmaEditorComponent', () => {
                             By.css('[data-testId="ema-dialog"]')
                         );
 
-                        spectator.setInput('contentlet', baseContentletPayload);
+                        store.setContentletArea(baseContentletPayload);
+
                         editURLContentButton.triggerEventHandler('onClick', {});
+
                         triggerCustomEvent(dialog, 'action', {
                             event: new CustomEvent('ng-event', {
                                 detail: {
@@ -1135,7 +1089,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        spectator.setInput('contentlet', CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
@@ -1163,7 +1117,7 @@ describe('EditEmaEditorComponent', () => {
                         modalSpy.mockReturnValue(of({ shouldCopy: true }));
                         spectator.detectChanges();
 
-                        spectator.setInput('contentlet', CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
@@ -1190,7 +1144,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        spectator.setInput('contentlet', CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
@@ -1225,7 +1179,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1293,7 +1247,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1384,7 +1338,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1473,7 +1427,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'before'
                     };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1551,7 +1505,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1640,7 +1594,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'before'
                     };
 
-                    spectator.setInput('contentlet', {
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1685,780 +1639,1580 @@ describe('EditEmaEditorComponent', () => {
                     });
                 });
             });
+
+            describe('drag and drop', () => {
+                describe('drag start', () => {
+                    it('should call the setDragItem from the store for content-types', () => {
+                        const setDragItemSpy = jest.spyOn(store, 'setDragItem');
+
+                        const target = {
+                            target: {
+                                dataset: {
+                                    type: 'content-type',
+                                    item: JSON.stringify({
+                                        contentType: {
+                                            variable: 'test',
+                                            name: 'test',
+                                            baseType: 'test'
+                                        },
+                                        move: false
+                                    })
+                                }
+                            }
+                        };
+
+                        const dragStart = new Event('dragstart');
+
+                        Object.defineProperty(dragStart, 'target', {
+                            writable: false,
+                            value: target.target
+                        });
+
+                        window.dispatchEvent(dragStart);
+
+                        expect(setDragItemSpy).toHaveBeenCalledWith({
+                            baseType: 'test',
+                            contentType: 'test',
+                            draggedPayload: {
+                                item: {
+                                    variable: 'test',
+                                    name: 'test'
+                                },
+                                type: 'content-type',
+                                move: false
+                            }
+                        });
+                    });
+
+                    it('should call the setDragItem from the store for contentlets', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const setDragItemSpy = jest.spyOn(store, 'setDragItem');
+
+                        const target = {
+                            target: {
+                                dataset: {
+                                    type: 'contentlet',
+                                    item: JSON.stringify({
+                                        contentlet,
+                                        move: false
+                                    })
+                                }
+                            }
+                        };
+
+                        const dragStart = new Event('dragstart');
+
+                        Object.defineProperty(dragStart, 'target', {
+                            writable: false,
+                            value: target.target
+                        });
+
+                        window.dispatchEvent(dragStart);
+
+                        expect(setDragItemSpy).toHaveBeenCalledWith({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    contentlet
+                                },
+                                type: 'contentlet',
+                                move: false
+                            }
+                        });
+                    });
+
+                    it('should call the setDragItem from the store for contentlets and move', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const container = {
+                            acceptTypes:
+                                'CallToAction,webPageContent,calendarEvent,Image,Product,Video,dotAsset,Blog,Banner,Activity,WIDGET,FORM',
+                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            maxContentlets: '25',
+                            uuid: '2',
+                            contentletsId: [
+                                '4694d40b-d9be-4e09-b031-64ee3e7c9642',
+                                '6ac5921e-e062-49a6-9808-f41aff9343c5'
+                            ]
+                        };
+
+                        const setDragItemSpy = jest.spyOn(store, 'setDragItem');
+
+                        const target = {
+                            target: {
+                                dataset: {
+                                    type: 'contentlet',
+                                    item: JSON.stringify({
+                                        contentlet,
+                                        container,
+                                        move: true
+                                    })
+                                }
+                            }
+                        };
+
+                        const dragStart = new Event('dragstart');
+
+                        Object.defineProperty(dragStart, 'target', {
+                            writable: false,
+                            value: target.target
+                        });
+
+                        window.dispatchEvent(dragStart);
+
+                        expect(setDragItemSpy).toHaveBeenCalledWith({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    contentlet,
+                                    container
+                                },
+                                type: 'contentlet',
+                                move: true
+                            }
+                        });
+                    });
+                });
+
+                describe('drag over', () => {
+                    it('should prevent default to avoid opening files', () => {
+                        const dragOver = new Event('dragover');
+                        const preventDefaultSpy = jest.spyOn(dragOver, 'preventDefault');
+
+                        window.dispatchEvent(dragOver);
+
+                        expect(preventDefaultSpy).toHaveBeenCalled();
+                    });
+                });
+
+                describe('drag end', () => {
+                    it('should reset the editor state to IDLE when dropEffect is none', () => {
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        const dragEnd = new Event('dragend');
+
+                        Object.defineProperty(dragEnd, 'dataTransfer', {
+                            writable: false,
+                            value: {
+                                dropEffect: 'none'
+                            }
+                        });
+
+                        window.dispatchEvent(dragEnd);
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+                    it('should not reset the editor state to IDLE when dropEffect is not none', () => {
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        const dragEnd = new Event('dragend');
+
+                        Object.defineProperty(dragEnd, 'dataTransfer', {
+                            writable: false,
+                            value: {
+                                dropEffect: 'copy'
+                            }
+                        });
+
+                        window.dispatchEvent(dragEnd);
+
+                        expect(updateEditorStateSpy).not.toHaveBeenCalled();
+                    });
+                });
+
+                describe('drag leave', () => {
+                    it('should set the editor state to OUT_OF_BOUNDS', () => {
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        const dragLeave = new Event('dragleave');
+
+                        Object.defineProperties(dragLeave, {
+                            x: {
+                                value: 0
+                            },
+                            y: {
+                                value: 0
+                            },
+                            relatedTarget: {
+                                value: undefined // this is undefined when the mouse leaves the window
+                            }
+                        });
+
+                        window.dispatchEvent(dragLeave);
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(
+                            EDITOR_STATE.OUT_OF_BOUNDS
+                        );
+                    });
+                    it('should not set the editor state to OUT_OF_BOUNDS when the leave is from an element in the window', () => {
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        const dragLeave = new Event('dragleave');
+
+                        Object.defineProperties(dragLeave, {
+                            x: {
+                                value: 900
+                            },
+                            y: {
+                                value: 1200
+                            },
+                            relatedTarget: {
+                                value: {}
+                            }
+                        });
+
+                        window.dispatchEvent(dragLeave);
+
+                        expect(updateEditorStateSpy).not.toHaveBeenCalled();
+                    });
+                });
+
+                describe('drag enter', () => {
+                    it('should call the event prevent default to prevent file opening', () => {
+                        const dragEnter = new Event('dragenter');
+
+                        const preventDefaultSpy = jest.spyOn(dragEnter, 'preventDefault');
+
+                        Object.defineProperty(dragEnter, 'fromElement', {
+                            writable: false,
+                            value: undefined
+                        }); // fromElement is falsy when the mouse enters the window
+
+                        window.dispatchEvent(dragEnter);
+
+                        expect(preventDefaultSpy).toHaveBeenCalled();
+                    });
+
+                    it('should set the dragItem if there is no dragItem', () => {
+                        const setDragItemSpy = jest.spyOn(store, 'setDragItem');
+
+                        const dragEnter = new Event('dragenter');
+
+                        Object.defineProperty(dragEnter, 'fromElement', {
+                            writable: false,
+                            value: undefined
+                        }); // fromElement is falsy when the mouse enters the window
+
+                        window.dispatchEvent(dragEnter);
+
+                        expect(setDragItemSpy).toHaveBeenCalledWith({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
+                    });
+
+                    it('should set the editor to DRAGGING if there is dragItem and the state is OUT_OF_BOUNDS', () => {
+                        store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        }); // Simulate drag start
+
+                        store.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // Simulate drag leave
+
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        const dragEnter = new Event('dragenter');
+
+                        Object.defineProperty(dragEnter, 'fromElement', {
+                            writable: false,
+                            value: undefined
+                        }); // fromElement is falsy when the mouse enters the window
+
+                        window.dispatchEvent(dragEnter);
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
+                    });
+                });
+
+                describe('drop', () => {
+                    it("should call prevent default to avoid opening files when it's not a contentlet", () => {
+                        const drop = new Event('drop');
+
+                        const preventDefaultSpy = jest.spyOn(drop, 'preventDefault');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'false'
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(preventDefaultSpy).toHaveBeenCalled();
+                    });
+                    it('should update the editor state when the drop is not in a dropzone', () => {
+                        const drop = new Event('drop');
+
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'false'
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should do the place item flow when dropping a contentlet and is not moving', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+
+                        store.setDragItem({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    contentlet
+                                },
+                                type: 'contentlet',
+                                move: false
+                            }
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: '123',
+                                            maxContentlets: 25,
+                                            variantId: 'DEFAULT',
+                                            uuid: '123'
+                                        },
+                                        contentlet: {
+                                            identifier: '456',
+                                            title: 'Explore the World',
+                                            inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(savePapeSpy).toHaveBeenCalledWith({
+                            pageContainers: [
+                                {
+                                    identifier: '123',
+                                    uuid: '123',
+                                    personaTag: 'dot:persona',
+                                    contentletsId: ['123', contentlet.identifier, '456'] // Before 456
+                                },
+                                {
+                                    identifier: '123',
+                                    uuid: '456',
+                                    personaTag: 'dot:persona',
+                                    contentletsId: ['123']
+                                }
+                            ],
+                            pageId: '123',
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            }
+                        });
+                    });
+
+                    it('should handle duplicated content', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        store.setDragItem({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    contentlet: {
+                                        ...contentlet,
+                                        identifier: '123' // Already added
+                                    }
+                                },
+                                type: 'contentlet',
+                                move: false
+                            }
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: '123',
+                                            maxContentlets: 25,
+                                            variantId: 'DEFAULT',
+                                            uuid: '123'
+                                        },
+                                        contentlet: {
+                                            identifier: '456',
+                                            title: 'Explore the World',
+                                            inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(savePapeSpy).not.toHaveBeenCalled();
+
+                        expect(addMessageSpy).toHaveBeenCalledWith({
+                            detail: 'This content is already added to this container',
+                            life: 2000,
+                            severity: 'info',
+                            summary: 'Content already added'
+                        });
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should do the place item flow when dropping a contentlet and is moving', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+
+                        store.setDragItem({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    // Moving contentlet
+                                    contentlet: {
+                                        ...contentlet,
+                                        identifier: '456' // Existent one
+                                    },
+                                    // Move it from this container
+                                    container: {
+                                        acceptTypes: 'Banner,Activity',
+                                        identifier: '123',
+                                        maxContentlets: 25,
+                                        variantId: 'DEFAULT',
+                                        uuid: '123'
+                                    }
+                                },
+                                type: 'contentlet',
+                                move: true
+                            }
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        // Container where we dropped
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: '123',
+                                            maxContentlets: 25,
+                                            variantId: 'DEFAULT',
+                                            uuid: '456'
+                                        },
+                                        // Pivot contentlet
+                                        contentlet: {
+                                            identifier: '123',
+                                            title: 'Explore the World',
+                                            inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(savePapeSpy).toHaveBeenCalledWith({
+                            pageContainers: [
+                                {
+                                    identifier: '123',
+                                    uuid: '123',
+                                    personaTag: 'dot:persona',
+                                    contentletsId: ['123']
+                                },
+                                {
+                                    identifier: '123',
+                                    uuid: '456',
+                                    personaTag: 'dot:persona',
+                                    contentletsId: ['456', '123'] // before pivot contentlet
+                                }
+                            ],
+                            pageId: '123',
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            }
+                        });
+                    });
+
+                    it('should handle duplicated content when moving', () => {
+                        const contentlet = CONTENTLETS_MOCK[0];
+
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        store.setDragItem({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    // Moving contentlet
+                                    contentlet: {
+                                        ...contentlet,
+                                        identifier: '123' // Existent one
+                                    },
+                                    // Move it from this container
+                                    container: {
+                                        acceptTypes: 'Banner,Activity',
+                                        identifier: '123',
+                                        maxContentlets: 25,
+                                        variantId: 'DEFAULT',
+                                        uuid: '123'
+                                    }
+                                },
+                                type: 'contentlet',
+                                move: true
+                            }
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        // Container where we dropped
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: '123',
+                                            maxContentlets: 25,
+                                            variantId: 'DEFAULT',
+                                            uuid: '456'
+                                        },
+                                        // Pivot contentlet
+                                        contentlet: {
+                                            identifier: '123',
+                                            title: 'Explore the World',
+                                            inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+                        expect(savePapeSpy).not.toHaveBeenCalled();
+
+                        expect(addMessageSpy).toHaveBeenCalledWith({
+                            detail: 'This content is already added to this container',
+                            life: 2000,
+                            severity: 'info',
+                            summary: 'Content already added'
+                        });
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should open dialog when dropping a content-type', () => {
+                        const contentType = CONTENT_TYPE_MOCK[0];
+
+                        jest.spyOn(store, 'updateEditorState');
+
+                        store.setDragItem({
+                            baseType: contentType.baseType,
+                            contentType: contentType.variable,
+                            draggedPayload: {
+                                item: {
+                                    variable: contentType.variable,
+                                    name: contentType.name
+                                },
+                                type: 'content-type',
+                                move: false
+                            } as ContentTypeDragPayload
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        // Container where we dropped
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: '123',
+                                            maxContentlets: 25,
+                                            variantId: 'DEFAULT',
+                                            uuid: '456'
+                                        },
+                                        // Pivot contentlet
+                                        contentlet: {
+                                            identifier: '123',
+                                            title: 'Explore the World',
+                                            inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        spectator.detectChanges();
+
+                        const dialog = spectator.debugElement.query(
+                            By.css('[data-testId="dialog"]')
+                        );
+
+                        expect(dialog.attributes['ng-reflect-visible']).toBe('true');
+                        expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should advice and reset the state to IDLE when the dropped file is not an image', () => {
+                        const drop = new Event('drop');
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
+
+                        Object.defineProperties(drop, {
+                            dataTransfer: {
+                                writable: false,
+                                value: {
+                                    files: [new File([''], 'test.pdf', { type: 'application/pdf' })]
+                                }
+                            },
+                            target: {
+                                value: {
+                                    dataset: {
+                                        dropzone: 'true',
+                                        position: 'before',
+                                        payload: JSON.stringify({
+                                            container: {
+                                                acceptTypes: 'Banner,Activity,DotAsset',
+                                                identifier: '123',
+                                                maxContentlets: 25,
+                                                variantId: 'DEFAULT',
+                                                uuid: '456'
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(addMessageSpy).toHaveBeenCalledWith({
+                            severity: 'error',
+                            summary: 'file-upload',
+                            detail: 'editpage.file.upload.not.image',
+                            life: 3000
+                        });
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should advice and reset state to IDLE when the dropped image failed uploading ', () => {
+                        const drop = new Event('drop');
+                        jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                            of([
+                                {
+                                    image: null,
+                                    id: 'temp_file_test'
+                                }
+                            ] as DotCMSTempFile[])
+                        );
+
+                        store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
+
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        Object.defineProperties(drop, {
+                            dataTransfer: {
+                                writable: false,
+                                value: {
+                                    files: [new File([''], 'test.png', { type: 'image/png' })]
+                                }
+                            },
+                            target: {
+                                value: {
+                                    dataset: {
+                                        dropzone: 'true',
+                                        position: 'before',
+                                        payload: JSON.stringify({
+                                            container: {
+                                                acceptTypes: 'Banner,Activity,DotAsset',
+                                                identifier: '123',
+                                                maxContentlets: 25,
+                                                variantId: 'DEFAULT',
+                                                uuid: '456'
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(1, {
+                            severity: 'info',
+                            summary: 'upload-image',
+                            detail: 'editpage.file.uploading',
+                            life: 3000
+                        });
+
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(2, {
+                            severity: 'error',
+                            summary: 'upload-image',
+                            detail: 'editpage.file.upload.error',
+                            life: 3000
+                        });
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    // This case is not probable but I added it anyways
+                    it('should not add an image when it is duplicated', () => {
+                        const drop = new Event('drop');
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+                        const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                        jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                            of([
+                                {
+                                    image: true,
+                                    id: 'temp_file_test'
+                                }
+                            ] as DotCMSTempFile[])
+                        );
+
+                        store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
+
+                        jest.spyOn(
+                            dotWorkflowActionsFireService,
+                            'publishContentletAndWaitForIndex'
+                        ).mockReturnValue(
+                            of({
+                                identifier: '123',
+                                inode: '123',
+                                title: 'test',
+                                contentType: 'dotAsset',
+                                baseType: 'IMAGE'
+                            })
+                        );
+
+                        Object.defineProperties(drop, {
+                            dataTransfer: {
+                                writable: false,
+                                value: {
+                                    files: [new File([''], 'test.png', { type: 'image/png' })]
+                                }
+                            },
+                            target: {
+                                value: {
+                                    dataset: {
+                                        dropzone: 'true',
+                                        position: 'before',
+                                        payload: JSON.stringify({
+                                            container: {
+                                                acceptTypes: 'Banner,Activity,DotAsset',
+                                                identifier: '123',
+                                                maxContentlets: 25,
+                                                variantId: 'DEFAULT',
+                                                uuid: '456'
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(1, {
+                            severity: 'info',
+                            summary: 'upload-image',
+                            detail: 'editpage.file.uploading',
+                            life: 3000
+                        });
+
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(2, {
+                            severity: 'info',
+                            summary: 'Workflow-Action',
+                            detail: 'editpage.file.publishing',
+                            life: 3000
+                        });
+
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(3, {
+                            detail: 'This content is already added to this container',
+                            life: 2000,
+                            severity: 'info',
+                            summary: 'Content already added'
+                        });
+
+                        expect(savePapeSpy).not.toHaveBeenCalled();
+
+                        expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                    });
+
+                    it('should add an image successfully', () => {
+                        const drop = new Event('drop');
+                        const savePapeSpy = jest.spyOn(store, 'savePage');
+
+                        jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                            of([
+                                {
+                                    image: true,
+                                    id: 'temp_file_test'
+                                }
+                            ] as DotCMSTempFile[])
+                        );
+
+                        store.setDragItem({
+                            baseType: 'dotAsset',
+                            contentType: 'dotAsset',
+                            draggedPayload: {
+                                type: 'temp'
+                            }
+                        });
+
+                        jest.spyOn(
+                            dotWorkflowActionsFireService,
+                            'publishContentletAndWaitForIndex'
+                        ).mockReturnValue(
+                            of({
+                                identifier: '789',
+                                inode: '123',
+                                title: 'test',
+                                contentType: 'dotAsset',
+                                baseType: 'IMAGE'
+                            })
+                        );
+
+                        Object.defineProperties(drop, {
+                            dataTransfer: {
+                                writable: false,
+                                value: {
+                                    files: [new File([''], 'test.png', { type: 'image/png' })]
+                                }
+                            },
+                            target: {
+                                value: {
+                                    dataset: {
+                                        dropzone: 'true',
+                                        position: 'before',
+                                        payload: JSON.stringify({
+                                            container: {
+                                                acceptTypes: 'Banner,Activity,DotAsset',
+                                                identifier: '123',
+                                                maxContentlets: 25,
+                                                variantId: 'DEFAULT',
+                                                uuid: '456'
+                                            },
+                                            contentlet: {
+                                                identifier: '123',
+                                                title: 'Explore the World',
+                                                inode: 'bef551b3-77ae-4dc8-a030-fe27a2ac056f',
+                                                contentType: 'Banner'
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(1, {
+                            severity: 'info',
+                            summary: 'upload-image',
+                            detail: 'editpage.file.uploading',
+                            life: 3000
+                        });
+
+                        expect(addMessageSpy).toHaveBeenNthCalledWith(2, {
+                            severity: 'info',
+                            summary: 'Workflow-Action',
+                            detail: 'editpage.file.publishing',
+                            life: 3000
+                        });
+
+                        expect(savePapeSpy).toHaveBeenCalledWith({
+                            pageContainers: [
+                                {
+                                    contentletsId: ['123', '456'],
+                                    identifier: '123',
+                                    personaTag: 'dot:persona',
+                                    uuid: '123'
+                                },
+                                {
+                                    contentletsId: ['789', '123'], // image inserted before
+                                    identifier: '123',
+                                    personaTag: 'dot:persona',
+                                    uuid: '456'
+                                }
+                            ],
+                            pageId: '123',
+                            params: {
+                                language_id: 1,
+                                url: 'page-one'
+                            }
+                        });
+                    });
+                });
+            });
+
+            describe('scroll inside iframe', () => {
+                it('should emit postMessage and change state to Scroll', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 200, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 120, enumerable: true });
+
+                    const postMessageSpy = jest.spyOn(
+                        spectator.component.iframe.nativeElement.contentWindow,
+                        'postMessage'
+                    );
+
+                    const scrollingStateSpy = jest.spyOn(store, 'setScrollingState');
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(postMessageSpy).toHaveBeenCalled();
+                    expect(scrollingStateSpy).toHaveBeenCalled();
+                });
+
+                it('should reset state to dragging when drag outside iframe', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 200, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 90, enumerable: true });
+
+                    const updateEditorState = jest.spyOn(store, 'updateEditorState');
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
+                });
+
+                it('should change state to dragging when drag outsite scroll trigger area', () => {
+                    const dragOver = new Event('dragover');
+
+                    Object.defineProperty(dragOver, 'clientY', { value: 300, enumerable: true });
+                    Object.defineProperty(dragOver, 'clientX', { value: 120, enumerable: true });
+
+                    const updateEditorState = jest.spyOn(store, 'updateEditorState');
+
+                    jest.spyOn(
+                        spectator.component.iframe.nativeElement,
+                        'getBoundingClientRect'
+                    ).mockReturnValue({
+                        top: 150,
+                        bottom: 700,
+                        left: 100,
+                        right: 500
+                    } as DOMRect);
+
+                    window.dispatchEvent(dragOver);
+                    spectator.detectChanges();
+                    expect(updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.DRAGGING);
+                });
+            });
+
+            describe('DOM', () => {
+                it("should not show a loader when the editor state is not 'loading'", () => {
+                    spectator.detectChanges();
+
+                    const progressbar = spectator.query(byTestId('progress-bar'));
+
+                    expect(progressbar).toBeNull();
+                });
+
+                it('should show a loader when the editor state is loading', () => {
+                    store.updateEditorState(EDITOR_STATE.LOADING);
+
+                    spectator.detectChanges();
+
+                    const progressbar = spectator.query(byTestId('progress-bar'));
+
+                    expect(progressbar).not.toBeNull();
+                });
+                it('iframe should have the correct src when is HEADLESS', () => {
+                    spectator.detectChanges();
+
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                    expect(iframe.nativeElement.src).toBe(
+                        'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
+                    );
+                });
+
+                describe('VTL Page', () => {
+                    beforeEach(() => {
+                        jest.useFakeTimers(); // Mock the timers
+                        spectator.detectChanges();
+
+                        store.load({
+                            url: 'index',
+                            language_id: '3',
+                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        });
+                    });
+
+                    afterEach(() => {
+                        jest.useRealTimers(); // Restore the real timers after each test
+                    });
+
+                    it('iframe should have the correct content when is VTL', () => {
+                        jest.runOnlyPendingTimers();
+
+                        const iframe = spectator.debugElement.query(
+                            By.css('[data-testId="iframe"]')
+                        );
+
+                        expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                            '<div>hello world</div>'
+                        );
+                        expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                            '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
+                        );
+                    });
+
+                    it('iframe should have reload the page and add the new content, maintaining scroll', () => {
+                        const params = {
+                            language_id: '4',
+                            url: 'index',
+                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        };
+
+                        const iframe = spectator.debugElement.query(
+                            By.css('[data-testId="iframe"]')
+                        );
+                        const scrollSpy = jest
+                            .spyOn(
+                                spectator.component.iframe.nativeElement.contentWindow,
+                                'scrollTo'
+                            )
+                            .mockImplementation(() => jest.fn);
+
+                        iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
+
+                        store.reload({
+                            params,
+                            whenReloaded: () => {
+                                /* */
+                            }
+                        });
+                        spectator.detectChanges();
+
+                        jest.runOnlyPendingTimers();
+
+                        expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                        expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                            '<div>New Content - Hello World</div>'
+                        );
+                        expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
+                            '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
+                        );
+
+                        expect(scrollSpy).toHaveBeenCalledWith(0, 100);
+                    });
+                });
+
+                it('should navigate to new url and change persona when postMessage SET_URL', () => {
+                    const router = spectator.inject(Router);
+                    jest.spyOn(router, 'navigate');
+
+                    spectator.detectChanges();
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'set-url',
+                                payload: {
+                                    url: '/some'
+                                }
+                            }
+                        })
+                    );
+
+                    expect(router.navigate).toHaveBeenCalledWith([], {
+                        queryParams: {
+                            url: '/some',
+                            'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                        },
+                        queryParamsHandling: 'merge'
+                    });
+                });
+
+                it('should not call navigate on load same url', () => {
+                    const router = spectator.inject(Router);
+                    jest.spyOn(router, 'navigate');
+
+                    spectator.detectChanges();
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'set-url',
+                                payload: {
+                                    url: 'page-one'
+                                }
+                            }
+                        })
+                    );
+
+                    expect(router.navigate).not.toHaveBeenCalled();
+                });
+
+                it('set url to a different route should set the editor state to loading', () => {
+                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    spectator.detectChanges();
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'set-url',
+                                payload: {
+                                    url: '/some'
+                                }
+                            }
+                        })
+                    );
+
+                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
+                });
+
+                it('set url to the same route should set the editor state to IDLE', () => {
+                    const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    const url = "/ultra-cool-url-that-doesn't-exist";
+
+                    spectator.detectChanges();
+                    spectator.triggerNavigation({
+                        url: [],
+                        queryParams: { url }
+                    });
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'set-url',
+                                payload: {
+                                    url
+                                }
+                            }
+                        })
+                    );
+
+                    expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                });
+
+                it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
+                    spectator.detectChanges();
+
+                    const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                    expect(confirmDialog.getAttribute('acceptIcon')).toBe('hidden');
+                    expect(confirmDialog.getAttribute('rejectIcon')).toBe('hidden');
+                });
+
+                it('should show the dialogs when we can edit a variant', () => {
+                    const componentsToHide = ['dialog', 'confirm-dialog']; // Test id of components that should hide when entering preview modes
+
+                    spectator.detectChanges();
+
+                    spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
+
+                    spectator.detectChanges();
+                    store.load({
+                        url: 'index',
+                        language_id: '5',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                        variantName: 'hello-there',
+                        experimentId: 'i have a variant'
+                    });
+
+                    spectator.detectChanges();
+
+                    componentsToHide.forEach((testId) => {
+                        expect(spectator.query(byTestId(testId))).not.toBeNull();
+                    });
+                });
+
+                describe('script and styles injection', () => {
+                    let iframeDocument: Document;
+                    let spy: jest.SpyInstance;
+
+                    beforeEach(() => {
+                        jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+                            cb(0); // Pass a dummy value to satisfy the expected argument count
+
+                            return 0;
+                        });
+
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        spectator.component.iframe = IFRAME_MOCK as any;
+                        iframeDocument = spectator.component.iframe.nativeElement.contentDocument;
+                        spy = jest.spyOn(iframeDocument, 'write');
+                    });
+
+                    it('should add script and styles to iframe', () => {
+                        spectator.component.setIframeContent(`<head></head></body></body>`);
+
+                        expect(spy).toHaveBeenCalled();
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                        );
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="container"]:empty'
+                        );
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="contentlet"].empty-contentlet'
+                        );
+                    });
+
+                    it('should add script and styles to iframe for advance templates', () => {
+                        spectator.component.setIframeContent(`<div>Advanced Template</div>`);
+
+                        expect(spy).toHaveBeenCalled();
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                        );
+
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="container"]:empty'
+                        );
+                        expect(iframeDocument.body.innerHTML).toContain(
+                            '[data-dot-object="contentlet"].empty-contentlet'
+                        );
+                    });
+
+                    afterEach(() => {
+                        (window.requestAnimationFrame as jest.Mock).mockRestore();
+                    });
+                });
+            });
+
+            describe('without edit permission', () => {
+                let spectator: SpectatorRouting<EditEmaEditorComponent>;
+                let store: EditEmaStore;
+
+                const createComponent = createRouting({ canEdit: false, canRead: true });
+                beforeEach(() => {
+                    spectator = createComponent({
+                        queryParams: { language_id: 1, url: 'page-one' }
+                    });
+
+                    store = spectator.inject(EditEmaStore, true);
+
+                    store.load({
+                        url: 'index',
+                        language_id: '1',
+                        clientHost: '',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
+                });
+
+                it('should not render components', () => {
+                    spectator.detectChanges();
+                    expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
+                    expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
+                });
+
+                it('should render a "Dont have permission" message', () => {
+                    spectator.detectChanges();
+                    expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
+                });
+
+                it('should iframe wrapper to be expanded', () => {
+                    spectator.detectChanges();
+                    expect(spectator.query(byTestId('editor-content')).classList).toContain(
+                        'editor-content--expanded'
+                    );
+                });
+            });
+
+            describe('inline editing', () => {
+                it('should save from inline edited contentlet', () => {
+                    const saveFromInlineEditedContentletSpy = jest.spyOn(
+                        store,
+                        'saveFromInlineEditedContentlet'
+                    );
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: {
+                                    dataset: {
+                                        inode: '123',
+                                        fieldName: 'title',
+                                        mode: 'full',
+                                        language: '1'
+                                    },
+                                    innerHTML: 'Hello World',
+                                    element: {},
+                                    eventType: '',
+                                    isNotDirty: false
+                                }
+                            }
+                        })
+                    );
+
+                    expect(saveFromInlineEditedContentletSpy).toHaveBeenCalledWith({
+                        contentlet: {
+                            inode: '123',
+                            title: 'Hello World'
+                        },
+                        params: {
+                            language_id: 1,
+                            url: 'page-one'
+                        }
+                    });
+                });
+
+                it('should dont trigger save from inline edited contentlet when dont have changes', () => {
+                    const saveFromInlineEditedContentletSpy = jest.spyOn(
+                        store,
+                        'saveFromInlineEditedContentlet'
+                    );
+                    const setEditorModeSpy = jest.spyOn(store, 'setEditorMode');
+
+                    spectator.setRouteQueryParam('variantName', DEFAULT_VARIANT_ID);
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: null
+                            }
+                        })
+                    );
+
+                    expect(saveFromInlineEditedContentletSpy).not.toHaveBeenCalled();
+                    expect(setEditorModeSpy).toHaveBeenCalledWith(EDITOR_MODE.EDIT);
+                });
+
+                it('should dont trigger save from inline edited contentlet when dont have changes and does not have variantName', () => {
+                    const saveFromInlineEditedContentletSpy = jest.spyOn(
+                        store,
+                        'saveFromInlineEditedContentlet'
+                    );
+                    const setEditorModeSpy = jest.spyOn(store, 'setEditorMode');
+
+                    spectator.setRouteQueryParam('variantName', undefined);
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: null
+                            }
+                        })
+                    );
+
+                    expect(saveFromInlineEditedContentletSpy).not.toHaveBeenCalled();
+                    expect(setEditorModeSpy).toHaveBeenCalledWith(EDITOR_MODE.EDIT);
+                });
+
+                it('should dont trigger save from inline edited contentlet when dont have changes and its a variant', () => {
+                    const saveFromInlineEditedContentletSpy = jest.spyOn(
+                        store,
+                        'saveFromInlineEditedContentlet'
+                    );
+                    const setEditorModeSpy = jest.spyOn(store, 'setEditorMode');
+
+                    spectator.setRouteQueryParam('variantName', 'hello-there');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: null
+                            }
+                        })
+                    );
+
+                    expect(saveFromInlineEditedContentletSpy).not.toHaveBeenCalled();
+                    expect(setEditorModeSpy).toHaveBeenCalledWith(EDITOR_MODE.EDIT_VARIANT);
+                });
+
+                it('should trigger copy contentlet dialog when inline editing', () => {
+                    const copyContentletSpy = jest.spyOn(dotCopyContentModalService, 'open');
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                                payload: {
+                                    inode: '123',
+                                    language: '1'
+                                }
+                            }
+                        })
+                    );
+
+                    expect(copyContentletSpy).toHaveBeenCalledWith();
+                });
+            });
+
+            describe('locked', () => {
+                describe('locked with unlock permission', () => {
+                    let spectator: SpectatorRouting<EditEmaEditorComponent>;
+                    let store: EditEmaStore;
+
+                    const createComponent = createRouting({ canEdit: true, canRead: true });
+                    beforeEach(() => {
+                        spectator = createComponent({
+                            queryParams: { language_id: 7, url: 'page-one' }
+                        });
+
+                        store = spectator.inject(EditEmaStore, true);
+
+                        store.load({
+                            url: 'index',
+                            language_id: '7',
+                            clientHost: '',
+                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        });
+                    });
+
+                    it('should not render components', () => {
+                        spectator.detectChanges();
+                        expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
+                        expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
+                    });
+
+                    it('should render a banner', () => {
+                        spectator.detectChanges();
+                        expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
+                    });
+
+                    it('should iframe wrapper to be expanded', () => {
+                        spectator.detectChanges();
+                        expect(spectator.query(byTestId('editor-content')).classList).toContain(
+                            'editor-content--expanded'
+                        );
+                    });
+                });
+            });
         });
 
-        describe('DOM', () => {
-            it("should not show a loader when the editor state is not 'loading'", () => {
-                spectator.detectChanges();
-
-                const progressbar = spectator.query(byTestId('progress-bar'));
-
-                expect(progressbar).toBeNull();
-            });
-
-            it('should show a loader when the editor state is loading', () => {
-                store.updateEditorState(EDITOR_STATE.LOADING);
-
-                spectator.detectChanges();
-
-                const progressbar = spectator.query(byTestId('progress-bar'));
-
-                expect(progressbar).not.toBeNull();
-            });
-            it('iframe should have the correct src when is HEADLESS', () => {
-                spectator.detectChanges();
-
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
-                expect(iframe.nativeElement.src).toBe(
-                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
-                );
-            });
-
-            it('should render the running experiment component', () => {
+        describe('Components Inputs', () => {
+            it('should set right inputs for the dot-ema-contentlet-tools tag', () => {
                 store.load({
                     url: 'index',
                     language_id: '5',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    variantName: 'hello-there',
                     experimentId: 'i-have-a-running-experiment'
-                }); // This will load a page with a running experiment
-
-                spectator.detectChanges();
-
-                const runningExperiment = spectator.query(byTestId('ema-running-experiment'));
-
-                expect(runningExperiment).not.toBeNull();
-            });
-
-            it('should show the info display when you cannot edit the page', () => {
-                store.load({
-                    url: 'index',
-                    language_id: '6',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
 
                 spectator.detectChanges();
 
-                const infoDisplay = spectator.query(byTestId('info-display'));
-
-                expect(infoDisplay).not.toBeNull();
-            });
-
-            it('should show the info display when trying to edit a variant of a running experiment', () => {
-                store.load({
-                    url: 'index',
-                    language_id: '6',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
-                    experimentId: 'i-have-a-running-experiment'
-                }); // This will load a page with a running experiment
+                store.patchState(SHOW_CONTENTLET_TOOLS_PATCH_MOCK);
 
                 spectator.detectChanges();
+                const contentletTool = spectator.query(EmaContentletToolsComponent);
 
-                const infoDisplay = spectator.query(byTestId('info-display'));
-
-                expect(infoDisplay).not.toBeNull();
-            });
-
-            it('should show the info display when trying to edit a variant of an scheduled experiment', () => {
-                store.load({
-                    url: 'index',
-                    language_id: '6',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
-                    experimentId: 'i-have-a-scheduled-experiment'
-                }); // This will load a page with a scheduled experiment
-
-                spectator.detectChanges();
-
-                const infoDisplay = spectator.query(byTestId('info-display'));
-
-                expect(infoDisplay).not.toBeNull();
-            });
-
-            describe('VTL Page', () => {
-                beforeEach(() => {
-                    jest.useFakeTimers(); // Mock the timers
-                    store.load({
-                        url: 'index',
-                        language_id: '3',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    });
-                    spectator.detectChanges();
-                });
-
-                afterEach(() => {
-                    jest.useRealTimers(); // Restore the real timers after each test
-                });
-
-                it('iframe should have the correct content when is VTL', () => {
-                    jest.runOnlyPendingTimers();
-                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-                    expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
-                        '<div>hello world</div>'
-                    );
-                });
-
-                it('iframe should have reload the page and add the new content, maintaining scroll', () => {
-                    const params = {
-                        language_id: '4',
-                        url: 'index',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                    };
-
-                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-                    const scrollSpy = jest
-                        .spyOn(spectator.component.iframe.nativeElement.contentWindow, 'scrollTo')
-                        .mockImplementation(() => jest.fn);
-
-                    iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
-
-                    store.reload({
-                        params,
-                        whenReloaded: () => {
-                            /* */
-                        }
-                    });
-                    spectator.detectChanges();
-
-                    jest.runOnlyPendingTimers();
-
-                    expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
-                    expect(iframe.nativeElement.contentDocument.body.innerHTML).toEqual(
-                        '<div>New Content - Hello World</div>'
-                    );
-                    expect(scrollSpy).toHaveBeenCalledWith(0, 100);
-                });
-            });
-
-            it('should navigate to new url and change persona when postMessage SET_URL', () => {
-                const router = spectator.inject(Router);
-                jest.spyOn(router, 'navigate');
-
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-url',
-                            payload: {
-                                url: '/some'
-                            }
-                        }
-                    })
+                expect(contentletTool).not.toBeNull();
+                expect(contentletTool.contentletArea).toEqual(
+                    SHOW_CONTENTLET_TOOLS_PATCH_MOCK.contentletArea
                 );
-
-                expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        url: '/some',
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                    },
-                    queryParamsHandling: 'merge'
-                });
+                expect(contentletTool.isEnterprise).toBeTruthy();
             });
-
-            it('should not call navigate on load same url', () => {
-                const router = spectator.inject(Router);
-                jest.spyOn(router, 'navigate');
-
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-url',
-                            payload: {
-                                url: 'page-one'
-                            }
-                        }
-                    })
-                );
-
-                expect(router.navigate).not.toHaveBeenCalled();
-            });
-
-            it('set url to a different route should set the editor state to loading', () => {
-                const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-url',
-                            payload: {
-                                url: '/some'
-                            }
-                        }
-                    })
-                );
-
-                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
-            });
-
-            it('set url to the same route should set the editor state to IDLE', () => {
-                const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
-
-                const url = "/ultra-cool-url-that-doesn't-exist";
-
-                spectator.detectChanges();
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: { url }
-                });
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-url',
-                            payload: {
-                                url
-                            }
-                        }
-                    })
-                );
-
-                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
-            });
-
-            it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                expect(confirmDialog.getAttribute('acceptIcon')).toBe('hidden');
-                expect(confirmDialog.getAttribute('rejectIcon')).toBe('hidden');
-            });
-        });
-
-        describe('move contentlet', () => {
-            it('should post to iframe to get bound on move contentlet and show bounds', () => {
-                spectator.detectChanges();
-
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
-                const postMessageSpy = jest.spyOn(
-                    iframe.nativeElement.contentWindow,
-                    'postMessage'
-                );
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                            payload: {
-                                x: 100,
-                                y: 100,
-                                width: 500,
-                                height: 500,
-                                payload: PAYLOAD_MOCK
-                            }
-                        }
-                    })
-                );
-
-                spectator.detectChanges();
-
-                const emaTools = spectator.debugElement.query(
-                    By.css('[data-testId="contentlet-tools"]')
-                );
-
-                spectator.triggerEventHandler(emaTools, 'moveStart', {
-                    ...PAYLOAD_MOCK
-                });
-
-                spectator.detectComponentChanges();
-
-                expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                ); // Simulate the iframe response
-
-                expect(spectator.query(EmaPageDropzoneComponent)).not.toBeNull();
-            });
-
-            it('should hide drop zone on contentlet tools drop', () => {
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                            payload: {
-                                x: 100,
-                                y: 100,
-                                width: 500,
-                                height: 500,
-                                payload: PAYLOAD_MOCK
-                            }
-                        }
-                    })
-                );
-
-                spectator.detectChanges();
-
-                const emaTools = spectator.debugElement.query(
-                    By.css('[data-testId="contentlet-tools"]')
-                );
-
-                spectator.triggerEventHandler(emaTools, 'moveStart', {
-                    ...PAYLOAD_MOCK
-                });
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                );
-
-                spectator.detectComponentChanges();
-
-                let dropZoneComponent = spectator.query(EmaPageDropzoneComponent);
-
-                const dropZoneDebugElement = spectator.debugElement.query(
-                    By.css('[data-testId="dropzone"]')
-                );
-
-                expect(dropZoneComponent.item).toEqual({
-                    contentType: 'Banner',
-                    baseType: 'CONTENT'
-                });
-                expect(dropZoneComponent.containers).toBe(BOUNDS_MOCK);
-
-                spectator.triggerEventHandler(emaTools, 'moveStop', {
-                    dataTransfer: {
-                        dropEffect: 'move'
-                    }
-                });
-                spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
-                    ...PAYLOAD_MOCK,
-                    position: 'after'
-                });
-
-                spectator.detectComponentChanges();
-                dropZoneComponent = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZoneComponent).toBeNull();
-            });
-
-            it('should move a contentlet from position in the same contentlet', () => {
-                const saveSpy = jest.spyOn(store, 'savePage');
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                            payload: {
-                                x: 100,
-                                y: 100,
-                                width: 500,
-                                height: 500,
-                                payload: PAYLOAD_MOCK
-                            }
-                        }
-                    })
-                );
-
-                spectator.detectChanges();
-
-                const emaTools = spectator.debugElement.query(
-                    By.css('[data-testId="contentlet-tools"]')
-                );
-
-                spectator.triggerEventHandler(emaTools, 'moveStart', {
-                    container: {
-                        acceptTypes: '123,456',
-                        identifier: '123',
-                        contentletsId: ['123', '456'],
-                        maxContentlets: 123,
-                        uuid: '123'
-                    }, // Same container
-                    contentlet: {
-                        identifier: '123' // The pivot
-                    }
-                });
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                );
-
-                spectator.detectComponentChanges();
-
-                const dropZone = spectator.debugElement.query(By.css('[data-testId="dropzone"]'));
-
-                spectator.triggerEventHandler(dropZone, 'place', {
-                    container: {
-                        acceptTypes: '123,456',
-                        identifier: '123',
-                        contentletsId: ['123', '456'],
-                        maxContentlets: 123,
-                        uuid: '123'
-                    }, // Same container
-                    position: 'after',
-                    contentlet: {
-                        identifier: '456' // The pivot
-                    }
-                });
-
-                const newPageContainers = [
-                    {
-                        identifier: '123',
-                        uuid: '123',
-                        contentletsId: ['456', '123'],
-                        personaTag: 'dot:persona'
-                    },
-                    {
-                        identifier: '123',
-                        uuid: '456',
-                        contentletsId: ['123'],
-                        personaTag: 'dot:persona'
-                    }
-                ];
-
-                expect(saveSpy).toHaveBeenCalledWith({
-                    pageContainers: newPageContainers,
-                    pageId: '123',
-                    params: {
-                        language_id: 1,
-                        url: 'page-one'
-                    }
-                });
-            });
-
-            it('should move a contentlet to another container', () => {
-                const saveSpy = jest.spyOn(store, 'savePage');
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                            payload: {
-                                x: 100,
-                                y: 100,
-                                width: 500,
-                                height: 500,
-                                payload: PAYLOAD_MOCK
-                            }
-                        }
-                    })
-                );
-
-                spectator.detectChanges();
-
-                const emaTools = spectator.debugElement.query(
-                    By.css('[data-testId="contentlet-tools"]')
-                );
-
-                spectator.triggerEventHandler(emaTools, 'moveStart', {
-                    container: {
-                        acceptTypes: '123,456',
-                        identifier: '123',
-                        contentletsId: ['123', '456'],
-                        maxContentlets: 123,
-                        uuid: '123'
-                    }, // From container
-                    contentlet: {
-                        identifier: '456' // The contentlet to move
-                    }
-                });
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                );
-
-                spectator.detectComponentChanges();
-
-                const dropZone = spectator.debugElement.query(By.css('[data-testId="dropzone"]'));
-
-                spectator.triggerEventHandler(dropZone, 'place', {
-                    container: {
-                        acceptTypes: '123,456',
-                        identifier: '123',
-                        contentletsId: ['123'],
-                        maxContentlets: 123,
-                        uuid: '456'
-                    }, // Another container
-                    position: 'after',
-                    contentlet: {
-                        identifier: '123' // The pivot
-                    }
-                });
-
-                const newPageContainers = [
-                    {
-                        identifier: '123',
-                        uuid: '123',
-                        contentletsId: ['123'],
-                        personaTag: 'dot:persona'
-                    },
-                    {
-                        identifier: '123',
-                        uuid: '456',
-                        contentletsId: ['123', '456'],
-                        personaTag: 'dot:persona'
-                    }
-                ];
-
-                expect(saveSpy).toHaveBeenCalledWith({
-                    pageContainers: newPageContainers,
-                    pageId: '123',
-                    params: {
-                        language_id: 1,
-                        url: 'page-one'
-                    }
-                });
-            });
-        });
-
-        describe('palette', () => {
-            it('should render a palette', () => {
-                spectator.detectChanges();
-
-                const palette = spectator.query(EditEmaPaletteComponent);
-                expect(palette).toBeDefined();
-            });
-
-            it('should post to iframe to get bound on drag', () => {
-                spectator.detectChanges();
-
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
-                const postMessageSpy = jest.spyOn(
-                    iframe.nativeElement.contentWindow,
-                    'postMessage'
-                );
-
-                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', {
-                    target: {
-                        dataset: {
-                            type: 'contentlet',
-                            item: JSON.stringify({
-                                contentlet: {
-                                    identifier: '123',
-                                    title: 'hello world'
-                                }
-                            })
-                        }
-                    }
-                });
-
-                spectator.detectComponentChanges();
-
-                expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
-            });
-
-            it('should show drop zone on iframe message', () => {
-                spectator.detectChanges();
-
-                let dropZone = spectator.query(EmaPageDropzoneComponent);
-
-                expect(dropZone).toBeNull();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                );
-
-                spectator.triggerEventHandler(
-                    EditEmaPaletteComponent,
-                    'dragStart',
-                    dragMoveEventMock
-                );
-
-                spectator.detectComponentChanges();
-
-                dropZone = spectator.query(EmaPageDropzoneComponent);
-
-                expect(dropZone.containers).toBe(BOUNDS_MOCK);
-                expect(dropZone.item).toEqual({
-                    contentType: 'File',
-                    baseType: 'CONTENT'
-                });
-            });
-
-            it('should hide drop zone on palette drop', () => {
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'set-bounds',
-                            payload: BOUNDS_MOCK
-                        }
-                    })
-                );
-
-                spectator.triggerEventHandler(
-                    EditEmaPaletteComponent,
-                    'dragStart',
-                    dragAddEventMock
-                );
-
-                spectator.detectComponentChanges();
-
-                let dropZone = spectator.query(EmaPageDropzoneComponent);
-
-                const dropZoneDebugElement = spectator.debugElement.query(
-                    By.css('[data-testId="dropzone"]')
-                );
-
-                expect(dropZone.item).toEqual({
-                    contentType: 'Banner',
-                    baseType: 'CONTENT'
-                });
-                expect(dropZone.containers).toBe(BOUNDS_MOCK);
-
-                spectator.triggerEventHandler(dropZoneDebugElement, 'place', {
-                    ...PAYLOAD_MOCK,
-                    position: 'after'
-                });
-                spectator.detectComponentChanges();
-
-                dropZone = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZone).toBeNull();
-            });
-        });
-
-        describe('Workflow actions', () => {
-            it('should set the inputs correctly', () => {
-                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
-
-                expect(component.inode).toBe(PAGE_INODE_MOCK);
-            });
-
-            it('should update reload if the page url changes', () => {
-                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
-                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
-
-                component.newPage.emit({
-                    ...dotcmsContentletMock,
-                    url: 'new-page'
-                });
-
-                spectator.detectChanges();
-
-                expect(routerSpy).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        ...QUERY_PARAMS_MOCK,
-                        url: 'new-page',
-                        language_id: '1'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-            });
-
-            it('should update reload if the language changes', () => {
-                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
-                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
-
-                component.newPage.emit({
-                    ...dotcmsContentletMock,
-                    url: 'index',
-                    languageId: 2
-                });
-
-                spectator.detectChanges();
-
-                expect(routerSpy).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        ...QUERY_PARAMS_MOCK,
-                        url: 'index',
-                        language_id: '2'
-                    },
-                    queryParamsHandling: 'merge'
-                });
-            });
-
-            it('should not reload if neither the url or language changes ', () => {
-                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
-                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
-
-                component.newPage.emit({
-                    ...dotcmsContentletMock,
-                    url: QUERY_PARAMS_MOCK.url,
-                    languageId: QUERY_PARAMS_MOCK.language_id
-                });
-
-                spectator.detectChanges();
-
-                expect(routerSpy).not.toHaveBeenCalled();
-            });
-        });
-    });
-
-    describe('without edit permission', () => {
-        let spectator: SpectatorRouting<EditEmaEditorComponent>;
-        let store: EditEmaStore;
-
-        const createComponent = createRouting({ canEdit: false, canRead: true });
-        beforeEach(() => {
-            spectator = createComponent({
-                queryParams: { language_id: 1, url: 'page-one' }
-            });
-
-            store = spectator.inject(EditEmaStore, true);
-
-            store.load({
-                url: 'index',
-                language_id: '1',
-                clientHost: '',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            });
-        });
-
-        it('should not render components', () => {
-            spectator.detectChanges();
-            expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
-            expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
-        });
-
-        it('should render a "Dont have permission" message', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
-        });
-
-        it('should iframe wrapper to be expanded', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('editor-content')).classList).toContain(
-                'editor-content--expanded'
-            );
         });
     });
 });

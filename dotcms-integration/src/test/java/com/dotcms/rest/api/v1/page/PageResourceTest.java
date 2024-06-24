@@ -97,8 +97,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.nullable;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -154,6 +154,7 @@ public class PageResourceTest {
         when(webResource.init(nullable(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class), any(Boolean.class), nullable(String.class))).thenReturn(initDataObject);
         when(webResource.init(any(HttpServletRequest.class), any(HttpServletResponse.class), any(Boolean.class))).thenReturn(initDataObject);
         when(webResource.init(false, request, true)).thenReturn(initDataObject);
+        when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
         this.pageResourceWithHelper = new PageResource(PageResourceHelper.getInstance(), webResource, htmlPageAssetRenderedAPI, this.esapi);
@@ -180,7 +181,7 @@ public class PageResourceTest {
                     attributes.put(key, value);
                 }
                 return null;
-        }).when(request).setAttribute(Mockito.anyString(), Mockito.anyObject());
+        }).when(request).setAttribute(Mockito.anyString(), Mockito.any());
 
 
         Folder aboutUs = APILocator.getFolderAPI().findFolderByPath(String.format("/%s/",folderName), host, APILocator.systemUser(), false);
@@ -547,6 +548,9 @@ public class PageResourceTest {
     @Test
     public void shouldReturnPageByURLPattern()
             throws DotDataException, DotSecurityException, InterruptedException, SystemException, PortalException {
+
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         final String baseUrl = String.format("/test%s", System.currentTimeMillis());
@@ -747,7 +751,7 @@ public class PageResourceTest {
             throws DotDataException, DotSecurityException, SystemException, PortalException {
         final String modeParam = "PREVIEW_MODE";
         when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.get(modeParam));
-        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
@@ -784,6 +788,9 @@ public class PageResourceTest {
     @Test
     public void testRenderPersonalizationVersion()
             throws DotDataException, DotSecurityException, SystemException, PortalException {
+
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
 
@@ -1127,6 +1134,9 @@ public class PageResourceTest {
     @Test
     public void testOnNumberOfPagesDataAttribute_render() throws DotDataException, SystemException, DotSecurityException,
                                                                 PortalException {
+
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
         // Initialization
         final String modeParam = "EDIT_MODE";
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -1157,6 +1167,8 @@ public class PageResourceTest {
      */
     @Test
     public void testCleanUpSessionWhenDeviceInodeIsNull() throws Exception {
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
         pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), null);
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
@@ -1171,6 +1183,8 @@ public class PageResourceTest {
      */
     @Test
     public void testCleanUpSessionWhenDeviceInodeIsBlank() throws Exception {
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
         pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "");
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);

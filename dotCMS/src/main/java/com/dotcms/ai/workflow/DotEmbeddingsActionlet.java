@@ -78,7 +78,7 @@ public class DotEmbeddingsActionlet extends WorkFlowActionlet {
 
         List<Field> fields = typesAndfields.getOrDefault(type.variable(), List.of());
 
-        EmbeddingsAPI.impl().generateEmbeddingsforContent(contentlet, fields, indexName);
+        EmbeddingsAPI.impl().generateEmbeddingsForContent(contentlet, fields, indexName);
 
     }
 

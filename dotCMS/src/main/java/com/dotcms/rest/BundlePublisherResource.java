@@ -21,6 +21,8 @@ import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -68,8 +70,10 @@ public class BundlePublisherResource {
 			throw new InvalidLicenseException("License required");
 		}
 
-		final ResourceResponse responseResource = new ResourceResponse(
-				CollectionsUtils.map("type", type, "callback", callback));
+		final Map<String, String> paramsMap = new HashMap<>();
+		paramsMap.put("type", type);
+		paramsMap.put("callback", callback);
+		final ResourceResponse responseResource = new ResourceResponse(paramsMap);
 		final String remoteIP = UtilMethods.isSet(request.getRemoteHost())?
 				request.getRemoteHost() : request.getRemoteAddr();
 

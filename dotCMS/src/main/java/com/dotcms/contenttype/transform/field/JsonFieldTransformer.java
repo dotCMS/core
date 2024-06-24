@@ -1,35 +1,32 @@
 package com.dotcms.contenttype.transform.field;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.contenttype.model.field.ContentTypeFieldProperties;
-import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.UtilMethods;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableCategoryField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotcms.contenttype.transform.JsonTransformer;
-import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
@@ -190,12 +187,12 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
         final Relationship relationship = APILocator.getRelationshipAPI()
                 .getRelationshipFromField(field, APILocator.getLoginServiceAPI().getLoggedInUser());
         if (null != relationship){
-          fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), map(
+          fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
                   "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType,
                   "isParentField", relationship.getParentStructureInode().equals(field.contentTypeId())
           ));
         } else{
-          fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), map(
+          fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
                   "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
           ));
         }

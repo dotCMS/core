@@ -6,9 +6,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotPersonalizeService } from '@dotcms/data-access';
 import { DotPersona } from '@dotcms/dotcms-models';
-import { DotPersonalizeServiceMock } from '@dotcms/utils-testing';
 
 import { EditEmaPersonaSelectorComponent } from './edit-ema-persona-selector.component';
 
@@ -56,10 +54,6 @@ describe('EditEmaPersonaSelectorComponent', () => {
         imports: [HttpClientTestingModule],
         providers: [
             ConfirmationService,
-            {
-                provide: DotPersonalizeService,
-                useValue: new DotPersonalizeServiceMock()
-            },
             {
                 provide: DotPageApiService,
                 useValue: {

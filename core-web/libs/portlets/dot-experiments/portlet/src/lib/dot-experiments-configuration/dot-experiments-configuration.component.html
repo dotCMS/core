@@ -1,20 +1,20 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-experiments-header
+        (goBack)="goToExperimentList(vm.experiment.pageId)"
         [experiment]="vm.experiment"
         [isLoading]="vm.isLoading"
-        [title]="vm.experiment?.name"
-        (goBack)="goToExperimentList(vm.experiment.pageId)">
+        [title]="vm.experiment?.name">
         <div class="flex flex-grow-0 align-items-center justify-content-between">
             <button
-                class="p-button-rounded"
                 (click)="menu.toggle($event)"
+                class="p-button-rounded"
                 data-testId="experiment-button-menu"
                 icon="pi pi-ellipsis-v"
                 pButton></button>
             <p-menu
-                #menu
                 [model]="vm.menuItems"
                 [popup]="true"
+                #menu
                 data-testId="experiment-menu"></p-menu>
         </div>
     </dot-experiments-header>
@@ -23,13 +23,13 @@
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
             <p-card data-testId="experiment-description">
                 <dot-experiments-inplace-edit-text
+                    (textChanged)="saveDescriptionAction($event, vm.experiment)"
                     [disabled]="
                         vm.experimentStatus === experimentStatus.RUNNING ||
                         !!vm.disabledTooltipLabel
                     "
                     [isLoading]="vm.isDescriptionSaving"
                     [text]="vm.experiment.description"
-                    (textChanged)="saveDescriptionAction($event, vm.experiment)"
                     emptyTextMessage="experiments.configure.description.add" />
             </p-card>
 
@@ -44,8 +44,8 @@
 
     <dot-add-to-bundle
         *ngIf="vm.addToBundleContentId"
-        [assetIdentifier]="vm.addToBundleContentId"
-        (cancel)="vm.addToBundleContentId = null" />
+        (cancel)="vm.addToBundleContentId = null"
+        [assetIdentifier]="vm.addToBundleContentId" />
 </ng-container>
 <ng-template #loadingTpl>
     <dot-experiments-configuration-skeleton />

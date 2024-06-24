@@ -943,22 +943,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             this.internalPublish(contentlet, user, respectFrontendRoles);
         } catch (DotDataException | DotStateException | DotSecurityException e) {
-
-            ActivityLogger.logInfo(getClass(), "Error Publishing Content",
-                    "StartDate: " + contentPushPublishDate + "; "
-                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                            ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentlet != null
-                            ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            logInfo("Error Publishing Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
             throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Published",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Content Published", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         //Generate a System Event for this publish operation
         HibernateUtil.addCommitListener(
@@ -1050,6 +1039,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
         }
 
+        invalidateLanguageVariableCache(contentlet);
 
         /*
         Triggers a local system event when this contentlet commit listener is executed,
@@ -1925,12 +1915,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String contentPushExpireDate = UtilMethods.get(
                 contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE), ND_SUPPLIER);
 
-        ActivityLogger.logInfo(getClass(), "Unlocking Content",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Unlocking Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         try {
             canLock(contentlet, user, respectFrontendRoles);
@@ -1943,21 +1928,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         } catch (DotDataException | DotStateException | DotSecurityException e) {
 
-            ActivityLogger.logInfo(getClass(), "Error Unlocking Content",
-                    "StartDate: " + contentPushPublishDate + "; "
-                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                            ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentlet != null
-                            ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            logInfo("Error Unlocking Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
             throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Unlocked",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Content Unlocked", contentlet, user, contentPushPublishDate, contentPushExpireDate);
     }
 
     @CloseDBIfOpened
@@ -2888,7 +2863,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private void backupDestroyedContentlets(final List<Contentlet> contentlets, final User user) {
-
+        if(!Config.getBooleanProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", false)){
+            return;
+        }
         if (contentlets.size() > 0) {
 
             final XStream xstream = XStreamHandler.newXStreamInstance();
@@ -3241,35 +3218,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
 
-        if (contentlets.size() > 0) {
-            XStream xStreamInstance = XStreamHandler.newXStreamInstance();
-            Date date = new Date();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-            String lastmoddate = sdf.format(date);
-            File _writing = null;
-
-            File backupFolder = new File(backupPath);
-            if (!backupFolder.exists()) {
-                backupFolder.mkdirs();
-            }
-            _writing = new File(
-                    backupPath + File.separator + lastmoddate + "_" + "deletedcontentlets"
-                            + ".xml");
-
-            BufferedOutputStream _bout = null;
-            try {
-                _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-            } catch (IOException e) {
-                Logger.error(this, e.getMessage());
-            } finally {
-                try {
-                    _bout.close();
-                } catch (IOException e) {
-                    Logger.error(this, e.getMessage());
-                }
-            }
-            xStreamInstance.toXML(contentlets, _bout);
-        }
+        backupDestroyedContentlets(contentlets, APILocator.systemUser());
         deleteBinaryFiles(contentletsVersion, null);
 
     }
@@ -3577,7 +3526,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
         }
-
+        invalidateLanguageVariableCache(contentlet);
         HibernateUtil.addCommitListener(
                 () -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
         HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(
@@ -3666,12 +3615,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String contentPushExpireDate = UtilMethods.get(
                 contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE), ND_SUPPLIER);
 
-        ActivityLogger.logInfo(getClass(), "Locking Content",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Locking Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         try {
 
@@ -3686,21 +3630,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getVersionableAPI().setLocked(contentlet, true, user);
             ThreadContextUtil.ifReindex(() -> indexAPI.addContentToIndex(contentlet, false));
         } catch (DotDataException | DotStateException | DotSecurityException e) {
-            ActivityLogger.logInfo(getClass(), "Error Locking Content",
-                    "StartDate: " + contentPushPublishDate + "; "
-                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                            ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentlet != null
-                            ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            logInfo("Error Locking Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
             throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Locked",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Content Locked", contentlet, user, contentPushPublishDate, contentPushExpireDate);
     }
 
     @Override
@@ -3950,12 +3884,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String contentPushExpireDate = UtilMethods.get(
                 contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE), ND_SUPPLIER);
 
-        ActivityLogger.logInfo(getClass(), "Unpublishing Content",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Unpublishing Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         try {
 
@@ -3983,21 +3912,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             triggerCommitListenerEvent(contentlet, user, false);
         } catch (DotDataException | DotStateException | DotSecurityException e) {
 
-            ActivityLogger.logInfo(getClass(), "Error Unpublishing Content",
-                    "StartDate: " + contentPushPublishDate + "; "
-                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                            ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentlet != null
-                            ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            logInfo("Error Unpublishing Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
             throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Unpublished",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Content Unpublished", contentlet, user, contentPushPublishDate, contentPushExpireDate);
     }
 
     private void internalUnpublish(final Contentlet contentlet, final User user, final int reindex)
@@ -4042,6 +3961,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.cleanFileAssetCache(contentlet, user, false);
         }
 
+        invalidateLanguageVariableCache(contentlet);
+
         new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
         CacheLocator.getContentletCache().remove(contentlet.getInode());
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
@@ -4056,6 +3977,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.getHost(), contentlet.getFolder(),
                     contentlet.getLanguageId());
         }
+    }
+
+    /**
+     * Invalidate the language variable cache if the contentlet is a language variable.
+     * @param contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private static void invalidateLanguageVariableCache(final Contentlet contentlet) {
+       try {
+           if (contentlet.isLanguageVariable()) {
+                APILocator.getLanguageVariableAPI().invalidateLanguageVariablesCache(contentlet);
+           }
+       } catch (Exception e) {
+           Logger.error(ESContentletAPIImpl.class, "Error invalidating Lang Variable Cache", e);
+       }
     }
 
     private void cleanFileAssetCache(final Contentlet contentlet, final User user,
@@ -4183,12 +4120,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String contentPushExpireDate = UtilMethods.get(
                 contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE), ND_SUPPLIER);
 
-        ActivityLogger.logInfo(getClass(), "Unarchiving Content",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Unarchiving Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
 
         try {
 
@@ -4220,21 +4152,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.internalUnarchive(contentlet, user, respectFrontendRoles);
         } catch (DotDataException | DotStateException | DotSecurityException e) {
 
-            ActivityLogger.logInfo(getClass(), "Error Unarchiving Content",
-                    "StartDate: " + contentPushPublishDate + "; "
-                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                            ? user.getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentlet != null
-                            ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            logInfo("Error Unarchiving Content", contentlet, user, contentPushPublishDate, contentPushExpireDate);
             throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Unarchived",
-                "StartDate: " + contentPushPublishDate + "; "
-                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
-                        ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier()
-                        : "Unknown"), contentlet.getHost());
+        logInfo("Content Unarchived", contentlet, user, contentPushPublishDate, contentPushExpireDate);
+
     }
 
     private void internalUnarchive(final Contentlet contentlet, final User user,
@@ -4279,7 +4202,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         new ContentletLoader().invalidate(contentlet);
         CacheLocator.getContentletCache().remove(contentlet.getInode());
         publishRelatedHtmlPages(contentlet);
-
+        invalidateLanguageVariableCache(contentlet);
         HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet),
                 1000);
         HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(
@@ -5021,13 +4944,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String contentPushExpireDateBefore =
                     UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
 
-            ActivityLogger.logInfo(getClass(), "Saving Content",
-                    "StartDate: " + contentPushPublishDateBefore + "; "
-                            + "EndDate: " + contentPushExpireDateBefore + "; User:" + (user != null
-                            ? user
-                            .getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + (contentletIn != null ? contentletIn
-                            .getIdentifier() : "Unknown"), contentletIn.getHost());
+            logInfo("Contentlet to be saved: ", contentletIn, user, contentPushPublishDateBefore,
+                    contentPushExpireDateBefore);
 
             this.checkOrSetContentType(contentletIn, user);
 
@@ -5075,13 +4993,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String contentPushExpireDateAfter =
                     UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
 
-            ActivityLogger.logInfo(getClass(), "Content Saved",
-                    "StartDate: " + contentPushPublishDateAfter + "; "
-                            + "EndDate: " + contentPushExpireDateAfter + "; User:" + (user != null
-                            ? user
-                            .getUserId() : "Unknown")
-                            + "; ContentIdentifier: " + contentletOut.getIdentifier(),
-                    contentletOut.getHost());
+            logInfo("Contentlet saved: " ,contentletOut, user, contentPushPublishDateAfter, contentPushExpireDateAfter);
 
             if (isWorkflowInProgress) {
                 autoAssign = false;
@@ -5136,7 +5048,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     final Optional<ContentType> contentTypeOpt = typeStrategy.get()
                             .apply(baseContentType,
-                                    CollectionsUtils.map("user", user, "host", host,
+                                    Map.of("user", user, "host", host,
                                             "contentletMap", contentletIn.getMap(), "accessingList",
                                             accessingList));
 
@@ -5644,6 +5556,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 tagAPI.updateTagReferences(contentlet.getIdentifier(), oldTagStorageId,
                         newTagStorageId);
             }
+
+            invalidateLanguageVariableCache(contentlet);
 
             flushMenuCacheIfNeeded(contentlet, workingContentlet, isNewContent, systemUser);
 
@@ -8946,31 +8860,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 respectFrontendRoles);
     }
 
-    /**
-     * Copies a contentlet, including all its fields including binary files, image and file fields
-     * are pointers and the are preserved as the are so if source contentlet points to image A and
-     * resulting new contentlet will point to same image A as well, also copies source permissions.
-     *
-     * @param sourceContentlet     - The contentlet that will be copied to the new destination.
-     * @param host                 - The destination host.
-     * @param folder               - The destination folder.
-     * @param user                 - The user performing this action.
-     * @param copySuffix           - A name suffix when there is a contentlet that already has the
-     *                             same URL.
-     * @param respectFrontendRoles -
-     * @return The {@link Contentlet} object that was created. Its inode represents the latest
-     * version of such a contentlet.
-     * @throws DotDataException            An error occurred when accessing the database.
-     * @throws DotSecurityException        The {@code user} object does not have the permissions to
-     *                                     perform this action.
-     * @throws DotContentletStateException The contentlet object could not be saved.
-     */
-    @WrapInTransaction
     @Override
     public Contentlet copyContentlet(final Contentlet sourceContentlet, final Host host,
             final Folder folder, final User user, final String copySuffix,
             final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
+        return copyContentlet(sourceContentlet, null, host, folder, user,
+                copySuffix, respectFrontendRoles);
+    }
+
+    @WrapInTransaction
+    @Override
+    @SuppressWarnings("unchecked")
+    public Contentlet copyContentlet(final Contentlet sourceContentlet,
+                                     final ContentType contentType, final Host site, final Folder folder, final User user,
+                                     final String copySuffix, final boolean respectFrontendRoles) throws DotDataException,
+       DotSecurityException, DotContentletStateException {
         if (user == null || UtilMethods.isNotSet(user.getUserId())) {
             throw new DotSecurityException("A user must be specified.");
         }
@@ -8987,7 +8892,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // we need to save the versions from older-to-newer to make sure the last save
         // is the current version
-        Collections.sort(versionsToCopy, Comparator.comparing(Contentlet::getModDate));
+        versionsToCopy.sort(Comparator.comparing(Contentlet::getModDate));
 
         for (final Contentlet contentlet : versionsToCopy) {
             final boolean isContentletLive = contentlet.isLive();
@@ -9003,12 +8908,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // gets the new information for the template from the request object
             Contentlet newContentlet = new Contentlet();
-            newContentlet.setStructureInode(contentlet.getStructureInode());
+            newContentlet.setContentTypeId(contentlet.getContentTypeId());
             copyProperties(newContentlet, contentlet.getMap(), true);
-
+            // Check if the copied contentlet must be associated to a specific Content Type instead
+            newContentlet.setContentTypeId(null != contentType ? contentType.id() : contentlet.getContentTypeId());
             newContentlet.setInode(StringPool.BLANK);
             newContentlet.setIdentifier(StringPool.BLANK);
-            newContentlet.setHost(host != null ? host.getIdentifier()
+            newContentlet.setHost(site != null ? site.getIdentifier()
                     : (folder != null ? folder.getHostId() : contentlet.getHost()));
             newContentlet.setFolder(folder != null ? folder.getInode() : null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
@@ -9074,9 +8980,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //verify if the velocity var name is not Host to avoid override the host
                 if (tempField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())
                         && !Host.HOST_VELOCITY_VAR_NAME.equalsIgnoreCase(tempField.getVelocityVarName())) {
-                    if (folder != null || host != null) {
+                    if (folder != null || site != null) {
                         newContentlet.setStringProperty(tempField.getVelocityVarName(),
-                                folder != null ? folder.getInode() : host.getIdentifier());
+                                folder != null ? folder.getInode() : site.getIdentifier());
                     } else {
                         if (contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER)) {
                             newContentlet.setStringProperty(tempField.getVelocityVarName(),
@@ -9093,8 +8999,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     respectFrontendRoles);
             final Map<Relationship, List<Contentlet>> rels = new HashMap<>();
             String destinationHostId;
-            if (host != null && UtilMethods.isSet(host.getIdentifier())) {
-                destinationHostId = host.getIdentifier();
+            if (site != null && UtilMethods.isSet(site.getIdentifier())) {
+                destinationHostId = site.getIdentifier();
             } else if (folder != null) {
                 destinationHostId = folder.getHostId();
             } else {
@@ -9320,10 +9226,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user,
-            boolean respectFrontendRoles)
+    public Contentlet copyContentlet(final Contentlet contentlet, final ContentType contentType, final Host site, final User user,
+                                     final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        return copyContentlet(contentlet, contentType, site, null, user,
+                generateCopySuffix(contentlet, site, null), respectFrontendRoles);
+    }
+
+    @WrapInTransaction
+    @Override
+    public Contentlet copyContentlet(final Contentlet contentlet, final Folder folder, final User user,
+                                     final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
         return copyContentlet(contentlet, null, folder, user,
+                generateCopySuffix(contentlet, null, folder), respectFrontendRoles);
+    }
+
+    @WrapInTransaction
+    @Override
+    public Contentlet copyContentlet(final Contentlet contentlet, final ContentType contentType, final Folder folder, final User user,
+                                     final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        return copyContentlet(contentlet, contentType, null, folder, user,
                 generateCopySuffix(contentlet, null, folder), respectFrontendRoles);
     }
 
@@ -10250,4 +10174,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return contentlet;
     }
+
+    /**
+     * log info
+     * @param action the label of the action
+     * @param contentlet the contentlet
+     * @param user the user
+     * @param contentPushPublishDate the publish date
+     * @param contentPushExpireDate the expire date
+     */
+    private void logInfo(final String action, final Contentlet contentlet, final User user, String contentPushPublishDate, String contentPushExpireDate) {
+        ActivityLogger.logInfo(getClass(), action,
+                "StartDate: " + contentPushPublishDate + "; "
+                        + "EndDate: " + contentPushExpireDate + "; User:" + (user != null
+                        ? user.getUserId() : "Unknown")
+                        + "; ContentIdentifier: " + (contentlet != null
+                        ? contentlet.getIdentifier() : "Unknown"), contentlet != null ? contentlet.getHost() : "Unknown");
+    }
+
 }

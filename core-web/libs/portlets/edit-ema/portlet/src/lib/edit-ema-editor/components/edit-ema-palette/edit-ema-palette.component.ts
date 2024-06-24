@@ -4,11 +4,9 @@ import { AsyncPipe, NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    EventEmitter,
     Input,
     OnDestroy,
     OnInit,
-    Output,
     inject
 } from '@angular/core';
 
@@ -35,10 +33,8 @@ import { DotPaletteStore, PALETTE_TYPES } from './store/edit-ema-palette.store';
 })
 export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     @Input() languageId: number;
+    @Input() variantId: string;
     @Input() containers: DotPageContainerStructure;
-
-    @Output() dragStart = new EventEmitter();
-    @Output() dragEnd = new EventEmitter();
 
     private readonly store = inject(DotPaletteStore);
     private destroy$ = new Subject<void>();
@@ -52,22 +48,6 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Event handler for the drag start event.
-     * @param event The drag event.
-     */
-    onDragStart(event: DragEvent) {
-        this.dragStart.emit(event);
-    }
-
-    /**
-     * Handles the drag end event.
-     * @param event The drag event.
-     */
-    onDragEnd(event: DragEvent) {
-        this.dragEnd.emit(event);
-    }
-
-    /**
      * Shows contentlets from a specific content type.
      *
      * @param contentTypeName - The name of the content type.
@@ -76,7 +56,8 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
         this.store.loadContentlets({
             filter: '',
             languageId: this.languageId.toString(),
-            contenttypeName: contentTypeName
+            contenttypeName: contentTypeName,
+            variantId: this.variantId
         });
     }
 
@@ -98,7 +79,8 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
             filter: '',
             languageId: this.languageId.toString(),
             contenttypeName: contentTypeVarName,
-            page: page
+            page: page,
+            variantId: this.variantId
         });
     }
 
@@ -113,7 +95,8 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
         this.store.loadContentlets({
             filter,
             contenttypeName: currentContentType,
-            languageId: this.languageId.toString()
+            languageId: this.languageId.toString(),
+            variantId: this.variantId
         });
     }
 

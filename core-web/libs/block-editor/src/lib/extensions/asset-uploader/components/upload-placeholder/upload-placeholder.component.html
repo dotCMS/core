@@ -1,5 +1,5 @@
 <ng-container [ngSwitch]="type">
-    <div class="placeholder-container" *ngSwitchCase="'video'">
+    <div *ngSwitchCase="'video'" class="placeholder-container">
         <div class="preview-container__video">
             <video class="video" src="" controls></video>
         </div>
@@ -10,12 +10,11 @@
                 Uploading video, wait until finished.
             </div>
             <button
-                class="p-button-md p-button-outlined"
                 (click)="cancel.emit(true)"
+                class="p-button-md p-button-outlined"
                 pButton
-                label="Cancel"
-            ></button>
+                label="Cancel"></button>
         </div>
     </div>
-    <span class="default-message" *ngSwitchDefault>Uploading...</span>
+    <span *ngSwitchDefault class="default-message">Uploading...</span>
 </ng-container>

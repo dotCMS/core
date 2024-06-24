@@ -38,7 +38,7 @@ public class AIImageRequestDTO {
     }
 
 
-    public static final class Builder {
+    public static class Builder {
         @JsonSetter(nulls = Nulls.SKIP)
         private String prompt;
         @JsonSetter(nulls = Nulls.SKIP)

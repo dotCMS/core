@@ -3,6 +3,8 @@ import { Injectable } from '@angular/core';
 /**
  * Clipboard utils
  *
+ * @deprecated This class is deprecated, use navigator.clipboard.writeText instead.
+ *
  * @export
  * @class DotClipboardUtil
  */

@@ -2,9 +2,10 @@
 import fakeIndexedDB from 'fake-indexeddb';
 import fetchMock from 'fetch-mock';
 
-import { API_EXPERIMENTS_URL } from './constants';
 import { DotExperiments } from './dot-experiments';
+import { API_EXPERIMENTS_URL, EXPERIMENT_QUERY_PARAM_KEY } from './shared/constants';
 import {
+    After15DaysIsUserIncludedResponse,
     IsUserIncludedResponse,
     LocationMock,
     MOCK_CURRENT_TIMESTAMP,
@@ -12,11 +13,12 @@ import {
     MockDataStoredIndexDBWithNew,
     MockDataStoredIndexDBWithNew15DaysLater,
     NewIsUserIncludedResponse,
+    NoExperimentsIsUserIncludedResponse,
     sessionStorageMock,
     TIME_15_DAYS_MILLISECONDS,
     TIME_5_DAYS_MILLISECONDS
-} from './mocks/mock';
-import { DotExperimentConfig } from './models';
+} from './shared/mocks/mock';
+import { DotExperimentConfig } from './shared/models';
 
 jest.spyOn(Date, 'now').mockImplementation(() => MOCK_CURRENT_TIMESTAMP);
 
@@ -47,15 +49,17 @@ if (!globalThis.structuredClone) {
 global.window = Object.create(window);
 Object.defineProperty(window, 'location', {
     value: {
-        href: 'http://localhost:8080/'
+        href: 'http://localhost:8080/',
+        origin: 'http://localhost:8080'
     }
 });
 
 describe('DotExperiments', () => {
     const configMock: DotExperimentConfig = {
-        'api-key': 'yourApiKey',
+        apiKey: 'yourApiKey',
         server: 'http://localhost:8080/',
-        debug: false
+        debug: false,
+        trackPageView: true
     };
 
     describe('DotExperiments Instance and Initialization', () => {
@@ -72,6 +76,7 @@ describe('DotExperiments', () => {
 
         it('should instantiate the class when getInstance is called with config', () => {
             const dotExperimentsInstance = DotExperiments.getInstance(configMock);
+
             expect(dotExperimentsInstance).toBeInstanceOf(DotExperiments);
         });
 
@@ -86,18 +91,19 @@ describe('DotExperiments', () => {
             expect(() =>
                 // @ts-ignore
                 DotExperiments.getInstance({ server: 'http://server-test.com', debug: true })
-            ).toThrow('`api-key` must be provided and should not be empty!');
+            ).toThrow('`apiKey` must be provided and should not be empty!');
         });
 
         it('should return false if the debug inactive', async () => {
             const instance = DotExperiments.getInstance(configMock);
+
             expect(instance.getIsDebugActive()).toBe(false);
         });
 
         it('should not call to trackPageView if you send the flag', async () => {
             const config: DotExperimentConfig = { ...configMock, trackPageView: false };
 
-            fetchMock.post(`${configMock.server}${API_EXPERIMENTS_URL}`, {
+            fetchMock.post(`${configMock.server}/${API_EXPERIMENTS_URL}`, {
                 status: 200,
                 body: IsUserIncludedResponse,
                 headers: {
@@ -107,6 +113,7 @@ describe('DotExperiments', () => {
             });
 
             const instance = DotExperiments.getInstance(config);
+
             const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
 
             expect(spyTrackPageView).not.toHaveBeenCalled();
@@ -114,6 +121,75 @@ describe('DotExperiments', () => {
             await instance.locationChanged(LocationMock).then(() => {
                 expect(spyTrackPageView).not.toHaveBeenCalled();
             });
+        });
+
+        it('should not call to trackPageView if you dont have experiment to track', async () => {
+            const config: DotExperimentConfig = { ...configMock, trackPageView: false };
+
+            fetchMock.post(
+                `${configMock.server}/${API_EXPERIMENTS_URL}`,
+                {
+                    status: 200,
+                    body: NoExperimentsIsUserIncludedResponse,
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                },
+                { overwriteRoutes: true }
+            );
+
+            const instance = DotExperiments.getInstance(config);
+
+            const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
+
+            expect(spyTrackPageView).not.toHaveBeenCalled();
+
+            await instance.locationChanged(LocationMock).then(() => {
+                expect(spyTrackPageView).not.toHaveBeenCalled();
+            });
+        });
+
+        it('should return a a string with the query params of variant by the url given', async () => {
+            const config: DotExperimentConfig = { ...configMock, trackPageView: false };
+
+            fetchMock.post(
+                `${configMock.server}/${API_EXPERIMENTS_URL}`,
+                {
+                    status: 200,
+                    body: IsUserIncludedResponse,
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                },
+                { overwriteRoutes: true }
+            );
+
+            const instance = DotExperiments.getInstance(config);
+
+            await instance.ready();
+
+            const EMPTY_URL = '';
+
+            const expected1 = new URLSearchParams({});
+
+            expect(instance.getVariantAsQueryParam(EMPTY_URL)).toStrictEqual(expected1);
+
+            const URL_WITH_EXPERIMENT = '/blog';
+
+            const expected2 = new URLSearchParams({
+                [EXPERIMENT_QUERY_PARAM_KEY]:
+                    IsUserIncludedResponse.entity.experiments[0].variant.name
+            });
+
+            expect(instance.getVariantAsQueryParam(URL_WITH_EXPERIMENT)).toStrictEqual(expected2);
+
+            const URL_NO_EXPERIMENT = '/destinations';
+
+            const expected3 = new URLSearchParams({});
+
+            expect(instance.getVariantAsQueryParam(URL_NO_EXPERIMENT)).toStrictEqual(expected3);
         });
     });
 
@@ -127,7 +203,7 @@ describe('DotExperiments', () => {
         it('should simulate the changes of the data in first run, after 5 days and 15 days.', async () => {
             // First time the user enter to the page
 
-            fetchMock.post(`${configMock.server}${API_EXPERIMENTS_URL}`, {
+            fetchMock.post(`${configMock.server}/${API_EXPERIMENTS_URL}`, {
                 status: 200,
                 body: IsUserIncludedResponse,
                 headers: {
@@ -137,10 +213,12 @@ describe('DotExperiments', () => {
             });
 
             const instance = DotExperiments.getInstance(configMock);
+
             const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
 
             await instance.ready().then(() => {
                 const experiments = instance.experiments;
+
                 expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDB);
 
@@ -154,7 +232,7 @@ describe('DotExperiments', () => {
             );
 
             fetchMock.post(
-                `${configMock.server}${API_EXPERIMENTS_URL}`,
+                `${configMock.server}/${API_EXPERIMENTS_URL}`,
                 {
                     status: 200,
                     body: NewIsUserIncludedResponse,
@@ -169,16 +247,17 @@ describe('DotExperiments', () => {
             await instance.locationChanged(LocationMock).then(() => {
                 // get the experiments stored in the indexDB
                 const experiments = instance.experiments;
-                expect(experiments.length).toBe(2);
+
+                expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDBWithNew);
                 expect(spyTrackPageView).toBeCalledTimes(2);
             });
 
             fetchMock.post(
-                `${configMock.server}${API_EXPERIMENTS_URL}`,
+                `${configMock.server}/${API_EXPERIMENTS_URL}`,
                 {
                     status: 200,
-                    body: [],
+                    body: After15DaysIsUserIncludedResponse,
                     headers: {
                         Accept: 'application/json',
                         'Content-Type': 'application/json'
@@ -196,6 +275,7 @@ describe('DotExperiments', () => {
             await instance.locationChanged(location).then(() => {
                 // get the experiments stored in the indexDB
                 const experiments = instance.experiments;
+
                 expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDBWithNew15DaysLater);
                 expect(spyTrackPageView).toBeCalledTimes(3);

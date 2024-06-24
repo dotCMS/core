@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
@@ -12,14 +12,10 @@
 
     <packaging>pom</packaging>
 
-    <groupId>com.dotcms</groupId>
     <artifactId>dotcms-independent-projects</artifactId>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tika.api.version>1.0.0-SNAPSHOT</tika.api.version>
+        <tika.api.version>${project.version}</tika.api.version>
     </properties>
 
     <modules>

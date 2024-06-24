@@ -3,7 +3,7 @@
         <tr>
             <th id="name">{{ 'name' | dm }}</th>
             <th id="description">{{ 'description' | dm }}</th>
-            <th id="action" [attr.aria-label]="'Actions' | dm"></th>
+            <th [attr.aria-label]="'Actions' | dm" id="action"></th>
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-contenttype>

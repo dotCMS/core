@@ -19,7 +19,7 @@ on:
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
-  GRAALVM_VERSION: '22.1.0'
+  GRAALVM_VERSION: '22.3.1'
   BRANCH: ${{ inputs.branch || github.ref_name }}
   SKIP_TESTS: true
 
@@ -215,6 +215,7 @@ jobs:
           path: |
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/*.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
+            ${{ github.workspace }}/tools/dotcms-cli/api-data-model/target/*.jar
           retention-days: 2
           if-no-files-found: ignore
 

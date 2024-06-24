@@ -3,10 +3,17 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    createPageApiUrlWithQueryParams
+    createPageApiUrlWithQueryParams,
+    SDK_EDITOR_SCRIPT_SOURCE
 } from '.';
 
 describe('utils functions', () => {
+    describe('SDK Editor Script Source', () => {
+        it('should return the correct script source', () => {
+            expect(SDK_EDITOR_SCRIPT_SOURCE).toEqual('/html/js/editor-js/sdk-editor.js');
+        });
+    });
+
     describe('delete contentlet from container', () => {
         it('should delete', () => {
             // Current page

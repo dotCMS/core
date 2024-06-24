@@ -345,6 +345,9 @@ public class TaskLocatorUtil {
 		.add(Task240111AddInodeAndIdentifierLeftIndexes.class)
 		.add(Task240131UpdateLanguageVariableContentType.class)
 		.add(Task240112AddMetadataColumnToStructureTable.class)
+		.add(Task240513UpdateContentTypesSystemField.class)
+		.add(Task240530AddDotAIPortletToLayout.class)
+		.add(Task240606AddVariableColumnToWorkflow.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}

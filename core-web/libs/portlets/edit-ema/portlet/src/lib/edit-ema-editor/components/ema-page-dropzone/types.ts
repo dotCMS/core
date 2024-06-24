@@ -1,4 +1,4 @@
-import { ActionPayload, ClientData } from '../../../shared/models';
+import { ActionPayload, ClientData, DraggedPayload } from '../../../shared/models';
 
 export interface ContentletArea {
     x: number;
@@ -36,6 +36,7 @@ export interface Column {
 export interface EmaDragItem {
     baseType: string;
     contentType: string;
+    draggedPayload: DraggedPayload;
 }
 
 export interface Row {
@@ -47,3 +48,24 @@ export interface Row {
 }
 
 export type EmaPageDropzoneItem = Row | Column | Container | ContentletArea;
+
+export interface CopyContentletPayload {
+    fieldName: string;
+    inode: string;
+    language: string;
+    mode: string;
+}
+
+export interface InlineEditingContentletDataset {
+    language: string;
+    mode: string;
+    inode: string;
+    fieldName: string;
+}
+
+export interface UpdatedContentlet {
+    dataset: InlineEditingContentletDataset;
+    innerHTML: string;
+    eventType: string;
+    isNotDirty: boolean;
+}

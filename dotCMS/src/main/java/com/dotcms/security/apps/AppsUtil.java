@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -63,6 +62,8 @@ public class AppsUtil {
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
     public static final String APPS_IMPORT_EXPORT_DEFAULT_PASSWORD = "APPS_IMPORT_EXPORT_DEFAULT_PASSWORD";
 
+    private AppsUtil() {
+    }
 
     /**
      * One single method takes care of building the internal-key
@@ -366,7 +367,7 @@ public class AppsUtil {
     private static AppsSecretsImportExport readObject(final Path importFile)
             throws IOException, ClassNotFoundException {
         try(InputStream inputStream = Files.newInputStream(importFile)){
-            return (AppsSecretsImportExport)new ObjectInputStream(inputStream).readObject();
+            return (AppsSecretsImportExport) new VersionOverrideObjectInputStream(inputStream).readObject();
         }
     }
 
@@ -563,7 +564,7 @@ public class AppsUtil {
                         .withType(Type.STRING)
                         .withEnvVar(null)
                         .withEnvShow(true)
-                        .withEnvValue(discoverEnvVarValue(() -> guessEnvVar(key, paramName), null))
+                        .withEnvValue(discoverEnvVarValue(key, paramName, null))
                         .build());
     }
 
@@ -609,6 +610,18 @@ public class AppsUtil {
     }
 
     /**
+     * Discovers the environment variable value based on the given application and parameter names.
+     *
+     * @param appName the name of the App
+     * @param appParamName the name of the parameter
+     * @param envVar the environment variable name
+     * @return the environment variable value
+     */
+    public static String discoverEnvVarValue(final String appName, final String appParamName, final String envVar) {
+        return discoverEnvVarValue(() -> guessEnvVar(appName, appParamName), envVar);
+    }
+
+    /**
      * Creates a secret based on a given {@link ParamDescriptor}.
      *
      * @param key the key of the App
@@ -628,7 +641,7 @@ public class AppsUtil {
                         .withType(pd.getType())
                         .withEnvVar(pd.getEnvVar())
                         .withEnvShow(pd.getEnvShow())
-                        .withEnvValue(discoverEnvVarValue(() -> guessEnvVar(key, paramName), pd.getEnvVar()))
+                        .withEnvValue(discoverEnvVarValue(key, paramName, pd.getEnvVar()))
                         .build())
                 .orElse(null);
     }
@@ -642,12 +655,14 @@ public class AppsUtil {
      */
     private static String guessEnvVar(final String key, final String paramName) {
         final String normalizedKey =
-                StringUtils.convertCamelToSnake(key
-                                .replaceAll("-config", StringPool.BLANK)
-                                .replaceAll(StringPool.DASH, StringPool.UNDERLINE))
-                        .replace("dot_", StringPool.BLANK)
-                        .toUpperCase();
-        final String normalizedParam = StringUtils.convertCamelToSnake(paramName).toUpperCase();
+                StringUtils.joinOneCharElements(
+                    StringUtils.convertCamelToSnake(key
+                                    .replace("-config", StringPool.BLANK)
+                                    .replaceAll(StringPool.DASH, StringPool.UNDERLINE))
+                            .replace("dot_", StringPool.BLANK)
+                            .toUpperCase());
+        final String normalizedParam =
+                StringUtils.joinOneCharElements(StringUtils.convertCamelToSnake(paramName).toUpperCase());
         return String.format(APP_PARAM_ENV_VAR_TEMPLATE, normalizedKey, normalizedParam);
     }
 

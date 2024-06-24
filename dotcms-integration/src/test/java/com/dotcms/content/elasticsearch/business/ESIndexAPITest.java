@@ -2,10 +2,11 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.IndiciesInfo.CLUSTER_PREFIX;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -62,6 +63,27 @@ public class ESIndexAPITest {
             esIndexAPI.delete(esIndexAPI.getNameWithClusterIDPrefix(newIndexName));
         }
     }
+
+
+    @Test
+    public void index_exists_should_resolve_even_with_cluster_id() throws Exception {
+        final String indexName = "live_esindexapitest_index_exists_" + System.currentTimeMillis();
+        final String clusterIndexName = esIndexAPI.getNameWithClusterIDPrefix(indexName);
+        assertFalse(esIndexAPI.indexExists(indexName));
+        assertFalse(esIndexAPI.indexExists(clusterIndexName));
+
+        esIndexAPI.createIndex(indexName);
+
+        assertTrue(esIndexAPI.indexExists(clusterIndexName));
+        assertTrue(esIndexAPI.indexExists(clusterIndexName));
+
+        esIndexAPI.delete(indexName);
+
+        assertFalse(esIndexAPI.indexExists(indexName));
+        assertFalse(esIndexAPI.indexExists(clusterIndexName));
+    }
+
+
 
     @Test
     public void testGetIndicesStatsWhenStatsTypeIsLongShouldPass() {

@@ -73,3 +73,5 @@ export * from './lib/dot-message.model';
 export * from './lib/dot-message-severity.model';
 export * from './lib/dot-message-type.model';
 export * from './lib/dot-dialog.model';
+export * from './lib/dot-content-compare.model';
+export * from './lib/dot-action-menu-item.model';

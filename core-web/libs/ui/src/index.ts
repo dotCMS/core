@@ -26,6 +26,8 @@ export * from './lib/components/dot-key-value-ng/dot-key-value-ng.component';
 export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
 export * from './lib/modules/dot-dialog/dot-dialog.component';
 export * from './lib/components/add-to-bundle/dot-add-to-bundle.component';
+export * from './lib/components/dot-menu/dot-menu.component';
+export * from './lib/components/dot-action-menu-button/dot-action-menu-button.component';
 
 // Directives
 export * from './lib/dot-field-required/dot-field-required.directive';
@@ -53,6 +55,7 @@ export * from './lib/pipes/dot-string-format/dot-string-format.pipe';
 export * from './lib/pipes/dot-timestamp-to-date/dot-timestamp-to-date.pipe';
 export * from './lib/pipes/safe-url/safe-url.pipe';
 export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
+export * from './lib/pipes/dot-diff/dot-diff.pipe';
 
 // Resolvers
 export * from './lib/resolvers/dot-portlet-have-license.resolver';

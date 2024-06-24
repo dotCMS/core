@@ -1,17 +1,15 @@
 package com.dotcms.rest;
 
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * @author Jonathan Gamba
@@ -160,9 +158,9 @@ public class ResourceResponse {
         return responseError(
                 message,
                 status,
-                map("WWW-Authenticate",
+                new HashMap<>(Map.of("WWW-Authenticate",
                         String.format("Bearer realm=\"example\",error=\"%s\",error_key=\"%s\",error_description=\"\"", errorCode, errorKey)
-                )
+                ))
         );
     }
 

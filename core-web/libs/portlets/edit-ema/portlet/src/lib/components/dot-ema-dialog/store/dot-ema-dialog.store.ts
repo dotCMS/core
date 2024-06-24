@@ -86,6 +86,23 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     );
 
     /**
+     * This method is called when we need to open a dialog with a specific URL
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly openDialogOnURL = this.updater(
+        (state, { url, title }: { url: string; title: string }) => {
+            return {
+                ...state,
+                header: title,
+                status: DialogStatus.LOADING,
+                url,
+                type: 'content'
+            };
+        }
+    );
+
+    /**
      * This method is called when the user clicks in the + button in the jsp dialog or drag a contentType from the palette
      *
      * @memberof DotEmaDialogStore

@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 /**
@@ -48,92 +49,91 @@ public class Task210321RemoveOldMetadataFiles implements StartupTask {
         this.future = submitter.submit(() -> deleteMetadataFiles(serverDir));
     }
 
+
     private Tuple2<Integer,Integer> deleteMetadataFiles(Path serverDir) {
         final MutableInt filesCount = new MutableInt(0);
         final MutableInt dirsCount = new MutableInt(0);
-        try {
-             /*
-               +serverDir
-               +
-               +- a  (First level 1 char length )
-                  +
-                  +- 5 (First level 1 char length )
-                     +
-                     +- a568fd-dff45fg- (identifier like folder name)
-                     +
-                     +- fileasset1-metadata.json
-                     +
-                     +- metaData
-                         +
-                         +- content
-             */
 
-            final Set<Path> firstLevelPaths = listDirectories(serverDir).stream()
-                    .filter(path -> path.getFileName().toString().length() == 1).collect(Collectors.toSet());
-
-            for (final Path dir : firstLevelPaths) {
-                final Set<Path> secondLevelPaths = listDirectories(dir).stream()
-                        .filter(path -> path.getFileName().toString().length() == 1).collect(Collectors.toSet());
-
-                for (final Path secondLevelPath : secondLevelPaths) {
-                    final Set<Path> paths = listDirectories(secondLevelPath).stream()
-                            .filter(path -> UUIDUtil.isUUID(path.getFileName().toString()))
-                            .collect(Collectors.toSet());
-                    for (final Path current:paths) {
-
-                        Logger.debug(Task210321RemoveOldMetadataFiles.class,"current dir: "+current);
-
-                        final Set<Path> metadataFiles = Files.list(current)
-                        .filter(path -> !Files.isDirectory(path))
-                        .filter(path -> path.getFileName().toString().toLowerCase().endsWith("-metadata.json")).collect(Collectors.toSet());
-
-                        for (final Path metadataFile : metadataFiles) {
-                            Logger.debug(Task210321RemoveOldMetadataFiles.class,"Removing metadata file: " + metadataFile.toString());
-                            if (metadataFile.toFile().delete()) {
-                                filesCount.increment();
-                            }
-                        }
-
-                        final Optional<Path> metaDataDir = Files.list(current)
-                                .filter(path -> Files.isDirectory(path))
-                                .filter(path -> path.getFileName().toString().equals("metaData"))
-                                .findFirst();
-                        if(metaDataDir.isPresent()){
-
-                            Files.walk(metaDataDir.get()).sorted(Comparator.reverseOrder())
-                                    .map(Path::toFile)
-                                    .forEach(file -> {
-                                        if (file.delete()) {
-                                            if (file.getName().equals("metaData")) {
-                                                dirsCount.increment();
-                                                Logger.debug(Task210321RemoveOldMetadataFiles.class,
-                                                        "Removed metaData dir: " + file);
-                                            }
-                                        }
-                                    });
-                        }
-                    }
-                }
-            }
-
+        try (Stream<Path> firstLevelStream = Files.list(serverDir)) {
+            firstLevelStream
+                    .filter(path -> path.getFileName().toString().length() == 1)
+                    .forEach(firstLevelPath -> processFirstLevelPath(firstLevelPath, filesCount, dirsCount));
         } catch (IOException e) {
             throw new DotRuntimeException(e);
         }
 
-        return Tuple.of(filesCount.getValue(),dirsCount.getValue());
-
+        return Tuple.of(filesCount.getValue(), dirsCount.getValue());
     }
 
-    private Set<Path> listDirectories(final Path dir) throws IOException {
-        final Set<Path> fileList = new HashSet<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
-            for (final Path path : stream) {
-                if (Files.isDirectory(path)) {
-                    fileList.add(path);
-                }
+    private void processFirstLevelPath(Path firstLevelPath, MutableInt filesCount, MutableInt dirsCount) {
+        try (Stream<Path> secondLevelStream = Files.list(firstLevelPath)) {
+            secondLevelStream
+                    .filter(path -> path.getFileName().toString().length() == 1)
+                    .forEach(secondLevelPath -> processSecondLevelPath(secondLevelPath, filesCount, dirsCount));
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private void processSecondLevelPath(Path secondLevelPath, MutableInt filesCount, MutableInt dirsCount) {
+        try (Stream<Path> pathsStream = Files.list(secondLevelPath)) {
+            pathsStream
+                    .filter(path -> UUIDUtil.isUUID(path.getFileName().toString()))
+                    .forEach(current -> processCurrentPath(current, filesCount, dirsCount));
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private void processCurrentPath(Path current, MutableInt filesCount, MutableInt dirsCount) {
+        try (Stream<Path> metadataStream = Files.list(current)) {
+            Set<Path> metadataFiles = metadataStream
+                    .filter(path -> !Files.isDirectory(path))
+                    .filter(path -> path.getFileName().toString().toLowerCase().endsWith("-metadata.json"))
+                    .collect(Collectors.toSet());
+            deleteMetadataFiles(metadataFiles, filesCount);
+            processMetaDataDirectory(current, dirsCount);
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private void deleteMetadataFiles(Set<Path> metadataFiles, MutableInt filesCount) {
+        for (Path metadataFile : metadataFiles) {
+            Logger.debug(Task210321RemoveOldMetadataFiles.class, "Removing metadata file: " + metadataFile.toString());
+            if (metadataFile.toFile().delete()) {
+                filesCount.increment();
             }
         }
-        return fileList;
+    }
+
+    private void processMetaDataDirectory(Path current, MutableInt dirsCount) {
+        try (Stream<Path> metaDataDirStream = Files.list(current)) {
+            Optional<Path> metaDataDir = metaDataDirStream
+                    .filter(Files::isDirectory)
+                    .filter(path -> path.getFileName().toString().equals("metaData"))
+                    .findFirst();
+            metaDataDir.ifPresent(metaDir -> deleteMetaDataDirectory(metaDir, dirsCount));
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private void deleteMetaDataDirectory(Path metaDataDir, MutableInt dirsCount) {
+        try (Stream<Path> walk = Files.walk(metaDataDir)) {
+            walk.sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(file -> {
+                        if (file.delete()) {
+                            if (file.getName().equals("metaData")) {
+                                dirsCount.increment();
+                                Logger.debug(Task210321RemoveOldMetadataFiles.class, "Removed metaData dir: " + file);
+                            }
+                        }
+                    });
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     public Future<Tuple2<Integer, Integer>> getFuture() {

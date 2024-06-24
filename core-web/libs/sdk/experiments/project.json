@@ -5,19 +5,43 @@
     "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@nx/vite:build",
+            "executor": "@nrwl/rollup:rollup",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/sdk/experiments",
-                "main": "libs/sdk/experiments/src/lib/standalone.ts",
                 "tsConfig": "libs/sdk/experiments/tsconfig.lib.json",
                 "project": "libs/sdk/experiments/package.json",
-                "assets": ["libs/sdk/experiments/README.md", "libs/sdk/experiments/package.json"]
+                "entryFile": "libs/sdk/experiments/src/index.ts",
+                "external": ["react/jsx-runtime"],
+                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
+                "compiler": "babel",
+                "assets": [
+                    {
+                        "glob": "libs/sdk/experiments/README.md",
+                        "input": ".",
+                        "output": "."
+                    }
+                ]
+            }
+        },
+        "build:iife": {
+            "executor": "@nx/vite:build",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/sdk/experiments/iife",
+                "main": "libs/sdk/experiments/src/lib/standalone.ts",
+                "tsConfig": "libs/sdk/experiments/tsconfig.lib.json"
             }
         },
         "publish": {
             "command": "node tools/scripts/publish.mjs sdk-experiments {args.ver} {args.tag}",
+            "outputPath": "dist/libs/sdk/experiments",
             "dependsOn": ["build", "test"]
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/libs/sdk/experiments"
+            }
         },
         "test": {
             "executor": "@nx/jest:jest",

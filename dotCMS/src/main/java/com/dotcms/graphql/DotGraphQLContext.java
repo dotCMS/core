@@ -1,21 +1,20 @@
 package com.dotcms.graphql;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import graphql.kickstart.execution.context.DefaultGraphQLContext;
 import graphql.kickstart.servlet.context.GraphQLServletContext;
+import org.dataloader.DataLoaderRegistry;
+
+import javax.security.auth.Subject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.security.auth.Subject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
-import org.dataloader.DataLoaderRegistry;
 
 /**
  * Extends the {@link DefaultGraphQLContext} to be able to set the dotCMS user and have it
@@ -32,7 +31,7 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
 
     private DotGraphQLContext(DataLoaderRegistry dataLoaderRegistry, Subject subject, HttpServletRequest httpServletRequest,
             HttpServletResponse httpServletResponse, User user) {
-        super(dataLoaderRegistry, subject);
+        super(dataLoaderRegistry, new HashMap<>());
         this.httpServletRequest = httpServletRequest;
         this.httpServletResponse = httpServletResponse;
         this.user = user;
@@ -77,7 +76,7 @@ public class DotGraphQLContext extends DefaultGraphQLContext implements
     }
 
     public void addFieldCount(final String field, final long count) {
-        this.fieldCountMaps.add(map("fieldName", field, "totalCount", count));
+        this.fieldCountMaps.add(Map.of("fieldName", field, "totalCount", count));
     }
 
     public List<Map<String, Object>> getFieldCountMaps() {

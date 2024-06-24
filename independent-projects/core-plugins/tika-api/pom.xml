@@ -6,34 +6,19 @@
     <parent>
         <groupId>com.dotcms.core.plugins</groupId>
         <artifactId>dotcms-core-plugins-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}${sha1}${changelist}</version>
     </parent>
 
     <artifactId>com.dotcms.tika-api</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.deploy.skip>false</maven.deploy.skip>
     </properties>
 
     <dependencies>
 
     </dependencies>
 
-    <distributionManagement>
-        <repository>
-            <id>dotcms-libs</id>
-            <name>DotCMS libs Release</name>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
-        </repository>
-        <snapshotRepository>
-            <id>dotcms-libs-snapshot</id>
-            <name>IDotCMS libs Snapshots</name>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
-        </snapshotRepository>
-    </distributionManagement>
 
 
 </project>

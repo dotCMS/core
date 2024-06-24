@@ -2,16 +2,20 @@ package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.APIProvider.Builder;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
@@ -93,7 +97,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -398,6 +402,49 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         Assert.assertNotEquals(map2.get("mimeType"),"unknown");
         Assert.assertTrue((long)map2.get("size") > 0);
 
+    }
+
+    /**
+     * Given Scenario: We have a contentlet with a dotAsset field, and we push it into the transformer prepared with the FILEASSET_VIEW strategy.
+     * Expected Result: We should get the dotAsset field with the expected properties.
+     * @throws Exception
+     */
+    @Test
+    public void Test_DotAsset_Field_Pushed_Into_Transformer() throws Exception {
+
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+        ContentletDataGen.publish(dotAssetLikeContentlet);
+
+        final List<Field> fields = List.of(
+                new FieldDataGen()
+                        .name("title")
+                        .velocityVarName("title")
+                        .next(),
+                new FieldDataGen()
+                        .type(FileField.class)
+                        .name("dotAsset")
+                        .velocityVarName("dotAsset")
+                        .next()
+        );
+
+        final String contentTypeName =  "withDotAssetType"+System.currentTimeMillis();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeName)
+                .fields(fields)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("title", "Test")
+                .setProperty("dotAsset", dotAssetLikeContentlet.getIdentifier())
+                .nextPersistedAndPublish();
+
+        final Contentlet transformed = new DotTransformerBuilder().hydratedContentMapTransformer().content(contentlet).build().hydrate().get(0);
+        Map<?,?> asset = (Map)transformed.getMap().get("dotAsset");
+        Assert.assertNotNull(asset);
+        Assert.assertFalse(asset.isEmpty());
+        Assert.assertEquals("dot_asset", asset.get("type"));
     }
 
 

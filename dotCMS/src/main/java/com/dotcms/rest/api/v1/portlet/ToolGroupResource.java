@@ -1,10 +1,17 @@
 package com.dotcms.rest.api.v1.portlet;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.Layout;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import java.io.Serializable;
+import com.liferay.portal.model.User;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -16,15 +23,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.Layout;
-import com.liferay.portal.model.User;
+import java.io.Serializable;
+import java.util.Map;
 
 /**
  * This Resource allows you to manage toolgroups
@@ -82,9 +82,9 @@ public class ToolGroupResource implements Serializable {
 
         APILocator.getRoleAPI().removeLayoutFromRole(layoutToRemove,
                 null == userid ? loggedInUser.getUserRole() : user.getUserRole());
-        return Response.ok(new ResponseEntityView(map("message",
-                layoutId + " removed from " + (null == userid ? loggedInUser.getUserId()
-                        : userid))))
+        return Response.ok(new ResponseEntityView(Map.of("message",
+                        layoutId + " removed from " + (null == userid ? loggedInUser.getUserId()
+                                : userid))))
                 .build();
 
     }
@@ -122,7 +122,7 @@ public class ToolGroupResource implements Serializable {
 
         APILocator.getLayoutAPI()
                 .addLayoutForUser(layoutToAdd, null == userid ? loggedInUser : user);
-        return Response.ok(new ResponseEntityView(map("message",
+        return Response.ok(new ResponseEntityView(Map.of("message",
                 layoutId + " added to " + (null == userid ? loggedInUser.getUserId()
                         : userid))))
                 .build();
@@ -165,7 +165,7 @@ public class ToolGroupResource implements Serializable {
 
         final Layout layout = getLayout(layoutId);
 
-        return Response.ok(new ResponseEntityView(map("message", APILocator.getRoleAPI()
+        return Response.ok(new ResponseEntityView(Map.of("message", APILocator.getRoleAPI()
                 .roleHasLayout(layout,
                         null == userid ? loggedInUser.getUserRole() : user.getUserRole()))))
                 .build();

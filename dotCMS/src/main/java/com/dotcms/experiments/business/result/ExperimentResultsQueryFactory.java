@@ -1,17 +1,16 @@
 package com.dotcms.experiments.business.result;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.filters.Filter;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
-import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.DotPreconditions;
 import io.vavr.Lazy;
+
 import java.util.Map;
 
 /**
@@ -67,7 +66,7 @@ public enum ExperimentResultsQueryFactory {
 
 
     private static Map<MetricType, MetricExperimentResultsQuery> createHelpersMap() {
-        return map(
+        return Map.of(
             MetricType.EXIT_RATE, new ExitRateResultQuery(),
             MetricType.REACH_PAGE, new ReachTargetAfterExperimentPageResultQuery(),
             MetricType.BOUNCE_RATE, new BounceRateResultQuery(),

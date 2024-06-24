@@ -21,6 +21,7 @@ form {
         margin: $spacing-0 0 $spacing-1 $spacing-5;
         font-size: $font-size-sm;
         color: $color-palette-gray-700;
+        word-break: break-word;
     }
 }
 
@@ -44,6 +45,23 @@ form {
     }
 }
 
+.ai-image-prompt__text-wrapper {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    .p-inputtext.p-inputtextarea {
+        padding: $spacing-1 $spacing-5 $spacing-1 $spacing-4;
+        min-height: $spacing-8;
+    }
+
+    dot-copy-button {
+        position: absolute;
+        right: $spacing-3;
+        bottom: $spacing-0;
+    }
+}
+
 .ai-image-prompt__orientation {
     margin-bottom: 9rem;
 }
@@ -51,11 +69,7 @@ form {
 .ai-image-prompt__rewritten-label {
     display: flex;
     gap: $spacing-1;
-
-    i {
-        color: $color-palette-primary;
-        cursor: pointer;
-    }
+    align-items: center;
 }
 
 p-accordion {

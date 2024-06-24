@@ -1,5 +1,5 @@
-import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSContent, DotCMSContentQuery, DotCMSError } from '../models';
+import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 
 function populateQueryUrl(params: DotCMSContentQuery): string {
     let url = '';
@@ -39,6 +39,7 @@ export class DotApiContent {
         const url = `/api/content/query/+contentType:${params.contentType}%20${populateQueryUrl(
             params
         )}`;
+
         return this.doRequest(url, null, 'GET');
     }
 

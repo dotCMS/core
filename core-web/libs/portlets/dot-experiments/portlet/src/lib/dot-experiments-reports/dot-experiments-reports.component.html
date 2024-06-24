@@ -1,17 +1,17 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-experiments-header
+        (goBack)="goToExperimentList(vm.experiment.pageId)"
         [experiment]="vm.experiment"
         [isLoading]="vm.isLoading"
-        [title]="vm.experiment?.name"
-        (goBack)="goToExperimentList(vm.experiment.pageId)" />
+        [title]="vm.experiment?.name" />
     <div class="flex flex-column dot-experiment-report__wrapper">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
             <dot-experiments-experiment-summary
+                (updateResults)="loadExperimentsResults()"
                 [goals]="vm.experiment.goals"
                 [scheduling]="vm.experiment.scheduling"
                 [sessionsReached]="vm.results ? vm.results.sessions.total : 0"
-                [suggestedWinner]="vm.winnerLegendSummary"
-                (updateResults)="loadExperimentsResults()" />
+                [suggestedWinner]="vm.winnerLegendSummary" />
 
             <div
                 class="flex align-items-center flex-column w-full dot-experiment-report__container gap-3">

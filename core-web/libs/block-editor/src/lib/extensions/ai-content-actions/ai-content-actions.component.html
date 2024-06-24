@@ -1,8 +1,0 @@
-<p-listbox [options]="actionOptions" (onClick)="$event.value.callback()">
-    <ng-template let-actionOption pTemplate="item">
-        <div class="action-content">
-            <i [class]="actionOption.icon"></i>
-            {{ actionOption.label }}
-        </div>
-    </ng-template>
-</p-listbox>

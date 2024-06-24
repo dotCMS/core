@@ -6,7 +6,6 @@ import '@material/mwc-list/mwc-list-item';
 import '@material/mwc-icon';
 import { DotContextMenuAction } from '../../models/dot-context-menu-action.model';
 
-
 @Component({
     tag: 'dot-context-menu',
     styleUrl: 'dot-context-menu.scss',
@@ -54,8 +53,7 @@ export class DotContextMenu {
                     type="button"
                     onClick={async () => {
                         await this.show(0, 0, 'relative');
-                    }}
-                >
+                    }}>
                     <mwc-icon>more_vert</mwc-icon>
                 </button>
                 <mwc-menu
@@ -68,8 +66,7 @@ export class DotContextMenu {
                             show: false
                         };
                         this.options[e.detail.index].action(e);
-                    }}
-                >
+                    }}>
                     {this.options.map(({ label }: DotContextMenuOption<DotContextMenuAction>) => (
                         <mwc-list-item>{label}</mwc-list-item>
                     ))}

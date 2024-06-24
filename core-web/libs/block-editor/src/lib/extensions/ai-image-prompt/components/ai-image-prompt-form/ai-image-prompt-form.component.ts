@@ -26,11 +26,17 @@ import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective, DotMessagePipe, DotValidators } from '@dotcms/ui';
+import {
+    DotCopyButtonComponent,
+    DotFieldRequiredDirective,
+    DotMessagePipe,
+    DotValidators
+} from '@dotcms/ui';
 
 import {
     AIImagePrompt,
@@ -46,6 +52,7 @@ import { PromptType } from '../../ai-image-prompt.models';
     imports: [
         ButtonModule,
         AccordionModule,
+        TooltipModule,
         RadioButtonModule,
         ReactiveFormsModule,
         FormsModule,
@@ -53,7 +60,8 @@ import { PromptType } from '../../ai-image-prompt.models';
         NgIf,
         InputTextareaModule,
         DotFieldRequiredDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        DotCopyButtonComponent
     ],
     styleUrls: ['./ai-image-prompt-form.component.scss']
 })
@@ -86,10 +94,7 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     promptLabel = 'block-editor.extension.ai-image.prompt';
     submitButtonLabel = 'block-editor.extension.ai-image.generate';
     requiredPrompt = true;
-
-    private isUpdatingValidators = false;
-    private destroyRef = inject(DestroyRef);
-
+    tooltipText: string = null;
     orientationOptions: SelectItem<DotAIImageOrientation>[] = [
         {
             value: DotAIImageOrientation.HORIZONTAL,
@@ -108,6 +113,8 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
             )
         }
     ];
+    private isUpdatingValidators = false;
+    private destroyRef = inject(DestroyRef);
 
     ngOnInit(): void {
         this.initForm();
@@ -121,10 +128,6 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         this.setSubmitButtonLabel(isLoading?.currentValue);
 
         this.toggleFormState(isLoading?.currentValue && !isLoading.firstChange);
-    }
-
-    copyToClipboard(): void {
-        navigator.clipboard.writeText(this.aiProcessedPrompt);
     }
 
     private initForm(): void {
@@ -196,7 +199,7 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         this.submitButtonLabel = isLoading
             ? 'block-editor.extension.ai-image.generating'
             : this.aiProcessedPrompt || this.value?.error
-            ? 'block-editor.extension.ai-image.regenerate'
-            : 'block-editor.extension.ai-image.generate';
+              ? 'block-editor.extension.ai-image.regenerate'
+              : 'block-editor.extension.ai-image.generate';
     }
 }

@@ -1,0 +1,35 @@
+<dl class="content-aside__workflow">
+    <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
+    <dd
+        class="workflow-column__description"
+        aria-labelledby="workflow-title"
+        data-testId="workflow-name">
+        {{ $workflowStatus()?.scheme?.name }}
+    </dd>
+
+    <dt class="workflow-column__title" id="step-title">{{ 'Step' | dm }}</dt>
+    <dd
+        class="workflow-column__description"
+        aria-labelledby="step-title"
+        data-testId="workflow-step">
+        {{ $workflowStatus()?.step?.name || 'New' }}
+    </dd>
+
+    <dt class="workflow-column__title" id="content-type-title">{{ 'Content-Type' | dm }}</dt>
+    <dd
+        class="workflow-column__description"
+        aria-labelledby="content-type-title"
+        data-testId="workflow-content-type">
+        {{ contentType.name }}
+    </dd>
+
+    @if ($workflowStatus()?.task) {
+        <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
+        <dd
+            class="workflow-column__description"
+            aria-labelledby="assignee-title"
+            data-testId="workflow-assigned">
+            {{ $workflowStatus().task.assignedTo }}
+        </dd>
+    }
+</dl>

@@ -63,7 +63,8 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: contentletAreaMock
+                        contentletArea: contentletAreaMock,
+                        isEnterprise: false
                     }
                 }))
         );
@@ -72,53 +73,67 @@ describe('EmaContentletToolsComponent', () => {
             expect(spectator.query(byTestId('drag-image'))).toHaveText('test');
         });
 
+        it('should close menus when contentlet @input was changed', () => {
+            const spyHideMenus = jest.spyOn(spectator.component, 'hideMenus');
+
+            const hideMenu = jest.spyOn(spectator.component.menu, 'hide');
+            // Open menu
+            spectator.click(byTestId('menu-add'));
+
+            //Change contentlet hover
+            spectator.setInput('contentletArea', {
+                ...contentletAreaMock,
+                payload: {
+                    ...contentletAreaMock.payload,
+                    contentlet: {
+                        ...contentletAreaMock.payload.contentlet,
+                        identifier: 'new-identifier'
+                    }
+                }
+            });
+
+            expect(spyHideMenus).toHaveBeenCalled();
+            expect(hideMenu).toHaveBeenCalled();
+        });
+
         describe('events', () => {
             it('should emit delete on delete button click', () => {
                 const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
-                spectator.click('[data-testId="delete-button"]');
+                spectator.click(byTestId('delete-button'));
                 expect(deleteSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
             });
 
             it('should emit edit on edit button click', () => {
                 const deleteSpy = jest.spyOn(spectator.component.edit, 'emit');
-                spectator.click('[data-testId="edit-button"]');
+                spectator.click(byTestId('edit-button'));
                 expect(deleteSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
             });
 
-            it('should emit move on move button drag', () => {
-                const moveSpy = jest.spyOn(spectator.component.moveStart, 'emit');
-
+            it('should set drag image', () => {
                 const dragButton = spectator.debugElement.query(
                     By.css('[data-testId="drag-button"]')
                 );
+
+                const dragImageSpy = jest.fn();
 
                 spectator.triggerEventHandler(dragButton, 'dragstart', {
                     dataTransfer: {
-                        setDragImage: jest.fn()
+                        setDragImage: dragImageSpy
                     }
                 });
 
-                expect(moveSpy).toHaveBeenCalledWith(contentletAreaMock.payload);
-            });
-
-            it('should emit dragStop', () => {
-                const dragStopSpy = jest.spyOn(spectator.component.moveStop, 'emit');
-                const dragButton = spectator.debugElement.query(
-                    By.css('[data-testId="drag-button"]')
-                );
-                spectator.triggerEventHandler(dragButton, 'dragend', {});
-                expect(dragStopSpy).toHaveBeenCalled();
+                expect(dragImageSpy).toHaveBeenCalled();
             });
 
             describe('top button', () => {
                 it('should open menu on add button click', () => {
-                    spectator.click('[data-testId="add-top-button"]');
+                    spectator.click(byTestId('add-top-button'));
                     expect(spectator.query('.p-menu-overlay')).not.toBeNull();
                 });
 
                 it('should call addContent on Content option click', () => {
                     const addSpy = jest.spyOn(spectator.component.addContent, 'emit');
-                    spectator.click('[data-testId="add-top-button"]');
+                    spectator.click(byTestId('add-top-button'));
                     spectator.click(byText('Content'));
                     expect(addSpy).toHaveBeenCalledWith({
                         ...contentletAreaMock.payload,
@@ -126,59 +141,107 @@ describe('EmaContentletToolsComponent', () => {
                     } as ActionPayload);
                 });
 
-                it('should call addForm on Form option click', () => {
-                    const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
-                    spectator.click('[data-testId="add-top-button"]');
-                    spectator.click(byText('Form'));
+                it('should not call addForm on Form option click', () => {
+                    spectator.click(byTestId('add-bottom-button'));
+                    const formOption = spectator.query(byText('Form'));
+                    expect(formOption).toBeNull();
+                });
+
+                it('should call addWidget on Widget option click', () => {
+                    const addSpy = jest.spyOn(spectator.component.addWidget, 'emit');
+                    spectator.click(byTestId('add-top-button'));
+                    spectator.click(byText('Widget'));
                     expect(addSpy).toHaveBeenCalledWith({
                         ...contentletAreaMock.payload,
                         position: 'before'
                     } as ActionPayload);
                 });
 
-                it('should call addWidget on Widget option click', () => {
-                    const addSpy = jest.spyOn(spectator.component.addWidget, 'emit');
-                    spectator.click('[data-testId="add-top-button"]');
-                    spectator.click(byText('Widget'));
-                    expect(addSpy).toHaveBeenCalledWith({
-                        ...contentletAreaMock.payload,
-                        position: 'before'
-                    } as ActionPayload);
+                describe('isEnterprise', () => {
+                    beforeEach(
+                        () =>
+                            (spectator = createComponent({
+                                props: {
+                                    contentletArea: contentletAreaMock,
+                                    isEnterprise: true
+                                }
+                            }))
+                    );
+
+                    it('should render form option', () => {
+                        spectator.click(byTestId('add-top-button'));
+                        expect(spectator.query(byText('Form'))).toBeDefined();
+                    });
+
+                    it('should call addForm on Form option click', () => {
+                        const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
+                        spectator.click(byTestId('add-top-button'));
+                        spectator.click(byText('Form'));
+                        expect(addSpy).toHaveBeenCalledWith({
+                            ...contentletAreaMock.payload,
+                            position: 'before'
+                        } as ActionPayload);
+                    });
                 });
             });
 
             describe('bottom button', () => {
                 it('should open menu on button click', () => {
-                    spectator.click('[data-testId="add-bottom-button"]');
+                    spectator.click(byTestId('add-bottom-button'));
                     expect(spectator.query('.p-menu-overlay')).not.toBeNull();
                 });
 
                 it('should call addContent on Content option click', () => {
                     const addSpy = jest.spyOn(spectator.component.addContent, 'emit');
-                    spectator.click('[data-testId="add-bottom-button"]');
+                    spectator.click(byTestId('add-bottom-button'));
                     spectator.click(byText('Content'));
                     expect(addSpy).toHaveBeenCalledWith({
                         ...contentletAreaMock.payload,
                         position: 'after'
                     } as ActionPayload);
                 });
-                it('should call addForm on Form option click', () => {
-                    const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
-                    spectator.click('[data-testId="add-bottom-button"]');
-                    spectator.click(byText('Form'));
-                    expect(addSpy).toHaveBeenCalledWith({
-                        ...contentletAreaMock.payload,
-                        position: 'after'
-                    } as ActionPayload);
+
+                it('should not call addForm on Form option click', () => {
+                    spectator.click(byTestId('add-bottom-button'));
+                    const formOption = spectator.query(byText('Form'));
+                    expect(formOption).toBeNull();
                 });
+
                 it('should call addWidget on Widget option click', () => {
                     const addSpy = jest.spyOn(spectator.component.addWidget, 'emit');
-                    spectator.click('[data-testId="add-bottom-button"]');
+                    spectator.click(byTestId('add-bottom-button'));
                     spectator.click(byText('Widget'));
                     expect(addSpy).toHaveBeenCalledWith({
                         ...contentletAreaMock.payload,
                         position: 'after'
                     } as ActionPayload);
+                });
+
+                describe('isEnterprise', () => {
+                    beforeEach(
+                        () =>
+                            (spectator = createComponent({
+                                props: {
+                                    contentletArea: contentletAreaMock,
+                                    isEnterprise: true
+                                }
+                            }))
+                    );
+
+                    it('should render form option', () => {
+                        spectator.click(byTestId('add-bottom-button'));
+                        expect(spectator.query(byText('Form'))).toBeDefined();
+                    });
+
+                    it('should call addForm on Form option click', () => {
+                        const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
+                        spectator.click(byTestId('add-bottom-button'));
+                        spectator.click(byText('Form'));
+                        expect(addSpy).toHaveBeenCalledWith({
+                            ...contentletAreaMock.payload,
+                            position: 'after'
+                        } as ActionPayload);
+                    });
                 });
             });
         });
@@ -231,7 +294,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             width: 180
                         }
@@ -267,7 +330,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             width: 180,
                             payload: {
@@ -277,7 +340,13 @@ describe('EmaContentletToolsComponent', () => {
                                     title: 'Fake title',
                                     contentType: 'Fake content type'
                                 },
-                                container: undefined,
+                                container: {
+                                    uuid: '',
+                                    acceptTypes: '',
+                                    identifier: '',
+                                    maxContentlets: 0,
+                                    variantId: ''
+                                },
                                 language_id: '1',
                                 pageContainers: [],
                                 pageId: '1',
@@ -300,7 +369,7 @@ describe('EmaContentletToolsComponent', () => {
             () =>
                 (spectator = createComponent({
                     props: {
-                        contentlet: {
+                        contentletArea: {
                             ...contentletAreaMock,
                             payload: {
                                 ...contentletAreaMock.payload,

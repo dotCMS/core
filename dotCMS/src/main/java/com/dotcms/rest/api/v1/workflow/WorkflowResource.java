@@ -70,6 +70,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -101,6 +102,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
@@ -142,6 +146,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionService;
@@ -154,7 +159,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.FAIL_ACTION_CALLBACK;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_ACTION_CALLBACK;
@@ -170,7 +174,7 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_A
  *     <li>Fire an action for a single content or bulk (action for a several contents).</li>
  * </ul>
  * <p>You can find more information in the
- * {@code dotCMS/src/curl-test/documentation/Workflow_Resource_Tests.json} file. It's a complete
+ * {@code dotcms-postman/src/main/resources/postman/documentation/Workflow_Resource_Tests.json} file. It's a complete
  * collection of examples on how to interact with this Resource.</p>
  *
  * @author jsanca
@@ -255,10 +259,11 @@ public class WorkflowResource {
     }
 
     /**
-     * Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.
+     * Returns all Workflow schemes, optionally associated with a content type. 401 if the user lacks permission.
      * @param request  HttpServletRequest
-     * @param contentTypeId String content type id to get the schemes associated to it, is this is null return
-     *                      all the schemes (archived and non-archived).
+     * @param contentTypeId String content type id to get the schemes associated to it; if this is null, return
+     *                      all schemes.
+     * @param showArchived Boolean determines whether to include archived Workflow schemes. (Default: true)
      * @return Response
      */
     @GET
@@ -266,10 +271,32 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getSchemes", summary = "Find Workflow schemes",
+            description = "Fetches Workflow schemes. Can be filtered by Content Type and/or live status " +
+                    "through optional query parameters.",
+            externalDocs = @ExternalDocumentation(url = "https://www.dotcms.com/docs/latest/workflow-rest-api"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Success",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Insufficient Permissions")
+            }
+    )
     public final Response findSchemes(@Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
-                                      @QueryParam("contentTypeId") final String  contentTypeId,
-                                      @DefaultValue("true") @QueryParam("showArchive")  final boolean showArchived) {
+                                      @Parameter(in = ParameterIn.QUERY, name = "contentTypeId",
+                                              description = "Identifier of Content Type examined for schemes; leave blank to show all workflow schemes." +
+                                                      "\n\nExample: `c541abb1-69b3-4bc5-8430-5e09e5239cc8` (Page Content Type)",
+                                              schema = @Schema(type = "string", format = "uuid",
+                                                      accessMode = Schema.AccessMode.READ_ONLY)
+                                      ) @QueryParam("contentTypeId") final String contentTypeId,
+                                      @Parameter(in = ParameterIn.QUERY, name = "showArchived",
+                                              description = "If true, includes archived schemes in response.",
+                                              schema = @Schema(type = "boolean", defaultValue = "true",
+                                                      accessMode = Schema.AccessMode.READ_ONLY)
+                                      ) @DefaultValue("true") @QueryParam("showArchived") final boolean showArchived) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, request, response, true, null);
@@ -622,7 +649,7 @@ public class WorkflowResource {
                             (Consumer<Long>) delta -> {
                                 eventBuilder.name("success");
                                 eventBuilder.data(Map.class,
-                                        map("success", delta));
+                                        Map.of("success", delta));
                                 eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
@@ -637,7 +664,7 @@ public class WorkflowResource {
                             (BiConsumer<String, Exception>) (inode, e) -> {
                                 eventBuilder.name("failure");
                                 eventBuilder.data(Map.class,
-                                        map("failure", inode));
+                                        Map.of("failure", inode));
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
                                     eventOutput.write(event);
@@ -1614,15 +1641,14 @@ public class WorkflowResource {
 
         //Empty collection implies removal, so only when a value is present we must pass the collection
         categories.ifPresent(formBuilder::categories);
-
+        final Contentlet basicContentlet = fireCommandOpt.isPresent()?
+                fireCommandOpt.get().fire(contentlet, this.needSave(fireActionForm), formBuilder.build()):
+                this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build());
+        final Contentlet hydratedContentlet = Objects.nonNull(basicContentlet)?
+                new DotTransformerBuilder().contentResourceOptions(false)
+                    .content(basicContentlet).build().hydrate().get(0): basicContentlet;
         return Response.ok(
-                new ResponseEntityView(
-                        this.workflowHelper.contentletToMap(
-                                fireCommandOpt.isPresent()?
-                                        fireCommandOpt.get().fire(contentlet,
-                                                this.needSave(fireActionForm), formBuilder.build()):
-                                        this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build()))
-                )
+                new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
         ).build(); // 200
     }
 
@@ -1959,7 +1985,8 @@ public class WorkflowResource {
                     offset, null,
                     initDataObject.getUser(), mode.respectAnonPerms);
 
-            final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(fireActionForm.getContentletFormData(),
+            final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(
+                    (Objects.isNull(fireActionForm) || Objects.isNull(fireActionForm.getContentletFormData()))?Map.of():fireActionForm.getContentletFormData(),
                     contentletSearches.size()> 10? IndexPolicy.DEFER: IndexPolicy.WAIT_FOR, request);
 
             for (final ContentletSearch contentletSearch : contentletSearches) {
@@ -2128,7 +2155,7 @@ public class WorkflowResource {
             outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
 
             ResponseUtil.wrapProperty(outputStream, "summary",
-                    objectMapper.writeValueAsString(CollectionsUtils.map("time", stopWatch.getTime(),
+                    objectMapper.writeValueAsString(Map.of("time", stopWatch.getTime(),
                             "affected", futures.size(),
                             "successCount", successCount,
                             "failCount", failCount)));
@@ -2911,20 +2938,21 @@ public class WorkflowResource {
     } // importScheme.
 
     /**
-     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
-     * in addition the permission (who can use) will be also returned.
-     * @param httpServletRequest  HttpServletRequest
-     * @param schemeId String
+     * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions) in
+     * addition the permission (who can use) will be also returned.
+     *
+     * @param httpServletRequest HttpServletRequest
+     * @param schemeIdOrVariable String (scheme id or variable)
      * @return Response
      */
     @GET
-    @Path("/schemes/{schemeId}/export")
+    @Path("/schemes/{schemeIdOrVariable}/export")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response exportScheme(@Context final HttpServletRequest  httpServletRequest,
                                        @Context final HttpServletResponse httpServletResponse,
-                                       @PathParam("schemeId") final String schemeId) {
+            @PathParam("schemeIdOrVariable") final String schemeIdOrVariable) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, httpServletRequest, httpServletResponse,true, null);
@@ -2935,14 +2963,14 @@ public class WorkflowResource {
 
         try {
 
-            Logger.debug(this, "Exporting the workflow scheme: " + schemeId);
+            Logger.debug(this, "Exporting the workflow scheme: " + schemeIdOrVariable);
             this.workflowAPI.isUserAllowToModifiedWorkflow(initDataObject.getUser());
 
-            scheme       = this.workflowAPI.findScheme(schemeId);
+            scheme = this.workflowAPI.findScheme(schemeIdOrVariable);
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
             response     = Response.ok(new ResponseEntityView(
-                    map("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
+                    Map.of("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
                             "permissions", permissions))).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),

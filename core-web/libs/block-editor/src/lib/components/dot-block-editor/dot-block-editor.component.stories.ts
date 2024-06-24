@@ -10,8 +10,14 @@ import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
-import { DotMessageService, DotPropertiesService, DotUploadFileService } from '@dotcms/data-access';
-import { DotContentSearchService, DotLanguageService } from '@dotcms/ui';
+import {
+    DotContentSearchService,
+    DotMessageService,
+    DotPropertiesService,
+    DotUploadFileService,
+    FileStatus
+} from '@dotcms/data-access';
+import { DotSpinnerModule } from '@dotcms/ui';
 
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
@@ -27,7 +33,6 @@ import {
     ASSET_MOCK,
     CONTENTLETS_MOCK,
     DotAiService,
-    FileStatus,
     SuggestionsComponent,
     SuggestionsService
 } from '../../shared';
@@ -49,7 +54,8 @@ export const Primary = () => ({
                 FormsModule,
                 BlockEditorModule,
                 OrderListModule,
-                ListboxModule
+                ListboxModule,
+                DotSpinnerModule
             ],
             providers: [
                 {
@@ -139,31 +145,6 @@ export const Primary = () => ({
                                     item.url.match(new RegExp(filter, 'i'))
                                 )
                             ).pipe(debounceTime(400));
-                        }
-                    }
-                },
-                {
-                    provide: DotLanguageService,
-                    useValue: {
-                        getLanguages() {
-                            return of({
-                                1: {
-                                    country: 'United States',
-                                    countryCode: 'US',
-                                    defaultLanguage: true,
-                                    id: 1,
-                                    language: 'English',
-                                    languageCode: 'en'
-                                },
-                                2: {
-                                    country: 'Espana',
-                                    countryCode: 'ES',
-                                    defaultLanguage: false,
-                                    id: 2,
-                                    language: 'Espanol',
-                                    languageCode: 'es'
-                                }
-                            });
                         }
                     }
                 },

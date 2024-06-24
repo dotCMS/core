@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
@@ -420,6 +421,43 @@ public class StringUtilsTest {
 
         // Test when input array is null
         assertArrayEquals(StringUtils.BLANK_CHARS, StringUtils.defensiveCopy(null)); // Check if the content is equal
+    }
+
+    /**
+     * Given a text as input
+     * When the method hashText is invoked
+     * Then it returns the SHA-256 hash of the input text
+     *
+     * @return The SHA-256 hash of the input text
+     */
+    @Test
+    public void testHashText() {
+        String input = "Hello, World!";
+        String actualOutput = StringUtils.hashText(input);
+        assertEquals(64, actualOutput.length());
+    }
+
+    /**
+     * Given a text input
+     * When calling the joinOneCharElements method
+     * Then verify that one-length elements in an underscore delimited String are joined together in the new string.
+     */
+    @Test
+    public void testJoinOneCharElements() {
+        String input = "a_b_c_d_e_f";
+        String expectedOutput = "abcdef";
+        String actualOutput = StringUtils.joinOneCharElements(input);
+        Assertions.assertEquals(expectedOutput, actualOutput);
+
+        input = "abc_def_ghi";
+        expectedOutput = "abc_def_ghi";
+        actualOutput = StringUtils.joinOneCharElements(input);
+        Assertions.assertEquals(expectedOutput, actualOutput);
+
+        input = "";
+        expectedOutput = "";
+        actualOutput = StringUtils.joinOneCharElements(input);
+        Assertions.assertEquals(expectedOutput, actualOutput);
     }
 
 }

@@ -6,11 +6,10 @@ class EmbeddingsSQL {
 
     static final String CHECK_IF_VECTOR_EXISTS ="select * from pg_extension where extname='vector'";
 
-
-
     static final String DROP_EMBEDDINGS_TABLE = "drop table if exists dot_embeddings";
+
     /**
-     * Our embeddings column has 1536 dimentions because that is the number of dimentions returned by
+     * Our embeddings column has 1536 dimensions because that is the number of dimensions returned by
      * OpenAI text-embedding-ada-002.
      * <p>
      * The dimensions would change if we used a different model.
@@ -31,8 +30,6 @@ class EmbeddingsSQL {
                     "embeddings vector(1536)            " +
                     ");  ";
 
-
-
     static final String[] CREATE_TABLE_INDEXES = {
             "create index if not exists dot_embeddings_idx_index_name on dot_embeddings(lower(index_name))",
             "create index if not exists dot_embeddings_idx_inode on dot_embeddings(inode)",
@@ -43,7 +40,6 @@ class EmbeddingsSQL {
             //"create index if not exists dot_embeddings_idx_vector ON dot_embeddings USING hnsw (embeddings vector_cosine_ops);"
     };
 
-
     static final String CREATE_EMBEDDINGS_CACHE_TABLE =
             "create table if not exists dot_embeddings_cache( " +
                     "extracted_text_hash varchar(255) primary key,  " +
@@ -51,9 +47,6 @@ class EmbeddingsSQL {
                     "token_count int ,                  " +
                     "embeddings vector(1536)            " +
                     ");  ";
-
-
-
 
     /**
      * The number of lists in this index should be determined
@@ -64,13 +57,11 @@ class EmbeddingsSQL {
             "CREATE INDEX if not exists dot_embeddings_idx3 ON dot_embeddings USING ivfflat (embeddings vector_cosine_ops) WITH (lists = ?);"
     };
 
-
     static final String SELECT_EMBEDDING_BY_TEXT_HASH =
             "Select token_count, embeddings, index_name from dot_embeddings where extracted_text_hash=? limit 1";
 
     static final String SELECT_EMBEDDING_BY_TEXT_HASH_INODE_AND_INDEX =
             "Select id from dot_embeddings where extracted_text_hash=? and inode=? and lower(index_name)=lower(?) limit 1";
-
 
     static final String INSERT_EMBEDDINGS =
             "insert into dot_embeddings " +
@@ -99,7 +90,6 @@ class EmbeddingsSQL {
                     "?," +
                     "?)";
 
-
     static final String SEARCH_EMBEDDINGS_SELECT_PREFIX=
             "select " +
             "inode, title, language, identifier,host, content_type, extracted_text, index_name, distance, token_count " +
@@ -110,7 +100,6 @@ class EmbeddingsSQL {
             "select count(distinct inode) as test " +
                     "from (select inode, title, language, identifier,host, content_type,extracted_text,index_name, token_count, (embeddings {operator} ?) AS distance " +
                     "from dot_embeddings where true ";
-
 
     static final String COUNT_EMBEDDINGS_BY_INDEX=
         "SELECT  " +
@@ -138,6 +127,5 @@ class EmbeddingsSQL {
 
     private EmbeddingsSQL() {
     }
-
 
 }

@@ -1,5 +1,6 @@
 package com.dotcms.api;
 
+import com.dotcms.api.provider.BuildVersionHeaders;
 import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
@@ -12,8 +13,8 @@ import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.tags.Tags;
+import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
-import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 /**
  *
@@ -24,6 +25,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 @Tags(
   value = { @Tag(name = "Authentication")}
 )
+@RegisterClientHeaders(BuildVersionHeaders.class)
 @RegisterProvider(DefaultResponseExceptionMapper.class)
 public interface AuthenticationAPI {
 

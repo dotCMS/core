@@ -1,17 +1,17 @@
 {
-	"useTabs": false,
-	"printWidth": 100,
-	"tabWidth": 4,
-	"singleQuote": true,
-	"trailingComma": "none",
-	"arrowParens": "always",
-	"bracketSameLine": true,
-	"overrides": [
-		{
-			"files": "*.scss",
-			"options": {
-				"singleQuote": false
-			}
-		}
-	]
+    "useTabs": false,
+    "printWidth": 100,
+    "tabWidth": 4,
+    "singleQuote": true,
+    "trailingComma": "none",
+    "arrowParens": "always",
+    "bracketSameLine": true,
+    "overrides": [
+        {
+            "files": "*.scss",
+            "options": {
+                "singleQuote": false
+            }
+        }
+    ]
 }

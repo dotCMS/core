@@ -1,7 +1,12 @@
 import { InjectionToken } from '@angular/core';
 
 import { mockSites } from '@dotcms/dotcms-js';
-import { CONTAINER_SOURCE, DotPageContainerStructure, DotPersona } from '@dotcms/dotcms-models';
+import {
+    CONTAINER_SOURCE,
+    DEFAULT_VARIANT_ID,
+    DotPageContainerStructure,
+    DotPersona
+} from '@dotcms/dotcms-models';
 import {
     mockDotLayout,
     mockDotTemplate,
@@ -9,6 +14,7 @@ import {
     dotcmsContentletMock
 } from '@dotcms/utils-testing';
 
+import { EDITOR_MODE, EDITOR_STATE } from './enums';
 import { ActionPayload } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
@@ -23,6 +29,12 @@ export const HOST = 'http://localhost:3000';
 export const EDIT_MODE = 'EDIT_MODE';
 
 export const WINDOW = new InjectionToken<Window>('WindowToken');
+
+export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
+
+export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
+
+export const IFRAME_SCROLL_ZONE = 100;
 
 export const DEFAULT_PERSONA: DotPersona = {
     hostFolder: 'SYSTEM_HOST',
@@ -167,7 +179,11 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         inode: '123-i',
         canEdit: true,
         canRead: true,
-        contentType: 'htmlpageasset'
+        contentType: 'htmlpageasset',
+        canLock: true,
+        locked: false,
+        lockedBy: '',
+        lockedByName: ''
     },
     viewAs: {
         language: {
@@ -177,7 +193,7 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
             languageCode: '1',
             country: 'United States'
         },
-
+        variantId: DEFAULT_VARIANT_ID,
         persona: {
             ...DEFAULT_PERSONA
         }
@@ -186,35 +202,6 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
     layout: mockDotLayout(),
     template: mockDotTemplate(),
     containers: mockDotContainers()
-};
-
-export const dragMoveEventMock = {
-    target: {
-        dataset: {
-            type: 'contentlet',
-            item: JSON.stringify({
-                identifier: '123',
-                title: 'hello world',
-                contentType: 'File',
-                baseType: 'CONTENT'
-            })
-        }
-    }
-};
-
-export const dragAddEventMock = {
-    target: {
-        dataset: {
-            type: 'contentlet',
-            item: JSON.stringify({
-                contentlet: {
-                    identifier: '322b7cc0-3ab9-4267-97f7-9634e519d5a8'
-                },
-                contentType: 'Banner',
-                baseType: 'CONTENT'
-            })
-        }
-    }
 };
 
 export const dotPageContainerStructureMock: DotPageContainerStructure = {
@@ -395,4 +382,42 @@ export const URL_CONTENT_MAP_MOCK = {
     identifier: '123',
     inode: '1234',
     title: 'hello world'
+};
+
+export const SHOW_CONTENTLET_TOOLS_PATCH_MOCK = {
+    editorState: EDITOR_STATE.IDLE,
+    editorData: {
+        mode: EDITOR_MODE.EDIT,
+        canEditVariant: true,
+        device: null,
+        page: {
+            lockedByUser: '',
+            canLock: true,
+            isLocked: false
+        }
+    },
+    contentletArea: {
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        payload: {
+            language_id: '',
+            pageContainers: [],
+            pageId: '',
+            container: {
+                acceptTypes: '',
+                identifier: '',
+                maxContentlets: 0,
+                variantId: '',
+                uuid: ''
+            },
+            contentlet: {
+                identifier: '123',
+                inode: '',
+                title: '',
+                contentType: ''
+            }
+        }
+    }
 };

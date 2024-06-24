@@ -49,6 +49,24 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
     protected readonly editorMode = EDITOR_MODE;
 
     ngOnChanges() {
+        if (this.editorData.page.isLocked) {
+            let message = 'editpage.locked-by';
+
+            if (!this.editorData.page.canLock) {
+                message = 'editpage.locked-contact-with';
+            }
+
+            this.options.set({
+                icon: 'pi pi-lock',
+                info: {
+                    message,
+                    args: [this.editorData.page.lockedByUser]
+                }
+            });
+
+            return;
+        }
+
         if (!this.editorData.canEditPage) {
             this.options.set({
                 icon: 'pi pi-exclamation-circle warning',
@@ -128,12 +146,13 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
 
         if (isNotDefaultVariant) {
             this.store.updateEditorData({
+                device: null,
                 mode: this.editorData.canEditVariant
                     ? this.editorMode.EDIT_VARIANT
                     : this.editorMode.PREVIEW_VARIANT
             });
         } else {
-            this.store.updateEditorData({ mode: this.editorMode.EDIT });
+            this.store.updateEditorData({ device: null, mode: this.editorMode.EDIT });
         }
     }
 }

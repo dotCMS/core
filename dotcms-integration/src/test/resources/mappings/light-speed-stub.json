@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\"What is the speed of light in the vacuum.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "chatcmpl-9Gw6oD0Cr5QTyGKN8Sij8nDw15P12",
+      "object": "chat.completion",
+      "created": 1713823646,
+      "model": "gpt-3.5-turbo-16k-0613",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The speed of light in a vacuum is approximately 299,792,458 meters per second (m/s), which is denoted by the symbol \"c\". This value represents the maximum speed at which information or energy can travel through space according to the theory of relativity. It serves as a fundamental constant in physics and plays a crucial role in various scientific disciplines, including astronomy, particle physics, and telecommunications."
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 44,
+        "completion_tokens": 242,
+        "total_tokens": 286
+      },
+      "system_fingerprint": null,
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}

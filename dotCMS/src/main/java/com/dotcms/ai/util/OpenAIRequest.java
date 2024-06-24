@@ -1,125 +1,176 @@
 package com.dotcms.ai.util;
 
-
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.control.Try;
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.*;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
+import javax.ws.rs.HttpMethod;
+import javax.ws.rs.core.MediaType;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * The OpenAIRequest class is a utility class that handles HTTP requests to the OpenAI API.
+ * It provides methods for sending GET, POST, PUT, DELETE, and PATCH requests.
+ * This class also manages rate limiting for the OpenAI API by keeping track of the last time a request was made.
+ *
+ * This class is implemented as a singleton, meaning that only one instance of the class is created throughout the execution of the program.
+ */
 public class OpenAIRequest {
 
-    static final ConcurrentHashMap<OpenAIModel,Long> lastRestCall = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<OpenAIModel, Long> lastRestCall = new ConcurrentHashMap<>();
 
-
-
-
-    private OpenAIRequest() {
-    }
-
-    public static String doRequest(String url, String method, String openAiAPIKey, JSONObject json)  {
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        doRequest(url, method, openAiAPIKey, json, out);
-        return out.toString();
-
-
-    }
-
-
-    private static HttpUriRequest resolveMethod(String method, String urlIn) {
-        if ("post" .equalsIgnoreCase(method)) {
-            return new HttpPost(urlIn);
-        }
-        if ("put" .equalsIgnoreCase(method)) {
-            return new HttpPut(urlIn);
-        }
-        if ("delete" .equalsIgnoreCase(method)) {
-            return new HttpDelete(urlIn);
-        }
-        if ("patch" .equalsIgnoreCase(method)) {
-            return new HttpPatch(urlIn);
-        }
-
-        return  new HttpGet(urlIn);
-
-    }
-    public static void doPost(String urlIn,  String openAiAPIKey, JSONObject json, OutputStream out) {
-       doRequest(urlIn,"post",openAiAPIKey,json,out);
-    }
-
-    public static void doGet(String urlIn,  String openAiAPIKey, JSONObject json, OutputStream out) {
-        doRequest(urlIn,"get",openAiAPIKey,json,out);
-    }
-
+    private OpenAIRequest() {}
 
     /**
-     * this allows for a streaming response.  It also attempts to rate limit requests based on OpenAI limits
-     * @param urlIn
-     * @param method
-     * @param openAiAPIKey
-     * @param json
-     * @param out
+     * Sends a request to the specified URL with the specified method, OpenAI API key, and JSON payload.
+     * The response from the request is returned as a string.
+     *
+     * @param url the URL to send the request to
+     * @param method the HTTP method to use for the request
+     * @param openAiAPIKey the OpenAI API key to use for the request
+     * @param json the JSON payload to send with the request
+     * @return the response from the request as a string
      */
-    public static void doRequest(String urlIn, String method, String openAiAPIKey, JSONObject json, OutputStream out) {
-        if(ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-            Logger.info(OpenAIRequest.class, "posting:" + json);
+    public static String doRequest(final String url,
+                                   final String method,
+                                   final String openAiAPIKey,
+                                   final JSONObject json)  {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        doRequest(url, method, openAiAPIKey, json, out);
+
+        return out.toString();
+    }
+
+    /**
+     * Sends a POST request to the specified URL with the specified OpenAI API key and JSON payload.
+     * The response from the request is written to the provided OutputStream.
+     *
+     * @param urlIn the URL to send the request to
+     * @param openAiAPIKey the OpenAI API key to use for the request
+     * @param json the JSON payload to send with the request
+     * @param out the OutputStream to write the response to
+     */
+    public static void doPost(final String urlIn,
+                              final String openAiAPIKey,
+                              final JSONObject json,
+                              final OutputStream out) {
+       doRequest(urlIn, HttpMethod.POST, openAiAPIKey, json, out);
+    }
+
+    /**
+     * Sends a GET request to the specified URL with the specified OpenAI API key and JSON payload.
+     * The response from the request is written to the provided OutputStream.
+     *
+     * @param urlIn the URL to send the request to
+     * @param openAiAPIKey the OpenAI API key to use for the request
+     * @param json the JSON payload to send with the request
+     * @param out the OutputStream to write the response to
+     */
+    public static void doGet(final String urlIn,
+                             final String openAiAPIKey,
+                             final JSONObject json,
+                             final OutputStream out) {
+        doRequest(urlIn, HttpMethod.GET, openAiAPIKey,json,out);
+    }
+
+    /**
+     * Sends a request to the specified URL with the specified method, OpenAI API key, and JSON payload.
+     * The response from the request is written to the provided OutputStream.
+     * This method also manages rate limiting for the OpenAI API by keeping track of the last time a request was made.
+     *
+     * @param urlIn the URL to send the request to
+     * @param method the HTTP method to use for the request
+     * @param openAiAPIKey the OpenAI API key to use for the request
+     * @param json the JSON payload to send with the request
+     * @param out the OutputStream to write the response to
+     */
+    public static void doRequest(final String urlIn,
+                                 final String method,
+                                 final String openAiAPIKey,
+                                 final JSONObject json,
+                                 final OutputStream out) {
+
+        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+            Logger.debug(OpenAIRequest.class, "posting:" + json);
         }
-        final OpenAIModel model = OpenAIModel.resolveModel(json.optString("model"));
 
-
-        long sleep = lastRestCall.computeIfAbsent(model, m -> 0L) + model.minIntervalBetweenCalls() - System.currentTimeMillis();
+        final OpenAIModel model = OpenAIModel.resolveModel(json.optString(AiKeys.MODEL));
+        final long sleep = lastRestCall.computeIfAbsent(model, m -> 0L)
+                + model.minIntervalBetweenCalls()
+                - System.currentTimeMillis();
         if (sleep > 0) {
-            Logger.info(OpenAIRequest.class, "Rate limit:" + model.apiPerMinute + "/minute, or 1 every " + (60000 / model.apiPerMinute) + "ms. Sleeping:" + sleep);
+            Logger.info(
+                    OpenAIRequest.class,
+                    "Rate limit:"
+                            + model.apiPerMinute
+                            + "/minute, or 1 every "
+                            + (60000 / model.apiPerMinute)
+                            + "ms. Sleeping:"
+                            + sleep);
             Try.run(() -> Thread.sleep(sleep));
         }
+
         lastRestCall.put(model, System.currentTimeMillis());
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            final StringEntity jsonEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
+            final HttpUriRequest httpRequest = resolveMethod(method, urlIn);
+            httpRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+            httpRequest.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + openAiAPIKey);
 
-
-            StringEntity jsonEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-            HttpUriRequest httpRequest = resolveMethod(method, urlIn);
-            httpRequest.setHeader("Content-Type", "application/json");
-            httpRequest.setHeader("Authorization", "Bearer " + openAiAPIKey);
-            if (null !=json && !json.getAsMap().isEmpty()) {
+            if (!json.getAsMap().isEmpty()) {
                 Try.run(() -> ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(jsonEntity));
             }
+
             try (CloseableHttpResponse response = httpClient.execute(httpRequest)) {
-                BufferedInputStream in = new BufferedInputStream(response.getEntity().getContent());
-                byte[] buffer = new byte[1024];
+                final BufferedInputStream in = new BufferedInputStream(response.getEntity().getContent());
+                final byte[] buffer = new byte[1024];
                 int len;
                 while ((len = in.read(buffer)) != -1) {
                     out.write(buffer, 0, len);
                     out.flush();
                 }
-
             }
-
         } catch (Exception e) {
-            if(ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)){
-                Logger.warn(OpenAIRequest.class, "INVALID REQUEST: " + e.getMessage(),e);
-                Logger.warn(OpenAIRequest.class, " -  " + method + " : " +json.toString());
-            }else{
+            if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)){
+                Logger.warn(OpenAIRequest.class, "INVALID REQUEST: " + e.getMessage(), e);
+            } else {
                 Logger.warn(OpenAIRequest.class, "INVALID REQUEST: " + e.getMessage());
-                Logger.warn(OpenAIRequest.class, " -  " + method + " : " +json.toString());
             }
+
+            Logger.warn(OpenAIRequest.class, " -  " + method + " : " +json);
 
             throw new DotRuntimeException(e);
         }
-
     }
 
+    private static HttpUriRequest resolveMethod(final String method, final String urlIn) {
+        switch(method) {
+            case HttpMethod.POST:
+                return new HttpPost(urlIn);
+            case HttpMethod.PUT:
+                return new HttpPut(urlIn);
+            case HttpMethod.DELETE:
+                return new HttpDelete(urlIn);
+            case "patch":
+                return new HttpPatch(urlIn);
+            case HttpMethod.GET:
+            default:
+                return new HttpGet(urlIn);
+        }
+    }
 
 }

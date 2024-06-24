@@ -10,7 +10,10 @@ import { DotActionBulkResult } from '@dotcms/dotcms-models';
 })
 export class DotBulkInformationComponent implements OnInit {
     data: DotActionBulkResult;
-    constructor(public ref: DynamicDialogRef, public config: DynamicDialogConfig) {}
+    constructor(
+        public ref: DynamicDialogRef,
+        public config: DynamicDialogConfig
+    ) {}
     ngOnInit(): void {
         this.data = this.config.data;
     }

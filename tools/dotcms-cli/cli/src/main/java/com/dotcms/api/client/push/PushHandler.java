@@ -24,6 +24,13 @@ public interface PushHandler<T> {
     String title();
 
     /**
+     * Returns the file name for a given T elements used to save the content to a file.
+     *
+     * @param content the content to be saved to a file.
+     */
+    String fileName(T content);
+
+    /**
      * Generates a simple String representation of a content to use on the console.
      *
      * @param content the content to be displayed

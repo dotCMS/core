@@ -13,7 +13,10 @@ export class ContentletStatusPipe implements PipeTransform {
     private readonly dotMessage = inject(DotMessageService);
     transform(contentlet?: DotCMSContentlet): { label: string; classes: string } {
         if (!contentlet) {
-            return null;
+            return {
+                label: this.dotMessage.get('New'),
+                classes: 'p-chip-blue'
+            };
         }
 
         const contentletStatus = this.getContentletStatus(contentlet);

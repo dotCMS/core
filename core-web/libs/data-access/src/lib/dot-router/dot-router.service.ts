@@ -24,7 +24,10 @@ export class DotRouterService {
     private _routeCanBeDeactivated = new BehaviorSubject(true);
     private _pageLeaveRequest = new Subject<void>();
 
-    constructor(private router: Router, private route: ActivatedRoute) {
+    constructor(
+        private router: Router,
+        private route: ActivatedRoute
+    ) {
         this._routeHistory.url = this.router.url;
         this.router.events
             .pipe(filter((event: Event) => event instanceof NavigationEnd))
@@ -201,6 +204,13 @@ export class DotRouterService {
         this.router.navigate([`/c/content/new/${variableName}`]);
     }
 
+    /**
+     * Redirect to edit the content type
+     *
+     * @param {string} id
+     * @param {string} portlet
+     * @memberof DotRouterService
+     */
     goToEditContentType(id: string, portlet: string): void {
         this.router.navigate([`/${portlet}/edit/${id}`]);
     }
