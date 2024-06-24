@@ -1,8 +1,8 @@
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { DotAiService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotAiService } from '@dotcms/ui';
 
 import { AiContentPromptState, AiContentPromptStore } from './ai-content-prompt.store';
 

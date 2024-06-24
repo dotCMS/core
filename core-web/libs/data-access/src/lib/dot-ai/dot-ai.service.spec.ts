@@ -1,6 +1,12 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { DotAIImageContent, DotAIImageOrientation, DotAIImageResponse } from './dot-ai.models';
+import {
+    DotAIImageContent,
+    DotAIImageOrientation,
+    DotAIImageResponse,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
+
 import { DotAiService, API_ENDPOINT_FOR_PUBLISH, API_ENDPOINT } from './dot-ai.service';
 
 describe('DotAiService', () => {
@@ -60,9 +66,10 @@ describe('DotAiService', () => {
                 response: 'temp_file123',
                 tempFileName: 'Test Imagae'
             } as unknown as DotAIImageContent;
+            const mockContentLet = { attr: 'testContent' } as unknown as DotCMSContentlet;
             const mockPublishResponse = {
                 entity: {
-                    results: [{ key: { attr: 'testContent' } }]
+                    results: [{ key: { ...mockContentLet } }]
                 }
             };
             const expectedPublishRequest = {
@@ -79,8 +86,8 @@ describe('DotAiService', () => {
 
             spectator.service.generateAndPublishImage(mockPrompt, size).subscribe((response) => {
                 expect(response).toEqual({
-                    contentlet: { ...mockPublishResponse.entity.results[0]['key'] },
-                    ...mockGenerateResponse
+                    ...mockGenerateResponse,
+                    contentlet: { ...mockContentLet }
                 });
             });
 

@@ -1,4 +1,4 @@
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet } from './dot-contentlet.model';
 
 export const enum PromptType {
     INPUT = 'input',

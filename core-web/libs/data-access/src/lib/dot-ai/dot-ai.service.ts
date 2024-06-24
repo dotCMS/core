@@ -5,15 +5,14 @@ import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, pluck, switchMap } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-
 import {
+    DotCMSContentlet,
     AiPluginResponse,
     DotAICompletionsConfig,
     DotAIImageContent,
     DotAIImageOrientation,
     DotAIImageResponse
-} from './dot-ai.models';
+} from '@dotcms/dotcms-models';
 
 export const AI_PLUGIN_KEY = {
     NOT_SET: 'NOT SET'
@@ -48,11 +47,11 @@ export class DotAiService {
             .pipe(
                 map((response) => {
                     // If the response is 200 and the body come with an error, we throw an error
-                    if (response.body.error) {
+                    if (response?.body?.error) {
                         throw new Error(response.body.error.message);
                     }
 
-                    const choices = response.body.choices;
+                    const choices = response?.body?.choices;
                     if (!choices || choices.length === 0) {
                         throw new Error(
                             'block-editor.extension.ai-image.api-error.no-choice-returned'
@@ -112,7 +111,7 @@ export class DotAiService {
                 observe: 'response'
             })
             .pipe(
-                map((res) => res.status === 200 && res.body.apiKey !== AI_PLUGIN_KEY.NOT_SET),
+                map((res) => res.status === 200 && res?.body?.apiKey !== AI_PLUGIN_KEY.NOT_SET),
                 catchError(() => {
                     return of(false);
                 })
@@ -132,9 +131,13 @@ export class DotAiService {
         ];
 
         return this.#http
-            .post(`${API_ENDPOINT_FOR_PUBLISH}`, JSON.stringify({ contentlets }), {
-                headers
-            })
+            .post<{ entity: { results: DotCMSContentlet[] } }>(
+                `${API_ENDPOINT_FOR_PUBLISH}`,
+                JSON.stringify({ contentlets }),
+                {
+                    headers
+                }
+            )
             .pipe(
                 pluck('entity', 'results'),
                 map((contentlets: DotCMSContentlet[]) => {

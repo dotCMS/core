@@ -14,15 +14,15 @@ import {
     DotLanguagesService,
     DotMessageService,
     DotPropertiesService,
-    DotUploadFileService
+    DotUploadFileService,
+    DotAiService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
     DotAssetSearchComponent,
     DotFieldRequiredDirective,
     DotMessagePipe,
-    DotSpinnerModule,
-    DotAiService
+    DotSpinnerModule
 } from '@dotcms/ui';
 
 //Editor
@@ -88,11 +88,11 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotUploadFileService,
         LoggerService,
         StringUtils,
+        DotAiService,
         ConfirmationService,
         DotPropertiesService,
         DotContentSearchService,
         DotLanguagesService,
-        DotAiService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,

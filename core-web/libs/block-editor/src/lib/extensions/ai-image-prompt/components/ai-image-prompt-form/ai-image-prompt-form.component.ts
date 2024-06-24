@@ -32,14 +32,16 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
-    DotCopyButtonComponent,
-    DotFieldRequiredDirective,
-    DotMessagePipe,
-    DotValidators,
     AIImagePrompt,
     DotAIImageOrientation,
     DotGeneratedAIImage,
     PromptType
+} from '@dotcms/dotcms-models';
+import {
+    DotCopyButtonComponent,
+    DotFieldRequiredDirective,
+    DotMessagePipe,
+    DotValidators
 } from '@dotcms/ui';
 
 @Component({

@@ -31,7 +31,7 @@ import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotPropertiesService, DotAiService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -39,7 +39,6 @@ import {
     IMPORT_RESULTS,
     RemoteCustomExtensions
 } from '@dotcms/dotcms-models';
-import { DotAiService } from '@dotcms/ui';
 
 import {
     ActionsMenu,

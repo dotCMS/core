@@ -5,8 +5,8 @@ import { Injectable } from '@angular/core';
 
 import { switchMap, withLatestFrom } from 'rxjs/operators';
 
+import { DotAiService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotAiService } from '@dotcms/ui';
 
 export interface AiGenerateContent {
     prompt: string;
