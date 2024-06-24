@@ -968,7 +968,7 @@ describe('EditEmaEditorComponent', () => {
                         const dialog = spectator.component.dialog;
                         spyContentlet = jest.spyOn(dotContentletService, 'getContentletByInode');
                         spyDialog = jest.spyOn(dialog, 'editUrlContentMapContentlet');
-                        spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
+                        spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframeContent');
                         spyUpdateQueryParams = jest.spyOn(router, 'navigate');
                         spyStoreReload = jest.spyOn(store, 'reload');
 
