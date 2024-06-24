@@ -379,7 +379,7 @@ public class ContentTypeResource implements Serializable {
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
 			final ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
-					form.getContentType(), user, false
+					idOrVar, form.getContentType(), user, false
 			);
 			Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
 			checkNotEmpty(contentType.id(), BadRequestException.class,
