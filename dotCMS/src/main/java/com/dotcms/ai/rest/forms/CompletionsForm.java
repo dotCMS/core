@@ -4,7 +4,6 @@ import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
@@ -123,7 +122,7 @@ public class CompletionsForm {
 
     private String validateBuilderQuery(final String query) {
         if (UtilMethods.isEmpty(query)) {
-            throw new DotRuntimeException("query/prompt cannot be null");
+            throw new IllegalArgumentException("query/prompt cannot be null");
         }
         return String.join(" ", query.trim().split("\\s+"));
     }
