@@ -1,4 +1,4 @@
-=0-0954324567751`=package org.apache.felix.framework;
+package org.apache.felix.framework;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
