@@ -1109,7 +1109,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     reloadIframeContent() {
         this.iframe?.nativeElement?.contentWindow.postMessage(
-            { name: 'SET_PAGE_INFO', payload: this.store.state().editor },
+            { name: NOTIFY_CUSTOMER.SET_PAGE_INFO, payload: this.store.state().editor },
             this.host
         );
     }
