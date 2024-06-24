@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useDotcmsPageContext } from "@dotcms/react";
+import imageLoaderByConfig from "@/utils/imageLoader";
 
 function Activity({ title, description, image, urlTitle }) {
     const {
@@ -14,9 +15,10 @@ function Activity({ title, description, image, urlTitle }) {
             {image && (
                 <Image
                     className="w-full"
-                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${
-                        image?.idPath || image
-                    }?language_id=${language?.id}`}
+                    loader={imageLoaderByConfig({
+                        language: language?.id ?? 1,
+                    })}
+                    src={image?.idPath ?? image}
                     width={100}
                     height={100}
                     alt="Activity Image"

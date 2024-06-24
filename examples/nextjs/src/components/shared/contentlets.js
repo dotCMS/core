@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import imageLoaderByConfig from "@/utils/imageLoader";
 
 const dateFormatOptions = {
     year: "numeric",
@@ -16,14 +17,19 @@ function Contentlets({ contentlets }) {
                         className="relative min-w-32"
                         href={contentlet.urlMap || contentlet.url}
                     >
-                        <Image
-                            src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${
-                                contentlet.image
-                            }?language_id=${contentlet.languageId || 1}`}
-                            alt={contentlet.urlTitle}
-                            fill={true}
-                            className="object-cover"
-                        />
+                        {contentlet.image && (
+                            <Image
+                                loader={imageLoaderByConfig({
+                                    language: contentlet.language?.id ?? 1,
+                                })}
+                                src={
+                                    contentlet.image?.idPath ?? contentlet.image
+                                }
+                                alt={contentlet.urlTitle}
+                                fill={true}
+                                className="object-cover"
+                            />
+                        )}
                     </a>
                     <div className="flex flex-col gap-1">
                         <a

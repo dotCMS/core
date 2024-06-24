@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useDotcmsPageContext } from "@dotcms/react";
+import imageLoaderByConfig from "@/utils/imageLoader";
 
 function Banner({ title, image, caption, buttonText, link }) {
     const {
@@ -9,15 +10,19 @@ function Banner({ title, image, caption, buttonText, link }) {
         },
     } = useDotcmsPageContext();
 
-
     return (
         <div className="relative w-full p-4 bg-gray-200 h-96">
-            <Image
-                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image?.idPath || image}?language_id=${language?.id || 1}`}
-                fill={true}
-                className="object-cover"
-                alt={title}
-            />
+            {image && (
+                <Image
+                    loader={imageLoaderByConfig({
+                        language: language?.id ?? 1,
+                    })}
+                    src={image?.idPath ?? image}
+                    fill={true}
+                    className="object-cover"
+                    alt={title}
+                />
+            )}
             <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white">
                 <h2 className="mb-2 text-6xl font-bold text-shadow">{title}</h2>
                 <p className="mb-4 text-xl text-shadow">{caption}</p>

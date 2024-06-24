@@ -71,7 +71,9 @@ export function MyPage({ pageAsset, nav }) {
                     config={{ onReload: refresh, pathname }}
                 />
             </main>
-            {pageAsset.layout.footer && <Footer />}
+            {pageAsset.layout.footer && (
+                <Footer language={pageAsset.viewAs.language} />
+            )}
         </div>
     );
 }

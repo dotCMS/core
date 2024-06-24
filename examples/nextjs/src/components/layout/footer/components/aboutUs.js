@@ -1,7 +1,8 @@
 import React from "react";
 import Image from "next/image";
+import imageLoaderByConfig from "@/utils/imageLoader";
 
-function AboutUs() {
+function AboutUs({ language }) {
     return (
         <div className="flex gap-7 flex-col">
             <h2 className="text-2xl font-bold text-black">About us</h2>
@@ -13,7 +14,10 @@ function AboutUs() {
                 registered clients.
             </p>
             <Image
-                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}/contentAsset/image/82da90eb-044d-44cc-a71b-86f79820b61b/fileAsset`}
+                loader={imageLoaderByConfig({
+                    language: language?.id ?? 1,
+                })}
+                src={"/dA/2f383e7fa6/fileAsset/logo.png"}
                 height={53}
                 width={221}
                 alt="TravelLux logo"

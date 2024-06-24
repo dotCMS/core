@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import imageLoaderByConfig from "@/utils/imageLoader";
 
 function extractLocationsAndActivities(contentlet) {
     return contentlet.reduce(
@@ -19,20 +20,25 @@ function CalendarEvent({ image, title, urlMap, description, location }) {
     return (
         <div className="relative flex bg-clip-border rounded-xl shadow-md w-full flex-row bg-slate-100">
             <div className="relative w-2/5 m-0 overflow-hidden bg-slate-100 rounded-r-none bg-clip-border rounded-xl shrink-0">
-                <Image
-                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${
-                        image?.idPath || image
-                    }`}
-                    alt={title}
-                    fill={true}
-                />
+                {image && (
+                    <Image
+                        loader={imageLoaderByConfig({
+                            language: language?.id ?? 1,
+                        })}
+                        src={image?.idPath ?? image}
+                        alt={title}
+                        fill={true}
+                    />
+                )}
             </div>
             <div className="p-6">
                 <h4 className="block mb-2 text-2xl antialiased font-semibold leading-snug tracking-normal text-blue-gray-900">
                     {title}
                 </h4>
                 <div className="block mb-2 text-base antialiased leading-snug tracking-normal text-blue-gray-900 break-all">
-                    <span className="cursor-auto select-none font-semibold underline">Locations:</span>
+                    <span className="cursor-auto select-none font-semibold underline">
+                        Locations:
+                    </span>
                     &nbsp;
                     {locations.map(({ title, url }, index) => {
                         return (
@@ -45,7 +51,9 @@ function CalendarEvent({ image, title, urlMap, description, location }) {
                     })}
                 </div>
                 <div className="block mb-2 text-base antialiased leading-snug tracking-normal text-blue-gray-900 break-all">
-                    <span className="cursor-auto select-none font-semibold underline">Activities:</span>
+                    <span className="cursor-auto select-none font-semibold underline">
+                        Activities:
+                    </span>
                     &nbsp;
                     {activities.slice(0, 3).map(({ title, urlMap }, index) => {
                         return (
