@@ -11,7 +11,7 @@ import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
   template: ` <div class="flex flex-col">
     <h2 class="text-2xl font-bold mb-7 text-black">Latest Blog Posts</h2>
     @if (!!blogs().length) {
-      <app-contentlets [contentlets]="blogs()" />
+    <app-contentlets [contentlets]="blogs()" />
     }
   </div>`,
 })
