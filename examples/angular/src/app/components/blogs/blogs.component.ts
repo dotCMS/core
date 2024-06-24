@@ -21,7 +21,6 @@ export class BlogsComponent implements OnInit {
   readonly blogs = signal<Contentlet<GenericContentlet>[]>([]);
 
   ngOnInit(): void {
-    console.log('BlogsComponent ngOnInit');
     this.client.content
       .getCollection<GenericContentlet>('Blog')
       .limit(3)
