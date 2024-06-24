@@ -5,17 +5,15 @@ import { Injectable } from '@angular/core';
 
 import { switchMap, withLatestFrom } from 'rxjs/operators';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
-
-import { PromptType } from './ai-image-prompt.models';
-
-import { DotAiService } from '../../shared';
+import { DotAiService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     AIImagePrompt,
     DotAIImageContent,
     DotAIImageOrientation,
-    DotGeneratedAIImage
-} from '../../shared/services/dot-ai/dot-ai.models';
+    DotGeneratedAIImage,
+    PromptType
+} from '@dotcms/dotcms-models';
 
 const DEFAULT_INPUT_PROMPT = PromptType.INPUT;
 

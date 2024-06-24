@@ -1,31 +1,34 @@
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, pluck, switchMap } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-
 import {
+    DotCMSContentlet,
     AiPluginResponse,
     DotAICompletionsConfig,
     DotAIImageContent,
     DotAIImageOrientation,
     DotAIImageResponse
-} from './dot-ai.models';
+} from '@dotcms/dotcms-models';
 
-import { AI_PLUGIN_KEY } from '../../utils';
+export const AI_PLUGIN_KEY = {
+    NOT_SET: 'NOT SET'
+};
 
-const API_ENDPOINT = '/api/v1/ai';
-const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH';
+export const API_ENDPOINT = '/api/v1/ai';
+
+export const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH';
+
 const headers = new HttpHeaders({
     'Content-Type': 'application/json'
 });
 
 @Injectable()
 export class DotAiService {
-    private http: HttpClient = inject(HttpClient);
+    #http: HttpClient = inject(HttpClient);
 
     /**
      * Generates content by sending a HTTP POST request to the AI plugin endpoint.
@@ -36,7 +39,7 @@ export class DotAiService {
      * @throws {string} - Throws an error message if there was an error fetching AI content.
      */
     generateContent(prompt: string): Observable<string> {
-        return this.http
+        return this.#http
             .post<AiPluginResponse>(`${API_ENDPOINT}/text/generate`, JSON.stringify({ prompt }), {
                 headers,
                 observe: 'response'
@@ -44,11 +47,11 @@ export class DotAiService {
             .pipe(
                 map((response) => {
                     // If the response is 200 and the body come with an error, we throw an error
-                    if (response.body.error) {
+                    if (response?.body?.error) {
                         throw new Error(response.body.error.message);
                     }
 
-                    const choices = response.body.choices;
+                    const choices = response?.body?.choices;
                     if (!choices || choices.length === 0) {
                         throw new Error(
                             'block-editor.extension.ai-image.api-error.no-choice-returned'
@@ -58,8 +61,12 @@ export class DotAiService {
                     // We only use the first choice
                     return choices[0].message.content;
                 }),
-                catchError((errorMsg: string) => {
-                    return throwError(errorMsg);
+                catchError((error) => {
+                    if (error instanceof HttpErrorResponse) {
+                        return throwError(error.statusText);
+                    }
+
+                    return throwError(error);
                 })
             );
     }
@@ -69,13 +76,13 @@ export class DotAiService {
      *
      * @param {string} prompt - The prompt for generating the image.
      * @param {string} size - The size of the image to be generated (default: '1024x1024').
-     * @returns {Observable<DotAIImageContent[]>} - An observable that emits an array of DotCMSContentlet objects.
+     * @returns {Observable<DotAIImageContent>} - An observable that emits an array of DotCMSContentlet objects.
      */
     public generateAndPublishImage(
         prompt: string,
-        size = DotAIImageOrientation.HORIZONTAL
+        size: string = DotAIImageOrientation.HORIZONTAL
     ): Observable<DotAIImageContent> {
-        return this.http
+        return this.#http
             .post<DotAIImageResponse>(
                 `${API_ENDPOINT}/image/generate`,
                 JSON.stringify({ prompt, size }),
@@ -99,12 +106,12 @@ export class DotAiService {
      * @return {Observable<boolean>} An observable that emits a boolean value indicating if the plugin is installed and properly configured.
      */
     checkPluginInstallation(): Observable<boolean> {
-        return this.http
+        return this.#http
             .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`, {
                 observe: 'response'
             })
             .pipe(
-                map((res) => res.status === 200 && res.body.apiKey !== AI_PLUGIN_KEY.NOT_SET),
+                map((res) => res.status === 200 && res?.body?.apiKey !== AI_PLUGIN_KEY.NOT_SET),
                 catchError(() => {
                     return of(false);
                 })
@@ -123,16 +130,28 @@ export class DotAiService {
             }
         ];
 
-        return this.http
-            .post(`${API_ENDPOINT_FOR_PUBLISH}`, JSON.stringify({ contentlets }), {
-                headers
-            })
+        return this.#http
+            .post<{ entity: { results: DotCMSContentlet[] } }>(
+                `${API_ENDPOINT_FOR_PUBLISH}`,
+                JSON.stringify({ contentlets }),
+                {
+                    headers
+                }
+            )
             .pipe(
                 pluck('entity', 'results'),
                 map((contentlets: DotCMSContentlet[]) => {
-                    const contentlet = Object.values(contentlets[0])[0];
+                    if (contentlets.length === 0) {
+                        throw new Error('contentlets is empty.');
+                    }
+
+                    const item = contentlets[0];
+                    const values = Object.values(item);
+
+                    const contentlet = { ...values[0] };
+
                     // under errorMessage is how the backend returns an error.
-                    if (contentlet.errorMessage) {
+                    if (contentlet?.errorMessage) {
                         throw new Error('Could not publish the image.');
                     }
 
@@ -146,6 +165,6 @@ export class DotAiService {
                         'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
                     )
                 )
-            ) as Observable<DotAIImageContent>;
+            );
     }
 }
