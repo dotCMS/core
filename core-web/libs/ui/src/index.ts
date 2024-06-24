@@ -46,6 +46,7 @@ export * from './lib/directives/dot-string-template-outlet.directive';
 // Services
 export * from './lib/services/clipboard/ClipboardUtil';
 export * from './lib/services/dot-copy-content-modal/dot-copy-content-modal.service';
+export * from './lib/services/dot-ai/dot-ai.service';
 
 // Pipes
 export * from './lib/pipes/dot-relative-date/dot-relative-date.pipe';
