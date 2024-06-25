@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -34,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
@@ -479,4 +481,33 @@ public class ContentTypeHelper implements Serializable {
     public long getContentTypesCount(String condition) throws DotDataException {
         return this.structureAPI.countStructures(condition);
     }
+
+    /**
+     * Generates a key to be use when calling the {@link ContentType#fieldMap(Function)} method.
+     * <p>
+     * The regular {@link ContentType#fieldMap()} throws a NPE if the key (variable name) is null as
+     * it is used as a key for the map.
+     * <p>
+     * When the {@link ContentType#fieldMap()} is called from a resource we could have cases where
+     * fields are sent without a variable name.
+     *
+     * @param field {@link Field} to generate the key for.
+     * @return The generated key.
+     */
+    public String generateFieldKey(final Field field) {
+
+        final String key;
+        if (StringUtils.isNotEmpty(field.id()) && StringUtils.isNotEmpty(field.variable())) {
+            key = String.format("%s-%s", field.id(), field.variable());
+        } else if (StringUtils.isNotEmpty(field.variable())) {
+            key = field.variable();
+        } else if (StringUtils.isNotEmpty(field.id())) {
+            key = field.id();
+        } else {
+            key = field.name();
+        }
+
+        return key;
+    }
+
 } // E:O:F:ContentTypeHelper.
