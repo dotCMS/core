@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -61,10 +62,14 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
   // Creates the JAXB contexts for the {@link DotPortlet} and {@link PortletList} classes. They're
   // used by JAXB to map the contents of the configuration XML files into such classes.
   static {
-    jaxbContexts = Try.of(() -> Map.of(
-                    DotPortlet.class, new JaxbContext(DotPortlet.class),
-                    PortletList.class, new JaxbContext(PortletList.class)))
-            .getOrElse(Map.of());
+    try {
+      jaxbContexts = Map.of(
+              DotPortlet.class, new JaxbContext(DotPortlet.class),
+              PortletList.class, new JaxbContext(PortletList.class));
+    } catch (final JAXBException e) {
+      throw new DotRuntimeException(String.format("FATAL - Failed to create JAXB contexts: " +
+              "%s", ExceptionUtil.getErrorMessage(e)), e);
+    }
   }
 
   /**

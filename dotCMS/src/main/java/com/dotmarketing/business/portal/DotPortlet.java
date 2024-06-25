@@ -22,7 +22,7 @@ import java.util.Map;
 public class DotPortlet extends Portlet {
 
     @XmlElement(name = "init-param")
-    private transient List<InitParam> initParamsAsList;
+    private List<InitParam> initParams;
 
     /**
      * Default class constructor, required by JAXB.
@@ -52,9 +52,9 @@ public class DotPortlet extends Portlet {
      */
   public DotPortlet(String portletId,  String portletClass, Map<String, String> initParams) {
     super(portletId, portletClass, initParams);
-        this.initParamsAsList = new ArrayList<>();
+        this.initParams = new ArrayList<>();
         for (Map.Entry<String, String> entry : initParams.entrySet()) {
-            this.initParamsAsList.add(new InitParam(entry.getKey(), entry.getValue()));
+            this.initParams.add(new InitParam(entry.getKey(), entry.getValue()));
         }
     }
 
@@ -64,6 +64,7 @@ public class DotPortlet extends Portlet {
         return portletId;
     }
 
+    @Override
     public void setPortletId(final String portletId) {
         super.portletId = portletId;
     }
@@ -74,13 +75,15 @@ public class DotPortlet extends Portlet {
         return portletClass;
     }
 
+    @Override
     public void setPortletClass(final String portletClass) {
         super.portletClass = portletClass;
     }
 
+    @SuppressWarnings("unused")
     @XmlElement(name = "init-param")
     public List<InitParam> getInitParamList() {
-        return this.initParamsAsList;
+        return this.initParams;
     }
 
     /**
@@ -92,8 +95,8 @@ public class DotPortlet extends Portlet {
      */
     @Override
     public Map<String, String> getInitParams() {
-        if (UtilMethods.isSet(this.initParamsAsList)) {
-            for (final InitParam initParam : this.initParamsAsList) {
+        if (UtilMethods.isSet(this.initParams)) {
+            for (final InitParam initParam : this.initParams) {
                 super.initParams.put(initParam.getName(), initParam.getValue());
             }
         }
@@ -106,7 +109,7 @@ public class DotPortlet extends Portlet {
                 " portletId='" + this.portletId + '\'' +
                 ", portletClass='" + this.portletClass + '\'' +
                 ", portletSource='" + this.portletSource + '\'' +
-                ", initParamsAsList=" + this.initParamsAsList +
+                ", initParamsAsList=" + this.initParams +
                 '}';
     }
 
