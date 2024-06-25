@@ -5,10 +5,13 @@ import { inject, Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
+import { DotCMSResponse } from '@dotcms/dotcms-js';
+
 import { DotCategoryFieldCategory } from '../models/dot-category-field.models';
 
-const API_URL = '/api/v1/categories';
-const ITEMS_PER_PAGE = 7000;
+export const API_URL = '/api/v1/categories';
+
+export const ITEMS_PER_PAGE = 7000;
 
 /**
  * CategoriesService class.
@@ -32,6 +35,10 @@ export class CategoriesService {
             .set('inode', inode)
             .set('showChildrenCount', 'true');
 
-        return this.#http.get(`${API_URL}/children`, { params }).pipe(pluck('entity'));
+        return this.#http
+            .get<DotCMSResponse<DotCategoryFieldCategory[]>>(`${API_URL}/children`, {
+                params
+            })
+            .pipe(pluck('entity'));
     }
 }

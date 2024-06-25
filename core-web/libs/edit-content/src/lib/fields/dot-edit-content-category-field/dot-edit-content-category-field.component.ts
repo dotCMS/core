@@ -1,4 +1,4 @@
-import { KeyValuePipe, NgClass } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -46,8 +46,7 @@ import { CategoryFieldStore } from './store/content-category-field.store';
         NgClass,
         TooltipModule,
         DotMessagePipe,
-        DotDynamicDirective,
-        KeyValuePipe
+        DotDynamicDirective
     ],
     templateUrl: './dot-edit-content-category-field.component.html',
     styleUrl: './dot-edit-content-category-field.component.scss',
@@ -85,6 +84,11 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
 
     readonly store = inject(CategoryFieldStore);
 
+    /**
+     * Determines if there are any selected categories.
+     *
+     * @returns {Boolean} - True if there are selected categories, false otherwise.
+     */
     hasSelectedCategories = computed(() => {
         return !!this.store.selectedCategories().length;
     });

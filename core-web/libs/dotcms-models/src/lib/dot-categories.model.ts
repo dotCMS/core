@@ -15,7 +15,7 @@ export interface DotCategory {
     path?: string;
     identifier: string;
     inode: string;
-    name: string;
+    name?: string;
     type: string;
     source?: CATEGORY_SOURCE;
     live?: boolean;
@@ -25,6 +25,7 @@ export interface DotCategory {
     iDate: number;
     keywords: string;
     owner: string;
+    modDate?: number;
     parentPermissionable?: {
         hostname: string;
     };

@@ -1,4 +1,3 @@
-import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -30,8 +29,7 @@ import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-cat
         ButtonModule,
         DotMessagePipe,
         SidebarModule,
-        DotCategoryFieldCategoryListComponent,
-        JsonPipe
+        DotCategoryFieldCategoryListComponent
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',

@@ -3467,15 +3467,15 @@
   resolved "https://registry.yarnpkg.com/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-14.2.4.tgz#e65a1c6539a671f97bb86d5183d6e3a1733c29c7"
   integrity sha512-tkLrjBzqFTP8DVrAAQmZelEahfR9OxWpFR++vAI9FBhCiIxtwHwBHC23SBHCTURBtwB4kc/x44imVOnkKGNVGg==
 
-"@ngneat/spectator@^15.0.1":
-  version "15.0.1"
-  resolved "https://registry.yarnpkg.com/@ngneat/spectator/-/spectator-15.0.1.tgz#b5699d419db54fa163b8eb0902abbe4d199bceb2"
-  integrity sha512-rcIWYco6KngfLHBTShhU0fTgjMD4b9Gfx8tEbnML+URApTjyXqVaNu9YLiA8PVxUTRO1EOTsF9gOCIbIJA8lTA==
+"@ngneat/spectator@^19.0.0":
+  version "19.0.0"
+  resolved "https://registry.npmjs.org/@ngneat/spectator/-/spectator-19.0.0.tgz#e93e7ca49a00adf0cb433e8ba44533db9f7b6db4"
+  integrity sha512-u3G0rpepKuwK9alYDxyTvQ5P8XK6MXiToL36O3Lt1Q3seUT6hkpbkAAGD/pG8r+cY+Wt5zM7P8cF+1m7vWUGUA==
   dependencies:
     "@testing-library/dom" "^8.11.0"
-    jquery "3.6.0"
+    jquery "3.6.4"
     replace-in-file "6.2.0"
-    tslib "^2.1.0"
+    tslib "^2.6.2"
 
 "@ngrx/component-store@17.0.1":
   version "17.0.1"
@@ -15434,10 +15434,10 @@ jju@~1.4.0:
   resolved "https://registry.yarnpkg.com/jju/-/jju-1.4.0.tgz#a3abe2718af241a2b2904f84a625970f389ae32a"
   integrity sha512-8wb9Yw966OSxApiCt0K3yNJL8pnNeIv+OEq2YMidz4FKP6nonSRoOXc80iXY4JaN2FC11B9qsNmDsm+ZOfMROA==
 
-jquery@3.6.0:
-  version "3.6.0"
-  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.6.0.tgz#c72a09f15c1bdce142f49dbf1170bdf8adac2470"
-  integrity sha512-JVzAR/AjBvVt2BmYhxRCSYysDsPcssdmTFnzyLEts9qNwmjmu4JTAMYubEfwVOSwpQ1I1sKKFcxhZCI2buerfw==
+jquery@3.6.4:
+  version "3.6.4"
+  resolved "https://registry.npmjs.org/jquery/-/jquery-3.6.4.tgz#ba065c188142100be4833699852bf7c24dc0252f"
+  integrity sha512-v28EW9DWDFpzcD9O5iyJXg3R3+q+mET5JhnjJzQUZMHOv67bpSIHq81GEYpPNZHG+XXHsfSme3nxp/hndKEcsQ==
 
 "js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
   version "4.0.0"
@@ -19878,6 +19878,7 @@ prepend-http@^1.0.1:
   integrity sha512-PhmXi5XmoyKw1Un4E+opM2KcsJInDvKyuOumcjjw3waw86ZNjHwVUOOWLc4bCzLdcKNaWBH9e99sbWzDQsVaYg==
 
 "prettier-fallback@npm:prettier@^3", prettier@^3.3.1:
+  name prettier-fallback
   version "3.3.2"
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.3.2.tgz#03ff86dc7c835f2d2559ee76876a3914cec4a90a"
   integrity sha512-rAVeHYMcv8ATV5d508CFdn+8/pHPpXeIid1DdrPwXnaAdH7cqjVbpJaT5eq4yRAFU/lsbwYwSF/n5iNrdJHPQA==

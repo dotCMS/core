@@ -1,16 +1,20 @@
-import { TestBed } from '@angular/core/testing';
+import { HttpMethod } from '@ngneat/spectator';
+import { createHttpFactory, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { CategoriesService } from './categories.service';
+import { API_URL, CategoriesService, ITEMS_PER_PAGE } from './categories.service';
 
 describe('CategoriesService', () => {
-    let service: CategoriesService;
+    let spectator: SpectatorHttp<CategoriesService>;
+    const createHttp = createHttpFactory(CategoriesService);
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({});
-        service = TestBed.inject(CategoriesService);
-    });
+    beforeEach(() => (spectator = createHttp()));
 
-    it('should be created', () => {
-        expect(service).toBeTruthy();
+    it('can getChildren with inode', () => {
+        const inode = 'inode-identifier';
+        spectator.service.getChildren(inode).subscribe();
+        spectator.expectOne(
+            `${API_URL}/children?per_page=${ITEMS_PER_PAGE}&direction=ASC&inode=${inode}&showChildrenCount=true`,
+            HttpMethod.GET
+        );
     });
 });

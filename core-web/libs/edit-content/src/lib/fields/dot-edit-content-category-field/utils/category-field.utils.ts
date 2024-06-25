@@ -13,7 +13,7 @@ export const getSelectedCategories = (
     variableName: string,
     contentlet: DotCMSContentlet
 ): DotKeyValueObj[] => {
-    if (!contentlet) {
+    if (!contentlet || !variableName) {
         return [];
     }
 
@@ -77,6 +77,11 @@ export const clearParentPathAfterIndex = (parentPath: string[], index: number): 
     return parentPath.slice(0, index);
 };
 
+/**
+ * Check if the index clicked is the last column
+ * @param index
+ * @param categories
+ */
 export const checkIfClickedIsLastItem = (
     index: number,
     categories: DotCategoryFieldCategory[][]

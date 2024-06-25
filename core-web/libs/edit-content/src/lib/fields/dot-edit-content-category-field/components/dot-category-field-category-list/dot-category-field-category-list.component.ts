@@ -25,7 +25,8 @@ import { DotCategory } from '@dotcms/dotcms-models';
 
 import { DotCategoryFieldCategory } from '../../models/dot-category-field.models';
 
-const MINIMUM_CATEGORY_COLUMNS = 4;
+export const MINIMUM_CATEGORY_COLUMNS = 4;
+
 const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 
 /**
@@ -61,11 +62,12 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
      * Generate the empty columns
      */
     emptyColumns = computed(() => {
-        const minimumCategoryColumns = MINIMUM_CATEGORY_COLUMNS;
-        const currentCategoriesLength = this.categories().length;
-        const numberOfEmptyColumns = Math.max(minimumCategoryColumns - currentCategoriesLength, 0);
+        const numberOfEmptyColumnsNeeded = Math.max(
+            MINIMUM_CATEGORY_COLUMNS - this.categories().length,
+            0
+        );
 
-        return Array(numberOfEmptyColumns).fill(null);
+        return Array(numberOfEmptyColumnsNeeded).fill(null);
     });
 
     /**
