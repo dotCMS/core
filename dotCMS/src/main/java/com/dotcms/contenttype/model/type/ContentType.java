@@ -290,14 +290,6 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
 
   public void constructWithFields(List<Field> fields) {
 
-    // Validating fields variables, fields without a variable cause NPE on fieldMap() as the
-    // variable is used as the map key.
-    for (Field field : fields) {
-      Preconditions.checkArgument(StringUtils.isNotEmpty(field.variable()),
-              String.format("Field variable name required in field [%s]", field.name())
-      );
-    }
-
     innerFields = fields;
   }
 
