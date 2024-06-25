@@ -18,7 +18,7 @@ if [[ "$#" -eq 0 || "$1" == "dotcms" ]]; then
   echo "Starting dotCMS ..."s
   echo "-------------------"
   echo ""
-  exec -- ${TOMCAT_HOME}/bin/catalina.sh run "$@"
+  exec -- ${TOMCAT_HOME}/bin/catalina.sh run dotcms
 else
   echo starting "$@"
   exec -- "$@"
