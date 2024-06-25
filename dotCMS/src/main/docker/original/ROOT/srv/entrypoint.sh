@@ -15,7 +15,7 @@ source /srv/40-custom-starter-zip.sh
 if [[ "$#" -eq 0 || "$1" == "dotcms" ]]; then
   shift
   echo ""
-  echo "Starting dotCMS ..."s
+  echo "Starting dotCMS ..."
   echo "-------------------"
   echo ""
   exec -- ${TOMCAT_HOME}/bin/catalina.sh run dotcms
