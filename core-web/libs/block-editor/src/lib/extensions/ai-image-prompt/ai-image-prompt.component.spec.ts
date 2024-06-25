@@ -4,16 +4,16 @@ import { of } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 
-import { AIImagePromptComponent } from './ai-image-prompt.component';
-import { PromptType } from './ai-image-prompt.models';
-import { DotAiImagePromptStore } from './ai-image-prompt.store';
-import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
-
 import {
+    PromptType,
     AIImagePrompt,
     DotAIImageOrientation,
     DotGeneratedAIImage
-} from '../../shared/services/dot-ai/dot-ai.models';
+} from '@dotcms/dotcms-models';
+
+import { AIImagePromptComponent } from './ai-image-prompt.component';
+import { DotAiImagePromptStore } from './ai-image-prompt.store';
+import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
 
 describe('AIImagePromptComponent', () => {
     let spectator: Spectator<AIImagePromptComponent>;

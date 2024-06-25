@@ -1,6 +1,9 @@
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet } from './dot-contentlet.model';
 
-import { PromptType } from '../../../extensions/ai-image-prompt/ai-image-prompt.models';
+export const enum PromptType {
+    INPUT = 'input',
+    AUTO = 'auto'
+}
 
 export interface AiPluginResponse {
     id: string;

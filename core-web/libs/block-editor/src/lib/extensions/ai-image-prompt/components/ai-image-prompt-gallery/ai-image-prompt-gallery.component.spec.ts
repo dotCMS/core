@@ -4,11 +4,10 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { Galleria, GalleriaModule } from 'primeng/galleria';
 
+import { DotGeneratedAIImage } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent } from '@dotcms/ui';
 
 import { AiImagePromptGalleryComponent } from './ai-image-prompt-gallery.component';
-
-import { DotGeneratedAIImage } from '../../../../shared/services/dot-ai/dot-ai.models';
 
 describe('AiImagePromptGalleryComponent', () => {
     let spectator: Spectator<AiImagePromptGalleryComponent>;

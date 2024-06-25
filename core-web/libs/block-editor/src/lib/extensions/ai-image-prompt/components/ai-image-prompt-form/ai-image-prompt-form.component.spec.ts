@@ -6,15 +6,10 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotAIImageOrientation, DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { AiImagePromptFormComponent } from './ai-image-prompt-form.component';
-
-import {
-    DotAIImageOrientation,
-    DotGeneratedAIImage
-} from '../../../../shared/services/dot-ai/dot-ai.models';
-import { PromptType } from '../../ai-image-prompt.models';
 
 describe('AiImagePromptFormComponent', () => {
     let spectator: Spectator<AiImagePromptFormComponent>;
