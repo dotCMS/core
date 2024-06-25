@@ -5,6 +5,7 @@ import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.ContentToStringUtil;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.beans.Host;
@@ -18,7 +19,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -205,14 +205,9 @@ public class SearchResource {
                                     user,
                                     true);
 
-        if (!UtilMethods.isSet(contentlet)) {
+        if (!UtilMethods.isSet(contentlet) || UtilMethods.isEmpty(contentlet::getIdentifier)) {
             Logger.warn(this.getClass(), getFailMessage(identifier, inode, language));
-            return Response.status(404).build();
-        }
-
-        if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
-            Logger.warn(this.getClass(), getFailMessage(identifier, inode, language));
-            return Response.status(404).build();
+            throw new NotFoundInDbException("contentlet not found");
         }
 
         final Field fieldToTry = contentlet.getContentType().fieldMap().get(fieldVar);
@@ -225,7 +220,7 @@ public class SearchResource {
             Logger.warn(
                     this.getClass(),
                     "unable to find matching content for id:" + identifier + " inode:" + inode + " language:" + language);
-            return Response.status(404).build();
+            throw new NotFoundInDbException("content not found");
         }
 
         final EmbeddingsDTO searcher = new EmbeddingsDTO.Builder()

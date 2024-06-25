@@ -1119,7 +1119,7 @@
 									"const jsonData = pm.response.json();",
 									"",
 									"pm.test('Error message is returned', function () {",
-									"    pm.expect(jsonData.message).equals('query/prompt cannot be null')",
+									"    pm.expect(jsonData.message).equals('query/prompt cannot be null');",
 									"});",
 									""
 								],
@@ -1854,7 +1854,13 @@
 									"pm.test('Status code should be ok 404', function () {",
 									"    pm.response.to.have.status(404);",
 									"});",
-									""
+									"",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.message).equals('contentlet not found');",
+									"});"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -1928,6 +1934,12 @@
 								"exec": [
 									"pm.test('Status code should be ok 404', function () {",
 									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test('Error message is returned', function () {",
+									"    pm.expect(jsonData.message).equals('content not found');",
 									"});",
 									""
 								],
