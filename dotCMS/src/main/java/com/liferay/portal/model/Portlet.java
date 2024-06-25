@@ -24,12 +24,14 @@ import java.util.Set;
 public class Portlet extends PortletModel {
 
   private static final long serialVersionUID = 1L;
+
+  protected transient Map<String, String> initParams;
   protected String portletId;
-  protected Map<String, String> initParams;
-  protected String portletClass, portletSource;
+  protected String portletClass;
+  protected String portletSource;
 
   public static final String MAINTENANCE = "maintenance";
-    public static final String DATA_VIEW_MODE_KEY = "dataViewMode";
+  public static final String DATA_VIEW_MODE_KEY = "dataViewMode";
 
   @Deprecated
   public Portlet(PortletPK pk) {

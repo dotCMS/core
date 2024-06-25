@@ -60,6 +60,8 @@ public class PortletResource implements Serializable {
     private final WebResource webResource;
     private final PortletAPI portletApi;
 
+    private static final String JSON_RESPONSE_PORTLET_ATTR = "portlet";
+
     /**
      * Default class constructor.
      */
@@ -117,7 +119,7 @@ public class PortletResource implements Serializable {
             final Portlet newPortlet = APILocator.getPortletAPI()
                     .savePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
-            return Response.ok(new ResponseEntityView<>(Map.of("portlet", newPortlet.getPortletId()))).build();
+            return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, newPortlet.getPortletId()))).build();
         } catch (final Exception e) {
             Logger.error(this, String.format("An error occurred when saving new Portlet with ID " +
                     "'%s': %s", portletId, ExceptionUtil.getErrorMessage(e)), e);
@@ -165,7 +167,7 @@ public class PortletResource implements Serializable {
             final Portlet newPortlet = APILocator.getPortletAPI()
                     .savePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
-            return Response.ok(new ResponseEntityView(Map.of("portlet", newPortlet.getPortletId()))).build();
+            return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, newPortlet.getPortletId()))).build();
 
         } catch (Exception e) {
             response = ResponseUtil.mapExceptionResponse(e);
@@ -250,8 +252,8 @@ public class PortletResource implements Serializable {
 
         layoutAPI.setPortletIdsToLayout(layout, portletIds);
 
-        return Response.ok(new ResponseEntityView(
-                        Map.of("portlet", portlet.getPortletId(), "layout", layout.getId())))
+        return Response.ok(new ResponseEntityView<>(
+                        Map.of(JSON_RESPONSE_PORTLET_ATTR, portlet.getPortletId(), "layout", layout.getId())))
                 .build();
 
     }

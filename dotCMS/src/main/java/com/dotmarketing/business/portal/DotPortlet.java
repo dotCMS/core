@@ -22,7 +22,7 @@ import java.util.Map;
 public class DotPortlet extends Portlet {
 
     @XmlElement(name = "init-param")
-    private List<InitParam> initParams;
+    private transient List<InitParam> initParamsAsList;
 
     /**
      * Default class constructor, required by JAXB.
@@ -52,12 +52,13 @@ public class DotPortlet extends Portlet {
      */
   public DotPortlet(String portletId,  String portletClass, Map<String, String> initParams) {
     super(portletId, portletClass, initParams);
-        this.initParams = new ArrayList<>();
+        this.initParamsAsList = new ArrayList<>();
         for (Map.Entry<String, String> entry : initParams.entrySet()) {
-            this.initParams.add(new InitParam(entry.getKey(), entry.getValue()));
+            this.initParamsAsList.add(new InitParam(entry.getKey(), entry.getValue()));
         }
     }
 
+    @Override
     @XmlElement(name = "portlet-name")
     public String getPortletId() {
         return portletId;
@@ -67,6 +68,7 @@ public class DotPortlet extends Portlet {
         super.portletId = portletId;
     }
 
+    @Override
     @XmlElement(name = "portlet-class")
     public String getPortletClass() {
         return portletClass;
@@ -78,7 +80,7 @@ public class DotPortlet extends Portlet {
 
     @XmlElement(name = "init-param")
     public List<InitParam> getInitParamList() {
-        return initParams;
+        return this.initParamsAsList;
     }
 
     /**
@@ -90,26 +92,13 @@ public class DotPortlet extends Portlet {
      */
     @Override
     public Map<String, String> getInitParams() {
-        /*final Map<String, String> initParamsMap = new HashMap<>();
-        if (UtilMethods.isSet(this.initParams)) {
-            for (final InitParam initParam : this.initParams) {
-                initParamsMap.put(initParam.getName(), initParam.getValue());
-            }
-        } else {
-            return super.getInitParams();
-        }
-        return initParamsMap;*/
-        if (UtilMethods.isSet(this.initParams)) {
-            for (final InitParam initParam : this.initParams) {
+        if (UtilMethods.isSet(this.initParamsAsList)) {
+            for (final InitParam initParam : this.initParamsAsList) {
                 super.initParams.put(initParam.getName(), initParam.getValue());
             }
         }
         return super.getInitParams();
     }
-
-    /*public void setInitParams(List<InitParam> initParams) {
-        throw new DotStateException("not supported");
-    }*/
 
     @Override
     public String toString() {
@@ -117,7 +106,7 @@ public class DotPortlet extends Portlet {
                 " portletId='" + this.portletId + '\'' +
                 ", portletClass='" + this.portletClass + '\'' +
                 ", portletSource='" + this.portletSource + '\'' +
-                ", initParams=" + this.initParams +
+                ", initParamsAsList=" + this.initParamsAsList +
                 '}';
     }
 

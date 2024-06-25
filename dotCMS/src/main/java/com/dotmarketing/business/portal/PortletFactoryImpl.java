@@ -338,7 +338,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
    */
   private static class JaxbContext {
 
-    final JAXBContext jaxbContext;
+    final JAXBContext jaxbContextObj;
     final Unmarshaller unmarshaller;
     final Marshaller marshaller;
 
@@ -349,11 +349,11 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
      *
      * @throws JAXBException An error occurred while creating the JAXB context.
      */
-    public JaxbContext(Class<?> clazz) throws JAXBException {
-      this.jaxbContext = JAXBContext.newInstance(clazz);
-      this.marshaller = jaxbContext.createMarshaller();
+    public JaxbContext(final Class<?> clazz) throws JAXBException {
+      this.jaxbContextObj = JAXBContext.newInstance(clazz);
+      this.marshaller = jaxbContextObj.createMarshaller();
       this.marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-      this.unmarshaller = jaxbContext.createUnmarshaller();
+      this.unmarshaller = jaxbContextObj.createUnmarshaller();
     }
 
     /**
