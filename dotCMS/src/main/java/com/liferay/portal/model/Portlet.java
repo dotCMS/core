@@ -1,23 +1,32 @@
 package com.liferay.portal.model;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.PortletPK;
 import com.liferay.portlet.ConcretePortletWrapper;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+/**
+ * This class represents a portlet in the dotCMS administration portal, i.e.; the back-end.
+ * <p>In dotCMS, a portlet is a page that you can access when you log into the back-end. It allows
+ * you to visualize and/or interact with information in your content repository. For instance,
+ * the Site Browser, the Content Search, and the Maintenance page are examples of portlets.
+ * Developers can create their own custom portlets as well, if required.</p>
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class Portlet extends PortletModel {
 
   private static final long serialVersionUID = 1L;
-  private final String portletId;
-  private final Map<String, String> initParams;
-  private final String portletClass, portletSource;
+  protected String portletId;
+  protected Map<String, String> initParams;
+  protected String portletClass, portletSource;
 
   public static final String MAINTENANCE = "maintenance";
     public static final String DATA_VIEW_MODE_KEY = "dataViewMode";

@@ -1,14 +1,147 @@
 {
 	"info": {
-		"_postman_id": "55fd5caa-08b8-474e-82bf-f181bd7df8b1",
+		"_postman_id": "643ee95c-85a5-40d7-9479-0f04474a0d8f",
 		"name": "PortletResource",
-		"description": "Contains test for portlet resources",
-		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
-		"_exporter_id": "27636414"
+		"description": "This folder contains a comprehensive set of API requests related to the `PortletResource` API endpoints. These requests cover various operations such as creating, retrieving and updating Portlets. The folder is organized to help developers and testers efficiently validate and interact with the exposed resource endpoints.\n\nThis test suite verifies that Portlets can be created, retrieved, updated, and deleted correctly. It verifies that such Portlets can be added to the main menu layout, and checks access permission for Users. Also, it correctly validates non-existing Portlets and Menu Layouts.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
-			"name": "GetCreateContentURL",
+			"name": "Checking Portlet Data",
+			"item": [
+				{
+					"name": "Create a Custom Portlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData.entity.portlet).to.eql(\"c_myCustom\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"dataViewMode\": \"card\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/custom",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"custom"
+							]
+						},
+						"description": "This test creates a custom content portlet for CONTENT base type"
+					},
+					"response": []
+				},
+				{
+					"name": "Retrieve an existing Portlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData.entity.response.portletId).to.eql(\"c_myCustom\");",
+									"    pm.expect(jsonData.entity.response.initParams.dataViewMode).to.eql(\"card\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/c_myCustom",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"c_myCustom"
+							]
+						},
+						"description": "Retrieves portlet details based on its Velocity Variable Name."
+					},
+					"response": []
+				},
+				{
+					"name": "Retrieve a non-existing Portlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/nonExisingPortlet",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"nonExisingPortlet"
+							]
+						},
+						"description": "Expects a 404 out of an invalid portlet ID."
+					},
+					"response": []
+				}
+			],
+			"description": "Checks that creating a Portlet returns the expected information, or an error code if an existing Portlet ID is being passed down."
+		},
+		{
+			"name": "Generating the Portlet Action URL",
 			"item": [
 				{
 					"name": "Get calendarEvent success",
@@ -27,22 +160,27 @@
 									"    pm.expect(jsonData).to.include(\"edit_event\")",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": {
-								"password": "admin",
-								"username": "admin@dotcms.com",
-								"showPassword": false
-							}
-						},
 						"method": "GET",
 						"header": [],
-						"url": "{{serverURL}}/api/v1/portlet/_actionurl/calendarEvent",
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/calendarEvent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"_actionurl",
+								"calendarEvent"
+							]
+						},
 						"description": "Test get portlet operation for calendar-Event"
 					},
 					"response": []
@@ -64,22 +202,27 @@
 									"    pm.expect(jsonData).to.include(\"edit_contentlet\")",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": {
-								"password": "admin",
-								"username": "admin@dotcms.com",
-								"showPassword": false
-							}
-						},
 						"method": "GET",
 						"header": [],
-						"url": "{{serverURL}}/api/v1/portlet/_actionurl/webpagecontent"
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/webpagecontent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"_actionurl",
+								"webpagecontent"
+							]
+						}
 					},
 					"response": []
 				},
@@ -100,22 +243,27 @@
 									"    pm.expect(jsonData).to.include(\"edit_contentlet\")",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": {
-								"password": "admin",
-								"username": "admin@dotcms.com",
-								"showPassword": false
-							}
-						},
 						"method": "GET",
 						"header": [],
-						"url": "{{serverURL}}/api/v1/portlet/_actionurl/WeBpAGecONTEnt",
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/WeBpAGecONTEnt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"_actionurl",
+								"WeBpAGecONTEnt"
+							]
+						},
 						"description": "get the create content url sending the contentType variable name using mixed case"
 					},
 					"response": []
@@ -131,22 +279,27 @@
 									"    pm.response.to.have.status(404);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": {
-								"password": "admin",
-								"username": "admin@dotcms.com",
-								"showPassword": false
-							}
-						},
 						"method": "GET",
 						"header": [],
-						"url": "{{serverURL}}/api/v1/portlet/_actionurl/contentTypeNotExist",
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/contentTypeNotExist",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"_actionurl",
+								"contentTypeNotExist"
+							]
+						},
 						"description": "Test that when we hit a non existing cotnent-type we get the appropriate 404"
 					},
 					"response": []
@@ -162,14 +315,28 @@
 									"    pm.response.to.have.status(200);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "GET",
 						"header": [],
-						"url": "{{serverURL}}/api/v1/logout"
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
 					},
 					"response": []
 				},
@@ -194,15 +361,27 @@
 						},
 						"method": "GET",
 						"header": [],
-						"url": "{{serverURL}}/api/v1/portlet/_actionurl/webpagecontent"
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/_actionurl/webpagecontent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"_actionurl",
+								"webpagecontent"
+							]
+						}
 					},
 					"response": []
 				}
 			],
-			"description": "Tests for the getCreateContentUrl endpoint"
+			"description": "This suite verifies that the `{{serverURL}}/api/v1/portlet/_actionurl/{{contentTypeVarName}}` works as expected.\n\nIt returns the Action URL used by the legacy Liferay layer to render a Portlet inside dotCMS. It includes several query String parameters such as IDs for the language, Content Type, Struts Actions, and so on."
 		},
 		{
-			"name": "Test Update Custom Content Portlet",
+			"name": "Updating a Custom Portlet",
 			"item": [
 				{
 					"name": "Create new custom portlet",
@@ -224,13 +403,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": {
-								"password": "admin",
-								"username": "admin@dotcms.com"
-							}
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -242,13 +414,24 @@
 								}
 							}
 						},
-						"url": "{{serverURL}}/api/v1/portlet/custom",
-						"description": "New Site to test find subfolders by path"
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/custom",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"custom"
+							]
+						},
+						"description": "Creates a Custom Portlet that visualizes Generic Content contentlets."
 					},
 					"response": []
 				},
 				{
-					"name": "Try to create custom portlet with same id shoud fail",
+					"name": "Create custom Portlet with an existing ID",
 					"event": [
 						{
 							"listen": "test",
@@ -266,13 +449,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": {
-								"password": "admin",
-								"username": "admin@dotcms.com"
-							}
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -284,8 +460,19 @@
 								}
 							}
 						},
-						"url": "{{serverURL}}/api/v1/portlet/custom",
-						"description": "New Site to test find subfolders by path"
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/custom",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"custom"
+							]
+						},
+						"description": "Expects a 404 because the new Portlet uses an existing ID."
 					},
 					"response": []
 				},
@@ -316,17 +503,21 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": {
-								"password": "admin",
-								"username": "admin@dotcms.com"
-							}
-						},
 						"method": "GET",
 						"header": [],
-						"url": "{{serverURL}}/api/v1/portlet/{{portletId}}",
-						"description": "Retrieves portlet details given its id"
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/{{portletId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"{{portletId}}"
+							]
+						},
+						"description": "Retrieves portlet details given its ID to compare them after an update."
 					},
 					"response": []
 				},
@@ -349,13 +540,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": {
-								"password": "admin",
-								"username": "admin@dotcms.com"
-							}
-						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -367,8 +551,19 @@
 								}
 							}
 						},
-						"url": "{{serverURL}}/api/v1/portlet/custom",
-						"description": "New Site to test find subfolders by path"
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/custom",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"custom"
+							]
+						},
+						"description": "Updates the existing Portled data."
 					},
 					"response": []
 				},
@@ -399,378 +594,321 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": {
-								"password": "admin",
-								"username": "admin@dotcms.com"
-							}
-						},
 						"method": "GET",
 						"header": [],
-						"url": "{{serverURL}}/api/v1/portlet/{{portletId}}",
-						"description": "Retrieves portlet details given its id"
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/{{portletId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"{{portletId}}"
+							]
+						},
+						"description": "Checks the updated information in the Portlet data."
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "Verifies that the `{{serverURL}}/api/v1/portlet/custom` endpoint is working as expected."
 		},
 		{
-			"name": "doesUserHaveAccessToPortlet",
-			"event": [
+			"name": "Portlet Permissions/Limitations",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"",
-							"    var jsonData = pm.response.json();",
-							"    console.log(jsonData);",
-							"",
-							"    pm.expect(jsonData.entity.response).to.eql(true);",
-							"});",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": {
-						"password": "admin",
-						"username": "admin@dotcms.com"
-					}
-				},
-				"method": "GET",
-				"header": [],
-				"url": "{{serverURL}}/api/v1/portlet/permissions/_doesuserhaveaccess",
-				"description": "Returns boolean indicating if a user has permissions to access a portlet given the portlet id"
-			},
-			"response": []
-		},
-		{
-			"name": "Create Custom Content Portlet restricted Content-type",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
-							"",
-							"    var jsonData = pm.response.json();",
-							"",
-							"    pm.expect(jsonData.message).to.eql(\"Invalid attempt to create Portlet for restricted Content Type Host. \");",
-							"});",
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": {
-						"password": "admin",
-						"username": "admin@dotcms.com"
-					}
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"contentTypes\": \"Host\",\n    \"dataViewMode\": \"card\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+					"name": "Check that logged-in user has access to \"Permissions\" portlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData.entity.response).to.eql(true);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
-					}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/permissions/_doesuserhaveaccess",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"permissions",
+								"_doesuserhaveaccess"
+							]
+						},
+						"description": "Returns boolean indicating if a user has permissions to access a portlet given the portlet id"
+					},
+					"response": []
 				},
-				"url": "{{serverURL}}/api/v1/portlet/custom",
-				"description": "This test  attempts to create a custom content portlet for The Restricted Content type Host"
-			},
-			"response": []
-		},
-		{
-			"name": "createCustomContentPortlet",
-			"event": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"",
-							"    var jsonData = pm.response.json();",
-							"    console.log(jsonData);",
-							"",
-							"    pm.expect(jsonData.entity.portlet).to.eql(\"c_myCustom\");",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": {
-						"password": "admin",
-						"username": "admin@dotcms.com"
-					}
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"dataViewMode\": \"card\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+					"name": "Create Custom Content Portlet restricted Content-type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.message).to.eql(\"Invalid attempt to create Portlet for restricted Content Type Host. \");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
-					}
-				},
-				"url": "{{serverURL}}/api/v1/portlet/custom",
-				"description": "This test creates a custom content portlet for CONTENT base type"
-			},
-			"response": []
-		},
-		{
-			"name": "getPortlet",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"",
-							"    var jsonData = pm.response.json();",
-							"    console.log(jsonData);",
-							"",
-							"    pm.expect(jsonData.entity.response.portletId).to.eql(\"c_myCustom\");",
-							"    pm.expect(jsonData.entity.response.initParams.dataViewMode).to.eql(\"card\");",
-							"});"
-						],
-						"type": "text/javascript"
-					}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"contentTypes\": \"Host\",\n    \"dataViewMode\": \"card\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/custom",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"custom"
+							]
+						},
+						"description": "This test attempts to create a custom content portlet for the Restricted Content type Host"
+					},
+					"response": []
 				}
 			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": {
-						"password": "admin",
-						"username": "admin@dotcms.com"
-					}
-				},
-				"method": "GET",
-				"header": [],
-				"url": "{{serverURL}}/api/v1/portlet/c_myCustom",
-				"description": "Retrieves portlet details given its id"
-			},
-			"response": []
+			"description": "Checks situations in which a Custom Portlet cannot be created, or User permissions are required."
 		},
 		{
-			"name": "getPortlet Expect 404",
-			"event": [
+			"name": "Portlets and the Menu Layout",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 404\", function () {",
-							"    pm.response.to.have.status(404);",
-							"",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": {
-						"password": "admin",
-						"username": "admin@dotcms.com"
-					}
-				},
-				"method": "GET",
-				"header": [],
-				"url": "{{serverURL}}/api/v1/portlet/nonExisingPortlet",
-				"description": "expect a 404 out of a non valid portlet identifier"
-			},
-			"response": []
-		},
-		{
-			"name": "getLayouts",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"",
-							"    var jsonData = pm.response.json();",
-							"    console.log(jsonData);",
-							"    pm.collectionVariables.set(\"firstReturnedLayout\", jsonData.entity[0].id);",
-							"    ",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": {
-						"password": "admin",
-						"username": "admin@dotcms.com"
-					}
-				},
-				"method": "GET",
-				"header": [],
-				"url": "{{serverURL}}/api/v1/menu",
-				"description": "Retrieves menu structure"
-			},
-			"response": []
-		},
-		{
-			"name": "addCustomContentPortletToLayout",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"",
-							"    var jsonData = pm.response.json();",
-							"    console.log(jsonData);",
-							"",
-							"    pm.expect(jsonData.entity.portlet).to.eql(\"c_myCustom\");",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": {
-						"password": "admin",
-						"username": "admin@dotcms.com"
-					}
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
+					"name": "Retrieve the Main Menu Layout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"    pm.collectionVariables.set(\"firstReturnedLayout\", jsonData.entity[0].id);",
+									"    ",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
-					}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/menu",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"menu"
+							]
+						},
+						"description": "Retrieves main menu structure Users see when logging into the dotCMS back-end."
+					},
+					"response": []
 				},
-				"url": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/{{firstReturnedLayout}}",
-				"description": "This test creates a custom content portlet for CONTENT base type"
-			},
-			"response": []
-		},
-		{
-			"name": "addCustomContentPortletToLayout Invalid Custom  Expect 404",
-			"event": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 404\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
+					"name": "Add Custom Portlet to Menu Layout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData.entity.portlet).to.eql(\"c_myCustom\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/{{firstReturnedLayout}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"custom",
+								"c_myCustom",
+								"_addtolayout",
+								"{{firstReturnedLayout}}"
+							]
+						},
+						"description": "Adds the previously created Portlet into the first group of the Menu Layout."
+					},
+					"response": []
+				},
+				{
+					"name": "Add non-existing Custom Portlet to Menu Layout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"dataViewMode\": \"card\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/custom/nonValidId/_addtolayout/{{firstReturnedLayout}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"custom",
+								"nonValidId",
+								"_addtolayout",
+								"{{firstReturnedLayout}}"
+							]
+						},
+						"description": "Expects a 404 because the Portlet ID doesn't exist."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Custom Portlet to non-existing Menu Layout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"dataViewMode\": \"card\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/nonValidLayout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"portlet",
+								"custom",
+								"c_myCustom",
+								"_addtolayout",
+								"nonValidLayout"
+							]
+						},
+						"description": "Expects a 404 because the Menu Layout doesn't exist."
+					},
+					"response": []
 				}
 			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": {
-						"password": "admin",
-						"username": "admin@dotcms.com"
-					}
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"dataViewMode\": \"card\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": "{{serverURL}}/api/v1/portlet/custom/nonValidId/_addtolayout/{{firstReturnedLayout}}",
-				"description": "add a Custom Content portlet To a layout Invalid Custom Expect 404. Because of one of the params is inexistent"
-			},
-			"response": []
+			"description": "Verifies that the interaction between new Portlets and the Menu Layout is working as expected. That is, this suite checks that adding Custom Portlets to the Tool Groups in the main menu in the dotCMS back-end is working properly."
 		},
 		{
-			"name": "addCustomContentPortletToLayout Invalid Layout  Expect 404",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 404\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": {
-						"password": "admin",
-						"username": "admin@dotcms.com"
-					}
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"dataViewMode\": \"card\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": "{{serverURL}}/api/v1/portlet/custom/c_myCustom/_addtolayout/nonValidLayout",
-				"description": "add Custom Content portlet To Layout an Invalid Layout is passed Expect 404"
-			},
-			"response": []
-		},
-		{
-			"name": "deleteCustomPortlet",
+			"name": "Delete the Custom Portlet",
 			"event": [
 				{
 					"listen": "test",
@@ -785,26 +923,42 @@
 							"    pm.expect(jsonData.entity.message).to.eql(\"c_myCustom deleted\");",
 							"});"
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": {
-						"password": "admin",
-						"username": "admin@dotcms.com"
-					}
-				},
 				"method": "DELETE",
 				"header": [],
-				"url": "{{serverURL}}/api/v1/portlet/custom/c_myCustom",
-				"description": "Deletes a custom content portlet"
+				"url": {
+					"raw": "{{serverURL}}/api/v1/portlet/custom/c_myCustom",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"portlet",
+						"custom",
+						"c_myCustom"
+					]
+				},
+				"description": "Deletes the custom content portlet."
 			},
 			"response": []
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
 	"event": [
 		{
 			"listen": "prerequest",
@@ -812,7 +966,49 @@
 				"type": "text/javascript",
 				"packages": {},
 				"exec": [
-					"pm.collectionVariables.set(\"timeMilis\", Date.now());"
+					"pm.collectionVariables.set(\"timeMilis\", Date.now());",
+					"",
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}",
+					""
 				]
 			}
 		},
@@ -825,20 +1021,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "firstReturnedLayout",
-			"value": ""
-		},
-		{
-			"key": "timeMilis",
-			"value": ""
-		},
-		{
-			"key": "portletId",
-			"value": ""
 		}
 	]
 }
