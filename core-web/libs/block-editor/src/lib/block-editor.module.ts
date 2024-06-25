@@ -14,7 +14,8 @@ import {
     DotLanguagesService,
     DotMessageService,
     DotPropertiesService,
-    DotUploadFileService
+    DotUploadFileService,
+    DotAiService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
@@ -41,7 +42,7 @@ import {
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
-import { DotAiService, EditorDirective } from './shared';
+import { EditorDirective } from './shared';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
 

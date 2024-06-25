@@ -63,7 +63,7 @@
         <test.felix.undeployed.folder>felix/core/undeployed</test.felix.undeployed.folder>
         <test.felix.system.undeployed.folder>felix/system/undeployed</test.felix.system.undeployed.folder>
         <!-- <docker.platforms>linux/arm64,linux/amd64</docker.platforms>-->
-        <tomcat.redis-session-manager.version>1.1</tomcat.redis-session-manager.version>
+        <tomcat.redis-session-manager.version>1.2</tomcat.redis-session-manager.version>
         <commons-pool2.version>2.11.1</commons-pool2.version>
         <org.slfj4.version>1.7.36</org.slfj4.version>
         <jedis.version>4.4.6</jedis.version>
