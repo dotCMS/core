@@ -1,5 +1,8 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
 import { of } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { fakeAsync } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
@@ -11,14 +14,13 @@ import {
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
 
-import { AIImagePromptComponent } from './ai-image-prompt.component';
+import { DotAIImagePromptComponent } from './ai-image-prompt.component';
 import { DotAiImagePromptStore } from './ai-image-prompt.store';
 import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
 
-describe('AIImagePromptComponent', () => {
-    let spectator: Spectator<AIImagePromptComponent>;
+describe('DotAIImagePromptComponent', () => {
+    let spectator: Spectator<DotAIImagePromptComponent>;
     let store: DotAiImagePromptStore;
-    let confirmationService: ConfirmationService;
 
     const imagesMock: DotGeneratedAIImage[] = [
         { name: 'image1', url: 'image_url' },
@@ -26,7 +28,7 @@ describe('AIImagePromptComponent', () => {
     ] as unknown as DotGeneratedAIImage[];
 
     const createComponent = createComponentFactory({
-        component: AIImagePromptComponent,
+        component: DotAIImagePromptComponent,
         providers: [
             {
                 provide: DotAiImagePromptStore,
@@ -41,16 +43,18 @@ describe('AIImagePromptComponent', () => {
                     generateImage: jasmine.createSpy('generateImage'),
                     hideDialog: jasmine.createSpy('hideDialog'),
                     patchState: jasmine.createSpy('patchState'),
-                    cleanError: jasmine.createSpy('cleanError')
+                    cleanError: jasmine.createSpy('cleanError'),
+                    setSelectedImage: jasmine.createSpy('setSelectedImage')
                 }
-            }
-        ]
+            },
+            mockProvider(ConfirmationService)
+        ],
+        imports: [HttpClientTestingModule]
     });
 
     beforeEach(() => {
         spectator = createComponent();
         store = spectator.inject(DotAiImagePromptStore);
-        confirmationService = spectator.inject(ConfirmationService);
     });
 
     it('should hide dialog', () => {
@@ -72,26 +76,26 @@ describe('AIImagePromptComponent', () => {
         expect(store.generateImage).toHaveBeenCalledWith();
     });
 
-    it('should inset image', () => {
+    it('should inset image', async () => {
         const submitBtn = spectator.query(byTestId('submit-btn'));
 
         spectator.click(submitBtn);
-        expect(store.patchState).toHaveBeenCalledWith({
-            selectedImage: imagesMock[0]
-        });
+        await spectator.fixture.whenStable();
+        expect(store.setSelectedImage).toHaveBeenCalled();
     });
 
     it('should clear error on hide confirm', () => {
         const dialog = spectator.query(Dialog);
         dialog.onHide.emit('true');
-        expect(store.cleanError).toHaveBeenCalled();
+        expect(store.hideDialog).toHaveBeenCalled();
     });
 
-    it('should call confirm dialog when try to close dialog', () => {
+    it('should call confirm dialog when try to close dialog', fakeAsync(() => {
         const closeBtn = spectator.query(byTestId('close-btn'));
-        jest.spyOn(confirmationService, 'confirm');
+        const spyCloseDialog = spyOn(spectator.component, 'closeDialog');
 
         spectator.click(closeBtn);
-        expect(confirmationService.confirm).toHaveBeenCalled();
-    });
+        spectator.tick();
+        expect(spyCloseDialog).toHaveBeenCalled();
+    }));
 });

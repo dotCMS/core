@@ -29,7 +29,6 @@ import {
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
-    AIImagePromptComponent,
     BubbleFormComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
@@ -62,8 +61,6 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         UploadPlaceholderComponent,
         DotMessagePipe,
         ConfirmDialogModule,
-        AIImagePromptComponent,
-        AIImagePromptComponent,
         DotAssetSearchComponent,
         DialogModule,
         InputTextareaModule,

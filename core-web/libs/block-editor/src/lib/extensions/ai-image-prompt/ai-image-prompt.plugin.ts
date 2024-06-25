@@ -10,15 +10,15 @@ import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { AIImagePromptComponent } from '../ai-image-prompt.component';
-import { AI_IMAGE_PROMPT_PLUGIN_KEY } from '../ai-image-prompt.extension';
-import { DotAiImagePromptStore } from '../ai-image-prompt.store';
+import { DotAIImagePromptComponent, DotAiImagePromptStore } from '@dotcms/ui';
+
+import { AI_IMAGE_PROMPT_PLUGIN_KEY } from './ai-image-prompt.extension';
 
 interface AIImagePromptProps {
     pluginKey: PluginKey;
     editor: Editor;
     element: HTMLElement;
-    component: ComponentRef<AIImagePromptComponent>;
+    component: ComponentRef<DotAIImagePromptComponent>;
 }
 
 interface PluginState {
@@ -44,7 +44,7 @@ export class AIImagePromptView {
 
     public pluginKey: PluginKey;
 
-    public component: ComponentRef<AIImagePromptComponent>;
+    public component: ComponentRef<DotAIImagePromptComponent>;
 
     private destroy$ = new Subject<boolean>();
 
