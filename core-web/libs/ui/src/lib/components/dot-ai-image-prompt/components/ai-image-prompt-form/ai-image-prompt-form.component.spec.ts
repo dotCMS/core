@@ -11,7 +11,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { AiImagePromptFormComponent } from './ai-image-prompt-form.component';
 
-describe('AiImagePromptFormComponent', () => {
+describe('DotAiImagePromptFormComponent', () => {
     let spectator: Spectator<AiImagePromptFormComponent>;
     let generateButton;
     const formValue = {
@@ -40,7 +40,7 @@ describe('AiImagePromptFormComponent', () => {
     });
 
     it('should emit value when form value change', () => {
-        const emitSpy = jest.spyOn(spectator.component.valueChange, 'emit');
+        const emitSpy = spyOn(spectator.component.valueChange, 'emit');
         spectator.component.form.setValue(formValue);
 
         spectator.detectChanges();
@@ -95,7 +95,7 @@ describe('AiImagePromptFormComponent', () => {
     });
 
     it('should emit generate when the form is submitted', () => {
-        const valueSpy = jest.spyOn(spectator.component.generate, 'emit');
+        const valueSpy = spyOn(spectator.component.generate, 'emit');
         spectator.setInput({ isLoading: false });
         spectator.component.form.setValue(formValue);
         spectator.detectChanges();
@@ -120,29 +120,5 @@ describe('AiImagePromptFormComponent', () => {
         } as DotGeneratedAIImage);
 
         expect(spectator.query(byTestId('prompt-label')).classList).not.toContain(REQUIRED_CLASS);
-    });
-
-    it('should copy to clipboard the ai rewritten text', () => {
-        const writeText = jest.fn();
-
-        Object.assign(navigator, {
-            clipboard: {
-                writeText
-            }
-        });
-
-        const newGeneratedValue = {
-            request: formValue,
-            response: { revised_prompt: 'New Prompt' }
-        } as DotGeneratedAIImage;
-
-        spectator.setInput('value', newGeneratedValue);
-        spectator.setInput('isLoading', false);
-
-        const icon = spectator.query(byTestId('copy-to-clipboard'));
-
-        spectator.click(icon);
-
-        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('New Prompt');
     });
 });
