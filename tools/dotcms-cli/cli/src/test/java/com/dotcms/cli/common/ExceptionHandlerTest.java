@@ -11,6 +11,7 @@ import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotAllowedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
+import org.jboss.resteasy.reactive.common.jaxrs.ResponseImpl;
 import org.jboss.resteasy.specimpl.BuiltResponse;
 import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
@@ -49,39 +50,39 @@ class ExceptionHandlerTest {
         Assertions.assertTrue(handled instanceof WebApplicationException);
         // On recent versions of Quarkus, the custom message is set as the reason phrase of the response
         //WebApplications have an immutable message so we can't change it. 404 will always be Not Found etc...
-        BuiltResponse response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
+        ResponseImpl response = (ResponseImpl) ((WebApplicationException) handled).getResponse();
         //Therefore the custom message needs to be extracted from the response
-        Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(404)));
+        Assertions.assertTrue(response.getStatusInfo().getReasonPhrase().contains(config.messages().get(404)));
 
         BadRequestException badRequestException = new BadRequestException("LOL");
         handled = exceptionHandler.handle(badRequestException);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
-        Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(400)));
+        response = (ResponseImpl) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getStatusInfo().getReasonPhrase().contains(config.messages().get(400)));
 
         ForbiddenException forbiddenException = new ForbiddenException("LOL");
         handled = exceptionHandler.handle(forbiddenException);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
-        Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(403)));
+        response = (ResponseImpl) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getStatusInfo().getReasonPhrase().contains(config.messages().get(403)));
 
         WebApplicationException unauthorized = new WebApplicationException(401);
         handled = exceptionHandler.handle(unauthorized);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
-        Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(401)));
+        response = (ResponseImpl) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getStatusInfo().getReasonPhrase().contains(config.messages().get(401)));
 
         WebApplicationException internalServerError = new WebApplicationException(500);
         handled = exceptionHandler.handle(internalServerError);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
-        Assertions.assertTrue(response.getReasonPhrase().contains(config.messages().get(500)));
+        response = (ResponseImpl) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getStatusInfo().getReasonPhrase().contains(config.messages().get(500)));
 
         NotAllowedException moreNoise = new NotAllowedException("Not Allowed");
         handled = exceptionHandler.handle(moreNoise);
         Assertions.assertTrue(handled instanceof WebApplicationException);
-        response = (BuiltResponse) ((WebApplicationException) handled).getResponse();
-        Assertions.assertTrue(response.getReasonPhrase().contains(config.fallback()));
+        response = (ResponseImpl) ((WebApplicationException) handled).getResponse();
+        Assertions.assertTrue(response.getStatusInfo().getReasonPhrase().contains(config.fallback()));
 
     }
 
