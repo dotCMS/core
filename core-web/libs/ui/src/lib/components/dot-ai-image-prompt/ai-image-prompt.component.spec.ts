@@ -2,6 +2,7 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { fakeAsync } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
@@ -89,12 +90,12 @@ describe('DotAIImagePromptComponent', () => {
         expect(store.hideDialog).toHaveBeenCalled();
     });
 
-    it('should call confirm dialog when try to close dialog', async () => {
+    it('should call confirm dialog when try to close dialog', fakeAsync(() => {
         const closeBtn = spectator.query(byTestId('close-btn'));
         const spyCloseDialog = spyOn(spectator.component, 'closeDialog');
 
         spectator.click(closeBtn);
-        await spectator.fixture.whenStable();
+        spectator.tick();
         expect(spyCloseDialog).toHaveBeenCalled();
-    });
+    }));
 });
