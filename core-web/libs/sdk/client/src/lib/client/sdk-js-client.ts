@@ -123,13 +123,11 @@ type NavApiOptions = {
     languageId?: number;
 };
 
-function isValidUrl(url: string): boolean {
+function getHostURL(url: string): URL | undefined {
     try {
-        new URL(url);
-
-        return true;
+        return new URL(url);
     } catch (error) {
-        return false;
+        return;
     }
 }
 
@@ -161,7 +159,9 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'dotcmsUrl' is required");
         }
 
-        if (!isValidUrl(config.dotcmsUrl)) {
+        const dotcmsHost = getHostURL(config.dotcmsUrl);
+
+        if (!dotcmsHost) {
             throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
         }
 
@@ -169,7 +169,10 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'authToken' is required");
         }
 
-        this.config = config;
+        this.config = {
+            ...config,
+            dotcmsUrl: dotcmsHost.origin
+        };
 
         this.requestOptions = {
             ...this.config.requestOptions,
