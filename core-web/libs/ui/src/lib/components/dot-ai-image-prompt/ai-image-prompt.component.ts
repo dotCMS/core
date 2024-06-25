@@ -11,8 +11,8 @@ import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotMessagePipe } from './../../dot-message/dot-message.pipe';
 import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
 import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
 import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gallery/ai-image-prompt-gallery.component';
@@ -33,10 +33,9 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
         AiImagePromptGalleryComponent
     ],
     providers: [FormGroupDirective, ConfirmationService],
-
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AIImagePromptComponent {
+export class DotAIImagePromptComponent {
     protected readonly vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
     protected readonly ComponentStatus = ComponentStatus;
     private dotMessageService = inject(DotMessageService);
