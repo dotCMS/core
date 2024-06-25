@@ -61,7 +61,7 @@ const PORTLETS_ANGULAR: Route[] = [
             )
     },
     {
-        path: 'locales', // Will be changed to locales.
+        path: 'locales',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: {
