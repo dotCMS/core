@@ -687,7 +687,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"portletId\": \"myCustom\",\n    \"portletName\": \"myCustom\",\n    \"baseTypes\": \"CONTENT\",\n    \"contentTypes\": \"Host\",\n    \"dataViewMode\": \"card\"\n}",
+							"raw": "{\n    \"portletId\": \"myRestrictedType\",\n    \"portletName\": \"myRestrictedType\",\n    \"baseTypes\": \"CONTENT\",\n    \"contentTypes\": \"Host\",\n    \"dataViewMode\": \"card\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
