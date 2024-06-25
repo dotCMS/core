@@ -26,4 +26,6 @@ export type GenericContentlet = {
   url: string;
   urlTitle?: string;
   image: string;
+  widgetTitle?: string;
+  onNumberOfPages?: number;
 };
