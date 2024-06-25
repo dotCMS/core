@@ -8631,7 +8631,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .velocityVarName(keyPropName)
                 .contentTypeId(contentType.id())
                 .type(TextAreaField.class)
-                .nextPersisted()
+                .nextPersisted();
 
         ContentTypeDataGen.addField(field);
 
