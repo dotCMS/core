@@ -7,8 +7,9 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAIImageOrientation, DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotCopyButtonComponent } from './../../../../components/dot-copy-button/dot-copy-button.component';
+import { DotMessagePipe } from './../../../../dot-message/dot-message.pipe';
 import { AiImagePromptFormComponent } from './ai-image-prompt-form.component';
 
 describe('DotAiImagePromptFormComponent', () => {
@@ -120,5 +121,23 @@ describe('DotAiImagePromptFormComponent', () => {
         } as DotGeneratedAIImage);
 
         expect(spectator.query(byTestId('prompt-label')).classList).not.toContain(REQUIRED_CLASS);
+    });
+
+    it('should copy to clipboard the ai rewritten text', () => {
+        const newGeneratedValue = {
+            request: formValue,
+            response: { revised_prompt: 'New Prompt' }
+        } as DotGeneratedAIImage;
+
+        spectator.setInput('value', newGeneratedValue);
+        spectator.setInput('isLoading', false);
+
+        const icon = spectator.query(byTestId('copy-to-clipboard'));
+
+        const btnCopy = spectator.query(DotCopyButtonComponent);
+        const spyCopy = spyOn(btnCopy, 'copyUrlToClipboard');
+        spectator.click(icon);
+
+        expect(spyCopy).toHaveBeenCalled();
     });
 });
