@@ -14,13 +14,10 @@ import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.WebResource;
-import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -56,25 +53,6 @@ public class ContentTypeHelper implements Serializable {
     public static ContentTypeHelper getInstance() {
 
         return ContentTypeHelper.SingletonHolder.INSTANCE;
-    }
-
-    private final WebResource webResource;
-    private final StructureAPI structureAPI;
-    private final ContentTypeUtil contentTypeUtil;
-
-    public ContentTypeHelper() {
-        this(new WebResource(),
-                APILocator.getStructureAPI(),
-                ContentTypeUtil.getInstance());
-    }
-
-    @VisibleForTesting
-    protected ContentTypeHelper(WebResource webResource,
-                                StructureAPI structureAPI,
-                                ContentTypeUtil contentTypeUtil) {
-        this.webResource = webResource;
-        this.structureAPI = structureAPI;
-        this.contentTypeUtil = contentTypeUtil;
     }
 
     /**
@@ -263,18 +241,16 @@ public class ContentTypeHelper implements Serializable {
                 throw new NotFoundInDbException(message);
             }
 
-            if (!existingContentType.id().equals(contentType.id())) {
+            if (!existingContentType.id().equals(contentType.id()) && (contentType.id() != null)) {
 
-                if (contentType.id() != null) {
-                    // We found a content type with the same variable but different id
-                    final var message = String.format(
-                            "Content Type to update with id [%s] not found, using existing "
-                                    + "Content Type with variable [%s] and id [%s] instead.",
-                            contentType.id(), existingContentType.variable(),
-                            existingContentType.id()
-                    );
-                    Logger.warn(ContentTypeHelper.class, message);
-                }
+                // We found a content type with the same variable but different id
+                final var message = String.format(
+                        "Content Type to update with id [%s] not found, using existing "
+                                + "Content Type with variable [%s] and id [%s] instead.",
+                        contentType.id(), existingContentType.variable(),
+                        existingContentType.id()
+                );
+                Logger.warn(ContentTypeHelper.class, message);
             }
 
             return existingContentType.id();
@@ -434,7 +410,8 @@ public class ContentTypeHelper implements Serializable {
      * @throws DotDataException
      * @throws LanguageException
      */
-    public List<BaseContentTypesView> getTypes(HttpServletRequest request ) throws DotDataException, LanguageException {
+    public List<BaseContentTypesView> getTypes(HttpServletRequest request)
+            throws LanguageException {
         List<BaseContentTypesView> result = list();
 
         Locale locale = LocaleUtil.getLocale(request);
@@ -476,10 +453,6 @@ public class ContentTypeHelper implements Serializable {
     @VisibleForTesting
     boolean isStandardOrEnterprise() {
         return LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level;
-    }
-
-    public long getContentTypesCount(String condition) throws DotDataException {
-        return this.structureAPI.countStructures(condition);
     }
 
     /**

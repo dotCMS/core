@@ -305,7 +305,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
         for (Field f : this.fields()) {
             fmap.put(keyGenerator.apply(f), f);
         }
-        return ImmutableMap.copyOf(fmap);
+        return Map.copyOf(fmap);
     }
 
   private List<Field> innerFields = null;
