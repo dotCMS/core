@@ -839,9 +839,14 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	 *  Default Implementation for {@link CategoryFactory#findAll(String)}
 	 * @param filter Value used to filter the Category by, returning only Categories that contain this value in their key, name, or variable name
 	 *
-	 * @return
+	 * @return A Collection of {@link Category} filtered by 'filter', if filter is null then it return the that
+	 * {@link CategoryFactoryImpl#findAll()}
 	 */
 	public List<Category> findAll(final String filter) throws DotDataException {
+
+		if ( !UtilMethods.isSet(filter) ) {
+			return findAll();
+		}
 
 		final DotConnect dc = new DotConnect()
 			.setSQL("SELECT * FROM category " +
@@ -849,11 +854,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
 					"LOWER(category.category_key) LIKE ?  OR " +
 					"LOWER(category.category_velocity_var_name) LIKE ?");
 
-		if ( UtilMethods.isSet(filter) ) {
-			dc.addObject("%" + filter.toLowerCase() + "%");
-			dc.addObject("%" + filter.toLowerCase() + "%");
-			dc.addObject("%" + filter.toLowerCase() + "%");
-		}
+		dc.addObject("%" + filter.toLowerCase() + "%");
+		dc.addObject("%" + filter.toLowerCase() + "%");
+		dc.addObject("%" + filter.toLowerCase() + "%");
 
 		List<Category> categories = convertForCategories(dc.loadObjectResults());
 		updateCache(categories);

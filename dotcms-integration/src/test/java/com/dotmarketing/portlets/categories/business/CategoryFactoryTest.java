@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.liferay.util.StringUtil;
@@ -372,6 +373,15 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .stream().map(Category::getInode).collect(Collectors.toList());
         assertEquals(categoriesExpected.size(), categories_2.size());
         assertTrue(categories_2.containsAll(categoriesExpected));
+    }
+
+    @Test
+    public void getAllCategoriesWithNullFilter() throws DotDataException {
+        new CategoryDataGen().nextPersisted();
+
+        final List<Category> categoriesWithFilter = FactoryLocator.getCategoryFactory().findAll(null);
+        final List<Category> categoriesWithoutFilter = FactoryLocator.getCategoryFactory().findAll();
+        assertTrue(Objects.deepEquals(categoriesWithoutFilter, categoriesWithFilter));
     }
 
 }
