@@ -359,8 +359,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .parent(childCategory_6)
                 .nextPersisted();
 
-        List<String> categoriesExpected = list(topLevelCategory_1, childCategory_1, childCategory_2, childCategory_3,
-                topLevelCategory_3, grandchildCategory_1).stream().map(Category::getInode).collect(Collectors.toList());
+        List<String> categoriesExpected = list(topLevelCategory_1, topLevelCategory_2, childCategory_1, childCategory_2,
+                childCategory_3, topLevelCategory_3, grandchildCategory_1).stream()
+                .map(Category::getInode).collect(Collectors.toList());
 
         final List<String> categories_1 = FactoryLocator.getCategoryFactory().findAll(stringToFilterBy.toUpperCase())
             .stream().map(Category::getInode).collect(Collectors.toList());
