@@ -5,8 +5,8 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.model.content.Contentlet;
 import com.dotcms.model.content.CreateContentRequest;
 import java.util.UUID;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class ContentsTestHelperService {
