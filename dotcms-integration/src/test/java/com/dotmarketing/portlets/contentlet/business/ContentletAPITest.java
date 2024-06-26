@@ -8607,7 +8607,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull(contentRetrieved);
         assertEquals(contentInode, contentRetrieved.getInode());
 
-        final Map keyValueRetrieved = (Map) contentRetrieved.get(keyValuePropName);
+        Object keyValueRetrieved = contentRetrieved.get(keyValuePropName);
+        if (keyValueRetrieved instanceof String) {
+            keyValueRetrieved = com.dotmarketing.portlets.structure.model.KeyValueFieldUtil
+                    .JSONValueToHashMap(keyValueRetrieved.toString());
+        }
         assertEquals(keyValueRetrieved, keyValueObj);
     }
 
