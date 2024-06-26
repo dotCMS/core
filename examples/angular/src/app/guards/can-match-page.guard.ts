@@ -15,7 +15,6 @@ export const canMatchPage: CanMatchFn = async (
     return true;
   }
 
-  
   const router = inject(Router);
   const client = inject(DOTCMS_CLIENT_TOKEN);
 

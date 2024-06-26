@@ -28,6 +28,8 @@ export const HOST = 'http://localhost:3000';
 
 export const EDIT_MODE = 'EDIT_MODE';
 
+export const LIVE = 'LIVE';
+
 export const WINDOW = new InjectionToken<Window>('WindowToken');
 
 export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';

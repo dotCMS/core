@@ -57,11 +57,10 @@ export function MyPage({ pageAsset, nav }) {
 
     return (
         <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
-            {pageAsset.layout.header && (
-                <Header>
-                    <Navigation items={nav} />
-                </Header>
-            )}
+            <Header>
+                <Navigation items={nav} />
+            </Header>
+
             <main className="container flex flex-col gap-8 m-auto">
                 <DotLayoutComponent
                     pageContext={{
@@ -71,7 +70,7 @@ export function MyPage({ pageAsset, nav }) {
                     config={{ onReload: refresh, pathname }}
                 />
             </main>
-            {pageAsset.layout.footer && <Footer />}
+            <Footer />
         </div>
     );
 }

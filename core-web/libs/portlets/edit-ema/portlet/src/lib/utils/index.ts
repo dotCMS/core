@@ -1,7 +1,7 @@
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, EDIT_MODE } from '../shared/consts';
+import { DEFAULT_PERSONA, LIVE } from '../shared/consts';
 import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
@@ -197,7 +197,7 @@ export function createPageApiUrlWithQueryParams(
         'com.dotmarketing.persona.id':
             params['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
         variantName: params.variantName ?? DEFAULT_VARIANT_ID,
-        mode: params.mode ?? EDIT_MODE
+        mode: params.mode ?? LIVE
     };
 
     // Filter out undefined values and url
