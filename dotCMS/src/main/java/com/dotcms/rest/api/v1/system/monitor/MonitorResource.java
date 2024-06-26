@@ -100,10 +100,10 @@ public class MonitorResource {
             return Response.status(FORBIDDEN).build();
         }
         //try this twice as it is an imperfect test
-        if(helper.isCacheHealthy(3000)) {
+        if(helper.isCacheHealthy()) {
             return Response.ok().build();
         }
-        if(helper.isCacheHealthy(3000)) {
+        if(helper.isCacheHealthy()) {
             return Response.ok().build();
         }
         
