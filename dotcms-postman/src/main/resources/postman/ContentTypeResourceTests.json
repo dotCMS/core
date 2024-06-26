@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "617b5d0d-55d0-48e0-9a41-23d6f364b41b",
+		"_postman_id": "6a8b5049-c7fd-42c0-8591-cbd3ee1424c1",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "31066048"
@@ -6662,7 +6662,7 @@
 												"contenttype"
 											]
 										},
-										"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+										"description": "Creates a content type without a content type id in the body."
 									},
 									"response": []
 								},
@@ -6700,7 +6700,7 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+										"description": "Searched for a content type by id validating the content type was created."
 									},
 									"response": []
 								},
@@ -6736,7 +6736,7 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+										"description": "Cleanup"
 									},
 									"response": []
 								}
@@ -6791,7 +6791,7 @@
 												"contenttype"
 											]
 										},
-										"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+										"description": "Creates a content type using in the body a non existing content type id."
 									},
 									"response": []
 								},
@@ -6829,7 +6829,7 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+										"description": "Searched for a content type by id validating the content type was created."
 									},
 									"response": []
 								},
@@ -6865,7 +6865,7 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+										"description": "Cleanup"
 									},
 									"response": []
 								}
@@ -6921,7 +6921,7 @@
 												"contenttype"
 											]
 										},
-										"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+										"description": "Simple content type creation to set up the test data."
 									},
 									"response": []
 								},
@@ -6959,12 +6959,167 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+										"description": "Searched for a content type by id validating the content type was created."
 									},
 									"response": []
 								},
 								{
-									"name": "Update Content Type with existing id",
+									"name": "Update Content Type without id in body and variable in body but existing id in path param",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response\", function () {",
+													"",
+													"    var contentTypeId = pm.collectionVariables.get(\"contentTypeId\");",
+													"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.entity.id).to.eql(contentTypeId);",
+													"    pm.expect(jsonData.entity.variable).to.eql(contentTypeVariable);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates a content type without an id and variable in the body but with a valid content type id as path param."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type without id in body and variable in body but existing variable in path param",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response\", function () {",
+													"",
+													"    var contentTypeId = pm.collectionVariables.get(\"contentTypeId\");",
+													"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.entity.id).to.eql(contentTypeId);",
+													"    pm.expect(jsonData.entity.variable).to.eql(contentTypeVariable);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeVariable}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeVariable}}"
+											]
+										},
+										"description": "Updates a content type without an id and variable in the body but with a valid content type id as path param."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type without id in body and variable in body and non existing id in path param",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be 404 Not found\", function () {",
+													"    pm.response.to.have.status(404);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/does-not-exist",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"does-not-exist"
+											]
+										},
+										"description": "Updates a content type without an id and variable in the body and without a valid content type id as path param."
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content Type with existing ids",
 									"event": [
 										{
 											"listen": "test",
@@ -7014,12 +7169,12 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+										"description": "Updates a content type with valid ids and variable name."
 									},
 									"response": []
 								},
 								{
-									"name": "Update Content Type with no existing id in body",
+									"name": "Update Content Type with existing id and variable in body but non existing id in path param",
 									"event": [
 										{
 											"listen": "test",
@@ -7049,7 +7204,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"does-not-exist\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -7057,7 +7212,7 @@
 											}
 										},
 										"url": {
-											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeVariable}}",
+											"raw": "{{serverURL}}/api/v1/contenttype/id/does-not-exist",
 											"host": [
 												"{{serverURL}}"
 											],
@@ -7066,65 +7221,10 @@
 												"v1",
 												"contenttype",
 												"id",
-												"{{contentTypeVariable}}"
+												"does-not-exist"
 											]
 										},
-										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
-									},
-									"response": []
-								},
-								{
-									"name": "Update Content Type without id in body",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test(\"Status code should be ok 200\", function () {",
-													"    pm.response.to.have.status(200);",
-													"});",
-													"",
-													"pm.test(\"Check response\", function () {",
-													"",
-													"    var contentTypeId = pm.collectionVariables.get(\"contentTypeId\");",
-													"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
-													"",
-													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.id).to.eql(contentTypeId);",
-													"    pm.expect(jsonData.entity.variable).to.eql(contentTypeVariable);",
-													"});"
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										}
-									],
-									"request": {
-										"method": "PUT",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeVariable}}",
-											"host": [
-												"{{serverURL}}"
-											],
-											"path": [
-												"api",
-												"v1",
-												"contenttype",
-												"id",
-												"{{contentTypeVariable}}"
-											]
-										},
-										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+										"description": "Updates a content type resolving the content type using the data in the body as the path param id does not exist."
 									},
 									"response": []
 								},
@@ -7179,7 +7279,7 @@
 												"does-not-exist"
 											]
 										},
-										"description": "Given a content type ID and a payload containing content type properties.  \nExpect that code is 200.  \nExpect content type is updated without issues.  \nExpect that the new properties (icon and sortOrder) are updated with the new values."
+										"description": "Updates a content type resolving the content type using the id and variable in the body as the path param id does not exist.  \nIn this test the id does not exist but the variable does."
 									},
 									"response": []
 								},
@@ -7234,7 +7334,7 @@
 												"does-not-exist"
 											]
 										},
-										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+										"description": "Updates a content type resolving the content type using variable in the body as the path param id does not exist.  \nIn this test the id in the body is not set, so the variable should be used."
 									},
 									"response": []
 								},
@@ -7277,7 +7377,7 @@
 											}
 										},
 										"url": {
-											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"raw": "{{serverURL}}/api/v1/contenttype/id/does-not-exist",
 											"host": [
 												"{{serverURL}}"
 											],
@@ -7286,15 +7386,15 @@
 												"v1",
 												"contenttype",
 												"id",
-												"{{contentTypeId}}"
+												"does-not-exist"
 											]
 										},
-										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+										"description": "Updates a content type resolving the content type using the id and variable in the body as the path param id does not exist.  \nIn this test the variable in the body does not exist."
 									},
 									"response": []
 								},
 								{
-									"name": "Update Content Type with not existing id and variable",
+									"name": "Update Content Type with not existing id and variable and path param",
 									"event": [
 										{
 											"listen": "test",
@@ -7322,7 +7422,7 @@
 											}
 										},
 										"url": {
-											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"raw": "{{serverURL}}/api/v1/contenttype/id/does-not-exist",
 											"host": [
 												"{{serverURL}}"
 											],
@@ -7331,7 +7431,7 @@
 												"v1",
 												"contenttype",
 												"id",
-												"{{contentTypeId}}"
+												"does-not-exist"
 											]
 										},
 										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
@@ -7370,11 +7470,12 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+										"description": "Cleanup"
 									},
 									"response": []
 								}
-							]
+							],
+							"description": "On this set of tests we are going to test multiple updates permutations."
 						}
 					],
 					"description": "In this folder we test different scenarios for handling the Content Type where we validate cases in order to not always rely on the Content Type ID."
@@ -7430,7 +7531,7 @@
 												"contenttype"
 											]
 										},
-										"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+										"description": "Creates a content type and field without a field id or content type id in the field."
 									},
 									"response": []
 								},
@@ -7468,7 +7569,7 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+										"description": "Validates the content type and field were created as expected."
 									},
 									"response": []
 								},
@@ -7504,15 +7605,15 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+										"description": "Cleanup."
 									},
 									"response": []
 								}
 							],
-							"description": "This test tries to create a content type and field without provide a content type field ID in the body, this is the most common escenario creating a content type."
+							"description": "This test tries to create a content type and field without provide a field ID in the body, this is the most common escenario creating a content type."
 						},
 						{
-							"name": "Creation with non existing id Copy",
+							"name": "Creation with non existing id",
 							"item": [
 								{
 									"name": "Create ContentType",
@@ -7562,7 +7663,7 @@
 												"contenttype"
 											]
 										},
-										"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+										"description": "Creates a field using a non existing field id."
 									},
 									"response": []
 								},
@@ -7610,7 +7711,7 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+										"description": "Validates the content type and field were created as expected."
 									},
 									"response": []
 								},
@@ -7646,7 +7747,7 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+										"description": "Cleanup"
 									},
 									"response": []
 								}
@@ -7690,7 +7791,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
 										},
 										"url": {
 											"raw": "{{serverURL}}/api/v1/contenttype",
@@ -7703,7 +7804,7 @@
 												"contenttype"
 											]
 										},
-										"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+										"description": "Simple creation to sep up the data for the update tests."
 									},
 									"response": []
 								},
@@ -7751,7 +7852,62 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+										"description": "Validates the content type and field were created as expected."
+									},
+									"response": []
+								},
+								{
+									"name": "Update field with no variable name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response\", function () {",
+													"",
+													"    var contentTypeField1Id = pm.collectionVariables.get(\"contentTypeField1Id\");",
+													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates the field with no variable name."
 									},
 									"response": []
 								},
@@ -7788,7 +7944,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t]\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -7808,7 +7964,62 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+										"description": "Updates the fields with no content type id in the fields."
+									},
+									"response": []
+								},
+								{
+									"name": "Update field with content type id",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Check response\", function () {",
+													"",
+													"    var contentTypeField1Id = pm.collectionVariables.get(\"contentTypeField1Id\");",
+													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
+													"",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeId}}"
+											]
+										},
+										"description": "Updates the fields with the content type id in the fields."
 									},
 									"response": []
 								},
@@ -7843,7 +8054,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t]\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -7863,7 +8074,7 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+										"description": "Updates a field using an existing field id."
 									},
 									"response": []
 								},
@@ -7898,7 +8109,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"does-not-exist\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"does-not-exist\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t]\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -7918,7 +8129,7 @@
 												"{{contentTypeVariable}}"
 											]
 										},
-										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+										"description": "Updates the field with a non existing field id but existing field variable name."
 									},
 									"response": []
 								},
@@ -7953,7 +8164,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t]\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -7973,7 +8184,52 @@
 												"{{contentTypeVariable}}"
 											]
 										},
-										"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+										"description": "Updates a field without a field id in the body but with a valid variable name."
+									},
+									"response": []
+								},
+								{
+									"name": "Update field without id and variable",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code should be ok 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": false\n\t\t}\n\t]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeVariable}}",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype",
+												"id",
+												"{{contentTypeVariable}}"
+											]
+										},
+										"description": "Updates a content type with a field without a field id and field variable in the body, as there is not data to use to identify the field, a new field will be created."
 									},
 									"response": []
 								},
@@ -8009,7 +8265,7 @@
 												"{{contentTypeId}}"
 											]
 										},
-										"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+										"description": "Cleanup"
 									},
 									"response": []
 								}
@@ -8019,22 +8275,7 @@
 					"description": "In this folder we test different scenarios for handling the Content Type fields where we validate cases in order to not always rely on the Content Type field ID."
 				}
 			],
-			"description": "When saving the content type, we don't need to rely entirely on the id, if the id does not exist or is not provided, we should use the variable as the key.",
-			"auth": {
-				"type": "basic",
-				"basic": [
-					{
-						"key": "password",
-						"value": "admin",
-						"type": "string"
-					},
-					{
-						"key": "username",
-						"value": "admin@dotcms.com",
-						"type": "string"
-					}
-				]
-			},
+			"description": "When saving content type and fields, we don't need to rely entirely on ids, if the id does not exist or is not provided, we should use variables as the key.",
 			"event": [
 				{
 					"listen": "prerequest",
