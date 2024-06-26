@@ -39,3 +39,9 @@ export enum EDITOR_MODE {
     INLINE_EDITING = 'inline-editing',
     LOCKED = 'locked'
 }
+
+export enum PAGE_MODE {
+    EDIT = 'EDIT_MODE',
+    PREVIEW = 'PREVIEW_MODE',
+    LIVE = 'LIVE'
+}

@@ -52,7 +52,7 @@ export class DotcmsLayoutComponent implements OnInit {
     private readonly pageContextService = inject(PageContextService);
     private readonly destroyRef$ = inject(DestroyRef);
 
-    pageAssetData = signal<any>(null);
+    pageAssetData = signal<DotCMSPageAsset | null>(null);
 
     @HostListener('window:message', ['$event'])
     onMessage(event: MessageEvent) {
@@ -62,7 +62,10 @@ export class DotcmsLayoutComponent implements OnInit {
 
         if (event.data.name === 'SET_PAGE_INFO') {
             this.pageAssetData.set(event.data.payload);
-            this.pageContextService.setContext(this.pageAssetData(), this.components);
+            this.pageContextService.setContext(
+                this.pageAssetData() as DotCMSPageAsset,
+                this.components
+            );
         }
     }
 

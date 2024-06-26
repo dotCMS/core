@@ -13,10 +13,11 @@ import {
     DotLayout,
     DotPageContainerStructure,
     DotPersona,
-    DotTemplate
+    DotTemplate,
+    VanityUrl
 } from '@dotcms/dotcms-models';
 
-import { EDIT_MODE, LIVE } from '../shared/consts';
+import { PAGE_MODE } from '../shared/enums';
 import { SavePagePayload } from '../shared/models';
 import { createPageApiUrlWithQueryParams } from '../utils';
 
@@ -45,19 +46,7 @@ export interface DotPageApiResponse {
     template: DotTemplate;
     containers: DotPageContainerStructure;
     urlContentMap?: DotCMSContentlet;
-    vanityUrl?: {
-        pattern: string;
-        vanityUrlId: string;
-        url: string;
-        siteId: string;
-        languageId: number;
-        forwardTo: string;
-        response: number;
-        order: number;
-        temporaryRedirect: boolean;
-        permanentRedirect: boolean;
-        forward: boolean;
-    };
+    vanityUrl?: VanityUrl;
 }
 
 export interface DotPageApiParams {
@@ -104,7 +93,7 @@ export class DotPageApiService {
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
         const pageType = params.clientHost ? 'json' : 'render';
-        const mode = params.clientHost ? LIVE : EDIT_MODE;
+        const mode = params.clientHost ? PAGE_MODE.LIVE : PAGE_MODE.EDIT;
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
             language_id: params.language_id,
