@@ -24,15 +24,15 @@ import {
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
-    categoryInode: string;
+    rootCategoryInode: string;
     categories: DotCategoryFieldCategory[][];
     categoriesValue: DotKeyValueObj[];
     parentPath: string[];
     state: ComponentStatus;
 };
 
-const initialState: CategoryFieldState = {
-    categoryInode: '',
+export const initialState: CategoryFieldState = {
+    rootCategoryInode: '',
     categories: [],
     categoriesValue: [],
     parentPath: [],
@@ -64,7 +64,11 @@ export const CategoryFieldStore = signalStore(
          */
         categoryList: computed(() =>
             categories().map((column) => addMetadata(column, parentPath()))
-        )
+        ),
+
+        hasSelectedCategories: computed(() => {
+            return !!categoriesValue().map((item) => item.key).length;
+        })
     })),
     withMethods((store, categoryService = inject(CategoriesService)) => ({
         /**
@@ -72,7 +76,7 @@ export const CategoryFieldStore = signalStore(
          */
         load({ variable, values }: DotCMSContentTypeField, contentlet: DotCMSContentlet): void {
             const categoriesValue = getSelectedCategories(variable, contentlet);
-            patchState(store, { categoryInode: values, categoriesValue });
+            patchState(store, { rootCategoryInode: values, categoriesValue });
         },
 
         /**
@@ -107,9 +111,11 @@ export const CategoryFieldStore = signalStore(
                 ),
                 tap(() => patchState(store, { state: ComponentStatus.LOADING })),
                 switchMap((event) => {
-                    const categoryInode: string = event ? event.item.inode : store.categoryInode();
+                    const rootCategoryInode: string = event
+                        ? event.item.inode
+                        : store.rootCategoryInode();
 
-                    return categoryService.getChildren(categoryInode).pipe(
+                    return categoryService.getChildren(rootCategoryInode).pipe(
                         tapResponse({
                             next: (newCategories) => {
                                 if (event) {

@@ -8,7 +8,7 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotCategoryFieldSidebarComponent } from './dot-category-field-sidebar.component';
 
-import { CATEGORIES_MOCK } from '../../mocks/category-field.mocks';
+import { CATEGORY_LIST_MOCK } from '../../mocks/category-field.mocks';
 import { CategoriesService } from '../../services/categories.service';
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
@@ -25,7 +25,7 @@ describe('DotEditContentCategoryFieldSidebarComponent', () => {
         spectator = createComponent({
             providers: [
                 mockProvider(CategoriesService, {
-                    getChildren: jest.fn().mockReturnValue(of(CATEGORIES_MOCK))
+                    getChildren: jest.fn().mockReturnValue(of(CATEGORY_LIST_MOCK))
                 })
             ]
         });

@@ -4,16 +4,19 @@ import { DotCategoryFieldCategory } from '../models/dot-category-field.models';
 
 export const CATEGORY_FIELD_VARIABLE_NAME = 'categorias';
 
+/**
+ * Response Mock of Contentlet
+ */
 export const CATEGORY_FIELD_CONTENTLET_MOCK: DotCMSContentlet = {
     modDate: '',
     archived: false,
     baseType: 'CONTENT',
     [CATEGORY_FIELD_VARIABLE_NAME]: [
         {
-            '11111': 'Cleaning Supplies'
+            '33333': 'Electrical'
         },
         {
-            '22222': 'Concrete & Cement'
+            '22222': 'Doors & Windows'
         }
     ],
     contentType: 'TEST',
@@ -43,6 +46,9 @@ export const CATEGORY_FIELD_CONTENTLET_MOCK: DotCMSContentlet = {
     working: true
 };
 
+/**
+ * Mock of the Field Category
+ */
 export const CATEGORY_FIELD_MOCK: DotCMSContentTypeField = {
     categories: {
         categoryName: 'Categorias',
@@ -75,65 +81,125 @@ export const CATEGORY_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'categorias'
 };
 
-export const CATEGORIES_WITH_CHILD_MOCK: DotCategoryFieldCategory[] = [
+/**
+ * Represent a Category List of level 1 with children `childrenCount`
+ */
+export const CATEGORY_LEVEL_1: DotCategoryFieldCategory[] = [
     {
         active: true,
-        categoryName: 'Adhesives & Sealants',
+        categoryName: 'Cleaning Supplies',
         categoryVelocityVarName: '1f208488057007cedda0e0b5d52ee3b3',
-        childrenCount: 10,
+        childrenCount: 1, // This make show the caret of has children
         description: null,
-        iDate: 1719242808952,
+        iDate: 1719275768170,
         identifier: null,
-        inode: '11111',
+        inode: '111111',
         key: '1f208488057007cedda0e0b5d52ee3b3',
         keywords: null,
         modDate: 1718916179985,
         owner: '',
         sortOrder: 0,
+        type: 'category'
+    },
+    {
+        active: true,
+        categoryName: 'Doors & Windows',
+        categoryVelocityVarName: 'cb83dc32c0a198fd0ca427b3b587f4ce',
+        childrenCount: 0,
+        description: null,
+        iDate: 1719410426844,
+        identifier: null,
+        inode: '22222',
+        key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
+        keywords: null,
+        modDate: 1718916176666,
+        owner: '',
+        sortOrder: 0,
         type: 'category',
-        checked: false
+        checked: true
+    },
+    {
+        active: true,
+        categoryName: 'Electrical',
+        categoryVelocityVarName: '0ab5e687775e4793679970e561380560',
+        childrenCount: 0,
+        description: null,
+        iDate: 1719410426844,
+        identifier: null,
+        inode: '33333',
+        key: '0ab5e687775e4793679970e561380560',
+        keywords: null,
+        modDate: 1718916175804,
+        owner: '',
+        sortOrder: 0,
+        type: 'category',
+        checked: true
     }
 ];
 
-export const CATEGORIES_MOCK: DotCategoryFieldCategory[][] = [
-    [
-        {
-            active: true,
-            categoryName: 'Cleaning Supplies',
-            categoryVelocityVarName: '1f208488057007cedda0e0b5d52ee3b3',
-            childrenCount: 1, // This make show the caret of has children
-            description: null,
-            iDate: 1719275768170,
-            identifier: null,
-            inode: '8259cf9bb5b895196fc2b4127e929f02',
-            key: '1f208488057007cedda0e0b5d52ee3b3',
-            keywords: null,
-            modDate: 1718916179985,
-            owner: '',
-            sortOrder: 0,
-            type: 'category',
-            checked: true
-        }
-    ],
-    [
-        {
-            active: true,
-            categoryName: 'Concrete & Cement',
-            categoryVelocityVarName: 'd2fb8e67c390e3b84cd613fa15aad5d4',
-            childrenCount: 0,
-            description: null,
-            iDate: 1719275768170,
-            identifier: null,
-            inode: '22222',
-            key: 'd2fb8e67c390e3b84cd613fa15aad5d4',
-            keywords: null,
-            modDate: 1718916180738,
-            owner: '',
-            sortOrder: 0,
-            type: 'category',
-            checked: false
-        }
-    ]
+/**
+ * Represent a Category List of level 2
+ */
+export const CATEGORY_LEVEL_2: DotCategoryFieldCategory[] = [
+    {
+        active: true,
+        categoryName: 'Concrete & Cement',
+        categoryVelocityVarName: 'd2fb8e67c390e3b84cd613fa15aad5d4',
+        childrenCount: 0,
+        description: null,
+        iDate: 1719275768170,
+        identifier: null,
+        inode: '44444',
+        key: 'd2fb8e67c390e3b84cd613fa15aad5d4',
+        keywords: null,
+        modDate: 1718916180738,
+        owner: '',
+        sortOrder: 0,
+        type: 'category'
+    },
+    {
+        active: true,
+        categoryName: 'Flooring',
+        categoryVelocityVarName: '3a3effac9f26593810c8687e692817a6',
+        childrenCount: 0,
+        description: null,
+        iDate: 1719410426844,
+        identifier: null,
+        inode: '55555',
+        key: '3a3effac9f26593810c8687e692817a6',
+        keywords: null,
+        modDate: 1718916176408,
+        owner: '',
+        sortOrder: 0,
+        type: 'category'
+    },
+    {
+        active: true,
+        categoryName: 'Garage Organization',
+        categoryVelocityVarName: '977ba2c4e2af65e303c748ec39f0f1ca',
+        childrenCount: 0,
+        description: null,
+        iDate: 1719410426844,
+        identifier: null,
+        inode: '66666',
+        key: '977ba2c4e2af65e303c748ec39f0f1ca',
+        keywords: null,
+        modDate: 1718916179380,
+        owner: '',
+        sortOrder: 0,
+        type: 'category'
+    }
 ];
 
-export const SELECTED_MOCK = [CATEGORIES_MOCK[0][0].inode];
+/**
+ * Represent a Category List handling 2 levels
+ */
+export const CATEGORY_LIST_MOCK: DotCategoryFieldCategory[][] = [
+    [...CATEGORY_LEVEL_1],
+    [...CATEGORY_LEVEL_2]
+];
+
+/**
+ * Represent the selected categories
+ */
+export const SELECTED_LIST_MOCK = [CATEGORY_LEVEL_1[1].inode, CATEGORY_LEVEL_1[2].inode];

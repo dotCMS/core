@@ -3,7 +3,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     ComponentRef,
-    computed,
     DestroyRef,
     inject,
     input,
@@ -57,7 +56,6 @@ import { CategoryFieldStore } from './store/content-category-field.store';
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
-    // eslint-disable-next-line @angular-eslint/no-host-metadata-property
     host: {
         '[class.dot-category-field__container--has-categories]': 'hasSelectedCategories()',
         '[class.dot-category-field__container]': '!hasSelectedCategories()'
@@ -83,18 +81,17 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     contentlet = input.required<DotCMSContentlet>();
 
     readonly store = inject(CategoryFieldStore);
+    readonly #destroyRef = inject(DestroyRef);
+    #componentRef: ComponentRef<DotCategoryFieldSidebarComponent>;
 
     /**
      * Determines if there are any selected categories.
      *
      * @returns {Boolean} - True if there are selected categories, false otherwise.
      */
-    hasSelectedCategories = computed(() => {
-        return !!this.store.selectedCategories().length;
-    });
-
-    readonly #destroyRef = inject(DestroyRef);
-    #componentRef: ComponentRef<DotCategoryFieldSidebarComponent>;
+    hasSelectedCategories(): boolean {
+        return !!this.store.hasSelectedCategories();
+    }
 
     /**
      * Open the "DotEditContentCategoryFieldDialogComponent" dialog to show categories.

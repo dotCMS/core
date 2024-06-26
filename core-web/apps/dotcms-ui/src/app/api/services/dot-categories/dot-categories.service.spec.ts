@@ -15,6 +15,12 @@ import {
 } from './dot-categories.service';
 
 const mockCategory: DotCategory = {
+    active: false,
+    childrenCount: 0,
+    description: '',
+    iDate: 0,
+    keywords: '',
+    owner: '',
     categoryId: '1222',
     categoryName: 'Test',
     key: 'adsdsd',

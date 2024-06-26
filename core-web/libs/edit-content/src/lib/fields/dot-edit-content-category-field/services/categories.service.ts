@@ -20,7 +20,7 @@ export const ITEMS_PER_PAGE = 7000;
  */
 @Injectable()
 export class CategoriesService {
-    readonly #http: HttpClient = inject(HttpClient);
+    readonly #http = inject(HttpClient);
 
     /**
      * Retrieves the children of a given inode.

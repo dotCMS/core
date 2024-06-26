@@ -21,5 +21,5 @@ export type DotCategoryFieldItem = { index: number; item: DotCategory };
  * @extends DotCategory
  */
 export interface DotCategoryFieldCategory extends DotCategory {
-    checked: boolean;
+    checked?: boolean;
 }

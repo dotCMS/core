@@ -10,6 +10,7 @@ import {
     EventEmitter,
     inject,
     input,
+    OnDestroy,
     Output,
     QueryList,
     ViewChildren
@@ -41,12 +42,11 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
     templateUrl: './dot-category-field-category-list.component.html',
     styleUrl: './dot-category-field-category-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // eslint-disable-next-line @angular-eslint/no-host-metadata-property
     host: {
         class: 'category-list__wrapper'
     }
 })
-export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
+export class DotCategoryFieldCategoryListComponent implements AfterViewInit, OnDestroy {
     @ViewChildren('categoryColumn') categoryColumns: QueryList<ElementRef>;
 
     /**
@@ -82,17 +82,19 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
 
     readonly #destroyRef = inject(DestroyRef);
 
-    constructor() {
-        effect(() => {
-            this.itemsSelected = this.selected();
-        });
-    }
+    #effectRef = effect(() => {
+        this.itemsSelected = this.selected();
+    });
 
     ngAfterViewInit() {
         // Handle the horizontal scroll to make visible the last column
         this.categoryColumns.changes.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
             this.scrollHandler();
         });
+    }
+
+    ngOnDestroy(): void {
+        this.#effectRef.destroy();
     }
 
     private scrollHandler() {
@@ -114,6 +116,7 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
                     inline: 'end'
                 });
             } else {
+                // scroll to the first column
                 columnsArray[0].nativeElement.scrollIntoView({
                     behavior: 'smooth',
                     block: 'nearest',

@@ -8,7 +8,7 @@ import {
     MINIMUM_CATEGORY_COLUMNS
 } from './dot-category-field-category-list.component';
 
-import { CATEGORIES_MOCK, SELECTED_MOCK } from '../../mocks/category-field.mocks';
+import { CATEGORY_LIST_MOCK, SELECTED_LIST_MOCK } from '../../mocks/category-field.mocks';
 
 describe('DotCategoryFieldCategoryListComponent', () => {
     let spectator: Spectator<DotCategoryFieldCategoryListComponent>;
@@ -21,8 +21,8 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                categories: CATEGORIES_MOCK,
-                selected: SELECTED_MOCK
+                categories: CATEGORY_LIST_MOCK,
+                selected: SELECTED_LIST_MOCK
             }
         });
 
@@ -34,24 +34,26 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     });
 
     it('should render correct number of category columns', () => {
-        expect(spectator.queryAll(byTestId('category-column')).length).toBe(CATEGORIES_MOCK.length);
+        expect(spectator.queryAll(byTestId('category-column')).length).toBe(
+            CATEGORY_LIST_MOCK.length
+        );
     });
 
     it('should render correct number of category items', () => {
         expect(spectator.queryAll(byTestId('category-item')).length).toBe(
-            CATEGORIES_MOCK.flat().length
+            CATEGORY_LIST_MOCK.flat().length
         );
     });
 
     it('should render correct number of category item labels', () => {
         expect(spectator.queryAll(byTestId('category-item-label')).length).toBe(
-            CATEGORIES_MOCK.flat().length
+            CATEGORY_LIST_MOCK.flat().length
         );
     });
 
     it('should render correct number of empty columns', () => {
         expect(spectator.queryAll(byTestId('category-column-empty')).length).toBe(
-            MINIMUM_CATEGORY_COLUMNS - CATEGORIES_MOCK.length
+            MINIMUM_CATEGORY_COLUMNS - CATEGORY_LIST_MOCK.length
         );
     });
 
@@ -66,23 +68,24 @@ describe('DotCategoryFieldCategoryListComponent', () => {
 
         expect(emitSpy).toHaveBeenCalledWith({
             index: 0,
-            item: CATEGORIES_MOCK[0][0]
+            item: CATEGORY_LIST_MOCK[0][0]
         });
     });
 
     it('should apply selected class to the correct item', () => {
         const items = spectator.queryAll(byTestId('category-item'));
-        expect(items[0].className).toContain('category-list__item--selected');
+        expect(items[1].className).toContain('category-list__item--selected');
+        expect(items[2].className).toContain('category-list__item--selected');
     });
 
     it('should not render any empty columns when there are enough categories', () => {
         const minColumns = 4;
-        const testCategories = Array(minColumns).fill(CATEGORIES_MOCK[0]);
+        const testCategories = Array(minColumns).fill(CATEGORY_LIST_MOCK[0]);
 
         spectator = createComponent({
             props: {
                 categories: testCategories,
-                selected: SELECTED_MOCK
+                selected: SELECTED_LIST_MOCK
             }
         });
 

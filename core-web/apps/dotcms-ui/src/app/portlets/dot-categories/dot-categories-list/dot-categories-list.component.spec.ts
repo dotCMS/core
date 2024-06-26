@@ -58,7 +58,13 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             working: false,
             name: 'dsdsd',
             friendlyName: 'dfdf',
-            type: 'ASD'
+            type: 'ASD',
+            active: false,
+            childrenCount: 0,
+            description: '',
+            iDate: 0,
+            keywords: '',
+            owner: ''
         },
         {
             categoryId: '9e882f2a-ada2-47e3-a441-bdf9a7254216',
@@ -72,7 +78,13 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             working: false,
             name: 'dsdsd',
             friendlyName: 'dfdf',
-            type: 'ASD'
+            type: 'ASD',
+            active: false,
+            childrenCount: 0,
+            description: '',
+            iDate: 0,
+            keywords: '',
+            owner: ''
         }
     ];
     beforeEach(() => {

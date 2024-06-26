@@ -45,7 +45,7 @@
 }
 
 .category-list__item {
-    gap: 1rem;
+    gap: $spacing-3;
     padding: 0 $spacing-1 0 $spacing-1;
     transition: background-color $basic-speed;
     height: 40px;

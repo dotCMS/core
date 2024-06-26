@@ -2,7 +2,7 @@
 <div
     [ngClass]="{ 'no-overflow-x-yet': emptyColumns().length }"
     class="flex-1 category-list__category-list">
-    @for (column of categories(); let index = $index; track categories()[index]) {
+    @for (column of categories(); let index = $index; track index) {
     <!--dynamic columns-->
     <div #categoryColumn class="category-list__category-column" data-testId="category-column">
         @for (item of column; track item.inode) {
@@ -32,8 +32,9 @@
     }
 
     <!--Fake empty columns-->
+    @for (_ of emptyColumns(); track _) {
     <div
-        *ngFor="let _ of emptyColumns()"
         class="flex-grow-1 category-list__category-column"
         data-testId="category-column-empty"></div>
+    }
 </div>
