@@ -705,12 +705,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private createPageURL(state: EditEmaState): string {
         const vanityUrl = state.editor.vanityUrl;
 
+        const vanityURI = vanityUrl?.response === 200 ? vanityUrl.url : vanityUrl?.forwardTo;
+
         const params = {
-            url: !vanityUrl
-                ? state.editor.page.pageURI
-                : vanityUrl.response === 200
-                  ? vanityUrl.url
-                  : vanityUrl.forwardTo,
+            url: vanityUrl ? vanityURI : state.editor.page.pageURI,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
             variantName: state.editorData.variantId
