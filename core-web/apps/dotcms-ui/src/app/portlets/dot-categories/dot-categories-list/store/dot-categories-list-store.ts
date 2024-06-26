@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { LazyLoadEvent, MenuItem } from 'primeng/api';
+import { LazyLoadEvent, MenuItem, MenuItemCommandEvent } from 'primeng/api';
 
 import { map, take } from 'rxjs/operators';
 
@@ -11,6 +11,11 @@ import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/do
 import { DotMessageService, OrderDirection } from '@dotcms/data-access';
 import { DotActionMenuItem, DotCategory } from '@dotcms/dotcms-models';
 import { DataTableColumn } from '@models/data-table';
+
+interface DotMenuItemCommandEvent extends MenuItemCommandEvent {
+    inode: string;
+    categoryName: string;
+}
 
 export interface DotCategoriesListState {
     categoriesBulkActions: MenuItem[];
@@ -188,7 +193,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
             {
                 menuItem: {
                     label: this.dotMessageService.get('View Children'),
-                    command: (event) => {
+                    command: (event: DotMenuItemCommandEvent) => {
                         this.getChildrenCategories({
                             sortOrder: 1,
                             filters: {
