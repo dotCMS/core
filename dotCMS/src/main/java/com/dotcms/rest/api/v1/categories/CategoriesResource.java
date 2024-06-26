@@ -139,6 +139,7 @@ public class CategoriesResource {
      * <li>ordeby: field to order by</li>
      * <li>direction: asc for upward order and desc for downward order</li>
      * <li>showChildrenCount: true for including children categories count and false to exclude it</li>
+     * <li>allLevels: true to find in all the levels, if showChildrenCount is set to TRUE then this parameter is ignore</li>
      * </ul>
      * <p>
      * Url example: /api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true
@@ -182,8 +183,9 @@ public class CategoriesResource {
         extraParams.put("searchInAllLevels", allLevels);
 
         try {
-           response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
-                   direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams)
+           response = allLevels || !showChildrenCount ?
+                   this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+                        direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams)
                    : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, direction);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
