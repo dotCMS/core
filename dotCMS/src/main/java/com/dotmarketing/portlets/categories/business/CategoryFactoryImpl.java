@@ -165,15 +165,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				.loadObjectResults();
 
 		List<Category> categories = convertForCategories(result);
-		for(final Category category : categories) {
-			//Updating the cache since we are already loading all the categories
-			if(catCache.get(category.getInode()) == null)
-				try {
-					catCache.put(category);
-				} catch (DotCacheException e) {
-					throw new DotDataException(e.getMessage(), e);
-				}
-		}
+		updateCache(categories);
 		return categories;
 	}
 
@@ -842,5 +834,41 @@ public class CategoryFactoryImpl extends CategoryFactory {
         }
         throw new DotDataException("Unable to suggest a variable name.  Got to:" + var);
     }
+
+	/**
+	 *  Default Implementation for {@link CategoryFactory#findAll(String)}
+	 * @param filter Value used to filter the Category by, returning only Categories that contain this value in their key, name, or variable name
+	 *
+	 * @return
+	 */
+	public List<Category> findAll(final String filter) throws DotDataException {
+
+		final DotConnect dc = new DotConnect()
+			.setSQL("SELECT * FROM category " +
+					"WHERE LOWER(category.category_name) LIKE ?  OR " +
+					"LOWER(category.category_key) LIKE ?  OR " +
+					"LOWER(category.category_velocity_var_name) LIKE ?");
+
+		if ( UtilMethods.isSet(filter) ) {
+			dc.addObject("%" + filter.toLowerCase() + "%");
+			dc.addObject("%" + filter.toLowerCase() + "%");
+			dc.addObject("%" + filter.toLowerCase() + "%");
+		}
+
+		List<Category> categories = convertForCategories(dc.loadObjectResults());
+		updateCache(categories);
+		return categories;
+	}
+
+	private void updateCache(List<Category> categories) throws DotDataException {
+		for(final Category category : categories) {
+			if(catCache.get(category.getInode()) == null)
+				try {
+					catCache.put(category);
+				} catch (DotCacheException e) {
+					throw new DotDataException(e.getMessage(), e);
+				}
+		}
+	}
 
 }

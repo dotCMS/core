@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.liferay.portal.model.User;
 
 /**
  * 
@@ -273,5 +274,14 @@ public abstract class CategoryFactory {
      * @throws DotDataException
      */
     abstract protected List<Category> getAllChildren(Categorizable parent) throws DotDataException;
+
+	/**
+	 * Return a list of Categories regardless of their levels.
+	 *
+	 * @param filter Value used to filter the Category by, returning only Categories that contain this value in their key, name, or variable name
+	 *
+	 * @return List of Category filtered
+	 */
+	public abstract List<Category> findAll(final String filter) throws DotDataException;
 	
 }

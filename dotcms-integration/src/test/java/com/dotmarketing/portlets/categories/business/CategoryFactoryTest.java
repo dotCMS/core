@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.categories.business;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -7,11 +8,18 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import com.liferay.util.StringUtil;
+import net.bytebuddy.utility.RandomString;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,6 +33,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     @BeforeClass
     public static void prepare() throws Exception {
+        IntegrationTestInitService.getInstance().init();
         categoryFactory = FactoryLocator.getCategoryFactory();
     }
 
@@ -274,6 +283,94 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         final Category leaf1 = newCategory();
         categoryFactory.addChild(root, leaf1, null);
         assertTrue(categoryFactory.hasDependencies(root));
+    }
+
+    /**
+     * Method to test: {@link CategoryFactoryImpl#findAll(String)}
+     * When: Create several Categories some of them with the word 'INCLUDE' on its name. key or variable name
+     * and call the method with filter equals to 'INCLUDE'
+     * Should: Return all the Category with the word include on any place
+     */
+    @Test
+    public void getAllCategoriesFiltered() throws DotDataException {
+
+        final String stringToFilterBy = new RandomString().nextString();
+
+        final Category topLevelCategory_1 = new CategoryDataGen().setCategoryName("Top Level Category " + stringToFilterBy)
+                .setKey("top_level_categoria")
+                .setCategoryVelocityVarName("top_level_categoria")
+                .nextPersisted();
+
+        final Category childCategory_1 = new CategoryDataGen().setCategoryName("Child Category 1")
+                .setKey("child_category_1 " + stringToFilterBy)
+                .setCategoryVelocityVarName("child_category_1")
+                .parent(topLevelCategory_1)
+                .nextPersisted();
+
+        final Category childCategory_2 = new CategoryDataGen().setCategoryName("Child Category 2")
+                .setKey("child_category_2")
+                .setCategoryVelocityVarName("child_category_2 " + stringToFilterBy)
+                .parent(topLevelCategory_1)
+                .nextPersisted();
+
+        final Category topLevelCategory_2 = new CategoryDataGen().setCategoryName("Top Level Category "  + stringToFilterBy)
+                .setKey("top_level_categoria")
+                .setCategoryVelocityVarName("top_level_categoria")
+                .nextPersisted();
+
+        final Category childCategory_3 = new CategoryDataGen().setCategoryName("Child Category 3 "  + stringToFilterBy)
+                .setKey("child_category_3")
+                .setCategoryVelocityVarName("child_category_3")
+                .parent(topLevelCategory_2)
+                .nextPersisted();
+
+        final Category childCategory_4 = new CategoryDataGen().setCategoryName("Child Category 4")
+                .setKey("child_category_4")
+                .setCategoryVelocityVarName("child_category_4")
+                .parent(topLevelCategory_2)
+                .nextPersisted();
+
+        final Category topLevelCategory_3 = new CategoryDataGen().setCategoryName("Top Level Category")
+                .setKey("top_level_categoria")
+                .setCategoryVelocityVarName("top_level_categoria "  + stringToFilterBy)
+                .nextPersisted();
+
+        final Category childCategory_5 = new CategoryDataGen().setCategoryName("Child Category 5")
+                .setKey("child_category_5")
+                .setCategoryVelocityVarName("child_category_5")
+                .parent(topLevelCategory_3)
+                .nextPersisted();
+
+        final Category topLevelCategory_4 = new CategoryDataGen().setCategoryName("Top Level Category")
+                .setKey("top_level_categoria")
+                .setCategoryVelocityVarName("top_level_categoria")
+                .parent(topLevelCategory_3)
+                .nextPersisted();
+
+        final Category childCategory_6 = new CategoryDataGen().setCategoryName("Child Category 6")
+                .setKey("child_category_6")
+                .setCategoryVelocityVarName("child_category_6")
+                .parent(topLevelCategory_3)
+                .nextPersisted();
+
+        final Category grandchildCategory_1 = new CategoryDataGen().setCategoryName("Grand Child Category 6 "  + stringToFilterBy)
+                .setKey("grand_child_category_6")
+                .setCategoryVelocityVarName("grand_child_category_6")
+                .parent(childCategory_6)
+                .nextPersisted();
+
+        List<String> categoriesExpected = list(topLevelCategory_1, childCategory_1, childCategory_2, childCategory_3,
+                topLevelCategory_3, grandchildCategory_1).stream().map(Category::getInode).collect(Collectors.toList());
+
+        final List<String> categories_1 = FactoryLocator.getCategoryFactory().findAll(stringToFilterBy.toUpperCase())
+            .stream().map(Category::getInode).collect(Collectors.toList());
+        assertEquals(categoriesExpected.size(), categories_1.size());
+        assertTrue(categories_1.containsAll(categoriesExpected));
+
+        final List<String> categories_2 = FactoryLocator.getCategoryFactory().findAll(stringToFilterBy.toLowerCase())
+                .stream().map(Category::getInode).collect(Collectors.toList());
+        assertEquals(categoriesExpected.size(), categories_2.size());
+        assertTrue(categories_2.containsAll(categoriesExpected));
     }
 
 }
