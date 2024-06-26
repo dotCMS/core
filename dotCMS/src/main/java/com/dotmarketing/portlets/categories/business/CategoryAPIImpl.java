@@ -952,6 +952,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 	 *
 	 * @return
 	 */
+	@CloseDBIfOpened
 	public PaginatedCategories findAll(final String filter, final User user, boolean respectFrontendRoles, final int limit,
 								  final int offset)
 			throws DotDataException, DotSecurityException {
