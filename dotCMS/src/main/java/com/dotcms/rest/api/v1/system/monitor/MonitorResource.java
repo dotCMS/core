@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
+import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -39,44 +40,45 @@ public class MonitorResource {
         final MonitorHelper helper = new MonitorHelper(request);
 
         ResponseBuilder builder = null;
-        if (helper.accessGranted) {
-            final MonitorStats stats = helper.getMonitorStats();
-
-            if (helper.useExtendedFormat) {
-                final JSONObject jo = new JSONObject();
-                jo.put("serverID", stats.serverId);
-                jo.put("clusterID", stats.clusterId);
-                jo.put("dotCMSHealthy", stats.isDotCMSHealthy());
-                jo.put("frontendHealthy", stats.isFrontendHealthy());
-                jo.put("backendHealthy", stats.isBackendHealthy());
-
-                final JSONObject subsystems = new JSONObject();
-                subsystems.put("dbSelectHealthy", stats.subSystemStats.isDBHealthy);
-                subsystems.put("indexLiveHealthy", stats.subSystemStats.isLiveIndexHealthy);
-                subsystems.put("indexWorkingHealthy", stats.subSystemStats.isWorkingIndexHealthy);
-                subsystems.put("cacheHealthy", stats.subSystemStats.isCacheHealthy);
-                subsystems.put("localFSHealthy", stats.subSystemStats.isLocalFileSystemHealthy);
-                subsystems.put("assetFSHealthy", stats.subSystemStats.isAssetFileSystemHealthy);
-                jo.put("subsystems", subsystems);
-
-                builder = Response.ok(jo.toString(2), MediaType.APPLICATION_JSON);
-            } else {
-                if (stats.isDotCMSHealthy()) {
-                    builder = Response.ok(StringPool.BLANK, MediaType.APPLICATION_JSON);
-                } else if (!stats.isBackendHealthy() && stats.isFrontendHealthy()) {
-                    builder = Response.status(INSUFFICIENT_STORAGE).entity(StringPool.BLANK).type(MediaType.APPLICATION_JSON);
-                } else {
-                    builder = Response.status(SERVICE_UNAVAILABLE).entity(StringPool.BLANK).type(MediaType.APPLICATION_JSON);
-                }
-            }
-        }
-        else {
-            // Access is forbidden because IP is not in any range in ACL list
+        if (!helper.accessGranted) {
             return Response.status(FORBIDDEN).build();
         }
+        final MonitorStats stats = helper.getMonitorStats();
 
-        return builder.build();
+        if (helper.useExtendedFormat) {
+            final Map<String, Object> map = new HashMap<>();
+            map.put("serverID", stats.serverId);
+            map.put("clusterID", stats.clusterId);
+            map.put("dotCMSHealthy", stats.isDotCMSHealthy());
+            map.put("frontendHealthy", stats.isFrontendHealthy());
+            map.put("backendHealthy", stats.isBackendHealthy());
+
+            final Map<String, Object> subsystems = new HashMap<>();
+            subsystems.put("dbSelectHealthy", stats.subSystemStats.isDBHealthy);
+            subsystems.put("indexLiveHealthy", stats.subSystemStats.isLiveIndexHealthy);
+            subsystems.put("indexWorkingHealthy", stats.subSystemStats.isWorkingIndexHealthy);
+            subsystems.put("cacheHealthy", stats.subSystemStats.isCacheHealthy);
+            subsystems.put("localFSHealthy", stats.subSystemStats.isLocalFileSystemHealthy);
+            subsystems.put("assetFSHealthy", stats.subSystemStats.isAssetFileSystemHealthy);
+            map.put("subsystems", subsystems);
+            return Response.ok(map, MediaType.APPLICATION_JSON).build();
+        }
+
+        if (stats.isDotCMSHealthy()) {
+            return Response.ok(StringPool.BLANK, MediaType.APPLICATION_JSON).build();
+        }
+
+        if (!stats.isBackendHealthy() && stats.isFrontendHealthy()) {
+            return Response.status(INSUFFICIENT_STORAGE).entity(StringPool.BLANK).type(MediaType.APPLICATION_JSON)
+                    .build();
+        }
+        return Response.status(SERVICE_UNAVAILABLE).entity(StringPool.BLANK).type(MediaType.APPLICATION_JSON).build();
+
+
     }
+
+
+}
     
     
     /**

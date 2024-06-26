@@ -191,14 +191,16 @@ class MonitorHelper {
                     + File.separator
                     + uuid;
             final File file = new File(realPath);
-            try (OutputStream os = Files.newOutputStream(file.toPath())) {
-                os.write(uuid.getBytes());
-            } catch (Exception e) {
-                Logger.error(this.getClass(), e.getMessage(), e);
-                return false;
+            if (file.mkdirs() && file.delete() && file.createNewFile()) {
+                try (OutputStream os = Files.newOutputStream(file.toPath())) {
+                    os.write(uuid.getBytes());
+                }catch (Exception e){
+                    Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
+                    return false;
+                }
+                return file.delete();
             }
-            return file.delete();
-
+            return false;
         }
 
 
