@@ -98,15 +98,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 if (!UtilMethods.isSet(contentsMap) || !(contentsMap instanceof List)) {
                     return new StoryBlockReferenceResult(true, storyBlockValue);
                 }
-                for (final Map<String, Object> contentMap : (List<Map<String, Object>>) contentsMap) {
-                    if (UtilMethods.isSet(contentMap)) {
-                        final String type = contentMap.get(TYPE_KEY).toString();
-                        if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
-
-                            refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
-                        }
-                    }
-                }
+                refreshed = isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) contentsMap);
                 if (refreshed) {
                     return new StoryBlockReferenceResult(true, this.toJson(blockEditorMap));
                 }
@@ -119,6 +111,22 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         }
         // Return the original value in case no data was refreshed
         return new StoryBlockReferenceResult(false, storyBlockValue);
+    }
+
+    private boolean isRefreshed(final String parentContentletIdentifier,
+                                final List<Map<String, Object>> contentsMap) {
+
+        boolean refreshed = false;
+        for (final Map<String, Object> contentMap : contentsMap) {
+            if (UtilMethods.isSet(contentMap)) {
+                final String type = contentMap.get(TYPE_KEY).toString();
+                if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
+
+                    refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
+                }
+            }
+        }
+        return refreshed;
     }
 
     /**
