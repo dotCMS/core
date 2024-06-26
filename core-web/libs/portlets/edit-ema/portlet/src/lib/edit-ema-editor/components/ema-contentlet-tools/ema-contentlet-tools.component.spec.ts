@@ -283,7 +283,8 @@ describe('EmaContentletToolsComponent', () => {
                     position: 'absolute',
                     left: '464px',
                     top: '80px',
-                    zIndex: '1'
+                    zIndex: '1',
+                    width: '128px'
                 });
             });
         });
@@ -357,10 +358,55 @@ describe('EmaContentletToolsComponent', () => {
                 }))
         );
 
-        it('should render only add button', () => {
+        it('should only render the add button', () => {
             expect(spectator.query(byTestId('add-top-button'))).toBeDefined();
             expect(spectator.query(byTestId('add-bottom-button'))).toBeNull();
             expect(spectator.query(byTestId('actions'))).toBeNull();
+        });
+    });
+
+    describe('Contentlet outside container', () => {
+        beforeEach(
+            () =>
+                (spectator = createComponent({
+                    props: {
+                        contentletArea: {
+                            ...contentletAreaMock,
+                            width: 180,
+                            payload: {
+                                contentlet: {
+                                    identifier: 'contentlet-identifier-123',
+                                    inode: 'contentlet-inode-123',
+                                    title: 'Hello World',
+                                    contentType: 'test'
+                                },
+                                container: null,
+                                language_id: '1',
+                                pageContainers: [],
+                                pageId: '1',
+                                position: 'after'
+                            }
+                        }
+                    }
+                }))
+        );
+
+        it('should only render the edit button', () => {
+            expect(spectator.query(byTestId('edit-button'))).toBeDefined();
+
+            const toBeNullTestIDs = [
+                'add-top-button',
+                'add-bottom-button',
+                'menu-add',
+                'delete-button',
+                'drag-button',
+                'edit-vtl-button',
+                'menu-vtl'
+            ];
+
+            toBeNullTestIDs.forEach((testId) => {
+                expect(spectator.query(byTestId(testId))).toBeNull();
+            });
         });
     });
 

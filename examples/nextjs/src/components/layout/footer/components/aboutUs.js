@@ -13,7 +13,7 @@ function AboutUs() {
                 registered clients.
             </p>
             <Image
-                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}/contentAsset/image/82da90eb-044d-44cc-a71b-86f79820b61b/fileAsset`}
+                src={"/dA/2f383e7fa6/fileAsset/logo.png"}
                 height={53}
                 width={221}
                 alt="TravelLux logo"
