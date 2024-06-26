@@ -1,5 +1,7 @@
 package com.dotcms.rest;
 
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -9,10 +11,13 @@ import java.util.List;
  * Encapsulates the data of an environment
  * @author jsanca
  */
-public class EnvironmentForm implements java.io.Serializable {
+public class EnvironmentForm  extends Validated implements java.io.Serializable {
 
+    @NotNull
     @JsonProperty("name")
     private final String name;
+
+    @NotNull
     @JsonProperty("pushMode")
     private final PushMode pushMode;
 
@@ -26,6 +31,7 @@ public class EnvironmentForm implements java.io.Serializable {
         this.name = name;
         this.whoCanSend = whoCanSend;
         this.pushMode = pushType;
+        checkValid();
     }
 
     public String getName() {
