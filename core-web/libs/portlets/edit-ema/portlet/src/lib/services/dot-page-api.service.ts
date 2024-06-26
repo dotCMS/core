@@ -16,6 +16,7 @@ import {
     DotTemplate
 } from '@dotcms/dotcms-models';
 
+import { EDIT_MODE, LIVE } from '../shared/consts';
 import { SavePagePayload } from '../shared/models';
 import { createPageApiUrlWithQueryParams } from '../utils';
 
@@ -103,12 +104,14 @@ export class DotPageApiService {
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
         const pageType = params.clientHost ? 'json' : 'render';
+        const mode = params.clientHost ? LIVE : EDIT_MODE;
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
             language_id: params.language_id,
             'com.dotmarketing.persona.id': params['com.dotmarketing.persona.id'],
             variantName: params.variantName,
-            experimentId: params.experimentId
+            experimentId: params.experimentId,
+            mode
         });
 
         const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;
