@@ -1158,7 +1158,7 @@ class ContentTypeCommandIT extends CommandTest {
                 contentTypeAPI.getContentType(newContentType3, 1L, false);
                 Assertions.fail(" 404 Exception should have been thrown here.");
             } catch (Exception e) {
-                Assertions.assertTrue(e instanceof NotFoundException);
+                Assertions.assertInstanceOf(NotFoundException.class, e);
             }
 
             byVarName = contentTypeAPI.getContentType(newContentType4.variable(), 1L, false);

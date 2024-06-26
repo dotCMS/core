@@ -1,13 +1,11 @@
 package com.dotcms.api.provider;
 
 import com.dotcms.api.AuthenticationContext;
-import java.io.IOException;
-import java.util.Optional;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MultivaluedMap;
-import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.util.Optional;
 
 
 /**

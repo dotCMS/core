@@ -2,11 +2,11 @@ package com.dotcms.cli.command;
 
 import com.dotcms.api.client.model.AuthenticationParam;
 import com.dotcms.api.client.model.ServiceManager;
-import com.dotcms.cli.common.DirectoryWatcherService;
 import com.dotcms.cli.command.contenttype.ContentTypeCommand;
 import com.dotcms.cli.command.files.FilesCommand;
 import com.dotcms.cli.command.language.LanguageCommand;
 import com.dotcms.cli.command.site.SiteCommand;
+import com.dotcms.cli.common.DirectoryWatcherService;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.VersionProvider;
 import com.dotcms.cli.exception.ExceptionHandlerImpl;
@@ -14,9 +14,7 @@ import com.dotcms.model.annotation.SecuredPassword;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import picocli.CommandLine;
 
