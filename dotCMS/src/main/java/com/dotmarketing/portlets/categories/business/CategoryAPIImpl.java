@@ -943,4 +943,23 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 	}
 
+	/**
+	 * Default implementation.
+	 *
+	 * @param filter Value used to filter the Category by, returning only Categories that contain this value in their key, name, or variable name
+	 * @param user User to check Permission
+	 * @param respectFrontendRoles true if you must respect Frontend Roles
+	 *
+	 * @return
+	 */
+	public PaginatedCategories findAll(final String filter, final User user, boolean respectFrontendRoles, final int limit,
+								  final int offset)
+			throws DotDataException, DotSecurityException {
+
+		final List<Category> categories = permissionAPI.filterCollection(categoryFactory.findAll(filter),
+				PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+
+		return getCategoriesSubList(offset, limit, categories, filter);
+	}
+
 }

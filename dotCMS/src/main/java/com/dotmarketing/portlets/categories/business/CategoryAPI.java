@@ -484,4 +484,18 @@ public interface CategoryAPI {
 							final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	List<Category> getCategoriesFromContent(final Contentlet contentlet, final User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return a list of Categories regardless of their levels.
+	 *
+	 * @param filter Value used to filter the Category by, returning only Categories that contain this value in their key, name, or variable name
+	 * @param user User to check Permission
+	 * @param respectFrontendRoles true if you must respect Frontend Roles
+	 * @param limit Pagination size
+	 * @param offset offset
+	 *
+	 * @return List of Category filtered
+	 */
+	PaginatedCategories findAll(final String filter, final User user, boolean respectFrontendRoles, final int limit,
+						   final int offset) throws DotDataException, DotSecurityException;
 }
