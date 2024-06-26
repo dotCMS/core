@@ -8,8 +8,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.jboss.logging.Logger;
 

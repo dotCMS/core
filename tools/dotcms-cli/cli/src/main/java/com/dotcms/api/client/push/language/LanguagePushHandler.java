@@ -8,9 +8,9 @@ import com.dotcms.model.language.Language;
 import java.io.File;
 import java.util.Map;
 import java.util.Optional;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 
 @Dependent
 public class LanguagePushHandler implements PushHandler<Language> {

@@ -39,8 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -257,7 +257,7 @@ class ContentTypeAPIIT {
                }
             }
             //This should throw 404 but under certain circumstances it does throw 400
-        }catch(javax.ws.rs.WebApplicationException e){
+        }catch(jakarta.ws.rs.WebApplicationException e){
             // Not relevant here
         }
     }

@@ -1,9 +1,9 @@
 package com.dotcms.api.provider;
 
 import com.dotcms.api.BuiltVersionService;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
 import org.jboss.logging.Logger;
 
