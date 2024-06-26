@@ -139,6 +139,7 @@ public class CategoriesResource {
      * <li>ordeby: field to order by</li>
      * <li>direction: asc for upward order and desc for downward order</li>
      * <li>showChildrenCount: true for including children categories count and false to exclude it</li>
+     * <li>allLevels: true to find in all the levels, if showChildrenCount is set to TRUE then this parameter is ignore</li>
      * </ul>
      * <p>
      * Url example: /api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true
@@ -164,7 +165,8 @@ public class CategoriesResource {
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
             @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
-            @QueryParam("showChildrenCount") final boolean showChildrenCount) {
+            @QueryParam("showChildrenCount") final boolean showChildrenCount,
+            @QueryParam("allLevels") final boolean allLevels) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -178,10 +180,12 @@ public class CategoriesResource {
 
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put("childrenCategories", false);
+        extraParams.put("searchInAllLevels", allLevels);
 
         try {
-           response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
-                   direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams)
+           response = allLevels || !showChildrenCount ?
+                   this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+                        direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams)
                    : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, direction);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
