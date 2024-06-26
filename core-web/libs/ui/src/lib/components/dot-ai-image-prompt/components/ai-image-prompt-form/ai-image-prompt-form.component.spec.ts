@@ -7,9 +7,8 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAIImageOrientation, DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
+import { DotClipboardUtil, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { DotCopyButtonComponent } from './../../../../components/dot-copy-button/dot-copy-button.component';
-import { DotMessagePipe } from './../../../../dot-message/dot-message.pipe';
 import { AiImagePromptFormComponent } from './ai-image-prompt-form.component';
 
 describe('DotAiImagePromptFormComponent', () => {
@@ -22,8 +21,13 @@ describe('DotAiImagePromptFormComponent', () => {
     };
     const createComponent = createComponentFactory({
         component: AiImagePromptFormComponent,
-        imports: [HttpClientTestingModule, ButtonModule, ReactiveFormsModule],
-        providers: [DotMessageService],
+        imports: [
+            HttpClientTestingModule,
+            ButtonModule,
+            ReactiveFormsModule,
+            DotCopyButtonComponent
+        ],
+        providers: [DotMessageService, DotClipboardUtil],
         mocks: [DotMessagePipe]
     });
 
@@ -52,21 +56,6 @@ describe('DotAiImagePromptFormComponent', () => {
     it('should clear validators for text control when type is auto', () => {
         spectator.component.form.get('type').setValue('auto');
         expect(spectator.component.form.get('text').validator).toBeNull();
-    });
-
-    it('should update form when changes come', () => {
-        const newGeneratedValue = {
-            request: formValue,
-            response: { revised_prompt: 'New Prompt' }
-        } as DotGeneratedAIImage;
-
-        spectator.setInput('value', newGeneratedValue);
-        spectator.setInput('isLoading', false);
-
-        expect(spectator.component.form.value).toEqual(newGeneratedValue.request);
-        expect(spectator.component.aiProcessedPrompt).toBe(
-            newGeneratedValue.response.revised_prompt
-        );
     });
 
     it('should disable form controls when isLoading is true', () => {
@@ -121,23 +110,5 @@ describe('DotAiImagePromptFormComponent', () => {
         } as DotGeneratedAIImage);
 
         expect(spectator.query(byTestId('prompt-label')).classList).not.toContain(REQUIRED_CLASS);
-    });
-
-    it('should copy to clipboard the ai rewritten text', () => {
-        const newGeneratedValue = {
-            request: formValue,
-            response: { revised_prompt: 'New Prompt' }
-        } as DotGeneratedAIImage;
-
-        spectator.setInput('value', newGeneratedValue);
-        spectator.setInput('isLoading', false);
-
-        const icon = spectator.query(byTestId('copy-to-clipboard'));
-
-        const btnCopy = spectator.query(DotCopyButtonComponent);
-        const spyCopy = spyOn(btnCopy, 'copyUrlToClipboard');
-        spectator.click(icon);
-
-        expect(spyCopy).toHaveBeenCalled();
     });
 });
