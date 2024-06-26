@@ -35,7 +35,7 @@ public class BuiltVersionServiceImpl implements BuiltVersionService {
                 logger.error("Unable to load properties file", e);
             }
         }
-        return Optional.of(buildVersion);
+        return Optional.ofNullable(buildVersion);
 
     }
 
