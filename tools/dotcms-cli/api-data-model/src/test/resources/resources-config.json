@@ -10,7 +10,7 @@
       "pattern": ".*\\.dll$"
     },
     {
-      "pattern": ".*\\.properties$"
+      "pattern": "(.*\\/)?build\\.properties$"
     }
   ]
 }
