@@ -35,7 +35,7 @@ export async function generateMetadata({ params, searchParams }) {
 }
 
 export default async function Home({ searchParams, params }) {
-    const info = async () => {
+    const getPageData = async () => {
         try {
             const path = params?.slug?.join("/") || "/";
             const pageRequestParams = getPageRequestParams({
@@ -55,7 +55,7 @@ export default async function Home({ searchParams, params }) {
         }
     };
 
-    const { data, nav } = await info();
+    const { data, nav } = await getPageData();
 
     const { vanityUrl } = data?.entity;
 

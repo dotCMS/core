@@ -32,7 +32,7 @@ export const canMatchPage: CanMatchFn = async (
 
     const { vanityUrl } = entity;
 
-    if (vanityUrl?.permanentRedirect) {
+    if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
       router.navigate([vanityUrl.forwardTo]);
 
       return false;

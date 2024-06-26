@@ -4,7 +4,7 @@ import {
     DotCMSPageEditorConfig,
     destroyEditor,
     initEditor,
-    isInsideEditor,
+    isInsideEditor as isInsideEditorFn,
     updateNavigation,
     CUSTOMER_ACTIONS,
     postMessageToEditor
@@ -12,11 +12,11 @@ import {
 
 import { DotCMSPageContext } from '../models';
 export const useDotcmsEditor = (config?: DotCMSPageEditorConfig) => {
-    const [isInsideEditorPage, setIsInsideEditorPage] = useState(false);
+    const [isInsideEditor, setIsInsideEditor] = useState(false);
     const [pageInfo, setPageInfo] = useState<DotCMSPageContext['pageAsset'] | null>(null);
 
     const handlePostMessage = (event: MessageEvent) => {
-        const insideEditor = isInsideEditor();
+        const insideEditor = isInsideEditorFn();
         if (!insideEditor) {
             return;
         }
@@ -27,7 +27,7 @@ export const useDotcmsEditor = (config?: DotCMSPageEditorConfig) => {
     };
 
     useEffect(() => {
-        const insideEditor = isInsideEditor();
+        const insideEditor = isInsideEditorFn();
         if (insideEditor) {
             initEditor(config);
             updateNavigation(config?.pathname || '/');
@@ -39,7 +39,7 @@ export const useDotcmsEditor = (config?: DotCMSPageEditorConfig) => {
             });
         }
 
-        setIsInsideEditorPage(insideEditor);
+        setIsInsideEditor(insideEditor);
         window.addEventListener('message', handlePostMessage);
 
         return () => {
@@ -50,5 +50,5 @@ export const useDotcmsEditor = (config?: DotCMSPageEditorConfig) => {
         };
     }, [config]);
 
-    return { isInsideEditorPage, pageInfo };
+    return { isInsideEditor, pageInfo };
 };

@@ -1,18 +1,11 @@
-<!-- @if (context()?.pageAsset; as pageAsset) { -->
 <div class="flex flex-col min-h-screen gap-6 bg-neutral-50">
-
-    <!-- @if(context()?.pageAsset.layout.header) { -->
-        <app-header>
-            <app-navigation [items]="context()?.nav.children" />
-        </app-header>
-    <!-- } -->
-    
+    <app-header>
+        <app-navigation [items]="context()?.nav.children" />
+    </app-header>
+        
     <main class="container flex flex-col gap-8 m-auto">
         <dotcms-layout [pageAsset]="context()?.pageAsset || {}" [components]="components()" />
     </main>
     
-    <!-- @if(context()?.pageAsset.layout.footer) { -->
-        <app-footer />
-    <!-- } -->
+    <app-footer />
 </div>
-<!-- } -->

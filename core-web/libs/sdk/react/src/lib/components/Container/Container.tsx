@@ -60,7 +60,7 @@ export function Container({ containerRef }: ContainerProps) {
             ? ContentTypeComponent || DefaultComponent
             : ContentTypeComponent || EmptyContent;
 
-        return isInsideEditor? (
+        return isInsideEditor ? (
             <div
                 data-testid="dot-contentlet"
                 data-dot-object="contentlet"

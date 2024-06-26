@@ -20,7 +20,7 @@ describe('DotPageApiService', () => {
             .subscribe();
 
         spectator.expectOne(
-            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=LIVE',
             HttpMethod.GET
         );
     });
@@ -36,7 +36,7 @@ describe('DotPageApiService', () => {
             .subscribe();
 
         spectator.expectOne(
-            '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+            '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=LIVE',
             HttpMethod.GET
         );
     });
@@ -87,7 +87,7 @@ describe('DotPageApiService', () => {
             .subscribe();
 
         spectator.expectOne(
-            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=LIVE',
             HttpMethod.GET
         );
     });
