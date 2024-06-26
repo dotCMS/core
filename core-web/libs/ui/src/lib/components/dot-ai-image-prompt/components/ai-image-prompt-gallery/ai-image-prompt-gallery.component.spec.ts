@@ -9,7 +9,7 @@ import { DotEmptyContainerComponent } from '@dotcms/ui';
 
 import { AiImagePromptGalleryComponent } from './ai-image-prompt-gallery.component';
 
-describe('AiImagePromptGalleryComponent', () => {
+describe('DotAiImagePromptGalleryComponent', () => {
     let spectator: Spectator<AiImagePromptGalleryComponent>;
 
     const createComponent = createComponentFactory({
@@ -74,7 +74,7 @@ describe('AiImagePromptGalleryComponent', () => {
     });
 
     it('should emit activeIndexChange event when galleria active index changes', () => {
-        const emitterSpy = jest.spyOn(spectator.component.activeIndexChange, 'emit');
+        const emitterSpy = spyOn(spectator.component.activeIndexChange, 'emit');
 
         spectator.setInput({
             isLoading: false,
@@ -88,7 +88,7 @@ describe('AiImagePromptGalleryComponent', () => {
     });
 
     it('should emit regenerate event when regenerate button is clicked', () => {
-        const emitterSpy = jest.spyOn(spectator.component.regenerate, 'emit');
+        const emitterSpy = spyOn(spectator.component.regenerate, 'emit');
 
         spectator.setInput({
             isLoading: false,

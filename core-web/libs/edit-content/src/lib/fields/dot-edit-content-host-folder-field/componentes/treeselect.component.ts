@@ -833,8 +833,8 @@ export class TreeSelect implements AfterContentInit, OnInit {
         return value.length
             ? value.map((node) => node.label).join(', ')
             : this.selectionMode === 'single' && this.value
-            ? value.label
-            : this.placeholder;
+              ? value.label
+              : this.placeholder;
     }
 }
 

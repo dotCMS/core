@@ -37,12 +37,11 @@ import {
     DotGeneratedAIImage,
     PromptType
 } from '@dotcms/dotcms-models';
-import {
-    DotCopyButtonComponent,
-    DotFieldRequiredDirective,
-    DotMessagePipe,
-    DotValidators
-} from '@dotcms/ui';
+
+import { DotCopyButtonComponent } from './../../../../components/dot-copy-button/dot-copy-button.component';
+import { DotFieldRequiredDirective } from './../../../../dot-field-required/dot-field-required.directive';
+import { DotMessagePipe } from './../../../../dot-message/dot-message.pipe';
+import { DotValidators } from './../../../../validators/dotValidators';
 
 @Component({
     selector: 'dot-ai-image-prompt-form',
