@@ -3,11 +3,9 @@ import {
     listenHoveredContentlet,
     pingEditor,
     scrollHandler,
-    setPageEditorConfig,
     subscriptions
 } from './listeners/listeners';
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
-import { DotCMSPageEditorConfig } from './models/editor.model';
 
 /**
  *
@@ -41,11 +39,7 @@ export function isInsideEditor() {
  *
  * @param conf - Optional configuration for the editor.
  */
-export function initEditor(config?: DotCMSPageEditorConfig) {
-    if (config) {
-        setPageEditorConfig(config);
-    }
-
+export function initEditor() {
     pingEditor();
     listenEditorMessages();
     listenHoveredContentlet();

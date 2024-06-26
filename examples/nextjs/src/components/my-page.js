@@ -67,7 +67,7 @@ export function MyPage({ pageAsset, nav }) {
                         components: componentsMap,
                         pageAsset: pageAsset,
                     }}
-                    config={{ onReload: refresh, pathname }}
+                    config={{ pathname }}
                 />
             </main>
             <Footer />

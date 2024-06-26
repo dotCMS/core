@@ -29,7 +29,7 @@ export const useDotcmsEditor = (config?: DotCMSPageEditorConfig) => {
     useEffect(() => {
         const insideEditor = isInsideEditorFn();
         if (insideEditor) {
-            initEditor(config);
+            initEditor();
             updateNavigation(config?.pathname || '/');
             postMessageToEditor({
                 action: CUSTOMER_ACTIONS.GET_PAGE_INFO,
