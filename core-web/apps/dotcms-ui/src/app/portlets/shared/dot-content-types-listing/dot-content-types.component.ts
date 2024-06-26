@@ -217,7 +217,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
-                    command: (item: DotCMSContentType) => this.addToBundleContentType(item)
+                    command: (item) => this.addToBundleContentType(item)
                 }
             });
         }
@@ -226,7 +226,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_menu'),
-                    command: (item: DotCMSContentType) => this.addToBundleMenu(item)
+                    command: (item) => this.addToBundleMenu(item)
                 },
                 shouldShow: (item: Record<string, unknown>) => {
                     return item.variable !== 'Host';
@@ -238,7 +238,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.copy'),
-                    command: (item: DotCMSContentType) => this.showCloneContentTypeDialog(item)
+                    command: (item) => this.showCloneContentTypeDialog(item)
                 }
             });
         }
