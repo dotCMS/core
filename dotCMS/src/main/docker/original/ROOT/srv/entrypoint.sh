@@ -12,13 +12,13 @@ source /srv/40-custom-starter-zip.sh
 
 [[ -n "${WAIT_FOR_DEPS}" ]] && echo "Waiting ${WAIT_FOR_DEPS} seconds for DotCMS dependencies to load..." && sleep ${WAIT_FOR_DEPS}
 
-if [[ "$1" == "dotcms" ]]; then
+if [[ "$#" -eq 0 || "$1" == "dotcms" ]]; then
   shift
   echo ""
-  echo "Starting dotCMS ..."s
+  echo "Starting dotCMS ..."
   echo "-------------------"
   echo ""
-  exec -- ${TOMCAT_HOME}/bin/catalina.sh run "$@"
+  exec -- ${TOMCAT_HOME}/bin/catalina.sh run
 else
   echo starting "$@"
   exec -- "$@"
