@@ -183,7 +183,7 @@ class ContentTypeAPIIT {
             Objects.requireNonNull(contentType.workflows()).forEach(workflow -> {
                 Assertions.assertNotNull(workflow);
                 Assertions.assertNotNull(workflow.id());
-                Assertions.assertNotNull(workflow.name());
+                Assertions.assertNotNull(workflow.variableName());
             });
         }
     }

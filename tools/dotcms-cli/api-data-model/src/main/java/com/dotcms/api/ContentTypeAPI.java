@@ -6,6 +6,9 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.contenttype.FilterContentTypesRequest;
 import com.dotcms.model.contenttype.SaveContentTypeRequest;
+import com.dotcms.model.views.CommonViews.ContentTypeExternalView;
+import com.dotcms.model.views.CommonViews.ContentTypeInternalView;
+import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -42,6 +45,7 @@ public interface ContentTypeAPI {
     @Operation(
             summary = "Get a list of Content-types for a given set of params"
     )
+    @JsonView(ContentTypeInternalView.class)
     ResponseEntityView<List<ContentType>> getContentTypes(
             @QueryParam("filter") String filter,
             @QueryParam("page") Integer page,
@@ -56,6 +60,7 @@ public interface ContentTypeAPI {
     @Operation(
             summary = "Get a specific Content-type for the given id or varName"
     )
+    @JsonView(ContentTypeInternalView.class)
     ResponseEntityView<ContentType> getContentType(@PathParam("idOrVar") final String idOrVar,
             @QueryParam("languageId") final Long languageId,
             @QueryParam("live") final Boolean paramLive);
@@ -65,8 +70,9 @@ public interface ContentTypeAPI {
     @Operation(
             summary = "Create a brand new CT instance"
     )
+    @JsonView(ContentTypeInternalView.class)
     ResponseEntityView<List<ContentType>> createContentTypes(
-            final List<SaveContentTypeRequest> contentTypes);
+            @JsonView(ContentTypeExternalView.class) final List<SaveContentTypeRequest> contentTypes);
 
 
     @PUT
@@ -74,8 +80,9 @@ public interface ContentTypeAPI {
     @Operation(
             summary = "Save/Update a CT instance"
     )
+    @JsonView(ContentTypeInternalView.class)
     ResponseEntityView<ContentType> updateContentType(@PathParam("idOrVar") final String idOrVar,
-            final SaveContentTypeRequest contentType);
+            @JsonView(ContentTypeExternalView.class) final SaveContentTypeRequest contentType);
 
 
     @DELETE
@@ -91,6 +98,7 @@ public interface ContentTypeAPI {
     @Operation(
             summary = "Get a list of Content-types for a given set of param"
     )
+    @JsonView(ContentTypeInternalView.class)
     ResponseEntityView<List<ContentType>> filterContentTypes(final FilterContentTypesRequest request);
 
 }

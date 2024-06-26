@@ -2105,6 +2105,7 @@ alter table Company add constraint fk_default_lang_id foreign key (default_langu
 create table workflow_scheme(
 	id varchar(36) primary key,
 	name varchar(255) not null,
+    variable_name varchar(255) not null unique,
 	description text,
 	archived boolean default false,
 	mandatory boolean default false,
@@ -2112,6 +2113,7 @@ create table workflow_scheme(
 	entry_action_id varchar(36),
 	mod_date timestamptz
 );
+CREATE INDEX idx_workflow_lower_variable_name ON workflow_scheme (LOWER(variable_name));
 
 create table workflow_step(
 	id varchar(36) primary key,

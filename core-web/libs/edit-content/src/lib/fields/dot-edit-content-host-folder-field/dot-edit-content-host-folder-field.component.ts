@@ -8,14 +8,13 @@ import {
     effect,
     inject
 } from '@angular/core';
-import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { TreeSelect, TreeSelectModule } from './componentes/treeselect.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
-import { TreeNodeSelectItem } from '../../models/dot-edit-content-host-folder-field.interface';
 import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
 
 /**
@@ -60,24 +59,23 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
             const nodeSelected = this.store.nodeSelected();
             this.pathControl.setValue(nodeSelected);
         });
+
+        effect(() => {
+            const pathToSave = this.store.pathToSave();
+            this.formControl.setValue(pathToSave);
+        });
     }
 
     ngOnInit() {
         const currentPath = this.formControl.value;
-        this.store.loadSites(currentPath);
+        const isRequired = this.formControl.hasValidator(Validators.required);
+        this.store.loadSites({
+            path: currentPath,
+            isRequired
+        });
     }
 
     get formControl(): FormControl {
         return this.#controlContainer.control.get(this.field.variable) as FormControl<string>;
-    }
-
-    onNodeSelect(event: TreeNodeSelectItem) {
-        const data = event.node.data;
-        if (!data) {
-            return;
-        }
-
-        const path = `${data.hostname}:${data.path ? data.path : '/'}`;
-        this.formControl.setValue(path);
     }
 }

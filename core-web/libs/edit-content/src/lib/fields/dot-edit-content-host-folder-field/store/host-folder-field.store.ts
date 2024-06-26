@@ -2,6 +2,7 @@ import { signalStore, withState, withComputed, withMethods } from '@ngrx/signals
 
 import { computed, inject } from '@angular/core';
 
+import { chooseNode } from './methods/chooseNode';
 import { loadChildren } from './methods/loadChildren';
 import { loadSites } from './methods/loadSites';
 
@@ -21,7 +22,7 @@ export type HostFolderFiledState = {
     error: string | null;
 };
 
-const initialState: HostFolderFiledState = {
+export const initialState: HostFolderFiledState = {
     nodeSelected: null,
     nodeExpaned: null,
     tree: [],
@@ -31,7 +32,7 @@ const initialState: HostFolderFiledState = {
 
 export const HostFolderFiledStore = signalStore(
     withState(initialState),
-    withComputed(({ status }) => ({
+    withComputed(({ status, nodeSelected }) => ({
         iconClasses: computed(() => {
             const currentStatus = status();
 
@@ -39,6 +40,17 @@ export const HostFolderFiledStore = signalStore(
                 'pi-spin pi-spinner': currentStatus === 'LOADING',
                 'pi-chevron-down': currentStatus !== 'LOADING'
             };
+        }),
+        pathToSave: computed(() => {
+            const node = nodeSelected();
+
+            if (node?.data) {
+                const { data } = node;
+
+                return `${data.hostname}:${data.path ? data.path : '/'}`;
+            }
+
+            return null;
         })
     })),
     withMethods((store) => {
@@ -46,7 +58,8 @@ export const HostFolderFiledStore = signalStore(
 
         return {
             loadSites: loadSites(store, dotEditContentService),
-            loadChildren: loadChildren(store, dotEditContentService)
+            loadChildren: loadChildren(store, dotEditContentService),
+            chooseNode: chooseNode(store)
         };
     })
 );

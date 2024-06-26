@@ -11,14 +11,28 @@ import type { HostFolderFiledState } from './../host-folder-field.store';
 
 const PEER_PAGE_LIMIT = 7000;
 
+type Props = {
+    path: string | null;
+    isRequired: boolean;
+};
+
+export const SYSTEM_HOST_NAME = 'System Host';
+
 export const loadSites = (store, dotEditContentService: DotEditContentService) => {
-    return rxMethod<string | null>(
+    return rxMethod<Props>(
         pipe(
             tap(() => patchState(store, { status: 'LOADING' })),
-            switchMap((path) => {
+            switchMap(({ path, isRequired }) => {
                 return dotEditContentService
                     .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
                     .pipe(
+                        map((sites) => {
+                            if (isRequired) {
+                                return sites.filter((site) => site.label !== SYSTEM_HOST_NAME);
+                            }
+
+                            return sites;
+                        }),
                         tapResponse({
                             next: (sites) => patchState(store, { tree: sites }),
                             error: () => patchState(store, { status: 'FAILED', error: '' }),
@@ -26,9 +40,35 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
                         }),
                         map((sites) => ({
                             path,
-                            sites
+                            sites,
+                            isRequired
                         }))
                     );
+            }),
+            switchMap(({ path, sites, isRequired }) => {
+                if (path) {
+                    return of({ path, sites });
+                }
+
+                if (isRequired) {
+                    return dotEditContentService.getCurrentSiteAsTreeNodeItem().pipe(
+                        switchMap((currentSite) => {
+                            const node = sites.find((item) => item.label === currentSite.label);
+
+                            return of({
+                                path: node?.label,
+                                sites
+                            });
+                        })
+                    );
+                }
+
+                const node = sites.find((item) => item.label === SYSTEM_HOST_NAME);
+
+                return of({
+                    path: node?.label,
+                    sites
+                });
             }),
             filter(({ path }) => !!path),
             switchMap(({ path, sites }) => {

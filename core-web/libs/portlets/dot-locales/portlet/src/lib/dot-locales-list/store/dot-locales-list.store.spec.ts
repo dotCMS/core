@@ -4,8 +4,9 @@ import {
     mockProvider,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -28,7 +29,9 @@ const messageServiceMock = new MockDotMessageService({
     'locales.set.as.default': 'Set as default',
     'locales.delete': 'Delete',
     'locales.push.publish': 'Push Publish',
-    'contenttypes.content.push_publish': 'Push Publish'
+    'contenttypes.content.push_publish': 'Push Publish',
+    'locale.delete.confirmation.notification.title': 'Locale deleted',
+    'locale.delete.confirmation.notification.message': 'Locale has been deleted'
 });
 
 describe('DotLocalesListStore', () => {
@@ -36,6 +39,7 @@ describe('DotLocalesListStore', () => {
     let languageService: SpyObject<DotLanguagesService>;
     let messageService: SpyObject<MessageService>;
     let dotPushPublishDialogService: DotPushPublishDialogService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     const storeService = createServiceFactory({
         service: DotLocalesListStore,
@@ -59,6 +63,7 @@ describe('DotLocalesListStore', () => {
         languageService = spectator.inject(DotLanguagesService);
         messageService = spectator.inject(MessageService);
         dotPushPublishDialogService = spectator.inject(DotPushPublishDialogService);
+        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
 
         languageService.get.mockReturnValue(of([...mockLocales]));
         languageService.getISO.mockReturnValue(of(mockLanguagesISO));
@@ -131,6 +136,26 @@ describe('DotLocalesListStore', () => {
             expect(notDefaultLocaleActions[2].menuItem.label).toBe('Set as default');
             expect(notDefaultLocaleActions[3].menuItem.label).toBe('Delete');
             done();
+        });
+    });
+
+    it('should handle errors correctly', () => {
+        languageService.delete.mockReturnValue(throwError('test'));
+
+        spectator.service.deleteLocale(1);
+
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+            'test' as unknown as HttpErrorResponse
+        );
+
+        languageService.delete.mockReturnValue(of(null));
+
+        spectator.service.deleteLocale(1);
+
+        expect(messageService.add).toHaveBeenCalledWith({
+            severity: 'info',
+            summary: 'Locale deleted',
+            detail: 'Locale has been deleted'
         });
     });
 });
