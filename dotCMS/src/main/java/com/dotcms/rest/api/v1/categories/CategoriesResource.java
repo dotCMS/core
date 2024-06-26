@@ -164,7 +164,8 @@ public class CategoriesResource {
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
             @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
-            @QueryParam("showChildrenCount") final boolean showChildrenCount) {
+            @QueryParam("showChildrenCount") final boolean showChildrenCount,
+            @QueryParam("allLevels") final boolean allLevels) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -178,6 +179,7 @@ public class CategoriesResource {
 
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put("childrenCategories", false);
+        extraParams.put("searchInAllLevels", allLevels);
 
         try {
            response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
