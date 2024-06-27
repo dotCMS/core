@@ -52,7 +52,7 @@ jobs:
         with:
           context: ./docker/java-base
           push: ${{ github.event.inputs.push }}
-          tags: ${{ github.event.inputs.sdkman_java_version }}
+          tags: dotcms/java-base:${{ github.event.inputs.sdkman_java_version }}
           platforms: ${{ env.PLATFORMS }}
           build-args:
             SDKMAN_JAVA_VERSION=${{ github.event.inputs.sdkman_java_version }}

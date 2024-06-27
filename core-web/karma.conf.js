@@ -17,7 +17,7 @@ module.exports = () => {
         ],
         client: {
             clearContext: false, // leave Jasmine Spec Runner output visible in browser
-            captureConsole: false
+            captureConsole: true
         },
         coverageReporter: {
             dir: '../../target/core-web-reports',

@@ -169,16 +169,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             areContainersEquals(container, clientData.container)
         ) ?? { contentletsId: [] };
 
+        const container = clientData.container
+            ? {
+                  ...clientData.container,
+                  contentletsId
+              }
+            : null;
+
         return {
             ...clientData,
             language_id: languageId.toString(),
             pageId: id,
             pageContainers: containers,
             personaTag,
-            container: {
-                ...clientData.container,
-                contentletsId
-            }
+            container
         } as ActionPayload;
     });
 

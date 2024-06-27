@@ -5,7 +5,7 @@ import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
 @ValueType

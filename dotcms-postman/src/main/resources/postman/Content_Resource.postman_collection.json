@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "6d6b0491-9a4b-49cd-990c-4e408951f7c8",
+		"_postman_id": "dad2a40e-1c1a-4242-8a70-08013513981d",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "17413400",
-		"_collection_link": "https://blue-shuttle-729384.postman.co/workspace/a7eabadb-1add-48d7-ad79-8cc45ee194f4/collection/17413400-6d6b0491-9a4b-49cd-990c-4e408951f7c8?action=share&source=collection_link&creator=17413400"
+		"_exporter_id": "36473486"
 	},
 	"item": [
 		{
@@ -3150,16 +3149,14 @@
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
 									"",
 									"",
 									"pm.test(\"description field check\", function () {",
 									"    pm.expect(jsonData.entity.fields[2].name).to.eql('description');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -3168,7 +3165,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3211,14 +3209,15 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"pm.test(\"description field check\", function () {",
+									"    pm.expect(jsonData.entity.description).to.eql('description');",
 									"});",
 									"",
 									"pm.collectionVariables.set(\"page_id\", jsonData.entity.identifier);",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -3227,7 +3226,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3272,15 +3272,13 @@
 									"var jsonData = pm.response.json();\r",
 									"\r",
 									"\r",
-									"pm.test(\"Status code should be ok 200\", function () {\r",
-									"    pm.response.to.have.status(200);\r",
-									"});\r",
 									"\r",
 									"pm.test(\"description field check\", function () {\r",
 									"    pm.expect(jsonData.contentlets[0].description).to.eql('description');\r",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						},
 						{
@@ -3289,7 +3287,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],

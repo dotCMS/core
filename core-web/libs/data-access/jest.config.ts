@@ -4,7 +4,8 @@ export default {
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
-    coverageReporters: [['lcovonly', { file: 'TEST-template-builder.lcov' }]],
+    coverageDirectory: '../../coverage/libs/data-access',
+    coverageReporters: ['html', ['lcovonly', { file: 'TEST-template-builder.lcov' }]],
     reporters: [
         'default',
         ['github-actions', { silent: false }],

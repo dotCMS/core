@@ -21,9 +21,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import javax.enterprise.context.Dependent;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.WebApplicationException;
+import jakarta.enterprise.context.Dependent;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 

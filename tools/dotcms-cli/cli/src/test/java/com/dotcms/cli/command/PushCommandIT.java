@@ -15,6 +15,8 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -26,8 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -351,55 +351,58 @@ class PushCommandIT extends CommandTest {
                 commandStartLatch.await();
 
                 // Scheduled executor for introducing delay
-                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
-                // Simulate changes in the tempFolder with a delay
-                logger.debug("Starting change task. This will create a new file in the temp folder (workspace) and feed it with content every second. during: a 5 seconds total time");
-                Runnable changeTask = () -> {
-                    try {
-                        final Path newFile = tempFolder.resolve("newFile.txt");
-                        Files.createFile(newFile);
-                        for (int i = 0; i < 5; i++) {
-                            // Create a new file
-                            Files.writeString(newFile, "Hello, world! " + i + "\n");
-                            // Use a latch to control timing
-                            CountDownLatch innerLatch = new CountDownLatch(1);
-                            logger.debug(" File updated now will be waiting for 1 second");
-                            scheduler.schedule(innerLatch::countDown, 1, TimeUnit.SECONDS);
-                            innerLatch.await();
+                    // Simulate changes in the tempFolder with a delay
+                    logger.debug(
+                            "Starting change task. This will create a new file in the temp folder (workspace) and feed it with content every second. during: a 5 seconds total time");
+                    Runnable changeTask = () -> {
+                        try {
+                            final Path newFile = tempFolder.resolve("newFile.txt");
+                            Files.createFile(newFile);
+                            for (int i = 0; i < 5; i++) {
+                                // Create a new file
+                                Files.writeString(newFile, "Hello, world! " + i + "\n");
+                                // Use a latch to control timing
+                                CountDownLatch innerLatch = new CountDownLatch(1);
+                                logger.debug(" File updated now will be waiting for 1 second");
+                                scheduler.schedule(innerLatch::countDown, 1, TimeUnit.SECONDS);
+                                innerLatch.await();
+                            }
+                        } catch (IOException | InterruptedException e) {
+                            // Quietly ignore exceptions
+                        } finally {
+                            changeLatch.countDown();
                         }
-                    } catch (IOException | InterruptedException e) {
-                        // Quietly ignore exceptions
-                    } finally {
-                        changeLatch.countDown();
-                    }
-                };
+                    };
 
-                // Schedule the change task to run immediately
-                scheduler.execute(changeTask);
+                    // Schedule the change task to run immediately
+                    scheduler.execute(changeTask);
 
-                // Wait for changes to be made
-                changeLatch.await();
+                    // Wait for changes to be made
+                    changeLatch.await();
 
-                // Allow some time for the command to process the changes
-                commandLatch.await(10, TimeUnit.SECONDS);
+                    // Allow some time for the command to process the changes
+                    commandLatch.await(10, TimeUnit.SECONDS);
 
-                // Interrupt the command thread to simulate sending a signal like CTRL-C
-                logger.debug("Interrupting command thread. This will simulate a signal like CTRL-C");
-                commandThread.interrupt();
-                commandThread.join();
-                logger.debug("Shutting down scheduler");
-                // Terminate the scheduler
-                scheduler.shutdown();
-                scheduler.awaitTermination(10, TimeUnit.SECONDS);
+                    // Interrupt the command thread to simulate sending a signal like CTRL-C
+                    logger.debug(
+                            "Interrupting command thread. This will simulate a signal like CTRL-C");
+                    commandThread.interrupt();
+                    commandThread.join();
+                    logger.debug("Shutting down scheduler");
+                    // Terminate the scheduler
+                    scheduler.shutdown();
+                    scheduler.awaitTermination(10, TimeUnit.SECONDS);
 
-                logger.debug("Running assertions");
-                // Validate the output of the command
-                final String output = writer.toString();
-                Assertions.assertTrue(output.contains("No changes in Languages to push"));
-                Assertions.assertTrue(output.contains("No changes in Sites to push"));
-                Assertions.assertTrue(output.contains("No changes in ContentTypes to push"));
-                Assertions.assertTrue(output.contains(" No changes in Files to push"));
+                    logger.debug("Running assertions");
+                    // Validate the output of the command
+                    final String output = writer.toString();
+                    Assertions.assertTrue(output.contains("No changes in Languages to push"));
+                    Assertions.assertTrue(output.contains("No changes in Sites to push"));
+                    Assertions.assertTrue(output.contains("No changes in ContentTypes to push"));
+                    Assertions.assertTrue(output.contains(" No changes in Files to push"));
+
             }
         } finally {
             deleteTempDirectory(tempFolder);

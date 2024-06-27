@@ -3,8 +3,8 @@ package com.dotcms.model.site;
 
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import javax.annotation.Nullable;
-import javax.ws.rs.QueryParam;
+import jakarta.annotation.Nullable;
+import jakarta.ws.rs.QueryParam;
 import org.immutables.value.Value;
 
 @ValueType
