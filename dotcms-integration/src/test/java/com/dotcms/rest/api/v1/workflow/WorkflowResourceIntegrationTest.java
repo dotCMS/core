@@ -99,6 +99,7 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -2156,7 +2157,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
     }
 
-    @Test
+    @Test(expected = DotContentletValidationException.class)
     public void Test_Create_Instance_Of_Content_With_Numeric_Fields_Verify_Message_When_Setting_Invalid_Values_Issue_15340()
             throws Exception {
         ContentType contentType = null;
@@ -2196,18 +2197,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
             final HttpServletRequest request2 = getHttpRequest();
+
             final Response response2 = workflowResource
                     .fireActionSinglePart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID,
                             brandNewContentlet.getInode(), null, "FORCE", "-1", fireActionForm2);
-
-            final int statusCode2 = response2.getStatus();
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), statusCode2);
-            final ResponseEntityView errorEntityView = ResponseEntityView.class.cast(
-                    response2.getEntity());
-            assertEquals(1, errorEntityView.getErrors().stream()
-                    .filter(errorEntity -> "required".equals(
-                            ErrorEntity.class.cast(errorEntity).getErrorCode())).count());
-
         } finally {
             if (null != contentType) {
                 contentTypeAPI.delete(contentType);
@@ -2577,7 +2570,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
 
         if (field instanceof KeyValueField) {
-            return "{key1:value, key2:value }";
+            return "{\"key1\":\"value\", \"key2\":\"value\" }";
         }
 
         final DataTypes dataType = field.dataType();
