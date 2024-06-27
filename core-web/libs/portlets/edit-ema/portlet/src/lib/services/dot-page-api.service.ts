@@ -13,9 +13,11 @@ import {
     DotLayout,
     DotPageContainerStructure,
     DotPersona,
-    DotTemplate
+    DotTemplate,
+    VanityUrl
 } from '@dotcms/dotcms-models';
 
+import { PAGE_MODE } from '../shared/enums';
 import { SavePagePayload } from '../shared/models';
 import { createPageApiUrlWithQueryParams } from '../utils';
 
@@ -44,6 +46,7 @@ export interface DotPageApiResponse {
     template: DotTemplate;
     containers: DotPageContainerStructure;
     urlContentMap?: DotCMSContentlet;
+    vanityUrl?: VanityUrl;
 }
 
 export interface DotPageApiParams {
@@ -90,12 +93,14 @@ export class DotPageApiService {
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
         const pageType = params.clientHost ? 'json' : 'render';
+        const mode = params.clientHost ? PAGE_MODE.LIVE : PAGE_MODE.EDIT;
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
             language_id: params.language_id,
             'com.dotmarketing.persona.id': params['com.dotmarketing.persona.id'],
             variantName: params.variantName,
-            experimentId: params.experimentId
+            experimentId: params.experimentId,
+            mode
         });
 
         const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;

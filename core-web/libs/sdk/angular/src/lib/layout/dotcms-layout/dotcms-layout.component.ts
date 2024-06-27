@@ -1,17 +1,26 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
+    HostListener,
     Input,
     OnInit,
-    inject
+    inject,
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { filter } from 'rxjs/operators';
 
-import { initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
+import {
+    CUSTOMER_ACTIONS,
+    initEditor,
+    isInsideEditor,
+    postMessageToEditor,
+    updateNavigation
+} from '@dotcms/client';
 
 import { DynamicComponentEntity } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';
@@ -29,7 +38,7 @@ import { RowComponent } from '../row/row.component';
     selector: 'dotcms-layout',
     standalone: true,
     imports: [RowComponent],
-    template: `@for (row of pageAsset.layout.body.rows; track $index) {
+    template: ` @for (row of this.pageAssetData()?.layout?.body?.rows; track $index) {
         <dotcms-row [row]="row" />
     }`,
     styleUrl: './dotcms-layout.component.css',
@@ -40,9 +49,25 @@ export class DotcmsLayoutComponent implements OnInit {
     @Input({ required: true }) components!: Record<string, DynamicComponentEntity>;
 
     private readonly route = inject(ActivatedRoute);
-    private readonly router = inject(Router);
     private readonly pageContextService = inject(PageContextService);
     private readonly destroyRef$ = inject(DestroyRef);
+
+    pageAssetData = signal<DotCMSPageAsset | null>(null);
+
+    @HostListener('window:message', ['$event'])
+    onMessage(event: MessageEvent) {
+        if (!isInsideEditor()) {
+            return;
+        }
+
+        if (event.data.name === 'SET_PAGE_INFO') {
+            this.pageAssetData.set(event.data.payload);
+            this.pageContextService.setContext(
+                this.pageAssetData() as DotCMSPageAsset,
+                this.components
+            );
+        }
+    }
 
     ngOnInit() {
         this.route.url
@@ -52,21 +77,22 @@ export class DotcmsLayoutComponent implements OnInit {
             )
             .subscribe((urlSegments) => {
                 const pathname = '/' + urlSegments.join('/');
-                const config = {
-                    pathname,
-                    onReload: () => {
-                        // Reload the page when the user edit the page
-                        this.router.navigate([pathname], {
-                            onSameUrlNavigation: 'reload' // Force Angular to reload the page
-                        });
-                    }
-                };
-                initEditor(config);
+
+                initEditor();
                 updateNavigation(pathname || '/');
+
+                //Sent the path to the editor
+                postMessageToEditor({
+                    action: CUSTOMER_ACTIONS.GET_PAGE_INFO,
+                    payload: {
+                        pathname
+                    }
+                });
             });
     }
 
     ngOnChanges() {
+        this.pageAssetData.set(this.pageAsset);
         //Each time the layout changes, we need to update the context
         this.pageContextService.setContext(this.pageAsset, this.components);
     }

@@ -1,4 +1,6 @@
+import { waitFor } from '@testing-library/react';
 import { renderHook } from '@testing-library/react-hooks';
+import { act } from 'react';
 
 import * as dotcmsClient from '@dotcms/client';
 
@@ -19,38 +21,76 @@ describe('useDotcmsEditor', () => {
         jest.clearAllMocks();
     });
 
-    it('should call initEditor when inside editor', () => {
-        isInsideEditorSpy.mockReturnValueOnce(true);
+    describe('when outside editor', () => {
+        it('should not call initEditor or destroyEditor when outside editor', () => {
+            isInsideEditorSpy.mockReturnValue(false);
 
-        renderHook(() => useDotcmsEditor());
+            renderHook(() => useDotcmsEditor());
 
-        expect(initEditorSpy).toHaveBeenCalled();
+            expect(initEditorSpy).not.toHaveBeenCalled();
+            expect(destroyEditorSpy).not.toHaveBeenCalled();
+        });
+
+        it('should dont update pageInfo when received from editor', async () => {
+            isInsideEditorSpy.mockReturnValue(false);
+            const pageInfoMock = { title: 'Hello World' };
+
+            const { result } = renderHook(() => useDotcmsEditor());
+
+            act(() => {
+                const event = new MessageEvent('message', {
+                    data: {
+                        name: 'SET_PAGE_INFO',
+                        payload: pageInfoMock
+                    }
+                });
+                window.dispatchEvent(event);
+            });
+
+            await waitFor(() => {
+                expect(result.current.pageInfo).toEqual(null);
+            });
+        });
     });
 
-    it('should call destroyEditor on unmount when inside editor', () => {
-        isInsideEditorSpy.mockReturnValueOnce(true);
+    describe('when inside editor', () => {
+        it('should call initEditor when inside editor', () => {
+            isInsideEditorSpy.mockReturnValueOnce(true);
 
-        const { unmount } = renderHook(() => useDotcmsEditor());
+            renderHook(() => useDotcmsEditor());
 
-        unmount();
+            expect(initEditorSpy).toHaveBeenCalled();
+        });
 
-        expect(destroyEditorSpy).toHaveBeenCalled();
-    });
+        it('should call destroyEditor on unmount when inside editor', () => {
+            isInsideEditorSpy.mockReturnValueOnce(true);
 
-    it('should not call initEditor or destroyEditor when outside editor', () => {
-        isInsideEditorSpy.mockReturnValueOnce(false);
+            const { unmount } = renderHook(() => useDotcmsEditor());
 
-        renderHook(() => useDotcmsEditor());
+            unmount();
 
-        expect(initEditorSpy).not.toHaveBeenCalled();
-        expect(destroyEditorSpy).not.toHaveBeenCalled();
-    });
+            expect(destroyEditorSpy).toHaveBeenCalled();
+        });
 
-    it('should call initEditor with options', () => {
-        isInsideEditorSpy.mockReturnValueOnce(true);
+        it('should update pageInfo when received from editor', async () => {
+            isInsideEditorSpy.mockReturnValue(true);
+            const pageInfoMock = { title: 'Hello World' };
 
-        renderHook(() => useDotcmsEditor({ onReload: jest.fn() }));
+            const { result } = renderHook(() => useDotcmsEditor());
 
-        expect(initEditorSpy).toHaveBeenCalledWith({ onReload: expect.any(Function) });
+            act(() => {
+                const event = new MessageEvent('message', {
+                    data: {
+                        name: 'SET_PAGE_INFO',
+                        payload: pageInfoMock
+                    }
+                });
+                window.dispatchEvent(event);
+            });
+
+            await waitFor(() => {
+                expect(result.current.pageInfo).toEqual(pageInfoMock);
+            });
+        });
     });
 });

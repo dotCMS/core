@@ -247,7 +247,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             }
 
             if (this.currentComponent instanceof EditEmaEditorComponent) {
-                this.currentComponent.reloadIframe();
+                this.currentComponent.reloadIframeContent();
             }
 
             this.activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {

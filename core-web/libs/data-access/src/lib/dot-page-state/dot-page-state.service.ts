@@ -284,9 +284,9 @@ export class DotPageStateService {
                 ) => {
                     if (page) {
                         const urlParam = generateDotFavoritePageUrl({
-                            deviceInode: page.viewAs.device?.inode,
-                            languageId: page.viewAs.language.id,
-                            pageURI: page.page.pageURI,
+                            deviceInode: page.viewAs?.device?.inode,
+                            languageId: page.viewAs?.language?.id || 1,
+                            pageURI: page.page?.pageURI,
                             siteId: page.site?.identifier
                         });
 

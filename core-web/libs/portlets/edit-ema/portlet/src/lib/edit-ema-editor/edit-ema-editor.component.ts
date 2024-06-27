@@ -567,7 +567,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 if (isVTL) {
                     this.setIframeContent(code);
                 } else {
-                    this.reloadIframe();
+                    this.reloadIframeContent();
                 }
 
                 this.store.setShouldReload(false);
@@ -1096,6 +1096,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
+            [CUSTOMER_ACTIONS.GET_PAGE_INFO]: () => {
+                this.reloadIframeContent();
+            },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
@@ -1108,9 +1111,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @private
      * @memberof DotEmaComponent
      */
-    reloadIframe() {
-        this.iframe?.nativeElement?.contentWindow?.postMessage(
-            NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
+    reloadIframeContent() {
+        this.iframe?.nativeElement?.contentWindow.postMessage(
+            { name: NOTIFY_CUSTOMER.SET_PAGE_INFO, payload: this.store.state().editor },
             this.host
         );
     }
