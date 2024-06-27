@@ -3,7 +3,7 @@ package com.dotcms.cli.common;
 import io.quarkus.arc.DefaultBean;
 import java.io.Console;
 import java.util.Optional;
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 import picocli.CommandLine.Help;
 
 @DefaultBean

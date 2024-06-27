@@ -8,9 +8,9 @@ import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.model.asset.AssetRequest;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import java.io.InputStream;
 
 @ApplicationScoped

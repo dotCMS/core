@@ -313,10 +313,10 @@ jobs:
       matrix:
         collection_group: [ 'category-content', 'container', 'experiment', 'graphql', 'page', 'pp', 'template', 'workflow',  'default' ]
     steps:
-      - uses: actions/checkout@v4
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v4
+      - uses: ./.github/actions/cleanup-runner
       - name: Download Maven Repo
         uses: actions/download-artifact@v4
         with:

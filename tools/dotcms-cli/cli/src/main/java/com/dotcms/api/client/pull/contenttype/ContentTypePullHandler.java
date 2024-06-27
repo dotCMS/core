@@ -6,7 +6,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.pull.PullOptions;
 import java.text.SimpleDateFormat;
 import java.util.List;
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 import org.apache.commons.lang3.StringUtils;
 
 @Dependent

@@ -7,7 +7,7 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
 import java.util.HashSet;
 import java.util.Set;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 

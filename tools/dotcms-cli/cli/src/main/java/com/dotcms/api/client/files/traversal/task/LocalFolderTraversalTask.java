@@ -29,8 +29,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import javax.enterprise.context.Dependent;
-import javax.ws.rs.NotFoundException;
+import jakarta.enterprise.context.Dependent;
+import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 

@@ -12,8 +12,8 @@ import com.dotcms.model.site.SiteView;
 import org.apache.commons.lang3.BooleanUtils;
 import picocli.CommandLine;
 
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 
 public abstract class AbstractSiteCommand {
 

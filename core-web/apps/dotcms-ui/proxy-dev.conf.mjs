@@ -12,7 +12,8 @@ export default [
             '/application',
             '/assets',
             '/dotcms-block-editor',
-            '/dotcms-binary-field-builder'
+            '/dotcms-binary-field-builder',
+            '/categoriesServlet'
         ],
         target: 'http://localhost:8080',
         secure: false,
