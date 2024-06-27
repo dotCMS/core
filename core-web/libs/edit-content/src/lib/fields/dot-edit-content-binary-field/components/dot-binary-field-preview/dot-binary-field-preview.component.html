@@ -122,7 +122,7 @@
     </div>
 
     @if (contentlet) {
-        @for (sourceLink of this.resourceLinks(); track $index; let last = $last) {
+        @for (sourceLink of this.resourceLinks(); track $index) {
             @if (sourceLink.show) {
                 <div [attr.data-testId]="'resource-link-' + sourceLink.key" class="file-info__item">
                     <span class="file-info__title">{{ sourceLink.key | dm }}:</span>

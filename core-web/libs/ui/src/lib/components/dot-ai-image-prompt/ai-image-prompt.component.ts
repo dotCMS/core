@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormGroupDirective } from '@angular/forms';
 
@@ -23,7 +23,6 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
     templateUrl: './ai-image-prompt.component.html',
     styleUrls: ['./ai-image-prompt.component.scss'],
     imports: [
-        NgIf,
         DialogModule,
         AsyncPipe,
         DotMessagePipe,
@@ -36,11 +35,12 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAIImagePromptComponent {
-    protected readonly vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
     protected readonly ComponentStatus = ComponentStatus;
     private dotMessageService = inject(DotMessageService);
     private confirmationService = inject(ConfirmationService);
     store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
+
+    protected readonly vm$: Observable<VmAiImagePrompt> = this.store.vm$;
 
     closeDialog(): void {
         this.confirmationService.confirm({

@@ -41,7 +41,7 @@
     [showItemNavigators]="images?.length > 1"
     [showThumbnails]="false"
     [value]="images"
-    visible="true">
+    [visible]="true">
     <ng-template pTemplate="item" let-item>
         <p-image
             *ngIf="item.response; else errorMessage"
