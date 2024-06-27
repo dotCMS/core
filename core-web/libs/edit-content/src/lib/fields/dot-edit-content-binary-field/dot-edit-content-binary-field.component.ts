@@ -129,11 +129,11 @@ export class DotEditContentBinaryFieldComponent
     readonly #cd = inject(ChangeDetectorRef);
     readonly #controlContainer = inject(ControlContainer);
 
+    field = input.required<DotCMSContentTypeField>();
     @Input() contentlet: DotCMSContentlet;
     @Input() imageEditor = false;
     @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
     @ViewChild('inputFile') inputFile: ElementRef;
-    @ViewChild(DotAIImagePromptComponent) dialogAI: DotAIImagePromptComponent;
     readonly dialogFullScreenStyles = { height: '90%', width: '90%' };
     readonly dialogHeaderMap = {
         [BinaryFieldMode.URL]: 'dot.binary.field.dialog.import.from.url.header',
@@ -198,8 +198,6 @@ export class DotEditContentBinaryFieldComponent
                 this.#dotBinaryFieldStore.setTempFile(tempFile);
             });
     }
-
-    field = input.required<DotCMSContentTypeField>();
 
     get value(): string {
         return this.formControl.value;
