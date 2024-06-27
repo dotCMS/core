@@ -66,7 +66,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     .forEach(field -> {
 
                         final Object storyBlockValue = contentlet.get(field.variable());
-                        if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
+                        if (null != storyBlockValue) {
                             final StoryBlockReferenceResult result =
                                     this.refreshStoryBlockValueReferences(storyBlockValue, contentlet.getIdentifier());
                             if (result.isRefreshed()) {
@@ -85,38 +85,48 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @SuppressWarnings("unchecked")
     public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed = false;
-        if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(),
-                "refreshStoryBlockValueReferences", MAX_RECURSION_LEVEL)) {
-            Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL +
-                    " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
-            return new StoryBlockReferenceResult(false, storyBlockValue);
-        }
-        try {
-            final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
-            final Object contentsMap = blockEditorMap.get(CONTENT_KEY);
-            if(!UtilMethods.isSet(contentsMap) || !(contentsMap instanceof List)) {
-                return new StoryBlockReferenceResult(true, storyBlockValue);
+        if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
+            if (ThreadUtils.isMethodCallCountEqualThan(this.getClass().getName(),
+                    "refreshStoryBlockValueReferences", MAX_RECURSION_LEVEL)) {
+                Logger.debug(this, () -> "This method has been called more than " + MAX_RECURSION_LEVEL +
+                        " times in the same thread. This could be a sign of circular reference in the Story Block field. Data will NOT be refreshed.");
+                return new StoryBlockReferenceResult(false, storyBlockValue);
             }
-            for (final Map<String, Object> contentMap : (List<Map<String, Object>>) contentsMap) {
-                if (UtilMethods.isSet(contentMap)) {
-                    final String type = contentMap.get(TYPE_KEY).toString();
-                    if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
-
-                        refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
-                    }
+            try {
+                final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
+                final Object contentsMap = blockEditorMap.get(CONTENT_KEY);
+                if (!UtilMethods.isSet(contentsMap) || !(contentsMap instanceof List)) {
+                    return new StoryBlockReferenceResult(true, storyBlockValue);
                 }
+                refreshed = isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) contentsMap);
+                if (refreshed) {
+                    return new StoryBlockReferenceResult(true, this.toJson(blockEditorMap));
+                }
+            } catch (final Exception e) {
+                final String errorMsg = String.format("An error occurred when refreshing Story Block Contentlet references in parent Content " +
+                        "'%s': %s", parentContentletIdentifier, ExceptionUtil.getErrorMessage(e));
+                Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg, e);
+                throw new DotRuntimeException(errorMsg, e);
             }
-            if (refreshed) {
-                return new StoryBlockReferenceResult(true, this.toJson(blockEditorMap));
-            }
-        } catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when refreshing Story Block Contentlet references in parent Content " +
-                    "'%s': %s", parentContentletIdentifier, ExceptionUtil.getErrorMessage(e));
-            Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
         }
         // Return the original value in case no data was refreshed
         return new StoryBlockReferenceResult(false, storyBlockValue);
+    }
+
+    private boolean isRefreshed(final String parentContentletIdentifier,
+                                final List<Map<String, Object>> contentsMap) {
+
+        boolean refreshed = false;
+        for (final Map<String, Object> contentMap : contentsMap) {
+            if (UtilMethods.isSet(contentMap)) {
+                final String type = contentMap.get(TYPE_KEY).toString();
+                if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
+
+                    refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
+                }
+            }
+        }
+        return refreshed;
     }
 
     /**
