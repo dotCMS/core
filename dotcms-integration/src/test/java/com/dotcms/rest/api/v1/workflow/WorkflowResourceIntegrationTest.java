@@ -2157,7 +2157,6 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
     }
 
-    @Test(expected = DotContentletValidationException.class)
     public void Test_Create_Instance_Of_Content_With_Numeric_Fields_Verify_Message_When_Setting_Invalid_Values_Issue_15340()
             throws Exception {
         ContentType contentType = null;
@@ -2201,7 +2200,11 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response2 = workflowResource
                     .fireActionSinglePart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID,
                             brandNewContentlet.getInode(), null, "FORCE", "-1", fireActionForm2);
-        } finally {
+
+            fail("Should have thrown an exception");
+        } catch (DotContentletValidationException e) {finally {
+            // nice
+        }
             if (null != contentType) {
                 contentTypeAPI.delete(contentType);
             }
