@@ -105,7 +105,10 @@
             <div class="field">
                 <label for="isoCode">{{ 'locale.id' | dm }}</label>
                 <span class="p-input-icon-right">
-                    <i [cdkCopyToClipboard]="isoCodeInput.value" class="pi pi-copy"></i>
+                    <dot-copy-button
+                        [copy]="isoCodeInput.value"
+                        *ngIf="isoCodeInput.value"
+                        customClass="p-button-rounded" />
                     <input
                         [placeholder]="'locale.id.placeholder' | dm"
                         id="isoCode"

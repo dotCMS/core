@@ -18,12 +18,12 @@
     </div>
     <p-table
         [value]="vm.locales"
-        [globalFilterFields]="['locale', 'language', 'country']"
+        [globalFilterFields]="['isoCode', 'language', 'country']"
         #dt
         styleClass="dotTable">
         <ng-template pTemplate="header">
             <tr>
-                <th scope="col" pSortableColumn="locale">
+                <th scope="col" pSortableColumn="isoCode">
                     {{ 'locales.locale' | dm }} <p-sortIcon field="locale"></p-sortIcon>
                 </th>
                 <th scope="col" pSortableColumn="language">
