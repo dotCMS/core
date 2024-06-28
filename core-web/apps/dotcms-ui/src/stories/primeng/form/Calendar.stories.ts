@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { Calendar } from 'primeng/calendar';
+import { Calendar, CalendarModule } from 'primeng/calendar';
 
 const TODAY = new Date();
 const DAYS_TO_DISABLE = 5;
@@ -74,7 +74,7 @@ export default meta;
 
 export const Primary: Story = (args) => ({
     moduleMetadata: {
-        imports: [BrowserAnimationsModule, ButtonModule]
+        imports: [BrowserAnimationsModule, ButtonModule, CalendarModule]
     },
     props: {
         ...args
