@@ -10,9 +10,10 @@ import {
 } from '@angular/core';
 import { ControlContainer, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
+
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { TreeSelect, TreeSelectModule } from './componentes/treeselect.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
 import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
