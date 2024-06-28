@@ -3,19 +3,14 @@ import { Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { LazyLoadEvent, MenuItem, MenuItemCommandEvent } from 'primeng/api';
+import { LazyLoadEvent, MenuItem } from 'primeng/api';
 
 import { map, take } from 'rxjs/operators';
 
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 import { DotMessageService, OrderDirection } from '@dotcms/data-access';
-import { DotActionMenuItem, DotCategory } from '@dotcms/dotcms-models';
+import { DotActionMenuItem, DotCategory, DotMenuItemCommandEvent } from "@dotcms/dotcms-models";
 import { DataTableColumn } from '@models/data-table';
-
-interface DotMenuItemCommandEvent extends MenuItemCommandEvent {
-    inode: string;
-    categoryName: string;
-}
 
 export interface DotCategoriesListState {
     categoriesBulkActions: MenuItem[];

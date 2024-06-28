@@ -12,14 +12,14 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { LazyLoadEvent, MenuItem, PrimeTemplate } from 'primeng/api';
+import { LazyLoadEvent, PrimeTemplate } from 'primeng/api';
 import { Table } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
 import { OrderDirection, PaginatorService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
-import { DotActionMenuItem } from '@dotcms/dotcms-models';
+import { CustomMenuItem, DotActionMenuItem } from '@dotcms/dotcms-models';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
 
@@ -77,14 +77,11 @@ export class DotListingDataTableComponent implements OnInit {
     isContentFiltered = false;
     dateColumns: DataTableColumn[];
     loading = true;
-    contextMenuItems: MenuItem[];
+    contextMenuItems: CustomMenuItem[];
     maxLinksPage: number;
     totalRecords: number;
 
-    constructor(
-        public loggerService: LoggerService,
-        public paginatorService: PaginatorService
-    ) {
+    constructor(public loggerService: LoggerService, public paginatorService: PaginatorService) {
         this.paginatorService.url = this.url;
     }
 
