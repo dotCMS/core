@@ -67,4 +67,19 @@ public class CommonViews {
 
     }
 
+    /**
+     * This interface represents the "Internal" view for our Content Type JSON serialization.
+     */
+    public interface ContentTypeInternalView {
+
+    }
+
+    /**
+     * This interface represents the "External" view for our Content Type JSON serialization used
+     * for creating or updating content types.
+     */
+    public interface ContentTypeExternalView {
+
+    }
+
 }

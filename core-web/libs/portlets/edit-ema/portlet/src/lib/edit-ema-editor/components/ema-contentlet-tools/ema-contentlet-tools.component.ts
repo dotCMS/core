@@ -220,7 +220,8 @@ export class EmaContentletToolsComponent implements OnChanges {
             position: 'absolute',
             left: `${left}px`,
             top: `${top}px`,
-            zIndex: '1'
+            zIndex: '1',
+            width: `${this.ACTIONS_CONTAINER_WIDTH}px`
         };
     }
 
