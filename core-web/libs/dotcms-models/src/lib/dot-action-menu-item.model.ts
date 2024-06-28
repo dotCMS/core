@@ -1,12 +1,15 @@
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
 
-import { DotCMSContentType } from './dot-content-types.model';
-
-interface CustomMenuItem extends Omit<MenuItem, 'command'> {
-    command?(event: DotCMSContentType): void;
+export interface CustomMenuItem<T = unknown> extends Omit<MenuItem, 'command'> {
+    command?(event?: T): void;
 }
 
-export interface DotActionMenuItem {
+export interface DotActionMenuItem<T = unknown> {
     shouldShow?: (x?: Record<string, unknown>) => boolean;
-    menuItem: CustomMenuItem;
+    menuItem: CustomMenuItem<T>;
+}
+
+export interface DotMenuItemCommandEvent extends MenuItemCommandEvent {
+    inode: string;
+    categoryName: string;
 }

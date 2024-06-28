@@ -10,6 +10,7 @@ import { AnimationEvent } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import {
     AfterContentInit,
+    booleanAttribute,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -19,13 +20,12 @@ import {
     forwardRef,
     Input,
     NgModule,
+    OnInit,
     Output,
     QueryList,
     TemplateRef,
     ViewChild,
-    ViewEncapsulation,
-    booleanAttribute,
-    OnInit
+    ViewEncapsulation
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -34,6 +34,7 @@ import {
     OverlayService,
     PrimeNGConfig,
     PrimeTemplate,
+    ScrollerOptions,
     SharedModule,
     TreeNode
 } from 'primeng/api';
@@ -43,7 +44,6 @@ import { SearchIcon } from 'primeng/icons/search';
 import { TimesIcon } from 'primeng/icons/times';
 import { Overlay, OverlayModule } from 'primeng/overlay';
 import { RippleModule } from 'primeng/ripple';
-import { ScrollerOptions } from 'primeng/scroller';
 import { Tree, TreeModule } from 'primeng/tree';
 import { ObjectUtils } from 'primeng/utils';
 
@@ -95,9 +95,9 @@ export const TREESELECT_VALUE_ACCESSOR = {
                             <div *ngFor="let node of value" class="p-treeselect-token">
                                 <span class="p-treeselect-token-label">{{ node.label }}</span>
                             </div>
-                            <ng-container *ngIf="emptyValue">{{
-                                placeholder || 'empty'
-                            }}</ng-container>
+                            <ng-container *ngIf="emptyValue"
+                                >{{ placeholder || 'empty' }}
+                            </ng-container>
                         </ng-template>
                     </ng-template>
                 </div>
@@ -334,50 +334,56 @@ export class TreeSelect implements AfterContentInit, OnInit {
      * @group Props
      */
     @Input({ transform: booleanAttribute }) loading: boolean | undefined;
-
-    @Input() get options(): any[] {
-        return this._options;
-    }
-    set options(options) {
-        this._options = options;
-        this.updateTreeState();
-    }
-
     @ContentChildren(PrimeTemplate) templates: QueryList<any>;
-
     @ViewChild('container') containerEl: ElementRef;
-
     @ViewChild('focusInput') focusInput: ElementRef;
-
     @ViewChild('filter') filterViewChild: ElementRef;
-
     @ViewChild('tree') treeViewChild: Tree;
-
     @ViewChild('panel') panelEl: ElementRef;
-
     @ViewChild('overlay') overlayViewChild: Overlay;
-
     @Output() onNodeExpand: EventEmitter<any> = new EventEmitter();
-
     @Output() onNodeCollapse: EventEmitter<any> = new EventEmitter();
-
     @Output() onShow: EventEmitter<any> = new EventEmitter();
-
     @Output() onHide: EventEmitter<any> = new EventEmitter();
-
     @Output() onClear: EventEmitter<any> = new EventEmitter();
-
     @Output() onFilter: EventEmitter<any> = new EventEmitter();
-
     @Output() onNodeUnselect: EventEmitter<any> = new EventEmitter();
-
     @Output() onNodeSelect: EventEmitter<any> = new EventEmitter();
+    public filteredNodes: TreeNode[];
+    filterValue: string = null;
+    serializedValue: any[];
+    valueTemplate: TemplateRef<any>;
+    headerTemplate: TemplateRef<any>;
+    emptyTemplate: TemplateRef<any>;
+    footerTemplate: TemplateRef<any>;
+    clearIconTemplate: TemplateRef<any>;
+    triggerIconTemplate: TemplateRef<any>;
+    filterIconTemplate: TemplateRef<any>;
+    closeIconTemplate: TemplateRef<any>;
+    itemTogglerIconTemplate: TemplateRef<any>;
+    itemCheckboxIconTemplate: TemplateRef<any>;
+    itemLoadingIconTemplate: TemplateRef<any>;
+    focused: boolean;
+    overlayVisible: boolean;
+    selfChange: boolean;
+    value;
+    expandedNodes: any[] = [];
+    public templateMap: any;
+
+    constructor(
+        public config: PrimeNGConfig,
+        public cd: ChangeDetectorRef,
+        public el: ElementRef,
+        public overlayService: OverlayService
+    ) {}
 
     /* @deprecated */
     _showTransitionOptions: string;
+
     @Input() get showTransitionOptions(): string {
         return this._showTransitionOptions;
     }
+
     set showTransitionOptions(val: string) {
         this._showTransitionOptions = val;
         console.warn(
@@ -387,9 +393,11 @@ export class TreeSelect implements AfterContentInit, OnInit {
 
     /* @deprecated */
     _hideTransitionOptions: string;
+
     @Input() get hideTransitionOptions(): string {
         return this._hideTransitionOptions;
     }
+
     set hideTransitionOptions(val: string) {
         this._hideTransitionOptions = val;
         console.warn(
@@ -397,58 +405,38 @@ export class TreeSelect implements AfterContentInit, OnInit {
         );
     }
 
-    public filteredNodes: TreeNode[];
-
-    filterValue: string = null;
-
-    serializedValue: any[];
-
-    valueTemplate: TemplateRef<any>;
-
-    headerTemplate: TemplateRef<any>;
-
-    emptyTemplate: TemplateRef<any>;
-
-    footerTemplate: TemplateRef<any>;
-
-    clearIconTemplate: TemplateRef<any>;
-
-    triggerIconTemplate: TemplateRef<any>;
-
-    filterIconTemplate: TemplateRef<any>;
-
-    closeIconTemplate: TemplateRef<any>;
-
-    itemTogglerIconTemplate: TemplateRef<any>;
-
-    itemCheckboxIconTemplate: TemplateRef<any>;
-
-    itemLoadingIconTemplate: TemplateRef<any>;
-
-    focused: boolean;
-
-    overlayVisible: boolean;
-
-    selfChange: boolean;
-
-    value;
-
-    expandedNodes: any[] = [];
-
     _options: any[];
 
-    public templateMap: any;
+    @Input() get options(): any[] {
+        return this._options;
+    }
+
+    set options(options) {
+        this._options = options;
+        this.updateTreeState();
+    }
+
+    get emptyValue() {
+        return !this.value || Object.keys(this.value).length === 0;
+    }
+
+    get emptyOptions() {
+        return !this.options || this.options.length === 0;
+    }
+
+    get label() {
+        const value = this.value || [];
+
+        return value.length
+            ? value.map((node) => node.label).join(', ')
+            : this.selectionMode === 'single' && this.value
+            ? value.label
+            : this.placeholder;
+    }
 
     onModelChange: Function = () => {};
 
     onModelTouched: Function = () => {};
-
-    constructor(
-        public config: PrimeNGConfig,
-        public cd: ChangeDetectorRef,
-        public el: ElementRef,
-        public overlayService: OverlayService
-    ) {}
 
     ngOnInit() {
         this.updateTreeState();
@@ -817,24 +805,6 @@ export class TreeSelect implements AfterContentInit, OnInit {
             'p-placeholder': this.label === this.placeholder,
             'p-treeselect-label-empty': !this.placeholder && this.emptyValue
         };
-    }
-
-    get emptyValue() {
-        return !this.value || Object.keys(this.value).length === 0;
-    }
-
-    get emptyOptions() {
-        return !this.options || this.options.length === 0;
-    }
-
-    get label() {
-        const value = this.value || [];
-
-        return value.length
-            ? value.map((node) => node.label).join(', ')
-            : this.selectionMode === 'single' && this.value
-              ? value.label
-              : this.placeholder;
     }
 }
 

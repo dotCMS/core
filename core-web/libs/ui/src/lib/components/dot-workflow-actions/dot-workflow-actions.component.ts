@@ -9,11 +9,10 @@ import {
     signal
 } from '@angular/core';
 
-import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { SplitButtonModule } from 'primeng/splitbutton';
 
-import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { CustomMenuItem, DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
@@ -40,7 +39,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
     @Input() size: ButtonSize = 'normal';
     @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
 
-    protected groupedActions = signal<MenuItem[][]>([]);
+    protected groupedActions = signal<CustomMenuItem[][]>([]);
     protected sizeClass: string;
 
     ngOnChanges(): void {
@@ -58,7 +57,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
      * @return {*}  {MenuItem[][]}
      * @memberof DotWorkflowActionsComponent
      */
-    private groupActions(actions: DotCMSWorkflowAction[] = []): MenuItem[][] {
+    private groupActions(actions: DotCMSWorkflowAction[] = []): CustomMenuItem[][] {
         return actions
             ?.reduce(
                 (acc, action) => {
@@ -87,7 +86,7 @@ export class DotWorkflowActionsComponent implements OnChanges {
      * @return {*}  {MenuItem[][]}
      * @memberof DotWorkflowActionsComponent
      */
-    private formatActions(actions: DotCMSWorkflowAction[] = []): MenuItem[][] {
+    private formatActions(actions: DotCMSWorkflowAction[] = []): CustomMenuItem[][] {
         const formatedActions = actions?.reduce((acc, action) => {
             if (action?.metadata?.subtype !== DotCMSActionSubtype.SEPARATOR) {
                 acc.push({

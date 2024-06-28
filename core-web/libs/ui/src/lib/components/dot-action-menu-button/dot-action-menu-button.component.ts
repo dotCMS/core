@@ -1,11 +1,10 @@
 import { NgIf } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
 
-import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotActionMenuItem } from '@dotcms/dotcms-models';
+import { CustomMenuItem, DotActionMenuItem } from '@dotcms/dotcms-models';
 
 import { DotMenuComponent } from '../dot-menu/dot-menu.component';
 
@@ -23,7 +22,7 @@ import { DotMenuComponent } from '../dot-menu/dot-menu.component';
     standalone: true
 })
 export class DotActionMenuButtonComponent implements OnInit {
-    filteredActions: MenuItem[] = [];
+    filteredActions: CustomMenuItem[] = [];
 
     @Input() item: Record<string, unknown>;
 
@@ -39,10 +38,9 @@ export class DotActionMenuButtonComponent implements OnInit {
             .map((action: DotActionMenuItem) => {
                 return {
                     ...action.menuItem,
-                    command: ($event) => {
+                    command: ($event: MouseEvent) => {
                         action.menuItem.command(this.item);
 
-                        $event = $event.originalEvent || $event;
                         $event.stopPropagation();
                     }
                 };

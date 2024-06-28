@@ -173,7 +173,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             {
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.action.delete'),
-                    command: (item) => this.removeConfirmation(item),
+                    command: (item: DotCMSContentType) => this.removeConfirmation(item),
                     icon: 'delete'
                 },
                 shouldShow: (item) => !item.fixed && !item.defaultType
@@ -208,7 +208,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                    command: (item) => this.pushPublishContentType(item)
+                    command: (item: DotCMSContentType) => this.pushPublishContentType(item)
                 }
             });
         }
@@ -217,7 +217,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
-                    command: (item) => this.addToBundleContentType(item)
+                    command: (item: DotCMSContentType) => this.addToBundleContentType(item)
                 }
             });
         }
@@ -226,7 +226,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_menu'),
-                    command: (item) => this.addToBundleMenu(item)
+                    command: (item: DotCMSContentType) => this.addToBundleMenu(item)
                 },
                 shouldShow: (item: Record<string, unknown>) => {
                     return item.variable !== 'Host';
@@ -238,7 +238,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.copy'),
-                    command: (item) => this.showCloneContentTypeDialog(item)
+                    command: (item: DotCMSContentType) => this.showCloneContentTypeDialog(item)
                 }
             });
         }
