@@ -57,7 +57,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
         String orderBy;
 
         @CommandLine.Option(names = {"-d", "--direction"},
-                description = "Set order direction. (ASC or DESC) ", defaultValue = "ASC")
+                description = "Set order direction. Accepts ASC or DESC (case insensitive)", defaultValue = "ASC")
         String direction;
 
         @CommandLine.Option(names = {"-p", "--page"},
@@ -128,7 +128,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
         final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
                 filter.typeName, filter.page, filter.pageSize,
-                filter.orderBy, filter.direction, null, filter.site);
+                filter.orderBy, filter.direction.toUpperCase(), null, filter.site);
 
         final List<ContentType> types = responseEntityView.entity();
         if (types.isEmpty()) {
