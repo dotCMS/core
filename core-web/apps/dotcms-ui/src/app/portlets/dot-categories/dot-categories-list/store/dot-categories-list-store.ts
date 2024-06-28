@@ -9,7 +9,7 @@ import { map, take } from 'rxjs/operators';
 
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 import { DotMessageService, OrderDirection } from '@dotcms/data-access';
-import { DotActionMenuItem, DotCategory, DotMenuItemCommandEvent } from "@dotcms/dotcms-models";
+import { DotActionMenuItem, DotCategory, DotMenuItemCommandEvent } from '@dotcms/dotcms-models';
 import { DataTableColumn } from '@models/data-table';
 
 export interface DotCategoriesListState {
