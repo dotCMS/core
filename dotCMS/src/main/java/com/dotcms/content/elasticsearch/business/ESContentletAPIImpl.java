@@ -7226,7 +7226,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return;
         }
 
-        FieldHandlerStrategyFactory.getInstance().get(field).apply(contentlet, field, value);
+        final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(
+                field);
+
+        FieldHandlerStrategyFactory.getInstance().get(newField).apply(contentlet, newField, value); 
     }
 
     /**
