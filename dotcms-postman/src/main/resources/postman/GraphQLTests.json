@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f706e4bf-1b1a-4d3c-a14a-eba0917ce57a",
+		"_postman_id": "8d31e831-7abc-4f53-ae81-9ebbf941b789",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -259,20 +259,25 @@
 					"name": "Test DotAsset as titleImage",
 					"item": [
 						{
-							"name": "pre_ImportBundleWithTestPages",
+							"name": "Create Page ContentType",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
+											"pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
+											"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[0].id);",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
 											"    pm.response.to.have.status(200);",
+											"});",
 											"",
-											"    var jsonData = pm.response.json();",
-											"    console.log(jsonData);",
 											"",
-											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"titleImageDotAsset.tar.gz\");",
-											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"pm.test(\"description check\", function () {",
+											"    pm.expect(jsonData.entity[0].description).to.eql('Test Page Type');",
 											"});"
 										],
 										"type": "text/javascript",
@@ -281,19 +286,103 @@
 								}
 							],
 							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
 								"method": "POST",
 								"header": [
 									{
 										"key": "Content-Type",
+										"name": "Content-Type",
 										"type": "text",
-										"value": "application/octet-stream",
-										"uuid": "09453c85-59e1-457c-9465-d70d94f0a6b8"
-									},
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutablePageContentType\", \n    \"defaultType\": false, \n    \"name\": \"Test Page Type\", \n    \"description\": \"Test Page Type\", \n    \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\", \n    \"owner\": \"dotcms.org.1\", \n    \"fixed\": false, \n    \"system\": false, \n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n            {\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"title\",\n\t\t\t\"fixed\": true\n\t\t}, \n        {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n\t\t      \"name\": \"myImage\",\n              \"variable\": \"myImage\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\", \n              \"sortOrder\": 2, \n              \"indexed\": true\n\t    }]\n}\n"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+							},
+							"response": []
+						},
+						{
+							"name": "Create DotAsset image",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Retrieving the ID of the DotAsset contentlet\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"dotAssetIdentifier\", jsonData.entity.identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
 									{
-										"key": "Content-Disposition",
-										"type": "text",
-										"value": "attachment",
-										"uuid": "8eb2ebe4-d782-4fc2-a0a4-0a2873e6be3f"
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -301,34 +390,95 @@
 									"formdata": [
 										{
 											"key": "file",
+											"contentType": "image/png",
 											"type": "file",
-											"src": "resources/GraphQL/titleImageDotAsset.tar.gz"
+											"src": "resources/dotcms.png"
+										},
+										{
+											"key": "json",
+											"value": "{\n\t \"contentlet\": {\n\t\t\"contentType\":\"DotAsset\",\n\t\t\"title\":\"myDotAsset\",\n\t\t\"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n\t}\n}\n",
+											"contentType": "application/json",
+											"type": "text"
 										}
 									]
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/bundle/sync?sync=true",
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
-										"bundle",
-										"sync"
-									],
-									"query": [
-										{
-											"key": "sync",
-											"value": "true"
-										},
-										{
-											"key": "AUTH_TOKEN",
-											"value": "",
-											"disabled": true
-										}
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
 									]
 								},
-								"description": "Imports a Bundle that includes:\n\n*   pp-test page with all the dependencies. pp-test page was created on a demo.dotcms.com site"
+								"description": "PDFDotAsset only accepts pdf files, so if we try to upload an image, it should throw a 400"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Page Content with DotAsset",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Retrieving the ID of the contentlet with File and Image fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"uuid": "6b51876a-65cd-4059-a87d-6a574774e9bc"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVAR}}\",\n       \"title\":\"Page With DotAsset\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"myImage\":\"{{dotAssetIdentifier}}\", \n       \"url\": \"myCoolPageWithDotAsset\", \n       \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n       \"template\": \"SYSTEM_TEMPLATE\", \n       \"cachettl\": 0\n\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
 							},
 							"response": []
 						},
@@ -349,9 +499,9 @@
 											"    var page = jsonData.data.page;",
 											"    ",
 											"    if (page && page != undefined) {",
-											"    pm.expect(page[\"titleImage\"].name, 'FAILED:[titleImage.name]').equal(\"IMG_1645.PNG\");",
-											"    pm.expect(page[\"titleImage\"].idPath, 'FAILED:[titleImage.idPath]').contains(\"/dA/29b579cf11/asset/IMG_1645.PNG\");",
-											"    pm.expect(page[\"titleImage\"].versionPath, 'FAILED:[titleImage.versionPath]').equal(\"/dA/c443b663b0/asset/IMG_1645.PNG\");",
+											"    pm.expect(page[\"titleImage\"].name, 'FAILED:[titleImage.name]').equal(\"dotcms.png\");",
+											"    pm.expect(page[\"titleImage\"].idPath, 'FAILED:[titleImage.idPath]').contains(\"/dA/efeddbdc39/asset/dotcms.png\");",
+											"    pm.expect(page[\"titleImage\"].versionPath, 'FAILED:[titleImage.versionPath]').equal(\"/dA/3632d5078d/asset/dotcms.png\");",
 											"    }",
 											"});"
 										],
@@ -377,7 +527,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url:\"/mygraphqlpage\") {\n    \n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n  }\n}",
+										"query": "{\n  page(url:\"/myCoolPageWithDotAsset\") {\n    identifier\n    title\n    host {\n        hostName\n    }\n    contentType\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n  }\n}",
 										"variables": ""
 									}
 								},
@@ -392,6 +542,67 @@
 										"graphql"
 									]
 								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Page Content without Image",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Retrieving the ID of the contentlet with File and Image fields\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"uuid": "6b51876a-65cd-4059-a87d-6a574774e9bc"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVAR}}\",\n       \"title\":\"Page without DotAsset\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"url\": \"myCoolPageWithoutImage\", \n       \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n       \"template\": \"SYSTEM_TEMPLATE\", \n       \"cachettl\": 0\n\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
 							},
 							"response": []
 						},
@@ -440,7 +651,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url:\"/pagenoimage\") {\n    \n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n  }\n}",
+										"query": "{\n  page(url:\"/myCoolPageWithoutImage\") {\n    \n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n  }\n}",
 										"variables": ""
 									}
 								},
@@ -10413,6 +10624,22 @@
 		},
 		{
 			"key": "parentContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentTypeID",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVAR",
+			"value": ""
+		},
+		{
+			"key": "contentTypeFieldID",
+			"value": ""
+		},
+		{
+			"key": "dotAssetIdentifier",
 			"value": ""
 		}
 	]
