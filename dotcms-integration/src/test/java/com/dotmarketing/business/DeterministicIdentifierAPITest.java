@@ -77,7 +77,9 @@ public class DeterministicIdentifierAPITest {
 
 
     /**
-     * Given Scenario: We have a {@link Host} and we want to generate a deterministic id for it
+     * Given Scenario: We have a fileAsset with missing physical file
+     * Expected behavior: The method must return an empty optional and the generation of an identifier still must be possible
+     * But the returned id must be a valid UUID and not a deterministic onec
      * @throws IOException if the file cannot be created
      * @throws DotDataException if the data cannot be persisted
      * @throws DotSecurityException if the data cannot be persisted
