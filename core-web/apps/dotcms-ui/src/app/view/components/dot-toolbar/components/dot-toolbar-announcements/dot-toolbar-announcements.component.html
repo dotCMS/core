@@ -1,4 +1,6 @@
-<div *ngIf="showMask()" class="dot-mask" data-testId="dot-mask"></div>
+@if (showMask()) {
+    <div class="dot-mask" data-testId="dot-mask"></div>
+}
 <p-overlayPanel
     (onHide)="hideDialog()"
     #toolbarAnnouncements
@@ -11,7 +13,9 @@
                 <li
                     [class.announcements__list-item--active]="!item.hasBeenRead"
                     class="announcements__list-item">
-                    <span *ngIf="!item.hasBeenRead" class="announcements__badge"></span>
+                    @if (!item.hasBeenRead) {
+                        <span class="announcements__badge"></span>
+                    }
                     <span
                         [ngClass]="typesIcons[item.type | lowercase] || typesIcons['important']"
                         class="announcements__image pi"></span>

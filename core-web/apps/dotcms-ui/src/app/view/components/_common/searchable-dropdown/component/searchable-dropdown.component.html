@@ -3,9 +3,11 @@
         (click)="handleClick(item)"
         [class.selected]="item[labelPropertyName] === valueString"
         class="searchable-dropdown__data-list-item"
-        data-testid="searchable-dropdown-data-list-item"
-        ><i *ngIf="item[labelPropertyName] === valueString" class="pi pi-check"></i
-        >{{ item.label }}</span
+        data-testid="searchable-dropdown-data-list-item">
+        @if (item[labelPropertyName] === valueString) {
+            <i class="pi pi-check"></i>
+        }
+        {{ item.label }}</span
     >
 </ng-template>
 
@@ -23,18 +25,19 @@
 </ng-template>
 
 <ng-template #defaultSelectTemplate let-item="item">
-    <button
-        *ngIf="label"
-        (click)="searchPanel.toggle($event)"
-        [label]="label"
-        [ngStyle]="{ width: width }"
-        [disabled]="disabled"
-        class="p-button-outlined"
-        #button
-        pButton
-        icon="pi pi-chevron-down"
-        iconPos="right"
-        type="button"></button>
+    @if (label) {
+        <button
+            (click)="searchPanel.toggle($event)"
+            [label]="label"
+            [ngStyle]="{ width: width }"
+            [disabled]="disabled"
+            class="p-button-outlined"
+            #button
+            pButton
+            icon="pi pi-chevron-down"
+            iconPos="right"
+            type="button"></button>
+    }
 </ng-template>
 
 <p-overlayPanel
@@ -50,12 +53,14 @@
             <ng-container
                 [ngTemplateOutlet]="externalFilterTemplate || defaultFilterTemplate"></ng-container>
         </div>
-        <div *ngIf="action" class="searchable-dropdown__search-action">
-            <p-button
-                (click)="action()"
-                icon="pi pi-plus"
-                styleClass="p-button-text p-button-rounded"></p-button>
-        </div>
+        @if (action) {
+            <div class="searchable-dropdown__search-action">
+                <p-button
+                    (click)="action()"
+                    icon="pi pi-plus"
+                    styleClass="p-button-text p-button-rounded"></p-button>
+            </div>
+        }
     </header>
 
     <p-dataView

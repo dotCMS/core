@@ -1,6 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
-import { NgIf, NgStyle } from '@angular/common';
+import { NgStyle } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, Input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -23,7 +23,6 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
     styleUrls: ['./template-builder-row.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgIf,
         ButtonModule,
         RemoveConfirmDialogComponent,
         TemplateBuilderBackgroundColumnsComponent,

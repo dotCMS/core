@@ -51,12 +51,16 @@
                 type="email"
                 required />
             <small [hidden]="emailInput.valid || emailInput.pristine" class="p-invalid">
-                <span *ngIf="emailInput.errors && emailInput.errors.required">
-                    {{ getRequiredMessage('email-address' | dm) }}
-                </span>
-                <span *ngIf="emailInput.errors && emailInput.errors.pattern">
-                    {{ 'errors.email' | dm: ['email-address' | dm] }}
-                </span>
+                @if (emailInput.errors && emailInput.errors.required) {
+                    <span>
+                        {{ getRequiredMessage('email-address' | dm) }}
+                    </span>
+                }
+                @if (emailInput.errors && emailInput.errors.pattern) {
+                    <span>
+                        {{ 'errors.email' | dm: ['email-address' | dm] }}
+                    </span>
+                }
             </small>
         </div>
 
@@ -85,12 +89,11 @@
                 type="password"
                 required />
 
-            <small
-                *ngIf="confirmPasswordFailedMsg"
-                class="p-invalid"
-                data-testId="dotCurrrentPasswordFailedMsg"
-                >{{ confirmPasswordFailedMsg }}</small
-            >
+            @if (confirmPasswordFailedMsg) {
+                <small class="p-invalid" data-testId="dotCurrrentPasswordFailedMsg">{{
+                    confirmPasswordFailedMsg
+                }}</small>
+            }
         </div>
         <div class="field">
             <p-checkbox
@@ -112,12 +115,11 @@
                 name="newPassword"
                 type="password" />
 
-            <small
-                *ngIf="newPasswordFailedMsg"
-                class="p-invalid"
-                data-testId="dotSavePasswordFailedMsg"
-                >{{ newPasswordFailedMsg }}</small
-            >
+            @if (newPasswordFailedMsg) {
+                <small class="p-invalid" data-testId="dotSavePasswordFailedMsg">{{
+                    newPasswordFailedMsg
+                }}</small>
+            }
         </div>
         <div class="field">
             <label for="dot-my-account-confirm-new-password-input">{{

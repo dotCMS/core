@@ -1,4 +1,4 @@
-import { DatePipe, LowerCasePipe, NgIf, TitleCasePipe } from '@angular/common';
+import { DatePipe, LowerCasePipe, TitleCasePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -29,7 +29,6 @@ import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
     styleUrls: ['./dot-experiments-ui-header.component.scss'],
     imports: [
         RouterLink,
-        NgIf,
         LowerCasePipe,
         DatePipe,
         TitleCasePipe,

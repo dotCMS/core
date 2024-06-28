@@ -1,7 +1,8 @@
 <dot-portlet-base>
-    <dot-not-license *ngIf="!canAccessPortlet; else licensed" />
-    <ng-template #licensed
-        ><div class="dot-apps__container">
+    @if (!canAccessPortlet) {
+        <dot-not-license />
+    } @else {
+        <div class="dot-apps__container">
             <div class="dot-apps__header">
                 <input
                     [placeholder]="('apps.search.placeholder' | dm) || ''"
@@ -35,13 +36,12 @@
                 </div>
             </div>
             <div class="dot-apps__body">
-                <dot-apps-card
-                    *ngFor="let app of appsCopy"
-                    (actionFired)="goToApp($event)"
-                    [app]="app"></dot-apps-card>
+                @for (app of appsCopy; track app) {
+                    <dot-apps-card (actionFired)="goToApp($event)" [app]="app"></dot-apps-card>
+                }
             </div>
         </div>
-    </ng-template>
+    }
 
     <dot-apps-import-export-dialog
         (resolved)="reloadAppsData()"

@@ -1,6 +1,5 @@
 import { forkJoin, of } from 'rxjs';
 
-import { NgFor } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -33,7 +32,6 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
     selector: 'dot-binary-settings',
     standalone: true,
     imports: [
-        NgFor,
         FormsModule,
         ReactiveFormsModule,
         InputTextModule,

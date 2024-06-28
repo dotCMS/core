@@ -1,13 +1,6 @@
 import { Observable } from 'rxjs';
 
-import {
-    AsyncPipe,
-    LowerCasePipe,
-    NgClass,
-    NgIf,
-    PercentPipe,
-    TitleCasePipe
-} from '@angular/common';
+import { AsyncPipe, LowerCasePipe, NgClass, PercentPipe, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -38,7 +31,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
     standalone: true,
     imports: [
         AsyncPipe,
-        NgIf,
         LowerCasePipe,
         PercentPipe,
         NgClass,

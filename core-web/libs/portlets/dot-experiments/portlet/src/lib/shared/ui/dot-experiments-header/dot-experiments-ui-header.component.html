@@ -6,11 +6,13 @@
         icon="pi pi-arrow-left"
         pButton></button>
 
-    <ng-container *ngIf="!isLoading; else loadingTpl">
+    @if (!isLoading) {
         <span data-testId="title">{{ title }}</span>
-    </ng-container>
+    } @else {
+        <p-skeleton height="1rem" width="12rem"></p-skeleton>
+    }
 
-    <ng-container *ngIf="!!experiment?.status">
+    @if (!!experiment?.status) {
         <div class="flex flex-grow-1 align-items-center justify-content-end">
             <p-chip
                 [icon]="this.statusIcon"
@@ -26,11 +28,7 @@
                 data-testId="status-tag"
                 styleClass="{{ experiment?.status | lowercase }}"></p-chip>
         </div>
-    </ng-container>
+    }
 
     <ng-content></ng-content>
 </div>
-
-<ng-template #loadingTpl>
-    <p-skeleton height="1rem" width="12rem"></p-skeleton>
-</ng-template>

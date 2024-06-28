@@ -1,4 +1,4 @@
-import { KeyValuePipe, NgClass, NgForOf, NgIf, NgTemplateOutlet } from '@angular/common';
+import { KeyValuePipe, NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -26,9 +26,7 @@ import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
     selector: 'dot-experiments-details-table',
     standalone: true,
     imports: [
-        NgIf,
         NgTemplateOutlet,
-        NgForOf,
         NgClass,
         KeyValuePipe,
         SkeletonModule,

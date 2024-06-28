@@ -28,49 +28,47 @@ const UNITS = {
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DecimalPipe],
     selector: 'cw-visitors-location-component',
-    template: `<div
-            *ngIf="comparisonDropdown != null"
-            flex
-            layout="row"
-            class="cw-visitors-location cw-condition-component-body">
-            <cw-input-dropdown
-                (onDropDownChange)="comparisonChange.emit($event)"
-                [options]="comparisonDropdown.options"
-                [formControl]="comparisonDropdown.control"
-                [required]="true"
-                [class.cw-comparator-selector]="true"
-                flex
-                class="cw-input"
-                placeholder="{{ comparisonDropdown.placeholder }}">
-            </cw-input-dropdown>
-            <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
-                <input
-                    [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
-                    [readonly]="true"
-                    pInputText
-                    class="cw-latLong" />
-                <label class="cw-input-label-right">{{ preferredUnit }}</label>
+    template: `@if (comparisonDropdown != null) {
+            <div flex layout="row" class="cw-visitors-location cw-condition-component-body">
+                <cw-input-dropdown
+                    (onDropDownChange)="comparisonChange.emit($event)"
+                    [options]="comparisonDropdown.options"
+                    [formControl]="comparisonDropdown.control"
+                    [required]="true"
+                    [class.cw-comparator-selector]="true"
+                    flex
+                    class="cw-input"
+                    placeholder="{{ comparisonDropdown.placeholder }}">
+                </cw-input-dropdown>
+                <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
+                    <input
+                        [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
+                        [readonly]="true"
+                        pInputText
+                        class="cw-latLong" />
+                    <label class="cw-input-label-right">{{ preferredUnit }}</label>
+                </div>
+                <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
+                    <label class="cw-input-label-left">{{ fromLabel }}</label>
+                    <input [value]="getLatLong()" [readonly]="true" pInputText class="cw-radius" />
+                </div>
+                <div flex layout="column" class="cw-input cw-last">
+                    <button
+                        (click)="toggleMap()"
+                        pButton
+                        class="p-button-secondary"
+                        icon="pi pi-plus"
+                        label="Show Map"
+                        aria-label="Show Map"></button>
+                </div>
             </div>
-            <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
-                <label class="cw-input-label-left">{{ fromLabel }}</label>
-                <input [value]="getLatLong()" [readonly]="true" pInputText class="cw-radius" />
-            </div>
-            <div flex layout="column" class="cw-input cw-last">
-                <button
-                    (click)="toggleMap()"
-                    pButton
-                    class="p-button-secondary"
-                    icon="pi pi-plus"
-                    label="Show Map"
-                    aria-label="Show Map"></button>
-            </div>
-        </div>
+        }
         <cw-area-picker-dialog-component
             (circleUpdate)="onUpdate($event)"
             (cancel)="showingMap = !showingMap"
             [headerText]="'Select an area'"
             [hidden]="!showingMap"
-            [circle]="circle"></cw-area-picker-dialog-component> `
+            [circle]="circle"></cw-area-picker-dialog-component>`
 })
 export class VisitorsLocationComponent {
     @Input() circle: GCircle = { center: { lat: 38.89, lng: -77.04 }, radius: 10000 };

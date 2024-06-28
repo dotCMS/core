@@ -1,12 +1,14 @@
 <ul [class.dot-nav-sub__collapsed]="collapsed" #ul class="dot-nav-sub">
-    <li *ngFor="let subItem of data.menuItems" class="dot-nav-sub__item">
-        <a
-            (click)="onItemClick($event, subItem)"
-            [class.dot-nav-sub__link--active]="subItem.active"
-            [routerLink]="subItem.menuLink"
-            [state]="{ menuId: data.id }"
-            class="dot-nav-sub__link"
-            >{{ subItem.label }}</a
-        >
-    </li>
+    @for (subItem of data.menuItems; track subItem) {
+        <li class="dot-nav-sub__item">
+            <a
+                (click)="onItemClick($event, subItem)"
+                [class.dot-nav-sub__link--active]="subItem.active"
+                [routerLink]="subItem.menuLink"
+                [state]="{ menuId: data.id }"
+                class="dot-nav-sub__link"
+                >{{ subItem.label }}</a
+            >
+        </li>
+    }
 </ul>

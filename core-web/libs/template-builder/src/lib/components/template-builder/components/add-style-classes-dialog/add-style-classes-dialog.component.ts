@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -22,7 +22,6 @@ import { JsonClassesService } from './services/json-classes.service';
         FormsModule,
         ButtonModule,
         DotMessagePipe,
-        NgIf,
         AsyncPipe,
         DotSelectItemDirective
     ],

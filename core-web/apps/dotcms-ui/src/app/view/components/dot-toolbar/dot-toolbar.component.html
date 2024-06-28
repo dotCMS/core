@@ -15,11 +15,13 @@
                 [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
                 [class.toolbar__logo-wrapper--whitelabel]="logo$ | async"
                 class="toolbar__logo-wrapper">
-                <span
-                    *ngIf="logo$ | async as logo; else toolbarLogo"
-                    [ngStyle]="{ 'background-image': logo }"
-                    class="toolbar__logo--whitelabel"></span>
-                <ng-template #toolbarLogo><span class="toolbar__logo"></span></ng-template>
+                @if (logo$ | async; as logo) {
+                    <span
+                        [ngStyle]="{ 'background-image': logo }"
+                        class="toolbar__logo--whitelabel"></span>
+                } @else {
+                    <span class="toolbar__logo"></span>
+                }
                 <span class="toolbar__logo-bg"></span>
             </div>
         </div>

@@ -1,29 +1,33 @@
-<div
-    *ngFor="let item of itemList; index as i"
-    [attr.data-testId]="'dot-options-item_' + item.val"
-    [class.active]="expanded.has(i)"
-    class="dot-options__item">
-    <ng-container
-        [ngTemplateOutletContext]="{ $implicit: item, index: i }"
-        [ngTemplateOutlet]="defaultHeader"></ng-container>
+@for (item of itemList; track item; let i = $index) {
     <div
-        *ngIf="item?.content"
-        [attr.data-testId]="'dot-options-item-content_' + item.val"
-        [class.expanded]="expanded.has(i)"
-        class="option-item__content flex flex-grow-1 flex-column"
-        [@contentExpansion]="expanded.has(i) ? 'expanded' : 'collapsed'">
-        <ng-container *ngIf="expanded.has(i) && item?.content?.templateRef">
-            <ng-container *ngTemplateOutlet="item?.content?.templateRef"></ng-container>
-        </ng-container>
+        [attr.data-testId]="'dot-options-item_' + item.val"
+        [class.active]="expanded.has(i)"
+        class="dot-options__item">
+        <ng-container
+            [ngTemplateOutletContext]="{ $implicit: item, index: i }"
+            [ngTemplateOutlet]="defaultHeader"></ng-container>
+        @if (item?.content) {
+            <div
+                [attr.data-testId]="'dot-options-item-content_' + item.val"
+                [class.expanded]="expanded.has(i)"
+                class="option-item__content flex flex-grow-1 flex-column"
+                [@contentExpansion]="expanded.has(i) ? 'expanded' : 'collapsed'">
+                @if (expanded.has(i) && item?.content?.templateRef) {
+                    <ng-container *ngTemplateOutlet="item?.content?.templateRef"></ng-container>
+                }
+            </div>
+        }
     </div>
-</div>
+}
 
 <ng-template #defaultHeader let-index="index" let-item>
     <header
         (click)="item.selectItem(item, index)"
         [attr.data-testId]="'dot-options-item-header_' + item.val"
         class="option__header">
-        <i *ngIf="item.icon" [class]="'pi ' + item.icon"></i>
+        @if (item.icon) {
+            <i [class]="'pi ' + item.icon"></i>
+        }
         <div>
             <h2>{{ item.title }}</h2>
             <p>{{ item.detail }}</p>

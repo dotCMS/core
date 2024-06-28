@@ -1,16 +1,6 @@
 import { Observable } from 'rxjs';
 
-import {
-    AsyncPipe,
-    JsonPipe,
-    NgClass,
-    NgFor,
-    NgIf,
-    NgSwitch,
-    NgSwitchCase,
-    NgSwitchDefault,
-    TitleCasePipe
-} from '@angular/common';
+import { AsyncPipe, JsonPipe, NgClass, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
@@ -36,13 +26,8 @@ import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-im
     imports: [
         NgClass,
         CardModule,
-        NgFor,
         TitleCasePipe,
-        NgIf,
         JsonPipe,
-        NgSwitch,
-        NgSwitchCase,
-        NgSwitchDefault,
         AsyncPipe,
         DotSafeHtmlPipe,
         DotMessagePipe,

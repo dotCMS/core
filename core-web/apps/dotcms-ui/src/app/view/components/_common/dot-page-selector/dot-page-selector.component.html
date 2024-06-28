@@ -15,15 +15,16 @@
         field="label">
         <ng-template let-item pTemplate="item">
             <div class="dot-page-selector__item">
-                <span *ngIf="searchType === 'site'; else notSite">{{ item.label }}</span>
-                <ng-template #notSite>
+                @if (searchType === 'site') {
+                    <span>{{ item.label }}</span>
+                } @else {
                     <span class="dot-page-selector__item-url">
                         {{ item.payload.path }}
                     </span>
                     <span class="dot-page-selector__item-host">
                         {{ item.payload.hostName }}
                     </span>
-                </ng-template>
+                }
             </div>
         </ng-template>
     </p-autoComplete>

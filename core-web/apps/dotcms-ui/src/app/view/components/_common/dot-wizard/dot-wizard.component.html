@@ -6,15 +6,19 @@
     [actions]="dialogActions"
     [header]="data?.title"
     #dialog>
-    <div *ngIf="data?.steps?.length" class="dot-wizard__view">
-        <div
-            (keydown.tab)="handleTab($event)"
-            (keydown.enter)="handleEnter($event)"
-            [ngStyle]="{ transform: transform }"
-            class="dot-wizard__container">
-            <div *ngFor="let step of data.steps" class="dot-wizard__step">
-                <ng-template dotContainerReference></ng-template>
+    @if (data?.steps?.length) {
+        <div class="dot-wizard__view">
+            <div
+                (keydown.tab)="handleTab($event)"
+                (keydown.enter)="handleEnter($event)"
+                [ngStyle]="{ transform: transform }"
+                class="dot-wizard__container">
+                @for (step of data.steps; track step) {
+                    <div class="dot-wizard__step">
+                        <ng-template dotContainerReference></ng-template>
+                    </div>
+                }
             </div>
         </div>
-    </div>
+    }
 </dot-dialog>

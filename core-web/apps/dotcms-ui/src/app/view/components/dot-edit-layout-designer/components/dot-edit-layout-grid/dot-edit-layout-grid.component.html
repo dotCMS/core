@@ -1,43 +1,41 @@
 <div (onDragStop)="updateModel()" (onResizeStop)="updateModel()" [config]="gridConfig" ngGrid>
-    <div
-        *ngFor="let rowClass of rowClass; let i = index"
-        [ngStyle]="{ 'top.px': i ? (206 + 8) * i : 0 }"
-        class="box__add-row-class-button">
-        <p-button
-            (click)="addRowClass(i)"
-            [pTooltip]="'editpage.layout.css.class.add.to.row' | dm"
-            icon="pi pi-ellipsis-h"
-            tooltipPosition="left"
-            styleClass="p-button-rounded p-button-sm p-button-text">
-        </p-button>
-    </div>
-
-    <div
-        *ngFor="let gridBox of grid.boxes; let i = index"
-        [(ngGridItem)]="gridBox.config"
-        class="box">
-        <dot-container-selector-layout
-            (switch)="propagateGridLayoutChange()"
-            (remove)="onRemoveContainer(i)"
-            [data]="gridBox.containers"
-            [multiple]="true">
-        </dot-container-selector-layout>
-        <div class="box__actions">
+    @for (rowClass of rowClass; track rowClass; let i = $index) {
+        <div [ngStyle]="{ 'top.px': i ? (206 + 8) * i : 0 }" class="box__add-row-class-button">
             <p-button
-                (click)="addColumnClass(i)"
-                [pTooltip]="'editpage.layout.css.class.add.to.box' | dm"
-                class="box__add-box-class-button"
-                styleClass="p-button-rounded p-button-text p-button-sm"
-                icon="pi pi-ellipsis-h">
-            </p-button>
-            <p-button
-                (click)="onRemoveContainer(i)"
-                [pTooltip]="'editpage.action.delete' | dm"
-                styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"
-                icon="pi pi-times">
+                (click)="addRowClass(i)"
+                [pTooltip]="'editpage.layout.css.class.add.to.row' | dm"
+                icon="pi pi-ellipsis-h"
+                tooltipPosition="left"
+                styleClass="p-button-rounded p-button-sm p-button-text">
             </p-button>
         </div>
-    </div>
+    }
+
+    @for (gridBox of grid.boxes; track gridBox; let i = $index) {
+        <div [(ngGridItem)]="gridBox.config" class="box">
+            <dot-container-selector-layout
+                (switch)="propagateGridLayoutChange()"
+                (remove)="onRemoveContainer(i)"
+                [data]="gridBox.containers"
+                [multiple]="true">
+            </dot-container-selector-layout>
+            <div class="box__actions">
+                <p-button
+                    (click)="addColumnClass(i)"
+                    [pTooltip]="'editpage.layout.css.class.add.to.box' | dm"
+                    class="box__add-box-class-button"
+                    styleClass="p-button-rounded p-button-text p-button-sm"
+                    icon="pi pi-ellipsis-h">
+                </p-button>
+                <p-button
+                    (click)="onRemoveContainer(i)"
+                    [pTooltip]="'editpage.action.delete' | dm"
+                    styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"
+                    icon="pi pi-times">
+                </p-button>
+            </div>
+        </div>
+    }
 </div>
 
 <dot-dialog
@@ -47,18 +45,20 @@
     [header]="addClassDialogHeader"
     [width]="400"
     #dialog>
-    <form *ngIf="addClassDialogShow" [formGroup]="form" class="p-fluid" novalidate>
-        <div class="field">
-            <label dotFieldRequired for="classToAdd">{{
-                'editpage.layout.css.class.names' | dm
-            }}</label>
-            <input
-                class="box__add-class-text"
-                id="classToAdd"
-                dotAutofocus
-                formControlName="classToAdd"
-                pInputText
-                type="text" />
-        </div>
-    </form>
+    @if (addClassDialogShow) {
+        <form [formGroup]="form" class="p-fluid" novalidate>
+            <div class="field">
+                <label dotFieldRequired for="classToAdd">{{
+                    'editpage.layout.css.class.names' | dm
+                }}</label>
+                <input
+                    class="box__add-class-text"
+                    id="classToAdd"
+                    dotAutofocus
+                    formControlName="classToAdd"
+                    pInputText
+                    type="text" />
+            </div>
+        </form>
+    }
 </dot-dialog>

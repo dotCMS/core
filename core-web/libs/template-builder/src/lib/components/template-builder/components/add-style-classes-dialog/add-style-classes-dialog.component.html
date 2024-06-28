@@ -14,16 +14,14 @@
         inputId="auto-complete-input"
         appendTo="body">
     </p-autoComplete>
-    <ng-container *ngIf="isJsonClasses$ | async; else suggestionNotes">
+    @if (isJsonClasses$ | async) {
         <ul data-testId="list">
             <li>
                 <i class="pi pi-info-circle"></i>
                 {{ 'dot.template.builder.autocomplete.has.suggestions' | dm }}
             </li>
         </ul>
-    </ng-container>
-
-    <ng-template #suggestionNotes>
+    } @else {
         <ul data-testId="list">
             <li>
                 <i class="pi pi-info-circle"></i>
@@ -35,7 +33,7 @@
                     [innerHTML]="'dot.template.builder.autocomplete.setup.suggestions' | dm"></span>
             </li>
         </ul>
-    </ng-template>
+    }
 </div>
 <div class="dialog__actions-container">
     <p-button (onClick)="save()" data-testId="update-btn">

@@ -1,4 +1,4 @@
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild, signal } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
@@ -26,8 +26,7 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
         DotMyAccountModule,
         DotSafeHtmlPipe,
         MenuModule,
-        AsyncPipe,
-        NgIf
+        AsyncPipe
     ]
 })
 export class DotToolbarUserComponent implements OnInit {

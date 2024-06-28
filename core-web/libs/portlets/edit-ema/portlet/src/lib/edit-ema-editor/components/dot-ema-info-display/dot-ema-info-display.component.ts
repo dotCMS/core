@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -32,7 +31,7 @@ interface InfoOptions {
 @Component({
     selector: 'dot-ema-info-display',
     standalone: true,
-    imports: [NgIf, ButtonModule, DotMessagePipe],
+    imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-ema-info-display.component.html',
     styleUrls: ['./dot-ema-info-display.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

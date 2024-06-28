@@ -5,7 +5,9 @@
     [actions]="dialogActions">
     <div class="login-as">
         <!--TODO: manage errors on required fields and errors messages -->
-        <p *ngIf="errorMessage" class="login-as__error-message">{{ errorMessage }}</p>
+        @if (errorMessage) {
+            <p class="login-as__error-message">{{ errorMessage }}</p>
+        }
         <form
             (ngSubmit)="doLoginAs()"
             [formGroup]="form"
@@ -30,17 +32,19 @@
                     overlayWidth="300px">
                 </dot-searchable-dropdown>
             </div>
-            <div *ngIf="needPassword" class="field">
-                <input
-                    [feedback]="false"
-                    pPassword
-                    #password
-                    formControlName="password"
-                    id="dot-login-as-password"
-                    type="password"
-                    placeholder="{{ 'loginas.input.loginas.password' | dm }}"
-                    floatingPlaceholder="false" />
-            </div>
+            @if (needPassword) {
+                <div class="field">
+                    <input
+                        [feedback]="false"
+                        pPassword
+                        #password
+                        formControlName="password"
+                        id="dot-login-as-password"
+                        type="password"
+                        placeholder="{{ 'loginas.input.loginas.password' | dm }}"
+                        floatingPlaceholder="false" />
+                </div>
+            }
         </form>
     </div>
 </dot-dialog>

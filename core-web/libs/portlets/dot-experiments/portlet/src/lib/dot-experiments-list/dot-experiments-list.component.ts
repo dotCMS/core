@@ -1,7 +1,7 @@
 import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -40,7 +40,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
     selector: 'dot-experiments-list',
     imports: [
         AsyncPipe,
-        NgIf,
         DotExperimentsListSkeletonComponent,
         DotExperimentsStatusFilterComponent,
         DotExperimentsListTableComponent,

@@ -1,4 +1,4 @@
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import { Component, Inject, Input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -24,7 +24,6 @@ import {
     styleUrls: ['./dot-edit-page-info-seo.component.scss'],
     standalone: true,
     imports: [
-        CommonModule,
         ButtonModule,
         DotCopyButtonComponent,
         DotApiLinkComponent,

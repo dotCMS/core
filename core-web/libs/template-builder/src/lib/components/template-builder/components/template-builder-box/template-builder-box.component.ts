@@ -1,6 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
-import { CommonModule, NgClass, NgFor, NgIf } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -32,8 +32,6 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
-        NgFor,
-        NgIf,
         NgClass,
         ButtonModule,
         ScrollPanelModule,

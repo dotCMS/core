@@ -1,13 +1,14 @@
 <h2>{{ title }}</h2>
-<dot-copy-button
-    *ngIf="url"
-    [copy]="baseUrl + url"
-    [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
-    [label]="'editpage.header.copy' | dm"></dot-copy-button>
-<dot-api-link *ngIf="innerApiLink" [href]="innerApiLink"></dot-api-link>
+@if (url) {
+    <dot-copy-button
+        [copy]="baseUrl + url"
+        [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
+        [label]="'editpage.header.copy' | dm"></dot-copy-button>
+}
+@if (innerApiLink) {
+    <dot-api-link [href]="innerApiLink"></dot-api-link>
+}
 
-<dot-link
-    *ngIf="innerApiLink"
-    [href]="previewUrl"
-    label="editpage.preview"
-    icon="pi-eye"></dot-link>
+@if (innerApiLink) {
+    <dot-link [href]="previewUrl" label="editpage.preview" icon="pi-eye"></dot-link>
+}

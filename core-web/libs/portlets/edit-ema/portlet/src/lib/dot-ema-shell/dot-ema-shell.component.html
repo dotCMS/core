@@ -1,5 +1,5 @@
-<ng-container *ngIf="shellProperties$ | async as sp">
-    <ng-container *ngIf="sp.canRead; else error">
+@if (shellProperties$ | async; as sp) {
+    @if (sp.canRead) {
         <router-outlet (activate)="onActivateRoute($event)"></router-outlet>
         <dot-edit-ema-navigation-bar
             [items]="sp.items"
@@ -8,16 +8,33 @@
         <dot-page-tools-seo
             [currentPageUrlParams]="sp.seoProperties"
             #pageTools></dot-page-tools-seo>
-    </ng-container>
-
+    } @else {
+        @switch (sp.error) {
+            @case (403) {
+                <dot-info-page [info]="EMA_INFO_PAGES.ACCESS_DENIED" />
+            }
+            @case (404) {
+                <dot-info-page [info]="EMA_INFO_PAGES.NOT_FOUND" />
+            }
+            @case (401) {
+                <dot-not-license />
+            }
+        }
+    }
     <ng-template #error>
-        <ng-container [ngSwitch]="sp.error">
-            <dot-info-page *ngSwitchCase="403" [info]="EMA_INFO_PAGES.ACCESS_DENIED" />
-            <dot-info-page *ngSwitchCase="404" [info]="EMA_INFO_PAGES.NOT_FOUND" />
-            <dot-not-license *ngSwitchCase="401" />
-        </ng-container>
+        @switch (sp.error) {
+            @case (403) {
+                <dot-info-page [info]="EMA_INFO_PAGES.ACCESS_DENIED" />
+            }
+            @case (404) {
+                <dot-info-page [info]="EMA_INFO_PAGES.NOT_FOUND" />
+            }
+            @case (401) {
+                <dot-not-license />
+            }
+        }
     </ng-template>
-</ng-container>
+}
 
 <dot-edit-ema-dialog
     (action)="handleNgEvent($event)"

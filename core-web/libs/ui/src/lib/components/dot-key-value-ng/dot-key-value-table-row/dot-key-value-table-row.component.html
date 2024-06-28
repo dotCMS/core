@@ -40,12 +40,14 @@
         </td>
     }
 
-    <td *ngIf="showHiddenField" class="dot-key-value-table-row__variables-hidden">
-        <p-inputSwitch
-            (onChange)="showEditMenu.set(true)"
-            [formControl]="form.get('hidden')"
-            data-testId="dot-key-value-hidden-switch"></p-inputSwitch>
-    </td>
+    @if (showHiddenField) {
+        <td class="dot-key-value-table-row__variables-hidden">
+            <p-inputSwitch
+                (onChange)="showEditMenu.set(true)"
+                [formControl]="form.get('hidden')"
+                data-testId="dot-key-value-hidden-switch"></p-inputSwitch>
+        </td>
+    }
 
     <td class="dot-key-value-table-row__variables-actions">
         @if (showEditMenu()) {

@@ -1,4 +1,4 @@
-import { NgClass, NgIf, TitleCasePipe } from '@angular/common';
+import { NgClass, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
@@ -17,7 +17,6 @@ import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-
     selector: 'dot-experiments-report-daily-details',
     standalone: true,
     imports: [
-        NgIf,
         NgClass,
         TitleCasePipe,
         DotExperimentsDetailsTableComponent,

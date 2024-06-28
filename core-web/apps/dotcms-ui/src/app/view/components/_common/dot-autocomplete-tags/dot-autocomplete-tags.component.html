@@ -15,6 +15,8 @@
     inputStyleClass="ui-inputtext "
     appendTo="body">
 </p-autoComplete>
-<span *ngIf="inputReference?.value?.trim()" class="autocomplete-helper">
-    {{ 'dot.common.press' | dm }}<dot-icon name="subdirectory_arrow_left" size="12"></dot-icon>
-</span>
+@if (inputReference?.value?.trim()) {
+    <span class="autocomplete-helper">
+        {{ 'dot.common.press' | dm }}<dot-icon name="subdirectory_arrow_left" size="12"></dot-icon>
+    </span>
+}

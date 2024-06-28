@@ -1,29 +1,30 @@
 <div [class.selected]="selectedItems.length" class="action-header">
-    <ng-container *ngIf="options && options.primary">
+    @if (options && options.primary) {
         <dot-action-button
             (press)="handlePrimaryAction()"
             [model]="options.primary.model"
             class="action-header__primary-button"></dot-action-button>
-    </ng-container>
+    }
     <div [style.overflow]="dynamicOverflow" class="action-header__container">
         <div class="action-header__global-search">
             <ng-content></ng-content>
         </div>
-        <div
-            *ngIf="(options && options.secondary) || selectedItems.length"
-            class="action-header__group-actions">
-            <span class="action-header__selected-items-counter"
-                >{{ selectedItems.length }} {{ 'selected' | dm }}</span
-            >
-            <ng-container *ngIf="options && options.secondary">
-                <p-splitButton
-                    *ngFor="let action of options.secondary"
-                    [model]="action.model"
-                    class="action-header__secondary-button"
-                    secondary
-                    label="{{ action.label }}"
-                    class="inverted"></p-splitButton>
-            </ng-container>
-        </div>
+        @if ((options && options.secondary) || selectedItems.length) {
+            <div class="action-header__group-actions">
+                <span class="action-header__selected-items-counter"
+                    >{{ selectedItems.length }} {{ 'selected' | dm }}</span
+                >
+                @if (options && options.secondary) {
+                    @for (action of options.secondary; track action) {
+                        <p-splitButton
+                            [model]="action.model"
+                            class="action-header__secondary-button"
+                            secondary
+                            label="{{ action.label }}"
+                            class="inverted"></p-splitButton>
+                    }
+                }
+            </div>
+        }
     </div>
 </div>

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -37,7 +37,6 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
     standalone: true,
     imports: [
         AsyncPipe,
-        NgIf,
         DotExperimentsUiHeaderComponent,
         DotExperimentsConfigurationVariantsComponent,
         DotExperimentsConfigurationGoalsComponent,

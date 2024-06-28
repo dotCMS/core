@@ -1,4 +1,4 @@
-import { LowerCasePipe, NgForOf, NgIf, UpperCasePipe } from '@angular/common';
+import { LowerCasePipe, UpperCasePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -29,14 +29,10 @@ import {
     standalone: true,
     selector: 'dot-experiments-list-table',
     imports: [
-        NgIf,
         LowerCasePipe,
         UpperCasePipe,
-        NgForOf,
-        // dotCMS
         DotMessagePipe,
         DotRelativeDatePipe,
-        // PrimeNG
         ConfirmPopupModule,
         TableModule,
         ButtonModule,

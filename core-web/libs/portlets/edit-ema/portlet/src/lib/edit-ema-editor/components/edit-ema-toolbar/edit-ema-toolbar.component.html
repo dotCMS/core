@@ -1,4 +1,4 @@
-<ng-container *ngIf="editorToolbarData$ | async as es">
+@if (editorToolbarData$ | async; as es) {
     <p-toolbar>
         <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
             <dot-device-selector-seo
@@ -9,29 +9,28 @@
                 #deviceSelector
                 appendTo="body"
                 data-testId="dot-device-selector" />
-
             <p-button
                 (onClick)="deviceSelector.openMenu($event)"
                 [label]="'editpage.toolbar.preview.page' | dm"
                 icon="pi pi-desktop"
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-preview" />
-
             @if (
                 es.editorData.mode === editorMode.EDIT ||
                 es.editorData.mode === editorMode.EDIT_VARIANT
             ) {
-                <p-button
-                    *ngIf="es.editor.urlContentMap as urlContentMap"
-                    (onClick)="editUrlContentMap.emit(urlContentMap)"
-                    [label]="
-                        'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
-                    "
-                    icon="pi pi-pencil"
-                    styleClass="p-button-text p-button-sm"
-                    data-testId="edit-url-content-map" />
+                @if (es.editor.urlContentMap; as urlContentMap) {
+                    <p-button
+                        (onClick)="editUrlContentMap.emit(urlContentMap)"
+                        [label]="
+                            'editpage.toolbar.edit.url.map.content'
+                                | dm: [urlContentMap.contentType]
+                        "
+                        icon="pi pi-pencil"
+                        styleClass="p-button-text p-button-sm"
+                        data-testId="edit-url-content-map" />
+                }
             }
-
             <dot-ema-bookmarks [url]="es.favoritePageURL" />
             <p-button
                 (cdkCopyToClipboardCopied)="triggerCopyToast()"
@@ -52,10 +51,11 @@
             </a>
         </div>
         <div class="p-toolbar-group-right" data-testId="toolbar-right-content">
-            <dot-ema-running-experiment
-                *ngIf="es.currentExperiment?.status === experimentStatus.RUNNING"
-                [runningExperiment]="es.currentExperiment"
-                data-testId="ema-running-experiment" />
+            @if (es.currentExperiment?.status === experimentStatus.RUNNING) {
+                <dot-ema-running-experiment
+                    [runningExperiment]="es.currentExperiment"
+                    data-testId="ema-running-experiment" />
+            }
             <dot-edit-ema-language-selector
                 (selected)="onLanguageSelected($event)"
                 [language]="es.editor.viewAs.language"
@@ -67,11 +67,11 @@
                 [value]="es.editor.viewAs.persona"
                 #personaSelector
                 data-testId="persona-selector" />
-            <dot-edit-ema-workflow-actions
-                *ngIf="es.showWorkflowActions"
-                (newPage)="handleNewPage($event)"
-                [inode]="es.editor.page.inode" />
-
+            @if (es.showWorkflowActions) {
+                <dot-edit-ema-workflow-actions
+                    (newPage)="handleNewPage($event)"
+                    [inode]="es.editor.page.inode" />
+            }
             @if (es.editorData.page.isLocked && es.editorData.page.canLock) {
                 <p-button
                     (click)="unlockPage(es.editor.page.inode)"
@@ -82,9 +82,10 @@
             }
         </div>
     </p-toolbar>
-    <dot-ema-info-display
-        *ngIf="es.showInfoDisplay"
-        [editorData]="es.editorData"
-        [currentExperiment]="es.currentExperiment"
-        data-testId="info-display" />
-</ng-container>
+    @if (es.showInfoDisplay) {
+        <dot-ema-info-display
+            [editorData]="es.editorData"
+            [currentExperiment]="es.currentExperiment"
+            data-testId="info-display" />
+    }
+}

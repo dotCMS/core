@@ -4,13 +4,14 @@
         <div class="notification-item__content">
             <p class="notification-item__message" id="{{ 'notification-item-message-' + data.id }}">
                 {{ data.notificationData.message }}
-                <a
-                    *ngIf="showLinkAction"
-                    [href]="data.notificationData.actions[0].action"
-                    class="notification-item__link"
-                    id="{{ 'notification-item-link-action' + data.id }}"
-                    >{{ data.notificationData.actions[0].text }}</a
-                >
+                @if (showLinkAction) {
+                    <a
+                        [href]="data.notificationData.actions[0].action"
+                        class="notification-item__link"
+                        id="{{ 'notification-item-link-action' + data.id }}"
+                        >{{ data.notificationData.actions[0].text }}</a
+                    >
+                }
                 <dot-custom-time
                     id="{{ 'notification-item-date-' + data.id }}"
                     time="{{ data.timeSent }}"></dot-custom-time>

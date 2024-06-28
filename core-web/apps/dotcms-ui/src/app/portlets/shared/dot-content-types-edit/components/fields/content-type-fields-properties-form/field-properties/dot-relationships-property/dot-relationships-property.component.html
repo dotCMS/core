@@ -1,28 +1,41 @@
-<div *ngIf="!editing" class="field relationship__type">
-    <p-radioButton
-        (click)="clean()"
-        [(ngModel)]="status"
-        [label]="'contenttypes.field.properties.relationship.new.label' | dm"
-        [value]="STATUS_NEW">
-    </p-radioButton>
-
-    <p-radioButton
-        (click)="clean()"
-        [(ngModel)]="status"
-        [label]="'contenttypes.field.properties.relationship.existing.label' | dm"
-        [value]="STATUS_EXISTING">
-    </p-radioButton>
-</div>
+@if (!editing) {
+    <div class="field relationship__type">
+        <p-radioButton
+            (click)="clean()"
+            [(ngModel)]="status"
+            [label]="'contenttypes.field.properties.relationship.new.label' | dm"
+            [value]="STATUS_NEW">
+        </p-radioButton>
+        <p-radioButton
+            (click)="clean()"
+            [(ngModel)]="status"
+            [label]="'contenttypes.field.properties.relationship.existing.label' | dm"
+            [value]="STATUS_EXISTING">
+        </p-radioButton>
+    </div>
+}
 
 <div class="relationship__config">
-    <dot-new-relationships
-        *ngIf="status === STATUS_NEW; else existing"
-        (switch)="handleChange($event)"
-        [velocityVar]="group.get(property.name).value.velocityVar"
-        [cardinality]="group.get(property.name).value.cardinality"
-        [editing]="editing"
-        class="relationships__new">
-    </dot-new-relationships>
+    @if (status === STATUS_NEW) {
+        <dot-new-relationships
+            (switch)="handleChange($event)"
+            [velocityVar]="group.get(property.name).value.velocityVar"
+            [cardinality]="group.get(property.name).value.cardinality"
+            [editing]="editing"
+            class="relationships__new">
+        </dot-new-relationships>
+    } @else {
+        <div class="field">
+            <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired
+                >Relationship</label
+            >
+            <dot-edit-relationships
+                (switch)="handleChange($event)"
+                [id]="property.name"
+                class="relationships__existing">
+            </dot-edit-relationships>
+        </div>
+    }
 
     <ng-template #existing>
         <div class="field">

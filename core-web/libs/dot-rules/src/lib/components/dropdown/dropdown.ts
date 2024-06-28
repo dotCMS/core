@@ -25,29 +25,31 @@ import { map, mergeMap, toArray } from 'rxjs/operators';
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-input-dropdown',
     template: `
-        <p-dropdown
-            *ngIf="maxSelections <= 1"
-            (onChange)="fireChange($event.value)"
-            [(ngModel)]="modelValue"
-            [style]="{ width: '100%' }"
-            [required]="minSelections > 0"
-            [placeholder]="placeholder"
-            [options]="dropdownOptions | async"
-            [editable]="allowAdditions"
-            [filter]="true"
-            #inputDropdown
-            ng-valid
-            class="ui fluid ng-valid"
-            appendTo="body">
-        </p-dropdown>
-        <dot-autocomplete-tags
-            *ngIf="maxSelections > 1"
-            (onChange)="fireChange($event)"
-            [inputId]="name"
-            [value]="modelValue"
-            [options]="dropdownOptions | async"
-            [placeholder]="placeholder">
-        </dot-autocomplete-tags>
+        @if (maxSelections <= 1) {
+            <p-dropdown
+                (onChange)="fireChange($event.value)"
+                [(ngModel)]="modelValue"
+                [style]="{ width: '100%' }"
+                [required]="minSelections > 0"
+                [placeholder]="placeholder"
+                [options]="dropdownOptions | async"
+                [editable]="allowAdditions"
+                [filter]="true"
+                #inputDropdown
+                ng-valid
+                class="ui fluid ng-valid"
+                appendTo="body">
+            </p-dropdown>
+        }
+        @if (maxSelections > 1) {
+            <dot-autocomplete-tags
+                (onChange)="fireChange($event)"
+                [inputId]="name"
+                [value]="modelValue"
+                [options]="dropdownOptions | async"
+                [placeholder]="placeholder">
+            </dot-autocomplete-tags>
+        }
     `
 })
 export class Dropdown implements ControlValueAccessor, OnChanges {

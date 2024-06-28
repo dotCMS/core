@@ -1,4 +1,4 @@
-import { AsyncPipe, DatePipe, NgIf, TitleCasePipe } from '@angular/common';
+import { AsyncPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink, RouterModule } from '@angular/router';
 
@@ -17,7 +17,6 @@ import { DotMessagePipe } from '@dotcms/ui';
         DotMessagePipe,
         TitleCasePipe,
         DatePipe,
-        NgIf,
         AsyncPipe
     ],
     templateUrl: './dot-ema-running-experiment.component.html',
