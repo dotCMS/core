@@ -10,15 +10,11 @@
             "outputs": ["{options.outputFile}"]
         },
         "test": {
-            "executor": "@angular-devkit/build-angular:karma",
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectName}"],
             "options": {
-                "main": "libs/ui/src/test.ts",
-                "tsConfig": "libs/ui/tsconfig.spec.json",
-                "karmaConfig": "libs/ui/karma.conf.js",
-                "styles": ["libs/dotcms-scss/angular/styles.scss"],
-                "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dotcms-scss/angular/"]
-                }
+                "jestConfig": "libs/ui/jest.config.ts",
+                "passWithNoTests": false
             }
         }
     },
