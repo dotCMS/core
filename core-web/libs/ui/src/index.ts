@@ -38,7 +38,6 @@ export * from './lib/dot-site-selector/dot-site-selector.directive';
 export * from './lib/directives/dot-autofocus/dot-autofocus.directive';
 export * from './lib/directives/dot-trim-input/dot-trim-input.directive';
 export * from './lib/dot-container-options/dot-container-options.directive';
-export * from './lib/directives/dot-select-item/dot-select-item.directive';
 export * from './lib/directives/dot-avatar/dot-avatar.directive';
 export * from './lib/directives/dot-dropdown.directive';
 export * from './lib/directives/dot-sidebar.directive';
