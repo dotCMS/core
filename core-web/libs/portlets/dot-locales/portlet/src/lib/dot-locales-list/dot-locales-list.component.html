@@ -19,6 +19,8 @@
     <p-table
         [value]="vm.locales"
         [globalFilterFields]="['isoCode', 'language', 'country']"
+        stateStorage="session"
+        stateKey="state-locales-session"
         #dt
         styleClass="dotTable">
         <ng-template pTemplate="header">
