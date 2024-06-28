@@ -10,6 +10,11 @@
             min-height: 20rem;
         }
     }
+    dot-copy-button {
+        position: absolute;
+        top: $spacing-0;
+        right: $spacing-0;
+    }
 }
 
 .locale-add__buttons {

@@ -43,8 +43,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1158,7 +1158,7 @@ class ContentTypeCommandIT extends CommandTest {
                 contentTypeAPI.getContentType(newContentType3, 1L, false);
                 Assertions.fail(" 404 Exception should have been thrown here.");
             } catch (Exception e) {
-                Assertions.assertTrue(e instanceof NotFoundException);
+                Assertions.assertInstanceOf(NotFoundException.class, e);
             }
 
             byVarName = contentTypeAPI.getContentType(newContentType4.variable(), 1L, false);

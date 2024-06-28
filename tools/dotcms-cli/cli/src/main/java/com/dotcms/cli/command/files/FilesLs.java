@@ -3,7 +3,7 @@ package com.dotcms.cli.command.files;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.OutputOptionMixin;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import picocli.CommandLine;
 
 /**

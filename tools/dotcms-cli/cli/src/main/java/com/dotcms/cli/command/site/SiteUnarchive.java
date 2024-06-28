@@ -7,7 +7,7 @@ import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import picocli.CommandLine;
 
 @ActivateRequestContext

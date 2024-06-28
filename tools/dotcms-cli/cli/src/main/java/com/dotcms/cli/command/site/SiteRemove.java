@@ -8,8 +8,8 @@ import com.dotcms.cli.common.Prompt;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext
