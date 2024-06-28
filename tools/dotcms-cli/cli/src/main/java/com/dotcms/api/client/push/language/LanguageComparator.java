@@ -5,9 +5,9 @@ import com.dotcms.model.language.Language;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.Nullable;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
+import jakarta.annotation.Nullable;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 
 @Dependent
 public class LanguageComparator implements ContentComparator<Language> {

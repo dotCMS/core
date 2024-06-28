@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 import java.util.Properties;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 /**
@@ -35,7 +35,7 @@ public class BuiltVersionServiceImpl implements BuiltVersionService {
                 logger.error("Unable to load properties file", e);
             }
         }
-        return Optional.of(buildVersion);
+        return Optional.ofNullable(buildVersion);
 
     }
 

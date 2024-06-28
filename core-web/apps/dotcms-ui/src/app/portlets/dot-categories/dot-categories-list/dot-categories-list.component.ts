@@ -5,7 +5,7 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
 
-import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
+import { DotCategory } from '@dotcms/dotcms-models';
 
 import { DotCategoriesListState, DotCategoriesListStore } from './store/dot-categories-list-store';
 
@@ -24,6 +24,7 @@ export class DotCategoriesListComponent {
     dataTable: Table;
     @ViewChild('gf')
     globalSearch: ElementRef;
+
     constructor(private store: DotCategoriesListStore) {}
 
     /**

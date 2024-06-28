@@ -3,7 +3,7 @@ package com.dotcms.api.client;
 import com.starxg.keytar.Keytar;
 import com.starxg.keytar.KeytarException;
 import java.util.Optional;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * KeyTarPasswordStoreImpl implements the SecurePasswordStore interface to securely store passwords using the system keychain.

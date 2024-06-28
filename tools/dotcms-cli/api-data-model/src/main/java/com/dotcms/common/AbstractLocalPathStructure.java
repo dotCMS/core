@@ -3,7 +3,7 @@ package com.dotcms.common;
 import com.dotcms.model.annotation.ValueType;
 import java.io.File;
 import java.nio.file.Path;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Derived;
