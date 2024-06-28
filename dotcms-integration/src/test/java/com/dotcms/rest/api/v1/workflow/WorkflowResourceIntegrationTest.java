@@ -2202,9 +2202,9 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                             brandNewContentlet.getInode(), null, "FORCE", "-1", fireActionForm2);
 
             fail("Should have thrown an exception");
-        } catch (DotContentletValidationException e) {finally {
+        } catch (DotContentletValidationException e) {
             // nice
-        }
+        } finally {
             if (null != contentType) {
                 contentTypeAPI.delete(contentType);
             }
