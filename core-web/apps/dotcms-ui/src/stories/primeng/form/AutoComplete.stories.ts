@@ -126,11 +126,12 @@ export const Main: Story = (args, { id }) => {
         [suggestions]="suggestions"
         [field]="field"
         appendTo="body"
-        [multiple]="multiple"
+        [multiple]="true"
         [showClear]="showClear"
         [dropdownIcon]="dropdownIcon"
         [delay]="delay"
         [unique]="unique"
+
         ></p-autoComplete>`
     };
 };

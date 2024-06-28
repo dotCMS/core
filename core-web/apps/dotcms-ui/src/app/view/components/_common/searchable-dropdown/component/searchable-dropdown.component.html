@@ -4,8 +4,10 @@
         [class.selected]="item[labelPropertyName] === valueString"
         class="searchable-dropdown__data-list-item"
         data-testid="searchable-dropdown-data-list-item"
-        ><i *ngIf="item[labelPropertyName] === valueString" class="pi pi-check"></i
-        >{{ item.label }}</span
+        ><i *ngIf="item[labelPropertyName] === valueString" class="pi pi-check"></i>asdsad{{
+            item.label
+        }}
+        {{ item | json }}</span
     >
 </ng-template>
 
