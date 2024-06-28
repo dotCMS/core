@@ -1,29 +1,17 @@
 package com.dotcms.cms.login;
 
-import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
-import java.io.Serializable;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -52,6 +40,26 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.InstancePool;
+import io.vavr.Lazy;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.Serializable;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import static com.dotmarketing.util.Constants.RESPECT_FRONT_END_ROLES;
+import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
 /**
  * Login Service Factory that allows developers to inject custom login services.
@@ -62,6 +70,8 @@ import com.liferay.util.InstancePool;
  */
 public class LoginServiceAPIFactory implements Serializable {
 
+    private static final Lazy<Boolean> FIRST_AVAILABLE_SITE_FALLBACK =
+            Lazy.of(() -> Config.getBooleanProperty("FIRST_AVAILABLE_SITE_FALLBACK", true));
     private static final String BACKEND_LOGIN = "backendLogin";
     public static final String LOG_OUT_ATTRIBUTE = "LOG_OUT";
 
@@ -304,6 +314,22 @@ public class LoginServiceAPIFactory implements Serializable {
             return authenticated;
         }
 
+        /**
+         * Executes the authentication process for the specified User ID. Several session-related
+         * parameters are loaded as well. Additionally, users/developers can run their own Pre- and
+         * Post-Login code, if necessary.
+         *
+         * @param userId     The ID of the user to authenticate.
+         * @param rememberMe This parameter is no longer useful.
+         * @param request    The current instance of the {@link HttpServletRequest}.
+         * @param response   The current instance of the {@link HttpServletResponse}.
+         *
+         * @throws PortalException      Failed to retrieve the User matching the specified ID.
+         * @throws SystemException      A system initialization error has occurred.
+         * @throws DotDataException     An error occurred when interacting with the data source.
+         * @throws DotSecurityException A permission problem when accessing the dotCMS APIs has
+         *                              occurred.
+         */
         @CloseDBIfOpened
         private void doAuthentication(final String userId, final boolean rememberMe,
                                       final HttpServletRequest  request,
@@ -335,11 +361,9 @@ public class LoginServiceAPIFactory implements Serializable {
                         throw new AuthException(errorMessage);
                     }
                 }
+            } else {
+                throw new AuthException(String.format("User ID '%s' was not found", userId));
             }
-
-            //DOTCMS-4943
-            final UserAPI userAPI = APILocator.getUserAPI();
-
             final Locale userSelectedLocale = LanguageUtil.getDefaultLocale(request);
             if (null != userSelectedLocale) {
 
@@ -349,34 +373,25 @@ public class LoginServiceAPIFactory implements Serializable {
             user.setLastLoginDate(new Date());
             user.setFailedLoginAttempts(0);
             user.setLastLoginIP(request.getRemoteAddr());
-            userAPI.save(user, userAPI.getSystemUser(), true);
-
+            userAPI.save(user, userAPI.getSystemUser(), RESPECT_FRONT_END_ROLES);
             session.setAttribute(WebKeys.USER_ID, userId);
-
-
-            //set the host to the domain of the URL if possible if not use the default host
-            //http://jira.dotmarketing.net/browse/DOTCMS-4475
-            try{
-
-                String domainName = request.getServerName();
-                Host host = APILocator.getHostAPI().resolveHostName(domainName, user, false);
-
-                if (null == host || !UtilMethods.isSet(host.getInode())) {
-                    host = APILocator.getHostAPI().findByName(domainName, user, false);
+            try {
+                final String domainName = request.getServerName();
+                Host resolvedSite = APILocator.getHostAPI().resolveHostName(domainName, user, DONT_RESPECT_FRONT_END_ROLES);
+                if (null == resolvedSite || !UtilMethods.isSet(resolvedSite.getInode())) {
+                    resolvedSite = APILocator.getHostAPI().findByName(domainName, user, DONT_RESPECT_FRONT_END_ROLES);
                 }
-
-                if(host == null || !UtilMethods.isSet(host.getInode())){
-                    host = APILocator.getHostAPI().findByAlias(domainName, user, false);
+                if (resolvedSite == null || !UtilMethods.isSet(resolvedSite.getInode())) {
+                    resolvedSite = APILocator.getHostAPI().findByAlias(domainName, user, DONT_RESPECT_FRONT_END_ROLES);
                 }
-
-                if(host != null && UtilMethods.isSet(host.getInode())) {
-                    request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
+                if (resolvedSite != null && UtilMethods.isSet(resolvedSite.getInode())) {
+                    request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, resolvedSite.getIdentifier());
                 } else {
-                    request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
+                    request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), RESPECT_FRONT_END_ROLES).getIdentifier());
                 }
-            } catch (DotSecurityException se) {
-
-                request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
+            } catch (final DotSecurityException se) {
+                Logger.warnAndDebug(LoginServiceAPIFactory.class, ExceptionUtil.getErrorMessage(se), se);
+                this.handleAvailableSiteFallback(user, request);
             }
 
             session.removeAttribute("_failedLoginName");
@@ -388,6 +403,96 @@ public class LoginServiceAPIFactory implements Serializable {
 
             EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), request, response);
             EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), request, response);
+        }
+
+        /**
+         * Handles the available site fallback behavior when the logged-in User does not have
+         * permission to access the selected Default Site. If the
+         * {@code FIRST_AVAILABLE_SITE_FALLBACK} is enabled, Users can fall back to accessing the
+         * first available Site that they have READ access to.
+         *
+         * @param loggedInUser The {@link User} that is currently logged in.
+         * @param request      The current instance of the {@link HttpServletRequest}.
+         *
+         * @throws DotDataException     If an error occurred when interacting with the data source.
+         * @throws DotSecurityException If a permission problem when accessing the dotCMS APIs has
+         *                              occurred.
+         * @throws AuthException        If the User does not have permission to any Site in the
+         *                              repository, or the available site fallback mechanism is
+         *                              disabled.
+         */
+        private void handleAvailableSiteFallback(final User loggedInUser,
+                                                 final HttpServletRequest request) throws DotDataException, DotSecurityException, AuthException {
+            final Optional<Host> defaultSiteOpt = this.findDefaultSite(loggedInUser);
+            if (defaultSiteOpt.isPresent()) {
+                Logger.warn(this, String.format("Setting the Default Site '%s' as current Site for User " +
+                        "'%s'", defaultSiteOpt, loggedInUser.getUserId()));
+                request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, defaultSiteOpt.get().getIdentifier());
+            } else if (FIRST_AVAILABLE_SITE_FALLBACK.get()) {
+                final List<Host> availableSites = this.findAvailableSites(loggedInUser);
+                if (!availableSites.isEmpty()) {
+                    Logger.warn(this, String.format("User '%s' does not have READ permission to the Default Site. " +
+                            "Setting the first available Site '%s' as current one", loggedInUser.getUserId(), availableSites.get(0)));
+                    request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, availableSites.get(0).getIdentifier());
+                } else {
+                    Logger.error(this, String.format("User '%s' " +
+                            "does not have permission to any Site in the repository", loggedInUser.getUserId()));
+                    throw new AuthException("The User does not have permission to any Site in the repository. " +
+                            "Please contact your CMS Administrator.");
+                }
+            } else {
+                Logger.error(this, String.format("User '%s' does not have permission to the Default Site. " +
+                        "The FIRST_AVAILABLE_SITE_FALLBACK is disabled. User will not be able to access the system. " +
+                        "Please contact your CMS Administrator.", loggedInUser.getUserId()));
+                throw new AuthException(String.format("The User does not have permission to the current Default Site " +
+                                "'%s'. Please contact your CMS Administrator.", defaultSiteOpt));
+            }
+        }
+
+        /**
+         * Finds the Default Site for the specified User.
+         *
+         * @param user The {@link User} to find the Default Site for.
+         *
+         * @return An {@link Optional} containing the Default Site if the User has permission to
+         * access it. Otherwise, an Empty Optional is returned.
+         *
+         * @throws DotDataException     If an error occurred when interacting with the data source.
+         * @throws DotSecurityException If a permission problem when accessing the dotCMS APIs has
+         *                              occurred.
+         */
+        private Optional<Host> findDefaultSite(final User user) throws DotDataException,
+                DotSecurityException {
+            final Host defaultSite = APILocator.getHostAPI().findDefaultHost(user, DONT_RESPECT_FRONT_END_ROLES);
+            final boolean hasPermission =
+                    APILocator.getPermissionAPI().doesUserHavePermission(defaultSite,
+                            PermissionAPI.PERMISSION_READ, user, DONT_RESPECT_FRONT_END_ROLES);
+            return hasPermission ? Optional.of(defaultSite) : Optional.empty();
+        }
+
+        /**
+         * Finds all the available Sites that the specified User has READ permission to.
+         *
+         * @param user The {@link User} to find the available Sites for.
+         *
+         * @return A {@link List} of {@link Host} objects that the User has READ permission to.
+         *
+         * @throws DotDataException     If an error occurred when interacting with the data source.
+         * @throws DotSecurityException If a permission problem when accessing the dotCMS APIs has
+         *                              occurred.
+         */
+        private List<Host> findAvailableSites(final User user) throws DotDataException, DotSecurityException {
+            final List<Host> availableSites = APILocator.getHostAPI().findAllFromCache(user, DONT_RESPECT_FRONT_END_ROLES);
+            return availableSites.stream().filter(site -> {
+                try {
+                    return APILocator.getPermissionAPI()
+                            .doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, DONT_RESPECT_FRONT_END_ROLES);
+                } catch (final DotDataException e) {
+                    Logger.debug(this, String.format("Failed to check READ permission of User " +
+                            "'%s' for Site '%s': %s", user, site, ExceptionUtil.getErrorMessage(e)));
+                    return false;
+                }
+            }).collect(Collectors.toList());
         }
 
         /**
