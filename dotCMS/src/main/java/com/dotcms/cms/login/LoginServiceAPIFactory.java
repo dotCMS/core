@@ -334,33 +334,11 @@ public class LoginServiceAPIFactory implements Serializable {
         private void doAuthentication(final String userId, final boolean rememberMe,
                                       final HttpServletRequest  request,
                                       final HttpServletResponse response) throws PortalException, SystemException, DotDataException, DotSecurityException {
-
             final HttpSession session = request.getSession();
             final User user = UserLocalManagerUtil.getUserById(userId);
 
             if (null != user) {
-                // User must be either back-end or front-end otherwise it must be rejected.
-                if (!user.isFrontendUser() && !user.isBackendUser()) {
-                    final String errorMessage = String
-                            .format("User `%s` can not be identified neither as front-end nor back-end user ",
-                                    user.getUserId());
-                    SecurityLogger.logInfo(LoginServiceAPI.class, errorMessage);
-                    throw new AuthException(errorMessage);
-                }
-
-                // if the authentication request comes from the backend user must have console access.
-                final Object backendLogin = request.getAttribute(BACKEND_LOGIN);
-                if (null != backendLogin && BooleanUtils.toBoolean(backendLogin.toString())) {
-                    if (!user.hasConsoleAccess()) {
-                        DateUtil.sleep(2000);
-                        final String errorMessage = String
-                                .format("User `%s` / `%s` login has failed. User does not have the Back End User Role or any layouts",
-                                        user.getEmailAddress(), user.getUserId());
-                        SecurityLogger.logInfo(this.getClass(), errorMessage);
-                        //Technically this could be considered a SecurityException but in order for the error to be shown on the login screen we must throw an AuthException
-                        throw new AuthException(errorMessage);
-                    }
-                }
+                this.checkLoggedInUserAttributes(request, user);
             } else {
                 throw new AuthException(String.format("User ID '%s' was not found", userId));
             }
@@ -375,8 +353,83 @@ public class LoginServiceAPIFactory implements Serializable {
             user.setLastLoginIP(request.getRemoteAddr());
             userAPI.save(user, userAPI.getSystemUser(), RESPECT_FRONT_END_ROLES);
             session.setAttribute(WebKeys.USER_ID, userId);
+            this.loadSiteIntoSession(request, user);
+
+            session.removeAttribute("_failedLoginName");
+
+            this.preventSessionFixation(request);
+
+            //JWT we crT always b/c in the future we want to use it not only for the remember me, but also for restful authentication.
+            this.doRememberMe(request, response, user, rememberMe);
+
+            EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), request, response);
+            EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), request, response);
+        }
+
+        /**
+         * Checks a specific set of attributes/characteristics that the User logging in must meet
+         * for it to be correctly authenticated. For instance:
+         * <ul>
+         *     <li>It must be either a back-end or a front-end User</li>
+         *     <li>If it's a back-end login, it must have access to <b>AT LEAST</b> one Portlet
+         *     .</li>
+         * </ul>
+         *
+         * @param request The current instance of the {@link HttpServletRequest}.
+         * @param user    The {@link User} that is currently logged in.
+         *
+         * @throws AuthException If the User does not meet the required attributes.
+         */
+        private void checkLoggedInUserAttributes(final HttpServletRequest request, final User user) throws AuthException {
+            // User must be either back-end or front-end otherwise it must be rejected.
+            if (!user.isFrontendUser() && !user.isBackendUser()) {
+                final String errorMessage = String
+                        .format("User `%s` can not be identified neither as front-end nor back-end user ",
+                                user.getUserId());
+                SecurityLogger.logInfo(LoginServiceAPI.class, errorMessage);
+                throw new AuthException(errorMessage);
+            }
+
+            // if the authentication request comes from the backend user must have console access.
+            final Object backendLogin = request.getAttribute(BACKEND_LOGIN);
+            if (null != backendLogin && BooleanUtils.toBoolean(backendLogin.toString())) {
+                if (!user.hasConsoleAccess()) {
+                    DateUtil.sleep(2000);
+                    final String errorMessage = String
+                            .format("User `%s` / `%s` login has failed. User does not have the Back End User Role or any layouts",
+                                    user.getEmailAddress(), user.getUserId());
+                    SecurityLogger.logInfo(this.getClass(), errorMessage);
+                    //Technically this could be considered a SecurityException but in order for the
+                    // error to be shown on the login screen we must throw an AuthException
+                    throw new AuthException(errorMessage);
+                }
+            }
+        }
+
+        /**
+         * Resolves the Site that the User will be accessing now that it is logged in. There are
+         * different ways of resolving the appropriate Site:
+         * <ul>
+         *     <li>Using the current domain name and look for a Site with a matching alias.</li>
+         *     <li>Using the current domain name and look for a Site with that specific name.</li>
+         *     <li>Returning the Default Site.</li>
+         *     <li>Finally, look for the first Site that the User has READ permission to.</li>
+         *     <li></li>
+         * </ul>
+         *
+         * @param request The current instance of the {@link HttpServletRequest}.
+         * @param user    The {@link User} that is currently logged in.
+         *
+         * @throws DotDataException     An error occurred when interacting with the data source.
+         * @throws DotSecurityException A permission problem when accessing the dotCMS APIs has
+         *                              occurred.
+         * @throws AuthException        If the User does not have permission to any Site in the
+         *                              repository, or the available site fallback mechanism is
+         *                              disabled.
+         */
+        private void loadSiteIntoSession(final HttpServletRequest request, final User user) throws DotDataException, DotSecurityException, AuthException {
+            final String domainName = request.getServerName();
             try {
-                final String domainName = request.getServerName();
                 Host resolvedSite = APILocator.getHostAPI().resolveHostName(domainName, user, DONT_RESPECT_FRONT_END_ROLES);
                 if (null == resolvedSite || !UtilMethods.isSet(resolvedSite.getInode())) {
                     resolvedSite = APILocator.getHostAPI().findByName(domainName, user, DONT_RESPECT_FRONT_END_ROLES);
@@ -393,16 +446,6 @@ public class LoginServiceAPIFactory implements Serializable {
                 Logger.warnAndDebug(LoginServiceAPIFactory.class, ExceptionUtil.getErrorMessage(se), se);
                 this.handleAvailableSiteFallback(user, request);
             }
-
-            session.removeAttribute("_failedLoginName");
-
-            this.preventSessionFixation(request);
-
-            //JWT we crT always b/c in the future we want to use it not only for the remember me, but also for restful authentication.
-            this.doRememberMe(request, response, user, rememberMe);
-
-            EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), request, response);
-            EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), request, response);
         }
 
         /**
@@ -428,17 +471,15 @@ public class LoginServiceAPIFactory implements Serializable {
                 Logger.warn(this, String.format("Setting the Default Site '%s' as current Site for User " +
                         "'%s'", defaultSiteOpt, loggedInUser.getUserId()));
                 request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, defaultSiteOpt.get().getIdentifier());
-            } else if (FIRST_AVAILABLE_SITE_FALLBACK.get()) {
+            } else if (Boolean.TRUE.equals(FIRST_AVAILABLE_SITE_FALLBACK.get())) {
                 final List<Host> availableSites = this.findAvailableSites(loggedInUser);
                 if (!availableSites.isEmpty()) {
                     Logger.warn(this, String.format("User '%s' does not have READ permission to the Default Site. " +
                             "Setting the first available Site '%s' as current one", loggedInUser.getUserId(), availableSites.get(0)));
                     request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, availableSites.get(0).getIdentifier());
                 } else {
-                    Logger.error(this, String.format("User '%s' " +
-                            "does not have permission to any Site in the repository", loggedInUser.getUserId()));
-                    throw new AuthException("The User does not have permission to any Site in the repository. " +
-                            "Please contact your CMS Administrator.");
+                    Logger.error(this, String.format("User '%s' does not have permission to any Site in the repository. " +
+                            "Please contact your CMS Administrator.", loggedInUser.getUserId()));
                 }
             } else {
                 Logger.error(this, String.format("User '%s' does not have permission to the Default Site. " +
