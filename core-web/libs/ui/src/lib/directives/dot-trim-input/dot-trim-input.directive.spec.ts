@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Component } from '@angular/core';
 import { FormsModule, NgControl } from '@angular/forms';
@@ -32,7 +32,7 @@ describe('DotTrimInputDirective', () => {
 
         await spectator.fixture.whenStable();
 
-        expect(spectator.query(byTestId('input-to-trim'))).toExist();
+        expect(spectator.query(byTestId('input-to-trim'))).not.toBeNull();
         expect(input.value).toBe(STRING_WITH_SPACES);
 
         spectator.dispatchFakeEvent(input, 'blur');
