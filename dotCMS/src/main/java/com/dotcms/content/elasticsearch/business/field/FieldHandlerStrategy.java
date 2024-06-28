@@ -1,7 +1,7 @@
 package com.dotcms.content.elasticsearch.business.field;
 
 
-import com.dotmarketing.portlets.structure.model.Field;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 
