@@ -1,5 +1,5 @@
 <div class="dot-tab-buttons">
-    @for (item of _options; track item) {
+    @for (item of _options; track $index) {
         <div class="dot-tab-buttons__container">
             <div class="dot-tab" data-testId="dot-tab-container">
                 <button
