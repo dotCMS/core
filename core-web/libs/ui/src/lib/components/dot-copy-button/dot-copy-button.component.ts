@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -18,7 +17,7 @@ import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
     providers: [DotClipboardUtil],
     templateUrl: './dot-copy-button.component.html',
     styleUrls: ['./dot-copy-button.component.scss'],
-    imports: [TooltipModule, ButtonModule, NgIf],
+    imports: [TooltipModule, ButtonModule],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCopyButtonComponent {
