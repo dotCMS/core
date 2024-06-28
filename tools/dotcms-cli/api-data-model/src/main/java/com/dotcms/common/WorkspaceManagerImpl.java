@@ -129,7 +129,17 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     }
 
     public Optional<Workspace> findWorkspace(Path currentPath) {
-        final Optional<Path> projectRoot = findProjectRoot(currentPath);
+        // Resolve the path as it may be relative
+        final Path resolvedPath = resolvePath(currentPath);
+        logger.debugf("currentPath = %s", resolvedPath);
+
+        final File file = resolvedPath.toFile();
+        if (!file.exists()) {
+            throw new IllegalArgumentException(
+                    String.format("Path [%s] does not exist", resolvedPath)
+            );
+        }
+        final Optional<Path> projectRoot = findProjectRoot(resolvedPath);
         return projectRoot.map(this::workspace);
     }
 

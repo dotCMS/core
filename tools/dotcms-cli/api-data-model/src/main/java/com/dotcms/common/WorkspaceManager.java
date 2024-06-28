@@ -3,6 +3,7 @@ package com.dotcms.common;
 import com.dotcms.model.config.Workspace;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 /**
@@ -40,5 +41,24 @@ public interface WorkspaceManager {
      * @throws IOException if the workspace cannot be destroyed.
      */
     void destroy(final Workspace workspace) throws IOException;
+
+    /**
+     * Resolves the path.
+     * @param inputPath the input path
+     * @return the resolved path
+     */
+    default  Path resolvePath(Path inputPath) {
+
+        // if the input path is not absolute, resolve it against the current directory
+        if (!inputPath.isAbsolute()) {
+            // Get the current directory
+            Path currentDir = Paths.get("").toAbsolutePath().normalize();
+            System.out.println("Current directory::: " + currentDir);
+            System.out.println("Normalized :: " + currentDir.resolve(inputPath).normalize());
+            return currentDir.resolve(inputPath).normalize();
+        }
+        // otherwise, return the normalized input path
+        return inputPath.normalize();
+    }
 
 }
