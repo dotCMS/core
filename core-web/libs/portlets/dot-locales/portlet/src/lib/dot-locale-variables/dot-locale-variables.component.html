@@ -1,0 +1,20 @@
+<p-table>
+    <ng-template pTemplate="header">
+        <tr>
+            <th scope="col" pSortableColumn="">
+                {{ 'locales.key' | dm }} <p-sortIcon field="locale"></p-sortIcon>
+            </th>
+            <th scope="col" style="width: 40px"></th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-variable>
+        <tr>
+            <td>
+                {{ variable.key }}
+            </td>
+            <td>
+                <!--                <dot-action-menu-button [actions]="variable.actions"></dot-action-menu-button>-->
+            </td>
+        </tr>
+    </ng-template>
+</p-table>
