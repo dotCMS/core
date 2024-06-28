@@ -57,7 +57,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
         String orderBy;
 
         @CommandLine.Option(names = {"-d", "--direction"},
-                description = "Set order direction. (ASC or DESC) ", defaultValue = "ASC")
+                description = "Set order direction. Accepts ASC or DESC (case insensitive)", defaultValue = "ASC")
         String direction;
 
         @CommandLine.Option(names = {"-p", "--page"},
