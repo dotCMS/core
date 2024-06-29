@@ -30,11 +30,6 @@ function getGraphQLPageQuery({ path, language_id, mode}) {
                 identifier
                 maxContentlets
                 containerStructures {
-                    id
-                    structureId
-                    containerInode
-                    containerId
-                    code
                     contentTypeVar
                 }
                 containerContentlets {
