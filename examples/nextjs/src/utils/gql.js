@@ -9,11 +9,11 @@ const API_URL = `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/api/v1/graphql`;
 function getGraphQLPageQuery({ path, language_id, mode}) {
     const params = [];
 
-    if(language_id) {
+    if (language_id) {
         params.push(`languageId: "${language_id}"`);
     }
 
-    if(mode) {
+    if (mode) {
         params.push(`pageMode: "${mode}"`);
     }
 
