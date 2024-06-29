@@ -498,17 +498,20 @@ public class LoginServiceAPIFactory implements Serializable {
          * @return An {@link Optional} containing the Default Site if the User has permission to
          * access it. Otherwise, an Empty Optional is returned.
          *
-         * @throws DotDataException     If an error occurred when interacting with the data source.
-         * @throws DotSecurityException If a permission problem when accessing the dotCMS APIs has
-         *                              occurred.
+         * @throws DotDataException If an error occurred when interacting with the data source.
          */
-        private Optional<Host> findDefaultSite(final User user) throws DotDataException,
-                DotSecurityException {
-            final Host defaultSite = APILocator.getHostAPI().findDefaultHost(user, DONT_RESPECT_FRONT_END_ROLES);
-            final boolean hasPermission =
-                    APILocator.getPermissionAPI().doesUserHavePermission(defaultSite,
-                            PermissionAPI.PERMISSION_READ, user, DONT_RESPECT_FRONT_END_ROLES);
-            return hasPermission ? Optional.of(defaultSite) : Optional.empty();
+        private Optional<Host> findDefaultSite(final User user) throws DotDataException {
+            try {
+                final Host defaultSite = APILocator.getHostAPI().findDefaultHost(user, DONT_RESPECT_FRONT_END_ROLES);
+                final boolean hasPermission =
+                        APILocator.getPermissionAPI().doesUserHavePermission(defaultSite,
+                                PermissionAPI.PERMISSION_READ, user, DONT_RESPECT_FRONT_END_ROLES);
+                return hasPermission ? Optional.of(defaultSite) : Optional.empty();
+            } catch (final DotSecurityException e) {
+                Logger.debug(this, String.format("User '%s' does not have permission to retrieve the Default Site: %s",
+                        user, ExceptionUtil.getErrorMessage(e)));
+                return Optional.empty();
+            }
         }
 
         /**
