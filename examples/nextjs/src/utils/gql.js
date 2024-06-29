@@ -6,7 +6,7 @@ const API_URL = `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/api/v1/graphql`;
  * @param {*} query
  * @return {*}
  */
-const getGraphQLPageQuery = ({ path, language_id, mode}) => {
+function getGraphQLPageQuery({ path, language_id, mode}) {
     const params = [];
 
     if(language_id) {
@@ -56,19 +56,14 @@ const getGraphQLPageQuery = ({ path, language_id, mode}) => {
                     }
                 }
             }
-            host {
-                hostName
-            }
             layout {
                 header
                 footer
                 body {
                     rows {
                         columns {
-                            widthPercent
                             leftOffset
                             styleClass
-                            preview
                             width
                             left
                             containers {
@@ -79,22 +74,7 @@ const getGraphQLPageQuery = ({ path, language_id, mode}) => {
                     }
                 }
             }
-            template {
-                iDate
-                inode
-                identifier
-                source
-                title
-                friendlyName
-                modDate
-                sortOrder
-                showOnMenu
-                image
-                drawed
-                drawedBody
-            }
             viewAs {
-                mode
                 visitor {
                   persona {
                     name
