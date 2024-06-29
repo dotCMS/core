@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 
 import { fakeAsync, tick } from '@angular/core/testing';

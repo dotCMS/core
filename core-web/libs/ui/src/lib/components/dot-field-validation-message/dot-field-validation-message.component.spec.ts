@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
-import { byTestId } from '@ngneat/spectator/jest';
+import { createHostFactory, SpectatorHost, byTestId } from '@ngneat/spectator/jest';
 
 import { Component } from '@angular/core';
 import { ReactiveFormsModule, UntypedFormControl, Validators } from '@angular/forms';

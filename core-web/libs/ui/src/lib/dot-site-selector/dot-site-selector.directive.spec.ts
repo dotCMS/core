@@ -1,4 +1,4 @@
-import { createDirectiveFactory, SpectatorDirective } from '@ngneat/spectator';
+import { createDirectiveFactory, SpectatorDirective } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';

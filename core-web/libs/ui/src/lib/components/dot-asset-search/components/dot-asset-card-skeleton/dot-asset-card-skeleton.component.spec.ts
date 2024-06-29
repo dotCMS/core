@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { CardModule } from 'primeng/card';
 import { Skeleton, SkeletonModule } from 'primeng/skeleton';

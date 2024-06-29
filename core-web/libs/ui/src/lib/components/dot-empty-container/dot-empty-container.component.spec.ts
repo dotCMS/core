@@ -1,5 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
-import { byTestId } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, byTestId } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotEmptyContainerComponent, PrincipalConfiguration } from '@dotcms/ui';

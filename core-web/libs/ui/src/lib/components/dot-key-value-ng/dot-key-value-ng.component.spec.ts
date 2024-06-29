@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 
 import { Table, TableModule } from 'primeng/table';
