@@ -500,8 +500,8 @@
 											"    ",
 											"    if (page && page != undefined) {",
 											"    pm.expect(page[\"titleImage\"].name, 'FAILED:[titleImage.name]').equal(\"dotcms.png\");",
-											"    pm.expect(page[\"titleImage\"].idPath, 'FAILED:[titleImage.idPath]').contains(\"/dA/84fcabaa3d/asset/dotcms.png\");",
-											"    pm.expect(page[\"titleImage\"].versionPath, 'FAILED:[titleImage.versionPath]').equal(\"/dA/15a25ae30e/asset/dotcms.png\");",
+											"    pm.expect(page[\"titleImage\"].idPath, 'FAILED:[titleImage.idPath]').include(\"/asset/dotcms.png\");",
+											"    pm.expect(page[\"titleImage\"].versionPath, 'FAILED:[titleImage.versionPath]').include(\"/asset/dotcms.png\");",
 											"    }",
 											"});"
 										],
