@@ -1,19 +1,31 @@
-@if (type) { @switch (type) { @case (CONTENT_THUMBNAIL_TYPE.image) {
-<img
-    (error)="handleError()"
-    [src]="src"
-    [title]="name"
-    [alt]="name"
-    data-testId="thumbnail-image" />
-} @case (CONTENT_THUMBNAIL_TYPE.video) {
-<video (error)="handleError()" controls data-testId="thumbnail-video">
-    <source [src]="src" />
-</video>
-} @case (CONTENT_THUMBNAIL_TYPE.pdf) {
-<img (error)="handleError()" [src]="src" [title]="name" [alt]="name" data-testId="thumbnail-pdf" />
-} @default {
-<i
-    [ngClass]="['pi', icon]"
-    [ngStyle]="{ 'font-size': iconSize, color: 'var(--color-palette-secondary-400)' }"
-    data-testId="thumbnail-icon"></i>
-} } }
+@if (type) {
+    @switch (type) {
+        @case (CONTENT_THUMBNAIL_TYPE.image) {
+            <img
+                (error)="handleError()"
+                [src]="src"
+                [title]="name"
+                [alt]="name"
+                data-testId="thumbnail-image" />
+        }
+        @case (CONTENT_THUMBNAIL_TYPE.video) {
+            <video (error)="handleError()" controls data-testId="thumbnail-video">
+                <source [src]="src" />
+            </video>
+        }
+        @case (CONTENT_THUMBNAIL_TYPE.pdf) {
+            <img
+                (error)="handleError()"
+                [src]="src"
+                [title]="name"
+                [alt]="name"
+                data-testId="thumbnail-pdf" />
+        }
+        @default {
+            <i
+                [ngClass]="['pi', icon]"
+                [ngStyle]="{ 'font-size': iconSize, color: 'var(--color-palette-secondary-400)' }"
+                data-testId="thumbnail-icon"></i>
+        }
+    }
+}

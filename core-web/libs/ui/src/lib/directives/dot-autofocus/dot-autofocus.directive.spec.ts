@@ -9,9 +9,9 @@ import { DotAutofocusDirective } from '@dotcms/ui';
 @Component({
     template: `
         @if (disabled) {
-        <input type="text" dotAutofocus disabled />
+            <input type="text" dotAutofocus disabled />
         } @else {
-        <input type="text" dotAutofocus />
+            <input type="text" dotAutofocus />
         }
     `
 })
