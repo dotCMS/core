@@ -56,9 +56,9 @@ describe('DotMenuComponent', () => {
         fixture.detectChanges();
         button = fixture.debugElement.query(By.css('[data-testid="dot-menu-button"]'));
 
-        expect(
-            (button.componentInstance.styleClass as string).includes('p-button-text')
-        ).toBeTrue();
+        expect((button.componentInstance.styleClass as string).includes('p-button-text')).toBe(
+            true
+        );
     });
 
     it('should pass menu items to the Menu', () => {

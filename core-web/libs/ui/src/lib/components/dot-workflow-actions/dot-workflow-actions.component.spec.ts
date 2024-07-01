@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Button } from 'primeng/button';
 import { SplitButton, SplitButtonModule } from 'primeng/splitbutton';
@@ -128,7 +128,7 @@ describe('DotWorkflowActionsComponent', () => {
         });
 
         it('should emit the action when click on a split button', () => {
-            const spy = spyOn(spectator.component.actionFired, 'emit');
+            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
             const splitButton = spectator.query('.p-splitbutton > button');
             splitButton.dispatchEvent(new Event('click'));
 

@@ -15,7 +15,7 @@ describe('DotClipboardUtil', () => {
     });
 
     it('should copy', () => {
-        spyOn(document, 'execCommand').and.returnValue(true);
+        jest.spyOn(document, 'execCommand').mockReturnValue(true);
 
         service.copy('hello-world').then((res: boolean) => {
             expect(res).toBe(true);
@@ -24,7 +24,9 @@ describe('DotClipboardUtil', () => {
     });
 
     it('should not copy and habdle error', () => {
-        spyOn(document, 'execCommand').and.throwError('failed');
+        jest.spyOn(document, 'execCommand').mockImplementation(() => {
+            throw new Error();
+        });
 
         service
             .copy('hello-world')

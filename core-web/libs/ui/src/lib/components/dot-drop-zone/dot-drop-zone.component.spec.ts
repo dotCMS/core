@@ -1,4 +1,4 @@
-import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
+import { SpectatorHost, createHostFactory } from '@ngneat/spectator/jest';
 
 import { CommonModule } from '@angular/common';
 

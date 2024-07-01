@@ -1,6 +1,5 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
@@ -11,24 +10,17 @@ import { DotActionMenuButtonComponent, DotMenuComponent } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 describe('ActionMenuButtonComponent', () => {
-    let comp: DotActionMenuButtonComponent;
-    let fixture: ComponentFixture<DotActionMenuButtonComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<DotActionMenuButtonComponent>;
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                ButtonModule,
-                TooltipModule,
-                DotMenuComponent,
-                BrowserAnimationsModule,
-                DotActionMenuButtonComponent
-            ]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(DotActionMenuButtonComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
+    const createComponent = createComponentFactory({
+        component: DotActionMenuButtonComponent,
+        imports: [
+            ButtonModule,
+            TooltipModule,
+            DotMenuComponent,
+            BrowserAnimationsModule,
+            DotActionMenuButtonComponent
+        ]
     });
 
     it('should display a menu button with multiple actions if actions are more than 1', () => {
@@ -54,12 +46,16 @@ describe('ActionMenuButtonComponent', () => {
             }
         ];
 
-        comp.actions = fakeActions;
-        fixture.detectChanges();
+        spectator = createComponent({
+            props: {
+                actions: fakeActions
+            }
+        });
+        spectator.detectChanges();
 
-        const button = de.query(By.css('.dot-menu__button'));
-        const buttonTooltip = de.query(By.css('[data-testid="dot-action-tooltip-button"]'));
-        const menu = de.query(By.css('dot-menu'));
+        const button = spectator.query('.dot-menu__button');
+        const buttonTooltip = spectator.query(byTestId('dot-action-tooltip-button'));
+        const menu = spectator.query('dot-menu');
 
         expect(buttonTooltip).toBeNull();
         expect(button).toBeDefined();
@@ -79,11 +75,15 @@ describe('ActionMenuButtonComponent', () => {
             }
         ];
 
-        comp.actions = fakeActions;
-        fixture.detectChanges();
+        spectator = createComponent({
+            props: {
+                actions: fakeActions
+            }
+        });
+        spectator.detectChanges();
 
-        const actionButtonTooltip = de.query(By.css('[data-testid="dot-action-tooltip-button"]'));
-        const actionButtonMenu = de.query(By.css('dot-menu'));
+        const actionButtonTooltip = spectator.query(byTestId('dot-action-tooltip-button'));
+        const actionButtonMenu = spectator.query('dot-menu');
 
         expect(actionButtonTooltip).not.toBeNull();
         expect(actionButtonMenu).toBeNull();
@@ -114,15 +114,18 @@ describe('ActionMenuButtonComponent', () => {
             owner: '123',
             system: false
         };
+        spectator = createComponent({
+            props: {
+                actions: fakeActions,
+                item: mockContentType
+            }
+        });
+        spectator.detectChanges();
 
-        comp.actions = fakeActions;
-        comp.item = mockContentType;
-        fixture.detectChanges();
+        jest.spyOn(fakeActions[0].menuItem, 'command');
 
-        spyOn(fakeActions[0].menuItem, 'command');
-
-        const actionButtonTooltip = de.query(By.css('[data-testid="dot-action-tooltip-button"]'));
-        actionButtonTooltip.nativeElement.click();
+        const actionButtonTooltip = spectator.query(byTestId('dot-action-tooltip-button'));
+        spectator.click(actionButtonTooltip);
 
         expect(fakeActions[0].menuItem.command).toHaveBeenCalledTimes(1);
         expect(fakeActions[0].menuItem.command).toHaveBeenCalledWith(mockContentType);
@@ -162,10 +165,14 @@ describe('ActionMenuButtonComponent', () => {
             }
         ];
 
-        comp.actions = fakeActions;
-        comp.ngOnInit();
+        spectator = createComponent({
+            props: {
+                actions: fakeActions
+            }
+        });
+        spectator.detectChanges();
 
-        expect(comp.filteredActions.length).toEqual(1);
+        expect(spectator.component.filteredActions.length).toEqual(1);
     });
 
     it('should render button with submenu', () => {
@@ -203,20 +210,25 @@ describe('ActionMenuButtonComponent', () => {
             system: false
         };
 
-        comp.actions = fakeActions;
-        comp.item = mockContentType;
-        fixture.detectChanges();
+        spectator = createComponent({
+            props: {
+                actions: fakeActions,
+                item: mockContentType
+            }
+        });
+        spectator.detectChanges();
 
-        expect(de.query(By.css('[data-testid="dot-action-tooltip-button"]')) === null).toEqual(
-            true,
-            'tooltip button hide'
-        );
-        expect(de.query(By.css('dot-menu')) === null).toEqual(false, 'menu options show');
-        expect(de.query(By.css('button')) === null).toEqual(false, 'button to show/hide menu show');
+        const actionButtonTooltip = spectator.query(byTestId('dot-action-tooltip-button'));
+        const dotMenu = spectator.query('dot-menu');
+        const button = spectator.query('button');
+
+        expect(actionButtonTooltip).toBeNull();
+        expect(dotMenu).not.toBeNull();
+        expect(button).not.toBeNull();
     });
 
     it('should call menu option actions with item passed', () => {
-        const fakeCommand = jasmine.createSpy('fakeCommand');
+        const fakeCommand = jest.fn();
 
         const fakeActions: DotActionMenuItem[] = [
             {
@@ -251,19 +263,22 @@ describe('ActionMenuButtonComponent', () => {
             owner: '123',
             system: false
         };
-        comp.actions = fakeActions;
-        comp.item = mockContentType;
-        fixture.detectChanges();
-        const actionButtonMenu = de.query(By.css('[data-testid="dot-menu-button"]'));
-        actionButtonMenu.triggerEventHandler('click', {
+        spectator = createComponent({
+            props: {
+                actions: fakeActions,
+                item: mockContentType
+            }
+        });
+        spectator.detectChanges();
+        spectator.triggerEventHandler(`[data-testid="dot-menu-button"]`, 'click', {
             stopPropagation: () => {
                 //
             }
         });
-        fixture.detectChanges();
+        spectator.detectChanges();
 
-        const menuItemsLink = de.queryAll(By.css('.p-menuitem-link'));
-        menuItemsLink[1].nativeElement.click();
+        const menuItemsLink = spectator.queryAll('.p-menuitem-link');
+        spectator.click(menuItemsLink[1]);
 
         expect(fakeCommand).toHaveBeenCalledTimes(1);
         expect(fakeCommand).toHaveBeenCalledWith(mockContentType);

@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { CommonModule } from '@angular/common';
 import { Component, Input, ViewChild } from '@angular/core';
