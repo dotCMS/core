@@ -10,7 +10,7 @@
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "libs/edit-content/jest.config.ts",
-                "verbose": true
+                "verbose": false
             }
         },
         "lint": {

@@ -101,7 +101,6 @@ type SystemOptionsType = {
     providers: [
         DotBinaryFieldStore,
         DotLicenseService,
-        DotBinaryFieldEditImageService,
         DotBinaryFieldValidatorService,
         DotAiImagePromptStore,
         {
@@ -172,10 +171,10 @@ export class DotEditContentBinaryFieldComponent
     });
 
     isOpenDialog$ = this.#dotAiImageStore.isOpenDialog$;
-    $isOpenDialog = toSignal(this.isOpenDialog$, { initialValue: null });
+    $isOpenDialog = toSignal(this.isOpenDialog$);
 
-    selectedImage$ = this.#dotAiImageStore.selectedImage$.pipe(filter((value) => !!value));
-    $selectedImage = toSignal(this.selectedImage$, { initialValue: null });
+    selectedImage$ = this.#dotAiImageStore.selectedImage$;
+    $selectedImage = toSignal(this.selectedImage$);
 
     constructor() {
         this.#dotMessageService.init();
@@ -195,9 +194,11 @@ export class DotEditContentBinaryFieldComponent
         effect(
             () => {
                 const selectedImage = this.$selectedImage();
-                const tempFile = this.parseToTempFile(selectedImage);
-                this.#dotAiImageStore.hideDialog();
-                this.#dotBinaryFieldStore.setTempFile(tempFile);
+                if (selectedImage) {
+                    const tempFile = this.parseToTempFile(selectedImage);
+                    this.#dotAiImageStore.hideDialog();
+                    this.#dotBinaryFieldStore.setTempFile(tempFile);
+                }
             },
             {
                 allowSignalWrites: true
@@ -237,9 +238,7 @@ export class DotEditContentBinaryFieldComponent
         this.#dotBinaryFieldStore.value$
             .pipe(
                 skip(1),
-                filter(({ value }) => {
-                    return value !== this.value;
-                })
+                filter(({ value }) => value !== this.value)
             )
             .subscribe(({ value, fileName }) => {
                 this.tempId = value; // If the value changes, it means that a new file was uploaded
@@ -266,7 +265,7 @@ export class DotEditContentBinaryFieldComponent
     ngAfterViewInit() {
         this.setFieldVariables();
 
-        if (!this.value || !this.checkMetadata()) {
+        if (!this.contentlet || !this.value || !this.checkMetadata()) {
             return;
         }
 

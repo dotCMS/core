@@ -4,7 +4,8 @@ import {
     createComponentFactory,
     createHostFactory,
     Spectator,
-    SpectatorHost
+    SpectatorHost,
+    SpyObject
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
@@ -33,6 +34,7 @@ import { DotEditContentBinaryFieldComponent } from '@dotcms/edit-content';
 import { DotAiImagePromptStore, DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
+import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
@@ -45,7 +47,7 @@ import { BINARY_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/moc
 const TEMP_FILE_MOCK: DotCMSTempFile = {
     fileName: 'image.png',
     folder: '/images',
-    id: '12345',
+    id: '123456',
     image: true,
     length: 1000,
     referenceUrl:
@@ -80,7 +82,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
     let spectator: Spectator<DotEditContentBinaryFieldComponent>;
     let store: DotBinaryFieldStore;
 
-    let dotBinaryFieldEditImageService: DotBinaryFieldEditImageService;
+    let dotBinaryFieldEditImageService: SpyObject<DotBinaryFieldEditImageService>;
     let ngZone: NgZone;
 
     const createComponent = createComponentFactory({
@@ -130,7 +132,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
             }
         });
         store = spectator.inject(DotBinaryFieldStore, true);
-        dotBinaryFieldEditImageService = spectator.inject(DotBinaryFieldEditImageService, true);
+        dotBinaryFieldEditImageService = spectator.inject(DotBinaryFieldEditImageService);
         ngZone = spectator.inject(NgZone);
     });
 
@@ -159,13 +161,15 @@ describe('DotEditContentBinaryFieldComponent', () => {
     it('should not emit new value is is equal to current value', () => {
         spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
         const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
-        spectator.detectChanges();
+        spectator.component.formControl.setValue(MOCK_DOTCMS_FILE.binaryField);
         store.setValue(MOCK_DOTCMS_FILE.binaryField);
+        spectator.detectChanges();
         expect(spyEmit).not.toHaveBeenCalled();
     });
 
-    xdescribe('Dropzone', () => {
+    describe('Dropzone', () => {
         beforeEach(async () => {
+            spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
             spectator.detectChanges();
             store.setStatus(BinaryFieldStatus.INIT);
             await spectator.fixture.whenStable();
@@ -247,7 +251,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
     });
 
-    xdescribe('Preview', () => {
+    describe('Preview', () => {
         beforeEach(async () => {
             store.setStatus(BinaryFieldStatus.PREVIEW);
             store.setTempFile(TEMP_FILE_MOCK);
@@ -284,12 +288,9 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
         describe('Edit Image', () => {
             it('should open edit image dialog when click on edit image button', () => {
-                const spy = jest.spyOn(dotBinaryFieldEditImageService, 'openImageEditor');
-                const dotBinaryFieldPreviewComponent = spectator.fixture.debugElement.query(
-                    By.css('dot-binary-field-preview')
-                );
-                dotBinaryFieldPreviewComponent.triggerEventHandler('editImage');
-                expect(spy).toHaveBeenCalled();
+                spectator.detectChanges();
+                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
+                expect(dotBinaryFieldEditImageService.openImageEditor).toHaveBeenCalled();
             });
 
             it('should emit the tempId of the edited image', () => {
