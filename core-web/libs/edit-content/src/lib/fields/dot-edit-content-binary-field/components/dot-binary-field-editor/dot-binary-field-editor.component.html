@@ -1,24 +1,24 @@
 <form (ngSubmit)="onSubmit()" [formGroup]="form" class="editor-mode__form">
     @if (allowFileNameEdit) {
-        <div class="editor-mode__input-container">
-            <label class="p-label-input-required" data-testId="editor-label" for="file-name">{{
-                'dot.binary.field.action.create.new.file.label' | dm
-            }}</label>
-            <input
-                id="file-name"
-                autocomplete="off"
-                formControlName="name"
-                pInputText
-                placeholder="Ex. template.html"
-                type="text"
-                data-testId="editor-file-name" />
-            <div class="error-message">
-                <dot-field-validation-message
-                    [field]="form.get('name')"
-                    [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
-                    data-testId="error-message"></dot-field-validation-message>
-            </div>
+    <div class="editor-mode__input-container">
+        <label class="p-label-input-required" data-testId="editor-label" for="file-name">{{
+            'dot.binary.field.action.create.new.file.label' | dm
+        }}</label>
+        <input
+            id="file-name"
+            autocomplete="off"
+            formControlName="name"
+            pInputText
+            placeholder="Ex. template.html"
+            type="text"
+            data-testId="editor-file-name" />
+        <div class="error-message">
+            <dot-field-validation-message
+                [field]="form.get('name')"
+                [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
+                data-testId="error-message"></dot-field-validation-message>
         </div>
+    </div>
     }
     <div class="binary-field__editor-container">
         <ngx-monaco-editor
