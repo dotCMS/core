@@ -4,9 +4,9 @@ import { Injectable } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 
-import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { OrderDirection, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCategory } from '@dotcms/dotcms-models';
 
 export const CATEGORY_API_URL = 'v1/categories';
 

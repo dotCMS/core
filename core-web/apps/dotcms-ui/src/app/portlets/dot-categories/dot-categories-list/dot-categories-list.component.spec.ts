@@ -21,9 +21,9 @@ import { TableModule } from 'primeng/table';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
-import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCategory } from '@dotcms/dotcms-models';
 import {
     DotActionMenuButtonComponent,
     DotMenuComponent,
@@ -58,7 +58,13 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             working: false,
             name: 'dsdsd',
             friendlyName: 'dfdf',
-            type: 'ASD'
+            type: 'ASD',
+            active: false,
+            childrenCount: 0,
+            description: '',
+            iDate: 0,
+            keywords: '',
+            owner: ''
         },
         {
             categoryId: '9e882f2a-ada2-47e3-a441-bdf9a7254216',
@@ -72,7 +78,13 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             working: false,
             name: 'dsdsd',
             friendlyName: 'dfdf',
-            type: 'ASD'
+            type: 'ASD',
+            active: false,
+            childrenCount: 0,
+            description: '',
+            iDate: 0,
+            keywords: '',
+            owner: ''
         }
     ];
     beforeEach(() => {

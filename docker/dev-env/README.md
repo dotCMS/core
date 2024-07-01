@@ -138,7 +138,7 @@ Running https on
 - data stored in /data/opensearch 
 
 
-#### Postgres 15
+#### Postgres 16
 Running on port 5432 and using the dotCMS defaults:
 - db: dotcms
 - user: dotcmsdbuser

@@ -1,30 +1,28 @@
-@if(contentletArea.payload.container) {
+@if (contentletArea.payload.container) {
 <p-button
-    (click)="setPositionFlag('before'); menu.toggle($event)"
     [ngStyle]="styles.topButton"
+    (click)="setPositionFlag('before'); menu.toggle($event)"
     data-testId="add-top-button"
     icon="pi pi-plus"></p-button>
 <p-button
     *ngIf="!isContainerEmpty"
-    (click)="setPositionFlag('after'); menu.toggle($event)"
     [ngStyle]="styles.bottomButton"
+    (click)="setPositionFlag('after'); menu.toggle($event)"
     data-testId="add-bottom-button"
     icon="pi pi-plus"></p-button>
-<p-menu [model]="items()" [popup]="true" #menu appendTo="body" data-testId="menu-add"></p-menu>
-
+<p-menu #menu [model]="items()" [popup]="true" appendTo="body" data-testId="menu-add"></p-menu>
 }
 
-<div *ngIf="!isContainerEmpty" [ngStyle]="styles.actions" class="actions" data-testId="actions">
+<div class="actions" *ngIf="!isContainerEmpty" [ngStyle]="styles.actions" data-testId="actions">
     @if (contentletArea.payload.vtlFiles?.length) {
-    <p-menu [model]="vtlFiles" [popup]="true" #menuVTL appendTo="body" data-testId="menu-vtl" />
+    <p-menu #menuVTL [model]="vtlFiles" [popup]="true" appendTo="body" data-testId="menu-vtl" />
     <p-button
         (click)="menuVTL.toggle($event)"
         data-testId="edit-vtl-button"
         styleClass="p-button-rounded p-button-raised"
         icon="pi pi-code" />
-    } @if(contentletArea.payload.container) {
+    } @if (contentletArea.payload.container) {
     <p-button
-        (dragstart)="dragStart($event)"
         [attr.data-item]="
             {
                 container: contentletArea.payload.container,
@@ -32,6 +30,7 @@
                 move: true
             } | json
         "
+        (dragstart)="dragStart($event)"
         data-type="contentlet"
         draggable="true"
         data-testId="drag-button"
@@ -51,7 +50,7 @@
         icon="pi pi-pencil" />
 </div>
 
-<div [ngStyle]="styles.bounds" class="bounds" data-testId="bounds"></div>
-<div *ngIf="contentletArea" class="drag-image" #dragImage data-testId="drag-image">
+<div class="bounds" [ngStyle]="styles.bounds" data-testId="bounds"></div>
+<div class="drag-image" #dragImage *ngIf="contentletArea" data-testId="drag-image">
     {{ contentletArea.payload.contentlet.contentType }}
 </div>

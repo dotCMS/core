@@ -379,7 +379,7 @@ public class ContentTypeResource implements Serializable {
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
 			final ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
-					form.getContentType(), user, false
+					idOrVar, form.getContentType(), user, false
 			);
 			Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
 			checkNotEmpty(contentType.id(), BadRequestException.class,
@@ -457,7 +457,9 @@ public class ContentTypeResource implements Serializable {
 		this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
 
 		if (!isNew) {
-			this.handleFields(contentTypeSaved.id(), contentType.fieldMap(), user, contentTypeAPI);
+			this.handleFields(contentTypeSaved.id(), contentType.fieldMap(
+					this.contentTypeHelper::generateFieldKey
+			), user, contentTypeAPI);
 		}
 
 		if (UtilMethods.isSet(systemActionMappings)) {
@@ -514,8 +516,11 @@ public class ContentTypeResource implements Serializable {
 
 		final ContentType currentContentType = contentTypeAPI.find(contentTypeId);
 
-		final DiffResult<FieldDiffItemsKey, Field> diffResult = new FieldDiffCommand(contentTypeId)
-				.applyDiff(currentContentType.fieldMap(), newContentTypeFieldsMap);
+		final DiffResult<FieldDiffItemsKey, Field> diffResult = new FieldDiffCommand(contentTypeId).
+				applyDiff(
+						currentContentType.fieldMap(this.contentTypeHelper::generateFieldKey),
+						newContentTypeFieldsMap
+				);
 
 		if (!diffResult.getToDelete().isEmpty()) {
 			APILocator.getContentTypeFieldLayoutAPI().deleteField(

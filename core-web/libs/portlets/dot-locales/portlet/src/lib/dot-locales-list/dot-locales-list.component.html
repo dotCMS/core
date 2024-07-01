@@ -3,27 +3,29 @@
         <span class="p-input-icon-right">
             <i class="pi pi-search"></i>
             <input
-                (input)="dt.filterGlobal($event.target.value, 'contains')"
                 class="locales-list__search"
+                (input)="dt.filterGlobal($event.target.value, 'contains')"
                 type="text"
                 data-testId="input-search"
                 pInputText />
         </span>
         <button
-            (click)="store.openAddEditDialog()"
             [label]="'locales.add.locale' | dm"
+            (click)="store.openAddEditDialog()"
             pButton
             type="button"
             icon="pi pi-plus"></button>
     </div>
     <p-table
-        [value]="vm.locales"
-        [globalFilterFields]="['locale', 'language', 'country']"
         #dt
+        [value]="vm.locales"
+        [globalFilterFields]="['isoCode', 'language', 'country']"
+        stateStorage="session"
+        stateKey="state-locales-session"
         styleClass="dotTable">
         <ng-template pTemplate="header">
             <tr>
-                <th scope="col" pSortableColumn="locale">
+                <th scope="col" pSortableColumn="isoCode">
                     {{ 'locales.locale' | dm }} <p-sortIcon field="locale"></p-sortIcon>
                 </th>
                 <th scope="col" pSortableColumn="language">
@@ -41,9 +43,9 @@
                 <td [ngClass]="{ 'tag-padding': locale.defaultLanguage }" data-testId="locale-cell">
                     {{ locale.language }} ({{ locale.isoCode }})
                     <p-tag
+                        class="sm p-tag-success"
                         *ngIf="locale.defaultLanguage"
-                        [value]="'Default' | dm"
-                        class="sm p-tag-success" />
+                        [value]="'Default' | dm" />
                 </td>
                 <td>{{ locale.language }} - {{ locale.languageCode }}</td>
                 <td>{{ locale.country }} - {{ locale.countryCode }}</td>

@@ -3,7 +3,7 @@ package com.dotcms.api.client.model;
 import io.quarkus.arc.DefaultBean;
 import java.net.URL;
 import java.util.Optional;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * This class is used to pass the token from the CLI to the API client. If the token is present here

@@ -205,7 +205,7 @@ start_dotcms () {
     echo " - DOT_ES_ENDPOINTS: $DOT_ES_ENDPOINTS"
     echo " - DOT_DOTCMS_CLUSTER_ID: $DOT_DOTCMS_CLUSTER_ID"
     echo " - DOT_STARTER_DATA_LOAD: $DOT_STARTER_DATA_LOAD"
-    . /srv/entrypoint.sh
+    . /srv/entrypoint.sh dotcms
 }
 
 ## Moves the dev license to the correct location

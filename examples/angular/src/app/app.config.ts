@@ -34,11 +34,14 @@ export const appConfig: ApplicationConfig = {
         if (isOutsideSRC) return src;
 
         const languageId = loaderParams?.['languageId'];
-        let url = `${environment.dotcmsUrl}${src}`;
 
-        url = `${url}/${width}?language_id=${languageId || '1'}`;
+        const dotcmsHost = new URL(environment.dotcmsUrl).origin;
 
-        return url;
+        const imageSRC = src.includes('/dA/') ? src : `/dA/${src}`;
+
+        return `${dotcmsHost}${imageSRC}/${width}?language_id=${
+          languageId || '1'
+        }`;
       },
     },
   ],
