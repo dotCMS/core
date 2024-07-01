@@ -9,7 +9,9 @@ import com.dotcms.model.asset.AssetSync;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderSync;
 import com.dotcms.model.asset.FolderView;
+import com.google.common.base.Function;
 import com.google.common.base.Strings;
+import java.util.Map;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -180,7 +182,7 @@ public class AssetsUtils {
      * @throws IllegalArgumentException if the source path is outside the workspace or does not follow the required
      *                                  structure
      */
-    public static List<String> parseRootPaths(File workspace, File source) {
+    public static List<String> parseRootPaths(final File workspace, final File source) {
 
         //Call resolve Path to get an absolute path
         var sourcePath = resolvePath(source.toPath());
@@ -188,54 +190,64 @@ public class AssetsUtils {
         var workspaceCount = workspacePath.getNameCount();
         var sourceCount = sourcePath.getNameCount();
 
-         if (sourceCount < workspaceCount) {
-                throw new IllegalArgumentException("Source path cannot be outside of the workspace");
-            }
+        if (sourceCount < workspaceCount) {
+            throw new IllegalArgumentException("Source path cannot be outside of the workspace");
+        }
 
-            // Check if we are inside the workspace but also inside the files folder
-            if (sourceCount > workspaceCount + 1) {
-                final Path files = Path.of(workspace.getAbsolutePath(), FILES_NAMESPACE).toAbsolutePath().normalize();
-                if (!sourcePath.startsWith(files)) {
-                    throw new IllegalArgumentException(
-                            String.format("Invalid source path [%s]. Source path must be inside the files folder or " +
-                            "at the root of the workspace [%s] ", sourcePath, workspacePath));
-                }
-            } else if (sourceCount == workspaceCount + 1) {
-                final Path files = Path.of(FILES_NAMESPACE).toAbsolutePath().normalize();
-                if (!sourcePath.startsWith(files)) {
-                    throw new IllegalArgumentException("Invalid source path. Source path must be inside the files folder or " +
-                            "at the root of the workspace");
-                }
+        // Check if we are inside the workspace but also inside the files folder
+        if (sourceCount > workspaceCount + 1) {
+            final Path files = Path.of(workspace.getAbsolutePath(), FILES_NAMESPACE)
+                    .toAbsolutePath().normalize();
+            if (!sourcePath.startsWith(files)) {
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Invalid source path [%s]. Source path must be inside the files folder or "
+                                        +
+                                        "at the root of the workspace [%s] ", sourcePath,
+                                workspacePath));
             }
+        } else if (sourceCount == workspaceCount + 1) {
+            final Path files = Path.of(FILES_NAMESPACE).toAbsolutePath().normalize();
+            if (!sourcePath.startsWith(files)) {
+                throw new IllegalArgumentException(
+                        "Invalid source path. Source path must be inside the files folder or " +
+                                "at the root of the workspace");
+            }
+        }
 
+        return parseRootPaths(sourcePath, workspaceCount, sourceCount);
+    }
+
+    /**
+     * Parses the root paths based on the workspace and source paths.
+     * @param sourcePath the source path
+     * @param workspaceCount the workspace path components count
+     * @param sourceCount the source path components count
+     * @return a list of root paths
+     */
+    private static List<String> parseRootPaths(final Path sourcePath, final int workspaceCount,
+            final int sourceCount) {
         var rootPaths = new ArrayList<String>();
 
         final File sourcePathFile = sourcePath.toFile();
 
-        if (workspaceCount == sourceCount) {// We are at the root of the workspace
-            if (sourcePathFile.exists()) {
-                rootPaths.addAll(fromRootFolder(sourcePathFile));
-            }
-        } else if (workspaceCount + 1 == sourceCount) {// We should be at the files level
-            if (sourcePathFile.exists()) {
-                rootPaths.addAll(fromFilesFolder(sourcePathFile));
-            }
-        } else if (workspaceCount + 2 == sourceCount) {// We should be at the status level
-            if (sourcePathFile.exists()) {
-                rootPaths.addAll(fromStatusFolder(sourcePathFile));
-            }
-        } else if (workspaceCount + 3 == sourceCount) {// We should be at the language level
-            if (sourcePathFile.exists()) {
-                rootPaths.addAll(fromLanguageFolder(sourcePathFile));
-            }
-        } else if (workspaceCount + 4 == sourceCount) {// We should be at the site level
-            if (sourcePathFile.exists()) {
-                rootPaths.add(fromSiteFolder(sourcePathFile));
-            }
+        if (!sourcePathFile.exists()) {
+            return rootPaths;
+        }
+
+        Map<Integer, Function<File, List<String>>> levelFunctions = Map.of(
+                workspaceCount, AssetsUtils::fromRootFolder,
+                workspaceCount + 1, AssetsUtils::fromFilesFolder,
+                workspaceCount + 2, AssetsUtils::fromStatusFolder,
+                workspaceCount + 3, AssetsUtils::fromLanguageFolder,
+                workspaceCount + 4, AssetsUtils::fromSiteFolder
+        );
+
+        if (levelFunctions.containsKey(sourceCount)) {
+            rootPaths.addAll(levelFunctions.get(sourceCount).apply(sourcePathFile));
         } else {
             rootPaths.add(sourcePathFile.getAbsolutePath());
         }
-
         return rootPaths;
     }
 
@@ -322,7 +334,7 @@ public class AssetsUtils {
                 }
 
                 // This is our root path to analyze
-                rootPaths.add(fromSiteFolder(siteFolder));
+                rootPaths.addAll(fromSiteFolder(siteFolder));
             }
         }
 
@@ -335,8 +347,8 @@ public class AssetsUtils {
      * @param siteFolder the site folder
      * @return the root path
      */
-    private static String fromSiteFolder(File siteFolder) {
-        return siteFolder.getAbsolutePath();
+    private static List<String> fromSiteFolder(File siteFolder) {
+        return List.of(siteFolder.getAbsolutePath());
     }
 
     /**
