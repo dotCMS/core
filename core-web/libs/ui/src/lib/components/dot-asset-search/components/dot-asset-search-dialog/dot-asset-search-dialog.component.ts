@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -9,7 +8,7 @@ import { DotAssetSearchComponent } from '@dotcms/ui';
 @Component({
     selector: 'dot-asset-search-dialog',
     standalone: true,
-    imports: [CommonModule, DotAssetSearchComponent],
+    imports: [DotAssetSearchComponent],
     templateUrl: './dot-asset-search-dialog.component.html',
     styleUrl: './dot-asset-search-dialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
