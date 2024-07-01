@@ -16,13 +16,14 @@ import {
     DotExperimentsService,
     DotFavoritePageService,
     DotLanguagesService,
+    DotMessageService,
     DotPageLayoutService,
     DotPageRenderService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import { DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent, InfoPage, SafeUrlPipe } from '@dotcms/ui';
 
@@ -35,7 +36,7 @@ import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.s
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { NavigationBarItem } from '../shared/models';
+import { DotPage, NavigationBarItem } from '../shared/models';
 
 @Component({
     selector: 'dot-ema-shell',
@@ -101,7 +102,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         canRead: boolean;
         seoProperties: DotPageToolUrlParams;
         error?: number;
-    }> = this.store.shellProperties$.pipe(
+    }> = this.store.shellProps$.pipe(
         map(({ currentUrl, page, host, languageId, siteId, templateDrawed, error }) => {
             const isLayoutDisabled = !page.canEdit || !templateDrawed;
 
@@ -174,6 +175,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     private readonly activatedRoute = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly siteService = inject(SiteService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly confirmationService = inject(ConfirmationService);
+
     private readonly destroy$ = new Subject<boolean>();
     private currentComponent: unknown;
 
@@ -223,6 +227,17 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
             this.router.navigate(['/pages']);
         });
+
+        // We need to check if the language is translated
+        this.store.translateProps$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(({ languages, page, pageLanguageId }) => {
+                const currentLanguage = languages.find((lang) => lang.id === pageLanguageId);
+
+                if (!currentLanguage.translated) {
+                    this.createNewTranslation(currentLanguage, page);
+                }
+            });
     }
 
     ngOnDestroy(): void {
@@ -298,5 +313,38 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         // If the clientHost is in the whitelist we can access it
         return sanitizedDevURLWhitelist.includes(sanitizedClientHost);
+    }
+
+    /**
+     * Asks the user for confirmation to create a new translation for a given language.
+     *
+     * @param {DotLanguage} language - The language to create a new translation for.
+     * @private
+     *
+     * @return {void}
+     */
+    private createNewTranslation(language: DotLanguage, page: DotPage): void {
+        this.confirmationService.confirm({
+            header: this.dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.header'
+            ),
+            message: this.dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.message',
+                language.language
+            ),
+            rejectIcon: 'hidden',
+            acceptIcon: 'hidden',
+            accept: () => {
+                this.dialog.translatePage({
+                    page,
+                    newLanguage: language.id
+                });
+            },
+            reject: () => {
+                this.navigate({
+                    language_id: 1
+                });
+            }
+        });
     }
 }

@@ -8,8 +8,8 @@ import { switchMap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
-import { EDIT_CONTENTLET_URL, ADD_CONTENTLET_URL } from '../../../shared/consts';
-import { ActionPayload } from '../../../shared/models';
+import { LAYOUT_URL, CONTENTLET_SELECTOR_URL } from '../../../shared/consts';
+import { ActionPayload, DotPage } from '../../../shared/models';
 
 type DialogType = 'content' | 'form' | 'widget' | null;
 
@@ -173,6 +173,23 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     );
 
     /**
+     * This method is called when the user tries to navigate to a different language
+     *
+     * @memberof DotEmaDialogStore
+     */
+    readonly translatePage = this.updater(
+        (state, { page, newLanguage }: { page: DotPage; newLanguage: number | string }) => {
+            return {
+                ...state,
+                header: page.title,
+                status: DialogStatus.LOADING,
+                type: 'content',
+                url: this.createTranslatePageUrl(page, newLanguage)
+            };
+        }
+    );
+
+    /**
      * This method is called when the user clicks on the [+ add] button
      *
      * @memberof DotEmaDialogStore
@@ -251,7 +268,17 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @memberof DotEmaComponent
      */
     private createEditContentletUrl(inode: string): string {
-        return `${EDIT_CONTENTLET_URL}${inode}`;
+        const queryParams = new URLSearchParams({
+            p_p_id: 'content',
+            p_p_action: '1',
+            p_p_state: 'maximized',
+            p_p_mode: 'view',
+            _content_struts_action: '/ext/contentlet/edit_contentlet',
+            _content_cmd: 'edit',
+            inode: inode
+        });
+
+        return `${LAYOUT_URL}?${queryParams.toString()}`;
     }
 
     /**
@@ -271,8 +298,37 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         acceptTypes: string;
         language_id: string;
     }): string {
-        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerId)
-            .replace('*BASE_TYPES*', acceptTypes)
-            .replace('*LANGUAGE_ID*', language_id);
+        const queryParams = new URLSearchParams({
+            ng: 'true',
+            container_id: containerId,
+            add: acceptTypes,
+            language_id
+        });
+
+        return `${CONTENTLET_SELECTOR_URL}?${queryParams.toString()}`;
+    }
+
+    private createTranslatePageUrl(page: DotPage, newLanguage: number | string) {
+        const isLive = page.live;
+        const pageLiveInode = page.liveInode;
+        const iNode = page.inode;
+        const stInode = page.stInode;
+
+        const queryParams = new URLSearchParams({
+            p_p_id: 'content',
+            p_p_action: '1',
+            p_p_state: 'maximized',
+            angularCurrentPortlet: 'pages',
+            _content_sibbling: isLive ? pageLiveInode : iNode,
+            _content_cmd: 'edit',
+            _content_sibblingStructure: isLive ? pageLiveInode : stInode,
+            _content_struts_action: '/ext/contentlet/edit_contentlet',
+            inode: '',
+            lang: newLanguage.toString(),
+            populateaccept: 'true',
+            reuseLastLang: 'true'
+        });
+
+        return `${LAYOUT_URL}?${queryParams.toString()}`;
     }
 }

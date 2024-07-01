@@ -39,7 +39,7 @@ import {
 
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { ActionPayload, VTLFile } from '../../shared/models';
+import { ActionPayload, DotPage, VTLFile } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
 @Component({
@@ -154,6 +154,16 @@ export class DotEmaDialogComponent {
             inode: vtlFile.inode,
             title: vtlFile.name
         });
+    }
+
+    /**
+     * Translate page
+     *
+     * @param {({ page: DotPage; newLanguage: number | string })} { page, newLanguage }
+     * @memberof DotEmaDialogComponent
+     */
+    translatePage({ page, newLanguage }: { page: DotPage; newLanguage: number | string }) {
+        this.store.translatePage({ page, newLanguage });
     }
 
     /**
