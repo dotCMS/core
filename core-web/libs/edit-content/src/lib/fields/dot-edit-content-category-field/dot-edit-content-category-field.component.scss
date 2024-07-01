@@ -7,6 +7,7 @@
 
     &.dot-category-field__container--has-categories .dot-category-field__categories {
         border-bottom: none;
+        padding: $spacing-1;
     }
 }
 
@@ -19,7 +20,6 @@
 }
 
 .dot-category-field__categories {
-    padding: $spacing-1;
     gap: $spacing-1;
     border-radius: $border-radius-md $border-radius-md 0 0;
 }

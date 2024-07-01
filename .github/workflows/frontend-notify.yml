@@ -1,0 +1,89 @@
+# action.yml
+name: 'Notification for Frontend'
+on:
+  workflow_call:
+    inputs:
+      actions:
+        description: 'Actions to perform'
+        type: string
+        required: true
+        default: '[]'
+    secrets:
+      CI_MACHINE_USER:
+        description: 'CI machine user'
+        required: true
+      CI_MACHINE_TOKEN:
+        description: 'CI machine token'
+        required: true
+      SLACK_BOT_TOKEN:
+        description: 'Slack bot token'
+        required: true
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  resolve-data:
+    runs-on: ubuntu-20.04
+    outputs:
+      issue_number: ${{ steps.evaluate-actions.outputs.issue_number }}
+    steps:
+      - name: Show detected actions
+        run: echo "${{ inputs.actions }}"
+
+      - name: Evaluate actions
+        id: evaluate-actions
+        run: |
+          action_json="${{ toJSON(inputs.actions) }}"
+          action_found=$(jq -r '.[] | select(.action == "FRONTEND_TECHNOLOGY_NOTIFY")' <<< ${action_json})
+          echo "action_found=[${action_found}]"
+          [[ -z "${action_found}" || ${action_found} == 'null' ]] && echo 'Action not found' && exit 1
+          
+          issue_number=$(jq -r '.issue_number' <<< ${action_found})
+          echo "issue_number=[${issue_number}]"
+          [[ -z "${issue_number}" ]] && echo 'Issue number not found' && exit 2
+          
+          echo "issue_number=${issue_number}" >> $GITHUB_OUTPUT
+
+  member-resolver:
+    name: Resolve members
+    needs: resolve-data
+    if: needs.resolve-data.outputs.issue_number
+    uses: ./.github/workflows/github-member-resolver.yml
+    with:
+      team: 'ui/ux'
+
+  slack-channel-resolver:
+    name: Resolve Slack Channel
+    needs: member-resolver
+    if: success() && needs.member-resolver.outputs.members
+    uses: ./.github/workflows/slack-channel-resolver.yml
+    with:
+      github_users: ${{ needs.member-resolver.outputs.members }}
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  frontend-notify:
+    name: Notify team member ${{ matrix.members }}
+    needs: [resolve-data, slack-channel-resolver]
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        member: ${{ fromJSON(needs.slack-channel-resolver.outputs.channel_ids) }}
+    env:
+      ISSUE_URL: https://github.com/${{ github.repository }}/issues/${{ needs.resolve-data.outputs.issue_number }}
+    steps:
+      - name: Notify member
+        shell: bash
+        run: |
+          channel=${{ matrix.member }}
+          message="The following github issue has been marked as a Front-end issue: ${{ env.ISSUE_URL }}"
+          
+          curl -X POST \
+            -H "Content-type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+            -d "{ \"channel\":\"${channel}\",\"text\":\"${message}\"}" \
+            -s \
+            https://slack.com/api/chat.postMessage

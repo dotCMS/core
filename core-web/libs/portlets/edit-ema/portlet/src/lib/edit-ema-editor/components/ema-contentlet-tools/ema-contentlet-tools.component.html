@@ -1,4 +1,4 @@
-@if(contentletArea.payload.container) {
+@if (contentletArea.payload.container) {
 <p-button
     (click)="setPositionFlag('before'); menu.toggle($event)"
     [ngStyle]="styles.topButton"
@@ -11,7 +11,6 @@
     data-testId="add-bottom-button"
     icon="pi pi-plus"></p-button>
 <p-menu [model]="items()" [popup]="true" #menu appendTo="body" data-testId="menu-add"></p-menu>
-
 }
 
 <div *ngIf="!isContainerEmpty" [ngStyle]="styles.actions" class="actions" data-testId="actions">
@@ -22,7 +21,7 @@
         data-testId="edit-vtl-button"
         styleClass="p-button-rounded p-button-raised"
         icon="pi pi-code" />
-    } @if(contentletArea.payload.container) {
+    } @if (contentletArea.payload.container) {
     <p-button
         (dragstart)="dragStart($event)"
         [attr.data-item]="

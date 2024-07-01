@@ -2,7 +2,7 @@ package com.dotcms.api.client.pull;
 
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 /**
  * The ContentFetcher interface provides a contract for classes that can fetch content of type T.
