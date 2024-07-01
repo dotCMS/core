@@ -2,6 +2,7 @@ package com.dotcms.common;
 
 import static com.dotcms.common.LocationUtils.encodePath;
 import static com.dotcms.model.config.Workspace.FILES_NAMESPACE;
+import static com.dotcms.common.WorkspaceManager.resolvePath;
 
 import com.dotcms.model.asset.AbstractAssetSync.PushType;
 import com.dotcms.model.asset.AssetSync;
@@ -174,62 +175,65 @@ public class AssetsUtils {
      * Parses the root paths based on the workspace and source files.
      *
      * @param workspace the workspace directory
-     * @param source               the source file or directory
+     * @param source  the source file or directory within the workspace to parse
      * @return a list of root paths
      * @throws IllegalArgumentException if the source path is outside the workspace or does not follow the required
      *                                  structure
      */
     public static List<String> parseRootPaths(File workspace, File source) {
 
-        var sourcePath = source.toPath();
-        var workspacePath = workspace.toPath();
-
+        //Call resolve Path to get an absolute path
+        var sourcePath = resolvePath(source.toPath());
+        var workspacePath = workspace.toPath().toAbsolutePath().normalize();
         var workspaceCount = workspacePath.getNameCount();
         var sourceCount = sourcePath.getNameCount();
 
-        if (sourceCount < workspaceCount) {
-            throw new IllegalArgumentException("Source path cannot be outside of the workspace");
-        }
+         if (sourceCount < workspaceCount) {
+                throw new IllegalArgumentException("Source path cannot be outside of the workspace");
+            }
 
-        // Check if we are inside the workspace but also inside the files folder
-        if (sourceCount > workspaceCount + 1) {
-            if (!source.getAbsolutePath().startsWith(
-                    workspace.getAbsolutePath() + File.separator + FILES_NAMESPACE + File.separator
-            )) {
-                throw new IllegalArgumentException("Invalid source path. Source path must be inside the files folder or " +
-                        "at the root of the workspace");
+            // Check if we are inside the workspace but also inside the files folder
+            if (sourceCount > workspaceCount + 1) {
+                final Path files = Path.of(workspace.getAbsolutePath(), FILES_NAMESPACE).toAbsolutePath().normalize();
+                if (!sourcePath.startsWith(files)) {
+                    throw new IllegalArgumentException(
+                            String.format("Invalid source path [%s]. Source path must be inside the files folder or " +
+                            "at the root of the workspace [%s] ", sourcePath, workspacePath));
+                }
+            } else if (sourceCount == workspaceCount + 1) {
+                final Path files = Path.of(FILES_NAMESPACE).toAbsolutePath().normalize();
+                if (!sourcePath.startsWith(files)) {
+                    throw new IllegalArgumentException("Invalid source path. Source path must be inside the files folder or " +
+                            "at the root of the workspace");
+                }
             }
-        } else if (sourceCount == workspaceCount + 1) {
-            if (!source.getName().equals(FILES_NAMESPACE)) {
-                throw new IllegalArgumentException("Invalid source path. Source path must be inside the files folder or " +
-                        "at the root of the workspace");
-            }
-        }
 
         var rootPaths = new ArrayList<String>();
 
+        final File sourcePathFile = sourcePath.toFile();
+
         if (workspaceCount == sourceCount) {// We are at the root of the workspace
-            if (source.exists()) {
-                rootPaths.addAll(fromRootFolder(source));
+            if (sourcePathFile.exists()) {
+                rootPaths.addAll(fromRootFolder(sourcePathFile));
             }
         } else if (workspaceCount + 1 == sourceCount) {// We should be at the files level
-            if (source.exists()) {
-                rootPaths.addAll(fromFilesFolder(source));
+            if (sourcePathFile.exists()) {
+                rootPaths.addAll(fromFilesFolder(sourcePathFile));
             }
         } else if (workspaceCount + 2 == sourceCount) {// We should be at the status level
-            if (source.exists()) {
-                rootPaths.addAll(fromStatusFolder(source));
+            if (sourcePathFile.exists()) {
+                rootPaths.addAll(fromStatusFolder(sourcePathFile));
             }
         } else if (workspaceCount + 3 == sourceCount) {// We should be at the language level
-            if (source.exists()) {
-                rootPaths.addAll(fromLanguageFolder(source));
+            if (sourcePathFile.exists()) {
+                rootPaths.addAll(fromLanguageFolder(sourcePathFile));
             }
         } else if (workspaceCount + 4 == sourceCount) {// We should be at the site level
-            if (source.exists()) {
-                rootPaths.add(fromSiteFolder(source));
+            if (sourcePathFile.exists()) {
+                rootPaths.add(fromSiteFolder(sourcePathFile));
             }
         } else {
-            rootPaths.add(source.getAbsolutePath());
+            rootPaths.add(sourcePathFile.getAbsolutePath());
         }
 
         return rootPaths;

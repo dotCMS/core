@@ -1,5 +1,7 @@
 package com.dotcms.common;
 
+import static com.dotcms.common.WorkspaceManager.*;
+
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.config.WorkspaceInfo;
