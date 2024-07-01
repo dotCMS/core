@@ -8,6 +8,7 @@ import {
     ChangeDetectorRef,
     Component,
     computed,
+    effect,
     ElementRef,
     EventEmitter,
     forwardRef,
@@ -21,6 +22,7 @@ import {
     Signal,
     ViewChild
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
     ControlContainer,
     ControlValueAccessor,
@@ -32,7 +34,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { delay, filter, map, skip, tap } from 'rxjs/operators';
+import { delay, filter, skip, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -40,7 +42,8 @@ import {
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
-    DotCMSTempFile
+    DotCMSTempFile,
+    DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
@@ -129,8 +132,16 @@ export class DotEditContentBinaryFieldComponent
     readonly #cd = inject(ChangeDetectorRef);
     readonly #controlContainer = inject(ControlContainer);
 
-    field = input.required<DotCMSContentTypeField>();
-    @Input() contentlet: DotCMSContentlet;
+    $field = input.required<DotCMSContentTypeField>({
+        alias: 'field'
+    });
+    $variable = computed(() => {
+        return this.field.variable;
+    });
+
+    $contentlet = input.required<DotCMSContentlet>({
+        alias: 'contentlet'
+    });
     @Input() imageEditor = false;
     @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
     @ViewChild('inputFile') inputFile: ElementRef;
@@ -144,7 +155,7 @@ export class DotEditContentBinaryFieldComponent
     readonly vm$ = this.#dotBinaryFieldStore.vm$;
     dialogOpen = false;
     customMonacoOptions: Signal<MonacoEditorConstructionOptions> = computed(() => {
-        const field = this.field();
+        const field = this.$field();
 
         return {
             ...this.parseCustomMonacoOptions(field.fieldVariables)
@@ -160,43 +171,28 @@ export class DotEditContentBinaryFieldComponent
         allowGenerateImg: false
     });
 
+    isOpenDialog$ = this.#dotAiStore.isOpenDialog$;
+    $isOpenDialog = toSignal(this.isOpenDialog$, { initialValue: null });
+
+    selectedImage$ = this.#dotAiStore.selectedImage$.pipe(filter((value) => !!value));
+    $selectedImage = toSignal(this.selectedImage$, { initialValue: null });
+
     constructor() {
         this.#dotMessageService.init();
-        this.#dotAiStore.isOpenDialog$.pipe(filter((state) => state === false)).subscribe(() => {
-            this.closeDialog();
+
+        effect(() => {
+            const isOpenDialog = this.$isOpenDialog();
+            if (isOpenDialog === false) {
+                this.closeDialog();
+            }
         });
 
-        /**
-         * Subscription fired by the store when image is seleted
-         * from the gallery to be inserted it into the editor
-         */
-        this.#dotAiStore.selectedImage$
-            .pipe(
-                filter((selectedImage) => !!selectedImage),
-                map((selectedImage) => {
-                    const { response } = selectedImage;
-                    const { contentlet } = response;
-                    const metaData = contentlet['assetMetaData'];
-
-                    const tempFile: DotCMSTempFile = {
-                        id: response.response,
-                        fileName: response.tempFileName,
-                        folder: contentlet.folder,
-                        image: true,
-                        length: metaData.length,
-                        mimeType: metaData.contentType,
-                        referenceUrl: contentlet.asset,
-                        thumbnailUrl: contentlet.asset,
-                        metadata: metaData
-                    };
-
-                    return tempFile;
-                })
-            )
-            .subscribe((tempFile) => {
-                this.#dotAiStore.hideDialog();
-                this.#dotBinaryFieldStore.setTempFile(tempFile);
-            });
+        effect(() => {
+            const selectedImage = this.$selectedImage();
+            const tempFile = this.parseToTempFile(selectedImage);
+            this.#dotAiStore.hideDialog();
+            this.#dotBinaryFieldStore.setTempFile(tempFile);
+        });
     }
 
     get value(): string {
@@ -211,8 +207,16 @@ export class DotEditContentBinaryFieldComponent
         return this.#dotBinaryFieldValidatorService.accept;
     }
 
-    get variable(): string {
-        return this.field().variable;
+    get variable() {
+        return this.$variable();
+    }
+
+    get field() {
+        return this.$field();
+    }
+
+    get contentlet() {
+        return this.$contentlet();
     }
 
     ngOnInit() {
@@ -398,6 +402,7 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     private setFieldVariables() {
+        const field = this.$field();
         const {
             accept,
             maxFileSize = 0,
@@ -410,7 +415,7 @@ export class DotEditContentBinaryFieldComponent
             accept: string;
             maxFileSize: string;
             systemOptions: string;
-        }>(this.field().fieldVariables);
+        }>(field.fieldVariables);
 
         this.#dotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
         this.#dotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
@@ -470,5 +475,25 @@ export class DotEditContentBinaryFieldComponent
 
     get formControl(): FormControl {
         return this.#controlContainer.control.get(this.variable) as FormControl<string>;
+    }
+
+    private parseToTempFile(selectedImage: DotGeneratedAIImage) {
+        const { response } = selectedImage;
+        const { contentlet } = response;
+        const metaData = contentlet['assetMetaData'];
+
+        const tempFile: DotCMSTempFile = {
+            id: response.response,
+            fileName: response.tempFileName,
+            folder: contentlet.folder,
+            image: true,
+            length: metaData.length,
+            mimeType: metaData.contentType,
+            referenceUrl: contentlet.asset,
+            thumbnailUrl: contentlet.asset,
+            metadata: metaData
+        };
+
+        return tempFile;
     }
 }
