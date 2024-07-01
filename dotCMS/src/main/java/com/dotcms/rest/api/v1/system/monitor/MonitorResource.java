@@ -1,36 +1,26 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.util.StringPool;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import org.glassfish.jersey.server.JSONP;
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.util.json.JSONObject;
-import com.liferay.util.StringPool;
-
-import java.util.List;
-import java.util.Map;
 
 
 @Path("/v1/{a:system-status|probes}")
 public class MonitorResource {
 
-    private static final int    INSUFFICIENT_STORAGE        = 507;
+
     private static final int    SERVICE_UNAVAILABLE         = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
     private static final int    FORBIDDEN                   = HttpServletResponse.SC_FORBIDDEN;
 
@@ -44,7 +34,7 @@ public class MonitorResource {
 
         final MonitorHelper helper = new MonitorHelper(request);
 
-        ResponseBuilder builder = null;
+
         if (!helper.accessGranted) {
             return Response.status(FORBIDDEN).build();
         }

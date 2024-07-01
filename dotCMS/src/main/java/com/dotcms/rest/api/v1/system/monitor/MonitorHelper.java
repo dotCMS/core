@@ -17,22 +17,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import javax.servlet.http.HttpServletRequest;
 import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -49,7 +43,7 @@ class MonitorHelper {
     private static final String SYSTEM_STATUS_API_IP_ACL = "SYSTEM_STATUS_API_IP_ACL";
 
 
-    private static final int SYSTEM_STATUS_CACHE_RESPONSE_SECONDS = Config.getIntProperty(
+    private static final long SYSTEM_STATUS_CACHE_RESPONSE_SECONDS = Config.getLongProperty(
             "SYSTEM_STATUS_CACHE_RESPONSE_SECONDS", 10);
 
     private static final String[] ACLS_IPS = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL,
@@ -84,7 +78,7 @@ class MonitorHelper {
         }
     }
 
-    MonitorStats getMonitorStats() throws Throwable {
+    MonitorStats getMonitorStats()  {
         if (cachedStats != null && cachedStats._1 > System.currentTimeMillis()) {
             return cachedStats._2;
         }
@@ -92,7 +86,7 @@ class MonitorHelper {
     }
 
 
-    synchronized MonitorStats getMonitorStatsNoCache() throws Throwable {
+    synchronized MonitorStats getMonitorStatsNoCache()  {
         // double check
         if (cachedStats != null && cachedStats._1 > System.currentTimeMillis()) {
             return cachedStats._2;
@@ -102,7 +96,7 @@ class MonitorHelper {
 
         final MonitorStats monitorStats = new MonitorStats();
 
-        final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+        final IndiciesInfo indiciesInfo = Try.of(()->APILocator.getIndiciesAPI().loadIndicies()).getOrElseThrow(DotRuntimeException::new);
 
         monitorStats.subSystemStats.isDBHealthy = isDBHealthy();
         monitorStats.subSystemStats.isLiveIndexHealthy = isIndexHealthy(indiciesInfo.getLive());
@@ -125,16 +119,20 @@ class MonitorHelper {
     }
 
 
-    boolean isDBHealthy() throws Throwable {
+    boolean isDBHealthy()  {
 
-        return new DotConnect().setSQL("SELECT count(*) as count FROM (SELECT 1 FROM dot_cluster LIMIT 1) AS t")
-                .loadInt("count") > 0;
+
+            return Try.of(()->
+                            new DotConnect().setSQL("SELECT count(*) as count FROM (SELECT 1 FROM dot_cluster LIMIT 1) AS t")
+                    .loadInt("count"))
+                    .onFailure(e->Logger.warnAndDebug(MonitorHelper.class, "unable to connect to db:" + e.getMessage(),e))
+                    .getOrElse(0) > 0;
 
 
     }
 
 
-    boolean isIndexHealthy(final String index) throws Throwable {
+    boolean isIndexHealthy(final String index) {
 
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.matchAllQuery());
@@ -146,47 +144,59 @@ class MonitorHelper {
         searchRequest.source(searchSourceBuilder);
         searchRequest.indices(index);
 
-        final SearchResponse response = Sneaky.sneak(() ->
-                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
-                        RequestOptions.DEFAULT));
-        return response.getHits().getTotalHits().value > 0;
+        long totalHits = Try.of(()->
+                RestHighLevelClientProvider
+                        .getInstance()
+                        .getClient()
+                        .search(searchRequest,RequestOptions.DEFAULT)
+                        .getHits()
+                        .getTotalHits()
+                        .value)
+                .onFailure(e->Logger.warnAndDebug(MonitorHelper.class, "unable to connect to index:" + e.getMessage(),e))
+                .getOrElse(0L);
+
+        return totalHits > 0;
 
     }
 
 
-    boolean isCacheHealthy() throws Throwable {
-
-        APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST);
-        return UtilMethods.isSet(APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST).getId());
-
+    boolean isCacheHealthy()  {
+        try {
+            APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST);
+            return UtilMethods.isSet(APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST).getId());
+        }
+        catch (Exception e){
+            Logger.warnAndDebug(this.getClass(), "unable to find SYSTEM_HOST: " + e.getMessage(), e);
+            return false;
+        }
 
     }
 
-    boolean isLocalFileSystemHealthy() throws Throwable {
+    boolean isLocalFileSystemHealthy()  {
 
         return new FileSystemTest(ConfigUtils.getDynamicContentPath()).call();
 
     }
 
-    boolean isAssetFileSystemHealthy() throws Throwable {
+    boolean isAssetFileSystemHealthy() {
 
         return new FileSystemTest(ConfigUtils.getAssetPath()).call();
 
     }
 
 
-    private String getServerID() throws Throwable {
+    private String getServerID()  {
         return APILocator.getServerAPI().readServerId();
 
     }
 
-    private String getClusterID() throws Throwable {
+    private String getClusterID()  {
         return ClusterFactory.getClusterId();
 
 
     }
 
-    final class FileSystemTest implements Callable<Boolean> {
+    static final class FileSystemTest implements Callable<Boolean> {
 
         final String initialPath;
 
@@ -195,25 +205,25 @@ class MonitorHelper {
         }
 
         @Override
-        public Boolean call() throws Exception {
+        public Boolean call() {
             final String uuid = UUIDUtil.uuid();
             final String realPath = initialPath
                     + "monitor"
                     + File.separator
                     + uuid;
             final File file = new File(realPath);
-            if (file.mkdirs() && file.delete() && file.createNewFile()) {
-                try (OutputStream os = Files.newOutputStream(file.toPath())) {
-                    os.write(uuid.getBytes());
-                }catch (Exception e){
-                    Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
-                    return false;
+            try {
+                if (file.mkdirs() && file.delete() && file.createNewFile()) {
+                    try (OutputStream os = Files.newOutputStream(file.toPath())) {
+                        os.write(uuid.getBytes());
+                    }
+                    return file.delete();
                 }
-                return file.delete();
+            } catch (Exception e) {
+                Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
+                return false;
             }
             return false;
         }
-
-
     }
 }
