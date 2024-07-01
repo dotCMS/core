@@ -99,6 +99,7 @@ type SystemOptionsType = {
         DotAIImagePromptComponent
     ],
     providers: [
+        DotBinaryFieldEditImageService,
         DotBinaryFieldStore,
         DotLicenseService,
         DotBinaryFieldValidatorService,
