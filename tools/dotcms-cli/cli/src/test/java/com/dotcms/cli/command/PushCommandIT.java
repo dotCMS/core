@@ -116,10 +116,9 @@ class PushCommandIT extends CommandTest {
     }
 
     /**
-     * This test checks for a simple push situation using a relative path where everything should work as expected.
-     *
-     * @throws IOException if there's a problem accessing the files and folders needed for the
-     *                     test.
+     * Given scenario: A push command is executed using a relative path.
+     * Expected result: The command should find the folder to push and complete successfully with an exit code 0 (OK).
+     * @throws IOException
      */
     @Test
     void testPushWithRelativePath() throws IOException {
