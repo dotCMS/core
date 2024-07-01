@@ -8,7 +8,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DialogStatus, DotEmaDialogStore } from './dot-ema-dialog.store';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
-import { EDIT_CONTENTLET_URL, PAYLOAD_MOCK } from '../../../shared/consts';
+import { LAYOUT_URL, PAYLOAD_MOCK } from '../../../shared/consts';
 
 describe('DotEmaDialogStoreService', () => {
     let spectator: SpectatorService<DotEmaDialogStore>;
@@ -63,6 +63,7 @@ describe('DotEmaDialogStoreService', () => {
         });
     });
 
+    // BROKEN TEST
     it('should initialize with edit iframe properties', (done) => {
         spectator.service.editContentlet({
             inode: '123',
@@ -71,7 +72,7 @@ describe('DotEmaDialogStoreService', () => {
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
-                url: EDIT_CONTENTLET_URL + '123',
+                url: LAYOUT_URL + '123',
                 status: DialogStatus.LOADING,
                 header: 'test',
                 type: 'content'
@@ -80,6 +81,7 @@ describe('DotEmaDialogStoreService', () => {
         });
     });
 
+    // BROKEN TEST
     it('should initialize with edit iframe properties', (done) => {
         spectator.service.editUrlContentMapContentlet({
             inode: '123',
@@ -88,7 +90,7 @@ describe('DotEmaDialogStoreService', () => {
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
-                url: EDIT_CONTENTLET_URL + '123&isURLMap=true',
+                url: LAYOUT_URL + '123&isURLMap=true',
                 status: DialogStatus.LOADING,
                 header: 'test',
                 type: 'content'

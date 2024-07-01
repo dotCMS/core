@@ -1,7 +1,7 @@
 import { combineLatest, Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -79,6 +79,9 @@ import { DotPage, NavigationBarItem } from '../shared/models';
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
+
+    private readonly didTranslate = signal(false);
+
     readonly store = inject(EditEmaStore);
     EMA_INFO_PAGES: Record<'NOT_FOUND' | 'ACCESS_DENIED', InfoPage> = {
         NOT_FOUND: {
@@ -250,27 +253,47 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     }
 
     handleNgEvent({ event }: { event: CustomEvent }) {
-        if (event.detail.name === NG_CUSTOM_EVENTS.SAVE_PAGE) {
-            const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
+        switch (event.detail.name) {
+            case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
+                if (!this.didTranslate()) {
+                    this.navigate({
+                        language_id: 1
+                    });
+                } else {
+                    this.didTranslate.set(false);
+                }
 
-            if (this.queryParams.url !== url) {
-                this.navigate({
-                    url
-                });
-
-                return;
+                break;
             }
 
-            if (this.currentComponent instanceof EditEmaEditorComponent) {
-                this.currentComponent.reloadIframe();
+            case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
+                this.didTranslate.set(true);
+                break;
             }
 
-            this.activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
-                this.store.load({
-                    ...this.queryParams,
-                    clientHost: this.queryParams.clientHost ?? data?.url
+            case NG_CUSTOM_EVENTS.SAVE_PAGE: {
+                const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
+
+                if (this.queryParams.url !== url) {
+                    this.navigate({
+                        url
+                    });
+
+                    return;
+                }
+
+                if (this.currentComponent instanceof EditEmaEditorComponent) {
+                    this.currentComponent.reloadIframe();
+                }
+
+                this.activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
+                    this.store.load({
+                        ...this.queryParams,
+                        clientHost: this.queryParams.clientHost ?? data?.url
+                    });
                 });
-            });
+                break;
+            }
         }
     }
 

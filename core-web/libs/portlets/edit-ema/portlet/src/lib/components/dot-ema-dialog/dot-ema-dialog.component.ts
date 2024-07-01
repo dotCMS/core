@@ -287,6 +287,18 @@ export class DotEmaDialogComponent {
         this.store.openDialogOnURL({ url, title });
     }
 
+    protected onHide() {
+        this.action.emit({
+            event: new CustomEvent('ng-event', {
+                detail: {
+                    name: NG_CUSTOM_EVENTS.DIALOG_CLOSED,
+                    payload: {}
+                }
+            }),
+            payload: this.dialogState().payload
+        });
+    }
+
     /**
      * Iframe load event
      *
