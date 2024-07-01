@@ -25,6 +25,11 @@ import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.servlet.http.HttpServletRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -87,7 +92,13 @@ class MonitorHelper {
     }
 
 
-    MonitorStats getMonitorStatsNoCache() throws Throwable {
+    synchronized MonitorStats getMonitorStatsNoCache() throws Throwable {
+        // double check
+        if (cachedStats != null && cachedStats._1 > System.currentTimeMillis()) {
+            return cachedStats._2;
+        }
+
+
 
         final MonitorStats monitorStats = new MonitorStats();
 
@@ -100,10 +111,10 @@ class MonitorHelper {
         monitorStats.subSystemStats.isLocalFileSystemHealthy = isLocalFileSystemHealthy();
         monitorStats.subSystemStats.isAssetFileSystemHealthy = isAssetFileSystemHealthy();
 
-        if (useExtendedFormat) {
-            monitorStats.serverId = getServerID();
-            monitorStats.clusterId = getClusterID();
-        }
+
+        monitorStats.serverId = getServerID();
+        monitorStats.clusterId = getClusterID();
+
 
         // cache a healthy response
         if (monitorStats.isDotCMSHealthy()) {

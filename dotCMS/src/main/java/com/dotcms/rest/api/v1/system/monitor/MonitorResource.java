@@ -1,6 +1,11 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -46,39 +51,20 @@ public class MonitorResource {
         final MonitorStats stats = helper.getMonitorStats();
 
         if (helper.useExtendedFormat) {
-            final Map<String, Object> map = new HashMap<>();
-            map.put("serverID", stats.serverId);
-            map.put("clusterID", stats.clusterId);
-            map.put("dotCMSHealthy", stats.isDotCMSHealthy());
-            map.put("frontendHealthy", stats.isFrontendHealthy());
-            map.put("backendHealthy", stats.isBackendHealthy());
-
-            final Map<String, Object> subsystems = new HashMap<>();
-            subsystems.put("dbSelectHealthy", stats.subSystemStats.isDBHealthy);
-            subsystems.put("indexLiveHealthy", stats.subSystemStats.isLiveIndexHealthy);
-            subsystems.put("indexWorkingHealthy", stats.subSystemStats.isWorkingIndexHealthy);
-            subsystems.put("cacheHealthy", stats.subSystemStats.isCacheHealthy);
-            subsystems.put("localFSHealthy", stats.subSystemStats.isLocalFileSystemHealthy);
-            subsystems.put("assetFSHealthy", stats.subSystemStats.isAssetFileSystemHealthy);
-            map.put("subsystems", subsystems);
-            return Response.ok(map, MediaType.APPLICATION_JSON).build();
+            return Response.ok(stats.toMap(), MediaType.APPLICATION_JSON).build();
         }
 
         if (stats.isDotCMSHealthy()) {
             return Response.ok(StringPool.BLANK, MediaType.APPLICATION_JSON).build();
         }
-
-        if (!stats.isBackendHealthy() && stats.isFrontendHealthy()) {
-            return Response.status(INSUFFICIENT_STORAGE).entity(StringPool.BLANK).type(MediaType.APPLICATION_JSON)
-                    .build();
-        }
+        
         return Response.status(SERVICE_UNAVAILABLE).entity(StringPool.BLANK).type(MediaType.APPLICATION_JSON).build();
 
 
     }
 
 
-}
+
     
     
     /**
@@ -112,8 +98,8 @@ public class MonitorResource {
         return Response.status(SERVICE_UNAVAILABLE).build();
         
     }
-    
-    
+
+
     /**
      * This probe tests all the dotCMS subsystems and will return either a success or failure based on
      * the result. This is a valid readiness check as the request already runs through the CMSFilter
@@ -158,7 +144,9 @@ public class MonitorResource {
         if(!helper.getMonitorStats().isDotCMSHealthy()) {
             return Response.status(SERVICE_UNAVAILABLE).build();
         }
-        
+        if(helper.useExtendedFormat) {
+            return Response.ok(helper.getMonitorStats().toMap()).build();
+        }
         return Response.ok().build();
         
     }
