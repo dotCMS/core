@@ -16,7 +16,6 @@
                     [value]="vm.images[vm.galleryActiveIndex]"
                     [isLoading]="vm.isLoading" />
             }
-
             <div [class.dialog-prompt_gallery]="vm.images.length || vm.isLoading">
                 <dot-ai-image-prompt-gallery
                     (activeIndexChange)="store.setGalleryActiveIndex($event)"
