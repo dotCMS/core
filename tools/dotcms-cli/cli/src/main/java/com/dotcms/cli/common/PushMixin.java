@@ -72,7 +72,7 @@ public class PushMixin {
         if (null == pushPath) {
             return Path.of("").toAbsolutePath();
         }
-        return pushPath.toPath().toAbsolutePath();
+        return pushPath.toPath().normalize().toAbsolutePath();
     }
 
     public boolean isWatchMode(){
