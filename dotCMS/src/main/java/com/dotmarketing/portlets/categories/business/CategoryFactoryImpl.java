@@ -21,17 +21,16 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.liferay.util.StringPool;
+
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -836,31 +835,60 @@ public class CategoryFactoryImpl extends CategoryFactory {
     }
 
 	/**
-	 *  Default Implementation for {@link CategoryFactory#findAll(String)}
-	 * @param filter Value used to filter the Category by, returning only Categories that contain this value in their key, name, or variable name
+	 *  Default Implementation for {@link CategoryFactory#findAll(CategorySearchCriteria)}
+	 * @param searchCriteria Search Criteria
 	 *
-	 * @return A Collection of {@link Category} filtered by 'filter', if filter is null then it return the that
-	 * {@link CategoryFactoryImpl#findAll()}
+	 * @return
+	 * @throws DotDataException
 	 */
-	public List<Category> findAll(final String filter) throws DotDataException {
+	public List<Category> findAll(final CategorySearchCriteria searchCriteria)
+			throws DotDataException {
 
-		if ( !UtilMethods.isSet(filter) ) {
+		if (!UtilMethods.isSet(searchCriteria.inode) && !UtilMethods.isSet(searchCriteria.filter)) {
 			return findAll();
 		}
 
-		final DotConnect dc = new DotConnect()
-			.setSQL("SELECT * FROM category " +
-					"WHERE LOWER(category.category_name) LIKE ?  OR " +
-					"LOWER(category.category_key) LIKE ?  OR " +
-					"LOWER(category.category_velocity_var_name) LIKE ?");
+		final String query = getFindAllSQLQuery(searchCriteria);
 
-		dc.addObject("%" + filter.toLowerCase() + "%");
-		dc.addObject("%" + filter.toLowerCase() + "%");
-		dc.addObject("%" + filter.toLowerCase() + "%");
+		final DotConnect dc = new DotConnect().setSQL(query);
 
-		List<Category> categories = convertForCategories(dc.loadObjectResults());
+		if (UtilMethods.isSet(searchCriteria.inode) ) {
+			dc.addObject(searchCriteria.inode);
+		}
+
+		if (UtilMethods.isSet(searchCriteria.filter) ) {
+			dc.addObject("%" + searchCriteria.filter.toLowerCase() + "%");
+			dc.addObject("%" + searchCriteria.filter.toLowerCase() + "%");
+			dc.addObject("%" + searchCriteria.filter.toLowerCase() + "%");
+		}
+
+		final List<Category> categories = convertForCategories(UtilMethods.isSet(searchCriteria.inode) ?
+				dc.loadObjectResults().stream()
+						.filter(map -> !map.get("inode").equals(searchCriteria.inode))
+						.collect(Collectors.toList()) : dc.loadObjectResults());
+
 		updateCache(categories);
 		return categories;
+	}
+
+	private static String getFindAllSQLQuery(CategorySearchCriteria searchCriteria) {
+		final String queryTemplate = "WITH RECURSIVE CategoryHierarchy AS ( " +
+				"SELECT c.* FROM Category c %s " +
+				"UNION ALL " +
+				"SELECT c.* FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode " +
+			") " +
+			"SELECT * FROM CategoryHierarchy %s ORDER BY %s %s";
+
+		final String rootCategoryFilter = UtilMethods.isSet(searchCriteria.inode) ? "WHERE c.inode = ?" : StringPool.BLANK;
+
+		final String filterCategories = UtilMethods.isSet(searchCriteria.filter) ?
+				"WHERE LOWER(category_name) LIKE ?  OR " +
+						"LOWER(category_key) LIKE ?  OR " +
+						"LOWER(category_velocity_var_name) LIKE ?" : StringPool.BLANK;
+
+		final String query = String.format(queryTemplate, rootCategoryFilter, filterCategories, searchCriteria.orderBy,
+				searchCriteria.direction.toString());
+		return query;
 	}
 
 	private void updateCache(List<Category> categories) throws DotDataException {
