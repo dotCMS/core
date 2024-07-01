@@ -6,6 +6,7 @@ import com.dotcms.model.config.WorkspaceInfo;
 import com.dotcms.model.config.WorkspaceInfo.Builder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.DefaultBean;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,8 +14,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 @DefaultBean
 @ApplicationScoped
