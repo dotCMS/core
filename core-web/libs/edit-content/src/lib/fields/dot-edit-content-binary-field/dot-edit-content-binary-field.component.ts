@@ -14,7 +14,6 @@ import {
     forwardRef,
     inject,
     input,
-    Input,
     OnDestroy,
     OnInit,
     Output,
@@ -125,7 +124,7 @@ export class DotEditContentBinaryFieldComponent
     implements OnInit, AfterViewInit, OnDestroy, ControlValueAccessor
 {
     readonly #dotBinaryFieldStore = inject(DotBinaryFieldStore);
-    readonly #dotAiStore = inject(DotAiImagePromptStore);
+    readonly #dotAiImageStore = inject(DotAiImagePromptStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotBinaryFieldEditImageService = inject(DotBinaryFieldEditImageService);
     readonly #dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
@@ -138,11 +137,12 @@ export class DotEditContentBinaryFieldComponent
     $variable = computed(() => {
         return this.field.variable;
     });
-
     $contentlet = input.required<DotCMSContentlet>({
         alias: 'contentlet'
     });
-    @Input() imageEditor = false;
+    $imageEditor = input(false, {
+        alias: 'imageEditor'
+    });
     @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
     @ViewChild('inputFile') inputFile: ElementRef;
     readonly dialogFullScreenStyles = { height: '90%', width: '90%' };
@@ -171,28 +171,42 @@ export class DotEditContentBinaryFieldComponent
         allowGenerateImg: false
     });
 
-    isOpenDialog$ = this.#dotAiStore.isOpenDialog$;
+    isOpenDialog$ = this.#dotAiImageStore.isOpenDialog$;
     $isOpenDialog = toSignal(this.isOpenDialog$, { initialValue: null });
 
-    selectedImage$ = this.#dotAiStore.selectedImage$.pipe(filter((value) => !!value));
+    selectedImage$ = this.#dotAiImageStore.selectedImage$.pipe(filter((value) => !!value));
     $selectedImage = toSignal(this.selectedImage$, { initialValue: null });
 
     constructor() {
         this.#dotMessageService.init();
 
-        effect(() => {
-            const isOpenDialog = this.$isOpenDialog();
-            if (isOpenDialog === false) {
-                this.closeDialog();
+        effect(
+            () => {
+                const isOpenDialog = this.$isOpenDialog();
+                if (isOpenDialog === false) {
+                    this.closeDialog();
+                }
+            },
+            {
+                allowSignalWrites: true
             }
-        });
+        );
 
-        effect(() => {
-            const selectedImage = this.$selectedImage();
-            const tempFile = this.parseToTempFile(selectedImage);
-            this.#dotAiStore.hideDialog();
-            this.#dotBinaryFieldStore.setTempFile(tempFile);
-        });
+        effect(
+            () => {
+                const selectedImage = this.$selectedImage();
+                const tempFile = this.parseToTempFile(selectedImage);
+                this.#dotAiImageStore.hideDialog();
+                this.#dotBinaryFieldStore.setTempFile(tempFile);
+            },
+            {
+                allowSignalWrites: true
+            }
+        );
+    }
+
+    get formControl(): FormControl {
+        return this.#controlContainer.control.get(this.variable) as FormControl<string>;
     }
 
     get value(): string {
@@ -223,7 +237,9 @@ export class DotEditContentBinaryFieldComponent
         this.#dotBinaryFieldStore.value$
             .pipe(
                 skip(1),
-                filter(({ value }) => value !== this.value)
+                filter(({ value }) => {
+                    return value !== this.value;
+                })
             )
             .subscribe(({ value, fileName }) => {
                 this.tempId = value; // If the value changes, it means that a new file was uploaded
@@ -287,7 +303,7 @@ export class DotEditContentBinaryFieldComponent
      */
     openDialog(mode: BinaryFieldMode) {
         if (mode === BinaryFieldMode.AI) {
-            this.#dotAiStore.showDialog('');
+            this.#dotAiImageStore.showDialog('');
         } else {
             this.dialogOpen = true;
         }
@@ -471,10 +487,6 @@ export class DotEditContentBinaryFieldComponent
         const key = isFileAsset ? 'metaData' : this.variable + 'MetaData';
 
         return !!this.contentlet[key];
-    }
-
-    get formControl(): FormControl {
-        return this.#controlContainer.control.get(this.variable) as FormControl<string>;
     }
 
     private parseToTempFile(selectedImage: DotGeneratedAIImage) {
