@@ -21,7 +21,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotISOItem, DotLanguage } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 export interface DotLocaleCreateEditData {
     languages: DotISOItem[];
@@ -45,7 +45,8 @@ export interface DotLocaleCreateEditData {
         DotMessagePipe,
         InputTextModule,
         CdkCopyToClipboard,
-        TooltipModule
+        TooltipModule,
+        DotCopyButtonComponent
     ],
     templateUrl: './DotLocaleCreateEdit.component.html',
     styleUrl: './DotLocaleCreateEdit.component.scss',

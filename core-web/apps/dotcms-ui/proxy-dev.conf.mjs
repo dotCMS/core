@@ -13,7 +13,8 @@ export default [
             '/assets',
             '/dotcms-block-editor',
             '/dotcms-binary-field-builder',
-            '/categoriesServlet'
+            '/categoriesServlet',
+            '/JSONTags'
         ],
         target: 'http://localhost:8080',
         secure: false,
