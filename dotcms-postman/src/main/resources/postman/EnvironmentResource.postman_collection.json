@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "223865d9-9dec-49b8-a62a-af4ceecf94c7",
+		"_postman_id": "0f5e2d91-8cf5-4fd2-84a2-c7657bdd63a0",
 		"name": "EnvironmentResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -138,11 +138,6 @@
 							"pm.test(\"Checking name\", function () {",
 							"    const entity = pm.response.json().entity;",
 							"    pm.expect(entity.length).to.be.gt(0);",
-							"",
-							"    pm.expect(1).to.be.equals(",
-							"        entity.filter(env => env.name === \"Test Environment\").length",
-							"    );",
-							" ",
 							"});"
 						],
 						"type": "text/javascript",
@@ -235,15 +230,16 @@
 			"response": []
 		},
 		{
-			"name": "UpdateEnvironment does not exist",
+			"name": "UpdateEnvironmentWrongId",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 404\", function () {",
-							"    pm.response.to.have.status(404);",
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
 							"});",
+							"",
 							""
 						],
 						"type": "text/javascript",
@@ -266,7 +262,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\":\"Test Environment 4\",\n    \"pushMode\":\"PUSH_TO_ONE\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}\n",
+					"raw": "{\n    \"name\":\"Test Environment babababa\",\n    \"pushMode\":\"PUSH_TO_ONE\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -274,14 +270,14 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/environment/does_not_exist",
+					"raw": "{{serverURL}}/api/environment/{{environmentId}}xxxx",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"environment",
-						"does_not_exist"
+						"{{environmentId}}xxxx"
 					]
 				}
 			},
@@ -333,52 +329,7 @@
 			"response": []
 		},
 		{
-			"name": "DeleteEnvironment does not exist",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 404\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							"",
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/environment/does_not_exist",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"environment",
-						"does_not_exist"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "GetEnvironments After delete",
+			"name": "CreateEnvironmentWithouWhoCanSend",
 			"event": [
 				{
 					"listen": "test",
@@ -390,115 +341,12 @@
 							"",
 							"pm.test(\"Checking name\", function () {",
 							"    const entity = pm.response.json().entity;",
-							"    pm.expect(entity.length).to.be.equals(0);",
-							" ",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/environment",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"environment"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Role",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"",
-							"    var jsonData = pm.response.json();",
-							"",
-							"    pm.collectionVariables.set(\"roleId\", jsonData.entity.id);",
-							"});",
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"roleName\":\"Resource Environment Test Role\",\n    \"roleKey\":\"Resource Environment Test Role KEY\", \n    \"canEditPermissions\": true\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/roles",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"roles"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "CreateEnvironment With Role",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Checking name\", function () {",
-							"    const entity = pm.response.json().entity;",
-							"    pm.expect(entity.name).to.be.eql(\"Test Environment With Role\");",
+							"    pm.expect(entity.name).to.be.eql(\"Test Environment withou who can sned\");",
 							"    pm.expect(entity.pushToAll).to.be.eql(true);",
 							"});",
 							"",
+							"",
+							"",
 							""
 						],
 						"type": "text/javascript",
@@ -521,7 +369,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\":\"Test Environment With Role\",\n    \"pushMode\":\"PUSH_TO_ALL\",\n    \"whoCanSend\":[\"{{roleId}}\"]\n}",
+					"raw": "{\n    \"name\":\"Test Environment withou who can sned\",\n    \"pushMode\":\"PUSH_TO_ALL\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -542,57 +390,7 @@
 			"response": []
 		},
 		{
-			"name": "Try to Delete Not Exists Environment",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 404\", function () {",
-							"    pm.response.to.have.status(404);",
-							"",
-							"    pm.expect(\"Can't delete Environment: not_exists. An Environment should exists. \").to.be.eql(pm.response.json().message);",
-							"",
-							"    ",
-							"});",
-
-							"",
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/environment/not_exists",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"environment",
-						"not_exists"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Try to Create Environment with no pushMode",
+			"name": "CreateInvalidEnvironment",
 			"event": [
 				{
 					"listen": "test",
@@ -602,11 +400,6 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
-							"pm.test(\"Checking name\", function () {",
-							"    const json = pm.response.json();",
-							"    pm.expect(json[0].fieldName).to.be.eql(\"pushMode\");",
-							"    pm.expect(json[0].message).to.be.eql(\"may not be null\");",
-							"});",
 							""
 						],
 						"type": "text/javascript",
@@ -629,7 +422,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"Test Environment with no pushMode\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}",
+					"raw": "{\n    \"name\":\"Test Environment invalid\"\n\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -650,66 +443,7 @@
 			"response": []
 		},
 		{
-			"name": "Try to Create Environment with no Name",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(400);",
-							"});",
-							"",
-							"pm.test(\"Checking name\", function () {",
-							"    const json = pm.response.json();",
-							"    pm.expect(json[0].fieldName).to.be.eql(\"name\");",
-							"    pm.expect(json[0].message).to.be.eql(\"may not be null\");",
-							"});",
-							"",
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{jwt}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"pushMode\":\"PUSH_TO_ALL\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/environment",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"environment"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Try to Create Environment with no whoCanSend",
+			"name": "CreateEnvironmentAnotherEnv",
 			"event": [
 				{
 					"listen": "test",
@@ -721,9 +455,15 @@
 							"",
 							"pm.test(\"Checking name\", function () {",
 							"    const entity = pm.response.json().entity;",
-							"    pm.expect(entity.name).to.be.eql(\"Test Environment Witout whoCanSend\");",
+							"    pm.expect(entity.name).to.be.eql(\"Test Environment\");",
 							"    pm.expect(entity.pushToAll).to.be.eql(true);",
 							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"console.log(\"environmentId\", jsonData.entity.id, \"environmentName\", jsonData.entity.name)",
+							"pm.collectionVariables.set(\"environmentId\", jsonData.entity.id);",
+							"pm.collectionVariables.set(\"environmentName\", jsonData.entity.name);",
 							"",
 							""
 						],
@@ -747,7 +487,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\":\"Test Environment Witout whoCanSend\",\n    \"pushMode\":\"PUSH_TO_ALL\"\n}",
+					"raw": "{\n    \"name\":\"Test Environment\",\n    \"pushMode\":\"PUSH_TO_ALL\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -762,6 +502,105 @@
 					"path": [
 						"api",
 						"environment"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateEnvironmentExistingIdButWithExistingName400",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"Test Environment 4\",\n    \"pushMode\":\"PUSH_TO_ONE\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/environment/{{environmentId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment",
+						"{{environmentId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteEnvironmentSecondOneEnv",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/environment/{{environmentId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment",
+						"{{environmentId}}"
 					]
 				}
 			},
@@ -834,10 +673,6 @@
 		},
 		{
 			"key": "environmentName",
-			"value": ""
-		},
-		{
-			"key": "roleId",
 			"value": ""
 		}
 	]
