@@ -16,17 +16,18 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.OutputStream;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
@@ -56,7 +57,7 @@ class MonitorHelper {
     boolean useExtendedFormat = false;
 
 
-    MonitorHelper(final HttpServletRequest request) throws UnknownHostException {
+    MonitorHelper(final HttpServletRequest request)  {
         try {
             this.useExtendedFormat = request.getParameter("extended") != null;
 
@@ -73,11 +74,19 @@ class MonitorHelper {
                     }
                 }
             }
+
+
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
             throw new DotRuntimeException(e);
         }
     }
+
+    boolean startedUp() {
+        return System.getProperty(WebKeys.DOTCMS_STARTED_UP)!=null;
+    }
+
+
 
     MonitorStats getMonitorStats()  {
         if (cachedStats.get() != null && cachedStats.get()._1 > System.currentTimeMillis()) {
