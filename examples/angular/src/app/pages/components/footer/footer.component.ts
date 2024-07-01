@@ -22,10 +22,7 @@ import { NgOptimizedImage } from '@angular/common';
           opportunities with free benefits and bonuses for registered clients.
         </p>
         <img
-          [ngSrc]="
-            environment.dotcmsUrl +
-            '/contentAsset/image/82da90eb-044d-44cc-a71b-86f79820b61b/fileAsset'
-          "
+          [ngSrc]="'/dA/2f383e7fa6/fileAsset/logo.png'"
           height="53"
           width="221"
           alt="TravelLux logo"

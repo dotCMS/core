@@ -202,15 +202,30 @@ public class FieldFactoryImpl implements FieldFactory {
       APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
   }
 
-  @Override
-  public Field save(final Field throwAwayField) throws DotDataException {
-      final Field field =  dbSaveUpdate(throwAwayField);
-      APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(field);
-      new FieldLoader().invalidate(field);
-      return field;
+    @Override
+    public Field save(final Field fieldToSave) throws DotDataException {
+        final Field field = dbSaveUpdate(fieldToSave);
+        invalidateField(field);
+        return field;
+    }
 
-  }
+    @Override
+    public Field save(final Field fieldToSave, final Field existingField) throws DotDataException {
+        final Field field = dbSaveUpdate(fieldToSave, existingField);
+        invalidateField(field);
+        return field;
+    }
 
+    /**
+     * Updates the Content Type's mod date and invalidates the field cache
+     *
+     * @param field the field to invalidate
+     * @throws DotDataException if there is an error updating the Content Type's mod date
+     */
+    private void invalidateField(final Field field) throws DotDataException {
+        APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(field);
+        new FieldLoader().invalidate(field);
+    }
 
   private Field normalizeData(final Field throwAwayField) throws DotDataException {
     FieldBuilder builder = FieldBuilder.builder(throwAwayField);
@@ -256,86 +271,89 @@ public class FieldFactoryImpl implements FieldFactory {
     
     return returnField;
   }
-  
-  
-  
-  private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 
+    private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 
-    FieldBuilder builder = FieldBuilder.builder(throwAwayField);
-    
-    
-    Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
-    builder.modDate(modDate);
+        // Search for the field in the database to see if it already exists
+        var existingFieldOptional = resolveExistingField(throwAwayField);
 
-      // Search for the field in the database to see if it already exists
-      var oldFieldOptional = resolveExistingField(throwAwayField);
-      if (oldFieldOptional.isPresent()) {
-          Field oldField = oldFieldOptional.get();
-          builder.id(oldField.id());
-          builder.fixed(oldField.fixed());
-          builder.readOnly(oldField.readOnly());
-          builder.dataType(oldField.dataType());
-          builder.dbColumn(oldField.dbColumn());
-      } else {
-          List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
+        return dbSaveUpdate(throwAwayField, existingFieldOptional.orElse(null));
+    }
 
-          if (throwAwayField.sortOrder() < 0) {
-              // move to the end of the line
-              builder.sortOrder(
-                      fieldsAlreadyAdded.stream().map(Field::sortOrder).max(Integer::compare)
-                              .orElse(-1) + 1
-              );
-          }
+    private Field dbSaveUpdate(final Field throwAwayField, final Field existingField)
+            throws DotDataException {
 
-          // normalize our velocityvar
-          final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable)
-                  .collect(
-                          Collectors.toList());
+        FieldBuilder builder = FieldBuilder.builder(throwAwayField);
 
-          String tryVar = getFieldVariable(throwAwayField, takenFieldVars);
+        Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
+        builder.modDate(modDate);
 
-          builder.variable(tryVar);
+        if (existingField != null) {
 
-          // assign an inode and db column if needed
-          if (throwAwayField.id() == null) {
-              builder.id(APILocator.getDeterministicIdentifierAPI()
-                      .generateDeterministicIdBestEffort(throwAwayField, () -> tryVar));
-          }
-      }
+            if (!existingField.variable().equalsIgnoreCase(throwAwayField.variable())) {
+                Logger.warn(this,
+                        String.format(
+                                "Field variable can not be modified, ignoring [%s] and using [%s] "
+                                        + "instead for field [%s]",
+                                throwAwayField.variable(),
+                                existingField.variable(),
+                                existingField.id()
+                        )
+                );
+            }
 
-    builder = FieldBuilder.builder(normalizeData(builder.build()));
+            builder.id(existingField.id());
+            builder.variable(existingField.variable());
+            builder.fixed(existingField.fixed());
+            builder.readOnly(existingField.readOnly());
+            builder.dataType(existingField.dataType());
+            builder.dbColumn(existingField.dbColumn());
+        } else {
 
-    Field retField = builder.build();
+            List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
 
+            if (throwAwayField.sortOrder() < 0) {
+                // move to the end of the line
+                builder.sortOrder(
+                        fieldsAlreadyAdded.stream().map(Field::sortOrder).max(Integer::compare)
+                                .orElse(-1) + 1
+                );
+            }
 
-    validateDbColumn(retField);
+            // normalize our velocityvar
+            final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable)
+                    .collect(
+                            Collectors.toList());
 
-      if (oldFieldOptional.isEmpty()) {
-          insertInodeInDb(retField);
-          insertFieldInDb(retField);
-      } else {
-          updateInodeInDb(retField);
-          updateFieldInDb(retField);
-      }
+            String tryVar = getFieldVariable(throwAwayField, takenFieldVars);
 
+            builder.variable(tryVar);
 
+            // assign an inode and db column if needed
+            if (throwAwayField.id() == null) {
+                builder.id(APILocator.getDeterministicIdentifierAPI()
+                        .generateDeterministicIdBestEffort(throwAwayField, () -> tryVar));
+            }
+        }
 
-    return retField;
-  }
+        builder = FieldBuilder.builder(normalizeData(builder.build()));
 
-    /**
-     * Resolves the existing field by searching in the database.
-     * <p>
-     * First tries to find the field by its ID. If the field is not found by ID, it tries to find
-     * the field by content type and variable.
-     *
-     * @param field the field to resolve
-     * @return an Optional containing the resolved field, or an empty Optional if the field is not
-     * found
-     * @throws DotDataException if there is an error while resolving the field
-     */
-    private Optional<Field> resolveExistingField(final Field field) throws DotDataException {
+        Field retField = builder.build();
+
+        validateDbColumn(retField);
+
+        if (existingField == null) {
+            insertInodeInDb(retField);
+            insertFieldInDb(retField);
+        } else {
+            updateInodeInDb(retField);
+            updateFieldInDb(retField);
+        }
+
+        return retField;
+    }
+
+    public Optional<Field> resolveExistingField(final Field field) throws DotDataException {
 
         Field oldField = null;
 
@@ -350,7 +368,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
                 if (org.apache.commons.lang.StringUtils.isNotEmpty(field.variable())) {
 
-                    Logger.warn(this.getClass(), String.format(
+                    Logger.debug(this.getClass(), String.format(
                             "Failed to find field by ID [%s]. Falling back to lookup by variable [%s].",
                             field.id(), field.variable()
                     ));

@@ -14,6 +14,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -56,16 +57,12 @@ public class CompletionsResource {
     public final Response summarizeFromContent(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
                                                final CompletionsForm formIn) {
-
-        if (formIn.prompt == null) {
-            return badRequestResponse();
-        }
-
-        final CompletionsForm form = resolveForm(request, response, formIn);
-        return fromForm(
-                form,
-                () -> CompletionsAPI.impl().summarize(form),
-                out -> CompletionsAPI.impl().summarizeStream(form, new LineReadingOutputStream(out)));
+        return getResponse(
+                request,
+                response,
+                formIn,
+                () -> CompletionsAPI.impl().summarize(formIn),
+                out -> CompletionsAPI.impl().summarizeStream(formIn, new LineReadingOutputStream(out)));
     }
 
     /**
@@ -83,16 +80,12 @@ public class CompletionsResource {
     public final Response rawPrompt(@Context final HttpServletRequest request,
                                     @Context final HttpServletResponse response,
                                     final CompletionsForm formIn) {
-
-        if (formIn.prompt == null) {
-            return badRequestResponse();
-        }
-        
-        final CompletionsForm form = resolveForm(request, response, formIn);
-        return fromForm(
-                form,
-                () -> CompletionsAPI.impl().raw(form),
-                out -> CompletionsAPI.impl().rawStream(form, new LineReadingOutputStream(out)));
+        return getResponse(
+                request,
+                response,
+                formIn,
+                () -> CompletionsAPI.impl().raw(formIn),
+                out -> CompletionsAPI.impl().rawStream(formIn, new LineReadingOutputStream(out)));
     }
 
     /**
@@ -156,24 +149,31 @@ public class CompletionsResource {
                 : formIn;
     }
 
-    private static Response fromForm(final CompletionsForm form,
-                                     final Supplier<JSONObject> noStream,
-                                     final Consumer<OutputStream> stream) {
-        final long startTime = System.currentTimeMillis();
-
-        if (!form.stream) {
-            final JSONObject jsonResponse = noStream.get();
-            jsonResponse.put(AiKeys.TOTAL_TIME, System.currentTimeMillis() - startTime + "ms");
-            return Response.ok(jsonResponse.toString(), MediaType.APPLICATION_JSON).build();
+    private static Response getResponse(final HttpServletRequest request,
+                                        final HttpServletResponse response,
+                                        final CompletionsForm formIn,
+                                        final Supplier<JSONObject> noStream,
+                                        final Consumer<OutputStream> stream) {
+        if (StringUtils.isBlank(formIn.prompt)) {
+            return badRequestResponse();
         }
 
-        final StreamingOutput streaming = output -> {
-            stream.accept(output);
-            output.flush();
-            output.close();
-        };
+        final long startTime = System.currentTimeMillis();
+        final CompletionsForm resolvedForm = resolveForm(request, response, formIn);
 
-        return Response.ok(streaming).build();
+        if (resolvedForm.stream) {
+            final StreamingOutput streaming = output -> {
+                stream.accept(output);
+                output.flush();
+                output.close();
+            };
+            return Response.ok(streaming).build();
+        }
+
+        final JSONObject jsonResponse = noStream.get();
+        jsonResponse.put(AiKeys.TOTAL_TIME, System.currentTimeMillis() - startTime + "ms");
+        return Response.ok(jsonResponse.toString(), MediaType.APPLICATION_JSON).build();
     }
+
 
 }

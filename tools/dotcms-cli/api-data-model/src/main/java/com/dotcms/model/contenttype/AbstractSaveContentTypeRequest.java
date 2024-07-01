@@ -6,9 +6,11 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.contenttype.model.workflow.Workflow;
 import com.dotcms.model.annotation.ValueType;
+import com.dotcms.model.views.CommonViews;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,8 +21,6 @@ import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 
@@ -47,11 +47,10 @@ public abstract class AbstractSaveContentTypeRequest extends ContentType {
      * This is a calculated field required only when sending the CT for a save or update
      * When pulling down the CT this shouldn't be present
      */
+    @JsonView({CommonViews.ContentTypeExternalView.class})
     @Value.Derived
-    public Set<String> workflow() {
-        final List<Workflow> workflows = workflows();
-        return workflows == null ? Set.of() : workflows.stream().map(Workflow::id).collect(
-                Collectors.toSet());
+    public List<Workflow> workflow() {
+        return workflows();
     }
 
     /**

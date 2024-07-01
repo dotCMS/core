@@ -96,11 +96,11 @@ export function deleteContentletFromContainer(action: ActionPayload): {
  */
 export function areContainersEquals(
     currentContainer: PageContainer,
-    containerToFind: ContainerPayload
+    containerToFind?: ContainerPayload
 ): boolean {
     return (
-        currentContainer.identifier === containerToFind.identifier &&
-        currentContainer.uuid === containerToFind.uuid
+        currentContainer.identifier === containerToFind?.identifier &&
+        currentContainer.uuid === containerToFind?.uuid
     );
 }
 

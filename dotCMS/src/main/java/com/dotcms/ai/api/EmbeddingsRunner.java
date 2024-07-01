@@ -4,6 +4,7 @@ import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.util.EncodingUtil;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -38,6 +39,7 @@ class EmbeddingsRunner implements Runnable {
     }
 
     @Override
+    @WrapInTransaction
     public void run() {
         try {
             if (embeddingsAPI.config.getConfigBoolean(AppKeys.EMBEDDINGS_DB_DELETE_OLD_ON_UPDATE)) {
@@ -66,18 +68,17 @@ class EmbeddingsRunner implements Runnable {
                 totalTokens += tokenCount;
 
                 if (totalTokens < splitAtTokens) {
-                    buffer.append(sentence).append(" ");
+                    buffer.append(sentence.trim()).append(" ");
                 } else {
-                    saveEmbedding(buffer.toString(), contentlet, indexName);
+                    saveEmbedding(buffer.toString());
                     buffer.setLength(0);
-                    buffer.append(sentence).append(" ");
+                    buffer.append(sentence.trim()).append(" ");
                     totalTokens = tokenCount;
                 }
-
             }
 
             if (buffer.toString().split("\\s+").length > 0) {
-                saveEmbedding(buffer.toString(), contentlet, indexName);
+                saveEmbedding(buffer.toString());
             }
         } catch (Exception e) {
             if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
@@ -88,14 +89,13 @@ class EmbeddingsRunner implements Runnable {
         }
     }
 
-    private void saveEmbedding(@NotNull final String content,
-                               @NotNull final Contentlet contentlet,
-                               final String indexName) {
-        if (UtilMethods.isEmpty(content)) {
+    private void saveEmbedding(@NotNull final String initial) {
+        if (UtilMethods.isEmpty(initial)) {
             return;
         }
 
-        if (embeddingsAPI.embeddingExists(contentlet.getInode(), indexName, content)) {
+        final String normalizedContent = initial.trim();
+        if (embeddingsAPI.embeddingExists(contentlet.getInode(), indexName, normalizedContent)) {
             Logger.info(
                     this.getClass(),
                     "embedding already exists for content:"
@@ -105,9 +105,9 @@ class EmbeddingsRunner implements Runnable {
             return;
         }
 
-        final Tuple2<Integer, List<Float>> embeddings = embeddingsAPI.pullOrGenerateEmbeddings(content);
+        final Tuple2<Integer, List<Float>> embeddings = embeddingsAPI.pullOrGenerateEmbeddings(normalizedContent);
         if (embeddings._2.isEmpty()) {
-            Logger.info(this.getClass(), "NO TOKENS for " + contentlet.getContentType().variable() + " content:" + content);
+            Logger.info(this.getClass(), "NO TOKENS for " + contentlet.getContentType().variable() + " content:" + normalizedContent);
             return;
         }
 
@@ -119,7 +119,7 @@ class EmbeddingsRunner implements Runnable {
                 .withTitle(contentlet.getTitle())
                 .withIdentifier(contentlet.getIdentifier())
                 .withHost(contentlet.getHost())
-                .withExtractedText(content)
+                .withExtractedText(normalizedContent)
                 .withIndexName(indexName)
                 .withEmbeddings(embeddings._2).build();
 

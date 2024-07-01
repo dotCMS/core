@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.workflow.ImmutableWorkflow;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
@@ -25,10 +26,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
 @ApplicationScoped
@@ -36,6 +37,9 @@ public class ContentTypesTestHelperService {
 
     private static final Duration MAX_WAIT_TIME = Duration.ofSeconds(15);
     private static final Duration POLL_INTERVAL = Duration.ofSeconds(2);
+
+    public static final String SYSTEM_WORKFLOW_ID = "d61a59e1-a49c-46f2-a929-db2b4bfa88b2";
+    public static final String SYSTEM_WORKFLOW_VARIABLE_NAME = "SystemWorkflow";
 
     @Inject
     RestClientFactory clientFactory;
@@ -210,6 +214,14 @@ public class ContentTypesTestHelperService {
                                 .variable("name")
                                 .fixed(false)
                                 .build()
+                )
+                .workflows(
+                        List.of(
+                                ImmutableWorkflow.builder()
+                                        .id(SYSTEM_WORKFLOW_ID)
+                                        .variableName(SYSTEM_WORKFLOW_VARIABLE_NAME)
+                                        .build()
+                        )
                 );
 
         if (identifier != null) {

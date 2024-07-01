@@ -18,9 +18,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import org.apache.commons.lang3.BooleanUtils;
 import org.jboss.logging.Logger;
 
@@ -329,7 +329,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
      * @return A completable future with the site view
      */
     @ActivateRequestContext
-    private CompletableFuture<SiteView> verifyAndReturnSiteAfterCompletion(
+    CompletableFuture<SiteView> verifyAndReturnSiteAfterCompletion(
             final String siteName, final boolean isSiteLive, final boolean isArchived
     ) {
 

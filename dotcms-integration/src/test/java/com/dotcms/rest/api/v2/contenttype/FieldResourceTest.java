@@ -179,8 +179,17 @@ public class FieldResourceTest {
         assertTrue("Error: " + response.getEntity().toString(), response.getEntity().toString().contains("contains characters not allowed"));
     }
 
+    /**
+     * Method to test: Testing the
+     * {@link com.dotcms.contenttype.business.FieldAPI#save(Field, User)} method
+     * <p>
+     * Given Scenario: Creating a new field of type {@link ImmutableRelationshipField} and saving it
+     * to later update it modifying the variable name
+     * <p>
+     * ExpectedResult: The process should be successful and the variable name should not be updated
+     */
     @Test
-    public void testUpdateFieldVariable_Return400() throws Exception {
+    public void testUpdateFieldVariable() throws Exception {
         final WebResource webResourceThatReturnsAdminUser = mock(WebResource.class);
         final InitDataObject dataObject1 = mock(InitDataObject.class);
         when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
@@ -208,7 +217,7 @@ public class FieldResourceTest {
         assertNotNull(response);
         assertEquals(200, response.getStatus());
 
-        final Map<String, Object> fieldMap = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
+        Map<String, Object> fieldMap = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
 
         final String jsonFieldUpdate = "{"+
                 // IDENTITY VALUES
@@ -218,7 +227,7 @@ public class FieldResourceTest {
                 "	\"name\" : \"YouTube Videos\","+
                 "   \"values\" :  1," +
                 "   \"variable\": \"youtube-Videos\","+
-                "   \"relationType\": \"Youtube\""+
+                "   \"relationType\": \"" + contentType.variable() + "\""+
                 "	}";
 
         response = resource.updateContentTypeFieldById(
@@ -226,9 +235,12 @@ public class FieldResourceTest {
                 jsonFieldUpdate.replace("CONTENT_TYPE_ID", contentType.id()).replace("CONTENT_TYPE_FIELD_ID", (String) fieldMap.get("id")),
                 getHttpRequest(),  new EmptyHttpResponse());
 
+        // The process should not fail
         assertNotNull(response);
-        assertEquals(400, response.getStatus());
-        assertTrue("Error: " + response.getEntity().toString(), response.getEntity().toString().contains("Field variable can not be modified"));
+        assertEquals(200, response.getStatus());
+        // Make sure we don't the variable didn't change
+        fieldMap = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertEquals("youtubeVideos", fieldMap.get("variable"));
     }
 
 
