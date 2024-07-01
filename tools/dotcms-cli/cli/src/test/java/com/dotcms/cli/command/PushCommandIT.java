@@ -99,7 +99,6 @@ class PushCommandIT extends CommandTest {
         var tempFolder = createTempFolder();
         // And a workspace for it
         workspaceManager.getOrCreate(tempFolder);
-        System.out.println(tempFolder.toAbsolutePath());
 
         try {
 
