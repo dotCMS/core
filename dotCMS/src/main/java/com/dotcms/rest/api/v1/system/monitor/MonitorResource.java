@@ -97,13 +97,12 @@ public class MonitorResource {
         if(!helper.startedUp()) {
             return Response.status(SERVICE_UNAVAILABLE).build();
         }
+        
         //try this twice as it is an imperfect test
-        if(helper.isCacheHealthy()) {
+        if(helper.isCacheHealthy() && helper.isCacheHealthy()) {
             return Response.ok().build();
         }
-        if(helper.isCacheHealthy()) {
-            return Response.ok().build();
-        }
+
         
         return Response.status(SERVICE_UNAVAILABLE).build();
         
