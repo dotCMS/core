@@ -2,8 +2,6 @@ package com.dotcms.rest.api.v1.system.monitor;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.util.StringPool;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -13,7 +11,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.glassfish.jersey.server.JSONP;
 
 
@@ -97,7 +94,7 @@ public class MonitorResource {
         if(!helper.startedUp()) {
             return Response.status(SERVICE_UNAVAILABLE).build();
         }
-        
+
         //try this twice as it is an imperfect test
         if(helper.isCacheHealthy() && helper.isCacheHealthy()) {
             return Response.ok().build();
