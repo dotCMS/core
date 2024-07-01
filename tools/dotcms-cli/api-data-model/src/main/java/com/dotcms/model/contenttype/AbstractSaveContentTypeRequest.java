@@ -6,7 +6,7 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.contenttype.model.workflow.Workflow;
 import com.dotcms.model.annotation.ValueType;
-import com.dotcms.model.views.CommonViews.ContentTypeExternalView;
+import com.dotcms.model.views.CommonViews;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -47,7 +47,7 @@ public abstract class AbstractSaveContentTypeRequest extends ContentType {
      * This is a calculated field required only when sending the CT for a save or update
      * When pulling down the CT this shouldn't be present
      */
-    @JsonView({ContentTypeExternalView.class})
+    @JsonView({CommonViews.ContentTypeExternalView.class})
     @Value.Derived
     public List<Workflow> workflow() {
         return workflows();

@@ -25,7 +25,7 @@ export class DotCopyButtonComponent {
     /**
      * String to be copied to clipboard
      */
-    copy = input('');
+    copy = input.required<string>();
 
     /**
      * Label to be displayed in the button

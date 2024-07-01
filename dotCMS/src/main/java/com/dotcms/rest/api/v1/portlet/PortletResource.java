@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.portlet;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -19,6 +20,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
@@ -46,21 +48,24 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.liferay.portal.model.Portlet.DATA_VIEW_MODE_KEY;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This Resource is for create custom portlets. These kind of custom portlets are to show diff types
  * or content (content types or base types).
  */
 @Path("/v1/portlet")
-@SuppressWarnings("serial")
 public class PortletResource implements Serializable {
 
     private final WebResource webResource;
     private final PortletAPI portletApi;
 
+    private static final String JSON_RESPONSE_PORTLET_ATTR = "portlet";
+
     /**
      * Default class constructor.
      */
+    @SuppressWarnings("unused")
     public PortletResource() {
         this(new WebResource(new ApiProvider()), APILocator.getPortletAPI());
     }
@@ -72,10 +77,13 @@ public class PortletResource implements Serializable {
     }
 
     /**
-     * Creates a Portlet for a given name content-types and Display view
-     * @param request
-     * @param formData
-     * @return
+     * Creates a custom dotCMS Portlet for a given Base Type or Content Type.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param formData The {@link CustomPortletForm} containing the information for the new
+     *                 Portlet.
+     *
+     * @return A {@link Response} object with the ID of the new portlet.
      */
     @POST
     @Path("/custom")
@@ -83,22 +91,21 @@ public class PortletResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response saveNew(@Context final HttpServletRequest request, final CustomPortletForm formData) {
-
+    public final Response saveNew(@Context final HttpServletRequest request,
+                                  final CustomPortletForm formData) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("roles")
+                .requiredPortlet(PortletID.ROLES.toString())
                 .init();
-
-        Response response = null;
-
+        String portletId = BLANK;
         try {
-            final String portletId = portletApi.portletIdPrefixCleaner(formData.portletId);
+            portletId = portletApi.portletIdPrefixCleaner(formData.portletId);
             if (UtilMethods.isSet(portletApi.findPortlet(portletId))) {
-                throw new DoesNotExistException("Portlet with Id: " + formData.portletId + " already exist");
+                throw new DoesNotExistException(String.format("Portlet with ID '%s' already exist",
+                        formData.portletId));
             }
 
             final Portlet contentPortlet = portletApi.findPortlet("content");
@@ -112,13 +119,12 @@ public class PortletResource implements Serializable {
             final Portlet newPortlet = APILocator.getPortletAPI()
                     .savePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
-            return Response.ok(new ResponseEntityView(Map.of("portlet", newPortlet.getPortletId()))).build();
-
-        } catch (Exception e) {
-            response = ResponseUtil.mapExceptionResponse(e);
+            return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, newPortlet.getPortletId()))).build();
+        } catch (final Exception e) {
+            Logger.error(this, String.format("An error occurred when saving new Portlet with ID " +
+                    "'%s': %s", portletId, ExceptionUtil.getErrorMessage(e)), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
-
-        return response;
     }
 
     /**
@@ -161,7 +167,7 @@ public class PortletResource implements Serializable {
             final Portlet newPortlet = APILocator.getPortletAPI()
                     .savePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
-            return Response.ok(new ResponseEntityView(Map.of("portlet", newPortlet.getPortletId()))).build();
+            return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, newPortlet.getPortletId()))).build();
 
         } catch (Exception e) {
             response = ResponseUtil.mapExceptionResponse(e);
@@ -246,8 +252,8 @@ public class PortletResource implements Serializable {
 
         layoutAPI.setPortletIdsToLayout(layout, portletIds);
 
-        return Response.ok(new ResponseEntityView(
-                        Map.of("portlet", portlet.getPortletId(), "layout", layout.getId())))
+        return Response.ok(new ResponseEntityView<>(
+                        Map.of(JSON_RESPONSE_PORTLET_ATTR, portlet.getPortletId(), "layout", layout.getId())))
                 .build();
 
     }

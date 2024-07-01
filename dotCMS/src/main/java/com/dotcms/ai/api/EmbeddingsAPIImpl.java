@@ -276,17 +276,13 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
     @Override
     public List<EmbeddingsDTO> getEmbeddingResults(final EmbeddingsDTO searcher) {
-        final List<Float> queryEmbeddings = pullOrGenerateEmbeddings(searcher.query)._2;
-        final EmbeddingsDTO newSearcher = EmbeddingsDTO.copy(searcher).withEmbeddings(queryEmbeddings).build();
-
+        final EmbeddingsDTO newSearcher = getSearcher(searcher);
         return EmbeddingsFactory.impl.get().searchEmbeddings(newSearcher);
     }
 
     @Override
     public long countEmbeddings(final EmbeddingsDTO searcher) {
-        final List<Float> queryEmbeddings = pullOrGenerateEmbeddings(searcher.query)._2;
-        final EmbeddingsDTO newSearcher = EmbeddingsDTO.copy(searcher).withEmbeddings(queryEmbeddings).build();
-
+        final EmbeddingsDTO newSearcher = getSearcher(searcher);
         return EmbeddingsFactory.impl.get().countEmbeddings(newSearcher);
     }
 
@@ -420,6 +416,11 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
     private String getAPIKey() {
         return config.getApiKey();
+    }
+
+    private EmbeddingsDTO getSearcher(EmbeddingsDTO searcher) {
+        final List<Float> queryEmbeddings = pullOrGenerateEmbeddings(searcher.query)._2;
+        return EmbeddingsDTO.copy(searcher).withEmbeddings(queryEmbeddings).build();
     }
 
 }
