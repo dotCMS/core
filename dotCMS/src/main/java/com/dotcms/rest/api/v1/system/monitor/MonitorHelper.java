@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpServletRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.RequestOptions;
@@ -50,7 +51,7 @@ class MonitorHelper {
             DEFAULT_IP_ACL_VALUE);
 
     
-    static Tuple2<Long, MonitorStats> cachedStats = null;
+    static AtomicReference<Tuple2<Long, MonitorStats>> cachedStats = null;
     boolean accessGranted = false;
     boolean useExtendedFormat = false;
 
@@ -79,8 +80,8 @@ class MonitorHelper {
     }
 
     MonitorStats getMonitorStats()  {
-        if (cachedStats != null && cachedStats._1 > System.currentTimeMillis()) {
-            return cachedStats._2;
+        if (cachedStats != null && cachedStats.get()._1 > System.currentTimeMillis()) {
+            return cachedStats.get()._2;
         }
         return getMonitorStatsNoCache();
     }
@@ -88,8 +89,8 @@ class MonitorHelper {
 
     synchronized MonitorStats getMonitorStatsNoCache()  {
         // double check
-        if (cachedStats != null && cachedStats._1 > System.currentTimeMillis()) {
-            return cachedStats._2;
+        if (cachedStats != null && cachedStats.get()._1 > System.currentTimeMillis()) {
+            return cachedStats.get()._2;
         }
 
 
@@ -112,8 +113,8 @@ class MonitorHelper {
 
         // cache a healthy response
         if (monitorStats.isDotCMSHealthy()) {
-            cachedStats = Tuple.of(System.currentTimeMillis() + (SYSTEM_STATUS_CACHE_RESPONSE_SECONDS * 1000),
-                    monitorStats);
+            cachedStats.set( Tuple.of(System.currentTimeMillis() + (SYSTEM_STATUS_CACHE_RESPONSE_SECONDS * 1000),
+                    monitorStats));
         }
         return monitorStats;
     }
