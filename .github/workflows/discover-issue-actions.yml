@@ -30,10 +30,6 @@ jobs:
           issue_number=$(cat $GITHUB_EVENT_PATH | jq '.issue.number')
           field_changed=$(cat $GITHUB_EVENT_PATH | jq '.changes.custom_fields.Technology.to')
 
-          # Remove me
-          field_changed='Front-end'
-          issue_number=29032
-               
           echo "field_changed=[${field_changed}]"
           if [[ -n "${issue_number}" && "${field_changed}" == 'Front-end' ]]; then
             [[ -n "${actions}" ]] && actions="${actions},"
