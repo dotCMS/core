@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
-import { ContextMenu } from 'primeng/contextmenu';
+import { ContextMenu as PrimeNGContextMenu } from 'primeng/contextmenu';
 import { Table } from 'primeng/table';
 
 import { filter, takeUntil } from 'rxjs/operators';
@@ -22,34 +22,33 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
 
+interface CustomContextMenu extends PrimeNGContextMenu {
+    show(event?: unknown): void;
+}
+
 @Component({
     selector: 'dot-pages-listing-panel',
     templateUrl: './dot-pages-listing-panel.component.html',
     styleUrls: ['./dot-pages-listing-panel.component.scss']
 })
 export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterViewInit {
-    @ViewChild('cm') cm: ContextMenu;
+    @ViewChild('cm') cm: CustomContextMenu;
     @ViewChild('table') table: Table;
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
     @Output() pageChange = new EventEmitter<void>();
-
-    private domIdMenuAttached = '';
-    private destroy$ = new Subject<boolean>();
-    private scrollElement?: HTMLElement;
     vm$: Observable<DotPagesState> = this.store.vm$;
-
     dotStateLabels = {
         archived: this.dotMessageService.get('Archived'),
         published: this.dotMessageService.get('Published'),
         revision: this.dotMessageService.get('Revision'),
         draft: this.dotMessageService.get('Draft')
     };
+    private domIdMenuAttached = '';
+    private destroy$ = new Subject<boolean>();
+    private scrollElement?: HTMLElement;
 
-    constructor(
-        private store: DotPageStore,
-        private dotMessageService: DotMessageService
-    ) {}
+    constructor(private store: DotPageStore, private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
         this.store.actionMenuDomId$
@@ -78,19 +77,6 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
         this.destroy$.next(true);
         this.destroy$.complete();
         this.scrollElement?.removeAllListeners('scroll');
-    }
-
-    /**
-     * Closes the context menu when the user clicks outside of it
-     *
-     * @memberof DotPagesListingPanelComponent
-     */
-    @HostListener('window:click')
-    private closeContextMenu(): void {
-        if (this.domIdMenuAttached.includes('tableRow')) {
-            this.cm.hide();
-            this.store.clearMenuActions();
-        }
     }
 
     /**
@@ -178,5 +164,18 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
         this.store.setArchived(archived);
         this.store.getPages({ offset: 0 });
         this.store.setSessionStorageFilterParams();
+    }
+
+    /**
+     * Closes the context menu when the user clicks outside of it
+     *
+     * @memberof DotPagesListingPanelComponent
+     */
+    @HostListener('window:click')
+    private closeContextMenu(): void {
+        if (this.domIdMenuAttached.includes('tableRow')) {
+            this.cm.hide();
+            this.store.clearMenuActions();
+        }
     }
 }

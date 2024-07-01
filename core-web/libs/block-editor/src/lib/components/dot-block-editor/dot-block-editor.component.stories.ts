@@ -10,7 +10,9 @@ import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
+import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
+    DotAiService,
     DotContentSearchService,
     DotMessageService,
     DotPropertiesService,
@@ -19,9 +21,7 @@ import {
 } from '@dotcms/data-access';
 import { DotSpinnerModule } from '@dotcms/ui';
 
-import { DotBlockEditorComponent } from './dot-block-editor.component';
-
-import { BlockEditorModule } from '../../block-editor.module';
+import { DotAiServiceMock } from '../../../../../data-access/src/lib/dot-ai/dot-ai-service.mock';
 import {
     AssetFormComponent,
     BubbleLinkFormComponent,
@@ -32,12 +32,10 @@ import { ContentletBlockComponent } from '../../nodes';
 import {
     ASSET_MOCK,
     CONTENTLETS_MOCK,
-    DotAiService,
     SuggestionsComponent,
     SuggestionsService
 } from '../../shared';
 import { DotMessageServiceMock } from '../../shared/mocks/dot-message.service.mock';
-import { DotAiServiceMock } from '../../shared/services/dot-ai/dot-ai-service.mock';
 
 export default {
     title: 'Library/Block Editor'
