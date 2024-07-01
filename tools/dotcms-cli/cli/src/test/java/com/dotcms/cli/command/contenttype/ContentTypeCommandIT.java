@@ -378,6 +378,26 @@ class ContentTypeCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: We want to filter the content types by var name and direction asc
+     * Expected result: The output should come back ordered by varName and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Ascending_Lower_Case() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "asc");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
      * Given scenario: We want to filter the content types by var name
      * Expected result: The output should come back ordered by varName and direction DESC
      */
@@ -389,6 +409,26 @@ class ContentTypeCommandIT extends CommandTest {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
                     "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name and direction desc
+     * Expected result: The output should come back ordered by varName and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Descending_Lower_Case() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "desc");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("variable",output);
