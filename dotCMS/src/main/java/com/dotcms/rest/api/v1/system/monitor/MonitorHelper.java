@@ -51,7 +51,7 @@ class MonitorHelper {
             DEFAULT_IP_ACL_VALUE);
 
     
-    static AtomicReference<Tuple2<Long, MonitorStats>> cachedStats = null;
+    static final AtomicReference<Tuple2<Long, MonitorStats>> cachedStats = new AtomicReference<>();
     boolean accessGranted = false;
     boolean useExtendedFormat = false;
 
@@ -80,7 +80,7 @@ class MonitorHelper {
     }
 
     MonitorStats getMonitorStats()  {
-        if (cachedStats != null && cachedStats.get()._1 > System.currentTimeMillis()) {
+        if (cachedStats.get() != null && cachedStats.get()._1 > System.currentTimeMillis()) {
             return cachedStats.get()._2;
         }
         return getMonitorStatsNoCache();
@@ -89,7 +89,7 @@ class MonitorHelper {
 
     synchronized MonitorStats getMonitorStatsNoCache()  {
         // double check
-        if (cachedStats != null && cachedStats.get()._1 > System.currentTimeMillis()) {
+        if (cachedStats.get() != null && cachedStats.get()._1 > System.currentTimeMillis()) {
             return cachedStats.get()._2;
         }
 
