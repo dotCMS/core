@@ -41,14 +41,10 @@ import { DotDropZoneComponent } from '../../dot-drop-zone.component';
                 formControlName="file"
                 dotDropZoneValueAccessor>
                 <div class="dot-drop-zone__content" id="dot-drop-zone__content">
-                    Drop files here.
-
-                    @if (accept.length) {
-                        <div><strong>Allowed Type:</strong> {{ accept }}</div>
-                    }
-
-                    @if (maxFileSize) {
-                        <div><strong>Max File Size:</strong> {{ maxFileSize }}</div>
+                    Drop files here. @if (accept.length) {
+                    <div><strong>Allowed Type:</strong> {{ accept }}</div>
+                    } @if (maxFileSize) {
+                    <div><strong>Max File Size:</strong> {{ maxFileSize }}</div>
                     }
                 </div>
             </dot-drop-zone>
