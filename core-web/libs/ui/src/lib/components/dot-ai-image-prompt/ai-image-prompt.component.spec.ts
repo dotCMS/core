@@ -40,11 +40,11 @@ describe('DotAIImagePromptComponent', () => {
                         galleryActiveIndex: 0,
                         orientation: DotAIImageOrientation.VERTICAL
                     }),
-                    generateImage: jasmine.createSpy('generateImage'),
-                    hideDialog: jasmine.createSpy('hideDialog'),
-                    patchState: jasmine.createSpy('patchState'),
-                    cleanError: jasmine.createSpy('cleanError'),
-                    setSelectedImage: jasmine.createSpy('setSelectedImage')
+                    generateImage: jest.fn(),
+                    hideDialog: jest.fn(),
+                    patchState: jest.fn(),
+                    cleanError: jest.fn(),
+                    setSelectedImage: jest.fn()
                 }
             },
             mockProvider(ConfirmationService)
@@ -92,7 +92,7 @@ describe('DotAIImagePromptComponent', () => {
 
     it('should call confirm dialog when try to close dialog', fakeAsync(() => {
         const closeBtn = spectator.query(byTestId('close-btn'));
-        const spyCloseDialog = spyOn(spectator.component, 'closeDialog');
+        const spyCloseDialog = jest.spyOn(spectator.component, 'closeDialog');
 
         spectator.click(closeBtn);
         spectator.tick();

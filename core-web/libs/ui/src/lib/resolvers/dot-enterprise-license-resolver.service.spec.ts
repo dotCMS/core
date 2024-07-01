@@ -25,7 +25,7 @@ describe('DotEnterpriseLicenseResolver', () => {
     });
 
     it('should call dotLicenseService', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
         service.resolve().subscribe(() => {
             expect(dotLicenseService.isEnterprise).toHaveBeenCalled();
         });

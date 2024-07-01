@@ -45,7 +45,7 @@ describe('DotAiImagePromptFormComponent', () => {
     });
 
     it('should emit value when form value change', () => {
-        const emitSpy = spyOn(spectator.component.valueChange, 'emit');
+        const emitSpy = jest.spyOn(spectator.component.valueChange, 'emit');
         spectator.component.form.setValue(formValue);
 
         spectator.detectChanges();
@@ -85,7 +85,7 @@ describe('DotAiImagePromptFormComponent', () => {
     });
 
     it('should emit generate when the form is submitted', () => {
-        const valueSpy = spyOn(spectator.component.generate, 'emit');
+        const valueSpy = jest.spyOn(spectator.component.generate, 'emit');
         spectator.setInput({ isLoading: false });
         spectator.component.form.setValue(formValue);
         spectator.detectChanges();

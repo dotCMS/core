@@ -29,7 +29,7 @@ describe('DotPushPublishEnvironmentsResolver', () => {
     });
 
     it('should get a list of environments', () => {
-        spyOn(pushPublishService, 'getEnvironments').and.returnValue(of([]));
+        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
         service.resolve().subscribe(() => {
             expect(pushPublishService.getEnvironments).toHaveBeenCalled();
         });

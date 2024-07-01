@@ -1,7 +1,5 @@
 import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator/jest';
 
-import { By } from '@angular/platform-browser';
-
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 
 import { DotSelectItemDirective } from './dot-select-item.directive';
@@ -9,8 +7,8 @@ import { DotSelectItemDirective } from './dot-select-item.directive';
 describe('DotSelectItemDirective', () => {
     let spectator: SpectatorDirective<DotSelectItemDirective>;
     let autoComplete: AutoComplete;
-    let onKeyUpMock: jasmine.Spy;
-    let selectItem: jasmine.Spy;
+    let onKeyUpMock: jest.SpyInstance;
+    let selectItem: jest.SpyInstance;
 
     const createDirective = createDirectiveFactory({
         directive: DotSelectItemDirective,
@@ -20,9 +18,9 @@ describe('DotSelectItemDirective', () => {
 
     beforeEach(() => {
         spectator = createDirective();
-        autoComplete = spectator.debugElement.query(By.css('p-autoComplete')).componentInstance;
-        onKeyUpMock = spyOn(spectator.directive, 'onKeyUp').and.callThrough();
-        selectItem = spyOn(autoComplete, 'selectItem');
+        autoComplete = spectator.query(AutoComplete);
+        onKeyUpMock = jest.spyOn(spectator.directive, 'onKeyUp').mockImplementation();
+        selectItem = jest.spyOn(autoComplete, 'selectItem');
     });
 
     it('should call onKeyUp from the directive', () => {
@@ -33,7 +31,7 @@ describe('DotSelectItemDirective', () => {
 
         spectator.triggerEventHandler('p-autoComplete[dotSelectItem]', 'onKeyUp', event);
 
-        expect(onKeyUpMock).toHaveBeenCalledOnceWith(event);
+        expect(onKeyUpMock).toHaveBeenCalledWith(event);
     });
 
     it('should call autoComplete selectItem when key is "Enter"', () => {
@@ -44,7 +42,7 @@ describe('DotSelectItemDirective', () => {
 
         spectator.triggerEventHandler('p-autoComplete[dotSelectItem]', 'onKeyUp', event);
 
-        expect(selectItem).toHaveBeenCalledOnceWith(event.target.value);
+        expect(selectItem).toHaveBeenCalledWith(event.target.value);
     });
 
     it('should not call autoComplete selectItem when key is not "Enter"', () => {

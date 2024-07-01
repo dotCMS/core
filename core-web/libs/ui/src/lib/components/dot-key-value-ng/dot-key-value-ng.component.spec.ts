@@ -88,7 +88,7 @@ describe('DotKeyValueComponent', () => {
 
     it('should call `event.stopPropagation()` when keydown.enter event is triggered', () => {
         const event = new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' });
-        const stopPropagationSpy = spyOn(event, 'stopPropagation');
+        const stopPropagationSpy = jest.spyOn(event, 'stopPropagation');
         const table = spectator.query('p-table'); // Use Table directly
         spectator.detectChanges();
 
@@ -98,8 +98,8 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should update an existing variable', () => {
-        const spyUpdate = spyOn(spectator.component.update, 'emit');
-        const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
+        const spyUpdate = jest.spyOn(spectator.component.update, 'emit');
+        const spyUpdatedList = jest.spyOn(spectator.component.updatedList, 'emit');
 
         spectator.detectChanges();
 
@@ -118,8 +118,8 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should save a new variable', () => {
-        const spySave = spyOn(spectator.component.save, 'emit');
-        const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
+        const spySave = jest.spyOn(spectator.component.save, 'emit');
+        const spyUpdatedList = jest.spyOn(spectator.component.updatedList, 'emit');
         const newVariable = {
             key: 'newKey',
             value: 'newValue',
@@ -136,8 +136,8 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should delete a variable from the list', () => {
-        const spyDelete = spyOn(spectator.component.delete, 'emit');
-        const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
+        const spyDelete = jest.spyOn(spectator.component.delete, 'emit');
+        const spyUpdatedList = jest.spyOn(spectator.component.updatedList, 'emit');
 
         spectator.detectChanges();
 
@@ -162,8 +162,8 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should save a hidden variable', () => {
-            const spysave = spyOn(spectator.component.save, 'emit');
-            const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
+            const spysave = jest.spyOn(spectator.component.save, 'emit');
+            const spyUpdatedList = jest.spyOn(spectator.component.updatedList, 'emit');
 
             const newVariable = {
                 key: 'newKey',
@@ -181,8 +181,8 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should update an existing variable', () => {
-            const spyupdate = spyOn(spectator.component.update, 'emit');
-            const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
+            const spyupdate = jest.spyOn(spectator.component.update, 'emit');
+            const spyUpdatedList = jest.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.detectChanges();
 
