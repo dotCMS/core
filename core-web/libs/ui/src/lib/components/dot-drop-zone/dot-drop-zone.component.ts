@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -30,7 +29,7 @@ export interface DropZoneFileValidity {
 @Component({
     selector: 'dot-drop-zone',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './dot-drop-zone.component.html',
     styleUrls: ['./dot-drop-zone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
