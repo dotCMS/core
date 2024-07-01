@@ -8,6 +8,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -22,6 +24,7 @@ import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -47,6 +50,7 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import net.bytebuddy.utility.RandomString;
@@ -1544,238 +1548,121 @@ public class CategoryAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link CategoryAPIImpl#findAll(String, User, boolean, int, int)}
-     * When: Create several Categories some of them with the word 'INCLUDE' on its name. key or variable name
-     * and call the method with filter equals to 'INCLUDE'
-     * Should: Return all the Category with the word include on any place
+     * Method to test: {@link CategoryAPIImpl#findAll(CategoryFactory.CategorySearchCriteria, User, boolean)}
+     * When: Call the API method
+     * Should: it should
+     * - Use the {@link CategoryFactoryImpl#findAll(CategoryFactory.CategorySearchCriteria)} to search the {@link Category}
+     * - Use the {@link PermissionAPI#filterCollection(List, int, boolean, User)} method to check permission
      */
     @Test
     public void getAllCategoriesFiltered() throws DotDataException, DotSecurityException {
+        final String inode = new RandomString().nextString();
+        final String filter = new RandomString().nextString();
+        final String orderBy = "category_key";
 
-        final String stringToFilterBy = new RandomString().nextString();
+        final CategoryFactory.CategorySearchCriteria searchingCriteria =
+                new CategoryFactory.CategorySearchCriteria.Builder()
+                        .inode(inode)
+                        .direction(OrderDirection.DESC)
+                        .orderBy(orderBy)
+                        .filter(filter)
+                        .limit(10)
+                        .build();
 
-        final Category topLevelCategory_1 = new CategoryDataGen().setCategoryName("Top Level Category " + stringToFilterBy)
-                .setKey("top_level_categoria")
-                .setCategoryVelocityVarName("top_level_categoria")
-                .nextPersisted();
+        final User user = mock();
 
-        final Category childCategory_1 = new CategoryDataGen().setCategoryName("Child Category 1")
-                .setKey("child_category_1 " + stringToFilterBy)
-                .setCategoryVelocityVarName("child_category_1")
-                .nextPersisted();
+        final Category category1 = mock(Category.class);
+        final Category category2 = mock(Category.class);
+        final Category category3 = mock(Category.class);
 
-        final Category childCategory_2 = new CategoryDataGen().setCategoryName("Child Category 2")
-                .setKey("child_category_2")
-                .setCategoryVelocityVarName("child_category_2 " + stringToFilterBy)
-                .nextPersisted();
+        final List<Category> categoriesAfterSearch = list(category1, category2, category3);
+        final List<Category> categoriesAfterPermission = list(category1, category2);
 
-        final Category topLevelCategory_2 = new CategoryDataGen().setCategoryName("Top Level Category " + stringToFilterBy)
-                .setKey("top_level_categoria")
-                .setCategoryVelocityVarName("top_level_categoria")
-                .nextPersisted();
+        final CategoryFactory categoryFactory = mock();
+        when(categoryFactory.findAll(searchingCriteria)).thenReturn(categoriesAfterSearch);
 
-        final Category childCategory_3 = new CategoryDataGen().setCategoryName("Child Category 3 " + stringToFilterBy)
-                .setKey("child_category_3")
-                .setCategoryVelocityVarName("child_category_3")
-                .nextPersisted();
+        final PermissionAPI permissionAPI = mock();
+        when(permissionAPI.filterCollection(categoriesAfterSearch, PermissionAPI.PERMISSION_READ, false, user))
+                .thenReturn(categoriesAfterPermission);
 
-        final Category childCategory_4 = new CategoryDataGen().setCategoryName("Child Category 4")
-                .setKey("child_category_4")
-                .setCategoryVelocityVarName("child_category_4")
-                .nextPersisted();
+        final CategoryAPI categoryAPI = new CategoryAPIImpl(categoryFactory, permissionAPI);
+        PaginatedCategories paginatedCategories = categoryAPI.findAll(searchingCriteria, user, false);
 
-        final Category topLevelCategory_3 = new CategoryDataGen().setCategoryName("Top Level Category")
-                .setKey("top_level_categoria")
-                .setCategoryVelocityVarName("top_level_categoria " + stringToFilterBy)
-                .nextPersisted();
-
-        final Category childCategory_5 = new CategoryDataGen().setCategoryName("Child Category 5")
-                .setKey("child_category_5")
-                .setCategoryVelocityVarName("child_category_5")
-                .nextPersisted();
-
-        final Category topLevelCategory_4 = new CategoryDataGen().setCategoryName("Top Level Category")
-                .setKey("top_level_categoria")
-                .setCategoryVelocityVarName("top_level_categoria")
-                .nextPersisted();
-
-        final Category childCategory_6 = new CategoryDataGen().setCategoryName("Child Category 6")
-                .setKey("child_category_6")
-                .setCategoryVelocityVarName("child_category_6")
-                .nextPersisted();
-
-        final Category grandchildCategory_1 = new CategoryDataGen().setCategoryName("Grand Child Category 6 "  + stringToFilterBy)
-                .setKey("grand_child_category_6")
-                .setCategoryVelocityVarName("grand_child_category_6")
-                .parent(childCategory_6)
-                .nextPersisted();
-
-        List<String> categoriesExpected = list(topLevelCategory_1, childCategory_1, childCategory_2, childCategory_3,
-                topLevelCategory_3, grandchildCategory_1).stream().map(Category::getInode).collect(Collectors.toList());
-
-        final List<String> categories_1 = APILocator.getCategoryAPI().findAll(stringToFilterBy.toUpperCase(),
-                        APILocator.systemUser(), false, 20, 0).getCategories()
-                .stream().map(Category::getInode).collect(Collectors.toList());
-        assertEquals(categoriesExpected.size(), categories_1.size());
-        assertTrue(categories_1.containsAll(categoriesExpected));
-
-        final List<String> categories_2 = APILocator.getCategoryAPI().findAll(stringToFilterBy.toLowerCase(),
-                        APILocator.systemUser(), false, 20, 0).getCategories()
-                .stream().map(Category::getInode).collect(Collectors.toList());
-        assertEquals(categoriesExpected.size(), categories_2.size());
-        assertTrue(categories_2.containsAll(categoriesExpected));
+        assertEquals(categoriesAfterPermission.size(), (int) paginatedCategories.getTotalCount());
+        assertTrue(categoriesAfterPermission.containsAll(paginatedCategories.getCategories()));
     }
 
     /**
-     * Method to test: {@link CategoryAPIImpl#findAll(String, User, boolean, int, int)}
-     * When: Create several Categories and called the Method with a Empty Filter String
-     * Should: Return all the Category
+     * Method to test: {@link CategoryAPIImpl#findAll(CategoryFactory.CategorySearchCriteria, User, boolean)}
+     * When: Create 9 Category, call the two times:
+     * first: limit =5, offset =0
+     * second: limit =5, offset =5
+     *
+     * Should: Return All the Categories with the 2 called
      */
     @Test
-    public void getAllCategoriesWithEmptyFilteringFiltered() throws DotDataException, DotSecurityException {
+    public void getAllCategoriesFilteredWithPagination() throws DotDataException, DotSecurityException {
+        final String inode = new RandomString().nextString();
+        final String filter = new RandomString().nextString();
+        final String orderBy = "category_key";
 
-        final Category topLevelCategory_1 = new CategoryDataGen().setCategoryName(new RandomString().nextString())
-                .setKey(new RandomString().nextString())
-                .setCategoryVelocityVarName(new RandomString().nextString())
-                .nextPersisted();
+        final CategoryFactory.CategorySearchCriteria searchingCriteria_1 =
+                new CategoryFactory.CategorySearchCriteria.Builder()
+                        .inode(inode)
+                        .direction(OrderDirection.DESC)
+                        .orderBy(orderBy)
+                        .filter(filter)
+                        .limit(5)
+                        .offset(0)
+                        .build();
 
-        final Category childCategory_1 = new CategoryDataGen().setCategoryName(new RandomString().nextString())
-                .setKey(new RandomString().nextString())
-                .setCategoryVelocityVarName(new RandomString().nextString())
-                .parent(topLevelCategory_1)
-                .nextPersisted();
+        final CategoryFactory.CategorySearchCriteria searchingCriteria_2 =
+                new CategoryFactory.CategorySearchCriteria.Builder()
+                        .inode(inode)
+                        .direction(OrderDirection.DESC)
+                        .orderBy(orderBy)
+                        .filter(filter)
+                        .limit(5)
+                        .offset(5)
+                        .build();
 
-        final Category childCategory_2 = new CategoryDataGen().setCategoryName(new RandomString().nextString())
-                .setKey(new RandomString().nextString())
-                .setCategoryVelocityVarName(new RandomString().nextString())
-                .parent(topLevelCategory_1)
-                .nextPersisted();
+        final Category category1 = mock(Category.class);
+        final Category category2 = mock(Category.class);
+        final Category category3 = mock(Category.class);
+        final Category category4 = mock(Category.class);
+        final Category category5 = mock(Category.class);
+        final Category category6 = mock(Category.class);
+        final Category category7 = mock(Category.class);
+        final Category category8 = mock(Category.class);
+        final Category category9 = mock(Category.class);
 
-        final Category grandChildCategory_1 = new CategoryDataGen().setCategoryName(new RandomString().nextString())
-                .setKey(new RandomString().nextString())
-                .setCategoryVelocityVarName(new RandomString().nextString())
-                .parent(childCategory_2)
-                .nextPersisted();
+        final User user = mock();
+
+        final List<Category> categories = list(category1, category2, category3, category4, category5, category6,
+                category7, category8, category9);
+
+        final CategoryFactory categoryFactory = mock();
+        when(categoryFactory.findAll(searchingCriteria_1)).thenReturn(categories);
+        when(categoryFactory.findAll(searchingCriteria_2)).thenReturn(categories);
+
+        final PermissionAPI permissionAPI = mock();
+        when(permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_READ, false, user))
+                .thenReturn(categories);
 
 
-        List<String> categoriesExpected = list(topLevelCategory_1, childCategory_1, childCategory_2, grandChildCategory_1).stream()
-                .map(Category::getInode).collect(Collectors.toList());
 
-        final List<Category> categories = APILocator.getCategoryAPI().findAll("", APILocator.systemUser(),
-                        false, 0, 20).getCategories();
-        assertTrue(categoriesExpected.size() > categories.size());
-        assertTrue(categories.containsAll(categoriesExpected));
+        final CategoryAPI categoryAPI = new CategoryAPIImpl(categoryFactory, permissionAPI);
+        PaginatedCategories firstPage = categoryAPI.findAll(searchingCriteria_1, user, false);
 
-    }
+        assertEquals(9, (int) firstPage.getTotalCount());
+        assertEquals(5, firstPage.getCategories().size());
+        assertTrue(list(category1, category2, category3, category4, category5).containsAll(firstPage.getCategories()));
 
-    /**
-     * Method to test: {@link CategoryAPIImpl#findAll(String, User, boolean, int, int)}
-     * When: Create several Categories and assig READ Permission to a limited User
-     * try to get all the categories using this limited User
-     * Should: Return just the Category with READ permission for the limited User
-     */
-    @Test
-    public void getAllCategoriesWithLimitedUser() throws DotDataException, DotSecurityException {
-        final String stringToFilterBy = new RandomString().nextString();
-        final User limitedUser = new UserDataGen().nextPersisted();
 
-        final Category topLevelCategory_1 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 1")
-                .setKey(stringToFilterBy + "_1")
-                .setCategoryVelocityVarName(stringToFilterBy + "_1")
-                .nextPersisted();
+        PaginatedCategories secondPage = categoryAPI.findAll(searchingCriteria_2, user, false);
 
-        final Category childCategory_1 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 2")
-                .setKey(stringToFilterBy + "_2")
-                .setCategoryVelocityVarName(stringToFilterBy + "_2")
-                .parent(topLevelCategory_1)
-                .nextPersisted();
-
-        final Category childCategory_2 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 3")
-                .setKey(stringToFilterBy + "_3")
-                .setCategoryVelocityVarName(stringToFilterBy + "_3")
-                .parent(topLevelCategory_1)
-                .nextPersisted();
-
-        final Category grandChildCategory_1 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 4")
-                .setKey(stringToFilterBy + "_4")
-                .setCategoryVelocityVarName(stringToFilterBy + "_4")
-                .parent(childCategory_2)
-                .nextPersisted();
-
-        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                grandChildCategory_1.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ, true);
-        APILocator.getPermissionAPI().save(permissions, grandChildCategory_1, APILocator.systemUser(), false);
-
-        final List<String> categories_1 = APILocator.getCategoryAPI().findAll(stringToFilterBy,
-                        limitedUser, false, 0, 20).getCategories()
-                .stream().map(Category::getInode).collect(Collectors.toList());
-        assertEquals(1, categories_1.size());
-        assertTrue(categories_1.contains(grandChildCategory_1.getInode()));
-    }
-
-    /**
-     * Method to test: {@link CategoryAPIImpl#findAll(String, User, boolean, int, int)}
-     * When: Create 7 Categories and get then using Pagination calling the method two times with limit equals to 4
-     * Should: Get 4 category the first time and 3 the second
-     */
-    @Test
-    public void getAllCategoriesByPagination() throws DotDataException, DotSecurityException {
-
-        final String stringToFilterBy = new RandomString().nextString();
-
-        final Category topLevelCategory_1 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 1")
-                .setKey(stringToFilterBy + "_1")
-                .setCategoryVelocityVarName(stringToFilterBy + "_1")
-                .nextPersisted();
-
-        final Category childCategory_1 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 2")
-                .setKey(stringToFilterBy + "_2")
-                .setCategoryVelocityVarName(stringToFilterBy + "_2")
-                .nextPersisted();
-
-        final Category childCategory_2 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 3")
-                .setKey(stringToFilterBy + "_3")
-                .setCategoryVelocityVarName(stringToFilterBy + "_3")
-                .nextPersisted();
-
-        final Category topLevelCategory_2 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 4")
-                .setKey(stringToFilterBy + "_4")
-                .setCategoryVelocityVarName(stringToFilterBy + "_4")
-                .nextPersisted();
-
-        final Category childCategory_3 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 5")
-                .setKey(stringToFilterBy + "_5")
-                .setCategoryVelocityVarName(stringToFilterBy + "_5")
-                .nextPersisted();
-
-        final Category childCategory_4 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 6")
-                .setKey(stringToFilterBy + "_6")
-                .setCategoryVelocityVarName(stringToFilterBy + "_6")
-                .nextPersisted();
-
-        final Category topLevelCategory_3 = new CategoryDataGen().setCategoryName(stringToFilterBy + " 7")
-                .setKey(stringToFilterBy + "_7")
-                .setCategoryVelocityVarName(stringToFilterBy + "_7")
-                .nextPersisted();
-
-        List<String> categoriesExpected_1 = list(topLevelCategory_1, childCategory_1, childCategory_2, topLevelCategory_2)
-                .stream().map(Category::getInode).collect(Collectors.toList());
-
-        List<String> categoriesExpected_2 = list(childCategory_3, childCategory_4, topLevelCategory_3)
-                .stream().map(Category::getInode).collect(Collectors.toList());
-
-        final List<String> categories_1 = APILocator.getCategoryAPI().findAll(stringToFilterBy.toUpperCase(),
-                        APILocator.systemUser(), false, 4, 0).getCategories()
-                .stream().map(Category::getInode).collect(Collectors.toList());
-        assertEquals(categoriesExpected_1.size(), categories_1.size());
-        assertTrue(categories_1.containsAll(categoriesExpected_1));
-
-        final List<String> categories_2 = APILocator.getCategoryAPI().findAll(stringToFilterBy.toLowerCase(),
-                        APILocator.systemUser(), false, 4, 4).getCategories()
-                .stream().map(Category::getInode).collect(Collectors.toList());
-        assertEquals(categoriesExpected_2.size(), categories_2.size());
-        assertTrue(categories_2.containsAll(categoriesExpected_2));
+        assertEquals(9, (int) secondPage.getTotalCount());
+        assertEquals(4, secondPage.getCategories().size());
+        assertTrue(list(category6, category7, category8, category9).containsAll(secondPage.getCategories()));
     }
 }
