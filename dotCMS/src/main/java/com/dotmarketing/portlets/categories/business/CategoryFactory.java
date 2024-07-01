@@ -300,26 +300,26 @@ public abstract class CategoryFactory {
 	 * - direction: Order by direction, it can be 'ASC' or 'DESC'
 	 */
 	public static class CategorySearchCriteria {
-		final String inode;
+		final String rootInode;
 		final String filter;
 		final String orderBy;
 		final OrderDirection direction;
 
 		private CategorySearchCriteria (final Builder builder) {
-			this.inode = builder.inode;
+			this.rootInode = builder.rootInode;
 			this.filter = builder.filter;
 			this.orderBy = builder.orderBy;
 			this.direction = builder.direction;
 		}
 
 		public static class Builder {
-			private String inode;
+			private String rootInode;
 			private String filter;
 			private String orderBy = "category_name";
 			private OrderDirection direction = OrderDirection.ASC;
 
-			public Builder inode(String inode) {
-				this.inode = inode;
+			public Builder rootInode(String rootInode) {
+				this.rootInode = rootInode;
 				return this;
 			}
 
