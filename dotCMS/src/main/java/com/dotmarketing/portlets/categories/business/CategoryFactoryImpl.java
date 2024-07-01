@@ -844,7 +844,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	public List<Category> findAll(final CategorySearchCriteria searchCriteria)
 			throws DotDataException {
 
-		if (!UtilMethods.isSet(searchCriteria.inode) && !UtilMethods.isSet(searchCriteria.filter)) {
+		if (!UtilMethods.isSet(searchCriteria.rootInode) && !UtilMethods.isSet(searchCriteria.filter)) {
 			return findAll();
 		}
 
@@ -852,8 +852,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 		final DotConnect dc = new DotConnect().setSQL(query);
 
-		if (UtilMethods.isSet(searchCriteria.inode) ) {
-			dc.addObject(searchCriteria.inode);
+		if (UtilMethods.isSet(searchCriteria.rootInode) ) {
+			dc.addObject(searchCriteria.rootInode);
 		}
 
 		if (UtilMethods.isSet(searchCriteria.filter) ) {
@@ -862,9 +862,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			dc.addObject("%" + searchCriteria.filter.toLowerCase() + "%");
 		}
 
-		final List<Category> categories = convertForCategories(UtilMethods.isSet(searchCriteria.inode) ?
+		final List<Category> categories = convertForCategories(UtilMethods.isSet(searchCriteria.rootInode) ?
 				dc.loadObjectResults().stream()
-						.filter(map -> !map.get("inode").equals(searchCriteria.inode))
+						.filter(map -> !map.get("inode").equals(searchCriteria.rootInode))
 						.collect(Collectors.toList()) : dc.loadObjectResults());
 
 		updateCache(categories);
@@ -879,7 +879,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			") " +
 			"SELECT * FROM CategoryHierarchy %s ORDER BY %s %s";
 
-		final String rootCategoryFilter = UtilMethods.isSet(searchCriteria.inode) ? "WHERE c.inode = ?" : StringPool.BLANK;
+		final String rootCategoryFilter = UtilMethods.isSet(searchCriteria.rootInode) ? "WHERE c.inode = ?" : StringPool.BLANK;
 
 		final String filterCategories = UtilMethods.isSet(searchCriteria.filter) ?
 				"WHERE LOWER(category_name) LIKE ?  OR " +

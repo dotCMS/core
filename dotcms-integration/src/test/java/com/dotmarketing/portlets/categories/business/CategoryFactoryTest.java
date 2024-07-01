@@ -8,6 +8,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.vtl.model.DotJSON;
+import com.dotcms.cache.DotJSONCacheAddTestCase;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.pagination.OrderDirection;
@@ -22,17 +24,23 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.liferay.util.StringUtil;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import net.bytebuddy.utility.RandomString;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /***
  * Category Factory Test
  */
+@RunWith(DataProviderRunner.class)
 public class CategoryFactoryTest extends IntegrationTestBase {
 
     private static CategoryFactory categoryFactory;
@@ -291,6 +299,19 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         assertTrue(categoryFactory.hasDependencies(root));
     }
 
+    @DataProvider
+    public static Object[] findCategoriesFilters() {
+        final String stringToFilterBy = new RandomString().nextString();
+
+        return new FilterTestCase[] {
+                new FilterTestCase(stringToFilterBy, String::toLowerCase),
+                new FilterTestCase(stringToFilterBy, String::toUpperCase),
+                new FilterTestCase(stringToFilterBy, (filter) ->
+                        filter.substring(1, filter.length()/2).toLowerCase() +
+                                filter.substring(filter.length()/2).toUpperCase())
+        };
+    }
+
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategoryFactory.CategorySearchCriteria)}
      * When:
@@ -303,35 +324,36 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      * - Add a child to the last child of topLevelCategory_1 (the one without the filter) and include the filter in its name.
      * Also, create a grandchild and include the filter in its name.
      * - Create another child for topLevelCategory_1 and include the filter in the key, name, and variable name.
-     * - Call the method with the filter in both lowercase and uppercase.
+     * - Call the method with the filter
      *
      * Should:
      *
      * Return five categories: the three children of topLevelCategory_1 that include the filter and the two grandchildren.
      */
     @Test
-    public void getAllCategoriesFiltered() throws DotDataException {
+    @UseDataProvider("findCategoriesFilters")
+    public void getAllCategoriesFiltered(final FilterTestCase filterTestCase) throws DotDataException {
 
-        final String stringToFilterBy = new RandomString().nextString();
+        final String stringToFilterBy = filterTestCase.filter;
 
-        final Category topLevelCategory_1 = new CategoryDataGen().setCategoryName("Top Level Category " + stringToFilterBy)
+        final Category topLevelCategory_1 = new CategoryDataGen().setCategoryName("Top Level Category " + filterTestCase.filter)
                 .setKey("top_level_categoria")
                 .setCategoryVelocityVarName("top_level_categoria")
                 .nextPersisted();
 
         final Category childCategory_1 = new CategoryDataGen().setCategoryName("Child Category 1")
-                .setKey("child_category_1 " + stringToFilterBy)
+                .setKey("child_category_1 " + filterTestCase.filter)
                 .setCategoryVelocityVarName("child_category_1")
                 .parent(topLevelCategory_1)
                 .nextPersisted();
 
         final Category childCategory_2 = new CategoryDataGen().setCategoryName("Child Category 2")
                 .setKey("child_category_2")
-                .setCategoryVelocityVarName("child_category_2 " + stringToFilterBy)
+                .setCategoryVelocityVarName("child_category_2 " + filterTestCase.filter)
                 .parent(topLevelCategory_1)
                 .nextPersisted();
 
-        final Category childCategory_3 = new CategoryDataGen().setCategoryName("Child Category 3 "  + stringToFilterBy)
+        final Category childCategory_3 = new CategoryDataGen().setCategoryName("Child Category 3 "  + filterTestCase.filter)
                 .setKey("child_category_3")
                 .setCategoryVelocityVarName("child_category_3")
                 .parent(topLevelCategory_1)
@@ -343,52 +365,54 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .parent(topLevelCategory_1)
                 .nextPersisted();
 
-        final Category grandchildCategory_1 = new CategoryDataGen().setCategoryName("Grand Child Category 1 " + stringToFilterBy)
+        final Category childCategory_6 = new CategoryDataGen().setCategoryName(filterTestCase.filter + "Child Category 6")
+                .setKey("child_category_6")
+                .setCategoryVelocityVarName("child_category_6")
+                .parent(topLevelCategory_1)
+                .nextPersisted();
+
+        final Category childCategory_7 = new CategoryDataGen().setCategoryName("Child " + filterTestCase.filter + "Category 7")
+                .setKey("child_category_7")
+                .setCategoryVelocityVarName("child_category_7")
+                .parent(topLevelCategory_1)
+                .nextPersisted();
+
+        final Category grandchildCategory_1 = new CategoryDataGen().setCategoryName("Grand Child Category 1 " + filterTestCase.filter)
                 .setKey("grand_child_category_1")
                 .setCategoryVelocityVarName("grand_child_category_1")
                 .parent(childCategory_4)
                 .nextPersisted();
 
-        final Category grandchildCategory_2 = new CategoryDataGen().setCategoryName("Grand Child Category 2 " + stringToFilterBy)
+        final Category grandchildCategory_2 = new CategoryDataGen().setCategoryName("Grand Child Category 2 " + filterTestCase.filter)
                 .setKey("grand_child_category_2")
                 .setCategoryVelocityVarName("grand_child_category_2")
                 .parent(grandchildCategory_1)
                 .nextPersisted();
 
-        final Category topLevelCategory_2 = new CategoryDataGen().setCategoryName("Top Level Category "  + stringToFilterBy)
+        final Category topLevelCategory_2 = new CategoryDataGen().setCategoryName("Top Level Category "  + filterTestCase.filter)
                 .setKey("top_level_category_2")
                 .setCategoryVelocityVarName("top_level_category_2")
                 .nextPersisted();
 
-        final Category childCategory_5 = new CategoryDataGen().setCategoryName("Child Category 5"  + stringToFilterBy)
-                .setKey("child_category_5 " + stringToFilterBy)
-                .setCategoryVelocityVarName("child_category_5 " +  stringToFilterBy)
+        final Category childCategory_5 = new CategoryDataGen().setCategoryName("Child Category 5"  + filterTestCase.filter)
+                .setKey("child_category_5 " + filterTestCase.filter)
+                .setCategoryVelocityVarName("child_category_5 " +  filterTestCase.filter)
                 .parent(topLevelCategory_2)
                 .nextPersisted();
 
 
-        List<String> categoriesExpected = list(childCategory_1, childCategory_2, childCategory_3, grandchildCategory_1, grandchildCategory_2)
-                .stream().map(Category::getInode).collect(Collectors.toList());
+        List<String> categoriesExpected = list(childCategory_1, childCategory_2, childCategory_3, grandchildCategory_1,
+                grandchildCategory_2, childCategory_6, childCategory_7).stream().map(Category::getInode).collect(Collectors.toList());
 
-        final CategoryFactory.CategorySearchCriteria categorySearchCriteria_1 = new CategoryFactory.CategorySearchCriteria.Builder()
-                .filter(stringToFilterBy.toUpperCase())
-                .inode(topLevelCategory_1.getInode())
+        final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
+                .filter(filterTestCase.transformToSearch())
+                .rootInode(topLevelCategory_1.getInode())
                 .build();
 
-        final List<String> categories_1 = FactoryLocator.getCategoryFactory().findAll(categorySearchCriteria_1)
+        final List<String> categories = FactoryLocator.getCategoryFactory().findAll(categorySearchCriteria)
             .stream().map(Category::getInode).collect(Collectors.toList());
-        assertEquals(categoriesExpected.size(), categories_1.size());
-        assertTrue(categories_1.containsAll(categoriesExpected));
-
-        final CategoryFactory.CategorySearchCriteria categorySearchCriteria_2 = new CategoryFactory.CategorySearchCriteria.Builder()
-                .filter(stringToFilterBy.toLowerCase())
-                .inode(topLevelCategory_1.getInode())
-                .build();
-
-        final List<String> categories_2 = FactoryLocator.getCategoryFactory().findAll(categorySearchCriteria_2)
-                .stream().map(Category::getInode).collect(Collectors.toList());
-        assertEquals(categoriesExpected.size(), categories_2.size());
-        assertTrue(categories_2.containsAll(categoriesExpected));
+        assertEquals(categoriesExpected.size(), categories.size());
+        assertTrue(categories.containsAll(categoriesExpected));
     }
 
     /**
@@ -494,7 +518,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .nextPersisted();
 
         final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
-                .inode(topLevelCategory_1.getInode())
+                .rootInode(topLevelCategory_1.getInode())
                 .build();
 
         List<String> categoriesExpected = list(childCategory_1, childCategory_2, childCategory_3, childCategory_4,
@@ -541,7 +565,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
                 .orderBy("category_key")
                 .direction(OrderDirection.ASC)
-                .inode(topLevelCategory_1.getInode())
+                .rootInode(topLevelCategory_1.getInode())
                 .build();
 
         final List<String> categoriesInode = FactoryLocator.getCategoryFactory().findAll(categorySearchCriteria)
@@ -558,4 +582,17 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     }
 
+    private static class FilterTestCase {
+        private String filter;
+        private Function<String, String> transformToSearch;
+
+        public FilterTestCase(final String filter, final Function<String, String> transformToSearch) {
+            this.filter = filter;
+            this.transformToSearch = transformToSearch;
+        }
+
+        public String transformToSearch(){
+            return transformToSearch.apply(filter);
+        }
+    }
 }
