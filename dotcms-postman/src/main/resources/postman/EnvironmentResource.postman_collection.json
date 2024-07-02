@@ -230,6 +230,60 @@
 			"response": []
 		},
 		{
+			"name": "UpdateEnvironmentWrongId",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"Test Environment babababa\",\n    \"pushMode\":\"PUSH_TO_ONE\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/environment/{{environmentId}}xxxx",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment",
+						"{{environmentId}}xxxx"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "DeleteEnvironment",
 			"event": [
 				{
@@ -383,6 +437,170 @@
 					"path": [
 						"api",
 						"environment"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateEnvironmentAnotherEnv",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Checking name\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.name).to.be.eql(\"Test Environment\");",
+							"    pm.expect(entity.pushToAll).to.be.eql(true);",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"console.log(\"environmentId\", jsonData.entity.id, \"environmentName\", jsonData.entity.name)",
+							"pm.collectionVariables.set(\"environmentId\", jsonData.entity.id);",
+							"pm.collectionVariables.set(\"environmentName\", jsonData.entity.name);",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"Test Environment\",\n    \"pushMode\":\"PUSH_TO_ALL\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/environment",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateEnvironmentExistingIdButWithExistingName400",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"Test Environment 4\",\n    \"pushMode\":\"PUSH_TO_ONE\",\n    \"whoCanSend\":[\"admin@dotcms.com\"]\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/environment/{{environmentId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment",
+						"{{environmentId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteEnvironmentSecondOneEnv",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/environment/{{environmentId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"environment",
+						"{{environmentId}}"
 					]
 				}
 			},
