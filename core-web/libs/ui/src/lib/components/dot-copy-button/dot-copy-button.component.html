@@ -1,8 +1,8 @@
 <button
+    (click)="copyUrlToClipboard($event)"
     [class]="$clazz()"
     [label]="label()"
     [pTooltip]="$tooltipText()"
-    (click)="copyUrlToClipboard($event)"
     appendTo="body"
     hideDelay="800"
     icon="pi pi-copy"

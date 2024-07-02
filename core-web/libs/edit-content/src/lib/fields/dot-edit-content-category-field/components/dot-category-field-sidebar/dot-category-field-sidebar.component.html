@@ -1,16 +1,16 @@
 <p-sidebar
     #sidebar
+    (onHide)="closedSidebar.emit()"
     [(visible)]="visible"
     [showCloseIcon]="false"
-    (onHide)="closedSidebar.emit()"
     data-testId="sidebar"
     position="right"
     styleClass="w-9">
     <ng-template pTemplate="header">
         <div class="flex flex-row category-field__header">
             <button
-                class="p-button-rounded p-button-text"
                 (click)="sidebar.close($event)"
+                class="p-button-rounded p-button-text"
                 data-testId="back-btn"
                 icon="pi pi-angle-left"
                 pButton></button>
@@ -25,9 +25,9 @@
             <div class="category-field__search">Input Search</div>
             <div class="flex-grow-1 category-field__categories">
                 <dot-category-field-category-list
+                    (itemClicked)="itemClicked($event)"
                     [categories]="store.categoryList()"
-                    [selected]="store.selectedCategories()"
-                    (itemClicked)="itemClicked($event)" />
+                    [selected]="store.selectedCategories()" />
             </div>
         </div>
 

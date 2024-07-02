@@ -13,10 +13,10 @@
 
 <div class="dot-category-field__select">
     <button
-        class="p-button-sm p-button-text p-button-secondary"
+        (click)="showCategoriesSidebar()"
         [disabled]="disableSelectCategoriesButton()"
         [label]="'edit.content.category-field.show-categories-dialog' | dm"
-        (click)="showCategoriesSidebar()"
+        class="p-button-sm p-button-text p-button-secondary"
         data-testId="show-sidebar-btn"
         pButton></button>
 </div>
