@@ -45,10 +45,10 @@ import { DotPage, NavigationBarItem } from '../shared/models';
         EditEmaStore,
         DotPageApiService,
         DotActionUrlService,
-        ConfirmationService,
         DotLanguagesService,
         MessageService,
         DotPageLayoutService,
+        ConfirmationService,
         DotFavoritePageService,
         DotESContentService,
         DialogService,
@@ -273,7 +273,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.didTranslate.set(true);
-                const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
+                const url = event.detail?.payload?.htmlPageReferer.split('?')[0].replace('/', '');
 
                 if (this.queryParams.url !== url) {
                     this.navigate({
