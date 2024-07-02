@@ -219,16 +219,7 @@ td {font-size: 100%;}
         dojo.connect(dijit.byId("addTagDialog"), "hide", function (evt) {
             dojo.byId("savedMessage").innerHTML = "";
         });
-        // Assuming tagsGrid is your dojox.grid.EnhancedGrid instance
-        dojo.connect(tagsGrid, "onRowClick", function(e){
-            // Check if the click is on an indirect selection checkbox
-            var cell = tagsGrid.getCell(e.cellIndex);
-            console.log(cell);
-            if(cell && cell.isRowSelector){
-                // Stop event propagation
-                dojo.stopEvent(e);
-            }
-        });
+
     });
 
         function resetSearch() {
