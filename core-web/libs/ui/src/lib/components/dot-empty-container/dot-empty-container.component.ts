@@ -1,4 +1,4 @@
-import { NgClass, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -18,7 +18,7 @@ export interface PrincipalConfiguration {
 @Component({
     selector: 'dot-empty-container',
     standalone: true,
-    imports: [ButtonModule, NgIf, NgClass, DotMessagePipe],
+    imports: [ButtonModule, NgClass, DotMessagePipe],
     templateUrl: './dot-empty-container.component.html',
     styleUrls: ['./dot-empty-container.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
