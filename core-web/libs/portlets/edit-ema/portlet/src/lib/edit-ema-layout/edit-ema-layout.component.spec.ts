@@ -14,6 +14,7 @@ import {
     DotContentTypeService,
     DotContentletLockerService,
     DotExperimentsService,
+    DotLanguagesService,
     DotLicenseService,
     DotMessageService,
     DotPageLayoutService,
@@ -21,7 +22,11 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
-import { DotExperimentsServiceMock, MockDotRouterJestService } from '@dotcms/utils-testing';
+import {
+    DotExperimentsServiceMock,
+    DotLanguagesServiceMock,
+    MockDotRouterJestService
+} from '@dotcms/utils-testing';
 
 import { EditEmaLayoutComponent } from './edit-ema-layout.component';
 
@@ -105,6 +110,10 @@ describe('EditEmaLayoutComponent', () => {
             },
             mockProvider(DotContentTypeService),
             mockProvider(CoreWebService),
+            {
+                provide: DotLanguagesService,
+                useValue: new DotLanguagesServiceMock()
+            },
             {
                 provide: DotContentletLockerService,
                 useValue: {

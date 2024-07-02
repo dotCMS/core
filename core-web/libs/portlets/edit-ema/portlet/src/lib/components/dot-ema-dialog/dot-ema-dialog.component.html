@@ -9,7 +9,8 @@
     [modal]="true"
     appendTo="body"
     data-testId="dialog"
-    styleClass="edit-ema-dialog">
+    styleClass="edit-ema-dialog"
+    (onHide)="onHide()">
     <ng-container [ngSwitch]="ds.type">
         <dot-ema-form-selector
             *ngSwitchCase="'form'"
