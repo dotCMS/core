@@ -2,12 +2,6 @@
 name: 'Notification for Frontend'
 on:
   workflow_call:
-    inputs:
-      actions:
-        description: 'Actions to perform'
-        type: string
-        required: true
-        default: '[]'
     secrets:
       CI_MACHINE_USER:
         description: 'CI machine user'
@@ -18,22 +12,70 @@ on:
       SLACK_BOT_TOKEN:
         description: 'Slack bot token'
         required: true
-env:
-  GH_TOKEN: ${{ github.token }}
-
 jobs:
   resolve-data:
     runs-on: ubuntu-20.04
     outputs:
       issue_number: ${{ steps.evaluate-actions.outputs.issue_number }}
     steps:
+      - name: Check if Technology field changed
+        id: check-technology
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const words = ['frontend', 'front-end'];
+            const issue = context.payload.issue;
+            const changes = context.payload.changes;
+            
+            function extractTechnologyField(body) {
+              const technologyLabel = 'Technology:';
+              const lines = body.split('\\n');
+            
+              for (const line of lines) {
+                if (line.toLowerCase().startsWith(technologyLabel.toLowerCase())) {
+                  return line.replace(technologyLabel, '').trim();
+                }
+              }
+            
+              return null;
+            }
+            
+            const actions = [];
+            if (changes && changes.body && issue.body) {
+              const oldBody = changes.body.from;
+              const newBody = issue.body;
+              console.log(`Old Body: [${oldBody}]`);
+              console.log(`New Body: [${newBody}]`);
+            
+              const oldTechnology = extractTechnologyField(oldBody);
+              const newTechnology = extractTechnologyField(newBody);
+            
+              console.log(`Old Technology: [${oldTechnology}]`);
+              console.log(`New Technology: [${newTechnology}]`);
+            
+              if (oldTechnology !== newTechnology
+                  && words.some(word => word.toLowerCase() === newTechnology.toLowerCase())) {
+                actions.push({
+                  action: 'FRONTEND_TECHNOLOGY_NOTIFY',
+                  issue_number: issue.number
+                });
+                console.log(`Technology field changed from [${oldTechnology}] to [${newTechnology}]`);
+              } else {
+                console.log('Technology field did not change');
+              }
+            } else {
+              console.log('No changes detected in the Technology field');
+            }
+            
+            core.setOutput('actions', JSON.stringify(actions));
+
       - name: Show detected actions
-        run: echo "${{ inputs.actions }}"
+        run: echo "${{ steps.check-technology.outputs.actions }}"
 
       - name: Evaluate actions
         id: evaluate-actions
         run: |
-          action_json="${{ toJSON(inputs.actions) }}"
+          action_json="${{ toJSON(steps.check-technology.outputs.actions) }}"
           action_found=$(jq -r '.[] | select(.action == "FRONTEND_TECHNOLOGY_NOTIFY")' <<< ${action_json})
           echo "action_found=[${action_found}]"
           [[ -z "${action_found}" || ${action_found} == 'null' ]] && echo 'Action not found' && exit 1
