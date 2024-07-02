@@ -291,6 +291,7 @@ public abstract class CategoryFactory {
 	 */
 	public abstract List<Category> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException;
 
+
 	/**
 	 * Represents Search Criteria for {@link Category} searching, you cans set the follow:
 	 *
@@ -304,16 +305,22 @@ public abstract class CategoryFactory {
 		final String filter;
 		final String orderBy;
 		final OrderDirection direction;
+<<<<<<< HEAD
 		final int limit;
 		final int offset;
+=======
+>>>>>>> origin/master
 
 		private CategorySearchCriteria (final Builder builder) {
 			this.rootInode = builder.rootInode;
 			this.filter = builder.filter;
 			this.orderBy = builder.orderBy;
 			this.direction = builder.direction;
+<<<<<<< HEAD
 			this.limit = builder.limit;
 			this.offset = builder.offset;
+=======
+>>>>>>> origin/master
 		}
 
 		public static class Builder {
@@ -321,8 +328,11 @@ public abstract class CategoryFactory {
 			private String filter;
 			private String orderBy = "category_name";
 			private OrderDirection direction = OrderDirection.ASC;
+<<<<<<< HEAD
 			private int limit = -1;
 			private int offset = 0;
+=======
+>>>>>>> origin/master
 
 			public Builder rootInode(String rootInode) {
 				this.rootInode = rootInode;
@@ -344,6 +354,7 @@ public abstract class CategoryFactory {
 				return this;
 			}
 
+<<<<<<< HEAD
 			public Builder limit(int limit) {
 				this.limit = limit;
 				return this;
@@ -355,6 +366,8 @@ public abstract class CategoryFactory {
 			}
 
 
+=======
+>>>>>>> origin/master
 			public CategorySearchCriteria build() {
 				return new CategorySearchCriteria(this);
 			}

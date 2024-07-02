@@ -1,5 +1,6 @@
 <div class="dot-tab-buttons">
-    <div *ngFor="let item of _options" class="dot-tab-buttons__container">
+    @for (item of _options; track $index) {
+    <div class="dot-tab-buttons__container">
         <div class="dot-tab" data-testId="dot-tab-container">
             <button
                 (click)="onClickOption($event, item.value.id)"
@@ -9,19 +10,18 @@
                 }"
                 [value]="item.value.id"
                 [disabled]="item.disabled"
-                [item.disabled]="item.disabled"
+                [attr.aria-disabled]="item.disabled"
                 [pTooltip]="'editpage.toolbar.' + item.label.toLowerCase() + '.page.clipboard' | dm"
                 class="dot-tab__button"
                 data-testId="dot-tab-button-text"
                 tooltipPosition="bottom">
                 {{ item.label }}
             </button>
-
+            @if (item.value.showDropdownButton) {
             <button
-                *ngIf="item.value.showDropdownButton"
                 (click)="onClickDropdown($event, item.value.id)"
                 [disabled]="item.disabled"
-                [aria-disabled]="item.disabled"
+                [attr.aria-disabled]="item.disabled"
                 [ngClass]="{ 'dot-tab-dropdown--active': activeId === item.value.id }"
                 class="dot-tab__dropdown"
                 data-testId="dot-tab-button-dropdown">
@@ -30,10 +30,11 @@
                     class="dot-tab-dropdown__icon pi"
                     data-testId="dot-tab-icon"></i>
             </button>
+            }
         </div>
-        <div
-            *ngIf="activeId === item.value.id"
-            class="dot-tab-indicator"
-            data-testId="dot-tab-button"></div>
+        @if (activeId === item.value.id) {
+        <div class="dot-tab-indicator" data-testId="dot-tab-button"></div>
+        }
     </div>
+    }
 </div>

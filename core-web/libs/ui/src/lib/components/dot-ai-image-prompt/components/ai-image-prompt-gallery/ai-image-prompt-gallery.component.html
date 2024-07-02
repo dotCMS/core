@@ -1,5 +1,5 @@
+@if (!isLoading && !images?.length) {
 <div
-    *ngIf="!isLoading && !images?.length"
     [className]="'s' + orientation + ' ai-image-gallery__placeholder'"
     data-testid="ai-image-gallery__placeholder">
     <svg xmlns="http://www.w3.org/2000/svg" width="54" height="52" viewBox="0 0 54 52" fill="none">
@@ -19,22 +19,20 @@
             fill="#7042F0" />
     </svg>
 </div>
-
+} @if (isLoading) {
 <p-skeleton
-    *ngIf="isLoading"
     width="100%"
     height="34rem"
     styleClass="ai-image-gallery_skeleton"
     data-testid="ai-image-gallery_skeleton" />
+
 <p-skeleton
-    *ngIf="isLoading"
     class="ai-image-gallery__count-skeleton"
     data-testid="ai-image-gallery__count-skeleton"
     width="30px"
     height="20px" />
-
+} @if (!isLoading && images?.length) {
 <p-galleria
-    *ngIf="!isLoading && images?.length"
     (activeIndexChange)="activeIndexChange.emit($event)"
     [activeIndex]="activeImageIndex"
     [circular]="true"
@@ -43,8 +41,8 @@
     [value]="images"
     visible="true">
     <ng-template pTemplate="item" let-item>
+        @if (item.response) {
         <p-image
-            *ngIf="item.response; else errorMessage"
             [src]="item.response.contentlet.assetVersion"
             [preview]="true"
             [alt]="item.response.contentlet.assetMetaData?.title"
@@ -53,16 +51,18 @@
                 <i class="pi pi-window-maximize"></i>
             </ng-template>
         </p-image>
-        <ng-template #errorMessage>
-            <dot-empty-container
-                (buttonAction)="regenerate.emit($event)"
-                [hideContactUsLink]="true"
-                [buttonLabel]="'try-again' | dm"
-                [secondaryButton]="true"
-                [configuration]="emptyConfiguration" />
-        </ng-template>
+        } @else {
+        <dot-empty-container
+            (buttonAction)="regenerate.emit($event)"
+            [hideContactUsLink]="true"
+            [buttonLabel]="'try-again' | dm"
+            [secondaryButton]="true"
+            [configuration]="emptyConfiguration" />
+        }
     </ng-template>
 </p-galleria>
-<span *ngIf="!isLoading && images?.length" class="ai-image-gallery__count align-self-center">
+} @if (!isLoading && images?.length) {
+<span class="ai-image-gallery__count align-self-center">
     {{ activeImageIndex + 1 }} {{ 'of' | dm }} {{ images.length }}
 </span>
+}

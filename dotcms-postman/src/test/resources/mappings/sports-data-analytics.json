@@ -1,0 +1,45 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\".*How has data analytics transformed the strategies and performance of professional sports teams.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "chatcmpl-9eXKjr4h1lDcqSkbddb030jSlCjkT",
+      "object": "chat.completion",
+      "created": 1719448281,
+      "model": "gpt-3.5-turbo-16k-0613",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Data"
+          },
+          "logprobs": null,
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 21,
+        "completion_tokens": 1,
+        "total_tokens": 22
+      },
+      "system_fingerprint": null
+    }
+  }
+}
