@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.cluster.ClusterFactory;
@@ -20,9 +18,10 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import io.vavr.Lazy;
+import io.vavr.CheckedFunction0;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import org.elasticsearch.action.search.SearchRequest;
@@ -33,16 +32,14 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.InternalServerErrorException;
 import java.io.File;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
@@ -55,7 +52,6 @@ class MonitorHelper {
     private static final long   DEFAULT_DB_TIMEOUT          = 1000;
     private static final String[] DEFAULT_IP_ACL_VALUE        = new String[] {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16"};
 
-
     private static final String SYSTEM_STATUS_API_IP_ACL           = "SYSTEM_STATUS_API_IP_ACL";
     private static final String SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT = "SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT";
     private static final String SYSTEM_STATUS_API_CACHE_TIMEOUT    = "SYSTEM_STATUS_API_CACHE_TIMEOUT";
@@ -67,16 +63,16 @@ class MonitorHelper {
     
     private static final String[] ACLS_IPS = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL, DEFAULT_IP_ACL_VALUE);
 
-
     private static final long localFSTimeout = Config.getLongProperty(SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT, DEFAULT_LOCAL_FS_TIMEOUT);
     private static final long cacheTimeout  = Config.getLongProperty(SYSTEM_STATUS_API_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT);
     private static final long assetTimeout = Config.getLongProperty(SYSTEM_STATUS_API_ASSET_FS_TIMEOUT, DEFAULT_ASSET_FS_TIMEOUT);
     private static final long indexTimeout = Config.getLongProperty(SYSTEM_STATUS_API_INDEX_TIMEOUT, DEFAULT_INDEX_TIMEOUT);
     private static final long dbTimeout = Config.getLongProperty(SYSTEM_STATUS_API_DB_TIMEOUT, DEFAULT_DB_TIMEOUT);
 
-    
+    private static final String UNKNOWN = "UNKNOWN";
+
     boolean accessGranted = false;
-    boolean useExtendedFormat = false;
+    boolean useExtendedFormat;
 
     MonitorHelper(final HttpServletRequest request) throws UnknownHostException {
         try {
@@ -194,73 +190,77 @@ class MonitorHelper {
                 }));
     }
 
-    boolean isCacheHealthy(final long timeOut) throws Throwable {
-
-        return Failsafe
-                .with(breaker())
-                .withFallback(Boolean.FALSE)
-                .get(this.failFastBooleanPolicy(timeOut, () -> {
-                    try{
-                        // load system host contentlet
-                        Contentlet con = APILocator.getContentletAPI().findContentletByIdentifier(Host.SYSTEM_HOST,false,APILocator.getLanguageAPI().getDefaultLanguage().getId(),APILocator.systemUser(),false);
-                        return UtilMethods.isSet(con::getIdentifier);
-                    }catch(Exception e) {
-                        Logger.warn(getClass(), "Cache is failing: " + e.getMessage() );
-                        return false;
-                    }finally{
-                        DbConnectionFactory.closeSilently();
-                    }
-                }));
-
+    private boolean isCacheHealthy() {
+        return getBoolean(() -> {
+            try {
+                final Contentlet con = APILocator
+                        .getContentletAPI()
+                        .findContentletByIdentifier(
+                                Host.SYSTEM_HOST,
+                                false,
+                                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                                APILocator.systemUser(), false);
+                return UtilMethods.isSet(con::getIdentifier);
+            } catch(Exception e) {
+                Logger.warn(getClass(), "Cache is failing: " + e.getMessage() );
+                throw e;
+            } finally {
+                DbConnectionFactory.closeSilently();
+            }
+        });
     }
 
-       final class FileSystemTest implements Callable<Boolean> {
+    private static final class FileSystemTest {
 
-        final String initialPath;
+        private final String initialPath;
 
-        public FileSystemTest(String initialPath) {
+        public FileSystemTest(final String initialPath) {
             this.initialPath = initialPath.endsWith(File.separator) ? initialPath : initialPath + File.separator;
         }
 
-        @Override
-        public Boolean call() throws Exception {
-            final String uuid=UUIDUtil.uuid();
-            final String realPath = initialPath
-                    + "monitor"
-                    + File.separator
-                    + uuid;
+        public Boolean get() throws Exception {
+            final String uuid = UUIDUtil.uuid();
+            final String realPath = Path.of(initialPath,"monitor", uuid).toString();
             final File file = new File(realPath);
-            if(file.mkdirs() && file.delete() && file.createNewFile()) {
-                try(OutputStream os = Files.newOutputStream(file.toPath())){
+            if (file.mkdirs() && Files.deleteIfExists(file.toPath()) && file.createNewFile()) {
+                try (OutputStream os = Files.newOutputStream(file.toPath())) {
                     os.write(uuid.getBytes());
                 }
-                return file.delete();
+                return Files.deleteIfExists(file.toPath());
             }
             return false;
         }
 
+    }
 
+    private boolean getBoolean(final CheckedFunction0<Boolean> getter) {
+        return Try.of(getter).getOrElse(Boolean.FALSE);
+    }
+
+    private boolean getBoolean(final String path) {
+        return getBoolean(() -> new FileSystemTest(path).get());
     }
     
-    boolean isLocalFileSystemHealthy(final long timeOut) throws Throwable {
-
-        return Failsafe
-                .with(breaker())
-                .withFallback(Boolean.FALSE)
-                .get(this.failFastBooleanPolicy(timeOut, new FileSystemTest(ConfigUtils.getDynamicContentPath()) 
-                ));
+    private boolean isLocalFileSystemHealthy() {
+        return getBoolean(ConfigUtils.getDynamicContentPath());
     }
 
-
-    boolean isAssetFileSystemHealthy(final long timeOut) throws Throwable {
-
-        return Failsafe
-                .with(breaker())
-                .withFallback(Boolean.FALSE)
-                .get(this.failFastBooleanPolicy(timeOut, new FileSystemTest(ConfigUtils.getAbsoluteAssetsRootPath()) 
-                ));
+    private boolean isAssetFileSystemHealthy() {
+        return getBoolean(ConfigUtils.getAbsoluteAssetsRootPath());
     }
-    
+
+    private String getString(final CheckedFunction0<String> getter) {
+        return Try.of(getter).getOrElse(UNKNOWN);
+    }
+
+    private String getServerID() {
+        return getString(() -> APILocator.getServerAPI().readServerId());
+    }
+
+    private String getClusterID() {
+        return getString(ClusterFactory::getClusterId);
+    }
+
     private Callable<Boolean> failFastBooleanPolicy(long thresholdMilliseconds, final Callable<Boolean> callable) throws Throwable{
         return ()-> {
             try {
@@ -275,7 +275,7 @@ class MonitorHelper {
         };
     }
 
-    private Callable<String> failFastStringPolicy(long thresholdMilliseconds, final Callable<String> callable) throws Throwable{
+    /*private Callable<String> failFastStringPolicy(long thresholdMilliseconds, final Callable<String> callable) throws Throwable{
         return ()-> {
             try {
                 final DotSubmitter executorService = DotConcurrentFactory.getInstance().getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
@@ -287,43 +287,10 @@ class MonitorHelper {
                 throw new InternalServerErrorException("Execution aborted, exceeded allowed " + thresholdMilliseconds + " threshold", e.getCause());
             }
         };
-    }
+    }*/
 
     private CircuitBreaker breaker(){
         return new CircuitBreaker();
     }
 
-    private String getServerID(final long timeOut) throws Throwable{
-        return Failsafe
-                .with(breaker())
-                .withFallback("UNKNOWN")
-                .get(failFastStringPolicy(timeOut, () -> {
-                    String serverID = "UNKNOWN";
-                    try {
-                        serverID=APILocator.getServerAPI().readServerId();
-                    }
-                    catch (Throwable t) {
-                        Logger.error(this, "Error - unable to get the serverID", t);
-                    }
-                    return serverID;
-                }));
-
-    }
-
-    private String getClusterID(final long timeOut) throws Throwable{
-        return Failsafe
-                .with(breaker())
-                .withFallback("UNKNOWN")
-                .get(failFastStringPolicy(timeOut, () -> {
-                    String clusterID = "UNKNOWN";
-                    try {
-                        clusterID=ClusterFactory.getClusterId();
-                    }
-                    catch (Throwable t) {
-                        Logger.error(this, "Error - unable to get the clusterID", t);
-                    }
-                    return clusterID;
-                }));
-
-    }
 }
