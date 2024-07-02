@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -23,9 +24,11 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -79,9 +82,8 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
         final String contentletId = (String) map.get(IDENTIFIER);
         final String contentTypeId = (String) map.get(STRUCTURE_INODE);
 
-        if (!UtilMethods.isSet(contentTypeId)) {
-            throw new DotRuntimeException("Contentlet must have a content type.");
-        }
+        ContentType type  = Try.of(()-> APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeId))
+                .getOrElseThrow(e->new DotRuntimeException("Contentlet must have a valid content type.: " + e.getMessage(),e));
 
         final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
 
@@ -89,7 +91,7 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
         final boolean hasJsonFields = (contentletJsonAPI.isPersistContentAsJson() && UtilMethods.isSet(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON)));
         if(hasJsonFields){
           try {
-              String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
+              String json  = replaceBadContentTypes(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString(), type.variable());
               json = UtilMethods.escapeHTMLCodeFromJSON(json);//Escape HTML chars from JSON
               contentlet = contentletJsonAPI.mapContentletFieldsFromJson(json);
           }catch (Exception e){
@@ -129,6 +131,31 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
 
         return contentlet;
     }
+
+    private static Lazy<Boolean> replaceBadContentTypesInJson = Lazy.of(()->Config.getBooleanProperty("REPLACE_BAD_CONTENT_TYPES_IN_JSON", true));
+
+    /**
+     * This method will replace the contentType in the JSON string with the one passed as parameter, to insure that
+     * the contentType in the JSON string is the same as the one in the Contentlet object.
+     * @param jsonStringIn
+     * @param contentType
+     * @return
+     */
+    private static String replaceBadContentTypes(String jsonStringIn, String contentType){
+
+        if(replaceBadContentTypesInJson.get()){
+            JSONObject jsonObject = new JSONObject(jsonStringIn);
+            jsonObject.put("contentType", contentType);
+            return jsonObject.toString();
+        }
+        return jsonStringIn;
+
+
+
+    }
+
+
+
 
     /**
      * Updates the values of the Contentlets that are being referenced in the Story Block field of the specified
