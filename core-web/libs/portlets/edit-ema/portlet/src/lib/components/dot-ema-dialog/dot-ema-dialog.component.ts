@@ -291,8 +291,7 @@ export class DotEmaDialogComponent {
         this.action.emit({
             event: new CustomEvent('ng-event', {
                 detail: {
-                    name: NG_CUSTOM_EVENTS.DIALOG_CLOSED,
-                    payload: {}
+                    name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                 }
             }),
             payload: this.dialogState().payload
