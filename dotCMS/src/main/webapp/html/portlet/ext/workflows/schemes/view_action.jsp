@@ -11,6 +11,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.business.*" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="com.dotmarketing.util.Config" %>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -221,7 +222,21 @@
 								   maxlength="255" onkeypress="actionAdmin.doChange()" <%if(action.isNew()){ %>onchange="actionAdmin.saveAction('<%=schemeId %>');"<%} %>>
 						</dd>
 					</dl>
-					
+
+					<%if(Config.getBooleanProperty("ALLOW_WORKFLOW_ACTION_ASYNC", true)) { %>
+					<dl class="vertical">
+						<dt>
+							<input type="checkbox" name="async" id="async" dojoType="dijit.form.CheckBox"  />
+							<label for="async">Run the workflow action asyncronous</label>
+
+						</dt>
+						<dd>
+
+						</dd>
+					</dl>
+					<br> <br>
+					<% } %>
+
 					<dl class="vertical">
 						<dt>
 							<label for="actionNextStep"><%=LanguageUtil.get(pageContext, "Next-Step")%>:</label>
@@ -238,15 +253,15 @@
 								<%if(steps !=null){
 
 									for(WorkflowStep s : steps){ %>
-										<option value="<%=s.getId() %>"
+								<option value="<%=s.getId() %>"
 										<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=s.getName() %></option>
 								<%}%>
 								<% }%>
 							</select>
 						</dd>
 					</dl>
-					<br> <br> 
-					
+					<br> <br>
+
 					<dl class="vertical">
 						<fieldset style="width:80%">
 							<legend><%=LanguageUtil.get(pageContext, "Who-can-use-action")%></legend>
