@@ -4,35 +4,50 @@ import {
     createComponentFactory,
     createHostFactory,
     Spectator,
-    SpectatorHost
+    SpectatorHost,
+    SpyObject
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { Component, NgZone } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import {
+    ControlContainer,
+    FormControl,
+    FormGroup,
+    FormGroupDirective,
+    ReactiveFormsModule
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
-import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotLicenseService,
+    DotMessageService,
+    DotUploadService
+} from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotEditContentBinaryFieldComponent } from '@dotcms/edit-content';
-import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
+import { DotAiImagePromptStore, DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
+import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 import { getUiMessage } from './utils/binary-field-utils';
-import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD, fileMetaData } from './utils/mock';
+import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, fileMetaData } from './utils/mock';
+
+import { BINARY_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
 const TEMP_FILE_MOCK: DotCMSTempFile = {
     fileName: 'image.png',
     folder: '/images',
-    id: '12345',
+    id: '123456',
     image: true,
     length: 1000,
     referenceUrl:
@@ -67,15 +82,22 @@ describe('DotEditContentBinaryFieldComponent', () => {
     let spectator: Spectator<DotEditContentBinaryFieldComponent>;
     let store: DotBinaryFieldStore;
 
-    let dotBinaryFieldEditImageService: DotBinaryFieldEditImageService;
+    let dotBinaryFieldEditImageService: SpyObject<DotBinaryFieldEditImageService>;
     let ngZone: NgZone;
 
     const createComponent = createComponentFactory({
         component: DotEditContentBinaryFieldComponent,
-        componentProviders: [DotBinaryFieldStore],
+        componentProviders: [
+            DotBinaryFieldStore,
+            DotAiImagePromptStore,
+            DotBinaryFieldEditImageService
+        ],
+        componentViewProviders: [
+            { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
+        ],
         providers: [
-            DotBinaryFieldEditImageService,
             DotBinaryFieldValidatorService,
+            DotAiService,
             {
                 provide: DotLicenseService,
                 useValue: {
@@ -97,7 +119,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
-            }
+            },
+            FormGroupDirective
         ]
     });
 
@@ -105,7 +128,9 @@ describe('DotEditContentBinaryFieldComponent', () => {
         spectator = createComponent({
             detectChanges: false,
             props: {
-                field: FIELD,
+                field: {
+                    ...BINARY_FIELD_MOCK
+                },
                 contentlet: null
             }
         });
@@ -125,6 +150,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
         expect(codeEditorButton).toBeNull();
     });
+
     it('should emit temp file', () => {
         const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
         spectator.detectChanges();
@@ -138,13 +164,15 @@ describe('DotEditContentBinaryFieldComponent', () => {
     it('should not emit new value is is equal to current value', () => {
         spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
         const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
-        spectator.detectChanges();
+        spectator.component.formControl.setValue(MOCK_DOTCMS_FILE.binaryField);
         store.setValue(MOCK_DOTCMS_FILE.binaryField);
+        spectator.detectChanges();
         expect(spyEmit).not.toHaveBeenCalled();
     });
 
     describe('Dropzone', () => {
         beforeEach(async () => {
+            spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
             spectator.detectChanges();
             store.setStatus(BinaryFieldStatus.INIT);
             await spectator.fixture.whenStable();
@@ -263,11 +291,9 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
         describe('Edit Image', () => {
             it('should open edit image dialog when click on edit image button', () => {
+                spectator.detectChanges();
                 const spy = jest.spyOn(dotBinaryFieldEditImageService, 'openImageEditor');
-                const dotBinaryFieldPreviewComponent = spectator.fixture.debugElement.query(
-                    By.css('dot-binary-field-preview')
-                );
-                dotBinaryFieldPreviewComponent.triggerEventHandler('editImage');
+                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
                 expect(spy).toHaveBeenCalled();
             });
 
@@ -282,7 +308,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                         );
                         dotBinaryFieldPreviewComponent.triggerEventHandler('editImage');
                         const customEvent = new CustomEvent(
-                            `binaryField-tempfile-${FIELD.variable}`,
+                            `binaryField-tempfile-${BINARY_FIELD_MOCK.variable}`,
                             {
                                 detail: { tempFile: TEMP_FILE_MOCK }
                             }
@@ -338,9 +364,9 @@ describe('DotEditContentBinaryFieldComponent', () => {
             const JSONString = JSON.stringify(systemOptions);
 
             const newField = {
-                ...FIELD,
+                ...BINARY_FIELD_MOCK,
                 fieldVariables: [
-                    ...FIELD.fieldVariables,
+                    ...BINARY_FIELD_MOCK.fieldVariables,
                     {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
                         fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
@@ -432,8 +458,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 spectator.detectChanges();
                 expect(spy).toHaveBeenCalledWith({
                     ...mock,
-                    fieldVariable: FIELD.variable,
-                    value: mock[FIELD.variable]
+                    fieldVariable: BINARY_FIELD_MOCK.variable,
+                    value: mock[BINARY_FIELD_MOCK.variable]
                 });
             });
         });
@@ -443,7 +469,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 const spy = jest
                     .spyOn(store, 'setFileFromContentlet')
                     .mockReturnValue(of(null).subscribe());
-                const variable = FIELD.variable;
+                const variable = BINARY_FIELD_MOCK.variable;
                 spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
                 spectator.detectChanges();
                 expect(spy).toHaveBeenCalledWith({
@@ -482,7 +508,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
     template: ''
 })
 class MockFormComponent {
-    field = FIELD;
+    field = BINARY_FIELD_MOCK;
+    contentlet = MOCK_DOTCMS_FILE;
     form = new FormGroup({
         binaryField: new FormControl('')
     });
@@ -499,12 +526,13 @@ describe('DotEditContentBinaryFieldComponent - ControlValueAccessor', () => {
             MonacoEditorModule,
             ReactiveFormsModule,
             DotEditContentBinaryFieldComponent
-        ]
+        ],
+        providers: [DotAiService, DotAiImagePromptStore]
     });
 
     beforeEach(() => {
         spectator = createHost(` <form [formGroup]="form">
-            <dot-edit-content-binary-field [field]="field" formControlName="binaryField"></dot-edit-content-binary-field>
+            <dot-edit-content-binary-field [contentlet]="contentlet" [field]="field" formControlName="binaryField"></dot-edit-content-binary-field>
         </form>`);
     });
 
