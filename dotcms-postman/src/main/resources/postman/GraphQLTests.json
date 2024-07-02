@@ -516,6 +516,16 @@
 								}
 							},
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkzMzFlNmUxMy04YWFiLTQzZWUtYTVkYi00Y2I3YWI0MGQyODMiLCJ4bW9kIjoxNzE5OTU1MDcxMDAwLCJuYmYiOjE3MTk5NTUwNzEsImlzcyI6ImZhODZhZTgzMDkiLCJsYWJlbCI6ImdyYXBocWwiLCJleHAiOjE4MTQ1MDgwMDAsImlhdCI6MTcxOTk1NTA3MSwianRpIjoiYWFlY2QxNmYtZTE4Mi00YjFjLWFiNjMtNjk2MDg3ZWU3MjI3In0.R7btkzKOuWSVDCXFUNijBHEq9PFlFQpQLQBz8bA7T3s",
+											"type": "string"
+										}
+									]
+								},
 								"method": "POST",
 								"header": [
 									{
@@ -1299,7 +1309,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"",
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
@@ -1346,7 +1355,7 @@
 									"    }",
 									"",
 									"     if (page[\"seodescription\"] != undefined) {",
-									"       m.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
+									"       pm.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
 									"     }",
 									"    pm.expect(page[\"shortDescription\"]).equal(\"Costa Rica is a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific. Costa Rica is known for its beaches, volcanoes, and biodiversity. Roughly a quarter of its area is made up of protected jungle, teeming with wildlife including spider monkeys and quetzal birds.\");",
 									"    pm.expect(page[\"shortyLive\"]).not.equal(null)",
