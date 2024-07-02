@@ -4,6 +4,8 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { addImageLanguageId, getImageAttr, imageElement, imageLinkElement } from './helpers';
 
+import { contentletToJSON } from '../../shared';
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         ImageBlock: {
@@ -109,15 +111,60 @@ export const ImageNode = Image.extend({
         };
     },
 
+    /**
+     * Return the node for the renderHTML method
+     *
+     * @param {*} { HTMLAttributes }
+     * @return {*}
+     */
     renderHTML({ HTMLAttributes }) {
         const { href = null, style } = HTMLAttributes || {};
 
         return [
             'div',
-            { class: 'image-container', style },
+            { style },
             href
                 ? imageLinkElement(this.options.HTMLAttributes, HTMLAttributes)
                 : imageElement(this.options.HTMLAttributes, HTMLAttributes)
         ];
+    },
+
+    /**
+     * Return the node view for Block Editor in Development mode
+     *
+     * @return {*}
+     */
+    addNodeView() {
+        return ({ node, HTMLAttributes }) => {
+            const hasImageLink = !!HTMLAttributes.href;
+
+            const dom = document.createElement('div');
+            dom.classList.add('image-container');
+            dom.setAttribute('style', HTMLAttributes.style);
+
+            const img = document.createElement('img');
+            Object.entries(HTMLAttributes).forEach(([key, value]) => {
+                if (typeof value === 'object' && value !== null) {
+                    value = JSON.stringify(value);
+                }
+
+                img.setAttribute(key, value);
+            });
+
+            const a = document.createElement('a');
+            a.setAttribute('href', HTMLAttributes.href);
+            a.setAttribute('target', HTMLAttributes.target);
+            a.appendChild(img);
+
+            dom.appendChild(hasImageLink ? a : img);
+
+            // Override toJSON method to include the contentlet data
+            node.toJSON = contentletToJSON.bind({ node });
+
+            return {
+                dom,
+                node
+            };
+        };
     }
 });

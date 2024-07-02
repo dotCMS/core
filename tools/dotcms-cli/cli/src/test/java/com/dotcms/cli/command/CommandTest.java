@@ -17,11 +17,12 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.inject.Inject;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import picocli.CommandLine;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 public abstract class CommandTest {
 
@@ -50,10 +51,13 @@ public abstract class CommandTest {
     @Inject
     RestClientFactory clientFactory;
 
+    @ConfigProperty(name = "test.dotcms.service.url", defaultValue = "http://localhost:8080")
+    String dotcmsServiceURL;
+
     @CanIgnoreReturnValue
     protected ServiceManager resetServiceProfiles() throws IOException {
         return serviceManager.removeAll()
-                .persist(ServiceBean.builder().name("default").url(new URL("http://localhost:8080")).active(true).build());
+                .persist(ServiceBean.builder().name("default").url(new URL(dotcmsServiceURL)).active(true).build());
     }
 
     protected CommandLine createCommand() {

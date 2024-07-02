@@ -29,8 +29,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -2577,7 +2577,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
 
         if (field instanceof KeyValueField) {
-            return "{key1:value, key2:value }";
+            return "{\"key1\":\"value\", \"key2\":\"value\" }";
         }
 
         final DataTypes dataType = field.dataType();

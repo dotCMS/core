@@ -60,6 +60,7 @@ export class DotCardContentlet {
             <dot-card>
                 <dot-contentlet-thumbnail
                     showVideoThumbnail={this.showVideoThumbnail}
+                    backgroundImage={true}
                     contentlet={contentlet}
                     width={this.thumbnailSize}
                     height={this.thumbnailSize}

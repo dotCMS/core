@@ -16,7 +16,7 @@
 
         <version.spotless.plugin>2.37.0</version.spotless.plugin>
         <batik.version>1.16</batik.version>
-        <glowroot.version>0.13.1</glowroot.version>
+        <glowroot.version>0.14.1</glowroot.version>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
         <assembly-directory>${basedir}/target/dist</assembly-directory>
         <clean.docker.volumes>true</clean.docker.volumes>
@@ -32,7 +32,7 @@
 
         <docker.base.image>tomcat:9.0.74-jdk11</docker.base.image>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
-
+        <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
 
         <felix.base.dir>${project.build.directory}/core-war/WEB-INF/felix</felix.base.dir>
         <felix.system.base.dir>${project.build.directory}/core-war/WEB-INF/felix-system</felix.system.base.dir>
@@ -77,7 +77,6 @@
         <maven.failsafe.debugArgs/>
         <coreit.test.skip>true</coreit.test.skip>
         <docker.filter>database,opensearch</docker.filter>
-        <jackson.version>2.17.0</jackson.version>
     </properties>
     <dependencies>
         <dependency>
@@ -165,18 +164,43 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.tngtech.junit.dataprovider</groupId>
             <artifactId>junit4-dataprovider</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -187,19 +211,16 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -336,10 +357,6 @@
                             <reuseForks>true</reuseForks>
                             <rerunFailingTestsCount>3</rerunFailingTestsCount>
                             <!--<skipAfterFailureCount>2</skipAfterFailureCount>-->
-                            <environmentVariables>
-                                <SOME_APP_ENV_VAR>overriddenValue</SOME_APP_ENV_VAR>
-                                <DOT_APP_TEST_APP_PARAM_TEST_PARAM>overriddenValue</DOT_APP_TEST_APP_PARAM_TEST_PARAM>
-                            </environmentVariables>
                             <systemPropertyVariables>
                                 <!-- Following is a hack to make Intellij pick up the fork number in systemProperites
                                     for tests correctly
@@ -394,6 +411,7 @@
                                 <DOT_VELOCITY_ROOT>${test.webapp.root}/WEB-INF/velocity</DOT_VELOCITY_ROOT>
                                 <DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>${test.webapp.root}/WEB-INF/geoip2/GeoLite2-City.mmdb</DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>
                                 <DOT_DARTSASS_COMPILER_LOCATION>${test.webapp.root}/WEB-INF/bin</DOT_DARTSASS_COMPILER_LOCATION>
+                                <DOT_OPEN_AI_EMBEDDINGS_URL>http://localhost:50505/e</DOT_OPEN_AI_EMBEDDINGS_URL>
                                 <!--suppress UnresolvedMavenProperty -->
                                 <java.io.tmpdir>${it.test.fork-folder}${surefire.forkNumber}/${test.temp.folder}</java.io.tmpdir>
                                 <!--suppress UnresolvedMavenProperty -->
@@ -489,7 +507,7 @@
                     </plugin>
                 </plugins>
             </build>
- <profiles>
+    <profiles>
         <profile>
             <id>quick-test</id>
             <activation>

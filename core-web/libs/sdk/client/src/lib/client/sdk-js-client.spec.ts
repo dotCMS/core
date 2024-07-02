@@ -1,5 +1,6 @@
 /// <reference types="jest" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Content } from './content/content-api';
 import { DotCmsClient, dotcmsClient } from './sdk-js-client';
 global.fetch = jest.fn();
 
@@ -76,6 +77,94 @@ describe('DotCmsClient', () => {
                     dotcmsClient.init(config);
                 }).toThrow("Invalid configuration - 'authToken' is required");
             });
+
+            it('should use a clean dotcmsUrl when passing an slash at the end', async () => {
+                const config = {
+                    dotcmsUrl: 'https://example.com/',
+                    siteId: '123456',
+                    authToken: 'ABC'
+                };
+
+                const mockResponse = { content: 'Page data' };
+                mockFetchResponse(mockResponse);
+
+                const client = dotcmsClient.init(config);
+
+                await client.page.get({ path: '/home' });
+
+                expect(fetch).toHaveBeenCalledWith(
+                    'https://example.com/api/v1/page/json/home?host_id=123456',
+                    {
+                        headers: { Authorization: 'Bearer ABC' }
+                    }
+                );
+            });
+
+            it('should use a clean dotcmsUrl when passing a route at the end', async () => {
+                const config = {
+                    dotcmsUrl: 'https://example.com/some/cool/route',
+                    siteId: '123456',
+                    authToken: 'ABC'
+                };
+
+                const mockResponse = { content: 'Page data' };
+                mockFetchResponse(mockResponse);
+
+                const client = dotcmsClient.init(config);
+
+                await client.page.get({ path: '/home' });
+
+                expect(fetch).toHaveBeenCalledWith(
+                    'https://example.com/api/v1/page/json/home?host_id=123456',
+                    {
+                        headers: { Authorization: 'Bearer ABC' }
+                    }
+                );
+            });
+
+            it('should use a clean dotcmsUrl when passing a port and an slash at the end', async () => {
+                const config = {
+                    dotcmsUrl: 'https://example.com:3434/cool/route',
+                    siteId: '123456',
+                    authToken: 'ABC'
+                };
+
+                const mockResponse = { content: 'Page data' };
+                mockFetchResponse(mockResponse);
+
+                const client = dotcmsClient.init(config);
+
+                await client.page.get({ path: '/home' });
+
+                expect(fetch).toHaveBeenCalledWith(
+                    'https://example.com:3434/api/v1/page/json/home?host_id=123456',
+                    {
+                        headers: { Authorization: 'Bearer ABC' }
+                    }
+                );
+            });
+
+            it('should use a clean dotcmsUrl when passing a port and an slash at the end', async () => {
+                const config = {
+                    dotcmsUrl: 'https://example.com:3434/',
+                    siteId: '123456',
+                    authToken: 'ABC'
+                };
+
+                const mockResponse = { content: 'Page data' };
+                mockFetchResponse(mockResponse);
+
+                const client = dotcmsClient.init(config);
+
+                await client.page.get({ path: '/home' });
+
+                expect(fetch).toHaveBeenCalledWith(
+                    'https://example.com:3434/api/v1/page/json/home?host_id=123456',
+                    {
+                        headers: { Authorization: 'Bearer ABC' }
+                    }
+                );
+            });
         });
 
         describe('page.get', () => {
@@ -141,6 +230,22 @@ describe('DotCmsClient', () => {
                         headers: { Authorization: 'Bearer ABC' }
                     }
                 );
+            });
+
+            it('should manage error response', () => {
+                const mockResponse = {};
+                mockFetchResponse(mockResponse, false, 401);
+
+                expect(client.page.get({ path: '/home' })).rejects.toEqual({
+                    status: 401,
+                    message: 'Unauthorized. Check the token and try again.'
+                });
+            });
+        });
+
+        describe('content', () => {
+            it('should have an instance of the content API', () => {
+                expect(client.content instanceof Content).toBeTruthy();
             });
         });
 

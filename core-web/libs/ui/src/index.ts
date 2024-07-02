@@ -26,6 +26,10 @@ export * from './lib/components/dot-key-value-ng/dot-key-value-ng.component';
 export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
 export * from './lib/modules/dot-dialog/dot-dialog.component';
 export * from './lib/components/add-to-bundle/dot-add-to-bundle.component';
+export * from './lib/components/dot-menu/dot-menu.component';
+export * from './lib/components/dot-action-menu-button/dot-action-menu-button.component';
+export * from './lib/components/dot-ai-image-prompt/ai-image-prompt.component';
+export * from './lib/components/dot-ai-image-prompt/ai-image-prompt.store';
 
 // Directives
 export * from './lib/dot-field-required/dot-field-required.directive';

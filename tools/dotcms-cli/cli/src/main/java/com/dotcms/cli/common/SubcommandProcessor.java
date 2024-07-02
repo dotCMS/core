@@ -19,16 +19,12 @@ import picocli.CommandLine.ParseResult;
  */
 public class SubcommandProcessor {
 
-    private SubcommandProcessor() {
-        //Utility class
-    }
-
     /**
      * This method will process the result of a command execution and return a CommandsChain object
      * @param subcommand the result of the command execution
      * @return an Optional of CommandsChain
      */
-    public static Optional<CommandsChain> process(final ParseResult subcommand){
+    public Optional<CommandsChain> process(final ParseResult subcommand){
 
         //If We're Looking only at EntryCommand this means that we're only displaying The main help screen and no subcommand therefore no need to process
         if(null == subcommand || EntryCommand.NAME.equals(subcommand.commandSpec().name()) && !subcommand.hasSubcommand()){
@@ -38,6 +34,7 @@ public class SubcommandProcessor {
         //This is a sub command
         boolean isHelpRequestedAny = false; //This will be true if any subcommand requested help
         boolean isShowErrors = false; //This will be true if any subcommand requested to show errors
+        boolean watchMode = false; //This will be true if any subcommand requested to watch
         List<ParseResult> subcommands = new ArrayList<>();
 
         // Get all instances that implement DotPush
@@ -53,6 +50,7 @@ public class SubcommandProcessor {
         while (current != null) {
             isShowErrors = isShowErrors || (current.matchedOption("--errors") != null);
             isHelpRequestedAny = isHelpRequestedAny || current.isUsageHelpRequested();
+            watchMode = watchMode || (current.matchedOption("--watch") != null);
             //We're only interested in subcommands that are not the main command
             if(!isMainCommand(current)) {
                 subcommands.add(current);
@@ -69,6 +67,7 @@ public class SubcommandProcessor {
                         subcommands(subcommands).
                         isShowErrorsAny(isShowErrors).
                         isHelpRequestedAny(isHelpRequestedAny).
+                        isWatchMode(watchMode).
                         isRemoteURLSet(isRemoteURLSet).
                         isTokenSet(isTokenSet).
                         command(String.join(" ", collect)).
@@ -82,7 +81,7 @@ public class SubcommandProcessor {
      * @param subcommand the result of the command execution
      * @return true if the subcommand is the main command
      */
-    static boolean isMainCommand(ParseResult subcommand){
+    boolean isMainCommand(ParseResult subcommand){
         return EntryCommand.NAME.equals(subcommand.commandSpec().name());
     }
 

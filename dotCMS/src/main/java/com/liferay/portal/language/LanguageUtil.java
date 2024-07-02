@@ -27,7 +27,6 @@ import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -60,6 +59,8 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
@@ -73,6 +74,9 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 public class LanguageUtil {
 
 	public static final String DEFAULT_ENCODING = "UTF-8";
+
+	private static final Pattern DASH_PATTERN = Pattern.compile("^[a-zA-Z0-9]+-[a-zA-Z0-9]+$");
+	private static final Pattern UNDERSCORE_PATTERN = Pattern.compile("^[a-zA-Z0-9]+_[a-zA-Z0-9]+$");
 
 	/**
 	 * Returns the locale (if could) from the string representation: could be a language code, language code + country (en, en-US, es_US)
@@ -95,38 +99,62 @@ public class LanguageUtil {
 	 * @param languageIdORCountryCode {@link String} id or lang code or lang code + country code
 	 * @return long -1 if not possible to figure out
 	 */
-	public static long getLanguageId (final String languageIdORCountryCode) {
+	public static long getLanguageId (final String languageIdORCountryCode){
+		return internalGetLanguageId(languageIdORCountryCode, true);
+	}
+
+	/**
+	 * Returns the language id from the string representation: could be a long as a string, or could be a language code, language code + country (en, en-US, es_US)
+	 * @param languageIdORCountryCode {@link String} id or lang code or lang code + country code
+	 * @param fallbackByBaseLan {@link boolean} if true, it will try to get the language by the base language
+	 * @return long -1 if not possible to figure out
+	 */
+	public static long getLanguageId (final String languageIdORCountryCode, final boolean fallbackByBaseLan){
+		return internalGetLanguageId(languageIdORCountryCode, fallbackByBaseLan);
+	}
+
+	/**
+	 * Returns the language id from the string representation: could be a long as a string, or could be a language code, language code + country (en, en-US, es_US)
+	 * @param languageIdORCountryCode {@link String} id or lang code or lang code + country code
+	 * @param fallbackByBaseLang {@link boolean} if true, it will try to get the language by the base language
+	 * @return long -1 if not possible to figure out
+	 */
+	private static long internalGetLanguageId(final String languageIdORCountryCode, final boolean fallbackByBaseLang) {
 
 		long languageId = -1;
-		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
 		if (UtilMethods.isSet(languageIdORCountryCode)) {
-
-			languageId = ConversionUtils.toLong(languageIdORCountryCode, -1l);
+			//Try to get the language by the id
+			languageId = ConversionUtils.toLong(languageIdORCountryCode, -1L);
+			//No language id, try to get the language by the language code
 			if (-1 == languageId) {
-
-				final Tuple2<String, String> languageCountryCode =
-						getLanguageCountryCodes(languageIdORCountryCode);
-
+				final Tuple2<String, String> languageCountryCode = getLanguageCountryCodes(languageIdORCountryCode);
 				if (null != languageCountryCode._1) {
-
-					Language language = languageAPI.getLanguage(languageCountryCode._1, languageCountryCode._2);
-
-					if ((null == language || language.getId() <= 0)) {
-
-						if(UtilMethods.isSet(languageCountryCode._2)) { // fallback by base lang
-
-							language = languageAPI.getFallbackLanguage(languageCountryCode._1);
-						}
-					}
-
-					if (null != language && language.getId() > 0) {
-
-						languageId = language.getId();
-					}
+					languageId = internalGetLanguageId(languageId, languageCountryCode._1, languageCountryCode._2, fallbackByBaseLang);
 				}
 			}
 		}
+		return languageId;
+	}
 
+	/**
+	 * Returns the language id from the string representation: could be a long as a string, or could be a language code, language code + country (en, en-US, es_US)
+	 * @param languageId {@link long} id
+	 * @param languageCode {@link String} language code
+	 * @param countryCode {@link String} country code
+	 * @param fallbackByBaseLang {@link boolean} if true, it will try to get the language by the base language
+	 * @return long -1 if not possible to figure out
+	 */
+	private static long internalGetLanguageId(long languageId, final String languageCode, final String countryCode, final boolean fallbackByBaseLang) {
+		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+		Language language = languageAPI.getLanguage(languageCode, countryCode);
+
+		//Attempt fallback by base lang
+		if ((null == language || language.getId() <= 0) && (UtilMethods.isSet(languageCode) && fallbackByBaseLang)) {
+				language = languageAPI.getFallbackLanguage(languageCode);
+		}
+		if (null != language && language.getId() > 0) {
+			languageId = language.getId();
+		}
 		return languageId;
 	}
 
@@ -136,11 +164,16 @@ public class LanguageUtil {
 		String countryCode  		   = null;
 		String [] languageCountryCodes = null;
 
-		if (languageCountryCode.contains(StringPool.DASH)) {
+		//More robust way to identify the language and country code
+		//negative numbers were triggering a language code db lookup
+		final Matcher dashMatcher = DASH_PATTERN.matcher(languageCountryCode);
+		final Matcher underscoreMatcher = UNDERSCORE_PATTERN.matcher(languageCountryCode);
+
+		if (dashMatcher.matches()) {
 
 			languageCountryCodes = languageCountryCode.split(StringPool.DASH);
 
-		} else if (languageCountryCode.contains(StringPool.UNDERLINE)) {
+		} else if (underscoreMatcher.matches()) {
 
 			languageCountryCodes = languageCountryCode.split(StringPool.UNDERLINE);
 		}

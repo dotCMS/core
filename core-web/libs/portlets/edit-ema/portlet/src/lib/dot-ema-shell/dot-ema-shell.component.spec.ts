@@ -1,4 +1,4 @@
-import { describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { ActivatedRouteStub } from '@ngneat/spectator';
 import { SpectatorRouting, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
@@ -281,6 +281,364 @@ describe('DotEmaShellComponent', () => {
                     language_id: 2,
                     url: 'my-awesome-page',
                     'com.dotmarketing.persona.id': 'SomeCoolDude'
+                });
+            });
+
+            it('should trigger a load when changing the clientHost and it is on the devURLWhitelist', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                devURLWhitelist: ['http://localhost:1111']
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:1111',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should trigger a load when changing the clientHost and it is on the devURLWhitelist with a slash at the end', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                devURLWhitelist: ['http://localhost:1111/']
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:1111',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should trigger a load when changing the clientHost has an slash at the and it is on the devURLWhitelist without the slash at the end', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111/',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                devURLWhitelist: ['http://localhost:1111']
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:1111/',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should trigger a load when changing the clientHost has an slash at the and it is on the devURLWhitelist with the slash at the end', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111/',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                devURLWhitelist: ['http://localhost:1111/']
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:1111/',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should trigger a navigate without the clientHost queryParam when the url is not in the devURLWhitelist', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                devURLWhitelist: ['http://localhost:4200']
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        clientHost: null,
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        language_id: 1,
+                        url: 'index'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:3000',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should trigger a navigate without the clientHost queryParam when the devURLWhitelistis empty', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                devURLWhitelist: []
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        clientHost: null,
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        language_id: 1,
+                        url: 'index'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:3000',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+            it('should trigger a navigate without the clientHost queryParam when the devURLWhitelistis has a wrong data type', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                devURLWhitelist: "I'm not an array"
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        clientHost: null,
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        language_id: 1,
+                        url: 'index'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:3000',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should trigger a navigate without the clientHost queryParam when the devURLWhitelistis is not present', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            options: {
+                                someRandomOption: 'Hello from the other side'
+                            }
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        clientHost: null,
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        language_id: 1,
+                        url: 'index'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:3000',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should trigger a navigate without the clientHost queryParam when the options are not present', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {
+                        data: {
+                            url: 'http://localhost:3000',
+                            pattern: '.*'
+                        }
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        clientHost: null,
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        language_id: 1,
+                        url: 'index'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:3000',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+            it('should trigger a navigate without the clientHost queryParam when the data is not present', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    },
+                    data: {}
+                });
+
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        clientHost: null,
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        language_id: 1,
+                        url: 'index'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:3000',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                });
+            });
+
+            it('should trigger a navigate without the clientHost queryParam when there is no data in activated route', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        clientHost: 'http://localhost:1111',
+                        language_id: 1,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        clientHost: null,
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        language_id: 1,
+                        url: 'index'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+
+                expect(store.load).toHaveBeenLastCalledWith({
+                    clientHost: 'http://localhost:3000',
+                    language_id: 1,
+                    url: 'index',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
             });
         });

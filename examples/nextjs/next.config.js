@@ -6,12 +6,14 @@ const nextConfig = {
     images: {
         remotePatterns: [
             {
-                protocol: url.protocol.replace(':', ''),
+                protocol: url.protocol.replace(":", ""),
                 hostname: url.hostname,
-                port: url.port || ''
-            }
-        ]
-    }
+                port: url.port || "",
+            },
+        ],
+        loader: "custom",
+        loaderFile: "./src/utils/imageLoader.js",
+    },
 };
 
 module.exports = nextConfig;

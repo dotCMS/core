@@ -1,15 +1,15 @@
 <div
-    class="dot-seo-image-preview__default"
     *ngIf="noImageAvailable; else imagePreview"
+    class="dot-seo-image-preview__default"
     data-testid="seo-image-default">
     <i class="pi pi-exclamation-triangle pi-"></i>
     <h5>{{ 'seo.rules.media.preview.not.defined' | dm }}</h5>
 </div>
 <ng-template #imagePreview>
     <img
-        class="dot-seo-image-preview__image"
-        [src]="image"
         (error)="onImageError()"
+        [src]="image"
+        class="dot-seo-image-preview__image"
         data-testid="seo-image-preview"
         alt="preview image" />
 </ng-template>

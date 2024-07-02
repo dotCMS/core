@@ -1,5 +1,6 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.service.OpenAIChatService;
@@ -13,10 +14,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -24,21 +27,28 @@ import java.util.function.Function;
  */
 public class AIViewTool implements ViewTool {
 
-    private final ViewContext context;
-    private final AppConfig config;
-    private final OpenAIChatService chatService;
-    private final OpenAIImageService imageService;
+    private ViewContext context;
+    private AppConfig config;
+    private OpenAIChatService chatService;
+    private OpenAIImageService imageService;
 
-    public AIViewTool(final Object obj) {
+    @Override
+    public void init(final Object obj) {
         context = (ViewContext) obj;
         config = config();
         chatService = chatService();
         imageService = imageService();
     }
 
-    @Override
-    public void init(final Object obj) {
-        /* unneeded because of constructor */
+    /**
+     * Check if AI is enabled by verifying if the API key is set in the configuration.
+     *
+     * @return true if AI is enabled, false otherwise
+     */
+    public boolean isAiEnabled() {
+        return Optional.ofNullable(config)
+                .map(appConfig -> StringUtils.isNotBlank(appConfig.getApiKey()))
+                .orElse(false);
     }
 
     /**
@@ -143,7 +153,7 @@ public class AIViewTool implements ViewTool {
 
     private JSONObject handleException(final Throwable e) {
         final JSONObject jsonResponse = new JSONObject();
-        jsonResponse.put("error", e.getMessage());
+        jsonResponse.put(AiKeys.ERROR, e.getMessage());
         return jsonResponse;
     }
 

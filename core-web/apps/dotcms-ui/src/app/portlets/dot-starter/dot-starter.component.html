@@ -6,21 +6,21 @@
                     {{ 'starter.title' | dm }}
                 </h2>
                 <p
-                    class="dot-starter-description"
-                    [innerHTML]="'starter.description' | dm : [user.username]"></p>
+                    [innerHTML]="'starter.description' | dm: [user.username]"
+                    class="dot-starter-description"></p>
             </div>
             <p-checkbox
+                (onChange)="handleVisibility($event.checked)"
                 [binary]="true"
-                [label]="'starter.dont.show' | dm"
-                (onChange)="handleVisibility($event.checked)"></p-checkbox>
+                [label]="'starter.dont.show' | dm"></p-checkbox>
         </div>
         <div class="col-12">
             <div class="grid">
                 <div class="md:col-12">
                     <div class="dot-starter-top-main__section">
                         <a
-                            class="dot-starter-top-main__block"
                             *ngIf="user.showCreateDataModelLink"
+                            class="dot-starter-top-main__block"
                             data-testId="starter.main.link.data.model"
                             routerLink="/content-types-angular/create/content">
                             <div class="dot-starter-top-main__link-number">
@@ -36,8 +36,8 @@
                             </div>
                         </a>
                         <a
-                            class="dot-starter-top-main__block"
                             *ngIf="user.showCreateContentLink"
+                            class="dot-starter-top-main__block"
                             data-testId="starter.main.link.content"
                             routerLink="/c/content/new/webPageContent">
                             <div class="dot-starter-top-main__link-number">
@@ -53,8 +53,8 @@
                             </div>
                         </a>
                         <a
-                            class="dot-starter-top-main__block"
                             *ngIf="user.showCreateTemplateLink"
+                            class="dot-starter-top-main__block"
                             data-testId="starter.main.link.design.layout"
                             routerLink="/templates/new/designer">
                             <div class="dot-starter-top-main__link-number">
@@ -70,8 +70,8 @@
                             </div>
                         </a>
                         <a
-                            class="dot-starter-top-main__block"
                             *ngIf="user.showCreatePageLink"
+                            class="dot-starter-top-main__block"
                             data-testId="starter.main.link.create.page"
                             routerLink="/c/content/new/htmlpageasset">
                             <div class="dot-starter-top-main__link-number">

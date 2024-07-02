@@ -1,6 +1,6 @@
-<ng-container *ngIf="link">
-    <a class="p-button-sm p-button-text" [href]="link" [title]="link" pButton target="_blank">
+@if (link) {
+    <a [href]="link" [title]="link" class="p-button-sm p-button-text" pButton target="_blank">
         <i [class]="classNames"></i>
         <span class="p-button-label">{{ this.label | dm }}</span>
     </a>
-</ng-container>
+}

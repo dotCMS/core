@@ -9,8 +9,7 @@ import { PrimeNGConfig } from 'primeng/api';
         type="button"
         pButton
         pRipple
-        label="Success"
-    ></button>`
+        label="Success"></button>`
 })
 export class RippleComponent implements OnInit {
     constructor(private primengConfig: PrimeNGConfig) {}

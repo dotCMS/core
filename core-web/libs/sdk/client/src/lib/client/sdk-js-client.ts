@@ -1,3 +1,8 @@
+import { Content } from './content/content-api';
+import { ErrorMessages } from './models';
+
+export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
+
 export interface ClientConfig {
     /**
      * The URL of the dotCMS instance.
@@ -31,10 +36,10 @@ export interface ClientConfig {
      *
      * @description These options will be used in the fetch request. Any option can be specified except for 'body' and 'method' which are omitted.
      * @example `{ headers: { 'Content-Type': 'application/json' } }`
-     * @type {Omit<RequestInit, 'body' | 'method'>}
+     * @type {ClientOptions}
      * @optional
      */
-    requestOptions?: Omit<RequestInit, 'body' | 'method'>;
+    requestOptions?: ClientOptions;
 }
 
 type PageApiOptions = {
@@ -118,13 +123,11 @@ type NavApiOptions = {
     languageId?: number;
 };
 
-function isValidUrl(url: string): boolean {
+function getHostURL(url: string): URL | undefined {
     try {
-        new URL(url);
-
-        return true;
+        return new URL(url);
     } catch (error) {
-        return false;
+        return undefined;
     }
 }
 
@@ -145,7 +148,9 @@ function isValidUrl(url: string): boolean {
  */
 export class DotCmsClient {
     private config: ClientConfig;
-    private requestOptions!: Omit<RequestInit, 'body' | 'method'>;
+    private requestOptions!: ClientOptions;
+
+    content: Content;
 
     constructor(
         config: ClientConfig = { dotcmsUrl: '', authToken: '', requestOptions: {}, siteId: '' }
@@ -154,7 +159,9 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'dotcmsUrl' is required");
         }
 
-        if (!isValidUrl(config.dotcmsUrl)) {
+        const dotcmsHost = getHostURL(config.dotcmsUrl);
+
+        if (!dotcmsHost) {
             throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
         }
 
@@ -162,7 +169,10 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'authToken' is required");
         }
 
-        this.config = config;
+        this.config = {
+            ...config,
+            dotcmsUrl: dotcmsHost.origin
+        };
 
         this.requestOptions = {
             ...this.config.requestOptions,
@@ -171,6 +181,8 @@ export class DotCmsClient {
                 ...this.config.requestOptions?.headers
             }
         };
+
+        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
     }
 
     page = {
@@ -215,7 +227,17 @@ export class DotCmsClient {
             const url = `${this.config.dotcmsUrl}/api/v1/page/json${formattedPath}${
                 queryParams ? `?${queryParams}` : ''
             }`;
+
             const response = await fetch(url, this.requestOptions);
+            if (!response.ok) {
+                const error = {
+                    status: response.status,
+                    message: ErrorMessages[response.status] || response.statusText
+                };
+
+                console.error(error);
+                throw error;
+            }
 
             return response.json();
         }

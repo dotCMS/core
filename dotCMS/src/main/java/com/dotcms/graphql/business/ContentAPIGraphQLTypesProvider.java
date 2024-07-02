@@ -57,6 +57,7 @@ import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -132,10 +133,10 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     private void fillTypesMap() throws DotDataException {
         typesMap.clear();
         // we want to generate them always - no cache
-        Set<GraphQLType> contentAPITypes = getContentAPITypes();
+        final Set<GraphQLType> contentAPITypes = getContentAPITypes();
 
         for (GraphQLType graphQLType : contentAPITypes) {
-            typesMap.put(graphQLType.getName(), graphQLType);
+            typesMap.put(TypeUtil.getName(graphQLType), graphQLType);
         }
     }
 
@@ -148,7 +149,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     private Set<GraphQLType> getContentAPITypes() throws DotDataException {
 
-        Set<GraphQLType> contentAPITypes = new HashSet<>(InterfaceType.valuesAsSet());
+        final Set<GraphQLType> contentAPITypes = new HashSet<>(InterfaceType.valuesAsSet());
 
         contentAPITypes.addAll(CustomFieldType.getCustomFieldTypes());
 
@@ -286,7 +287,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 return (!isCustomFieldType(inheritedFieldGraphQLType)
                         && !isCustomFieldType(fieldGraphQLType))
                         || inheritedFieldGraphQLType.equals(fieldGraphQLType)
-                        || inheritedFieldGraphQLType.getName().equals(fieldGraphQLType.getName());
+                        || TypeUtil.getName(inheritedFieldGraphQLType).equals(TypeUtil.getName(fieldGraphQLType));
             }
 
         return true;
@@ -297,4 +298,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             GraphQLFieldGeneratorFactory fieldGeneratorFactory) {
         this.fieldGeneratorFactory = fieldGeneratorFactory;
     }
+
+
 }

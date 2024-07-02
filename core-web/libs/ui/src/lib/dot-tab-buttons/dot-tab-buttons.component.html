@@ -1,39 +1,42 @@
 <div class="dot-tab-buttons">
-    <div class="dot-tab-buttons__container" *ngFor="let item of _options">
-        <div class="dot-tab" data-testId="dot-tab-container">
-            <button
-                class="dot-tab__button"
-                [ngClass]="{
-                    'dot-tab--active': activeId === item.value.id,
-                    'dot-tab__button--right': item.value.showDropdownButton
-                }"
-                [value]="item.value.id"
-                [disabled]="item.disabled"
-                [item.disabled]="item.disabled"
-                [pTooltip]="'editpage.toolbar.' + item.label.toLowerCase() + '.page.clipboard' | dm"
-                (click)="onClickOption($event, item.value.id)"
-                data-testId="dot-tab-button-text"
-                tooltipPosition="bottom">
-                {{ item.label }}
-            </button>
-
-            <button
-                class="dot-tab__dropdown"
-                *ngIf="item.value.showDropdownButton"
-                [disabled]="item.disabled"
-                [aria-disabled]="item.disabled"
-                [ngClass]="{ 'dot-tab-dropdown--active': activeId === item.value.id }"
-                (click)="onClickDropdown($event, item.value.id)"
-                data-testId="dot-tab-button-dropdown">
-                <i
-                    class="dot-tab-dropdown__icon pi"
-                    [class]="item.value.toggle ? dropDownOpenIcon : dropDownCloseIcon"
-                    data-testId="dot-tab-icon"></i>
-            </button>
+    @for (item of _options; track $index) {
+        <div class="dot-tab-buttons__container">
+            <div class="dot-tab" data-testId="dot-tab-container">
+                <button
+                    (click)="onClickOption($event, item.value.id)"
+                    [ngClass]="{
+                        'dot-tab--active': activeId === item.value.id,
+                        'dot-tab__button--right': item.value.showDropdownButton
+                    }"
+                    [value]="item.value.id"
+                    [disabled]="item.disabled"
+                    [attr.aria-disabled]="item.disabled"
+                    [pTooltip]="
+                        'editpage.toolbar.' + item.label.toLowerCase() + '.page.clipboard' | dm
+                    "
+                    class="dot-tab__button"
+                    data-testId="dot-tab-button-text"
+                    tooltipPosition="bottom">
+                    {{ item.label }}
+                </button>
+                @if (item.value.showDropdownButton) {
+                    <button
+                        (click)="onClickDropdown($event, item.value.id)"
+                        [disabled]="item.disabled"
+                        [attr.aria-disabled]="item.disabled"
+                        [ngClass]="{ 'dot-tab-dropdown--active': activeId === item.value.id }"
+                        class="dot-tab__dropdown"
+                        data-testId="dot-tab-button-dropdown">
+                        <i
+                            [class]="item.value.toggle ? dropDownOpenIcon : dropDownCloseIcon"
+                            class="dot-tab-dropdown__icon pi"
+                            data-testId="dot-tab-icon"></i>
+                    </button>
+                }
+            </div>
+            @if (activeId === item.value.id) {
+                <div class="dot-tab-indicator" data-testId="dot-tab-button"></div>
+            }
         </div>
-        <div
-            class="dot-tab-indicator"
-            *ngIf="activeId === item.value.id"
-            data-testId="dot-tab-button"></div>
-    </div>
+    }
 </div>

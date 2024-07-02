@@ -4,7 +4,6 @@ import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
@@ -21,7 +20,14 @@ import java.util.Objects;
 @JsonDeserialize(builder = CompletionsForm.Builder.class)
 public class CompletionsForm {
 
-    static final Map<String, String> OPERATORS = Map.of("distance", "<->", "cosine", "<=>", "innerProduct", "<#>");
+    private static final Map<String, String> OPERATORS = Map.of(
+            "distance",
+            "<->",
+            "cosine",
+            "<=>",
+            "innerProduct",
+            "<#>");
+
     @Size(min = 1, max = 4096)
     public final String prompt;
     @Min(1)
@@ -44,9 +50,8 @@ public class CompletionsForm {
     public final String operator;
     public final String site;
 
-
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (!(o instanceof CompletionsForm)) return false;
         CompletionsForm that = (CompletionsForm) o;
@@ -93,10 +98,7 @@ public class CompletionsForm {
         return result;
     }
 
-
-
-
-    private CompletionsForm(Builder builder) {
+    private CompletionsForm(final Builder builder) {
         this.prompt = validateBuilderQuery(builder.prompt);
         this.searchLimit = builder.searchLimit;
         this.fieldVar = builder.fieldVar;
@@ -110,29 +112,29 @@ public class CompletionsForm {
         this.language = validateLanguage(builder.language);
         this.searchOffset = builder.searchOffset;
         this.contentType = UtilMethods.isSet(builder.contentType) ? AppConfig.SPLITTER.split(builder.contentType) : new String[0];
-        this.temperature = builder.temperature <= 0
-                ? ConfigService.INSTANCE.config().getConfigFloat(AppKeys.COMPLETION_TEMPERATURE)
-                : builder.temperature >= 2
-                    ? 2
-                    : builder.temperature;
+        if (builder.temperature <= 0) {
+            this.temperature = ConfigService.INSTANCE.config().getConfigFloat(AppKeys.COMPLETION_TEMPERATURE);
+        } else {
+            this.temperature = builder.temperature >= 2 ? 2 : builder.temperature;
+        }
         this.model = UtilMethods.isSet(builder.model) ? builder.model : ConfigService.INSTANCE.config().getConfig(AppKeys.MODEL);
     }
 
-    String validateBuilderQuery(String query) {
+    private String validateBuilderQuery(final String query) {
         if (UtilMethods.isEmpty(query)) {
-            throw new DotRuntimeException("query/prompt cannot be null");
+            throw new IllegalArgumentException("query/prompt cannot be null");
         }
         return String.join(" ", query.trim().split("\\s+"));
     }
 
-    long validateLanguage(String language) {
+    private long validateLanguage(final String language) {
         return Try.of(() -> Long.parseLong(language))
                 .recover(x -> APILocator.getLanguageAPI().getLanguage(language).getId())
                 .getOrElseTry(() -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
     }
 
-    public static final Builder copy(CompletionsForm form) {
+    public static Builder copy(final CompletionsForm form) {
         return new Builder()
                 .temperature(form.temperature)
                 .site(form.site)
@@ -148,10 +150,7 @@ public class CompletionsForm {
                 .indexName(form.indexName)
                 .threshold(form.threshold)
                 .stream(form.stream);
-
     }
-
-
 
     public static final class Builder {
 
@@ -203,7 +202,6 @@ public class CompletionsForm {
             this.language = String.valueOf(language);
             return this;
         }
-
 
         public Builder searchOffset(int searchOffset) {
             this.searchOffset = searchOffset;
@@ -262,7 +260,8 @@ public class CompletionsForm {
 
         public CompletionsForm build() {
             return new CompletionsForm(this);
-
         }
+
     }
+
 }

@@ -1,0 +1,23 @@
+@if (store.selectedCategories().length) {
+<div class="dot-category-field__categories" data-testId="category-chip-list">
+    @for (category of store.categoriesValue(); track category.key) {
+    <p-chip
+        [pTooltip]="category.value"
+        [removable]="true"
+        [label]="category.value"
+        tooltipPosition="top"
+        styleClass="p-chip-sm" />
+    }
+</div>
+}
+
+<div class="dot-category-field__select">
+    <button
+        (click)="showCategoriesSidebar()"
+        [disabled]="disableSelectCategoriesButton()"
+        [label]="'edit.content.category-field.show-categories-dialog' | dm"
+        class="p-button-sm p-button-text p-button-secondary"
+        data-testId="show-sidebar-btn"
+        pButton></button>
+</div>
+<ng-container data-testId="sidebar-placeholder" dotDynamic></ng-container>

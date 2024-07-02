@@ -34,7 +34,7 @@ public class EmptyPageView extends PageView {
      *
      * @return The {@link CachedVanityUrl} object associated with this {@link EmptyPageView}.
      */
-    public CachedVanityUrl getVanityUrl() {
+    public CachedVanityUrl getCachedVanityUrl() {
         return this.cachedVanityUrl;
     }
 

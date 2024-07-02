@@ -17,6 +17,7 @@ import {
     DotUploadFileService,
     FileStatus
 } from '@dotcms/data-access';
+import { DotSpinnerModule } from '@dotcms/ui';
 
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
@@ -53,7 +54,8 @@ export const Primary = () => ({
                 FormsModule,
                 BlockEditorModule,
                 OrderListModule,
-                ListboxModule
+                ListboxModule,
+                DotSpinnerModule
             ],
             providers: [
                 {

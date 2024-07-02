@@ -61,15 +61,14 @@ const PORTLETS_ANGULAR: Route[] = [
             )
     },
     {
-        path: 'languages',
-
+        path: 'locales',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: {
             reuseRoute: false
         },
         loadChildren: () =>
-            import('@dotcms/portlets/dot-languages/portlet').then((m) => m.DotLanguagesRoutes)
+            import('@dotcms/portlets/dot-locales/portlet').then((m) => m.DotLocalesRoutes)
     },
     {
         path: 'forms',

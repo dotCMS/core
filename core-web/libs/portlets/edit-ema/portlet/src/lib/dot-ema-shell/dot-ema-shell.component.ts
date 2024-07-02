@@ -186,7 +186,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             language_id: queryParams['language_id'],
             url: queryParams['url'],
             'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id'],
-            variantName: queryParams['variantName']
+            variantName: queryParams['variantName'],
+            clientHost: queryParams['clientHost']
         };
     }
 
@@ -194,9 +195,27 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         combineLatest([this.activatedRoute.data, this.activatedRoute.queryParams])
             .pipe(takeUntil(this.destroy$))
             .subscribe(([{ data }, queryParams]) => {
+                // If we have a clientHost we need to check if it's in the whitelist
+                if (queryParams.clientHost) {
+                    const canAccessClientHost = this.checkClientHostAccess(
+                        queryParams.clientHost,
+                        data?.options?.devURLWhitelist
+                    ); // If we don't have a whitelist we can't access the clientHost;
+
+                    // If we can't access the clientHost we need to navigate to the default page
+                    if (!canAccessClientHost) {
+                        this.navigate({
+                            ...queryParams,
+                            clientHost: null // Clean the queryParam so the editor behaves as expected
+                        });
+
+                        return; // We need to return here, to avoid the editor to load with a non desirable clientHost
+                    }
+                }
+
                 this.store.load({
                     ...(queryParams as DotPageApiParams),
-                    clientHost: data?.url
+                    clientHost: queryParams.clientHost ?? data?.url
                 });
             });
 
@@ -233,8 +252,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             this.activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
                 this.store.load({
-                    clientHost: data?.url,
-                    ...this.queryParams
+                    ...this.queryParams,
+                    clientHost: this.queryParams.clientHost ?? data?.url
                 });
             });
         }
@@ -252,5 +271,32 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             queryParams,
             queryParamsHandling: 'merge'
         });
+    }
+
+    /**
+     * Check if the clientHost is in the whitelist provided by the app
+     *
+     * @private
+     * @param {string} clientHost
+     * @param {*} [devURLWhitelist=[]]
+     * @return {*}
+     * @memberof DotEmaShellComponent
+     */
+    private checkClientHostAccess(clientHost: string, devURLWhitelist: string[] = []): boolean {
+        // If we don't have a whitelist or a clientHost we can't access it
+        if (!clientHost || !Array.isArray(devURLWhitelist) || !devURLWhitelist.length) {
+            return false;
+        }
+
+        // Most IDEs and terminals add a / at the end of the URL, so we need to sanitize it
+        const sanitizedClientHost = clientHost.endsWith('/') ? clientHost.slice(0, -1) : clientHost;
+
+        // We need to sanitize the whitelist as well
+        const sanitizedDevURLWhitelist = devURLWhitelist.map((url) =>
+            url.endsWith('/') ? url.slice(0, -1) : url
+        );
+
+        // If the clientHost is in the whitelist we can access it
+        return sanitizedDevURLWhitelist.includes(sanitizedClientHost);
     }
 }

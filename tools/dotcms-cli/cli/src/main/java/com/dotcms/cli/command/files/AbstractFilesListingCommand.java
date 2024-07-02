@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import picocli.CommandLine;
 

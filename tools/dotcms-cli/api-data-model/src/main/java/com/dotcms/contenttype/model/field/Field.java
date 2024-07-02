@@ -2,6 +2,7 @@
 package com.dotcms.contenttype.model.field;
 
 import com.dotcms.api.provider.ClientObjectMapper;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -18,7 +19,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -151,6 +152,7 @@ public abstract class Field {
 
     public abstract DataTypes dataType();
 
+    @JsonIgnore
     @Nullable
     public abstract String contentTypeId();
 

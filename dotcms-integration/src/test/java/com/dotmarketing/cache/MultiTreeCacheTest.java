@@ -1,5 +1,6 @@
 package com.dotmarketing.cache;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static graphql.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -17,13 +18,19 @@ import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -33,13 +40,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import graphql.AssertException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang.RandomStringUtils;
@@ -55,8 +57,8 @@ public class MultiTreeCacheTest {
 
     /**
      * Method to test: {@link MultiTreeCache#putPageMultiTrees(String, String, boolean, Table)} and {@link MultiTreeCache#getPageMultiTrees(String, String, boolean)}
-     * When: put a {@link MultiTree} collections with live equals true
-     * Should: be able to get this collection with live equals true
+     * When: put a {@link MultiTree} collections with live equals true and DEFAULT Variant
+     * Should: be able to get this collection with live equals true and DEFAULT Variant
      */
     @Test
     public void putAndGetLiveTrue(){
@@ -555,12 +557,6 @@ public class MultiTreeCacheTest {
         assertEquals(multiTreesWorkingSpecificVariant, multiTreeCache.getPageMultiTrees(
                 pageId, specificVariantName, false).orElseThrow());
 
-        final Collection<String> variantsNameBeforeRemove = multiTreeCache.getVariantsInCache(pageId);
-
-        assertEquals(2, variantsNameBeforeRemove.size());
-        assertTrue(variantsNameBeforeRemove.contains(VariantAPI.DEFAULT_VARIANT.name()));
-        assertTrue(variantsNameBeforeRemove.contains(specificVariantName));
-
         multiTreeCache.removePageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), true);
         multiTreeCache.removePageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), false);
 
@@ -572,9 +568,6 @@ public class MultiTreeCacheTest {
         assertFalse(multiTreeCache.getPageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), false).isPresent());
         assertFalse(multiTreeCache.getPageMultiTrees(pageId, specificVariantName, true).isPresent());
         assertFalse(multiTreeCache.getPageMultiTrees(pageId, specificVariantName, false).isPresent());
-
-        final Collection<String> variantsNameAfterRemove = multiTreeCache.getVariantsInCache(pageId);
-        assertTrue(variantsNameAfterRemove.isEmpty());
     }
 
     /**
@@ -583,8 +576,7 @@ public class MultiTreeCacheTest {
      * Should: Remove all the MultiTrees for all the variants
      */
     @Test
-    public void putAndRemoveAll(){
-        final MultiTreeCache multiTreeCache = CacheLocator.getMultiTreeCache();
+    public void putAndRemoveAll() throws DotDataException {
 
         final String pageId = RandomStringUtils.random(20);
 
@@ -594,6 +586,28 @@ public class MultiTreeCacheTest {
         final Table<String, String, Set<PersonalizedContentlet>> multiTreesWorkingSpecificVariant =  mock(Table.class);
 
         final String specificVariantName = "Specific Variant";
+
+        final Experiment experiment = mock(Experiment.class);
+        final TrafficProportion trafficProportion = mock(TrafficProportion.class);
+
+        when(experiment.trafficProportion()).thenReturn(trafficProportion);
+        final SortedSet<ExperimentVariant> variants = new TreeSet<>(Comparator.comparingInt(ExperimentVariant::hashCode));
+
+        final ExperimentVariant variant_1 = mock(ExperimentVariant.class);
+        when(variant_1.id()).thenReturn(VariantAPI.DEFAULT_VARIANT.name());
+
+        final ExperimentVariant variant_2 = mock(ExperimentVariant.class);
+        when(variant_2.id()).thenReturn(specificVariantName);
+
+        variants.add(variant_1);
+        variants.add(variant_2);
+
+        when(trafficProportion.variants()).thenReturn(variants);
+
+        final ExperimentsAPI experimentsAPI = mock(ExperimentsAPI.class);
+        when(experimentsAPI.listActive(pageId)).thenReturn(list(experiment));
+
+        final MultiTreeCache multiTreeCache = new MultiTreeCache(experimentsAPI);
 
         final boolean present_1 = Stream.of(
                         multiTreeCache.getPageMultiTrees(pageId, VariantAPI.DEFAULT_VARIANT.name(), true),
@@ -625,12 +639,6 @@ public class MultiTreeCacheTest {
         assertEquals(multiTreesWorkingSpecificVariant, multiTreeCache.getPageMultiTrees(
                 pageId, specificVariantName, false).orElseThrow());
 
-        final Collection<String> variantsNameBeforeRemove = multiTreeCache.getVariantsInCache(pageId);
-
-        assertEquals(2, variantsNameBeforeRemove.size());
-        assertTrue(variantsNameBeforeRemove.contains(VariantAPI.DEFAULT_VARIANT.name()));
-        assertTrue(variantsNameBeforeRemove.contains(specificVariantName));
-
 
         multiTreeCache.removePageMultiTrees(pageId);
 
@@ -640,56 +648,5 @@ public class MultiTreeCacheTest {
         assertFalse(multiTreeCache.getPageMultiTrees(pageId, specificVariantName, true).isPresent());
         assertFalse(multiTreeCache.getPageMultiTrees(pageId, specificVariantName, false).isPresent());
 
-        final Collection<String> variantsNameAfterRemove = multiTreeCache.getVariantsInCache(pageId);
-        assertTrue(variantsNameAfterRemove.isEmpty());
     }
-
-    /**
-     * Method to test: {@link MultiTreeCache#putPageMultiTrees(String, String, boolean, Table)} and {@link MultiTreeCache#getPageMultiTrees(String, String, boolean)}
-     * When: When you put MultiTress inside a Cache
-     * Should:
-     * - Get them with the Get method.
-     * - Don't get them anymore after remove them.
-     */
-    @Test
-    public void getVariants(){
-        final MultiTreeCache multiTreeCache = CacheLocator.getMultiTreeCache();
-
-        final String pageId = RandomStringUtils.random(20);
-        final Table<String, String, Set<PersonalizedContentlet>> multiTreesLiveSpecificVariant1 =  mock(Table.class);
-        final Table<String, String, Set<PersonalizedContentlet>> multiTreesWorkingSpecificVariant2 =  mock(Table.class);
-        final Table<String, String, Set<PersonalizedContentlet>> multiTreesLiveSpecificVariant3 =  mock(Table.class);
-        final Table<String, String, Set<PersonalizedContentlet>> multiTreesWorkingSpecificVariant3 =  mock(Table.class);
-
-        final String specificVariantName_1 = "Specific Variant 1";
-        final String specificVariantName_2 = "Specific Variant 2";
-        final String specificVariantName_3 = "Specific Variant 3";
-
-        final boolean present_1 = Stream.of(
-                        multiTreeCache.getPageMultiTrees(pageId, specificVariantName_1, true),
-                        multiTreeCache.getPageMultiTrees(pageId, specificVariantName_2, false),
-                        multiTreeCache.getPageMultiTrees(pageId, specificVariantName_3, true),
-                        multiTreeCache.getPageMultiTrees(pageId, specificVariantName_3, false)
-                )
-                .filter(optional -> optional.isPresent())
-                .findFirst()
-                .isPresent();
-
-        if (present_1) {
-            throw new AssertException("Value Not Expected");
-        }
-
-        multiTreeCache.putPageMultiTrees(pageId, specificVariantName_1, true, multiTreesLiveSpecificVariant1);
-        multiTreeCache.putPageMultiTrees(pageId, specificVariantName_2, false, multiTreesWorkingSpecificVariant2);
-        multiTreeCache.putPageMultiTrees(pageId, specificVariantName_3, true, multiTreesLiveSpecificVariant3);
-        multiTreeCache.putPageMultiTrees(pageId, specificVariantName_3, false, multiTreesWorkingSpecificVariant3);
-
-        final Collection<String> variantsNameBeforeRemove = multiTreeCache.getVariantsInCache(pageId);
-
-        assertEquals(3, variantsNameBeforeRemove.size());
-        assertTrue(variantsNameBeforeRemove.contains(specificVariantName_1));
-        assertTrue(variantsNameBeforeRemove.contains(specificVariantName_2));
-        assertTrue(variantsNameBeforeRemove.contains(specificVariantName_3));
-    }
-
 }

@@ -5,7 +5,7 @@ import com.dotcms.api.client.util.NamingUtils;
 import com.dotcms.model.pull.PullOptions;
 import com.dotcms.model.site.SiteView;
 import java.util.List;
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 import org.apache.commons.lang3.BooleanUtils;
 
 @Dependent

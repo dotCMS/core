@@ -5,16 +5,12 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.FolderAPI;
-import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FileUploadData;
 import com.dotcms.model.asset.FileUploadDetail;
-import com.dotcms.model.site.CreateUpdateSiteRequest;
-import com.dotcms.model.site.GetSiteByNameRequest;
-import com.dotcms.model.site.SiteView;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,21 +24,24 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
 @ApplicationScoped
 public class FilesTestHelperService {
 
-    @Inject
-    RestClientFactory clientFactory;
-
     private static final Duration MAX_WAIT_TIME = Duration.ofSeconds(15);
     private static final Duration POLL_INTERVAL = Duration.ofSeconds(2);
+
+    @Inject
+    SitesTestHelperService sitesTestHelper;
+
+    @Inject
+    RestClientFactory clientFactory;
 
     /**
      * Prepares data by creating test folders, adding test files, and creating a new test site.
@@ -114,7 +113,7 @@ public class FilesTestHelperService {
         );
 
         // Creating a new test site
-        final String newSiteName = createSite();
+        final String newSiteName = sitesTestHelper.createSiteOnServer().siteName();
 
         // Creating test folders
         final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse =
@@ -199,29 +198,6 @@ public class FilesTestHelperService {
     }
 
     /**
-     * Creates a new site.
-     *
-     * @return The name of the newly created test site.
-     */
-    public String createSite() {
-
-        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-
-        // Creating a new test site
-        final String newSiteName = String.format("site-%s", UUID.randomUUID());
-        CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder()
-                .siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = siteAPI.create(newSiteRequest);
-        Assertions.assertNotNull(createSiteResponse);
-        // Publish the new site
-        siteAPI.publish(createSiteResponse.entity().identifier());
-        Assertions.assertTrue(siteExist(newSiteName),
-                String.format("Site %s was not created", newSiteName));
-
-        return newSiteName;
-    }
-
-    /**
      * Pushes a file asset to the given site and folder path.
      *
      * @param live       Whether the asset should be published live
@@ -262,38 +238,6 @@ public class FilesTestHelperService {
     }
 
     /**
-     * Checks if a site with the given name exists.
-     *
-     * @param siteName the name of the site to check
-     * @return true if the site exists, false otherwise
-     */
-    public Boolean siteExist(final String siteName) {
-
-        try {
-
-            await()
-                    .atMost(MAX_WAIT_TIME)
-                    .pollInterval(POLL_INTERVAL)
-                    .until(() -> {
-                        try {
-                            var response = findSiteByName(siteName);
-                            return (response != null && response.entity() != null) &&
-                                    ((response.entity().isLive() != null &&
-                                            response.entity().isLive()) &&
-                                            (response.entity().isWorking() != null &&
-                                                    response.entity().isWorking()));
-                        } catch (NotFoundException e) {
-                            return false;
-                        }
-                    });
-
-            return true;
-        } catch (ConditionTimeoutException ex) {
-            return false;
-        }
-    }
-
-    /**
      * Checks whether an asset exists at the given remote asset path.
      *
      * @param remoteAssetPath The path to the remote asset
@@ -321,23 +265,6 @@ public class FilesTestHelperService {
         } catch (ConditionTimeoutException ex) {
             return false;
         }
-    }
-
-    /**
-     * Retrieves a site by its name.
-     *
-     * @param siteName The name of the site.
-     * @return The ResponseEntityView containing the SiteView object representing the site.
-     */
-    @ActivateRequestContext
-    public ResponseEntityView<SiteView> findSiteByName(final String siteName) {
-
-        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-
-        // Execute the REST call to retrieve folder contents
-        return siteAPI.findByName(
-                GetSiteByNameRequest.builder().siteName(siteName).build()
-        );
     }
 
     /**

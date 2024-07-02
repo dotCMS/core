@@ -353,8 +353,16 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * Method to test: {@link ExperimentsAPI#getRunningExperiments()}
      * When: You have tree Experiment:
      * - First one in DRAFT state, it has never been running.
-     * - Second one in RUNNING state, it was already started and it was not stopped yet
-     * - Finally one in STOP State, it was started, but it was stopped already
+     * - Second and third are started.
+     *
+     * Should : The method return the second and third Experiment,
+     * Also before called the method the Running Experiment cache must be empty and after called the method the cache
+     * must include the two Running Experiment.
+     *
+     * later Stop the third Experiment, and called the method again, now the method
+     * must return just the Second Experiment.
+     * Also, the Running Experiment Cache must ve empty before called the methos and include just the second Experiment
+     * after call it.
      */
     @Test
     public void getRunningExperiment() throws DotDataException, DotSecurityException {
@@ -365,6 +373,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Experiment stoppedExperiment = new ExperimentDataGen().nextPersisted();
         ExperimentDataGen.start(stoppedExperiment);
+
+        assertCachedRunningExperiments(Collections.emptyList());
 
         try {
             List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
@@ -379,6 +389,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             assertCachedRunningExperiments(experimentIds);
 
             ExperimentDataGen.end(stoppedExperiment);
+
+            assertCachedRunningExperiments(Collections.emptyList());
 
             experimentRunning = APILocator.getExperimentsAPI()
                     .getRunningExperiments();
@@ -461,9 +473,15 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
 
     private static void assertCachedRunningExperiments(final List<String> experimentIds) {
-        CacheLocator.getExperimentsCache()
-                .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY)
-                .forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
+        final List<Experiment> runningExperimentsCached = CacheLocator.getExperimentsCache()
+                .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
+
+        if (runningExperimentsCached != null) {
+            assertEquals(experimentIds.size(), runningExperimentsCached.size());
+            runningExperimentsCached.forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
+        } else {
+            assertTrue(experimentIds == null || experimentIds.isEmpty());
+        }
     }
 
     /**
@@ -3982,6 +4000,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
      * When: Try to cancel a Running Experiment
      * Should: The Experiment come back to DRAFT
+     * Also the Running Experiment Cache must be empty after cancel an Experiment
      */
     @Test
     public void cancelRunningExperiment() throws DotDataException, DotSecurityException {
@@ -3990,15 +4009,20 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
 
+        APILocator.getExperimentsAPI().getRunningExperiments();
+        assertCachedRunningExperiments(list(experiment.id().get()));
+
         try {
-            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+            final Experiment experimentAfterRunning = APILocator.getExperimentsAPI()
                     .find(experiment.id().orElseThrow(), APILocator.systemUser())
                     .orElseThrow();
 
-            assertEquals(Status.RUNNING, experimentAfterScheduled.status());
+            assertEquals(Status.RUNNING, experimentAfterRunning.status());
 
             APILocator.getExperimentsAPI()
-                    .cancel(experimentAfterScheduled.getIdentifier(), APILocator.systemUser());
+                    .cancel(experimentAfterRunning.getIdentifier(), APILocator.systemUser());
+
+            assertCachedRunningExperiments(Collections.emptyList());
 
             final Experiment experimentAfterCancel = APILocator.getExperimentsAPI()
                     .find(experiment.id().orElseThrow(), APILocator.systemUser())
@@ -4020,6 +4044,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             }
         }
     }
+
 
     /**
      * Method to test: {@link ExperimentsAPIImpl#cancel(String, User)}
@@ -4338,6 +4363,31 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Variant variant2FromDataBase = APILocator.getVariantAPI().get(v2.id()).orElseThrow();
         assertTrue("The Variant must be archived", variant2FromDataBase.archived());
 
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#listActive(String)}
+     * When: The method is called
+     * Should: use the {@link ExperimentsFactory#listActive(String)}
+     */
+    @Test
+    public void listActive() throws DotDataException {
+        final List<Experiment> experiments = new ArrayList<>();
+        experiments.add(mock(Experiment.class));
+        experiments.add(mock(Experiment.class));
+
+        final Host host = mock(Host.class);
+
+        final AnalyticsHelper analyticsHelper = mock(AnalyticsHelper.class);
+
+        final ExperimentsFactory experimentsFactory = mock();
+        when(experimentsFactory.listActive(host.getIdentifier())).thenReturn(experiments);
+
+        final ExperimentsAPI experimentsAPI = new ExperimentsAPIImpl(analyticsHelper, experimentsFactory);
+        final Collection<Experiment> activeExperiments = experimentsAPI.listActive(host.getIdentifier());
+
+        assertEquals(experiments, activeExperiments);
+        verify(experimentsFactory).listActive(host.getIdentifier());
     }
 }
 

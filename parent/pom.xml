@@ -15,6 +15,52 @@
         <sha1/>
         <flatten.mode>oss</flatten.mode>
         <flatten.skip>false</flatten.skip>
+        <!-- default load from .sdkmanrc file -->
+        <!--suppress UnresolvedMavenProperty -->
+        <sdkman.java.version>${ext.java}</sdkman.java.version>
+        <!-- allows for override version of base for docker container separate from build -->
+        <runtime.docker.sdkman.java.version>${sdkman.java.version}</runtime.docker.sdkman.java.version>
+
+        <!-- this is the version of source we support in source must be same or less that running version
+         run version is set by .sdkmanrc file in project root should update only after downstream plugins and projects
+         support new version default in environments/environment.properties and can be changed for local developer in
+        environments/dev/user-dev.properties -->
+        <!--suppress UnresolvedMavenProperty -->
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
+        <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
+        <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
+        <java.module.args>
+            --illegal-access=deny
+            --add-modules java.se
+            --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
+            --add-opens java.base/java.lang=ALL-UNNAMED
+            --add-opens java.base/java.nio=ALL-UNNAMED
+            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens java.management/sun.management=ALL-UNNAMED
+            --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+            --add-opens java.base/java.util=ALL-UNNAMED
+            --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
+            --add-opens java.base/java.lang.ref=ALL-UNNAMED
+            --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+            --add-opens java.base/java.net=ALL-UNNAMED
+            --add-opens java.base/java.nio=ALL-UNNAMED
+            --add-opens java.base/java.nio.charset=ALL-UNNAMED
+            --add-opens java.base/java.time=ALL-UNNAMED
+            --add-opens java.base/java.time.zone=ALL-UNNAMED
+            --add-opens java.base/java.util=ALL-UNNAMED
+            --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens java.base/java.util.concurrent.locks=ALL-UNNAMED
+            --add-opens java.base/java.util.regex=ALL-UNNAMED
+            --add-opens java.base/javax.crypto.spec=ALL-UNNAMED
+            --add-opens java.management/javax.management=ALL-UNNAMED
+            --add-opens java.base/sun.nio.cs=ALL-UNNAMED
+            --add-opens java.base/sun.util.calendar=ALL-UNNAMED
+            --add-opens java.base/sun.util.locale=ALL-UNNAMED
+        </java.module.args>
+
         <maven.deploy.skip>false</maven.deploy.skip>
         <tomcat.version>9.0.85</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
@@ -31,7 +77,7 @@
         <docker.jacoco.skip>true</docker.jacoco.skip>
         <!-- starter -->
         <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
-        <starter.deploy.version>empty_20240201</starter.deploy.version>
+        <starter.deploy.version>empty_20240531</starter.deploy.version>
         <starter.deploy.filename>starter.zip</starter.deploy.filename>
         <starter.run.version>${starter.deploy.version}</starter.run.version>
         <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>
@@ -45,7 +91,7 @@
         <insecure.repositories>WARN</insecure.repositories>
         <!-- jandex maven plugin version -->
         <jandex-maven-plugin.version>1.2.3</jandex-maven-plugin.version>
-        <java.version>11</java.version>
+
         <javadoc.additional.params>-Xdoclint:none --allow-script-in-comments</javadoc.additional.params>
         <jdk.min.version>${maven.compiler.argument.source}</jdk.min.version>
         <maven.compiler.argument.source>${maven.compiler.source}</maven.compiler.argument.source>
@@ -53,11 +99,7 @@
         <maven.compiler.argument.testSource>${maven.compiler.testSource}</maven.compiler.argument.testSource>
         <maven.compiler.argument.testTarget>${maven.compiler.testTarget}</maven.compiler.argument.testTarget>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
-        <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
+
         <maven.min.version>3.8.1</maven.min.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -81,7 +123,7 @@
         <version.deploy.plugin>3.1.1</version.deploy.plugin>
         <version.docker-compose.plugin>4.0.0</version.docker-compose.plugin>
         <!-- version.* properties are defined in jboss-parent and are overridden/updated here: -->
-        <version.enforcer.plugin>3.0.0</version.enforcer.plugin>
+        <version.enforcer.plugin>3.5.0</version.enforcer.plugin>
         <version.exec.plugin>3.0.0</version.exec.plugin>
         <version.surefire.plugin>3.2.5</version.surefire.plugin>
         <version.failsafe.plugin>${version.surefire.plugin}</version.failsafe.plugin>
@@ -130,7 +172,7 @@
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
         <surefire.fork.count>1</surefire.fork.count>
-        <immutables.version>2.9.0</immutables.version>
+        <immutables.version>2.10.1</immutables.version>
         <docker.platforms/>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
         <docker.version.tag>${project.version}</docker.version.tag>
@@ -146,7 +188,7 @@
         <docker.container.name.pattern>${docker.run.context}_%a</docker.container.name.pattern>
         <license.user.path>${user.home}/.dotcms/license/license.dat</license.user.path>
         <license.use>false</license.use>
-        <dotcms.startup.timeout>120000</dotcms.startup.timeout>
+        <dotcms.startup.timeout>150000</dotcms.startup.timeout>
         <docker.license.volume.internal>/data/local/dotsecure/license/license.dat</docker.license.volume.internal>
         <docker.starter.volume.internal>/data/starter</docker.starter.volume.internal>
         <docker.db.volume>${docker.run.context}_db</docker.db.volume>
@@ -612,7 +654,7 @@
                     <version>${version.compiler.plugin}</version>
                     <configuration>
                         <fork>true</fork>
-                        <release>${java.version}</release>
+                        <release>${maven.compiler.release}</release>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
@@ -652,13 +694,9 @@
                          files and hence the coverage report.
                         -->
                         <argLine>@{argLine} -Xmx1024m
-                            --add-modules java.se
-                            --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
-                            --add-opens java.base/java.lang=ALL-UNNAMED
-                            --add-opens java.base/java.nio=ALL-UNNAMED
-                            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
-                            --add-opens java.management/sun.management=ALL-UNNAMED
-                            --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED</argLine>
+                            ${java.module.args}
+                        </argLine>
+
                         <trimStackTrace>false</trimStackTrace>
                     </configuration>
                 </plugin>
@@ -807,13 +845,10 @@
                         <forkCount>${surefire.fork.count}</forkCount>
                         <reuseForks>true</reuseForks>
                         <argLine>@{argLine} -Xmx1024m
-                            --add-modules java.se
-                            --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
-                            --add-opens java.base/java.lang=ALL-UNNAMED
-                            --add-opens java.base/java.nio=ALL-UNNAMED
-                            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
-                            --add-opens java.management/sun.management=ALL-UNNAMED
-                            --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED</argLine>
+                            --illegal-access=deny
+                            ${java.module.args}
+                        </argLine>
+
                         <systemPropertyVariables/>
                         <trimStackTrace>true</trimStackTrace>
                     </configuration>
@@ -937,6 +972,7 @@
                             <useDefaultValues>true</useDefaultValues>
                             <files>
                                 <file>${environment.properties.defaults}</file>
+                                <file>${maven.multiModuleProjectDirectory}/.sdkmanrc</file>
                             </files>
                             <keyPrefix>ext.</keyPrefix>
                         </configuration>
@@ -1500,7 +1536,6 @@
                             </excludes>
                         </configuration>
                         <executions>
-
                             <execution>
                                 <id>prepare-agent</id>
                                 <goals>

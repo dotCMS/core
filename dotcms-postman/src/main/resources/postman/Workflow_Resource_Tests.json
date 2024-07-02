@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "e5a39255-b6a9-4ab9-bde9-9e581b2c9fbc",
+		"_postman_id": "e48ada2d-189e-48a7-87a2-c97346e5ce83",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "3028555"
 	},
 	"item": [
 		{
@@ -117,11 +117,19 @@
 									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"REST Schema\\\"\");",
 									"});",
 									"",
+									"pm.test(\"Response includes variable name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.variableName).to.eql(\"RestSchema\");",
+									"});",
+									"",
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"schemeId\", jsonData.entity.id);",
-									"pm.collectionVariables.set(\"schemeIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+									"pm.collectionVariables.set(\"schemeIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));",
+									"pm.collectionVariables.set(\"schemeVariableName\", jsonData.entity.variableName);",
+									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -560,10 +568,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [ad61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -1895,12 +1904,13 @@
 									"//Validate that returns the schemes included in the starter site ",
 									"",
 									"pm.test(\"Valid Response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [ad61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});",
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3490,10 +3500,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [d123] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -4416,10 +4427,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [e61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -6322,6 +6334,79 @@
 						"description": "Validate you can export schemes as admin user"
 					},
 					"response": []
+				},
+				{
+					"name": "Variable name validation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Includes scheme\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"REST Schema\\\"\");",
+									"});",
+									"",
+									"pm.test(\"Includes step\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"My REST step\\\"\");",
+									"});",
+									"",
+									"pm.test(\"Includes action\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW\\\"\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeVariableName}}/export",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"{{schemeVariableName}}",
+								"export"
+							]
+						},
+						"description": "Validate you can export schemes as admin user using the scheme variable name"
+					},
+					"response": []
 				}
 			]
 		},
@@ -7196,10 +7281,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [a85c1515c-c4f3-463c-bac2-860b8fcacc34] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -8027,8 +8113,6 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
 										"value": "application/json"
 									}
 								],
@@ -8090,9 +8174,7 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
-										"value": "application/json",
-										"type": "text"
+										"value": "application/json"
 									}
 								],
 								"body": {
@@ -9782,10 +9864,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exis\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [ad61a59e1-a49c-46f2-a929-db2b4bfa88b2] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -11858,10 +11941,11 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"The Workflow Scheme does not exist\");",
+									"    pm.expect(pm.response.text()).to.include(\"Workflow scheme [123] not found\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -12187,9 +12271,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -12255,9 +12337,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -12420,9 +12500,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -12500,8 +12578,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -12582,8 +12658,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -12648,7 +12722,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"console.log(\"Running test\")",
 									"",
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -13045,6 +13118,76 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "PublishMergeWithoutContentNode",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n    \"query\":\"+contentType:webPageContent AND title:\\\"Test Merge Content\\\"\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -13284,14 +13427,11 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							},
 							{
 								"key": "Origin",
-								"value": "{{serverURL}}",
-								"type": "text"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -15309,12 +15449,10 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"type": "text",
 								"value": "application/octet-stream"
 							},
 							{
 								"key": "Content-Disposition",
-								"type": "text",
 								"value": "attachment"
 							}
 						],
@@ -15451,14 +15589,17 @@
 									"",
 									"pm.test(\"Valid JSON field in response\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.fileAsset).to.include(\"greatings.txt\");",
+									"    pm.expect(jsonData.entity.fileAsset).to.include(\"greetings.txt\");",
 									"    pm.expect(jsonData.entity.contentType).to.be.eql(\"FileAsset\");",
+									"    pm.expect(jsonData.entity.metaData.name).to.be.eql(\"greetings.txt\");",
+									"    pm.expect(jsonData.entity.metaData.title).to.be.eql(\"greetings.txt\");",
 									"});",
 									"",
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -15482,7 +15623,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"hostFolder\":\"default\",\n        \"title\": \"greatings.txt\",\n        \"fileName\": \"greatings.txt\",\n        \"fileAsset\": {\n            \"fileName\": \"greatings.txt\",\n           \"content\": \"Hello dotCMS\"\n         },\n        \"contentType\": \"FileAsset\"\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n        \"hostFolder\":\"default\",\n        \"title\": \"greetings.txt\",\n        \"fileName\": \"greetings.txt\",\n        \"fileAsset\": {\n            \"fileName\": \"greetings.txt\",\n           \"content\": \"Hello dotCMS\"\n         },\n        \"contentType\": \"FileAsset\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -15503,7 +15644,8 @@
 								"fire",
 								"PUBLISH"
 							]
-						}
+						},
+						"description": "This endpoint allows you to trigger the PUBLISH action for a default workflow. The HTTP PUT request should be made to {{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH.\n\n### Request Body\n\nThe request should include a JSON payload with the following structure:\n\n``` json\n{\n    \"contentlet\": {\n        \"hostFolder\": \"\",\n        \"title\": \"\",\n        \"fileName\": \"\",\n        \"fileAsset\": {\n            \"fileName\": \"\",\n            \"content\": \"\"\n        },\n        \"contentType\": \"\"\n    }\n}\n\n ```\n\n### Response\n\nUpon successful execution, the endpoint returns a 200 status with a JSON response containing the entity details, errors, i18n messages map, messages, pagination, and permissions.\n\nThe \"entity\" object provides information about the content, including metadata, file details, status, and ownership.\n\nAny errors encountered during the execution will be listed in the \"errors\" array.\n\nThe \"i18nMessagesMap\" and \"messages\" fields may contain internationalization messages and general messages, respectively.\n\nThe \"pagination\" field, if present, provides pagination details.\n\nThe \"permissions\" array includes information about the permissions associated with the content.\n\n### **Validations**\n\n- Validate the 200 response code\n    \n- Validating we are returnign the proper metadata in the response"
 					},
 					"response": []
 				}
@@ -15840,8 +15982,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -15922,8 +16062,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -16374,8 +16512,6 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
 										"value": "application/json"
 									}
 								],
@@ -16432,9 +16568,7 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"name": "Content-Type",
-										"value": "application/json",
-										"type": "text"
+										"value": "application/json"
 									}
 								],
 								"body": {
@@ -16565,8 +16699,6 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
 								"value": "application/json"
 							}
 						],
@@ -16625,9 +16757,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							}
 						],
 						"body": {
@@ -16924,6 +17054,194 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "SavingKeyValues",
+			"item": [
+				{
+					"name": "CreateKeyValueContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"My KeyValueContentType\",\n    \"defaultType\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"KeyValueContentType\",\n    \"variable\": \"keyValueContentType\",\n    \"host\": \"SYSTEM_HOST\",\n    \"fixed\": false,\n    \"icon\": \"testIcon\",\n    \"sortOrder\": 3,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"indexed\": true,\n            \"dataType\": \"TEXT\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"listed\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"name\": \"title\",\n            \"variable\": \"title\",\n            \"fixed\": true\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableKeyValueField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"Key-Value\",\n            \"fieldTypeLabel\": \"Key/Value\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1718051559000,\n            \"indexed\": false,\n            \"listed\": false,\n            \"modDate\": 1718051559000,\n            \"name\": \"Title: Feature\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"titleFeature\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableKeyValueField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"Key-Value\",\n            \"fieldTypeLabel\": \"Key/Value\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1718051581000,\n            \"indexed\": false,\n            \"listed\": false,\n            \"modDate\": 1718051581000,\n            \"name\": \"Title: Europe\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 4,\n            \"unique\": false,\n            \"variable\": \"titleEurope\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateKeyValue",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Check keyValueContentType content type\", function () {",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"keyValueContentType\");",
+									"});",
+									"",
+									"pm.test(\"Check keyValueContentType content type\", function () {",
+									"    pm.expect(jsonData.entity.titleEurope['12345']).to.eql(\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"keyValueContentType\",\n        \"title\": \"supporttest\",\n        \"titleFeature\": {\"12345\":\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\"},\n        \"titleEurope\": {\"12345\":\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\"}\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This test creates a type with a key value field and fires a new\n\nThe idea is to be able to create contentlet, since key values before where throwing errors",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"if (!pm.environment.get('jwt')) {",
+							"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+							"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+							"",
+							"    if (!pm.environment.get('jwt')) {",
+							"        const username = 'admin@dotcms.com';",
+							"        const password = 'admin';",
+							"        const basicAuth = btoa(`${username}:${password}`);",
+							"",
+							"        const requestOptions = {",
+							"            url: apiUrl,",
+							"            method: \"POST\",",
+							"            header: {",
+							"                \"accept\": \"*/*\",",
+							"                \"content-type\": \"application/json\",",
+							"                \"Authorization\": `Basic ${basicAuth}`",
+							"            },",
+							"            body: {",
+							"                mode: \"raw\",",
+							"                raw: JSON.stringify({",
+							"                    \"expirationSeconds\": 7200,",
+							"                    \"userId\": \"dotcms.org.1\",",
+							"                    \"network\": \"0.0.0.0/0\",",
+							"                    \"claims\": {\"label\": \"postman-tests\"}",
+							"                })",
+							"            }",
+							"        };",
+							"",
+							"        pm.sendRequest(requestOptions, function (err, response) {",
+							"            if (err) {",
+							"                console.log(err);",
+							"            } else {",
+							"                const jwt = response.json().entity.jwt;",
+							"                pm.environment.set('jwt', jwt);",
+							"            }",
+							"        });",
+							"    }",
+							"}"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
 		}
 	],
 	"event": [
@@ -16953,6 +17271,18 @@
 		},
 		{
 			"key": "englishidentifier",
+			"value": ""
+		},
+		{
+			"key": "schemeId",
+			"value": ""
+		},
+		{
+			"key": "schemeIdShorty",
+			"value": ""
+		},
+		{
+			"key": "schemeVariableName",
 			"value": ""
 		}
 	]

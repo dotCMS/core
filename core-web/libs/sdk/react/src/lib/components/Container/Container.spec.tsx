@@ -36,9 +36,10 @@ describe('Container', () => {
             containers: []
         };
 
-        it('renders NoContent component for unsupported content types', () => {
+        it('renders NoComponent component for unsupported content types', () => {
             const updatedContext = {
                 ...mockPageContext,
+                isInsideEditor: true,
                 components: {}
             };
 
@@ -50,6 +51,28 @@ describe('Container', () => {
 
             expect(screen.getByTestId('no-component')).toHaveTextContent(
                 'No Component for content-type-1'
+            );
+        });
+
+        it('render custom NoComponent component for unsetted content types', () => {
+            const updatedContext = {
+                ...mockPageContext,
+                isInsideEditor: true,
+                components: {
+                    CustomNoComponent: () => (
+                        <div data-testid="custom-no-component">Custom No Component</div>
+                    )
+                }
+            };
+
+            render(
+                <MockContextRender mockContext={updatedContext}>
+                    <Container containerRef={mockContainerRef} />
+                </MockContextRender>
+            );
+
+            expect(screen.getByTestId('custom-no-component')).toHaveTextContent(
+                'Custom No Component'
             );
         });
 
@@ -74,7 +97,7 @@ describe('Container', () => {
 
             const container = getContainer({
                 containerRef: mockContainer,
-                containers: updatedContext.containers
+                containers: updatedContext.pageAsset.containers
             });
 
             const contentlet = screen.getByTestId('dot-contentlet');

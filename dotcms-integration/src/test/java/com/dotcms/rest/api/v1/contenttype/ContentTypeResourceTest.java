@@ -1,5 +1,15 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -17,7 +27,6 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
-import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
@@ -34,15 +43,6 @@ import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -50,16 +50,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest {
@@ -389,8 +387,7 @@ public class ContentTypeResourceTest {
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
 		final ContentTypeResource resource = new ContentTypeResource
-				(new ContentTypeHelper(webResource, APILocator.getStructureAPI(),
-						ContentTypeUtil.getInstance()), webResource, paginationUtil,
+				(new ContentTypeHelper(), webResource, paginationUtil,
 						WorkflowHelper.getInstance(), permissionAPI);
 		final Response response = resource.getRecentBaseTypes(request);
 		assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
@@ -424,8 +421,7 @@ public class ContentTypeResourceTest {
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
 		final ContentTypeResource resource = new ContentTypeResource
-				(new ContentTypeHelper(webResource, APILocator.getStructureAPI(),
-						ContentTypeUtil.getInstance()), webResource, paginationUtil,
+				(new ContentTypeHelper(), webResource, paginationUtil,
 						WorkflowHelper.getInstance(), permissionAPI);
 		final Response response = resource.getRecentBaseTypes(request);
 		assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
@@ -471,8 +467,7 @@ public class ContentTypeResourceTest {
 			.init(nullable(String.class), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
 					nullable(String.class))).thenReturn(dataObject);
 
-		final ContentTypeHelper contentTypeHelper = Mockito.spy(new ContentTypeHelper(webResource,
-				APILocator.getStructureAPI(), ContentTypeUtil.getInstance()));
+		final ContentTypeHelper contentTypeHelper = Mockito.spy(new ContentTypeHelper());
 
 		Mockito.doReturn(!testCase.isCommunity).when(contentTypeHelper).isStandardOrEnterprise();
 

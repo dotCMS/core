@@ -22,6 +22,7 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.command.PushContext;
 import com.dotcms.cli.common.FilesTestHelperService;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.SitesTestHelperService;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.pull.PullOptions;
@@ -38,7 +39,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,6 +82,9 @@ class PushServiceIT {
 
     @Inject
     FilesTestHelperService filesTestHelper;
+
+    @Inject
+    SitesTestHelperService sitesTestHelper;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -938,7 +942,7 @@ class PushServiceIT {
             final String assetName) {
 
         // Validate some pushed data, giving some time to the system to index the new data
-        Assertions.assertTrue(filesTestHelper.siteExist(siteName),
+        Assertions.assertTrue(sitesTestHelper.siteExist(siteName),
                 String.format("Site %s was not created", siteName));
 
         // Building the remote asset path

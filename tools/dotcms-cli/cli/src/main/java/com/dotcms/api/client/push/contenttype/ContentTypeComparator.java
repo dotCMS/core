@@ -4,12 +4,13 @@ import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.ContentComparator;
 import com.dotcms.contenttype.model.type.ContentType;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+
 
 @Dependent
 public class ContentTypeComparator implements ContentComparator<ContentType> {

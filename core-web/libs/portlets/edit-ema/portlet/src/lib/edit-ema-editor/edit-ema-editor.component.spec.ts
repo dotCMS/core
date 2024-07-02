@@ -94,7 +94,8 @@ import {
     TREE_NODE_MOCK,
     URL_CONTENT_MAP_MOCK,
     newContentlet,
-    dotPageContainerStructureMock
+    dotPageContainerStructureMock,
+    SHOW_CONTENTLET_TOOLS_PATCH_MOCK
 } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
@@ -524,6 +525,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             }
         ]
     });
+
 describe('EditEmaEditorComponent', () => {
     describe('with queryParams and permission', () => {
         let spectator: SpectatorRouting<EditEmaEditorComponent>;
@@ -2735,11 +2737,6 @@ describe('EditEmaEditorComponent', () => {
                         jest.useFakeTimers(); // Mock the timers
                         spectator.detectChanges();
 
-                        // We need to force the editor state to loading for this test
-                        // because first we get the pageapi of "1" person
-                        // and then we get the pageapi of "3" person
-                        store.updateEditorState(EDITOR_STATE.LOADING);
-
                         store.load({
                             url: 'index',
                             language_id: '3',
@@ -3071,6 +3068,8 @@ describe('EditEmaEditorComponent', () => {
                         'saveFromInlineEditedContentlet'
                     );
                     const setEditorModeSpy = jest.spyOn(store, 'setEditorMode');
+
+                    spectator.setRouteQueryParam('variantName', DEFAULT_VARIANT_ID);
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             origin: HOST,
@@ -3083,6 +3082,51 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(saveFromInlineEditedContentletSpy).not.toHaveBeenCalled();
                     expect(setEditorModeSpy).toHaveBeenCalledWith(EDITOR_MODE.EDIT);
+                });
+
+                it('should dont trigger save from inline edited contentlet when dont have changes and does not have variantName', () => {
+                    const saveFromInlineEditedContentletSpy = jest.spyOn(
+                        store,
+                        'saveFromInlineEditedContentlet'
+                    );
+                    const setEditorModeSpy = jest.spyOn(store, 'setEditorMode');
+
+                    spectator.setRouteQueryParam('variantName', undefined);
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: null
+                            }
+                        })
+                    );
+
+                    expect(saveFromInlineEditedContentletSpy).not.toHaveBeenCalled();
+                    expect(setEditorModeSpy).toHaveBeenCalledWith(EDITOR_MODE.EDIT);
+                });
+
+                it('should dont trigger save from inline edited contentlet when dont have changes and its a variant', () => {
+                    const saveFromInlineEditedContentletSpy = jest.spyOn(
+                        store,
+                        'saveFromInlineEditedContentlet'
+                    );
+                    const setEditorModeSpy = jest.spyOn(store, 'setEditorMode');
+
+                    spectator.setRouteQueryParam('variantName', 'hello-there');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: null
+                            }
+                        })
+                    );
+
+                    expect(saveFromInlineEditedContentletSpy).not.toHaveBeenCalled();
+                    expect(setEditorModeSpy).toHaveBeenCalledWith(EDITOR_MODE.EDIT_VARIANT);
                 });
 
                 it('should trigger copy contentlet dialog when inline editing', () => {
@@ -3143,6 +3187,31 @@ describe('EditEmaEditorComponent', () => {
                         );
                     });
                 });
+            });
+        });
+
+        describe('Components Inputs', () => {
+            it('should set right inputs for the dot-ema-contentlet-tools tag', () => {
+                store.load({
+                    url: 'index',
+                    language_id: '5',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    variantName: 'hello-there',
+                    experimentId: 'i-have-a-running-experiment'
+                });
+
+                spectator.detectChanges();
+
+                store.patchState(SHOW_CONTENTLET_TOOLS_PATCH_MOCK);
+
+                spectator.detectChanges();
+                const contentletTool = spectator.query(EmaContentletToolsComponent);
+
+                expect(contentletTool).not.toBeNull();
+                expect(contentletTool.contentletArea).toEqual(
+                    SHOW_CONTENTLET_TOOLS_PATCH_MOCK.contentletArea
+                );
+                expect(contentletTool.isEnterprise).toBeTruthy();
             });
         });
     });

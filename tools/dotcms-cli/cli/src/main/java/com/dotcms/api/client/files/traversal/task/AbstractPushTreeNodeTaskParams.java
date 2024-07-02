@@ -5,7 +5,7 @@ import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.common.LocalPathStructure;
 import com.dotcms.model.annotation.ValueType;
 import java.io.Serializable;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 

@@ -19,10 +19,9 @@ import { DotInlineEditComponent } from './dot-inline-edit.component';
             <input />
         </ng-template>
         <dot-inline-edit
-            #dotEditInline
             [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
             [inlineEditContentTemplate]="inlineEditContentTemplate"
-        ></dot-inline-edit>
+            #dotEditInline></dot-inline-edit>
     `
 })
 class HostTestComponent {

@@ -9,13 +9,13 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotBulkInformationModule } from '@components/_common/dot-bulk-information/dot-bulk-information.module';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotSiteBrowserService } from '@dotcms/data-access';
 import {
+    DotActionMenuButtonComponent,
     DotAddToBundleComponent,
     DotBinaryOptionSelectorComponent,
     DotMessagePipe,
@@ -37,7 +37,7 @@ import { DotTemplateListComponent } from './dot-template-list.component';
         MenuModule,
         ButtonModule,
         DotActionButtonModule,
-        DotActionMenuButtonModule,
+        DotActionMenuButtonComponent,
         DotAddToBundleComponent,
         DynamicDialogModule,
         DotBulkInformationModule,

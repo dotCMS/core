@@ -6,6 +6,8 @@ import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
 import com.dotcms.contenttype.model.workflow.Workflow;
 import com.dotcms.model.views.CommonViews;
+import com.dotcms.model.views.CommonViews.ContentTypeInternalView;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -27,7 +29,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -158,6 +160,8 @@ public abstract class ContentType {
     @Nullable
     public abstract List<FieldLayoutRow> layout();
 
+    @JsonAlias("detailPagePath")
+    @JsonProperty("detailPage")
     @Nullable
     public abstract String detailPage();
 
@@ -170,6 +174,7 @@ public abstract class ContentType {
         return Collections.emptyMap();
     }
 
+    @JsonView({ContentTypeInternalView.class})
     @Value.Default
     public List<Workflow> workflows() {
         return Collections.emptyList();

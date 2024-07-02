@@ -3,8 +3,12 @@ package com.dotcms.languagevariable.business;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Provides access to Language Variable objects in the system, which allow you to associate a key to
@@ -23,7 +27,7 @@ import java.util.List;
  */
 public interface LanguageVariableAPI {
 	
-	public static final String LANGUAGEVARIABLE_VAR_NAME = "Languagevariable";
+	String LANGUAGEVARIABLE_VAR_NAME = "Languagevariable";
 
     /**
      * Returns the Language Variable value associated to the specified key and language ID. This
@@ -125,4 +129,61 @@ public interface LanguageVariableAPI {
     public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key, final long languageId, final User user, final int limit)
             throws DotDataException, DotSecurityException;
 
+
+    String ORDER_BY_DEFAULT = "contentlet.identifier";
+
+    /**
+     * Returns all the Language Variables in the system.
+     * useful for cache building.
+     * @return List of Language Variables.
+     */
+    Map<Language, List<LanguageVariable>> findAllVariables() ;
+
+    /**
+     * Returns all the Language Variables for the specified language.
+     * @param langId - The ID of the language that the variable was created for.
+     * @return List of Language Variables.
+     * @throws DotDataException - If an error occurs while retrieving the Language Variables.
+     */
+    List<LanguageVariable> findVariables(final long langId) throws DotDataException;
+
+    /**
+     * Returns an Optional of {@link LanguageVariable} matching the specified language ID and key.
+     * @param languageId - The ID of the language that the variable was created for.
+     * @param key - The key to the Language Variable that starts with.
+     * @return Optional of Language Variables.
+     * @throws DotDataException - If an error occurs while retrieving the Language Variables.
+     */
+    Optional<LanguageVariable> findVariable(final long languageId, final String key) throws DotDataException;
+
+    /**
+     * Returns a list of {@link LanguageVariable} that the key starts with the specified key and
+     *
+     * @param offset  - The offset of the list.
+     * @param limit   - Size of the list.
+     * @param orderBy - The order by clause.
+     * @return List of {@link LanguageVariable}
+     * @throws DotDataException - If there is an error retrieving the list of Language Variables.
+     */
+    Map<String, List<LanguageVariableExt>> findVariablesGroupedByKey(int offset, int limit, String orderBy)
+            throws DotDataException;
+
+    /**
+     * Count content Variables
+     * @return the number of content variables unique by key
+     */
+    int countVariablesByKey();
+
+    /**
+     * Count content Variables
+     * @param languageId - The ID of the language that the variable was created for.
+     * @return the number of content variables unique by key
+     */
+    int countVariablesByKey(final long languageId);
+
+    /**
+     * Invalidate the cache for the Language Variables
+     * @param contentlet - The contentlet that will be used to invalidate the cache.
+     */
+    void invalidateLanguageVariablesCache(Contentlet contentlet);
 }

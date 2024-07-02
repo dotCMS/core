@@ -9,7 +9,6 @@ import com.dotcms.api.client.files.traversal.PushTraverseParams;
 import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
-import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.command.PushContext;
 import com.dotcms.cli.common.ApplyCommandOrder;
@@ -18,6 +17,7 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.common.LocalPathStructure;
+import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import java.io.File;
 import java.io.IOException;
@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import picocli.CommandLine;
@@ -41,8 +41,7 @@ import picocli.CommandLine;
                 "" // empty string here so we can have a new line
         }
 )
-public class FilesPush extends AbstractFilesCommand implements Callable<Integer>,
-        DotCommand, DotPush {
+public class FilesPush extends AbstractFilesCommand implements Callable<Integer>, DotPush {
 
     static final String NAME = "push";
     static final String FILES_PUSH_MIXIN = "filesPushMixin";
@@ -196,9 +195,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     private Pair<Workspace, File> resolveWorkspaceAndPath() throws IOException {
 
         // Make sure the path is within a workspace
-        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
-                this.getPushMixin().path()
-        );
+        final Optional<Workspace> workspace = workspace();
         if (workspace.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format("No valid workspace found at path: [%s]",
@@ -301,4 +298,17 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         return ApplyCommandOrder.FILES.getOrder();
     }
 
+    @Override
+    public WorkspaceManager workspaceManager() {
+        return workspaceManager;
+    }
+
+    @Override
+    public Path workingRootDir() {
+        final Optional<Workspace> workspace = workspace();
+        if (workspace.isPresent()) {
+            return workspace.get().files();
+        }
+        throw new IllegalArgumentException("No valid workspace found.");
+    }
 }

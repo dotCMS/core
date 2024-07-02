@@ -39,7 +39,10 @@ import java.util.stream.Collectors;
  */
 public class ContentToStringUtil {
 
+    public static final String FILE_ASSET_KEY = "fileAsset";
+    public static final String ASSET_KEY = "asset";
     public static final Lazy<ContentToStringUtil> impl = Lazy.of(ContentToStringUtil::new);
+
     private static final String[] MARKDOWN_STRING_PATTERNS = {
             "(^|[\\n])\\s*1\\.\\s.*\\s+1\\.\\s",                    // markdown list with 1. \n 1.
             "(^|[\\n])\\s*-\\s.*\\s+-\\s",                          // markdown unordered list -
@@ -55,7 +58,7 @@ public class ContentToStringUtil {
 
     };
 
-    private static final Lazy<List<Pattern>> MARKDOWN_PATTERNS = Lazy.of(() -> Arrays.stream(MARKDOWN_STRING_PATTERNS).map(Pattern::compile).collect(Collectors.toList()));
+    private static final Lazy<List<Pattern>> MARKDOWN_PATTERNS = Lazy.of(() -> Arrays.stream(MARKDOWN_STRING_PATTERNS).map(Pattern::compile).collect(Collectors.toUnmodifiableList()));
 
     private static final Pattern HTML_PATTERN = Pattern.compile(".*\\<[^>]+>.*");
 
@@ -145,21 +148,21 @@ public class ContentToStringUtil {
 
     public List<Field> guessWhatFieldsToIndex(@NotNull Contentlet contentlet) {
 
-        List<Field> embedMe = new ArrayList<>();
+        final List<Field> embedMe = new ArrayList<>();
         if (contentlet.isFileAsset()) {
-            File fileAsset = Try.of(() -> contentlet.getBinary("fileAsset")).getOrNull();
+            File fileAsset = Try.of(() -> contentlet.getBinary(FILE_ASSET_KEY)).getOrNull();
             if (shouldIndex(fileAsset)) {
-                embedMe.add(contentlet.getContentType().fieldMap().get("fileAsset"));
+                embedMe.add(contentlet.getContentType().fieldMap().get(FILE_ASSET_KEY));
             }
         }
         if (contentlet.isDotAsset()) {
-            File asset = Try.of(() -> contentlet.getBinary("asset")).getOrNull();
+            File asset = Try.of(() -> contentlet.getBinary(ASSET_KEY)).getOrNull();
             if (shouldIndex(asset)) {
-                embedMe.add(contentlet.getContentType().fieldMap().get("asset"));
+                embedMe.add(contentlet.getContentType().fieldMap().get(ASSET_KEY));
             }
         }
         // pages are not indexed based on fields, instead they will be rendered to be parsed
-        if (contentlet.isHTMLPage()) {
+        if (Boolean.TRUE.equals(contentlet.isHTMLPage())) {
             return List.of();
         }
 
@@ -168,8 +171,7 @@ public class ContentToStringUtil {
         contentlet.getContentType()
                 .fields()
                 .stream().filter(f -> !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
-                .filter(f -> f instanceof StoryBlockField || f instanceof WysiwygField || f instanceof BinaryField ||  f instanceof TextAreaField || f instanceof FileField)
-                .forEach(embedMe::add);
+                .filter(f -> f instanceof StoryBlockField || f instanceof WysiwygField || f instanceof BinaryField ||  f instanceof TextAreaField || f instanceof FileField);
 
         if (!embedMe.isEmpty()) {
             return embedMe;
@@ -180,7 +182,7 @@ public class ContentToStringUtil {
                 .stream().filter(f -> !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
                 .filter(f ->
                         f.dataType().equals(DataTypes.LONG_TEXT)
-                ).collect(Collectors.toList());
+                ).collect(Collectors.toUnmodifiableList());
     }
 
     private boolean shouldIndex(File file) {
@@ -205,7 +207,7 @@ public class ContentToStringUtil {
 
     }
 
-    public Optional<String> parseFields(@NotNull Contentlet contentlet, @NotNull List<Field> fields) {
+    public Optional<String> parseFields(@NotNull final Contentlet contentlet, @NotNull final List<Field> fields) {
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
             return Optional.empty();
         }
@@ -227,9 +229,7 @@ public class ContentToStringUtil {
             return Optional.empty();
         }
 
-        return Optional.of(builder.toString());
-
-
+        return Optional.of(builder.toString().trim());
     }
 
     private Optional<String> parseField(@NotNull Contentlet contentlet, @NotNull Field field) {
@@ -276,10 +276,10 @@ public class ContentToStringUtil {
             return Optional.empty();
         }
         if(con.get().isDotAsset()){
-            return parseFile(Try.of(() -> con.get().getBinary("asset")).getOrNull());
+            return parseFile(Try.of(() -> con.get().getBinary(ASSET_KEY)).getOrNull());
         }
         else if(con.get().isFileAsset()){
-            return parseFile(Try.of(() -> con.get().getBinary("fileAsset")).getOrNull());
+            return parseFile(Try.of(() -> con.get().getBinary(FILE_ASSET_KEY)).getOrNull());
         }
         return Optional.empty();
     }

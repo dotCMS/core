@@ -1,4 +1,4 @@
-<form class="p-fluid" *ngIf="form" [formGroup]="form">
+<form *ngIf="form" [formGroup]="form" class="p-fluid">
     <ng-container *ngIf="areMultipleTabs; else singleForm">
         <p-tabView [scrollable]="true" data-testId="edit-content-multiple-tabs">
             <p-tabPanel *ngFor="let tab of tabs" [header]="tab.title">
@@ -13,13 +13,13 @@
 
     <ng-template #tabTemplate let-tab="tab">
         <div class="form__layout">
-            <div class="row" *ngFor="let row of tab.layout" data-testId="row">
-                <div class="column" *ngFor="let column of row.columns" data-testId="column">
+            <div *ngFor="let row of tab.layout" class="row" data-testId="row">
+                <div *ngFor="let column of row.columns" class="column" data-testId="column">
                     <dot-edit-content-field
                         *ngFor="let field of column.fields"
-                        [field]="field"
-                        [contentlet]="formData.contentlet"
                         [contentType]="formData.contentType.variable"
+                        [contentlet]="formData.contentlet"
+                        [field]="field"
                         data-testId="field" />
                 </div>
             </div>

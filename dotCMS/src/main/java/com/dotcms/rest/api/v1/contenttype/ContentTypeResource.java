@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+import static com.liferay.util.StringPool.COMMA;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -11,7 +15,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
-import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -51,9 +54,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.server.JSONP;
-
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -70,19 +78,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-import static com.liferay.util.StringPool.COMMA;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * This REST Endpoint provides information related to Content Types in the current dotCMS repository.
@@ -93,6 +90,10 @@ import static com.liferay.util.StringPool.COMMA;
 @Path("/v1/contenttype")
 @Tag(name = "Content Type")
 public class ContentTypeResource implements Serializable {
+
+	private static final String MAP_KEY_WORKFLOWS = "workflows";
+	private static final String MAP_KEY_SYSTEM_ACTION_MAPPINGS = "systemActionMappings";
+
 	private final WebResource 		webResource;
 	private final ContentTypeHelper contentTypeHelper;
 	private final PaginationUtil 	paginationUtil;
@@ -247,9 +248,13 @@ public class ContentTypeResource implements Serializable {
 		final ContentType contentTypeSaved = contentTypeAPI.copyFromAndDependencies(builder.build());
 
 		return ImmutableMap.builder()
-				.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(contentTypeSaved.variable())).mapObject())
-				.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
-				.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user).stream()
+				.putAll(contentTypeHelper.contentTypeToMap(
+						contentTypeAPI.find(contentTypeSaved.variable()), user))
+				.put(MAP_KEY_WORKFLOWS,
+						this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
+				.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
+						this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user)
+								.stream()
 						.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
 				.build();
 	}
@@ -293,8 +298,9 @@ public class ContentTypeResource implements Serializable {
 			final List<Map<Object, Object>> savedContentTypes = new ArrayList<>();
 
 			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
-				final ContentType type = entry.contentType;
-				final Set<String> workflowsIds = new HashSet<>(entry.workflowsIds);
+				final ContentType type = contentTypeHelper.evaluateContentTypeRequest(
+						entry.contentType, user, true
+				);
 
 				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
 					return ExceptionMapperUtil.createResponse(null, String.format("Content Type ID " +
@@ -302,13 +308,16 @@ public class ContentTypeResource implements Serializable {
 				}
 
 				final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>>  tuple2 =
-						this.saveContentTypeAndDependencies(type, initData.getUser(), workflowsIds,
+						this.saveContentTypeAndDependencies(type, initData.getUser(),
+								entry.workflows,
 							form.getSystemActions(), APILocator.getContentTypeAPI(user, true), true);
 				final ContentType contentTypeSaved = tuple2._1;
 				final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
-							.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
-						.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
-						.put("systemActionMappings", tuple2._2.stream()
+						.putAll(contentTypeHelper.contentTypeToMap(contentTypeSaved, user))
+						.put(MAP_KEY_WORKFLOWS,
+								this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(),
+										initData.getUser()))
+						.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS, tuple2._2.stream()
 								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
 						.build();
 				savedContentTypes.add(responseMap);
@@ -369,28 +378,34 @@ public class ContentTypeResource implements Serializable {
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
-			final ContentType contentType = form.getContentType();
+			final ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
+					idOrVar, form.getContentType(), user, false
+			);
 			Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
-			checkNotEmpty(contentType.id(), BadRequestException.class, "Content Type 'id' attribute must be set");
-				final ContentType currentContentType = contentTypeAPI.find(idOrVar);
+			checkNotEmpty(contentType.id(), BadRequestException.class,
+					"Content Type 'id' attribute must be set");
 
-				if (!currentContentType.id().equals(contentType.id())) {
-					return ExceptionMapperUtil.createResponse(null, "Field id '"+ idOrVar +"' does not match the Content Type with id '"+ contentType.id() +"'");
-				} else {
-
-					final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 = this.saveContentTypeAndDependencies(contentType, user,
-							new HashSet<>(form.getWorkflowsIds()), form.getSystemActions(), contentTypeAPI, false);
-					final ImmutableMap.Builder<Object, Object> builderMap =
-							ImmutableMap.builder()
-							.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(tuple2._1.variable())).mapObject())
-							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
-							.put("systemActionMappings", tuple2._2.stream()
-								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)));
-				return Response.ok(new ResponseEntityView<>(builderMap.build())).build();
-				}
+			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
+					this.saveContentTypeAndDependencies(contentType, user,
+							form.getWorkflows(), form.getSystemActions(),
+							contentTypeAPI, false);
+			final ImmutableMap.Builder<Object, Object> builderMap =
+					ImmutableMap.builder()
+							.putAll(contentTypeHelper.contentTypeToMap(
+									contentTypeAPI.find(tuple2._1.variable()), user))
+							.put(MAP_KEY_WORKFLOWS,
+									this.workflowHelper.findSchemesByContentType(
+											contentType.id(), initData.getUser()))
+							.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS, tuple2._2.stream()
+									.collect(Collectors.toMap(
+											SystemActionWorkflowActionMapping::getSystemAction,
+											mapping -> mapping)));
+			return Response.ok(new ResponseEntityView<>(builderMap.build())).build();
 		} catch (final NotFoundInDbException e) {
 			Logger.error(this, String.format("Content Type with ID or var name '%s' was not found", idOrVar), e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+		} catch (final IllegalArgumentException e) {
+			return ExceptionMapperUtil.createResponse(null, e.getMessage());
 		} catch (final DotStateException | DotDataException e) {
 			final String errorMsg = String.format("Failed to update Content Type with ID or var name " +
 					"'%s': %s", idOrVar, ExceptionUtil.getErrorMessage(e));
@@ -432,17 +447,19 @@ public class ContentTypeResource implements Serializable {
 	@WrapInTransaction
 	private Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> saveContentTypeAndDependencies (final ContentType contentType,
 																								   final User user,
-																								   final Set<String> workflowsIds,
+																								   final List<WorkflowFormEntry> workflows,
 																								   final List<Tuple2<WorkflowAPI.SystemAction,String>> systemActionMappings,
 																								   final ContentTypeAPI contentTypeAPI,
 																								   final boolean isNew) throws DotSecurityException, DotDataException {
 
 		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = new ArrayList<>();
 		final ContentType contentTypeSaved = contentTypeAPI.save(contentType);
-		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
+		this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
 
 		if (!isNew) {
-			this.handleFields(contentType, user, contentTypeAPI);
+			this.handleFields(contentTypeSaved.id(), contentType.fieldMap(
+					this.contentTypeHelper::generateFieldKey
+			), user, contentTypeAPI);
 		}
 
 		if (UtilMethods.isSet(systemActionMappings)) {
@@ -482,39 +499,60 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	/**
-	 * We need to handle in this way b/c when the content type exists the fields are not being updated
-	 * @param newContentType
-	 * @param user
-	 * @param contentTypeAPI
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * We need to handle in this way b/c when the content type exists the fields are not being
+	 * updated
+	 *
+	 * @param contentTypeId           the content type id
+	 * @param newContentTypeFieldsMap the content type fields found in the request
+	 * @param user                    the user performing the action
+	 * @param contentTypeAPI          the content type api
+	 * @throws DotDataException     if there is an error with the data
+	 * @throws DotSecurityException if the user does not have the required permissions
 	 */
 	@WrapInTransaction
-	private void handleFields(final ContentType newContentType, final User user, final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
+	private void handleFields(final String contentTypeId,
+			final Map<String, Field> newContentTypeFieldsMap, final User user,
+			final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
 
-		final ContentType currentContentType = contentTypeAPI.find(newContentType.id());
+		final ContentType currentContentType = contentTypeAPI.find(contentTypeId);
 
-		final DiffResult<FieldDiffItemsKey, Field> diffResult = new FieldDiffCommand().applyDiff(currentContentType.fieldMap(), newContentType.fieldMap());
+		final DiffResult<FieldDiffItemsKey, Field> diffResult = new FieldDiffCommand(contentTypeId).
+				applyDiff(
+						currentContentType.fieldMap(this.contentTypeHelper::generateFieldKey),
+						newContentTypeFieldsMap
+				);
 
 		if (!diffResult.getToDelete().isEmpty()) {
-
-			APILocator.getContentTypeFieldLayoutAPI().deleteField(currentContentType, diffResult.getToDelete().
-					values().stream().map(Field::id).collect(Collectors.toList()), user);
+			APILocator.getContentTypeFieldLayoutAPI().deleteField(
+					currentContentType,
+					diffResult.getToDelete().values().stream().
+							map(Field::id).
+							collect(Collectors.toList()),
+					user);
 		}
 
 		if (!diffResult.getToAdd().isEmpty()) {
-
-			APILocator.getContentTypeFieldAPI().saveFields(new ArrayList<>(diffResult.getToAdd().values()), user);
+			APILocator.getContentTypeFieldAPI().saveFields(
+					new ArrayList<>(diffResult.getToAdd().values()), user
+			);
 		}
 
 		if (!diffResult.getToUpdate().isEmpty()) {
-
 			handleUpdateFieldAndFieldVariables(user, diffResult);
 		}
 	}
 
-	private void handleUpdateFieldAndFieldVariables(final User user,
-													final DiffResult<FieldDiffItemsKey, Field> diffResult) throws DotSecurityException, DotDataException {
+	/**
+	 * Handles the update of fields and field variables based on the difference result.
+	 *
+	 * @param user          The user performing the update.
+	 * @param diffResult    The result of the field differences.
+	 * @throws DotSecurityException If a security exception occurs.
+	 * @throws DotDataException     If a data exception occurs.
+	 */
+	private void handleUpdateFieldAndFieldVariables(
+			final User user, final DiffResult<FieldDiffItemsKey, Field> diffResult)
+			throws DotSecurityException, DotDataException {
 
 		final List<Field> fieldToUpdate = new ArrayList<>();
 		final List<Tuple2<Field, List<DiffItem>>> fieldVariableToUpdate = new ArrayList<>();
@@ -526,7 +564,8 @@ public class ContentTypeResource implements Serializable {
 			final List<DiffItem> fieldVariableList = diffPartition.get(Boolean.TRUE);  // field variable diffs
 			final List<DiffItem> fieldList         = diffPartition.get(Boolean.FALSE); // field diffs
 			if (UtilMethods.isSet(fieldList)) {
-				Logger.debug(this, "Updating the field : " + entry.getValue().variable() + " diff: " + fieldList);
+				Logger.debug(this, "Updating the field : " + entry.getValue().variable() + " diff: "
+						+ fieldList);
 				fieldToUpdate.add(entry.getValue());
 			}
 
@@ -540,34 +579,72 @@ public class ContentTypeResource implements Serializable {
 			APILocator.getContentTypeFieldAPI().saveFields(fieldToUpdate, user);
 		}
 
-		if (UtilMethods.isSet(fieldVariableToUpdate)) { // any diff on field variables, lets see what kind of diffs are.
+		// any diff on field variables, lets see what kind of diffs are.
+		if (UtilMethods.isSet(fieldVariableToUpdate)) {
+			handleUpdateFieldVariables(user, fieldVariableToUpdate);
+		}
+	}
 
-			for (final Tuple2<Field, List<DiffItem>> fieldVariableTuple : fieldVariableToUpdate) {
+	/**
+	 * Handles the update of field variables for a given user and a list of field variable tuples.
+	 *
+	 * @param user                  The user object for which the field variables will be updated.
+	 * @param fieldVariableToUpdate List of tuples containing the field and a list of diff items to
+	 *                              update.
+	 * @throws DotDataException     If there is an error accessing the data.
+	 * @throws DotSecurityException If there is a security error.
+	 */
+	private void handleUpdateFieldVariables(
+			final User user, final List<Tuple2<Field, List<DiffItem>>> fieldVariableToUpdate)
+			throws DotDataException, DotSecurityException {
 
-				final Map<String, FieldVariable>  fieldVariableMap = fieldVariableTuple._1().fieldVariablesMap();
-				for (final DiffItem diffItem : fieldVariableTuple._2()) {
+		for (final Tuple2<Field, List<DiffItem>> fieldVariableTuple : fieldVariableToUpdate) {
+			handleUpdateFieldVariables(user, fieldVariableTuple);
+		}
+	}
 
-					// normalizing the real varname
-					final String fieldVariableVarName = StringUtils.replace(diffItem.getVariable(), "fieldVariable.", StringPool.BLANK);
-					if ("delete".equals(diffItem.getDetail()) && fieldVariableMap.containsKey(fieldVariableVarName)) {
+	/**
+	 * Handles the update of field variables for a user and field variable tuple.
+	 *
+	 * @param user               the user performing the update
+	 * @param fieldVariableTuple the tuple containing the field and list of diff items
+	 * @throws DotDataException     if there is an issue with data access
+	 * @throws DotSecurityException if there is a security issue
+	 */
+	private void handleUpdateFieldVariables(
+			final User user, final Tuple2<Field, List<DiffItem>> fieldVariableTuple)
+			throws DotDataException, DotSecurityException {
 
-						APILocator.getContentTypeFieldAPI().delete(fieldVariableMap.get(fieldVariableVarName));
-					}
+		final Map<String, FieldVariable> fieldVariableMap =
+				fieldVariableTuple._1().fieldVariablesMap();
+		for (final DiffItem diffItem : fieldVariableTuple._2()) {
 
-					// if add or update, it is pretty much the same
-					if ("add".equals(diffItem.getDetail()) || "update".equals(diffItem.getDetail())) {
+			final var detail = diffItem.getDetail();
 
-						if ("update".equals(diffItem.getDetail()) && !fieldVariableMap.containsKey(fieldVariableVarName)) {
-							// on update get the current field and gets the id
-							continue;
-						}
+			// normalizing the real varname
+			final String fieldVariableVarName = StringUtils.replace(diffItem.getVariable(),
+					"fieldVariable.", StringPool.BLANK);
+			if ("delete".equals(detail) &&
+					fieldVariableMap.containsKey(fieldVariableVarName)) {
 
-						APILocator.getContentTypeFieldAPI().save(fieldVariableMap.get(fieldVariableVarName), user);
-					}
+				APILocator.getContentTypeFieldAPI()
+						.delete(fieldVariableMap.get(fieldVariableVarName));
+			}
+
+			// if add or update, it is pretty much the same
+			if ("add".equals(detail) || "update".equals(detail)) {
+
+				if ("update".equals(detail) &&
+						!fieldVariableMap.containsKey(fieldVariableVarName)) {
+					// on update get the current field and gets the id
+					continue;
 				}
+
+				APILocator.getContentTypeFieldAPI()
+						.save(fieldVariableMap.get(fieldVariableVarName), user);
 			}
 		}
-	} // handleUpdateFieldAndFieldVariables.
+	}
 
 	@DELETE
 	@Path("/id/{idOrVar}")
@@ -627,8 +704,15 @@ public class ContentTypeResource implements Serializable {
 			Logger.debug(this, ()-> "Getting the Type: " + idOrVar);
 
 			final ContentType type = tapi.find(idOrVar);
+			if (null == type) {
+				// Humoring sonarlint, this block should never be reached as the find method will
+				// throw an exception if the type is not found.
+				throw new NotFoundInDbException(
+						String.format("Content Type with ID or var name '%s' was not found", idOrVar
+						));
+			}
 
-			if(null != session && null != type){
+			if (null != session) {
 				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
 			}
 
@@ -638,12 +722,16 @@ public class ContentTypeResource implements Serializable {
 
 			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
 					new ContentTypeInternationalization(languageId, live, user) : null;
-            final Map<String, Object> resultMap = new HashMap<>(new JsonContentTypeTransformer(type, contentTypeInternationalization).mapObject());
-
-			resultMap.put("workflows", this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
-			resultMap.put("systemActionMappings",
-					this.workflowHelper.findSystemActionsByContentType(type, initData.getUser())
-							.stream().collect(Collectors.toMap(mapping -> mapping.getSystemAction(),mapping -> mapping)));
+			final ImmutableMap<Object, Object> resultMap = ImmutableMap.builder()
+					.putAll(contentTypeHelper.contentTypeToMap(type,
+							contentTypeInternationalization, user))
+					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
+							type.id(), initData.getUser()))
+					.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
+							this.workflowHelper.findSystemActionsByContentType(
+									type, initData.getUser()).stream()
+							.collect(Collectors.toMap(mapping -> mapping.getSystemAction(),
+									mapping -> mapping))).build();
 
 			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
 					Response.ok(new ResponseEntityView<>(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():

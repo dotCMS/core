@@ -7,16 +7,21 @@ import io.vavr.Lazy;
 
 import java.io.OutputStream;
 
+/**
+ * The CompletionsAPI interface provides methods for interacting with the AI completion service.
+ * It includes methods for summarizing content based on matching embeddings in dotCMS,
+ * generating AI responses based on given prompts, and streaming AI responses.
+ * Implementations of this interface should provide the specific logic for interacting with the AI service.
+ */
 public interface CompletionsAPI {
 
-    static CompletionsAPI impl(AppConfig config) {
+    static CompletionsAPI impl(final AppConfig config) {
         return new CompletionsAPIImpl(Lazy.of(() -> config));
     }
 
     static CompletionsAPI impl() {
         return new CompletionsAPIImpl(null);
     }
-
 
     /**
      * this method takes the query/prompt, searches dotCMS content for matching embeddings and then returns an AI
@@ -27,7 +32,6 @@ public interface CompletionsAPI {
      */
     JSONObject summarize(CompletionsForm searcher);
 
-
     /**
      * this method takes the query/prompt, searches dotCMS content for matching embeddings and then streams the AI
      * response based on the matching content in dotCMS
@@ -37,6 +41,13 @@ public interface CompletionsAPI {
      */
     void summarizeStream(CompletionsForm searcher, OutputStream out);
 
+    /**
+     * this method takes a prompt in the form of json and returns a json AI response based upon that prompt
+     *
+     * @param promptJSON
+     * @return
+     */
+    JSONObject raw(JSONObject promptJSON);
 
     /**
      * this method takes a prompt and returns the AI response based upon that prompt
@@ -45,15 +56,6 @@ public interface CompletionsAPI {
      * @return
      */
     JSONObject raw(CompletionsForm promptForm);
-
-
-    /**
-     * this method takes a prompt in the form of json and returns a json AI response based upon that prompt
-     *
-     * @param promptJSON
-     * @return
-     */
-    JSONObject raw(JSONObject promptJSON);
 
     /**
      * this method takes a prompt in the form of parameters and returns a json AI response based on the parameters
@@ -68,7 +70,6 @@ public interface CompletionsAPI {
      */
     JSONObject prompt(String systemPrompt, String userPrompt, String model, float temperature, int maxTokens);
 
-
     /**
      * this method takes a prompt in the form of json and returns streaming AI response based upon that prompt
      *
@@ -76,4 +77,5 @@ public interface CompletionsAPI {
      * @return
      */
     void rawStream(CompletionsForm promptForm, OutputStream out);
+
 }

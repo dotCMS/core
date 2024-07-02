@@ -49,6 +49,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -188,10 +189,10 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                     .forEach(fileContainer -> dependencyProcessor.addAsset(fileContainer,
                             PusheableAsset.CONTAINER));
 
+            PaginatedContentlets contentletsPaginatedByHost = this.contentletAPI.get().findContentletsPaginatedByHost(site,
+                    APILocator.systemUser(), false);
             // Content dependencies
-            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-                    pushPublishigDependencyProvider.getContentletByLuceneQuery(
-                            "+conHost:" + site.getIdentifier()),
+            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentletsPaginatedByHost,
                     ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(site));
 
             // Structure dependencies
@@ -457,7 +458,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             for (final Contentlet contentletVersion : contentList) {
 
                 if (contentletVersion.isHTMLPage()) {
-                    processHTMLPagesDependency(contentletVersion.getIdentifier());
+                    processHTMLPagesDependency(contentletVersion.getIdentifier(),contentletVersion.getLanguageId());
                 }
                 processStoryBockDependencies(contentletVersion);
 
@@ -714,7 +715,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      * </ul>
      *
      */
-    private void processHTMLPagesDependency(final String pageId) {
+    private void processHTMLPagesDependency(final String pageId, final long languageId) {
         try {
 
             final IdentifierAPI idenAPI = APILocator.getIdentifierAPI();
@@ -729,7 +730,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             final IHTMLPage workingPage = Try.of(
                     ()->APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(
                             identifier,
-                            APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                            languageId,
                             false,
                             user,
                             false)
@@ -752,8 +753,13 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             final IHTMLPage livePage = workingPage.isLive()
                     ? workingPage
                     : Try.of(()->
-                            APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(identifier, APILocator.getLanguageAPI().getDefaultLanguage().getId(), true, user, false))
-                            .onFailure(e->Logger.warnAndDebug(DependencyManager.class, e)).getOrNull();
+                            APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(
+                                    identifier,
+                                    languageId,
+                                    true,
+                                    user,
+                                    false))
+                    .onFailure(e->Logger.warnAndDebug(DependencyManager.class, e)).getOrNull();
 
             // working template working page
             addTemplateAsDependency(workingPage);
@@ -911,11 +917,13 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     private <T> void tryToAddAllAndProcessDependencies(
-            final PusheableAsset pusheableAsset, final Collection<T> assets, final String reason)
+            final PusheableAsset pusheableAsset, final Iterable<T> assets, final String reason)
             throws DotDataException, DotSecurityException {
 
         if (UtilMethods.isSet(assets)) {
-            assets.stream().forEach(asset -> tryToAddAndProcessDependencies(pusheableAsset, asset, reason));
+            for (T asset : assets) {
+                tryToAddAndProcessDependencies(pusheableAsset, asset, reason);
+            }
         }
     }
 

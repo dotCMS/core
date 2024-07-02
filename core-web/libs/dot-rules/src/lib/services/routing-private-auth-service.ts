@@ -1,7 +1,9 @@
+import { Observable, Observer } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+
 import { RoutingService } from '@dotcms/dotcms-js';
-import { Observable, Observer } from 'rxjs';
 import { LoginService, DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotRouterService } from '@dotcms/dotcms-js';
 
@@ -32,6 +34,7 @@ export class RoutingPrivateAuthService implements CanActivate {
                                 if (!checkAccess) {
                                     this.router.goToMain();
                                 }
+
                                 obs.next(checkAccess);
                             });
                         }

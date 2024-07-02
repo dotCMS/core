@@ -58,8 +58,7 @@ const contentTypeMock: DotCMSContentType = {
     template: ` <dot-new-relationships
         [cardinality]="cardinalityIndex"
         [velocityVar]="velocityVar"
-        [editing]="editing"
-    >
+        [editing]="editing">
     </dot-new-relationships>`
 })
 class HostTestComponent {
