@@ -238,7 +238,8 @@ public class CategoriesResource {
             @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
             @QueryParam("inode") final String inode,
-            @QueryParam("showChildrenCount") final boolean showChildrenCount) throws DotDataException, DotSecurityException {
+            @QueryParam("showChildrenCount") final boolean showChildrenCount,
+            @QueryParam("allLevels") final boolean allLevels) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -257,6 +258,7 @@ public class CategoriesResource {
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put("inode", inode);
         extraParams.put("childrenCategories", true);
+        extraParams.put("searchInAllLevels", allLevels);
 
         try {
             response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
@@ -463,7 +465,7 @@ public class CategoriesResource {
                 : this.getChildren(httpRequest, httpResponse, categoryEditForm.getFilter(),
                         categoryEditForm.getPage(),
                         categoryEditForm.getPerPage(), "", categoryEditForm.getDirection(),
-                        categoryEditForm.getParentInode(), true);
+                        categoryEditForm.getParentInode(), true, false);
     }
 
     /**
