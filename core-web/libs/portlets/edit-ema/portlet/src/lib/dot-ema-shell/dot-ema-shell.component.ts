@@ -259,9 +259,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     this.navigate({
                         language_id: 1 // We navigate to the default language if the user didn't translate
                     });
+                } else {
+                    this.didTranslate.set(false);
+                    this.reloadFromDialog();
                 }
 
-                this.didTranslate.set(false);
                 break;
             }
 

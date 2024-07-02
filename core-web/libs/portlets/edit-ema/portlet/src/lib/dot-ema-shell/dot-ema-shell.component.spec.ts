@@ -829,6 +829,8 @@ describe('DotEmaShellComponent', () => {
             }));
 
             it('should open a dialog to create the page and do nothing when the user creates the page correctly', fakeAsync(() => {
+                const reloadSpy = jest.spyOn(store, 'reload');
+
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -872,6 +874,16 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 expect(router.navigate).not.toHaveBeenCalled();
+
+                expect(reloadSpy).toHaveBeenLastCalledWith({
+                    params: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                        clientHost: undefined,
+                        variantName: undefined
+                    }
+                });
             }));
 
             it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE', fakeAsync(() => {

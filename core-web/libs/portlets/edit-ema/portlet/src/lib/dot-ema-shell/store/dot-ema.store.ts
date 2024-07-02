@@ -466,10 +466,21 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
             switchMap(({ params, whenReloaded }) => {
                 return this.dotPageApiService.get(params).pipe(
+                    switchMap((pageData) =>
+                        this.dotLanguagesService
+                            .getLanguagesUsedPage(pageData.page.identifier)
+                            .pipe(
+                                map((languages) => ({
+                                    editor: pageData,
+                                    languages
+                                }))
+                            )
+                    ),
                     tapResponse({
-                        next: (editor) => {
+                        next: ({ editor, languages }) => {
                             this.patchState({
                                 editor,
+                                languages,
                                 editorState: EDITOR_STATE.IDLE,
                                 shouldReload: true
                             });
