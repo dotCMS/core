@@ -48,7 +48,10 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     private destroy$ = new Subject<boolean>();
     private scrollElement?: HTMLElement;
 
-    constructor(private store: DotPageStore, private dotMessageService: DotMessageService) {}
+    constructor(
+        private store: DotPageStore,
+        private dotMessageService: DotMessageService
+    ) {}
 
     ngOnInit() {
         this.store.actionMenuDomId$
