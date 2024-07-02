@@ -516,16 +516,6 @@
 								}
 							},
 							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkzMzFlNmUxMy04YWFiLTQzZWUtYTVkYi00Y2I3YWI0MGQyODMiLCJ4bW9kIjoxNzE5OTU1MDcxMDAwLCJuYmYiOjE3MTk5NTUwNzEsImlzcyI6ImZhODZhZTgzMDkiLCJsYWJlbCI6ImdyYXBocWwiLCJleHAiOjE4MTQ1MDgwMDAsImlhdCI6MTcxOTk1NTA3MSwianRpIjoiYWFlY2QxNmYtZTE4Mi00YjFjLWFiNjMtNjk2MDg3ZWU3MjI3In0.R7btkzKOuWSVDCXFUNijBHEq9PFlFQpQLQBz8bA7T3s",
-											"type": "string"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [
 									{
