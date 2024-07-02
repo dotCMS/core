@@ -1583,6 +1583,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function createContentlet(url, contentType) {
+        url = url + "&lang=" + selectedLang;
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",

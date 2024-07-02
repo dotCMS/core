@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import {
     Component,
     DestroyRef,
@@ -55,7 +54,6 @@ import { DotValidators } from './../../../../validators/dotValidators';
         ReactiveFormsModule,
         FormsModule,
         DropdownModule,
-        NgIf,
         InputTextareaModule,
         DotFieldRequiredDirective,
         DotMessagePipe,
@@ -197,7 +195,7 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         this.submitButtonLabel = isLoading
             ? 'block-editor.extension.ai-image.generating'
             : this.aiProcessedPrompt || this.value?.error
-              ? 'block-editor.extension.ai-image.regenerate'
-              : 'block-editor.extension.ai-image.generate';
+            ? 'block-editor.extension.ai-image.regenerate'
+            : 'block-editor.extension.ai-image.generate';
     }
 }

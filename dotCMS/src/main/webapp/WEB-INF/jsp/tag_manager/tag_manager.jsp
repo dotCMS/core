@@ -155,12 +155,12 @@ td {font-size: 100%;}
             field: 'tagname',
             name: tagNameMsg,
             width: '30%',
-            formatter: formatHref
+            formatter: formatHref,
         },
         {
             field: 'hostName',
             name: hostMsg,
-            width: '70%'
+            width: '70%',
         }];
 
         tagsGrid = new dojox.grid.EnhancedGrid({
@@ -192,6 +192,7 @@ td {font-size: 100%;}
         },
         document.createElement('div'));
 
+
         // append the new grid
         dojo.byId('tagsGrid').appendChild(tagsGrid.domNode);
 
@@ -212,11 +213,18 @@ td {font-size: 100%;}
          // Call startup, in order to render the grid:
          tagsGrid.startup();
 
-         dojo.connect(dijit.byId("addTagDialog"), "hide", function (evt) {
-                dojo.byId("savedMessage").innerHTML = "";
-            });
-
+        dojo.connect(dijit.byId("addTagDialog"), "hide", function (evt) {
+            dojo.byId("savedMessage").innerHTML = "";
         });
+
+        // The first column, which is the checkbox should not be resizable due to a event bubble that prevents the user to select all the checkboxes
+        tagsGrid.layout.cells[0] = {
+            ...tagsGrid.layout.cells[0],
+           noresize: true
+        }
+
+
+    });
 
         function resetSearch() {
             dijit.byId("showGlobal").set('checked',false);

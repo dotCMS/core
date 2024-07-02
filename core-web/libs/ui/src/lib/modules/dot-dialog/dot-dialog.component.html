@@ -1,5 +1,5 @@
+@if (visible) {
 <div
-    *ngIf="visible"
     [ngStyle]="{
         width: width,
         height: height
@@ -11,24 +11,21 @@
         [ngStyle]="headerStyle"
         class="dialog__header">
         <h4 [textContent]="header" class="dialog__title"></h4>
+        @if (closeable) {
         <p-button
-            *ngIf="closeable"
             (click)="close($event)"
             icon="pi pi-times"
             styleClass="p-button-rounded p-button-text"
             data-testId="close-button"></p-button>
+        }
     </header>
-
     <div (scroll)="onContentScroll($event)" [ngStyle]="contentStyle" class="dialog__content">
         <ng-content></ng-content>
     </div>
-
-    <footer
-        *ngIf="actions"
-        [class.dialog__footer--shadowed]="isContentScrolled"
-        class="dialog__footer">
+    @if (actions) {
+    <footer [class.dialog__footer--shadowed]="isContentScrolled" class="dialog__footer">
+        @if (actions.cancel) {
         <button
-            *ngIf="actions.cancel"
             (click)="cancelAction()"
             [disabled]="actions.cancel.disabled"
             [label]="actions.cancel.label"
@@ -36,8 +33,8 @@
             class="dialog__button-cancel p-button-outlined"
             data-testId="dotDialogCancelAction"
             pButton></button>
+        } @if (actions.accept) {
         <button
-            *ngIf="actions.accept"
             (click)="acceptAction()"
             [disabled]="actions.accept.disabled"
             [label]="actions.accept.label"
@@ -46,5 +43,8 @@
             class="dialog__button-accept"
             data-testId="dotDialogAcceptAction"
             pButton></button>
+        }
     </footer>
+    }
 </div>
+}
