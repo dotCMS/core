@@ -4,17 +4,11 @@ on:
     types: [edited]
 
 jobs:
-  discover-actions:
-    name: Issue Resolve Actions
-    uses: ./.github/workflows/discover-issue-actions.yml
 
   frontend-notify:
-    needs: discover-actions
     name: Issue Resolve Actions
-    if: success() && needs.discover-actions.outputs.actions
+    if: success()
     uses: ./.github/workflows/frontend-notify.yml
-    with:
-      actions: ${{ needs.discover-actions.outputs.actions }}
     secrets:
       CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
