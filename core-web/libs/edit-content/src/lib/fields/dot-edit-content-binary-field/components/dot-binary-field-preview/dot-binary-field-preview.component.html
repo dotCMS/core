@@ -49,11 +49,13 @@
             data-testId="info-btn"
             icon="pi pi-info" />
 
-        <p-button
-            (click)="downloadAsset()"
-            styleClass="p-button-rounded p-button-sm p-button-secondary p-button-outlined"
-            data-testId="download-btn"
-            icon="pi pi-download" />
+        @if (contentlet) {
+            <p-button
+                (click)="downloadAsset()"
+                styleClass="p-button-rounded p-button-sm p-button-secondary p-button-outlined"
+                data-testId="download-btn"
+                icon="pi pi-download" />
+        }
     </div>
 
     <div class="preview-metadata__actions">

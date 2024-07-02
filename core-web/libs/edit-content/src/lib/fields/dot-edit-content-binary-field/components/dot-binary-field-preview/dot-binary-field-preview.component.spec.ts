@@ -112,6 +112,15 @@ describe('DotBinaryFieldPreviewComponent', () => {
         );
     });
 
+    it("should doesn't show download button", () => {
+        spectator.setInput('tempFile', TEMP_FILES_MOCK[0]);
+        spectator.setInput('contentlet', null);
+        spectator.detectChanges();
+        const downloadButton = spectator.query(byTestId('download-btn'));
+
+        expect(downloadButton).toBeNull();
+    });
+
     it('should be editable', () => {
         spectator.detectChanges();
         const editButton = spectator.query(byTestId('edit-button'));
