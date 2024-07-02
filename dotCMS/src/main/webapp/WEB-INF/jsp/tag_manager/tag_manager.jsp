@@ -186,7 +186,10 @@ td {font-size: 100%;}
                     defaultPage: 1, defaultPageSize: 25
                 },
                 search : true,
-                indirectSelection: { headerSelector: true }
+                indirectSelection: {
+                    headerSelector: true,
+                    noresize: true
+                }
 
             }
         },
@@ -216,13 +219,6 @@ td {font-size: 100%;}
         dojo.connect(dijit.byId("addTagDialog"), "hide", function (evt) {
             dojo.byId("savedMessage").innerHTML = "";
         });
-
-        // The first column, which is the checkbox should not be resizable due to a event bubble that prevents the user to select all the checkboxes
-        tagsGrid.layout.cells[0] = {
-            ...tagsGrid.layout.cells[0],
-           noresize: true
-        }
-
 
     });
 
