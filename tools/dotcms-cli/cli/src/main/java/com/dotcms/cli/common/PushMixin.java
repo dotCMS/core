@@ -83,7 +83,7 @@ public class PushMixin {
         if (null == pushPath) {
             return workingDir;
         }
-        return pushPath.toPath().resolve(workingDir).normalize().toAbsolutePath();
+        return workingDir.resolve(pushPath.toPath()).normalize().toAbsolutePath();
     }
 
     /**
