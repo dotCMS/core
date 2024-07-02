@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8d31e831-7abc-4f53-ae81-9ebbf941b789",
+		"_postman_id": "7b014251-f194-49cf-b7c2-d9562ac65c92",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -286,30 +286,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
-										}
-									]
-								},
 								"method": "POST",
 								"header": [
 									{
@@ -361,21 +337,6 @@
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
 								"method": "PUT",
 								"header": [
 									{
