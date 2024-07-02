@@ -1,11 +1,9 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.cli.common.PushMixin;
-import com.dotcms.cli.common.WorkspaceParams;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 
