@@ -116,3 +116,6 @@ This maintenance release includes the following code fixes:
 109. https://github.com/dotCMS/core/issues/28695 : UT210901 UpdateDateTimezones has wrong DST query #28695
 110. https://github.com/dotCMS/core/issues/28760 : Template Evaluation for Non-Default Language Pages #28760
 111. https://github.com/dotCMS/core/issues/28769 : Language Fallback not working. #28769
+112. https://github.com/dotCMS/core/issues/28204 : Search filter in the theme selection menu fails to load sites #28204
+113. https://github.com/dotCMS/core/issues/28609 : Remove old vulnerability-scan.yml workflow #28609
+114. https://github.com/dotCMS/core/issues/23292 : Password validation failed for few characters #23292
