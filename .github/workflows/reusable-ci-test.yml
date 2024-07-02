@@ -311,7 +311,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        collection_group: [ 'category-content', 'container', 'experiment', 'graphql', 'page', 'pp', 'template', 'workflow',  'default' ]
+        collection_group: [ 'category-content', 'container', 'experiment', 'graphql', 'page', 'pp', 'template', 'workflow', 'default-split', 'default' ]
     steps:
       - id: fetch-core
         name: Fetch Core Repo
