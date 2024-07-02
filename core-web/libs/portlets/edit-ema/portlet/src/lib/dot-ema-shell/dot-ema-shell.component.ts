@@ -257,21 +257,22 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
                 if (!this.didTranslate()) {
                     this.navigate({
-                        language_id: 1
+                        language_id: 1 // We navigate to the default language if the user didn't translate
                     });
-                } else {
-                    this.didTranslate.set(false);
                 }
 
+                this.didTranslate.set(false);
                 break;
             }
 
             case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
+                // We need to check when the contentlet is updated, to know if we need to reload the page
                 this.didTranslate.set(true);
                 break;
             }
 
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
+                this.didTranslate.set(true);
                 const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
 
                 if (this.queryParams.url !== url) {
