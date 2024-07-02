@@ -119,3 +119,4 @@ This maintenance release includes the following code fixes:
 112. https://github.com/dotCMS/core/issues/28204 : Search filter in the theme selection menu fails to load sites #28204
 113. https://github.com/dotCMS/core/issues/28609 : Remove old vulnerability-scan.yml workflow #28609
 114. https://github.com/dotCMS/core/issues/23292 : Password validation failed for few characters #23292
+115. https://github.com/dotCMS/core/issues/23131 : Remove 10k Push Publishing Limit #23131
