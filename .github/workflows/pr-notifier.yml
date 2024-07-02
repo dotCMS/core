@@ -7,12 +7,6 @@ on:
         description: 'PR status'
         type: string
         required: true
-      github_user:
-        description: 'Github user'
-        type: string
-        required: false
-        default: ${{ github.actor }}
-
     secrets:
       CI_MACHINE_USER:
         description: 'CI machine user'
@@ -25,129 +19,69 @@ on:
         required: true
 
 jobs:
-  pr-notifier:
+  message-resolver:
+    name: Resolve Message
     runs-on: ubuntu-20.04
-    if: always()
-    env:
-      SOURCE_REPOSITORY: ${{ github.repository }}
+    outputs:
+      message: ${{ steps.message-resolver.outputs.message }}
+    steps:
+      - name: Resolve Message
+        id: message-resolver
+        shell: bash
+        run: |
+          pr_status=${{ inputs.pr_status }}
+          run_id=${{ github.run_id }}
+          run_url=https://github.com/${{ github.repository }}/actions/runs/${run_id}
+          details_message="Please check ${run_url} for more details."
+          
+          case "${pr_status}" in
+          "SUCCESS")
+              message=":white_check_mark: PR passed all checks"
+              ;;
+          "FAILURE")
+              message=":x: PR failed checks"
+              ;;
+          "CANCELLED")
+              message=":warning: PR was cancelled"
+              ;;
+          *)
+              message=":question: PR status is unknown"
+              ;;
+          esac
+          
+          message="${message}. ${details_message}"
+          
+          echo "message: [${message}]"
+          echo "message=${message}" >> $GITHUB_OUTPUT
+
+  slack-channel-resolver:
+    name: Resolve Slack Channel
+    uses: ./.github/workflows/slack-channel-resolver.yml
+    with:
+      github_users: "${{ github.actor }}"
+      default_channel: eng
+      default_channel_id: C028Z3R2D
+      continue_on_error: true
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  pr-notifier:
+    needs: [message-resolver, slack-channel-resolver]
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        member: ${{ fromJSON(needs.slack-channel-resolver.outputs.channel_ids) }}
     continue-on-error: true
     steps:
-      - name: Resolve User
-        id: resolve-user
-        continue-on-error: true
-        shell: bash
-        env:
-          DEFAULT_CHANNEL: eng
-        run: |
-          github_user=${{ inputs.github_user }}
-          [[ -z "${github_user}" ]] && github_user=${{ env.DEFAULT_CHANNEL }}
-          
-          echo "github_user=${github_user}"
-          echo "github_user=${github_user}" >> $GITHUB_OUTPUT
-
-      - name: Resolve Channel
-        id: resolve-channel
-        continue-on-error: true
-        shell: bash
-        env:
-          DEFAULT_CHANNEL_ID: C028Z3R2D # eng channel id
-        run: |
-          github_user=${{ steps.resolve-user.outputs.github_user }}
-          
-          githack_host=raw.githack.com
-          githack_core_repo_url=https://${githack_host}/${{ env.SOURCE_REPOSITORY }}
-          
-          branch=/${{ github.head_ref }}
-          slack_mappings_file=slack-mappings.json
-          slack_mappings_path=.github/data/${slack_mappings_file}
-          slack_mapping_url=${githack_core_repo_url}${branch}/${slack_mappings_path}
-          
-          if [[ -n "${github_user}" ]]; then
-            json=$(curl -s ${slack_mapping_url})
-          
-            channel_id=$( \
-              jq ".[] | select(.github_user == \"${github_user}\")" <<< "${json}" | \
-              jq -r '.slack_id' \
-            )
-        
-            echo "Resolved channel id [${channel_id}] from [${slack_mappings_file}]"
-          
-            if [[ -z "${channel_id}" ]]; then
-              echo "Channel id could not be resolved from [${slack_mappings_file}]. Attempting to resolve from Github user email."
-              user_email=$( \
-                curl \
-                  -u ${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }} \
-                  --request GET \
-                  -s \
-                  https://api.github.com/users/${github_user} | \
-                grep "\"email\":" | \
-                sed "s/\"email\"://g" | \
-                tr -d '",[:space:]' \
-              )
-              echo "Resolved user email: [${user_email}]"
-            
-              if [[ -n "${user_email}" ]]; then
-                channel_id=$( \
-                  curl \
-                    --request GET \
-                    --header "Content-type: application/json" \
-                    --header "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-                    -s \
-                    "https://slack.com/api/users.lookupByEmail?email=${user_email}" | \
-                  python3 -m json.tool | \
-                  grep "\"id\":" | \
-                  sed "s/\"id\"://g" | \
-                  tr -d '",[:space:]' \
-                )
-          
-                echo "Resolved channel id [${channel_id}] from email [${user_email}]"
-              fi
-            fi
-          fi
-            
-          [[ -z "${channel_id}" ]] \
-            && echo "Channel id could not be resolved, defaulting to eng's [${{ env.DEFAULT_CHANNEL_ID }}]" \
-            && channel_id=${{ env.DEFAULT_CHANNEL_ID }}
-          echo "channel_id=${channel_id}" >> $GITHUB_OUTPUT
-          echo "channel_id=${channel_id}"
-
-      - name: Resolve Message
-        id: resolve-message
-        continue-on-error: true
-        shell: bash
-        run: |
-            pr_status=${{ inputs.pr_status }}
-            channel_id=${{ steps.resolve-channel.outputs.channel_id }}
-            run_id=${{ github.run_id }}
-            run_url=https://github.com/${{ env.SOURCE_REPOSITORY }}/actions/runs/${run_id}
-            details_message="Please check ${run_url} for more details."
-            
-            case "${pr_status}" in
-            "SUCCESS")
-                message=":white_check_mark: PR passed all checks"
-                ;;
-            "FAILURE")
-                message=":x: PR failed checks"
-                ;;
-            "CANCELLED")
-                message=":warning: PR was cancelled"
-                ;;
-            *)
-                message=":question: PR status is unknown"
-                ;;
-            esac
-          
-            message="${message}. ${details_message}"
-            
-            echo "message=${message}" >> $GITHUB_OUTPUT
-            echo "message=${message}"
-
       - name: Notify PR Status
         continue-on-error: true
         shell: bash
         run: |
-          channel=${{ steps.resolve-channel.outputs.channel_id }}
-          message="${{ steps.resolve-message.outputs.message }}"
+          channel=${{ matrix.member }}
+          message="${{ needs.message-resolver.outputs.message }}"
           
           curl -X POST \
             -H "Content-type: application/json" \
