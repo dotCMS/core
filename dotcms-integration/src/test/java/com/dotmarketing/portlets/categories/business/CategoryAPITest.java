@@ -1548,7 +1548,7 @@ public class CategoryAPITest extends IntegrationTestBase {
      * Method to test: {@link CategoryAPIImpl#findAll(CategoryFactory.CategorySearchCriteria, User, boolean)}
      * When: Call the API method
      * Should: it should
-     * - Use the {@link CategoryFactoryImpl#findAll(CategoryFactory.CategorySearchCriteria)} to search the {@link Category}
+     * - Use the {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)} to search the {@link Category}
      * - Use the {@link PermissionAPI#filterCollection(List, int, boolean, User)} method to check permission
      */
     @Test
@@ -1557,8 +1557,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         final String filter = new RandomString().nextString();
         final String orderBy = "category_key";
 
-        final CategoryFactory.CategorySearchCriteria searchingCriteria =
-                new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria searchingCriteria = new CategorySearchCriteria.Builder()
                         .rootInode(inode)
                         .direction(OrderDirection.DESC)
                         .orderBy(orderBy)
@@ -1590,7 +1589,7 @@ public class CategoryAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link CategoryAPIImpl#findAll(CategoryFactory.CategorySearchCriteria, User, boolean)}
+     * Method to test: {@link CategoryAPIImpl#findAll(CategorySearchCriteria, User, boolean)}
      * When: Create 9 Category, call the two times:
      * first: limit =5, offset =0
      * second: limit =5, offset =5
@@ -1603,8 +1602,8 @@ public class CategoryAPITest extends IntegrationTestBase {
         final String filter = new RandomString().nextString();
         final String orderBy = "category_key";
 
-        final CategoryFactory.CategorySearchCriteria searchingCriteria_1 =
-                new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria searchingCriteria_1 =
+                new CategorySearchCriteria.Builder()
                         .rootInode(inode)
                         .direction(OrderDirection.DESC)
                         .orderBy(orderBy)
@@ -1613,8 +1612,7 @@ public class CategoryAPITest extends IntegrationTestBase {
                         .offset(0)
                         .build();
 
-        final CategoryFactory.CategorySearchCriteria searchingCriteria_2 =
-                new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria searchingCriteria_2 = new CategorySearchCriteria.Builder()
                         .rootInode(inode)
                         .direction(OrderDirection.DESC)
                         .orderBy(orderBy)
