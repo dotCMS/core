@@ -2,25 +2,25 @@ import { Injectable } from '@angular/core';
 
 @Injectable()
 export class DotBinaryFieldValidatorService {
-    private _maxFileSize: number;
-    private _accept: string[] = [];
-    private _acceptSanitized: string[] = [];
+    #maxFileSize: number;
+    #accept: string[] = [];
+    #acceptSanitized: string[] = [];
 
     get accept(): string[] {
-        return this._accept;
+        return this.#accept;
     }
 
     get maxFileSize(): number {
-        return this._maxFileSize;
+        return this.#maxFileSize;
     }
 
     setMaxFileSize(maxFileSize: number) {
-        this._maxFileSize = maxFileSize;
+        this.#maxFileSize = maxFileSize;
     }
 
     setAccept(accept: string[]) {
-        this._accept = accept;
-        this._acceptSanitized = accept
+        this.#accept = accept;
+        this.#acceptSanitized = accept
             ?.filter((value) => value !== '*/*')
             .map((type) => {
                 // Remove the wildcard character
@@ -29,22 +29,22 @@ export class DotBinaryFieldValidatorService {
     }
 
     isValidType({ extension, mimeType }): boolean {
-        if (this._acceptSanitized?.length === 0) {
+        if (this.#acceptSanitized?.length === 0) {
             return true;
         }
 
         const sanitizedExtension = extension?.replace('.', '');
 
-        return this._acceptSanitized.some(
+        return this.#acceptSanitized.some(
             (type) => mimeType?.includes(type) || type?.includes(`.${sanitizedExtension}`)
         );
     }
 
     isValidSize(size: number): boolean {
-        if (!this._maxFileSize) {
+        if (!this.#maxFileSize) {
             return true;
         }
 
-        return size <= this._maxFileSize;
+        return size <= this.#maxFileSize;
     }
 }

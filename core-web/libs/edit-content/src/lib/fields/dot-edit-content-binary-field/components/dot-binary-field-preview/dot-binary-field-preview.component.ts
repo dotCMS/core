@@ -84,10 +84,10 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
     protected isEditable = false;
     protected readonly content = signal<string>('');
     protected readonly resourceLinks = signal<dotPreviewResourceLink[]>([]);
-    private readonly dotResourceLinksService = inject(DotResourceLinksService);
+    readonly #dotResourceLinksService = inject(DotResourceLinksService);
 
     get metadata(): DotFileMetadata {
-        return this.tempFile?.metadata || getFileMetadata(this.contentlet);
+        return this.tempFile?.metadata ?? getFileMetadata(this.contentlet);
     }
 
     get title(): string {
@@ -138,7 +138,7 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
      * @memberof DotBinaryFieldPreviewComponent
      */
     private fetchResourceLinks(): void {
-        this.dotResourceLinksService
+        this.#dotResourceLinksService
             .getFileResourceLinks({
                 fieldVariable: this.fieldVariable,
                 inodeOrIdentifier: this.contentlet.identifier

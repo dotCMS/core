@@ -15,7 +15,7 @@ import {
     UI_MESSAGE_KEYS,
     UiMessageI
 } from '../interfaces/index';
-import { getFileMetadata, getUiMessage } from '../utils/binary-field-utils';
+import { getFieldVersion, getFileMetadata, getUiMessage } from '../utils/binary-field-utils';
 
 export interface BinaryFieldState {
     contentlet: DotCMSContentlet;
@@ -182,8 +182,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                 tap(() => this.setUploading()),
                 switchMap((contentlet) => {
                     const { contentType, editableAsText, name } = getFileMetadata(contentlet);
-                    const { fileAssetVersion, fieldVariable } = contentlet;
-                    const contentURL = fileAssetVersion || contentlet[`${fieldVariable}Version`];
+                    const contentURL = getFieldVersion(contentlet);
                     const obs$ = editableAsText ? this.getFileContent(contentURL) : of('');
 
                     return obs$.pipe(

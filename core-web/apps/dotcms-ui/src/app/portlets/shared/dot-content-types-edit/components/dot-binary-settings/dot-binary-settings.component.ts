@@ -62,6 +62,10 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
         {
             key: 'allowCodeWrite',
             message: 'binary-field.settings.system.options.allow.code.write'
+        },
+        {
+            key: 'allowGenerateImg',
+            message: 'binary-field.settings.system.options.allow.generate.img'
         }
     ];
     private readonly fb: FormBuilder = inject(FormBuilder);
@@ -83,7 +87,8 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
             accept: '',
             systemOptions: this.fb.group({
                 allowURLImport: true,
-                allowCodeWrite: true
+                allowCodeWrite: true,
+                allowGenerateImg: true
             })
         });
 
