@@ -42,6 +42,7 @@ services:
         DB_BASE_URL: "jdbc:postgresql://db/dotcms"
         DB_USERNAME: 'dotcmsdbuser'
         DB_PASSWORD: 'password'
+        DB_HOST: 'db'
         DB_LOAD_DUMP_SQL: '/data/dump/dump.sql'
         DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
         DOT_ES_ENDPOINTS: 'https://opensearch:9200'

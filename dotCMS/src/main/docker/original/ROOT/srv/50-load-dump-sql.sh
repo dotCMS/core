@@ -10,9 +10,10 @@ if [[ -n "${DB_LOAD_DUMP_SQL}" && -f "${DB_LOAD_DUMP_SQL}" && -z ${CUSTOM_STARTE
     whereis pg_dump
     which psql
     which pg_dump
-#    PGPASSWORD=${DB_PASSWORD} psql -h ${DB_BASE_URL} -U ${DB_USERNAME} -d ${DB_NAME} -f "${DB_LOAD_DUMP_SQL}"
-#    /usr/bin/psql -h ${DB_BASE_URL} -U ${DB_USERNAME} -d ${DB_NAME} -f "${DB_LOAD_DUMP_SQL}"
-#    /usr/bin/pg_dump -h ${DB_BASE_URL} -U ${DB_USERNAME} -W ${DB_PASSWORD} -d ${DB_NAME} -f "${DB_LOAD_DUMP_SQL}"
+    sleep 10
+    export PGPASSWORD=${DB_PASSWORD}
+    /usr/bin/psql -h "${DB_HOST}" -U "${DB_USERNAME}" -d "${DB_NAME}" -f "${DB_LOAD_DUMP_SQL}"
+
     echo "Dump successfully imported."
 else
     echo "Dump file not found at ${DB_LOAD_DUMP_SQL}"
