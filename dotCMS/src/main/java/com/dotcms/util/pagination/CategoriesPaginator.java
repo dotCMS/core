@@ -76,7 +76,7 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
                     .limit(limit)
                     .offset(offset)
                     .orderBy(orderby != null ? orderby : "category_name")
-                    .direction(direction != null ? OrderDirection.ASC : direction)
+                    .direction(direction != null ? direction : OrderDirection.ASC )
                     .rootInode(inode)
                     .build();
 
@@ -127,11 +127,19 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
                                                  final CategorySearchCriteria searchingCriteria,
                                                  final boolean childrenCategories)
             throws DotDataException, DotSecurityException {
+
+        String categoriesSort = null;
+
+        if (searchingCriteria.getOrderBy() != null) {
+            categoriesSort = searchingCriteria.getDirection() == OrderDirection.DESC
+                    ? "-" + searchingCriteria.getOrderBy() : searchingCriteria.getOrderBy();
+        }
+
         return childrenCategories == false ?
                 categoryAPI.findTopLevelCategories(user, false, searchingCriteria.getOffset(),
-                        searchingCriteria.getLimit(), searchingCriteria.getFilter(), searchingCriteria.getOrderBy()) :
+                        searchingCriteria.getLimit(), searchingCriteria.getFilter(), categoriesSort) :
                 categoryAPI.findChildren(user, searchingCriteria.getRootInode(), false,
                         searchingCriteria.getOffset(), searchingCriteria.getLimit(), searchingCriteria.getFilter(),
-                        searchingCriteria.getOrderBy());
+                        categoriesSort);
     }
 }
