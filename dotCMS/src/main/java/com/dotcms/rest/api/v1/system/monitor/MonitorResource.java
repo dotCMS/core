@@ -39,14 +39,12 @@ public class MonitorResource {
      * @param request
      * @return
      */
-    @NoCache
     @GET
     @JSONP
-    @Path("/{a:startup|ready|}")
+    @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @CloseDBIfOpened
     public Response statusCheck(final @Context HttpServletRequest request)  {
-
         final MonitorHelper helper = new MonitorHelper(request);
         if(!helper.accessGranted) {
             return Response.status(FORBIDDEN).entity(Map.of()).build();
@@ -63,6 +61,22 @@ public class MonitorResource {
             return Response.ok(helper.getMonitorStats().toMap()).build();
         }
         return Response.ok().build();
+
+
+    }
+
+
+
+
+    @NoCache
+    @GET
+    @JSONP
+    @Path("/{a:startup|ready}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @CloseDBIfOpened
+    public Response ready(final @Context HttpServletRequest request)  {
+
+        return statusCheck(request);
 
     }
 
