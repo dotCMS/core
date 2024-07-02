@@ -715,6 +715,7 @@ describe('DotEmaShellComponent', () => {
                     rejectEvent: expect.any(Object),
                     rejectIcon: 'hidden',
                     acceptIcon: 'hidden',
+                    key: 'shell-confirm-dialog',
                     header: 'editpage.language-change-missing-lang-populate.confirm.header',
                     message: 'editpage.language-change-missing-lang-populate.confirm.message'
                 });
@@ -868,6 +869,7 @@ describe('DotEmaShellComponent', () => {
                         }
                     })
                 });
+                spectator.detectChanges();
 
                 expect(router.navigate).not.toHaveBeenCalled();
             }));
@@ -900,7 +902,10 @@ describe('DotEmaShellComponent', () => {
                 spectator.triggerEventHandler(dialog, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.SAVE_PAGE
+                            name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                            payload: {
+                                htmlPageReferer: '/index'
+                            }
                         }
                     })
                 });
@@ -913,6 +918,7 @@ describe('DotEmaShellComponent', () => {
                         }
                     })
                 });
+                spectator.detectChanges();
 
                 expect(router.navigate).not.toHaveBeenCalled();
             }));

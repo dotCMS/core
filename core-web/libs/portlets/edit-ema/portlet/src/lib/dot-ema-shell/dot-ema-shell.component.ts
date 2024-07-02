@@ -273,7 +273,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.didTranslate.set(true);
-                const url = event.detail?.payload?.htmlPageReferer.split('?')[0].replace('/', '');
+                const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
 
                 if (this.queryParams.url !== url) {
                     this.navigate({
@@ -358,6 +358,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             ),
             rejectIcon: 'hidden',
             acceptIcon: 'hidden',
+            key: 'shell-confirm-dialog',
             accept: () => {
                 this.dialog.translatePage({
                     page,
