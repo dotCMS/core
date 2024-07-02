@@ -48,11 +48,24 @@ RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
     mkdir -p /data/local/dotsecure/license && \
     chown -R $USER_NAME:$USER_NAME /data
 
+# ----------------------------------------------
+# Stage 3:  Flatten everything to 1 layer
+# ----------------------------------------------
+FROM scratch
+
+LABEL com.dotcms.contact "support@dotcms.com"
+LABEL com.dotcms.vendor "dotCMS LLC"
+LABEL com.dotcms.description "dotCMS Content Management System"
+
+ARG USER_UID="65001"
+ARG USER_GID="65001"
+
+COPY --from=container-base / /
 
 # Switching to non-root user to install SDKMAN!
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
-ENV PATH=$PATH:/java/bin:/usr/local/pgsql/bin
+ENV PATH=$PATH:/java/bin
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]

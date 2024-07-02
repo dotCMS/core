@@ -7,7 +7,7 @@ SHELL ["/bin/bash", "-c"]
 ARG DEBIAN_FRONTEND=noninteractive
 
 # see https://www.postgresql.org/ftp/source/ for versions
-ARG POSTGRES_VERSION=15.3
+ARG POSTGRES_VERSION=16.2
 
 ARG POSTGRES_TARBALL=postgresql-${POSTGRES_VERSION}.tar.bz2
 ARG FTP_PATH=https://ftp.postgresql.org/pub/source/v${POSTGRES_VERSION}
@@ -17,7 +17,7 @@ ARG BUILD_DEPS="build-essential ca-certificates curl zlib1g-dev"
 
 # './configure --without-readline' currently means we won't have shared library
 # dependencies that are not present in the dotcms image
-ARG CONFIGURE_OPTS="--without-readline"
+ARG CONFIGURE_OPTS="--without-readline --without-icu"
 
 # builds client only - see https://www.postgresql.org/docs/current/install-procedure.html
 RUN apt update -y \

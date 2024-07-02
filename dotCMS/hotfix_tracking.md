@@ -123,3 +123,5 @@ This maintenance release includes the following code fixes:
 116. https://github.com/dotCMS/core/issues/28897 : Content Resource v1 hits the db #28897
 117. https://github.com/dotCMS/core/issues/28890 : LanguageUtil.getLanguageId is always hitting the db #28890
 118. https://github.com/dotCMS/core/issues/26421 : Block Editor: Add align-justify option to menu #26421
+119. https://github.com/dotCMS/core/issues/27537 : Download database not working in latest version #27537
+120. https://github.com/dotCMS/core/issues/27871 : refactor pg_dump inclusion in our docker image #27871
