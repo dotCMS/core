@@ -1,8 +1,11 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.cli.common.PushMixin;
+import com.dotcms.cli.common.WorkspaceParams;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -55,7 +58,14 @@ public interface DotPush extends DotCommand {
     WorkspaceManager workspaceManager();
 
     default Optional<Workspace> workspace(){
-       return workspaceManager().findWorkspace(getPushMixin().path());
+        final Path path = getPushMixin().path();
+        final WorkspaceManager workspaceManager = workspaceManager();
+        // This should only really concern Integration tests.
+        // Workspace param is hidden we only use for testing in the Push commands
+        final File workspace = getPushMixin().workspace;
+
+        //If No explicit workspace is provided, we rely on the path to find the workspace
+       return workspaceManager.findWorkspace( workspace != null ? workspace.toPath() : path);
     }
 
     default Path workingRootDir() {

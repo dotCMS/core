@@ -236,7 +236,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
      */
     private Path watchedPath(final DotPush push) {
         final PushMixin pushMixin = push.getPushMixin();
-        if (pushMixin.isPathProvided()) {
+        if (pushMixin.isUserProvidedPath()) {
             return pushMixin.path();
         }
         return push.workingRootDir();

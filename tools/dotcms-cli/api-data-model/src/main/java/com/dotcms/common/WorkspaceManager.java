@@ -47,12 +47,12 @@ public interface WorkspaceManager {
      * @param inputPath the input path
      * @return the resolved path
      */
-    static Path resolvePath(Path inputPath) {
+    static Path resolvePath(final Path inputPath) {
 
         // if the input path is not absolute, resolve it against the current directory
         if (!inputPath.isAbsolute()) {
             // Get the current directory
-            Path currentDir = Paths.get("").toAbsolutePath().normalize();
+            final Path currentDir = Paths.get("").toAbsolutePath().normalize();
             return currentDir.resolve(inputPath).normalize();
         }
         // otherwise, return the normalized input path
