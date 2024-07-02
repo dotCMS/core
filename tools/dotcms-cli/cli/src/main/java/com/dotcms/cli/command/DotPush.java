@@ -63,7 +63,7 @@ public interface DotPush extends DotCommand {
         if (workspace.isPresent()) {
             return workspace.get().root();
         }
-        throw new IllegalArgumentException("No valid workspace found.");
+        return getPushMixin().path();
     }
 
 }

@@ -106,7 +106,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
         }
 
         File inputFile = this.getPushMixin().path().toFile();
-        if (!inputFile.isAbsolute()) {
+        if (!inputFile.isAbsolute() && inputFile.isFile() ) {
             inputFile = Path.of(workspace.get().languages().toString(), inputFile.getName())
                     .toFile();
         }

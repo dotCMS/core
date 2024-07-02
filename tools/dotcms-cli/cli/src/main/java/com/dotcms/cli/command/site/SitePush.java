@@ -87,7 +87,7 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>, 
         }
 
         File inputFile = this.getPushMixin().path().toFile();
-        if (!inputFile.isAbsolute()) {
+        if (!inputFile.isAbsolute() && inputFile.isFile()) {
             inputFile = Path.of(workspace.get().sites().toString(), inputFile.getName())
                     .toFile();
         }

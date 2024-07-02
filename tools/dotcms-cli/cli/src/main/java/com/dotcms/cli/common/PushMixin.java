@@ -70,11 +70,23 @@ public class PushMixin {
      */
     public Path path() {
         if (null == pushPath) {
-            return Path.of("").toAbsolutePath();
+            return Path.of("").normalize().toAbsolutePath();
         }
-        return pushPath.toPath();
+        return pushPath.toPath().normalize().toAbsolutePath();
     }
 
+    /**
+     * Returns whether a path is provided.
+     * @return true if a path is provided; false otherwise.
+     */
+    public boolean isPathProvided(){
+        return null != pushPath;
+    }
+
+    /**
+     * Returns whether the watch mode is enabled.
+     * @return true if the watch mode is enabled; false otherwise.
+     */
     public boolean isWatchMode(){
         return null != interval;
     }
