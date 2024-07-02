@@ -1,9 +1,16 @@
 package com.dotmarketing.portlets.categories.business;
 
+import java.util.Collection;
 import java.util.List;
 
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.liferay.portal.model.User;
+
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.QueryParam;
 
 /**
  * 
@@ -273,5 +280,68 @@ public abstract class CategoryFactory {
      * @throws DotDataException
      */
     abstract protected List<Category> getAllChildren(Categorizable parent) throws DotDataException;
+
+	/**
+	 * Return a {@link Category} Collection looking through the entire category tree starting from a specified inode.
+	 * This means the search will begin from the specified inode category and then proceed recursively through its children.
+	 *
+	 * @param searchCriteria Search Criteria
+	 *
+	 * @return List of Category filtered
+	 */
+	public abstract Collection<Category> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException;
+
+	/**
+	 * Represents Search Criteria for {@link Category} searching, you cans set the follow:
+	 *
+	 * - filter: Value used to filter the Category by, returning only Categories that contain this value in their key, name, or variable name.
+	 * - inode: Entry point on the Category tree to start the searching.
+	 * - orderBy: Field name to order the Category
+	 * - direction: Order by direction, it can be 'ASC' or 'DESC'
+	 */
+	public static class CategorySearchCriteria {
+		final String rootInode;
+		final String filter;
+		final String orderBy;
+		final OrderDirection direction;
+
+		private CategorySearchCriteria (final Builder builder) {
+			this.rootInode = builder.rootInode;
+			this.filter = builder.filter;
+			this.orderBy = builder.orderBy;
+			this.direction = builder.direction;
+		}
+
+		public static class Builder {
+			private String rootInode;
+			private String filter;
+			private String orderBy = "category_name";
+			private OrderDirection direction = OrderDirection.ASC;
+
+			public Builder rootInode(String rootInode) {
+				this.rootInode = rootInode;
+				return this;
+			}
+
+			public Builder filter(String filter) {
+				this.filter = filter;
+				return this;
+			}
+
+			public Builder orderBy(String orderBy) {
+				this.orderBy = orderBy;
+				return this;
+			}
+
+			public Builder direction(OrderDirection direction) {
+				this.direction = direction;
+				return this;
+			}
+
+			public CategorySearchCriteria build() {
+				return new CategorySearchCriteria(this);
+			}
+		}
+	}
 	
 }

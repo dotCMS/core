@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormGroupDirective } from '@angular/forms';
 
@@ -23,7 +23,6 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
     templateUrl: './ai-image-prompt.component.html',
     styleUrls: ['./ai-image-prompt.component.scss'],
     imports: [
-        NgIf,
         DialogModule,
         AsyncPipe,
         DotMessagePipe,
