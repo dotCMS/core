@@ -298,6 +298,8 @@ public abstract class CategoryFactory {
 	 * - inode: Entry point on the Category tree to start the searching.
 	 * - orderBy: Field name to order the Category
 	 * - direction: Order by direction, it can be 'ASC' or 'DESC'
+	 * - rootInode:  If the root inode is set, the search will be conducted only among the children of this category.
+	 * Otherwise, the search will include only the top-level categories.
 	 */
 	public static class CategorySearchCriteria {
 		final String rootInode;
@@ -313,6 +315,30 @@ public abstract class CategoryFactory {
 			this.direction = builder.direction;
 			this.limit = builder.limit;
 			this.offset = builder.offset;
+		}
+
+		public String getRootInode() {
+			return rootInode;
+		}
+
+		public String getFilter() {
+			return filter;
+		}
+
+		public String getOrderBy() {
+			return orderBy;
+		}
+
+		public OrderDirection getDirection() {
+			return direction;
+		}
+
+		public int getLimit() {
+			return limit;
+		}
+
+		public int getOffset() {
+			return offset;
 		}
 
 		public static class Builder {
