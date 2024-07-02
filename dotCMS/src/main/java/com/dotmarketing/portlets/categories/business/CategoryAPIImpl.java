@@ -962,7 +962,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 	 */
 	@CloseDBIfOpened
 	@Override
-	public PaginatedCategories findAll(final CategoryFactory.CategorySearchCriteria searchCriteria,
+	public PaginatedCategories findAll(final CategorySearchCriteria searchCriteria,
 									   final User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 

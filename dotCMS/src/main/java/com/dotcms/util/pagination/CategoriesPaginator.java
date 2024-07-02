@@ -1,6 +1,7 @@
 package com.dotcms.util.pagination;
 
 import com.dotmarketing.portlets.categories.business.CategoryFactory;
+import com.dotmarketing.portlets.categories.business.CategorySearchCriteria;
 import com.liferay.util.StringPool;
 import java.util.Collection;
 import java.util.List;
@@ -36,13 +37,14 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
 
     /**
      *
-     * Return {@link Category} by pagiunation, you can et 3 parameters to set the way the search is done:
-     *
-     * - searchInAllLevels: A Boolean value. If TRUE, the search will look for the category at any level,
-     * and the childrenCategories parameter is ignored.
-     * - childrenCategories: A Boolean value. If FALSE, the search is limited to the top-level category. If TRUE,
-     * the search is confined to the children of the category specified by the inode parameter.
-     * - inode: If set and childrenCategories is TRUE, the search is limited to the children of the category with this inode.
+     * Returns a {@link Category} by pagination. You can set three parameters to customize the search:
+     * - searchInAllLevels: A Boolean value.
+     * If TRUE, the search will include categories at any level, ignoring the childrenCategories parameter.
+     * - childrenCategories: A Boolean value.
+     * If FALSE, the search is limited to the top-level category.
+     * If TRUE, the search is confined to the children of the category specified by the inode parameter.
+     * -inode: If it is set and childrenCategories is TRUE, the search is limited to the children of the category with this inode
+     * If it is set searchInAllLevels is TRUE, the search starts at this category and goes through its children recursively .
      *
      * @param user        The {@link User} that is using this method.
      * @param filter      Allows you to add more conditions to the query via SQL code. It's very
@@ -69,7 +71,7 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
 
         try {
 
-            final CategoryFactory.CategorySearchCriteria searchingCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
+            final CategorySearchCriteria searchingCriteria = new CategorySearchCriteria.Builder()
                     .filter(filter)
                     .limit(limit)
                     .offset(offset)
@@ -105,7 +107,7 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
      * @throws DotSecurityException
      */
     private PaginatedCategories searchAllLevels(final User user,
-                                                final CategoryFactory.CategorySearchCriteria searchingCriteria)
+                                                final CategorySearchCriteria searchingCriteria)
             throws DotDataException, DotSecurityException {
 
         return categoryAPI.findAll(searchingCriteria, user, false);
@@ -122,7 +124,7 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
      * @throws DotSecurityException
      */
     private PaginatedCategories searchInOneLevel(final User user,
-                                                 final CategoryFactory.CategorySearchCriteria searchingCriteria,
+                                                 final CategorySearchCriteria searchingCriteria,
                                                  final boolean childrenCategories)
             throws DotDataException, DotSecurityException {
         return childrenCategories == false ?
