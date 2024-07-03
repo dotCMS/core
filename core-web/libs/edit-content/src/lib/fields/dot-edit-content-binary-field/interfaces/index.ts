@@ -4,7 +4,8 @@ import { DropZoneErrorType } from '@dotcms/ui';
 export enum BinaryFieldMode {
     DROPZONE = 'DROPZONE',
     URL = 'URL',
-    EDITOR = 'EDITOR'
+    EDITOR = 'EDITOR',
+    AI = 'AI'
 }
 
 export enum BinaryFieldStatus {
