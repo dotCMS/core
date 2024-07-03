@@ -1,4 +1,4 @@
-# dotCMS Back End Setup
+# dotCMS backend onboarding
 
 ## Get Started
 
@@ -175,31 +175,6 @@ Advanced configurations allow you to customize and optimize your development env
 	|--|--|
 	| `just build-no-docker`| `./mvnw clean install -DskipTests -Ddocker.skip`  |	
 
-~~**Upload a new starter**:~~
-1. Create a **_mysettings.xml_** file (can be placed in any location):
-	```xml
-	<settings>
-		<servers>
-			<server>
-				<id>dotcms-libs</id>
-				<username>{USERNAME}</username>
-				<password>{PASSWORD}</password>
-			</server>
-		</servers>
-	</settings>	
-	```
-2. Then, **run** the following command: 
-	```sh
-	./mvnw deploy:deploy-file -Durl=https://repo.dotcms.com/artifactory/libs-release-local -DrepositoryId=dotcms-libs -Dfile={PATH_OF_THE_ZIP} -DgroupId=com.dotcms -DartifactId=starter -Dversion={{empty_}timestamp} -Dpackaging=zip -s {PATH}/mysettings.xml -pl :dotcms-core
-	```
-	**_Example_**:
-	```sh
-	./mvnw  deploy:deploy-file  -Durl=[https://repo.dotcms.com/artifactory/libs-release-local](https://repo.dotcms.com/artifactory/libs-release-local)  -DrepositoryId=dotcms-libs  -Dfile=/Users/<user>/Desktop/empty_20240131.zip  -DgroupId=com.dotcms  -DartifactId=starter  -Dversion=empty_20240131  -Dpackaging=zip  -s  /Users/<user>/Documents/dotcms_master_maven/mysettings.xml  -pl  :dotcms-core
-	```
-3. Update the **_parent/pom.xml_** file with the new starter version:
-	```xml
-	<starter.deploy.version>{NEW_STARTER}</starter.deploy.version>
-	```
 
 ### Local DB and ES settings
 
@@ -223,5 +198,123 @@ Advanced configurations allow you to customize and optimize your development env
 	export DOT_ES_AUTH_TYPE=BASIC
 	```
 
+## Troubleshooting
+
+In this section, we address common issues you might encounter during setup, development, and deployment, along with their solutions. Following these steps will help you quickly resolve problems and continue with your development tasks smoothly.
+
+### Puppeteer Chromium Binary Not Available for ARM64
+
+You might encounter the following error when setting up Puppeteer on an ARM64-based machine (such as Apple's M1/M2 Macs):
+
+```sh
+[INFO] Directory: /Users/<user>/Documents/projects/dotcms/sourcecode/core/core-web/node_modules/puppeteer
+[INFO] Output:
+[INFO] The chromium binary is not available for arm64:
+[INFO] If you are on Ubuntu, you can install with:
+[INFO]
+[INFO] apt-get install chromium-browser
+[INFO]
+[INFO] /Users/<user>/Documents/projects/dotcms/sourcecode/core/core-web/node_modules/puppeteer/lib/cjs/puppeteer/node/BrowserFetcher.js:112
+[INFO] throw new Error();
+[INFO] ^
+[INFO]
+[INFO] Error
+[INFO] at /Users/<user>/Documents/projects/dotcms/sourcecode/core/core-web/node_modules/puppeteer/lib/cjs/puppeteer/node/BrowserFetcher.js:112:19
+[INFO] at FSReqCallback.oncomplete (node:fs:210:21)
+[INFO]
+[INFO] Node.js v18.18.2
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for dotcms-root 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] dotcms-parent ...................................... SUCCESS [ 0.335 s]
+[INFO] dotcms-independent-projects ........................ SUCCESS [ 0.023 s]
+[INFO] dotcms-core-plugins-parent ......................... SUCCESS [ 0.021 s]
+[INFO] com.dotcms.tika-api ................................ SUCCESS [ 0.538 s]
+[INFO] com.dotcms.tika .................................... SUCCESS [ 5.262 s]
+[INFO] dotcms-bom ......................................... SUCCESS [ 0.021 s]
+[INFO] dotcms-logging-bom ................................. SUCCESS [ 0.020 s]
+[INFO] dotcms-application-bom ............................. SUCCESS [ 0.027 s]
+[INFO] dotcms-nodejs-parent ............................... SUCCESS [ 5.478 s]
+[INFO] dotcms-core-web .................................... FAILURE [02:11 min]
+[INFO] dotcms-osgi-base ................................... SKIPPED
+[INFO] dotcms-core-bundles ................................ SKIPPED
+[INFO] dotcms-system-bundles .............................. SKIPPED
+[INFO] dotcms-build-parent ................................ SKIPPED
+[INFO] dotcms-core ........................................ SKIPPED
+[INFO] dotcms-cli-parent .................................. SKIPPED
+[INFO] dotcms-api-data-model .............................. SKIPPED
+[INFO] dotcms-cli ......................................... SKIPPED
+[INFO] dotcms-integration ................................. SKIPPED
+[INFO] dotcms-postman ..................................... SKIPPED
+[INFO] dotcms-reports ..................................... SKIPPED
+[INFO] dotcms-root ........................................ SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 02:24 min
+[INFO] Finished at: 2024-06-05T14:35:40-05:00
+[INFO] ------------------------------------------------------------------------
+```
+
+
+This error occurs because Puppeteer attempts to download a Chromium binary that is not compatible with the ARM64 architecture by default. This issue can arise due to several reasons, including:
+
+- **New Installation on ARM64 Machines**: Setting up a new development environment on ARM64-based machines.
+- **Puppeteer Version Compatibility**: Using a version of Puppeteer that does not fully support ARM64 architecture.
+- **Environment Variable Misconfiguration**: Incorrect `PUPPETEER_EXECUTABLE_PATH` environment variable setting.
+- **Network Issues**: Restrictions that prevent Puppeteer from downloading the Chromium binary.
+- **Custom Docker Images**: Improperly configured custom Docker images for ARM64 architectures.
+- **Cross-Platform Development**: Working on multiple platforms without the correct configuration.
+
+#### Solution
+
+To resolve this issue, follow the steps documented in this guide: [How to fix M1 Mac Puppeteer Chromium ARM64 bug](https://linguinecode.com/post/how-to-fix-m1-mac-puppeteer-chromium-arm64-bug).
+
+1. **Install Chromium for ARM64**:
+  First, ensure you have the necessary tools installed. You can use Homebrew to install the ARM64 version of Chromium.
+
+    ```sh
+    brew install chromium
+    ```
+2. **Set the Puppeteer Executable Path**:
+  Configure Puppeteer to use the installed Chromium binary by setting the `PUPPETEER_EXECUTABLE_PATH` environment variable. Add the following lines to your `.bashrc`, `.zshrc`, or appropriate shell configuration file:
+
+    ```sh
+    export PUPPETEER_EXECUTABLE_PATH=$(which chromium)
+    ```
+
+3. **Source the Configuration**:
+  Reload your shell configuration to apply the changes:
+
+    ```sh
+    source ~/.zshrc  # or ~/.bashrc, depending on your shell
+    ```
+4. **Configure Puppeteer to Skip Downloading Chromium**:
+  To avoid downloading Chromium in the future, set the `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` environment variable:
+
+    ```sh
+    export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+    ```
+
+    Add this to your shell configuration file to make it persistent:
+
+    ```sh
+    echo "export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true" >> ~/.zshrc  # or ~/.bashrc
+    ```
+
+5. **Reinstall Puppeteer**:
+  Finally, reinstall Puppeteer to ensure it picks up the correct Chromium binary and respects the skip download setting:
+
+    ```sh
+    npm install puppeteer
+    ```
+
+By following these steps, you should be able to resolve the Puppeteer Chromium binary issue and prevent it from occurring in the future, allowing you to proceed with your development tasks.
+
 ## Resources and Further Reading
-For more advanced actions and commands, you can consult the `justfile` in the project repository. The `justfile` contains several scripts that simplify common tasks and automate complex processes, making it a valuable reference for efficient development workflows.
+Below, you'll find a curated list of resources to help deepen your understanding of the technologies and tools used in our project. We recommend that you familiarize yourself with these resources before diving into the project.
+
+- [DotCMS Documentation](https://dotcms.com/docs/)
+- [DotCMS R&D - Onboarding](https://docs.google.com/document/d/1BKwGbqyVNBjc_FuP6tD2R9Aqloh28b-2nstlnziLDRw/edit#heading=h.34zjomn5aq0w)
+
+Additionally, for more advanced actions and commands, you can consult the `justfile` in the project repository. The `justfile` contains various scripts that simplify common tasks and automate complex processes, making it a valuable reference for efficient development workflows.

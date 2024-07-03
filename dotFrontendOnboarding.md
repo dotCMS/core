@@ -1,4 +1,4 @@
-# dotCMS Front End Setup
+# Frontend Project Onboarding Guide
 
 ## Get Started
 
@@ -20,7 +20,7 @@ Before you begin, ensure you have the following tools installed on your system:
 
 - **NVM**: Node Version Manager
   ```sh
-  brew install node
+  brew install nvm
   ```  
 
 - **Node**: JavaScript runtime environment
@@ -38,13 +38,11 @@ Before you begin, ensure you have the following tools installed on your system:
   brew install yarn
   ```
 
-- **Just**: A command runner for simplifying common tasks with scripts.
-	```sh
-	brew install just
-	```
-
 - **VS Code**: Code editor for development
   - Download from [VS Code website](https://code.visualstudio.com/download) (Recommended)
+
+- **Nx Console**: A Visual Studio Code extension for Nx
+  - Download from [Vs Code Marketplace ](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) (Optional)
 
 
 ## Installation
@@ -62,20 +60,16 @@ Follow these steps to install and set up the frontend project. This section will
     ```sh
     cd <path-to-project>/
     ```
-3. **Install dependencies**:
+3. **Install dependencies**: _**Just**_ is a command runner for simplifying common tasks with scripts. 
+	```sh
+	brew install just
+	```
+
 	```sh
 	just install-all-mac-deps
 	```
 
-## Setup
-
-Before running the project, you need to configure the necessary environment settings for the frontend project.
-
-* Export the environment variable `NPM_TOKEN` to configure the frontend project with your NPM token. If you don't have one, you can create one by following the steps in the [NPM documentation](https://docs.npmjs.com/creating-and-viewing-authentication-tokens).
-
-  ```sh
-  export NPM_TOKEN=<your-npm-token>
-  ```
+	> ℹ️ **Note**: This command ensures that all necessary dependencies such as **Git**, **JDK**, and **Docker** are installed. If any dependencies are missing, this step will handle their installation.
 
 ## Running
 
@@ -95,7 +89,7 @@ To run the frontend application locally, follow these steps. This section will g
     Use the following command to start the backend services required by the frontend application:
 
     ```sh
-    docker-compose -f core-web/docker-compose.yml up
+    docker-compose -f docker/docker-compose-examples/single-node/docker-compose.yml up
     ```
 
 3. **Run the frontend application**:
@@ -204,3 +198,122 @@ In this section, you'll find advanced configuration options to optimize your dev
   Each feature has its own specific environment variable. To know which features can be enabled through feature flags, you need to consult with the team.
 
 By leveraging these advanced configurations, you can streamline your development process, customize your environment, and enhance your productivity.
+
+## Troubleshooting
+
+In this section, we address common issues you might encounter during setup, development, and deployment, along with their solutions. Following these steps will help you quickly resolve problems and continue with your development tasks smoothly.
+
+### Puppeteer Chromium Binary Not Available for ARM64
+
+You might encounter the following error when setting up Puppeteer on an ARM64-based machine (such as Apple's M1/M2 Macs):
+
+```sh
+[INFO] Directory: /Users/<user>/Documents/projects/dotcms/sourcecode/core/core-web/node_modules/puppeteer
+[INFO] Output:
+[INFO] The chromium binary is not available for arm64:
+[INFO] If you are on Ubuntu, you can install with:
+[INFO]
+[INFO] apt-get install chromium-browser
+[INFO]
+[INFO] /Users/<user>/Documents/projects/dotcms/sourcecode/core/core-web/node_modules/puppeteer/lib/cjs/puppeteer/node/BrowserFetcher.js:112
+[INFO] throw new Error();
+[INFO] ^
+[INFO]
+[INFO] Error
+[INFO] at /Users/<user>/Documents/projects/dotcms/sourcecode/core/core-web/node_modules/puppeteer/lib/cjs/puppeteer/node/BrowserFetcher.js:112:19
+[INFO] at FSReqCallback.oncomplete (node:fs:210:21)
+[INFO]
+[INFO] Node.js v18.18.2
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for dotcms-root 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] dotcms-parent ...................................... SUCCESS [ 0.335 s]
+[INFO] dotcms-independent-projects ........................ SUCCESS [ 0.023 s]
+[INFO] dotcms-core-plugins-parent ......................... SUCCESS [ 0.021 s]
+[INFO] com.dotcms.tika-api ................................ SUCCESS [ 0.538 s]
+[INFO] com.dotcms.tika .................................... SUCCESS [ 5.262 s]
+[INFO] dotcms-bom ......................................... SUCCESS [ 0.021 s]
+[INFO] dotcms-logging-bom ................................. SUCCESS [ 0.020 s]
+[INFO] dotcms-application-bom ............................. SUCCESS [ 0.027 s]
+[INFO] dotcms-nodejs-parent ............................... SUCCESS [ 5.478 s]
+[INFO] dotcms-core-web .................................... FAILURE [02:11 min]
+[INFO] dotcms-osgi-base ................................... SKIPPED
+[INFO] dotcms-core-bundles ................................ SKIPPED
+[INFO] dotcms-system-bundles .............................. SKIPPED
+[INFO] dotcms-build-parent ................................ SKIPPED
+[INFO] dotcms-core ........................................ SKIPPED
+[INFO] dotcms-cli-parent .................................. SKIPPED
+[INFO] dotcms-api-data-model .............................. SKIPPED
+[INFO] dotcms-cli ......................................... SKIPPED
+[INFO] dotcms-integration ................................. SKIPPED
+[INFO] dotcms-postman ..................................... SKIPPED
+[INFO] dotcms-reports ..................................... SKIPPED
+[INFO] dotcms-root ........................................ SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 02:24 min
+[INFO] Finished at: 2024-06-05T14:35:40-05:00
+[INFO] ------------------------------------------------------------------------
+```
+
+
+This error occurs because Puppeteer attempts to download a Chromium binary that is not compatible with the ARM64 architecture by default. This issue can arise due to several reasons, including:
+
+- **New Installation on ARM64 Machines**: Setting up a new development environment on ARM64-based machines.
+- **Puppeteer Version Compatibility**: Using a version of Puppeteer that does not fully support ARM64 architecture.
+- **Environment Variable Misconfiguration**: Incorrect `PUPPETEER_EXECUTABLE_PATH` environment variable setting.
+- **Network Issues**: Restrictions that prevent Puppeteer from downloading the Chromium binary.
+- **Custom Docker Images**: Improperly configured custom Docker images for ARM64 architectures.
+- **Cross-Platform Development**: Working on multiple platforms without the correct configuration.
+
+#### Solution
+
+To resolve this issue, follow the steps documented in this guide: [How to fix M1 Mac Puppeteer Chromium ARM64 bug](https://linguinecode.com/post/how-to-fix-m1-mac-puppeteer-chromium-arm64-bug).
+
+1. **Install Chromium for ARM64**:
+  First, ensure you have the necessary tools installed. You can use Homebrew to install the ARM64 version of Chromium.
+
+    ```sh
+    brew install chromium
+    ```
+2. **Set the Puppeteer Executable Path**:
+  Configure Puppeteer to use the installed Chromium binary by setting the `PUPPETEER_EXECUTABLE_PATH` environment variable. Add the following lines to your `.bashrc`, `.zshrc`, or appropriate shell configuration file:
+
+    ```sh
+    export PUPPETEER_EXECUTABLE_PATH=$(which chromium)
+    ```
+
+3. **Source the Configuration**:
+  Reload your shell configuration to apply the changes:
+
+    ```sh
+    source ~/.zshrc  # or ~/.bashrc, depending on your shell
+    ```
+4. **Configure Puppeteer to Skip Downloading Chromium**:
+  To avoid downloading Chromium in the future, set the `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` environment variable:
+
+    ```sh
+    export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+    ```
+
+    Add this to your shell configuration file to make it persistent:
+
+    ```sh
+    echo "export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true" >> ~/.zshrc  # or ~/.bashrc
+    ```
+
+5. **Reinstall Puppeteer**:
+  Finally, reinstall Puppeteer to ensure it picks up the correct Chromium binary and respects the skip download setting:
+
+    ```sh
+    npm install puppeteer
+    ```
+
+By following these steps, you should be able to resolve the Puppeteer Chromium binary issue and prevent it from occurring in the future, allowing you to proceed with your development tasks.
+
+## Resources and Further Reading
+Below, you'll find a curated list of resources to help deepen your understanding of the technologies and tools used in our project. We recommend that you familiarize yourself with these resources before diving into the project.
+
+- [DotCMS Documentation](https://dotcms.com/docs/)
+- [DotCMS R&D - Onboarding](https://docs.google.com/document/d/1BKwGbqyVNBjc_FuP6tD2R9Aqloh28b-2nstlnziLDRw/edit#heading=h.34zjomn5aq0w)
