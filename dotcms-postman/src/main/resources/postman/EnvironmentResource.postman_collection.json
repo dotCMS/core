@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "0f5e2d91-8cf5-4fd2-84a2-c7657bdd63a0",
+		"_postman_id": "c40f34b6-51fc-4918-81cb-6c006783718d",
 		"name": "EnvironmentResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -82,6 +82,10 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
+							"pm.test(\"Response include proper message\", function () {",
+							"   var response = pm.response.json();",
+							"   pm.expect(response.message, 'FAILED:[message]').equal(\"An Environment with the given name Test Environment already exist.\");",
+							"});",
 							""
 						],
 						"type": "text/javascript",
@@ -240,6 +244,11 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
+							"pm.test(\"Response include proper message\", function () {",
+							"   var response = pm.response.json();",
+							"    pm.expect(response.message, 'FAILED:[message]').includes(\"An Environment with the given id\");",
+							"    pm.expect(response.message, 'FAILED:[message]').includes(\"does not exist\");",
+							"});",
 							""
 						],
 						"type": "text/javascript",
@@ -390,7 +399,7 @@
 			"response": []
 		},
 		{
-			"name": "CreateInvalidEnvironment",
+			"name": "CreateEnvironmentWithoutPushMode",
 			"event": [
 				{
 					"listen": "test",
@@ -400,6 +409,11 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
+							"pm.test(\"Response include proper message\", function () {",
+							"   var response = pm.response.json();",
+							"    pm.expect(response[0].fieldName, 'FAILED:[fieldName]').eql(\"pushMode\");",
+							"    pm.expect(response[0].message, 'FAILED:[message]').eql(\"may not be null\");",
+							"});",
 							""
 						],
 						"type": "text/javascript",
@@ -518,6 +532,10 @@
 							"    pm.response.to.have.status(400);",
 							"});",
 							"",
+							"pm.test(\"Response include proper message\", function () {",
+							"   var response = pm.response.json();",
+							"    pm.expect(response.message, 'FAILED:[message]').eql(\"An Environment with the given name Test Environment 4 already exist.\");",
+							"});",
 							""
 						],
 						"type": "text/javascript",
@@ -616,6 +634,7 @@
 				"exec": [
 					"if (!pm.environment.get('jwt')) {",
 					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    console.log(\"serverURL: \" + serverURL)",
 					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
 					"",
 					"    if (!pm.environment.get('jwt')) {",
