@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormGroupDirective } from '@angular/forms';
 
@@ -25,7 +25,6 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
     imports: [
         DialogModule,
         AsyncPipe,
-        JsonPipe,
         DotMessagePipe,
         ButtonModule,
         ConfirmDialogModule,

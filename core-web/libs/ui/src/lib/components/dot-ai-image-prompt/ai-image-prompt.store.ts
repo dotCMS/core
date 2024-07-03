@@ -41,7 +41,7 @@ const initialState: DotAiImagePromptComponentState = {
     showDialog: false,
     status: ComponentStatus.INIT,
     images: [],
-    editorContent: 'asas',
+    editorContent: null,
     selectedImage: null,
     galleryActiveIndex: 0,
     formValue: {
