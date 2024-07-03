@@ -424,7 +424,7 @@ export const SHOW_CONTENTLET_TOOLS_PATCH_MOCK = {
     }
 };
 
-export const pagesByLanguageId = {
+export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
     1: of({
         page: {
             title: 'hello world',

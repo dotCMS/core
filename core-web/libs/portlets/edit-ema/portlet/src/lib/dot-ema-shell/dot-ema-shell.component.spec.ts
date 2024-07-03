@@ -55,9 +55,9 @@ import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.s
 import { DotPageApiService } from '../services/dot-page-api.service';
 import {
     DEFAULT_PERSONA,
+    PAGE_RESPONSE_BY_LANGUAGE_ID,
     PAYLOAD_MOCK,
-    WINDOW,
-    PAGE_RESPONSE_BY_LANGUAGE_ID
+    WINDOW
 } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 
