@@ -20,3 +20,4 @@ This maintenance release includes the following code fixes:
 14. https://github.com/dotCMS/core/issues/28760 : Template Evaluation for Non-Default Language Pages #28760
 15. https://github.com/dotCMS/core/issues/28769 : Language Fallback not working. #28769
 16. https://github.com/dotCMS/core/issues/28785 : APIs return incorrect information for pages with fields using the variable name "description" #28785
+17. https://github.com/dotCMS/core/issues/28609 : Remove old vulnerability-scan.yml workflow #28609
