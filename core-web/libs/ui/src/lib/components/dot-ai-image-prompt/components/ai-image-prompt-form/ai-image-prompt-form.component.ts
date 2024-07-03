@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import {
     Component,
     DestroyRef,
@@ -55,7 +54,6 @@ import { DotValidators } from './../../../../validators/dotValidators';
         ReactiveFormsModule,
         FormsModule,
         DropdownModule,
-        NgIf,
         InputTextareaModule,
         DotFieldRequiredDirective,
         DotMessagePipe,

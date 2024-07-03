@@ -1,8 +1,8 @@
 <p-sidebar
-    (onHide)="this.closedSidebar.emit()"
+    #sidebar
+    (onHide)="closedSidebar.emit()"
     [(visible)]="visible"
     [showCloseIcon]="false"
-    #sidebar
     data-testId="sidebar"
     position="right"
     styleClass="w-9">
@@ -23,14 +23,19 @@
     <div class="category-field__content h-full w-full">
         <div class="category-field__left-pane flex flex-column">
             <div class="category-field__search">Input Search</div>
-            <div class="flex-grow-1 category-field__categories">Categories</div>
+            <div class="flex-grow-1 category-field__categories">
+                <dot-category-field-category-list
+                    (itemClicked)="itemClicked($event)"
+                    [categories]="store.categoryList()"
+                    [selected]="store.selectedCategories()" />
+            </div>
         </div>
 
         <div class="category-field__right-pane flex flex-column">
             <div class="category-field__selected-categories-list flex-1">Selected Categories</div>
             <div class="category-field__actions flex justify-content-end">
                 <button class="p-button p-button-link" data-testId="clear_all-btn" pButton>
-                    {{ 'edit.content.category-field.button.clear-all' | dm }}
+                    {{ 'edit.content.category-field.sidebar.button.clear-all' | dm }}
                 </button>
             </div>
         </div>

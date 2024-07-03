@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -30,7 +29,6 @@ import { DotMessagePipe } from './../../../../dot-message/dot-message.pipe';
     imports: [
         GalleriaModule,
         ImageModule,
-        NgIf,
         SharedModule,
         SkeletonModule,
         DotMessagePipe,

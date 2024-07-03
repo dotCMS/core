@@ -14,8 +14,8 @@
 }
 
 .category-field__content {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
+    display: flex;
+    flex-direction: row;
     margin: auto;
     background-color: $color-palette-gray-300;
     padding: $spacing-4;
@@ -27,15 +27,32 @@
     gap: $spacing-1;
 }
 
+.category-field__left-pane {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    gap: $spacing-1;
+    max-width: 75vw;
+    overflow: hidden;
+    height: 100%;
+}
+
+.category-field__right-pane {
+    flex: 0 0 25%; // Ajusta según sea necesario
+    gap: $spacing-1;
+}
+
 .category-field__search,
 .category-field__categories,
 .category-field__right-pane {
     border: $field-border-size solid $color-palette-gray-400;
     border-radius: $border-radius-md;
     background-color: $white;
-    padding: $spacing-3;
+    overflow: hidden;
 }
 
 :host ::ng-deep .p-sidebar-content {
     padding: 0;
+    height: 100%;
+    overflow: hidden;
 }
