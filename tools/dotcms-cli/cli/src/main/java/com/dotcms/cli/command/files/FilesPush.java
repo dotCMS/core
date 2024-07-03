@@ -203,7 +203,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         }
 
         File inputFile = this.getPushMixin().path().toFile();
-        if (!inputFile.isAbsolute() && inputFile.isFile()) {
+        if (!inputFile.isAbsolute()){
             // If the path is not absolute, we assume it is relative to the files folder
             inputFile = Path.of(
                     workspace.get().files().toString(), inputFile.getPath()
