@@ -239,7 +239,13 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         if (pushMixin.isUserProvidedPath()) {
             return pushMixin.path();
         }
-        return push.workingRootDir();
+        try {
+            return push.workingRootDir();
+        } catch (IllegalArgumentException e) {
+            // If we can't find a workspace, we default to the user provided path
+            //I'm catching this exception here, so it can be properly handled in the calling command when it figures out that the given path isn't a workspace
+            return pushMixin.path();
+        }
     }
 
     private int watch(final IExecutionStrategy underlyingStrategy, final ParseResult parseResult,
