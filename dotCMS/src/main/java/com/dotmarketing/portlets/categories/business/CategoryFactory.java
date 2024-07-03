@@ -1,9 +1,16 @@
 package com.dotmarketing.portlets.categories.business;
 
+import java.util.Collection;
 import java.util.List;
 
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.liferay.portal.model.User;
+
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.QueryParam;
 
 /**
  * 
@@ -273,5 +280,14 @@ public abstract class CategoryFactory {
      * @throws DotDataException
      */
     abstract protected List<Category> getAllChildren(Categorizable parent) throws DotDataException;
-	
+
+	/**
+	 * Return a {@link Category} Collection looking through the entire category tree starting from a specified inode.
+	 * This means the search will begin from the specified inode category and then proceed recursively through its children.
+	 *
+	 * @param searchCriteria Search Criteria
+	 *
+	 * @return List of Category filtered
+	 */
+	public abstract List<Category> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException;
 }

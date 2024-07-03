@@ -155,12 +155,12 @@ td {font-size: 100%;}
             field: 'tagname',
             name: tagNameMsg,
             width: '30%',
-            formatter: formatHref
+            formatter: formatHref,
         },
         {
             field: 'hostName',
             name: hostMsg,
-            width: '70%'
+            width: '70%',
         }];
 
         tagsGrid = new dojox.grid.EnhancedGrid({
@@ -186,11 +186,15 @@ td {font-size: 100%;}
                     defaultPage: 1, defaultPageSize: 25
                 },
                 search : true,
-                indirectSelection: { headerSelector: true }
+                indirectSelection: {
+                    headerSelector: true,
+                    noresize: true
+                }
 
             }
         },
         document.createElement('div'));
+
 
         // append the new grid
         dojo.byId('tagsGrid').appendChild(tagsGrid.domNode);
@@ -212,11 +216,11 @@ td {font-size: 100%;}
          // Call startup, in order to render the grid:
          tagsGrid.startup();
 
-         dojo.connect(dijit.byId("addTagDialog"), "hide", function (evt) {
-                dojo.byId("savedMessage").innerHTML = "";
-            });
-
+        dojo.connect(dijit.byId("addTagDialog"), "hide", function (evt) {
+            dojo.byId("savedMessage").innerHTML = "";
         });
+
+    });
 
         function resetSearch() {
             dijit.byId("showGlobal").set('checked',false);

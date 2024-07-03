@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -407,6 +408,21 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     
         
     }
-    
+
+    /**
+     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object, String)}
+     * Given Scenario: Test a story block value that is not a json
+     * ExpectedResult: Do not throw exception and must return zero dependencies
+     */
+    @Test
+    public void test_refreshStoryBlockValueReferences_with_json_value()  {
+
+        final Object newStoryBlockJson1        = "bu bu bu}";
+
+        StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson1, "xxx");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+
+    }
     
 }

@@ -21,17 +21,16 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.liferay.util.StringPool;
+
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -165,15 +164,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				.loadObjectResults();
 
 		List<Category> categories = convertForCategories(result);
-		for(final Category category : categories) {
-			//Updating the cache since we are already loading all the categories
-			if(catCache.get(category.getInode()) == null)
-				try {
-					catCache.put(category);
-				} catch (DotCacheException e) {
-					throw new DotDataException(e.getMessage(), e);
-				}
-		}
+		updateCache(categories);
 		return categories;
 	}
 
@@ -842,5 +833,73 @@ public class CategoryFactoryImpl extends CategoryFactory {
         }
         throw new DotDataException("Unable to suggest a variable name.  Got to:" + var);
     }
+
+	/**
+	 *  Default Implementation for {@link CategoryFactory#findAll(CategorySearchCriteria)}
+	 * @param searchCriteria Search Criteria
+	 *
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<Category> findAll(final CategorySearchCriteria searchCriteria)
+			throws DotDataException {
+
+		if (!UtilMethods.isSet(searchCriteria.rootInode) && !UtilMethods.isSet(searchCriteria.filter)) {
+			return findAll();
+		}
+
+		final String query = getFindAllSQLQuery(searchCriteria);
+
+		final DotConnect dc = new DotConnect().setSQL(query);
+
+		if (UtilMethods.isSet(searchCriteria.rootInode) ) {
+			dc.addObject(searchCriteria.rootInode);
+		}
+
+		if (UtilMethods.isSet(searchCriteria.filter) ) {
+			dc.addObject("%" + searchCriteria.filter.toLowerCase() + "%");
+			dc.addObject("%" + searchCriteria.filter.toLowerCase() + "%");
+			dc.addObject("%" + searchCriteria.filter.toLowerCase() + "%");
+		}
+
+		final List<Category> categories = convertForCategories(UtilMethods.isSet(searchCriteria.rootInode) ?
+				dc.loadObjectResults().stream()
+						.filter(map -> !map.get("inode").equals(searchCriteria.rootInode))
+						.collect(Collectors.toList()) : dc.loadObjectResults());
+
+		updateCache(categories);
+		return categories;
+	}
+
+	private static String getFindAllSQLQuery(CategorySearchCriteria searchCriteria) {
+		final String queryTemplate = "WITH RECURSIVE CategoryHierarchy AS ( " +
+				"SELECT c.* FROM Category c %s " +
+				"UNION ALL " +
+				"SELECT c.* FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode " +
+			") " +
+			"SELECT * FROM CategoryHierarchy %s ORDER BY %s %s";
+
+		final String rootCategoryFilter = UtilMethods.isSet(searchCriteria.rootInode) ? "WHERE c.inode = ?" : StringPool.BLANK;
+
+		final String filterCategories = UtilMethods.isSet(searchCriteria.filter) ?
+				"WHERE LOWER(category_name) LIKE ?  OR " +
+						"LOWER(category_key) LIKE ?  OR " +
+						"LOWER(category_velocity_var_name) LIKE ?" : StringPool.BLANK;
+
+		final String query = String.format(queryTemplate, rootCategoryFilter, filterCategories, searchCriteria.orderBy,
+				searchCriteria.direction.toString());
+		return query;
+	}
+
+	private void updateCache(List<Category> categories) throws DotDataException {
+		for(final Category category : categories) {
+			if(catCache.get(category.getInode()) == null)
+				try {
+					catCache.put(category);
+				} catch (DotCacheException e) {
+					throw new DotDataException(e.getMessage(), e);
+				}
+		}
+	}
 
 }

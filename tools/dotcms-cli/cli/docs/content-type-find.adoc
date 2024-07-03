@@ -68,7 +68,7 @@ Expected values that can be used are:
 variable, name, description, modDate
 
 *-d*, *--direction*=_<direction>_::
-  Set order direction. (ASC or DESC) 
+  Set order direction. Accepts ASC or DESC (case insensitive)
 
 *-p*, *--page*=_<page>_::
   Page Number.

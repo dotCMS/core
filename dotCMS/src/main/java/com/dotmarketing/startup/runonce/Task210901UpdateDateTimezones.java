@@ -140,6 +140,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
             TimeZone.setDefault(defaultTz);
             updateDateFieldsToUTC();
         } catch (final Exception e) {
+            Logger.error(this.getClass(), e.getMessage());
             throw new DotRuntimeException(e);
         }
     }
@@ -181,7 +182,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
                     dstOffset));
             // If the original Time Zone offset is negative, we need to multiply the DST offset by -1 in order to
             // subtract it from existing dates. If not, we just add it
-            dstOffset = offset < 0 ? dstOffset * -1 : dstOffset;
+            dstOffset = offset <= 0 ? dstOffset * -1 : dstOffset;
         }
         return offsetFromUTCtoTimezone;
     }
@@ -235,7 +236,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
 
         Logger.info(this, String.format("Adjusting current '%s.%s' values by %s seconds", table, column, offset));
         String sql;
-        if (considerDst) {
+        if (considerDst) {//we apply DST from March 13th to November 5th
             sql = ("UPDATE {1} SET {2} = {2} + INTERVAL '{3}' SECOND WHERE {2} IS NOT NULL AND " +
                                         "(DATE_PART('month',{2}) = '4' OR DATE_PART('month',{2}) = '5' OR " +
                                         "DATE_PART('month',{2}) = '6' OR DATE_PART('month',{2}) = '7' OR " +
@@ -246,7 +247,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
                                        .replace("{3}", String.valueOf(offset));
             new DotConnect().setSQL(sql).loadResult();
             sql = ("UPDATE {1} SET {2} = {2} + INTERVAL '{3}' SECOND WHERE {2} IS NOT NULL AND " +
-                           "DATE_PART('month',{2}) = '3' AND DATE_PART('day',{2}) BETWEEN '01' and '13'")
+                           "DATE_PART('month',{2}) = '3' AND DATE_PART('day',{2}) BETWEEN '13' and '31'")
                           .replace("{1}", table)
                           .replace("{2}", column)
                           .replace("{3}", String.valueOf(offset));

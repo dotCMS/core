@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -19,7 +18,7 @@ import { DotMenuComponent } from '../dot-menu/dot-menu.component';
     selector: 'dot-action-menu-button',
     styleUrls: ['./dot-action-menu-button.component.scss'],
     templateUrl: 'dot-action-menu-button.component.html',
-    imports: [DotMenuComponent, ButtonModule, TooltipModule, NgIf],
+    imports: [DotMenuComponent, ButtonModule, TooltipModule],
     standalone: true
 })
 export class DotActionMenuButtonComponent implements OnInit {

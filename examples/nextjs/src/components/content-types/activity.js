@@ -1,22 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useDotcmsPageContext } from "@dotcms/react";
 
 function Activity({ title, description, image, urlTitle }) {
-    const {
-        pageAsset: {
-            viewAs: { language },
-        },
-    } = useDotcmsPageContext();
-
     return (
         <article className="p-4 overflow-hidden bg-white rounded shadow-lg">
             {image && (
                 <Image
                     className="w-full"
-                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${
-                        image?.idPath || image
-                    }?language_id=${language?.id}`}
+                    src={image?.idPath ?? image}
                     width={100}
                     height={100}
                     alt="Activity Image"

@@ -1,5 +1,7 @@
 package com.dotcms.cli.command.contenttype;
 
+import static com.dotcms.cli.common.ContentTypesTestHelperService.SYSTEM_WORKFLOW_ID;
+import static com.dotcms.cli.common.ContentTypesTestHelperService.SYSTEM_WORKFLOW_VARIABLE_NAME;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.dotcms.DotCMSITProfile;
@@ -21,6 +23,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.workflow.ImmutableWorkflow;
 import com.dotcms.model.config.Workspace;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
@@ -40,8 +43,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -375,6 +378,26 @@ class ContentTypeCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: We want to filter the content types by var name and direction asc
+     * Expected result: The output should come back ordered by varName and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Ascending_Lower_Case() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "asc");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
      * Given scenario: We want to filter the content types by var name
      * Expected result: The output should come back ordered by varName and direction DESC
      */
@@ -386,6 +409,26 @@ class ContentTypeCommandIT extends CommandTest {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
                     "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name and direction desc
+     * Expected result: The output should come back ordered by varName and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Descending_Lower_Case() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "desc");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("variable",output);
@@ -795,6 +838,159 @@ class ContentTypeCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: Testing the Content Type push command modifying the workflows
+     *
+     * @throws IOException if an I/O error occurs during the execution of the test
+     */
+    @Test
+    void Test_Push_Content_Type_With_Workflows() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            // Creating a content type file descriptor
+            final var newContentTypeResult = contentTypesTestHelper.createContentTypeDescriptor(
+                    workspace
+            );
+
+            // ╔════════════════════════════════════════════════════════════╗
+            // ║  Pushing the descriptor for the just created Content Type  ║
+            // ╚════════════════════════════════════════════════════════════╝
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            var updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).id(),
+                    updatedContentType.workflows().get(0).id()
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).variableName(),
+                    updatedContentType.workflows().get(0).variableName()
+            );
+
+            // ╔══════════════════════════════════════════════════════════════════════════════╗
+            // ║  Modifying the workflows of the content type -> With just the variable name  ║
+            // ╚══════════════════════════════════════════════════════════════════════════════╝
+            updatedContentType = ImmutableSimpleContentType.builder().from(updatedContentType)
+                    .workflows(
+                            List.of(
+                                    ImmutableWorkflow.builder()
+                                            .variableName(SYSTEM_WORKFLOW_VARIABLE_NAME)
+                                            .build()
+                            )
+                    ).build();
+            var jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentType);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔════════════════════════════════╗
+            // ║  Pushing again the descriptor  ║
+            // ╚════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).id(),
+                    updatedContentType.workflows().get(0).id()
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).variableName(),
+                    updatedContentType.workflows().get(0).variableName()
+            );
+
+            // ╔═══════════════════════════════════════════════════════════════════╗
+            // ║  Modifying the workflows of the content type -> With just the id  ║
+            // ╚═══════════════════════════════════════════════════════════════════╝
+            updatedContentType = ImmutableSimpleContentType.builder().from(updatedContentType)
+                    .workflows(
+                            List.of(
+                                    ImmutableWorkflow.builder()
+                                            .id(SYSTEM_WORKFLOW_ID)
+                                            .build()
+                            )
+                    ).build();
+            jsonContent = this.mapperService
+                    .objectMapper(newContentTypeResult.path().toFile())
+                    .writeValueAsString(updatedContentType);
+            Files.write(newContentTypeResult.path(), jsonContent.getBytes());
+
+            // ╔════════════════════════════════╗
+            // ║  Pushing again the descriptor  ║
+            // ╚════════════════════════════════╝
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME,
+                    workspace.contentTypes().toAbsolutePath().toString(),
+                    "--fail-fast", "-e");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // ╔══════════════════════════════╗
+            // ║  Validating the information  ║
+            // ╚══════════════════════════════╝
+            byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
+            Assertions.assertTrue(byVarName.isPresent());
+            Assertions.assertEquals(newContentTypeResult.variable(), byVarName.get().variable());
+
+            // ---
+            // Now validating the auto update updated the content type descriptor
+            updatedContentType = this.mapperService.map(
+                    newContentTypeResult.path().toFile(),
+                    ContentType.class
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).id(),
+                    updatedContentType.workflows().get(0).id()
+            );
+            Assertions.assertEquals(
+                    byVarName.get().workflows().get(0).variableName(),
+                    updatedContentType.workflows().get(0).variableName()
+            );
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
      * Given scenario: Pushing a content type with a detail page with an invalid site
      *
      * @throws IOException if there is an error reading the JSON content type file
@@ -1002,7 +1198,7 @@ class ContentTypeCommandIT extends CommandTest {
                 contentTypeAPI.getContentType(newContentType3, 1L, false);
                 Assertions.fail(" 404 Exception should have been thrown here.");
             } catch (Exception e) {
-                Assertions.assertTrue(e instanceof NotFoundException);
+                Assertions.assertInstanceOf(NotFoundException.class, e);
             }
 
             byVarName = contentTypeAPI.getContentType(newContentType4.variable(), 1L, false);

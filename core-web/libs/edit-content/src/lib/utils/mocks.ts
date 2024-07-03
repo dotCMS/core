@@ -449,26 +449,41 @@ export const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {
 
 export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
-    contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
-    dataType: 'BINARY',
+    contentTypeId: 'd1901a41d38b6686dd5ed8f910346d7a',
+    dataType: 'SYSTEM',
     fieldType: 'Binary',
-    fieldTypeLabel: 'Binary Field',
-    fieldVariables: [],
+    fieldTypeLabel: 'Binary',
+    fieldVariables: [
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+            fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
+            id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
+            key: 'accept',
+            value: 'image/*,.html,.ts'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+            fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
+            id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
+            key: 'maxFileSize',
+            value: '50000'
+        }
+    ],
+    hint: 'Helper label to be displayed below the field',
     fixed: false,
-    hint: 'A hint text',
-    iDate: 1698264695000,
-    id: '535a6de288e3fe91fad2679e8d7d966b',
+    forceIncludeInApi: false,
+    iDate: 1698153564000,
+    id: '5df3f8fc49177c195740bcdc02ec2db7',
     indexed: false,
     listed: false,
-    modDate: 1698291913000,
-    name: 'Binary',
+    modDate: 1698153564000,
+    name: 'Binary Field',
     readOnly: false,
     required: false,
     searchable: false,
-    sortOrder: 3,
+    sortOrder: 2,
     unique: false,
-    values: '/test.png',
-    variable: 'Binary'
+    variable: 'binaryField'
 };
 
 export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
@@ -1206,6 +1221,17 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         label: 'nico.dotcms.com',
         data: {
             hostname: 'nico.dotcms.com',
+            path: '',
+            type: 'site'
+        },
+        expandedIcon: 'pi pi-folder-open',
+        collapsedIcon: 'pi pi-folder'
+    },
+    {
+        key: 'System Host',
+        label: 'System Host',
+        data: {
+            hostname: 'System Host',
             path: '',
             type: 'site'
         },

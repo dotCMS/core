@@ -1,5 +1,7 @@
 package com.dotcms.config;
 
+import com.dotcms.ai.api.EmbeddingsAPI;
+import com.dotcms.ai.api.EmbeddingsInitializer;
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
 import com.dotcms.business.SystemTableInitializer;
@@ -128,7 +130,8 @@ public class DotInitializationService implements Serializable {
                 (DotInitializer)APILocator.getTemplateAPI(),
                 new ContentTypeInitializer(),
                 new DefaultVariantInitializer(),
-                new SystemTableInitializer()
+                new SystemTableInitializer(),
+                new EmbeddingsInitializer()
         );
     } // getInternalInitializers.
 

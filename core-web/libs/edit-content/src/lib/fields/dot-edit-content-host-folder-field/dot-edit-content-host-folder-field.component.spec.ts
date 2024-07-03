@@ -1,38 +1,57 @@
-import { createFakeEvent } from '@ngneat/spectator';
-import { Spectator, createComponentFactory, mockProvider, SpyObject } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { Spectator, SpyObject, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { signal } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
 import { mockMatchMedia } from '@dotcms/utils-testing';
 
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
+import { HostFolderFiledStore } from './store/host-folder-field.store';
 
-import { DotEditContentService } from '../../services/dot-edit-content.service';
+import {
+    TreeNodeItem,
+    TreeNodeSelectItem
+} from '../../models/dot-edit-content-host-folder-field.interface';
+import { newFakeRxMethod, getRxMethodFake } from '../../utils/fake-rx-method';
 import {
     HOST_FOLDER_TEXT_MOCK,
-    TREE_SELECT_MOCK_NODE,
     TREE_SELECT_SITES_MOCK,
     TREE_SELECT_MOCK,
     createFormGroupDirectiveMock
 } from '../../utils/mocks';
 
+class MockHostFolderFiledStore {
+    nodeSelected = signal<TreeNodeItem | null>(null);
+    nodeExpaned = signal<TreeNodeSelectItem['node'] | null>(null);
+    tree = signal<TreeNodeItem[]>([]);
+    status = signal<'idle' | 'pending' | 'fulfilled' | { error: string }>('idle');
+
+    iconClasses = signal(['']);
+
+    loadSites = newFakeRxMethod();
+    loadChildren = newFakeRxMethod();
+    chooseNode = newFakeRxMethod();
+}
+
+type TypeMock = SpyObject<MockHostFolderFiledStore>;
+
 describe('DotEditContentHostFolderFieldComponent', () => {
     let spectator: Spectator<DotEditContentHostFolderFieldComponent>;
     let component: DotEditContentHostFolderFieldComponent;
-    let service: SpyObject<DotEditContentService>;
+    let store: TypeMock;
 
     const createComponent = createComponentFactory({
         component: DotEditContentHostFolderFieldComponent,
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ],
-        providers: [
-            FormGroupDirective,
-            mockProvider(DotEditContentService, {
-                getSitesTreePath: jest.fn().mockReturnValue(of(TREE_SELECT_SITES_MOCK))
-            })
+        componentProviders: [
+            {
+                provide: HostFolderFiledStore,
+                useClass: MockHostFolderFiledStore
+            }
         ],
+        providers: [FormGroupDirective],
         detectChanges: false
     });
 
@@ -44,7 +63,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
                 }
             }
         });
-        service = spectator.inject(DotEditContentService);
+        store = spectator.inject(HostFolderFiledStore, true) as unknown as TypeMock;
         component = spectator.component;
         component.formControl.setValue(null);
         mockMatchMedia();
@@ -53,197 +72,74 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     it('should create the component', () => {
         spectator.detectChanges();
         expect(spectator.component).toBeTruthy();
+        expect(store).toBeTruthy();
     });
 
     it('should show options', () => {
+        store.tree.set(TREE_SELECT_SITES_MOCK);
+        const spyloadSites = getRxMethodFake(store.loadSites);
         spectator.detectChanges();
-        const options = component.$options();
 
-        expect(service.getSitesTreePath).toHaveBeenCalled();
+        const options = component.store.tree();
+
         expect(options).toBe(TREE_SELECT_SITES_MOCK);
         expect(component.treeSelect.options).toBe(TREE_SELECT_SITES_MOCK);
+        expect(spyloadSites).toHaveBeenCalled();
+    });
+
+    it('should tree selection height and virtual scroll height be the same', async () => {
+        spectator.detectChanges();
+
+        const triggerElement = spectator.query('.p-treeselect-trigger');
+        spectator.click(triggerElement);
+
+        await spectator.fixture.whenStable();
+
+        const treeSelectHeight = spectator.component.treeSelect.scrollHeight;
+        const treeVirtualScrollHeight =
+            spectator.component.treeSelect.virtualScrollOptions.style['height'];
+
+        expect(treeSelectHeight).toBe(treeVirtualScrollHeight);
     });
 
     describe('The init value with the root path', () => {
         it('should show a root path', () => {
-            const rootPath = TREE_SELECT_SITES_MOCK[0].key;
-            component.formControl.setValue(rootPath);
+            store.tree.set(TREE_SELECT_SITES_MOCK);
+            const nodeSelected = TREE_SELECT_SITES_MOCK[0];
+            store.nodeSelected.set(nodeSelected);
+            component.formControl.setValue(nodeSelected.key);
             spectator.detectChanges();
-            const label = spectator.query('.p-treeselect-label');
-            expect(label).toHaveText(rootPath);
-        });
-
-        it('should show the selected path in the tree', () => {
-            const rootPath = TREE_SELECT_SITES_MOCK[0].key;
-            component.formControl.setValue(rootPath);
-            spectator.detectChanges();
-
-            const triggerElement = spectator.query('.p-treeselect-trigger');
-            spectator.click(triggerElement);
-            const labelElement = spectator.query('.p-treenode-content.p-highlight');
-            expect(labelElement).toHaveText(rootPath);
+            expect(component.formControl.value).toBe('demo.dotcms.com');
+            expect(component.pathControl.value.key).toBe(nodeSelected.key);
+            expect(component.treeSelect.value.label).toBe(nodeSelected.label);
         });
     });
 
     describe('The init value with the one levels', () => {
         it('should show a path selected', () => {
-            service.buildTreeByPaths.mockReturnValue(of(TREE_SELECT_MOCK_NODE));
-            const rootPath = 'demo.dotcms.com/level1/';
-            component.formControl.setValue(rootPath);
-            spectator.detectChanges();
-            const label = spectator.query('.p-treeselect-label');
-            expect(label).toHaveText(rootPath);
-        });
-
-        it('should show the selected path in the tree', () => {
-            service.buildTreeByPaths.mockReturnValue(of(TREE_SELECT_MOCK_NODE));
-            const rootPath = 'demo.dotcms.com/level1/';
-            component.formControl.setValue(rootPath);
+            store.tree.set(TREE_SELECT_MOCK);
+            const nodeSelected = TREE_SELECT_MOCK[0].children[0];
+            store.nodeSelected.set(nodeSelected);
+            component.formControl.setValue(nodeSelected.label);
             spectator.detectChanges();
 
-            const triggerElement = spectator.query('.p-treeselect-trigger');
-            spectator.click(triggerElement);
-            const labelElement = spectator.query('.p-treenode-content.p-highlight');
-            expect(labelElement).toHaveText('level1');
+            expect(component.formControl.value).toBe('demo.dotcms.com/level1/');
+            expect(component.pathControl.value.key).toBe(nodeSelected.key);
+            expect(component.treeSelect.value.label).toBe(nodeSelected.label);
         });
     });
 
     describe('The init value with the two levels', () => {
         it('should show a path selected', () => {
-            const mockResponse = {
-                ...TREE_SELECT_MOCK_NODE,
-                node: { ...TREE_SELECT_MOCK[0].children[0].children[0] }
-            };
-            service.buildTreeByPaths.mockReturnValue(of(mockResponse));
-            const rootPath = 'demo.dotcms.com/level1/child1/';
-            component.formControl.setValue(rootPath);
-            spectator.detectChanges();
-            const label = spectator.query('.p-treeselect-label');
-            expect(label).toHaveText(rootPath);
-        });
-
-        it('should show the selected path in the tree', () => {
-            const mockResponse = {
-                ...TREE_SELECT_MOCK_NODE,
-                node: { ...TREE_SELECT_MOCK[0].children[0].children[0] }
-            };
-            service.buildTreeByPaths.mockReturnValue(of(mockResponse));
-            const rootPath = 'demo.dotcms.com/level1/child1/';
-            component.formControl.setValue(rootPath);
+            store.tree.set(TREE_SELECT_MOCK);
+            const nodeSelected = TREE_SELECT_MOCK[0].children[0].children[0];
+            store.nodeSelected.set(nodeSelected);
+            component.formControl.setValue(nodeSelected.label);
             spectator.detectChanges();
 
-            const triggerElement = spectator.query('.p-treeselect-trigger');
-            spectator.click(triggerElement);
-            const labelElement = spectator.query('.p-treenode-content.p-highlight');
-            expect(labelElement).toHaveText('child1');
-        });
-    });
-
-    describe('Select levels: onNodeSelect', () => {
-        it('should update the form value with the correct format with root path', () => {
-            spectator.detectChanges();
-            const mockItem = {
-                originalEvent: createFakeEvent('input'),
-                node: { ...TREE_SELECT_MOCK[0] }
-            };
-            component.onNodeSelect(mockItem);
-            const value = component.formControl.value;
-            expect(value).toBe('demo.dotcms.com:/');
-        });
-
-        it('should update the form value with the correct format with one level', () => {
-            spectator.detectChanges();
-            const mockItem = {
-                originalEvent: createFakeEvent('input'),
-                node: { ...TREE_SELECT_MOCK[0].children[0] }
-            };
-            component.onNodeSelect(mockItem);
-            const value = component.formControl.value;
-            expect(value).toBe('demo.dotcms.com:/level1/');
-        });
-
-        it('should update the form value with the correct format with two level', () => {
-            spectator.detectChanges();
-            const mockItem = {
-                originalEvent: createFakeEvent('input'),
-                node: { ...TREE_SELECT_MOCK[0].children[0].children[0] }
-            };
-            component.onNodeSelect(mockItem);
-            const value = component.formControl.value;
-            expect(value).toBe('demo.dotcms.com:/level1/child1/');
-        });
-    });
-
-    describe('Expand level: onNodeExpand', () => {
-        it('should not call getFoldersTreeNode when it is a node with children', () => {
-            spectator.detectChanges();
-            const mockItem = {
-                originalEvent: createFakeEvent('select'),
-                node: {
-                    ...TREE_SELECT_MOCK[0]
-                }
-            };
-            component.onNodeExpand(mockItem);
-            expect(service.getFoldersTreeNode).not.toHaveBeenCalled();
-        });
-
-        it('should not call getFoldersTreeNode when it is a node is loading', () => {
-            spectator.detectChanges();
-            const mockItem = {
-                originalEvent: createFakeEvent('select'),
-                node: {
-                    ...TREE_SELECT_MOCK[0],
-                    icon: 'spinner'
-                }
-            };
-            component.onNodeExpand(mockItem);
-            expect(service.getFoldersTreeNode).not.toHaveBeenCalled();
-        });
-
-        it('should call getFoldersTreeNode when it is a node with no children', async () => {
-            const response = TREE_SELECT_MOCK[0].children;
-            service.getFoldersTreeNode.mockReturnValue(of(response));
-            spectator.detectChanges();
-
-            await spectator.fixture.whenStable();
-
-            const treeDetectChangesSpy = jest.spyOn(component.treeSelect.cd, 'detectChanges');
-            const mockNode = { ...TREE_SELECT_SITES_MOCK[0] };
-            const mockItem = {
-                originalEvent: createFakeEvent('select'),
-                node: mockNode
-            };
-            component.onNodeExpand(mockItem);
-            const hostName = mockNode.data.hostname;
-            const path = mockNode.data.path;
-            expect(service.getFoldersTreeNode).toHaveBeenCalledWith(hostName, path);
-            expect(mockNode.children).toBe(response);
-            expect(mockNode.leaf).toBe(true);
-            expect(mockNode.icon).toBe('pi pi-folder-open');
-            expect(treeDetectChangesSpy).toHaveBeenCalled();
-        });
-
-        it('should call getFoldersTreeNode when it is a node with no children and empty response', async () => {
-            const response = [];
-            service.getFoldersTreeNode.mockReturnValue(of(response));
-            spectator.detectChanges();
-
-            await spectator.fixture.whenStable();
-
-            const treeDetectChangesSpy = jest.spyOn(component.treeSelect.cd, 'detectChanges');
-            const mockNode = { ...TREE_SELECT_SITES_MOCK[0] };
-            const mockItem = {
-                originalEvent: createFakeEvent('select'),
-                node: mockNode
-            };
-            component.onNodeExpand(mockItem);
-            const hostName = mockNode.data.hostname;
-            const path = mockNode.data.path;
-            expect(service.getFoldersTreeNode).toHaveBeenCalledWith(hostName, path);
-            expect(mockNode.children).toBe(response);
-            expect(mockNode.leaf).toBe(true);
-            expect(mockNode.icon).toBe('pi pi-folder-open');
-            expect(treeDetectChangesSpy).toHaveBeenCalled();
+            expect(component.formControl.value).toBe('demo.dotcms.com/level1/child1/');
+            expect(component.pathControl.value.key).toBe(nodeSelected.key);
+            expect(component.treeSelect.value.label).toBe(nodeSelected.label);
         });
     });
 });

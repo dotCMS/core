@@ -94,7 +94,8 @@ import {
     TREE_NODE_MOCK,
     URL_CONTENT_MAP_MOCK,
     newContentlet,
-    dotPageContainerStructureMock
+    dotPageContainerStructureMock,
+    SHOW_CONTENTLET_TOOLS_PATCH_MOCK
 } from '../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
@@ -524,6 +525,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             }
         ]
     });
+
 describe('EditEmaEditorComponent', () => {
     describe('with queryParams and permission', () => {
         let spectator: SpectatorRouting<EditEmaEditorComponent>;
@@ -3185,6 +3187,31 @@ describe('EditEmaEditorComponent', () => {
                         );
                     });
                 });
+            });
+        });
+
+        describe('Components Inputs', () => {
+            it('should set right inputs for the dot-ema-contentlet-tools tag', () => {
+                store.load({
+                    url: 'index',
+                    language_id: '5',
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    variantName: 'hello-there',
+                    experimentId: 'i-have-a-running-experiment'
+                });
+
+                spectator.detectChanges();
+
+                store.patchState(SHOW_CONTENTLET_TOOLS_PATCH_MOCK);
+
+                spectator.detectChanges();
+                const contentletTool = spectator.query(EmaContentletToolsComponent);
+
+                expect(contentletTool).not.toBeNull();
+                expect(contentletTool.contentletArea).toEqual(
+                    SHOW_CONTENTLET_TOOLS_PATCH_MOCK.contentletArea
+                );
+                expect(contentletTool.isEnterprise).toBeTruthy();
             });
         });
     });

@@ -13,8 +13,6 @@
 
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <tika.version>1.28.5</tika.version>
         <spifly.version>1.3.6</spifly.version>
         <asm.version>9.4</asm.version>
@@ -63,7 +61,7 @@
         <dependency>
             <groupId>com.dotcms.core.plugins</groupId>
             <artifactId>com.dotcms.telemetry</artifactId>
-            <version>24.05.29</version>
+            <version>24.06.19</version>
             <scope>provided</scope>
 
             <exclusions>

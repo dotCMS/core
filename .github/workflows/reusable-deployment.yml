@@ -34,7 +34,7 @@ on:
         EE_REPO_PASSWORD:
           required: false
           description: 'Artifactory password'
-        DEVELOPERS_SLACK_WEBHOOK:
+        SLACK_BOT_TOKEN:
           required: false
           description: 'Slack webhook for developers'
         NPM_ORG_TOKEN:
@@ -91,14 +91,14 @@ jobs:
             # This is a secret that is used to request a dev license from license.dotcms.com
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }} 
 
-      # The artifacts are uploaded to Artifactory using the 'deploy-artifact-artifactory' action.
+      # The artifacts are uploaded to Artifactory using the 'deploy-artifact-jfrog' action.
       - name: CLI Deploy
         continue-on-error: true
         id: cli_deploy
-        uses: ./.github/actions/deploy-artifact-artifactory
+        uses: ./.github/actions/deploy-artifact-jfrog
         with:
-          artifactory-repo-username: ${{ secrets.EE_REPO_USERNAME }}
-          artifactory-repo-password: ${{ secrets.EE_REPO_PASSWORD }}
+          artifactory-username: ${{ secrets.EE_REPO_USERNAME }}
+          artifactory-password: ${{ secrets.EE_REPO_PASSWORD }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: CLI Publish
@@ -110,30 +110,44 @@ jobs:
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           reuse-previous-build: ${{ inputs.reuse-previous-build }}
 
+
+      # A Slack notification is sent using the 'slackapi/slack-github-action' action if the repository is 'dotcms/core'.
+      - name: Slack Notification (Docker image announcement)
+        if: github.repository == 'dotcms/core'
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: "log-docker"
+          payload: |
+            {
+              "blocks": [              
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "> :large_purple_circle: *Attention dotters:* Docker image built!\n \n>This automated script is happy to announce that a new *docker* image has been built for *${{ inputs.environment }}* with *tags:* [`${{ steps.docker_build.outputs.tags }}`] :docker:"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
       - name: Slack Notification (dotCLI announcement)
         if: inputs.publish-npm-package
-        uses: rtCamp/action-slack-notify@v2
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: "log-dotcli"
+          payload: |
+            {
+              "blocks": [              
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "> :large_purple_circle: *Attention dotters:* dotCLI published!\n \n>This automated script is happy to announce that a new *_dotCLI_* version *tagged as:* [ `${{ steps.cli_publish.outputs.npm-package-version }}, ${{ steps.cli_publish.outputs.npm-package-version-tag }}` ] is now available on the `NPM` registry :package:!\n \n>`npm i -g @dotcms/dotcli@${{ steps.cli_publish.outputs.npm-package-version-tag }}`"
+                  }
+                }
+              ]
+            }
         env:
-          SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL: "log-dotcli"
-          SLACK_TITLE: "Important news!"
-          SLACK_MESSAGE: "This automated script is happy to announce that a new dotCLI version has been built for *${{ inputs.environment }}* with tags: [ ${{ steps.cli_publish.outputs.npm-package-version }}, ${{ steps.cli_publish.outputs.npm-package-version-tag }} ] is now available on the NPM registry :package:!"
-          SLACK_USERNAME: dotBot
-          SLACK_MSG_AUTHOR: " "
-          MSG_MINIMAL: true
-          SLACK_FOOTER: ""
-          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-
-      # A Slack notification is sent using the 'action-slack-notify' action if the repository is 'dotcms/core'.
-      - name: Slack Notification
-        if: github.repository == 'dotcms/core'
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotBot
-          SLACK_TITLE: "Attention dotters: Docker image built!"
-          SLACK_MSG_AUTHOR: " "
-          MSG_MINIMAL: true
-          SLACK_FOOTER: ""
-          SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
-          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *${{ inputs.environment }}* with tags: [${{ steps.docker_build.outputs.tags }}] :docker:"
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

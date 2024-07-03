@@ -1,39 +1,67 @@
-import { dotcmsClient, graphqlToPageEntity } from "@dotcms/client";
+import { notFound } from "next/navigation";
+
+import { graphqlToPageEntity, getPageRequestParams } from "@dotcms/client";
 import { MyPage } from "@/components/my-page";
 
-import { getGraphQLPageData } from "../../utils/gql";
+import { getGraphQLPageData } from "@/utils/gql";
+import { client } from "@/utils/dotcmsClient";
 
-const client = dotcmsClient.init({
-    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-    authToken: process.env.DOTCMS_AUTH_TOKEN,
-    siteId: "59bb8831-6706-4589-9ca0-ff74016e02b2",
-    requestOptions: {
-        // In production you might want to deal with this differently
-        cache: "no-cache",
-    },
-});
+const getPath = (params) => {
+    const defaultPath = "colorado-preseason-special";
+    const path = "/campaigns/" + (params?.slug?.join("/") || defaultPath);
+
+    return path;
+};
+
+/**
+ * Generate metadata
+ *
+ * @export
+ * @param {*} { params, searchParams }
+ * @return {*}
+ */
+export async function generateMetadata({ params, searchParams }) {
+    const path = getPath(params);
+    const pageRequestParams = getPageRequestParams({
+        path,
+        params: searchParams,
+    });
+
+    try {
+        const data = await client.page.get(pageRequestParams);
+        const page = data.entity?.page;
+        const title = page?.friendlyName || page?.title;
+
+        return {
+            title,
+        };
+    } catch (e) {
+        return {
+            title: "not found",
+        };
+    }
+}
 
 export default async function Home({ searchParams, params }) {
-    const defaultPath = "/campaigns/colorado-preseason-special";
-    const path = params?.slug
-        ? "/campaigns/" + params.slug.join("/")
-        : defaultPath;
-    const requestData = {
+    const path = getPath(params);
+    const pageRequestParams = getPageRequestParams({
         path,
-        language_id: searchParams.language_id,
-        "com.dotmarketing.persona.id":
-            searchParams["com.dotmarketing.persona.id"] || "",
-        mode: searchParams.mode,
-        variantName: searchParams["variantName"],
-    };
+        params: searchParams,
+    });
     const nav = await client.nav.get({
         path: "/",
         depth: 2,
         languageId: searchParams.language_id,
     });
 
-    const data = await getGraphQLPageData(requestData);
+    const data = await getGraphQLPageData(pageRequestParams);
     const pageAsset = graphqlToPageEntity(data);
+
+    // GraphQL returns null if the page is not found
+    // It does not throw an error
+    if (!pageAsset) {
+        notFound();
+    }
 
     return <MyPage nav={nav.entity.children} pageAsset={pageAsset}></MyPage>;
 }

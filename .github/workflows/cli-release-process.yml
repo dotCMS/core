@@ -9,6 +9,10 @@ on:
         description: 'Release version'
         default: '1.0.0-SNAPSHOT'
         required: false
+      dry-run:
+        description: 'Dry run'
+        default: 'false'
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
@@ -113,14 +117,26 @@ jobs:
           echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
           echo "AUXILIARY_BRANCH=$AUXILIARY_BRANCH" >> "$GITHUB_OUTPUT"
 
+  get-runners:
+    needs: [ precheck ]
+    name: 'Get runners'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          RUNNERS='[{ "os": "ubuntu-latest", "label": "Linux", "platform": "linux-x86_64" }, { "os": "macos-latest", "label": "macOS-Intel", "platform": "osx-x86_64" }, { "os": "macos-13-xlarge", "label": "macOS-Silicon", "platform": "osx-aarch_64" }]'
+          echo "matrix=$RUNNERS" >> $GITHUB_OUTPUT
+
   # Build native executable per runner
   build:
-    needs: [ precheck ]
-    name: 'Build native image on ${{ matrix.os }}'
+    needs: [ precheck, get-runners ]
+    name: 'Build native image on ${{ matrix.label }}'
     strategy:
       fail-fast: true
       matrix:
-        os: [ macos-13-xlarge, macOS-latest, ubuntu-latest ]
+        include: ${{ fromJSON(needs.get-runners.outputs.matrix) }}
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -140,7 +156,7 @@ jobs:
       # Sets up GraalVM for native image compilation (Linux/macOS)
       # Downloads and installs GraalVM
       # Configures environment variables
-      - name: 'Set up GraalVM for (Linux/MacOS)'
+      - name: 'Set up GRAALVM for ${{ matrix.label }}'
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
@@ -240,7 +256,7 @@ jobs:
 
       # Builds a native image of the CLI using GraalVM (Linux/macOS)
       # Runs on a matrix for different operating systems
-      - name: 'Build Native Image (Linux/MacOS)'
+      - name: 'Build Native Image ${{ matrix.label }}'
         if: ${{ matrix.os != 'windows-latest' }}
         working-directory: ${{ github.workspace }}
         run: |
@@ -268,7 +284,7 @@ jobs:
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{ matrix.os }}
+          name: artifacts-${{ matrix.platform }}
           path: |
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
@@ -295,7 +311,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/artifacts
           pattern: artifacts-*
-          merge-multiple: true
 
       - name: 'List artifacts'
         run: |
@@ -323,11 +338,10 @@ jobs:
           JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
           JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
           JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
-          JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-          JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          JRELEASER_DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
         working-directory: ${{ github.workspace }}
         run: |
-          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
+          tools/dotcms-cli/mvnw -B -Prelease validate -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
 
   publish-npm-package:
     name: "Publish NPM Package"
@@ -459,7 +473,7 @@ jobs:
         run: |
           echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
           npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
-          
+
       - name: Slack Notification
         continue-on-error: true
         uses: rtCamp/action-slack-notify@v2
