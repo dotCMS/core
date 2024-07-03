@@ -7,6 +7,7 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchedCategory;
 import com.liferay.portal.model.User;
 
 import javax.ws.rs.DefaultValue;
@@ -287,7 +288,7 @@ public abstract class CategoryFactory {
 	 *
 	 * @param searchCriteria Search Criteria
 	 *
-	 * @return List of Category filtered
+	 * @return List of Category filteredx
 	 */
-	public abstract List<Category> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException;
+	public abstract List<HierarchedCategory> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException;
 }
