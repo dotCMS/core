@@ -224,9 +224,4 @@ Advanced configurations allow you to customize and optimize your development env
 	```
 
 ## Resources and Further Reading
-Below, you'll find a curated list of resources to help deepen your understanding of the technologies and tools used in our project. We recommend that you familiarize yourself with these resources before diving into the project.
-
-- [DotCMS Documentation](https://dotcms.com/docs/)
-- [DotCMS R&D - Onboarding](https://docs.google.com/document/d/1BKwGbqyVNBjc_FuP6tD2R9Aqloh28b-2nstlnziLDRw/edit#heading=h.34zjomn5aq0w)
-
-Additionally, for more advanced actions and commands, you can consult the `justfile` in the project repository. The `justfile` contains various scripts that simplify common tasks and automate complex processes, making it a valuable reference for efficient development workflows.
+For more advanced actions and commands, you can consult the `justfile` in the project repository. The `justfile` contains various scripts that simplify common tasks and automate complex processes, making it a valuable reference for efficient development workflows.

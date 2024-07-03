@@ -204,9 +204,3 @@ In this section, you'll find advanced configuration options to optimize your dev
   Each feature has its own specific environment variable. To know which features can be enabled through feature flags, you need to consult with the team.
 
 By leveraging these advanced configurations, you can streamline your development process, customize your environment, and enhance your productivity.
-
-## Resources and Further Reading
-Below, you'll find a curated list of resources to help deepen your understanding of the technologies and tools used in our project. We recommend that you familiarize yourself with these resources before diving into the project.
-
-- [DotCMS Documentation](https://dotcms.com/docs/)
-- [DotCMS R&D - Onboarding](https://docs.google.com/document/d/1BKwGbqyVNBjc_FuP6tD2R9Aqloh28b-2nstlnziLDRw/edit#heading=h.34zjomn5aq0w)
