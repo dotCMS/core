@@ -260,3 +260,5 @@ This maintenance release includes the following code fixes:
 203. https://github.com/dotCMS/core/issues/28785 : APIs return incorrect information for pages with fields using the variable name "description" #28785
 
 **Release-23.01.19**
+
+204. https://github.com/dotCMS/core/issues/28609 : Remove old vulnerability-scan.yml workflow #28609
