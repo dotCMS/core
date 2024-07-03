@@ -10,13 +10,12 @@ import {
     EventEmitter,
     inject,
     input,
-    OnDestroy,
     Output,
     QueryList,
     ViewChildren
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -38,7 +37,14 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 @Component({
     selector: 'dot-category-field-category-list',
     standalone: true,
-    imports: [CommonModule, TreeModule, CheckboxModule, FormsModule, ButtonModule],
+    imports: [
+        CommonModule,
+        TreeModule,
+        CheckboxModule,
+        ButtonModule,
+        ReactiveFormsModule,
+        FormsModule
+    ],
     templateUrl: './dot-category-field-category-list.component.html',
     styleUrl: './dot-category-field-category-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,18 +52,21 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
         class: 'category-list__wrapper'
     }
 })
-export class DotCategoryFieldCategoryListComponent implements AfterViewInit, OnDestroy {
+export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
+    /**
+     *  Represent the columns of categories
+     */
     @ViewChildren('categoryColumn') categoryColumns: QueryList<ElementRef>;
 
     /**
      * Represents the variable 'categories' which is of type 'DotCategoryFieldCategory[][]'.
      */
     categories = input.required<DotCategoryFieldCategory[][]>();
+
     /**
      * Represent the selected item saved in the contentlet
      */
     selected = input.required<string[]>();
-
     /**
      * Generate the empty columns
      */
@@ -76,6 +85,11 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit, OnD
     @Output() itemClicked = new EventEmitter<{ index: number; item: DotCategory }>();
 
     /**
+     * Emit the item checked to the parent component
+     */
+    @Output() itemChecked = new EventEmitter<{ selected: string[]; item: DotCategory }>();
+
+    /**
      * Model of the items selected
      */
     itemsSelected: string[];
@@ -83,6 +97,8 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit, OnD
     readonly #destroyRef = inject(DestroyRef);
 
     #effectRef = effect(() => {
+        // Todo: find a better way to update this
+        // Initial selected items from the contentlet
         this.itemsSelected = this.selected();
     });
 
@@ -91,10 +107,10 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit, OnD
         this.categoryColumns.changes.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
             this.scrollHandler();
         });
-    }
 
-    ngOnDestroy(): void {
-        this.#effectRef.destroy();
+        this.#destroyRef.onDestroy(() => {
+            this.#effectRef.destroy();
+        });
     }
 
     private scrollHandler() {

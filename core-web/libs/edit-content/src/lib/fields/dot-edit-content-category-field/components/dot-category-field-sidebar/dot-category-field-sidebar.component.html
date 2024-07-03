@@ -25,9 +25,10 @@
             <div class="category-field__search">Input Search</div>
             <div class="flex-grow-1 category-field__categories">
                 <dot-category-field-category-list
+                    (itemChecked)="itemChecked($event)"
                     (itemClicked)="itemClicked($event)"
                     [categories]="store.categoryList()"
-                    [selected]="store.selectedCategories()" />
+                    [selected]="store.selectedCategoriesValues()" />
             </div>
         </div>
 

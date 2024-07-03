@@ -7,12 +7,17 @@ import { computed, inject } from '@angular/core';
 
 import { filter, switchMap, tap } from 'rxjs/operators';
 
-import { ComponentStatus, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCategory,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 
 import {
     DotCategoryFieldCategory,
     DotCategoryFieldItem,
-    DotKeyValueObj
+    DotCategoryFieldKeyValueObj
 } from '../models/dot-category-field.models';
 import { CategoriesService } from '../services/categories.service';
 import {
@@ -24,17 +29,17 @@ import {
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
-    rootCategoryInode: string;
-    categories: DotCategoryFieldCategory[][];
-    categoriesValue: DotKeyValueObj[];
-    parentPath: string[];
+    field: DotCMSContentTypeField; // field and configurations
+    selected: DotCategoryFieldKeyValueObj[]; // selected items from form and UI
+    categories: DotCategoryFieldCategory[][]; // list of categories
+    parentPath: string[]; // Parent patch of selected UI
     state: ComponentStatus;
 };
 
 export const initialState: CategoryFieldState = {
-    rootCategoryInode: '',
+    field: {} as DotCMSContentTypeField,
+    selected: [],
     categories: [],
-    categoriesValue: [],
     parentPath: [],
     state: ComponentStatus.IDLE
 };
@@ -54,11 +59,11 @@ export const initialState: CategoryFieldState = {
  */
 export const CategoryFieldStore = signalStore(
     withState(initialState),
-    withComputed(({ categories, categoriesValue, parentPath }) => ({
+    withComputed(({ field, categories, selected, parentPath }) => ({
         /**
          * Current selected items (key) from the contentlet
          */
-        selectedCategories: computed(() => categoriesValue().map((item) => item.key)),
+        selectedCategoriesValues: computed(() => selected().map((item) => item.key)),
         /**
          * Categories for render with added properties
          */
@@ -66,17 +71,43 @@ export const CategoryFieldStore = signalStore(
             categories().map((column) => addMetadata(column, parentPath()))
         ),
 
-        hasSelectedCategories: computed(() => {
-            return !!categoriesValue().map((item) => item.key).length;
-        })
+        hasSelectedCategories: computed(() => !!selected().map((item) => item.key).length),
+
+        rootCategoryInode: computed(() => field().values),
+        fieldVariableName: computed(() => field().variable)
     })),
     withMethods((store, categoryService = inject(CategoriesService)) => ({
         /**
          * Sets a given iNode as the main parent and loads selected categories into the store.
          */
-        load({ variable, values }: DotCMSContentTypeField, contentlet: DotCMSContentlet): void {
-            const categoriesValue = getSelectedCategories(variable, contentlet);
-            patchState(store, { rootCategoryInode: values, categoriesValue });
+        load(field: DotCMSContentTypeField, contentlet: DotCMSContentlet): void {
+            const selected = getSelectedCategories(field, contentlet);
+            patchState(store, {
+                field,
+                selected
+            });
+        },
+
+        updateSelected(selected: string[], item: DotCategory): void {
+            if (!Array.isArray(selected)) {
+                console.error('Expected selected to be an array, but got:', selected);
+
+                return;
+            }
+
+            const currentChecked = [...store.selected()];
+            if (selected.includes(item.key)) {
+                currentChecked.push({ key: item.key, value: item.categoryName });
+            } else {
+                const index = currentChecked.findIndex((entry) => entry.key === item.key);
+                if (index > -1) {
+                    currentChecked.splice(index, 1);
+                }
+            }
+
+            patchState(store, {
+                selected: currentChecked
+            });
         },
 
         /**

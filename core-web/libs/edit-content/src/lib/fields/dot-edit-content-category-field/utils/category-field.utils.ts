@@ -1,25 +1,28 @@
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DotCategoryFieldCategory, DotKeyValueObj } from '../models/dot-category-field.models';
+import {
+    DotCategoryFieldCategory,
+    DotCategoryFieldKeyValueObj
+} from '../models/dot-category-field.models';
 
 /**
  * Retrieves selected categories from a contentlet.
  *
  * @param {string} variableName - The name of the variable containing the selected categories.
  * @param {DotCMSContentlet} contentlet - The contentlet from which to retrieve the selected categories.
- * @returns {DotKeyValueObj[]} - An array of objects representing the selected categories.
+ * @returns {DotCategoryFieldKeyValueObj[]} - An array of objects representing the selected categories.
  */
 export const getSelectedCategories = (
-    variableName: string,
+    { variable }: DotCMSContentTypeField,
     contentlet: DotCMSContentlet
-): DotKeyValueObj[] => {
-    if (!contentlet || !variableName) {
+): DotCategoryFieldKeyValueObj[] => {
+    if (!contentlet || !variable) {
         return [];
     }
 
-    const selectedCategories = contentlet[variableName] || [];
+    const selectedCategories = contentlet[variable] || [];
 
-    return selectedCategories.map((obj: DotKeyValueObj) => {
+    return selectedCategories.map((obj: DotCategoryFieldKeyValueObj) => {
         const key = Object.keys(obj)[0];
 
         return { key, value: obj[key] };

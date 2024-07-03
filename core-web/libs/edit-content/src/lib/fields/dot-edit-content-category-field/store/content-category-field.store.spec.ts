@@ -17,7 +17,7 @@ import {
     CATEGORY_LEVEL_2,
     SELECTED_LIST_MOCK
 } from '../mocks/category-field.mocks';
-import { DotKeyValueObj } from '../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
 import { CategoriesService } from '../services/categories.service';
 
 const EMPTY_ARRAY = [];
@@ -59,7 +59,7 @@ describe('CategoryFieldStore', () => {
 
     describe('withMethods', () => {
         it('should set the correct rootCategoryInode and categoriesValue', () => {
-            const expectedCategoryValues: DotKeyValueObj[] = [
+            const expectedCategoryValues: DotCategoryFieldKeyValueObj[] = [
                 {
                     key: '33333',
                     value: 'Electrical'

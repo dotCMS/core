@@ -9,33 +9,33 @@ import {
 
 import {
     CATEGORY_FIELD_CONTENTLET_MOCK,
-    CATEGORY_FIELD_VARIABLE_NAME,
+    CATEGORY_FIELD_MOCK,
     CATEGORY_LEVEL_1
 } from '../mocks/category-field.mocks';
-import { DotCategoryFieldCategory, DotKeyValueObj } from '../models/dot-category-field.models';
+import {
+    DotCategoryFieldCategory,
+    DotCategoryFieldKeyValueObj
+} from '../models/dot-category-field.models';
 
 describe('CategoryFieldUtils', () => {
     describe('getSelectedCategories', () => {
         it('should return an empty array if contentlet is null', () => {
-            const result = getSelectedCategories(CATEGORY_FIELD_VARIABLE_NAME, null);
+            const result = getSelectedCategories(CATEGORY_FIELD_MOCK, null);
             expect(result).toEqual([]);
         });
+
         it('should return an empty array if variable is null', () => {
             const result = getSelectedCategories(null, CATEGORY_FIELD_CONTENTLET_MOCK);
             expect(result).toEqual([]);
         });
-        it("should return an empty array if variable is ''", () => {
-            const result = getSelectedCategories('', CATEGORY_FIELD_CONTENTLET_MOCK);
-            expect(result).toEqual([]);
-        });
 
         it('should return parsed the values', () => {
-            const expected: DotKeyValueObj[] = [
+            const expected: DotCategoryFieldKeyValueObj[] = [
                 { key: '33333', value: 'Electrical' },
                 { key: '22222', value: 'Doors & Windows' }
             ];
             const result = getSelectedCategories(
-                CATEGORY_FIELD_VARIABLE_NAME,
+                CATEGORY_FIELD_MOCK,
                 CATEGORY_FIELD_CONTENTLET_MOCK
             );
 
@@ -53,6 +53,7 @@ describe('CategoryFieldUtils', () => {
             const result = addMetadata(CATEGORY_LEVEL_1, PARENT_PATH_MOCK);
             expect(result).toEqual(expected);
         });
+
         it('should `checked: false` when category has children and do not exist in the parentPath', () => {
             const PATH_MOCK = [];
             const expected = CATEGORY_LEVEL_1.map((item) => {

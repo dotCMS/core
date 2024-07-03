@@ -1,11 +1,11 @@
-import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
 export type FnResolutionValue = (
     contentlet: DotCMSContentlet,
     field: DotCMSContentTypeField
-) => string;
+) => string | string[];
 
 const defaultResolutionFn: FnResolutionValue = (contentlet, field) =>
     contentlet?.[field.variable] ?? field.defaultValue;
@@ -36,5 +36,13 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
     [FIELD_TYPES.TEXTAREA]: defaultResolutionFn,
     [FIELD_TYPES.TIME]: defaultResolutionFn,
     [FIELD_TYPES.WYSIWYG]: defaultResolutionFn,
-    [FIELD_TYPES.CATEGORY]: defaultResolutionFn
+    [FIELD_TYPES.CATEGORY]: (contentlet, field) => {
+        const values = contentlet?.[field.variable];
+
+        if (Array.isArray(values)) {
+            return values.map((item) => Object.keys(item)[0]);
+        }
+
+        return field.defaultValue ?? [];
+    }
 };

@@ -1,17 +1,19 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     EventEmitter,
     inject,
-    OnDestroy,
     OnInit,
-    Output
+    Output,
+    ViewChild
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { SidebarModule } from 'primeng/sidebar';
 
+import { DotCategory } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoryFieldItem } from '../../models/dot-category-field.models';
@@ -35,7 +37,10 @@ import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-cat
     styleUrl: './dot-category-field-sidebar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
+export class DotCategoryFieldSidebarComponent implements OnInit {
+    @ViewChild(DotCategoryFieldCategoryListComponent)
+    listComponent: DotCategoryFieldCategoryListComponent;
+
     /**
      * Indicates whether the sidebar is visible or not.
      */
@@ -48,8 +53,14 @@ export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
 
     readonly store = inject(CategoryFieldStore);
 
+    #destroyRef = inject(DestroyRef);
+
     ngOnInit(): void {
         this.store.getCategories();
+
+        this.#destroyRef.onDestroy(() => {
+            this.store.clean();
+        });
     }
 
     /**
@@ -63,7 +74,12 @@ export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
         this.store.getCategories({ index, item });
     }
 
-    ngOnDestroy(): void {
-        this.store.clean();
+    /**
+     * Handle the selection of an item
+     * @param $event
+     * @param item
+     */
+    itemChecked({ selected, item }: { selected: string[]; item: DotCategory }) {
+        this.store.updateSelected(selected, item);
     }
 }

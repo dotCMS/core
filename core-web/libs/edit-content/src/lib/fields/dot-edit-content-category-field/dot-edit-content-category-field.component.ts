@@ -1,4 +1,4 @@
-import { NgClass } from '@angular/common';
+import { JsonPipe, NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,7 +11,7 @@ import {
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -45,25 +45,30 @@ import { CategoryFieldStore } from './store/content-category-field.store';
         NgClass,
         TooltipModule,
         DotMessagePipe,
-        DotDynamicDirective
+        DotDynamicDirective,
+        JsonPipe
     ],
     templateUrl: './dot-edit-content-category-field.component.html',
     styleUrl: './dot-edit-content-category-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        '[class.dot-category-field__container--has-categories]': 'hasSelectedCategories()',
+        '[class.dot-category-field__container]': '!hasSelectedCategories()'
+    },
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
-    host: {
-        '[class.dot-category-field__container--has-categories]': 'hasSelectedCategories()',
-        '[class.dot-category-field__container]': '!hasSelectedCategories()'
-    },
     providers: [CategoriesService, CategoryFieldStore]
 })
 export class DotEditContentCategoryFieldComponent implements OnInit {
+    /**
+     * Disable the button to open the sidebar
+     */
     disableSelectCategoriesButton = signal(false);
+
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
 
     /**
@@ -79,8 +84,8 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      *
      */
     contentlet = input.required<DotCMSContentlet>();
-
     readonly store = inject(CategoryFieldStore);
+    readonly #form = inject(ControlContainer).control as FormGroup;
     readonly #destroyRef = inject(DestroyRef);
     #componentRef: ComponentRef<DotCategoryFieldSidebarComponent>;
 
@@ -115,8 +120,20 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
         this.#componentRef.instance.closedSidebar
             .pipe(takeUntilDestroyed(this.#destroyRef), delay(CLOSE_SIDEBAR_CSS_DELAY_MS))
             .subscribe(() => {
+                this.updateCategoryFieldControl();
+                // enable the show sidebar button
                 this.disableSelectCategoriesButton.set(false);
-                this.sidebarHost.viewContainerRef.clear();
+                this.removeDotCategoryFieldSidebarComponent();
             });
+    }
+
+    private updateCategoryFieldControl(): void {
+        this.#form
+            .get(this.store.fieldVariableName())
+            .setValue(this.store.selectedCategoriesValues());
+    }
+
+    private removeDotCategoryFieldSidebarComponent() {
+        this.sidebarHost.viewContainerRef.clear();
     }
 }
