@@ -22,3 +22,4 @@ This maintenance release includes the following code fixes:
 16. https://github.com/dotCMS/core/issues/28785 : APIs return incorrect information for pages with fields using the variable name "description" #28785
 17. https://github.com/dotCMS/core/issues/28609 : Remove old vulnerability-scan.yml workflow #28609
 18. https://github.com/dotCMS/core/issues/23292 : Password validation failed for few characters #23292
+19. https://github.com/dotCMS/core/issues/23131 : Remove 10k Push Publishing Limit #23131
