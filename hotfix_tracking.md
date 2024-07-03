@@ -265,3 +265,4 @@ This maintenance release includes the following code fixes:
 205. https://github.com/dotCMS/core/issues/23292 : Password validation failed for few characters #23292
 206. https://github.com/dotCMS/core/issues/23131 : Remove 10k Push Publishing Limit #23131
 207. https://github.com/dotCMS/core/issues/28897 : Content Resource v1 hits the db #28897
+208. https://github.com/dotCMS/core/issues/28890 : LanguageUtil.getLanguageId is always hitting the db #28890
