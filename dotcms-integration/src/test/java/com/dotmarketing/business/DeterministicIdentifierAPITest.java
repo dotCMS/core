@@ -79,7 +79,9 @@ public class DeterministicIdentifierAPITest {
     /**
      * Given Scenario: We have a fileAsset with missing physical file
      * Expected behavior: The method must return an empty optional and the generation of an identifier still must be possible
-     * But the returned id must be a valid UUID and not a deterministic onec
+     * The whole purpose of this test is to ensure that the method is robust enough to handle missing files
+     * and demonstrate that we won't get a NPE
+     * But the returned id must be a valid UUID and not a deterministic one
      * @throws IOException if the file cannot be created
      * @throws DotDataException if the data cannot be persisted
      * @throws DotSecurityException if the data cannot be persisted
@@ -95,6 +97,7 @@ public class DeterministicIdentifierAPITest {
         java.io.File file = java.io.File.createTempFile("file", ".txt");
         FileUtil.write(file, "helloworld");
 
+        //Now let's create a fileAsset with a missing binary
         final Contentlet fileAsset = new FileAssetDataGen(folder, file).languageId(english).nextPersisted();
         fileAsset.setIdentifier(null);
         fileAsset.setInode(null);
