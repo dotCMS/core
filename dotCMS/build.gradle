@@ -292,7 +292,7 @@ dependencies {
 
     if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
 
-        implementation group: 'com.dotcms.enterprise', name: 'ee', version: '23.01.18', changing: true
+        implementation group: 'com.dotcms.enterprise', name: 'ee', version: '23.01.19', changing: true
     }
 }
 
