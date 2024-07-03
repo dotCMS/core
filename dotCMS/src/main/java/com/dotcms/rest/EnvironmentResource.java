@@ -245,7 +245,7 @@ public class EnvironmentResource {
 			if (Objects.nonNull(existingEnvironment)) {
 
 				Logger.info(getClass(), "Can't save Environment. An Environment with the given name already exists. ");
-				throw new IllegalArgumentException("An Environment with the given name " + environmentName + " already exist.");
+				throw new IllegalArgumentException("An Environment with the given name " + environmentName + " already exists.");
 			}
 
 			Logger.debug(this, ()-> "Creating environment: " + environmentName);
@@ -345,7 +345,7 @@ public class EnvironmentResource {
 		if (Objects.isNull(existingEnvironmentById)
 				|| !existingEnvironmentById.getId().equals(id)) {
 
-			Logger.info(getClass(), "Can't save Environment. An Environment id that does not exists. ");
+			Logger.info(getClass(), "Can't save Environment. An Environment id that does not exist. ");
 			throw new IllegalArgumentException("An Environment with the given id " + id + " does not exist.");
 		}
 
@@ -353,7 +353,7 @@ public class EnvironmentResource {
 				&& (!existingEnvironmentByName.getId().equals(id) && existingEnvironmentByName.getName().equals(environmentName))) {
 
 			Logger.info(getClass(), "Can't save Environment. An Environment with the given name already exists. ");
-			throw new IllegalArgumentException("An Environment with the given name " + environmentName + " already exist.");
+			throw new IllegalArgumentException("An Environment with the given name " + environmentName + " already exists.");
 		}
 
 		Logger.debug(this, ()-> "Updating environment: " + environmentName);
