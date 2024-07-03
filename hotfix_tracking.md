@@ -262,3 +262,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.19**
 
 204. https://github.com/dotCMS/core/issues/28609 : Remove old vulnerability-scan.yml workflow #28609
+205. https://github.com/dotCMS/core/issues/23292 : Password validation failed for few characters #23292
