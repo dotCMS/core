@@ -115,7 +115,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
             } else {
                 //This should handle cases like a multi-binary contentlets
                 final Optional<String> optional = resolveAssetName(contentlet);
-                seed = optional.orElseGet(uuidSupplier);
+                seed = optional.orElseGet(contentlet::getTitle);
             }
         } else if (asset instanceof WebAsset) {
             seed = ((WebAsset) asset).getTitle();
