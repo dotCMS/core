@@ -224,4 +224,4 @@ Advanced configurations allow you to customize and optimize your development env
 	```
 
 ## Resources and Further Reading
-For more advanced actions and commands, you can consult the `justfile` in the project repository. The `justfile` contains various scripts that simplify common tasks and automate complex processes, making it a valuable reference for efficient development workflows.
+For more advanced actions and commands, you can consult the `justfile` in the project repository. The `justfile` contains several scripts that simplify common tasks and automate complex processes, making it a valuable reference for efficient development workflows.
