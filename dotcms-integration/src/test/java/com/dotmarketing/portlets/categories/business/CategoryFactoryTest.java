@@ -404,7 +404,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         List<String> categoriesExpected = list(childCategory_1, childCategory_2, childCategory_3, grandchildCategory_1,
                 grandchildCategory_2, childCategory_6, childCategory_7).stream().map(Category::getInode).collect(Collectors.toList());
 
-        final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria categorySearchCriteria = new CategorySearchCriteria.Builder()
                 .filter(filterTestCase.transformToSearch())
                 .rootInode(topLevelCategory_1.getInode())
                 .build();
@@ -416,7 +416,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link CategoryFactoryImpl#findAll(CategoryFactory.CategorySearchCriteria)}
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When: call the method with filter and inode equals to null
      * Should: return all the Categories
      *
@@ -447,7 +447,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .parent(childCategory_2)
                 .nextPersisted();
 
-        final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria categorySearchCriteria = new CategorySearchCriteria.Builder()
                 .build();
 
         final Collection<Category> categoriesWithFilter = FactoryLocator.getCategoryFactory().findAll(categorySearchCriteria);
@@ -457,7 +457,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link CategoryFactoryImpl#findAll(CategoryFactory.CategorySearchCriteria)}
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When: call the method with filter  equals to null and inode not null
      * Should: return all children  Categories
      *
@@ -517,7 +517,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .parent(topLevelCategory_2)
                 .nextPersisted();
 
-        final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria categorySearchCriteria = new CategorySearchCriteria.Builder()
                 .rootInode(topLevelCategory_1.getInode())
                 .build();
 
@@ -531,7 +531,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link CategoryFactoryImpl#findAll(CategoryFactory.CategorySearchCriteria)}
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When: Create a set of {@link Category} and called the method ordering by key
      * Should: return all children  Categories ordered
      *
@@ -562,7 +562,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .parent(childCategory_2)
                 .nextPersisted();
 
-        final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria categorySearchCriteria = new CategorySearchCriteria.Builder()
                 .orderBy("category_key")
                 .direction(OrderDirection.ASC)
                 .rootInode(topLevelCategory_1.getInode())

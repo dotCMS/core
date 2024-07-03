@@ -4,8 +4,7 @@
 @font-face {
     font-family: 'FontAwesome';
     src: url('../fonts/fontawesome-webfont.eot?v=4.7.0');
-    src:
-        url('../fonts/fontawesome-webfont.eot?#iefix&v=4.7.0') format('embedded-opentype'),
+    src: url('../fonts/fontawesome-webfont.eot?#iefix&v=4.7.0') format('embedded-opentype'),
         url('../fonts/fontawesome-webfont.woff2?v=4.7.0') format('woff2'),
         url('../fonts/fontawesome-webfont.woff?v=4.7.0') format('woff'),
         url('../fonts/fontawesome-webfont.ttf?v=4.7.0') format('truetype'),
@@ -4828,13 +4827,11 @@
 
 .dijitTitlePane {
     border-radius: 1px;
-    box-shadow:
-        0 1px 3px var(--color-palette-black-op-10),
+    box-shadow: 0 1px 3px var(--color-palette-black-op-10),
         0 1px 2px var(--color-palette-black-op-20);
 }
 .dijitTitlePaneHover {
-    box-shadow:
-        0 3px 6px var(--color-palette-black-op-10),
+    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
         0 3px 6px var(--color-palette-black-op-20);
 }
 .dijitTitlePaneHover .dijitTitlePaneContentOuter {
@@ -4891,8 +4888,7 @@
     background-color: #ffffff;
     border-radius: 0px;
     border: none;
-    box-shadow:
-        0 3px 6px var(--color-palette-black-op-10),
+    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
         0 3px 6px var(--color-palette-black-op-20);
 }
 .dijitDialogCloseIcon {
@@ -4947,9 +4943,7 @@
     color: #14151a;
     border: 0 none;
     border-radius: 0.375rem;
-    box-shadow:
-        0px 0px 4px rgba(20, 21, 26, 0.04),
-        0px 8px 16px rgba(20, 21, 26, 0.08);
+    box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
     padding: 0.5rem;
     margin-top: 0.5rem;
 }
@@ -5528,9 +5522,7 @@
     color: #14151a;
     border: 0 none;
     border-radius: 0.375rem;
-    box-shadow:
-        0px 0px 4px rgba(20, 21, 26, 0.04),
-        0px 8px 16px rgba(20, 21, 26, 0.08);
+    box-shadow: 0px 0px 4px rgba(20, 21, 26, 0.04), 0px 8px 16px rgba(20, 21, 26, 0.08);
     padding: 0.5rem;
     margin-top: 0.5rem;
 }
@@ -6560,9 +6552,7 @@ select[multiple]:hover {
 }
 
 .tailerBody {
-    font-family:
-        Andale Mono,
-        monospace;
+    font-family: Andale Mono, monospace;
     font-size: 9pt;
     white-space: nowrap;
 }
@@ -10880,7 +10870,6 @@ a.tag_higlighted {
 .tag-manager__tags-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell:first-child,
 .tag-manager__tags-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell:first-child {
     width: 48px !important;
-    padding-left: 1.5rem;
 }
 
 .add-relationship dt {
@@ -10920,8 +10909,7 @@ a.tag_higlighted {
 }
 
 .context-menu {
-    box-shadow:
-        0 3px 6px var(--color-palette-black-op-10),
+    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
         0 3px 6px var(--color-palette-black-op-20);
     position: absolute;
     background: #ffffff;
@@ -11072,8 +11060,7 @@ a.tag_higlighted {
 }
 
 .file-selector-tree__card {
-    box-shadow:
-        0 1px 3px var(--color-palette-black-op-10),
+    box-shadow: 0 1px 3px var(--color-palette-black-op-10),
         0 1px 2px var(--color-palette-black-op-20);
     cursor: pointer;
     display: flex;
@@ -11084,8 +11071,7 @@ a.tag_higlighted {
     margin: 0.25rem;
 }
 .file-selector-tree__card:hover {
-    box-shadow:
-        0 3px 6px var(--color-palette-black-op-10),
+    box-shadow: 0 3px 6px var(--color-palette-black-op-10),
         0 3px 6px var(--color-palette-black-op-20);
 }
 .file-selector-tree__card .thumbnail {
@@ -11653,9 +11639,7 @@ Resize Handle
     padding: 2px 6px 2px 4px;
     text-decoration: none;
     text-transform: uppercase;
-    transition:
-        background-color 150ms ease,
-        color 150ms ease;
+    transition: background-color 150ms ease, color 150ms ease;
 }
 .api-link:hover {
     background-color: var(--color-palette-secondary-500);
@@ -11712,9 +11696,7 @@ Resize Handle
     font-style: normal;
     font-weight: 400;
     font-display: swap;
-    src:
-        local(''),
-        url('/dotAdmin/assets/Assistant-Regular.woff2') format('woff2'),
+    src: local(''), url('/dotAdmin/assets/Assistant-Regular.woff2') format('woff2'),
         url('/dotAdmin/assets/Assistant-Regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 @font-face {
@@ -11722,9 +11704,7 @@ Resize Handle
     font-style: normal;
     font-weight: 500;
     font-display: swap;
-    src:
-        local(''),
-        url('/dotAdmin/assets/Assistant-SemiBold.woff2') format('woff2'),
+    src: local(''), url('/dotAdmin/assets/Assistant-SemiBold.woff2') format('woff2'),
         url('/dotAdmin/assets/Assistant-SemiBold.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 @font-face {
@@ -11732,9 +11712,7 @@ Resize Handle
     font-style: normal;
     font-weight: 700;
     font-display: swap;
-    src:
-        local(''),
-        url('/dotAdmin/assets/Assistant-Bold.woff2') format('woff2'),
+    src: local(''), url('/dotAdmin/assets/Assistant-Bold.woff2') format('woff2'),
         url('/dotAdmin/assets/Assistant-Bold.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 @font-face {
