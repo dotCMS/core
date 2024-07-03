@@ -26,7 +26,7 @@ describe('DotStateRestoreDirective', () => {
         expect(table.sortField).toBe(savedState.sortField);
         expect(table.sortOrder).toBe(savedState.sortOrder);
     });
-    //
+
     it('should apply the saved state from sessionStorage', () => {
         spyOn(sessionStorage, 'getItem').and.returnValue(JSON.stringify(savedState));
 
