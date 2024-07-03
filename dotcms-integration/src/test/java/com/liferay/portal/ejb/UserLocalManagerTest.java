@@ -2,6 +2,9 @@ package com.liferay.portal.ejb;
 
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.UserDataGen;
+import com.dotmarketing.business.Role;
+import com.liferay.portal.*;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -10,10 +13,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDUtil;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.UserFirstNameException;
-import com.liferay.portal.UserLastNameException;
 import com.liferay.portal.model.User;
 
 /**
@@ -114,8 +113,70 @@ public class UserLocalManagerTest {
         assertTrue(UUIDUtil.isUUID(uuidPart));
 
     }
-    
-    
-    
-    
+
+
+
+    @Test
+    public void testValidPassword() throws Exception {
+
+        User testUser = null;
+        try {
+            final Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
+            testUser = new UserDataGen().roles(backendRole).nextPersisted();
+            final String userId = testUser.getUserId();
+
+            final String testPassword = "p4ss!word";
+            UserLocalManager userManager = UserLocalManagerFactory.getManager();
+            userManager.validate(userId, testPassword, testPassword);
+
+        } finally {
+            if (null != testUser) {
+                UserDataGen.remove(testUser);
+            }
+        }
+
+    }
+
+    @Test(expected = UserPasswordException.class)
+    public void testInvalidCharacterInPassword() throws Exception {
+
+        User testUser = null;
+        try {
+            final Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
+            testUser = new UserDataGen().roles(backendRole).nextPersisted();
+            final String userId = testUser.getUserId();
+
+            final String testPassword = "p4ss$word";
+            UserLocalManager userManager = UserLocalManagerFactory.getManager();
+            userManager.validate(userId, testPassword, testPassword);
+
+        } finally {
+            if (null != testUser) {
+                UserDataGen.remove(testUser);
+            }
+        }
+
+    }
+
+
+    @Test (expected = UserPasswordException.class)
+    public void testNotEnoughCharsInPassword() throws Exception {
+
+        User testUser = null;
+        try {
+            final Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
+            testUser = new UserDataGen().roles(backendRole).nextPersisted();
+            final String userId = testUser.getUserId();
+
+            final String testPassword = "p4ss!";
+            UserLocalManager userManager = UserLocalManagerFactory.getManager();
+            userManager.validate(userId, testPassword, testPassword);
+
+        } finally {
+            if (null != testUser) {
+                UserDataGen.remove(testUser);
+            }
+        }
+
+    }
 }
