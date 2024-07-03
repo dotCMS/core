@@ -4,17 +4,17 @@ const API_URL = `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/api/v1/graphql`;
  * Get the GraphQL query for a page
  *
  * @param {*} query
- * @return {*} 
+ * @return {*}
  */
 const getGraphQLPageQuery = ({ path, language_id, mode}) => {
     const params = [];
 
     if(language_id) {
-        params.push(`languageId: "${language_id}"`); 
+        params.push(`languageId: "${language_id}"`);
     }
 
     if(mode) {
-        params.push(`pageMode: "${mode}"`); 
+        params.push(`pageMode: "${mode}"`);
     }
 
     const paramsString = params.length ? `, ${params.join(", ")}` : "";
@@ -114,7 +114,7 @@ const getGraphQLPageQuery = ({ path, language_id, mode}) => {
  * Fetch content from dotCMS using GraphQL
  *
  * @param {*} query
- * @return {*} 
+ * @return {*}
  */
 export const getGraphQLPageData = async (params) => {
     const query = getGraphQLPageQuery(params);
@@ -122,7 +122,7 @@ export const getGraphQLPageData = async (params) => {
     const res = await fetch(API_URL, {
         method: "POST",
         headers: {
-            'Authorization': `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`, 
+            "Cookie": `access_token=${process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN}`,
             "Content-Type": "application/json",
             "dotcachettl": "0" // Bypasses GraphQL cache
         },

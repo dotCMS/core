@@ -1,0 +1,45 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/c",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": ".*\"content\":\".*How has streaming changed the music industry and affected the way artists release and promote their music.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "chatcmpl-9eVYvAXIu9AmoEWnnd1gbC3R8OMxu",
+      "object": "chat.completion",
+      "created": 1719441473,
+      "model": "gpt-3.5-turbo-16k-0613",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Streaming"
+          },
+          "logprobs": null,
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 116,
+        "completion_tokens": 1,
+        "total_tokens": 117
+      },
+      "system_fingerprint": null
+    }
+  }
+}

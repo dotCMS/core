@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -39,7 +38,6 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
     templateUrl: './dot-key-value-table-input-row.component.html',
     standalone: true,
     imports: [
-        CommonModule,
         ButtonModule,
         InputSwitchModule,
         InputTextModule,

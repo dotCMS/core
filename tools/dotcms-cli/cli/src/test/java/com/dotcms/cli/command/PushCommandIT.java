@@ -116,6 +116,38 @@ class PushCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: A push command is executed using a relative path.
+     * Expected result: The command should find the folder to push and complete successfully with an exit code 0 (OK).
+     * @throws IOException
+     */
+    @Test
+    void testPushWithRelativePath() throws IOException {
+
+        // Create a temporal folder for the push
+        var tempFolder = createTempFolder();
+        // And a workspace for it
+        workspaceManager.getOrCreate(tempFolder);
+
+        // Get the relative path of the temporal folder
+        var relativePath = Path.of("").toAbsolutePath().relativize(tempFolder.toAbsolutePath());
+
+        try {
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                commandLine.setOut(out);
+                final int status = commandLine.execute(PushCommand.NAME,
+                        relativePath.toString(), "--dry-run");
+                Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+
+
+    /**
      * This test checks for a situation where an incorrect option is passed to the push command.
      *
      * @throws IOException if there's a problem accessing the files and folders needed for the

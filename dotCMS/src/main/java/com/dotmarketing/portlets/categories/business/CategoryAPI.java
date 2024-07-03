@@ -484,4 +484,17 @@ public interface CategoryAPI {
 							final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	List<Category> getCategoriesFromContent(final Contentlet contentlet, final User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return a list of Categories regardless of their levels.
+	 *
+	 * @param searchCriteria Searching criteria
+	 * @param user User to check Permission
+	 * @param respectFrontendRoles true if you must respect Frontend Roles
+	 *
+	 * @return List of Category filtered
+	 */
+	PaginatedCategories findAll(final CategoryFactory.CategorySearchCriteria searchCriteria,
+								final User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
 }

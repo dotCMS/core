@@ -2577,7 +2577,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
 
         if (field instanceof KeyValueField) {
-            return "{key1:value, key2:value }";
+            return "{\"key1\":\"value\", \"key2\":\"value\" }";
         }
 
         final DataTypes dataType = field.dataType();
