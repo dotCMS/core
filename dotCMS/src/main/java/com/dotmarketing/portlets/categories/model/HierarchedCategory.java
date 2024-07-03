@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.categories.model;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents a {@link Category} with its hierarchy calculated.
@@ -25,5 +26,19 @@ public class HierarchedCategory extends Category{
 
     public List<ShortCategory> getParentList() {
         return parentList;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        HierarchedCategory that = (HierarchedCategory) o;
+        return Objects.equals(parentList, that.parentList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), parentList);
     }
 }

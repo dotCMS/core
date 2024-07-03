@@ -631,19 +631,22 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				HierarchedCategory category = (HierarchedCategory) convertForCategory(row, HierarchedCategory.class);
 
                 try {
-					final String parentsASJsonArray = "[" + row.get("path") + "]";
+					if (row !=null && row.get("path") != null ) {
+						final String parentsASJsonArray = "[" + row.get("path") + "]";
 
-					final List<ShortCategory> parentList = ((List<Map<String, String>>) JsonUtil.getObjectFromJson(parentsASJsonArray, List.class))
-							.stream()
-							.map(map -> new ShortCategory.Builder()
-									.setCategoryName(map.get("categoryName"))
-									.setKey(map.get("key"))
-									.setInode(map.get(INODE))
-									.build()
-							)
-							.collect(Collectors.toList());
+						final List<ShortCategory> parentList = ((List<Map<String, String>>) JsonUtil.getObjectFromJson(parentsASJsonArray, List.class))
+								.stream()
+								.map(map -> new ShortCategory.Builder()
+										.setCategoryName(map.get("categoryName"))
+										.setKey(map.get("key"))
+										.setInode(map.get(INODE))
+										.build()
+								)
+								.collect(Collectors.toList());
 
-					category.setParentList(parentList.subList(0, parentList.size() - 1));
+						category.setParentList(parentList.subList(0, parentList.size() - 1));
+					}
+
 					categories.add(category);
                 } catch (IOException e) {
 					Logger.warn(CategoryFactoryImpl.class, e::getMessage);
@@ -674,7 +677,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 			Object sortOrder = sqlResult.get("sort_order");
 
-			category.setInode((String) sqlResult.get("inode"));
+			category.setInode((String) sqlResult.get(INODE));
 			category.setCategoryName((String) sqlResult.get("category_name"));
 			category.setKey((String) sqlResult.get("category_key"));
 			if ( sortOrder != null ) {
@@ -846,7 +849,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
     private void putResultInCatCache( final ResultSet rs ) throws SQLException, DotDataException {
         while(rs.next()) {
 			// calling find will put it into cache internally
-			find(rs.getString("inode"));
+			find(rs.getString(INODE));
         }
     }
 
@@ -905,7 +908,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 		final List<Map<String, Object>> results = UtilMethods.isSet(searchCriteria.rootInode) ?
 				dc.loadObjectResults().stream()
-						.filter(map -> !map.get("inode").equals(searchCriteria.rootInode))
+						.filter(map -> !map.get(INODE).equals(searchCriteria.rootInode))
 						.collect(Collectors.toList()) : dc.loadObjectResults();
 
 		final List<HierarchedCategory> categories = convertForHierarchedCategories(results);

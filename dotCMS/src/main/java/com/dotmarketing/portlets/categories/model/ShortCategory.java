@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.categories.model;
 
+import java.io.Serializable;
+
 /**
  * Represents a {@link Category}, but only contains the most important data:
  *
@@ -7,7 +9,7 @@ package com.dotmarketing.portlets.categories.model;
  * - Category's key
  * - Category's inode
  */
-public class ShortCategory {
+public class ShortCategory implements Serializable {
 
     private String categoryName;
     private String inode;
