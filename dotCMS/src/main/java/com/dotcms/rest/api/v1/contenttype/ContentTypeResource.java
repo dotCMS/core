@@ -1165,7 +1165,7 @@ public class ContentTypeResource implements Serializable {
 													   description = "Requires POST body consisting of a JSON object with the following properties:\n\n" +
 																	 "| Property |  Type  | Description |\n" +
 																	 "|----------|--------|-------------|\n" +
-																	 "| `filter`   | JSON Object | Contains two properties: <ul><li style=\"margin-bottom:0.75rem;\">`query`: A query string returning full or partial matches.</li><li>`types`: A comma-separated list of specific content type variables.</li></ul> |\n" +
+																	 "| `filter`   | JSON Object | Contains two properties: <ul><li>`query`: A query string returning full or partial matches.</li><li>`types`: A comma-separated list of specific content type variables.</li></ul> |\n" +
 																	 "| `page` | Integer | Which page of results to show. Defaults to `1`. |\n" +
 																	 "| `perPage`   | Integer | Number of results to display per page. Defaults to `10`. |\n" +
 																	 "| `orderBy`   | String | Sorting parameter: `name` (default), `velocity_var_name`, `mod_date`, or `sort_order`. |\n" +
