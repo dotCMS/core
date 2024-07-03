@@ -106,8 +106,8 @@ public class DeterministicIdentifierAPITest {
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
 
             //We just introduced a failure by removing the binary
-            //final Optional<String> resolved = defaultGenerator.resolveAssetName(fileAsset);
-            //assertTrue(resolved.isEmpty());
+            final Optional<String> resolved = defaultGenerator.resolveAssetName(fileAsset);
+            assertTrue(resolved.isEmpty());
 
             //But we should still be able to get
             final String generatedId = defaultGenerator.generateDeterministicIdBestEffort(fileAsset, folder);
@@ -141,12 +141,14 @@ public class DeterministicIdentifierAPITest {
             assertEquals(testCase.expectedType,
                     defaultGenerator.resolveAssetType(testCase.versionable));
 
-            //final Optional<String> resolved = defaultGenerator.resolveAssetName(testCase.versionable);
+            final Optional<String> resolved = defaultGenerator.resolveAssetName(
+                    testCase.versionable);
 
-            //assertTrue(resolved.isPresent());
+            assertTrue(resolved.isPresent());
 
             //We also check the asset name is what we expect too
-            //assertEquals(testCase.expectedName, resolved.get());
+            assertEquals(testCase.expectedName,
+                    resolved.get());
             //While the identifier isnt in the database we should continue to get the same (That's why we call it consistent)
             final String generatedId1 = defaultGenerator
                     .generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
