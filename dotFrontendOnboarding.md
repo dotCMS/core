@@ -311,9 +311,3 @@ To resolve this issue, follow the steps documented in this guide: [How to fix M1
     ```
 
 By following these steps, you should be able to resolve the Puppeteer Chromium binary issue and prevent it from occurring in the future, allowing you to proceed with your development tasks.
-
-## Resources and Further Reading
-Below, you'll find a curated list of resources to help deepen your understanding of the technologies and tools used in our project. We recommend that you familiarize yourself with these resources before diving into the project.
-
-- [DotCMS Documentation](https://dotcms.com/docs/)
-- [DotCMS R&D - Onboarding](https://docs.google.com/document/d/1BKwGbqyVNBjc_FuP6tD2R9Aqloh28b-2nstlnziLDRw/edit#heading=h.34zjomn5aq0w)
