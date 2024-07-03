@@ -42,6 +42,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -174,10 +175,10 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                     .forEach(fileContainer -> dependencyProcessor.addAsset(fileContainer,
                             PusheableAsset.CONTAINER));
 
+            PaginatedContentlets contentletsPaginatedByHost = this.contentletAPI.get().findContentletsPaginatedByHost(site,
+                    APILocator.systemUser(), false);
             // Content dependencies
-            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-                    pushPublishigDependencyProvider.getContentletByLuceneQuery(
-                            "+conHost:" + site.getIdentifier()),
+            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentletsPaginatedByHost,
                     ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(site));
 
             // Structure dependencies
@@ -808,11 +809,13 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     private <T> void tryToAddAllAndProcessDependencies(
-            final PusheableAsset pusheableAsset, final Collection<T> assets, final String reason)
+            final PusheableAsset pusheableAsset, final Iterable<T> assets, final String reason)
             throws DotDataException, DotSecurityException {
 
         if (UtilMethods.isSet(assets)) {
-            assets.stream().forEach(asset -> tryToAddAndProcessDependencies(pusheableAsset, asset, reason));
+            for (T asset : assets) {
+                tryToAddAndProcessDependencies(pusheableAsset, asset, reason);
+            }
         }
     }
 
