@@ -26,7 +26,7 @@ export type DotcmsPageProps = {
      */
     readonly pageContext: DotCMSPageContext;
 
-    readonly config?: DotCMSPageEditorConfig;
+    readonly config: DotCMSPageEditorConfig;
 };
 
 /**
@@ -38,8 +38,8 @@ export type DotcmsPageProps = {
  * @returns {JSX.Element} - A JSX element that represents the layout for a DotCMS page.
  */
 export function DotcmsLayout({ pageContext, config }: DotcmsPageProps): JSX.Element {
-    const { isInsideEditor, pageInfo } = useDotcmsEditor(config);
-    pageContext = { ...pageContext, pageAsset: pageInfo ?? pageContext.pageAsset };
+    const { isInsideEditor } = useDotcmsEditor(config);
+    pageContext = { ...pageContext, pageAsset: pageContext.pageAsset };
 
     return (
         <PageProvider pageContext={{ ...pageContext, isInsideEditor }}>

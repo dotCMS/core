@@ -1,11 +1,12 @@
 import {
+    getPageDataInsideEditor,
     listenEditorMessages,
     listenHoveredContentlet,
-    pingEditor,
     scrollHandler,
     subscriptions
 } from './listeners/listeners';
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
+import { DotCMSPageEditorConfig } from './models/editor.model';
 
 /**
  *
@@ -39,8 +40,9 @@ export function isInsideEditor() {
  *
  * @param conf - Optional configuration for the editor.
  */
-export function initEditor() {
-    pingEditor();
+export function initEditor(config?: DotCMSPageEditorConfig) {
+    // TODO: Fix this
+    getPageDataInsideEditor(config?.pathname || '');
     listenEditorMessages();
     listenHoveredContentlet();
     scrollHandler();
@@ -76,4 +78,23 @@ export function addClassToEmptyContentlets() {
 
         contentlet.classList.add('empty-contentlet');
     });
+}
+
+/**
+ * Executes a callback when the editor fetches the page data from the UVE.
+ *
+ * @param {unknown} callback - The callback to execute when the page data is fetched.
+ */
+export function onFetchPageAssetFromUVE(callback: (payload: unknown) => void) {
+    const messageCallback = (event: MessageEvent) => {
+        if (event.data.name === 'SET_PAGE_DATA') {
+            callback(event.data.payload);
+        }
+    };
+
+    window.addEventListener('message', messageCallback);
+
+    return () => {
+        window.removeEventListener('message', messageCallback);
+    };
 }

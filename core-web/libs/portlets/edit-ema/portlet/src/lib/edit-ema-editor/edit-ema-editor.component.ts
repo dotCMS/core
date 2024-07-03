@@ -1007,12 +1007,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.IFRAME_SCROLL_END]: () => {
                 this.store.updateEditorDragState();
             },
-            [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
-                this.iframe?.nativeElement?.contentWindow.postMessage(
-                    NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
-                    this.host
-                );
-            },
             [CUSTOMER_ACTIONS.INIT_INLINE_EDITING]: () => {
                 // The iframe says that the editor is ready to start inline editing
                 // The dataset of the inline-editing contentlet is ready inside the service.
@@ -1092,7 +1086,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
-            [CUSTOMER_ACTIONS.GET_PAGE_INFO]: () => {
+            [CUSTOMER_ACTIONS.GET_PAGE_DATA]: () => {
                 this.reloadIframeContent();
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
@@ -1108,8 +1102,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     reloadIframeContent() {
-        this.iframe?.nativeElement?.contentWindow.postMessage(
-            { name: NOTIFY_CUSTOMER.SET_PAGE_INFO, payload: this.store.state().editor },
+        this.iframe?.nativeElement?.contentWindow?.postMessage(
+            { name: NOTIFY_CUSTOMER.SET_PAGE_DATA, payload: this.store.state().editor },
             this.host
         );
     }

@@ -93,7 +93,7 @@ export class DotPageApiService {
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
         const pageType = params.clientHost ? 'json' : 'render';
-        const mode = params.clientHost ? PAGE_MODE.LIVE : PAGE_MODE.EDIT;
+        const mode = PAGE_MODE.EDIT;
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
             language_id: params.language_id,

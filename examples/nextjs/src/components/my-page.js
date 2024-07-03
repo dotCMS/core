@@ -12,7 +12,7 @@ import Header from "./layout/header";
 import Footer from "./layout/footer/footer";
 import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";
-import { DotcmsLayout } from "@dotcms/react";
+import { DotcmsLayout, useDotcmsEditorPageAsset } from "@dotcms/react";
 import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
 
@@ -39,7 +39,7 @@ const componentsMap = {
 };
 
 export function MyPage({ pageAsset, nav }) {
-    const { refresh, replace } = useRouter();
+    const { replace } = useRouter();
     const pathname = usePathname();
 
     /**
@@ -55,11 +55,16 @@ export function MyPage({ pageAsset, nav }) {
           })
         : DotcmsLayout;
 
+    const pageData = useDotcmsEditorPageAsset(pageAsset);
+    pageAsset = pageData ?? pageAsset;
+
     return (
         <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
-            <Header>
-                <Navigation items={nav} />
-            </Header>
+            {pageAsset.layout.header && (
+                <Header>
+                    <Navigation items={nav} />
+                </Header>
+            )}
 
             <main className="container flex flex-col gap-8 m-auto">
                 <DotLayoutComponent
@@ -70,7 +75,8 @@ export function MyPage({ pageAsset, nav }) {
                     config={{ pathname }}
                 />
             </main>
-            <Footer />
+
+            {pageAsset.layout.footer && <Footer />}
         </div>
     );
 }

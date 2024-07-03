@@ -1,4 +1,11 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  OnInit,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
@@ -8,7 +15,13 @@ import { NavigationComponent } from './components/navigation/navigation.componen
 
 import { DYNAMIC_COMPONENTS } from '../utils';
 
-import { DotcmsLayoutComponent } from '@dotcms/angular';
+import {
+  DotCMSPageAsset,
+  DotcmsLayoutComponent,
+  PageContextService,
+} from '@dotcms/angular';
+import { onFetchPageAssetFromUVE } from '@dotcms/client';
+import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'dotcms-pages',
@@ -18,6 +31,7 @@ import { DotcmsLayoutComponent } from '@dotcms/angular';
     HeaderComponent,
     NavigationComponent,
     FooterComponent,
+    JsonPipe,
   ],
   templateUrl: './pages.component.html',
   styleUrl: './pages.component.css',
@@ -28,6 +42,9 @@ export class DotCMSPagesComponent implements OnInit {
 
   protected readonly context = signal<any>(null);
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
+  #cdr = inject(ChangeDetectorRef);
+
+  pageContextService = inject(PageContextService);
 
   ngOnInit() {
     // Get the context data from the route
@@ -36,5 +53,9 @@ export class DotCMSPagesComponent implements OnInit {
       .subscribe((data) => {
         this.context.set(data['context']);
       });
+
+    onFetchPageAssetFromUVE((pageAsset) => {
+      this.context.update((context) => ({ ...context, pageAsset }));
+    });
   }
 }

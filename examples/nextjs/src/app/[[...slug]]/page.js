@@ -51,11 +51,15 @@ export default async function Home({ searchParams, params }) {
 
             return { data, nav };
         } catch (error) {
-            return <ErrorPage error={error} />;
+            return { data: null, nav: null, error };
         }
     };
 
-    const { data, nav } = await getPageData();
+    const { data, nav, error } = await getPageData();
+
+    if (error) {
+        return <ErrorPage error={error} />;
+    }
 
     const { vanityUrl } = data?.entity;
 

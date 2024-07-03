@@ -775,7 +775,7 @@ describe('EditEmaStore', () => {
                 });
             });
 
-            it('should fetch data from vanity url', (done) => {
+            it('should call pageAPI with vanity URL params if it had', (done) => {
                 const dotPageApiService = spectator.inject(DotPageApiService);
                 const VANITY_URL = {
                     pattern: '',

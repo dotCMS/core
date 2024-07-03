@@ -39,7 +39,7 @@ function setBounds() {
 }
 
 /**
- * Listens for editor messages and performs corresponding actions based on the received message.
+ * Listens for editor messages and performs corresding actions based on the received message.
  *
  * @private
  * @memberof DotCMSPageEditor
@@ -206,11 +206,16 @@ export function preserveScrollOnIframe() {
 }
 
 /**
- * Sends a ping message to the editor.
- *
+ * Sends a message to the editor to get the page data.
+ * @param {string} pathname - The pathname of the page.
+ * @private
+ * @memberof DotCMSPageEditor
  */
-export function pingEditor() {
+export function getPageDataInsideEditor(pathname: string) {
     postMessageToEditor({
-        action: CUSTOMER_ACTIONS.PING_EDITOR
+        action: CUSTOMER_ACTIONS.GET_PAGE_DATA,
+        payload: {
+            pathname
+        }
     });
 }

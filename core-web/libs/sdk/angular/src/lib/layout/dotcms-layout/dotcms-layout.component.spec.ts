@@ -29,9 +29,8 @@ jest.mock('@dotcms/client', () => ({
     initEditor: jest.fn(),
     updateNavigation: jest.fn(),
     CUSTOMER_ACTIONS: {
-        GET_PAGE_INFO: 'get-page-info'
-    },
-    postMessageToEditor: jest.fn()
+        GET_PAGE_DATA: 'get-page-data'
+    }
 }));
 
 describe('DotcmsLayoutComponent', () => {
@@ -88,20 +87,10 @@ describe('DotcmsLayoutComponent', () => {
             expect(updateNavigationSpy).toHaveBeenCalled();
         });
 
-        it('should call postMessageToEditor from @dotcms/client', () => {
-            const postMessageToEditorSpy = jest.spyOn(dotcmsClient, 'postMessageToEditor');
-
+        it('should listen to SET_PAGE_DATA message', () => {
             spectator.detectChanges();
             window.dispatchEvent(
-                new MessageEvent('message', { data: { name: 'SET_PAGE_INFO', payload: {} } })
-            );
-            expect(postMessageToEditorSpy).toHaveBeenCalled();
-        });
-
-        it('should listen to SET_PAGE_INFO message', () => {
-            spectator.detectChanges();
-            window.dispatchEvent(
-                new MessageEvent('message', { data: { name: 'SET_PAGE_INFO', payload: {} } })
+                new MessageEvent('message', { data: { name: 'SET_PAGE_DATA', payload: {} } })
             );
             expect(spectator.inject(PageContextService).setContext).toHaveBeenCalled();
         });

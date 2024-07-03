@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanMatchFn, Route, Router, UrlSegment } from '@angular/router';
 
-import { getPageRequestParams, isInsideEditor } from '@dotcms/client';
+import { getPageRequestParams } from '@dotcms/client';
 import { DotCMSPageAsset } from '@dotcms/angular';
 
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
@@ -10,11 +10,6 @@ export const canMatchPage: CanMatchFn = async (
   route: Route,
   segments: UrlSegment[],
 ) => {
-  const isInEditor = isInsideEditor();
-  if (isInEditor) {
-    return true;
-  }
-
   const router = inject(Router);
   const client = inject(DOTCMS_CLIENT_TOKEN);
 
@@ -55,6 +50,7 @@ export const canMatchPage: CanMatchFn = async (
     return !!entity;
   } catch (error: any) {
     console.error(error); // Log the error
+    route.data = { ...route.data, pageAsset: null }; // Add the page asset to the route data
     return !(error?.status === 404); // If the page is not found, return false.
   }
 };

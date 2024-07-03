@@ -49,7 +49,7 @@ export enum CUSTOMER_ACTIONS {
     /**
      * Tell the editor to send the page info to iframe
      */
-    GET_PAGE_INFO = 'get-page-info',
+    GET_PAGE_DATA = 'get-page-data',
 
     NOOP = 'noop'
 }
