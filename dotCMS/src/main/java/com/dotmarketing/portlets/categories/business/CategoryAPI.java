@@ -494,7 +494,7 @@ public interface CategoryAPI {
 	 *
 	 * @return List of Category filtered
 	 */
-	PaginatedCategories findAll(final CategoryFactory.CategorySearchCriteria searchCriteria,
+	PaginatedCategories findAll(final CategorySearchCriteria searchCriteria,
 								final User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException;
 }
