@@ -19,14 +19,16 @@
     <p-table
         [value]="vm.locales"
         [globalFilterFields]="['isoCode', 'language', 'country']"
+        sortField="isoCode"
         stateStorage="session"
         stateKey="state-locales-session"
+        dotStateRestore
         #dt
         styleClass="dotTable">
         <ng-template pTemplate="header">
             <tr>
                 <th scope="col" pSortableColumn="isoCode">
-                    {{ 'locales.locale' | dm }} <p-sortIcon field="locale"></p-sortIcon>
+                    {{ 'locales.locale' | dm }} <p-sortIcon field="isoCode"></p-sortIcon>
                 </th>
                 <th scope="col" pSortableColumn="language">
                     {{ 'locales.language' | dm }} <p-sortIcon field="language"></p-sortIcon>

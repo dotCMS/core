@@ -21,7 +21,10 @@
         <div class="field">
             <label for="isoCodeEdit">{{ 'locale.id' | dm }}</label>
             <span class="p-input-icon-right">
-                <i [cdkCopyToClipboard]="localeIDInput.value" class="pi pi-copy"></i>
+                <dot-copy-button
+                    [copy]="localeIDInput.value"
+                    *ngIf="localeIDInput.value"
+                    customClass="p-button-rounded" />
                 <input
                     id="isoCodeEdit"
                     #localeIDInput
@@ -34,7 +37,10 @@
         <div class="field">
             <label for="id">{{ 'locale.language.id' | dm }}</label>
             <span class="p-input-icon-right">
-                <i [cdkCopyToClipboard]="languageIDInput.value" class="pi pi-copy"></i>
+                <dot-copy-button
+                    [copy]="languageIDInput.value"
+                    *ngIf="languageIDInput.value"
+                    customClass="p-button-rounded" />
                 <input
                     id="id"
                     #languageIDInput
