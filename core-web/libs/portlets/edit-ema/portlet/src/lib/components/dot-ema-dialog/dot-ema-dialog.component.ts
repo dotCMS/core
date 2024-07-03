@@ -63,7 +63,7 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
 export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
 
-    @Output() action = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
+    @Output() action = new EventEmitter<{ event: CustomEvent; payload?: ActionPayload }>();
     @Output() reloadFromDialog = new EventEmitter<void>();
 
     $compareData = signal<DotContentCompareEvent | null>(null);

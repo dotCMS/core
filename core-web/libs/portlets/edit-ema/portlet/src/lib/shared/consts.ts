@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+
 import { InjectionToken } from '@angular/core';
 
 import { mockSites } from '@dotcms/dotcms-js';
@@ -420,4 +422,62 @@ export const SHOW_CONTENTLET_TOOLS_PATCH_MOCK = {
             }
         }
     }
+};
+
+export const pagesByLanguageId = {
+    1: of({
+        page: {
+            title: 'hello world',
+            identifier: '123',
+            inode: '123',
+            canEdit: true,
+            canRead: true,
+            pageURI: 'index',
+            liveInode: '1234',
+            stInode: '12345',
+            live: true
+        },
+        viewAs: {
+            language: {
+                id: 1,
+                language: 'English',
+                countryCode: 'US',
+                languageCode: 'EN',
+                country: 'United States'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        site: mockSites[0],
+        template: {
+            drawed: true
+        }
+    }),
+
+    2: of({
+        page: {
+            title: 'hello world',
+            identifier: '123',
+            inode: '123',
+            canEdit: true,
+            canRead: true,
+            pageURI: 'index',
+            liveInode: '1234',
+            stInode: '12345',
+            live: true
+        },
+        viewAs: {
+            language: {
+                id: 2,
+                languageCode: 'IT',
+                countryCode: '',
+                language: 'Italian',
+                country: 'Italy'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        site: mockSites[0],
+        template: {
+            drawed: true
+        }
+    })
 };

@@ -1,5 +1,5 @@
 import { describe, expect } from '@jest/globals';
-import { ActivatedRouteStub } from '@ngneat/spectator';
+import { ActivatedRouteStub, createMouseEvent } from '@ngneat/spectator';
 import {
     SpectatorRouting,
     byTestId,
@@ -53,7 +53,12 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
+import {
+    DEFAULT_PERSONA,
+    PAYLOAD_MOCK,
+    WINDOW,
+    PAGE_RESPONSE_BY_LANGUAGE_ID
+} from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 
 describe('DotEmaShellComponent', () => {
@@ -61,6 +66,7 @@ describe('DotEmaShellComponent', () => {
     let store: EditEmaStore;
     let siteService: SiteServiceMock;
     let confirmationService: SpyObject<ConfirmationService>;
+    let confirmationServiceSpy: jest.SpyInstance;
     let router: Router;
     let route: ActivatedRoute;
 
@@ -132,63 +138,7 @@ describe('DotEmaShellComponent', () => {
                 provide: DotPageApiService,
                 useValue: {
                     get({ language_id }) {
-                        return {
-                            1: of({
-                                page: {
-                                    title: 'hello world',
-                                    identifier: '123',
-                                    inode: '123',
-                                    canEdit: true,
-                                    canRead: true,
-                                    pageURI: 'index',
-                                    liveInode: '1234',
-                                    stInode: '12345',
-                                    live: true
-                                },
-                                viewAs: {
-                                    language: {
-                                        id: 1,
-                                        language: 'English',
-                                        countryCode: 'US',
-                                        languageCode: 'EN',
-                                        country: 'United States'
-                                    },
-                                    persona: DEFAULT_PERSONA
-                                },
-                                site: mockSites[0],
-                                template: {
-                                    drawed: true
-                                }
-                            }),
-
-                            2: of({
-                                page: {
-                                    title: 'hello world',
-                                    identifier: '123',
-                                    inode: '123',
-                                    canEdit: true,
-                                    canRead: true,
-                                    pageURI: 'index',
-                                    liveInode: '1234',
-                                    stInode: '12345',
-                                    live: true
-                                },
-                                viewAs: {
-                                    language: {
-                                        id: 2,
-                                        languageCode: 'IT',
-                                        countryCode: '',
-                                        language: 'Italian',
-                                        country: 'Italy'
-                                    },
-                                    persona: DEFAULT_PERSONA
-                                },
-                                site: mockSites[0],
-                                template: {
-                                    drawed: true
-                                }
-                            })
-                        }[language_id];
+                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
                     },
                     save() {
                         return of({});
@@ -230,6 +180,7 @@ describe('DotEmaShellComponent', () => {
             router = spectator.inject(Router, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             jest.spyOn(store, 'load');
+            confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
 
             spectator.triggerNavigation({
                 url: [],
@@ -686,15 +637,12 @@ describe('DotEmaShellComponent', () => {
 
         describe('language checking', () => {
             it('should not trigger the confirmation service if the page is translated to the current language', () => {
-                const confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
-
                 spectator.detectChanges();
 
                 expect(confirmationServiceSpy).not.toHaveBeenCalled();
             });
 
             it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
-                const confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -738,9 +686,11 @@ describe('DotEmaShellComponent', () => {
 
                 const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-                confirmDialog
-                    .querySelector('.p-confirm-dialog-reject')
-                    .dispatchEvent(new MouseEvent('click'));
+                const clickEvent = createMouseEvent('click');
+
+                confirmDialog.querySelector('.p-confirm-dialog-reject').dispatchEvent(clickEvent);
+
+                spectator.detectChanges();
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: { language_id: 1 },
@@ -806,20 +756,19 @@ describe('DotEmaShellComponent', () => {
 
                 const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-                const dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
+                const clickEvent = createMouseEvent('click');
 
-                confirmDialog
-                    .querySelector('.p-confirm-dialog-accept')
-                    .dispatchEvent(new MouseEvent('click'));
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
 
                 spectator.detectChanges();
 
-                spectator.triggerEventHandler(dialog, 'action', {
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
                             name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                         }
-                    })
+                    }),
+                    payload: PAYLOAD_MOCK
                 });
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
@@ -847,30 +796,31 @@ describe('DotEmaShellComponent', () => {
 
                 const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-                const dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
+                const clickEvent = createMouseEvent('click');
 
-                confirmDialog
-                    .querySelector('.p-confirm-dialog-accept')
-                    .dispatchEvent(new MouseEvent('click'));
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
 
                 spectator.detectChanges();
 
-                spectator.triggerEventHandler(dialog, 'action', {
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
                             name: NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED
                         }
-                    })
+                    }),
+                    payload: PAYLOAD_MOCK
                 });
 
                 spectator.detectChanges();
-                spectator.triggerEventHandler(dialog, 'action', {
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
                             name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                         }
-                    })
+                    }),
+                    payload: PAYLOAD_MOCK
                 });
+
                 spectator.detectChanges();
 
                 expect(router.navigate).not.toHaveBeenCalled();
@@ -903,32 +853,29 @@ describe('DotEmaShellComponent', () => {
 
                 const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-                const dialog = spectator.debugElement.query(By.css('[data-testId="ema-dialog"]'));
+                const clickEvent = createMouseEvent('click');
 
-                confirmDialog
-                    .querySelector('.p-confirm-dialog-accept')
-                    .dispatchEvent(new MouseEvent('click'));
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
 
                 spectator.detectChanges();
 
-                spectator.triggerEventHandler(dialog, 'action', {
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                            payload: {
-                                htmlPageReferer: '/index'
-                            }
+                            name: NG_CUSTOM_EVENTS.SAVE_PAGE
                         }
-                    })
+                    }),
+                    payload: PAYLOAD_MOCK
                 });
 
                 spectator.detectChanges();
-                spectator.triggerEventHandler(dialog, 'action', {
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
                             name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
                         }
-                    })
+                    }),
+                    payload: PAYLOAD_MOCK
                 });
                 spectator.detectChanges();
 

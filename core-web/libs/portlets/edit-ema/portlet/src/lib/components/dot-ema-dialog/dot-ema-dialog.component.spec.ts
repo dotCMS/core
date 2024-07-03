@@ -13,6 +13,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 
 import {
     DotAlertConfirmService,
@@ -187,9 +188,7 @@ describe('DotEmaDialogComponent', () => {
             component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
             spectator.detectChanges();
 
-            const pDialog = spectator.debugElement.query(By.css('p-dialog'));
-
-            spectator.triggerEventHandler(pDialog, 'onHide', {});
+            spectator.triggerEventHandler(Dialog, 'onHide', {});
 
             expect(actionSpy).toHaveBeenCalledWith({
                 event: new CustomEvent('ng-event', {
