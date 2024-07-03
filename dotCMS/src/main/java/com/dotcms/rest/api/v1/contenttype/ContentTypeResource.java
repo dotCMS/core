@@ -48,13 +48,23 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.Tuple;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.tags.Tag;import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.Serializable;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -88,7 +98,11 @@ import org.glassfish.jersey.server.JSONP;
  * @since Sep 11th, 2016
  */
 @Path("/v1/contenttype")
-@Tag(name = "Content Type")
+@Tag(name = "Content Type",
+		description = "Endpoints that perform operations related to content types.",
+		externalDocs = @ExternalDocumentation(description = "Additional Content Type API information",
+				url = "https://www.dotcms.com/docs/latest/content-type-api")
+)
 public class ContentTypeResource implements Serializable {
 
 	private static final String MAP_KEY_WORKFLOWS = "workflows";
@@ -124,66 +138,142 @@ public class ContentTypeResource implements Serializable {
 
 	@POST
 	@Path("/{baseVariableName}/_copy")
+	@Operation(
+			operationId = "postContentTypeCopy",
+			summary = "Copies a content type",
+			description = "Creates a new content type by copying an existing one.\n\nReturns resulting content type.",
+			tags = {"Content Type"}
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Content type copied successfully",
+					content = @Content(mediaType = "application/json",
+							examples = {
+									@ExampleObject(
+											value = "{\n" +
+													"  \"errors\": [\n" +
+													"    {\n" +
+													"      \"errorCode\": \"string\",\n" +
+													"      \"message\": \"string\",\n" +
+													"      \"fieldName\": \"string\"\n" +
+													"    }\n" +
+													"  ],\n" +
+													"  \"entity\": {\n" +
+													"    \"baseType\": \"string\",\n" +
+													"    \"clazz\": \"string\",\n" +
+													"    \"defaultType\": true,\n" +
+													"    \"description\": \"string\",\n" +
+													"    \"fields\": [],\n" +
+													"    \"fixed\": true,\n" +
+													"    \"folder\": \"string\",\n" +
+													"    \"folderPath\": \"string\",\n" +
+													"    \"host\": \"string\",\n" +
+													"    \"iDate\": 0,\n" +
+													"    \"icon\": \"string\",\n" +
+													"    \"id\": \"string\",\n" +
+													"    \"layout\": [],\n" +
+													"    \"metadata\": {},\n" +
+													"    \"modDate\": 0,\n" +
+													"    \"multilingualable\": true,\n" +
+													"    \"name\": \"string1\",\n" +
+													"    \"siteName\": \"string\",\n" +
+													"    \"sortOrder\": 0,\n" +
+													"    \"system\": true,\n" +
+													"    \"systemActionMappings\": {},\n" +
+													"    \"variable\": \"string\",\n" +
+													"    \"versionable\": true,\n" +
+													"    \"workflows\": []\n" +
+													"  },\n" +
+													"  \"messages\": [\n" +
+													"    {\n" +
+													"      \"message\": \"string\"\n" +
+													"    }\n" +
+													"  ],\n" +
+													"  \"i18nMessagesMap\": {\n" +
+													"    \"additionalProp1\": \"string\",\n" +
+													"    \"additionalProp2\": \"string\",\n" +
+													"    \"additionalProp3\": \"string\"\n" +
+													"  },\n" +
+													"  \"permissions\": [\n" +
+													"    \"string\"\n" +
+													"  ],\n" +
+													"  \"pagination\": {\n" +
+													"    \"currentPage\": 0,\n" +
+													"    \"perPage\": 0,\n" +
+													"    \"totalEntries\": 0\n" +
+													"  }\n" +
+													"}"
+									)
+							}
+					)
+			),
+			@ApiResponse(responseCode = "400", description = "Bad Request"),
+			@ApiResponse(responseCode = "403", description = "Forbidden"),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response copyType(@Context final HttpServletRequest req,
 								   @Context final HttpServletResponse res,
-								   @PathParam("baseVariableName") final String baseVariableName,
-								   final CopyContentTypeForm copyContentTypeForm) {
+								   @PathParam("baseVariableName") @Parameter(description = "The variable name of the content type to copy") final String baseVariableName,
+								   @RequestBody(
+										   description = "Requires POST body consisting of a JSON object with the following properties:\n\n" +
+														 "| Property |  Type  | Description |\n" +
+														 "|----------|--------|-------------|\n" +
+														 "| `name`   | String | **Required.** Name of new content type |\n" +
+														 "| `variable` | String | System variable of new content type |\n" +
+														 "| `folder`   | String | Folder in which new content type will live |\n" +
+														 "| `host`   | String | Site or host to which the new content type will belong |\n" +
+														 "| `icon`   | String | System icon to represent content type |\n\n" +
+														 "Values not specified default to values of the original content type.",
+										   required = true,
+										   content = @Content(
+												   examples = {
+														   @ExampleObject(
+																   value = "{\n" +
+																		   "  \"name\": \"Copied Content Type Name\",\n" +
+																		   "  \"variable\": \"copiedContentTypeVar\",\n" +
+																		   "  \"folder\": \"SYSTEM_FOLDER\",\n" +
+																		   "  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n" +
+																		   "  \"icon\": \"event_note\"\n" +
+																		   "}"
+														   )
+												   }
+										   )
+								   )
+								   final CopyContentTypeForm copyContentTypeForm) throws BadRequestException, DotDataException, DotSecurityException {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
 		Response response;
 
-		try {
+		if (null == copyContentTypeForm) {
 
-			if (null == copyContentTypeForm) {
-
-				return ExceptionMapperUtil.createResponse(null, "The Request needs a POST body");
-			}
-
-			Logger.debug(this, ()->String.format("Creating new content type '%s' based from  '%s' ", baseVariableName,  copyContentTypeForm.getName()));
-			final HttpSession session = req.getSession(false);
-
-			// Validate input
-			final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
-			final ContentType type = contentTypeAPI.find(baseVariableName);
-
-			if (null == type || (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id()))) {
-
-				return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
-			}
-
-			final ImmutableMap<Object, Object> responseMap = this.copyContentTypeAndDependencies(contentTypeAPI, type, copyContentTypeForm, user);
-
-			// save the last one to the session to be compliant with #13719
-			if(null != session) {
-				session.removeAttribute(SELECTED_STRUCTURE_KEY);
-			}
-
-			response = Response.ok(new ResponseEntityView<>(responseMap)).build();
-		} catch (final IllegalArgumentException e) {
-			final String errorMsg = String.format("Missing required information when copying Content Type " +
-					"'%s': %s", baseVariableName, ExceptionUtil.getErrorMessage(e));
-			Logger.error(this, errorMsg, e);
-			response = ExceptionMapperUtil.createResponse(null, errorMsg);
-		} catch (final DotStateException | DotDataException e) {
-			final String errorMsg = String.format("Failed to copy Content Type '%s': %s",
-					baseVariableName, ExceptionUtil.getErrorMessage(e));
-			Logger.error(this, errorMsg, e);
-			response = ExceptionMapperUtil.createResponse(null, errorMsg);
-		} catch (final DotSecurityException e) {
-			Logger.error(this, String.format("User '%s' does not have permission to copy Content Type " +
-					"'%s'", user.getUserId(), baseVariableName), e);
-			throw new ForbiddenException(e);
-		} catch (final Exception e) {
-			final String errorMsg = String.format("An error occurred when copying Content Type " +
-					"'%s': %s", baseVariableName, ExceptionUtil.getErrorMessage(e));
-			Logger.error(this, errorMsg, e);
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+			throw new BadRequestException ("The Request needs a POST body");
 		}
+
+
+		Logger.debug(this, ()->String.format("Creating new content type '%s' based from  '%s' ", baseVariableName,  copyContentTypeForm.getName()));
+		final HttpSession session = req.getSession(false);
+
+		// Validate input
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+		final ContentType type = contentTypeAPI.find(baseVariableName);
+
+		if (null == type || (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id()))) {
+
+			throw new BadRequestException ("ContentType 'id' if set, should be a uuid");
+		}
+
+		final ImmutableMap<Object, Object> responseMap = this.copyContentTypeAndDependencies(contentTypeAPI, type, copyContentTypeForm, user);
+
+		// save the last one to the session to be compliant with #13719
+		if(null != session) {
+			session.removeAttribute(SELECTED_STRUCTURE_KEY);
+		}
+
+		response = Response.ok(new ResponseEntityView<>(responseMap)).build();
 
 		return response;
 	}
@@ -274,14 +364,124 @@ public class ContentTypeResource implements Serializable {
 	 *                          database.
 	 */
 	@POST
+	@Operation(
+			operationId = "postContentTypeCreate",
+			summary = "Creates one or more content types",
+			description = "Creates one or more content types specified in the JSON payload.\n\n " +
+						  "Returns a list entity containing the created content type objects.",
+			tags = {"Content Type"}
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Content type(s) created successfully",
+					content = @Content(mediaType = "application/json",
+							examples = {
+									@ExampleObject(
+											value = "{\n" +
+													"  \"entity\": [\n" +
+													"    {\n" +
+													"      \"baseType\": \"string\",\n" +
+													"      \"clazz\": \"string\",\n" +
+													"      \"defaultType\": true,\n" +
+													"      \"description\": \"string\",\n" +
+													"      \"fields\": [],\n" +
+													"      \"fixed\": true,\n" +
+													"      \"folder\": \"string\",\n" +
+													"      \"folderPath\": \"string\",\n" +
+													"      \"host\": \"string\",\n" +
+													"      \"iDate\": 0,\n" +
+													"      \"icon\": \"string\",\n" +
+													"      \"id\": \"string\",\n" +
+													"      \"layout\": [],\n" +
+													"      \"metadata\": {},\n" +
+													"      \"modDate\": 0,\n" +
+													"      \"multilingualable\": true,\n" +
+													"      \"name\": \"string\",\n" +
+													"      \"owner\": \"string\",\n" +
+													"      \"siteName\": \"string\",\n" +
+													"      \"sortOrder\": 0,\n" +
+													"      \"system\": true,\n" +
+													"      \"systemActionMappings\": {},\n" +
+													"      \"variable\": \"string\",\n" +
+													"      \"versionable\": true,\n" +
+													"      \"workflows\": []\n" +
+													"    }\n" +
+													"  ],\n" +
+													"  \"errors\": [],\n" +
+													"  \"i18nMessagesMap\": {},\n" +
+													"  \"messages\": [],\n" +
+													"  \"pagination\": null,\n" +
+													"  \"permissions\": []\n" +
+													"}"
+									)
+							}
+					)
+			),
+			@ApiResponse(responseCode = "400", description = "Bad Request"),
+			@ApiResponse(responseCode = "403", description = "Forbidden"),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response createType(@Context final HttpServletRequest req,
 									 @Context final HttpServletResponse res,
-									 final ContentTypeForm form)
-			throws DotDataException {
+									 @RequestBody(
+											 description = "Payload may consist of a single content type JSON object, or a list " +
+														   "containing multiple content type objects.\n\n" +
+														   "Objects require `clazz` and `name` properties at minimum.\n\n" +
+														   "May optionally include the following special properties:\n\n" +
+														   "| Property | Value | Description |\n" +
+														   "|-|-|-|\n" +
+														   "| `systemActionMappings` | JSON Object | Maps " +
+														   "[Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) " +
+														   "to workflow action identifiers (as values) for this content type.|\n" +
+														   "| `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.",
+											 required = true,
+											 content = @Content(
+													 examples = {
+															 @ExampleObject(
+																	 value = "[\n" +
+																			 "  {\n" +
+																			 "    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																			 "    \"defaultType\": false,\n" +
+																			 "    \"name\": \"The Content Type 1\",\n" +
+																			 "    \"description\": \"THE DESCRIPTION\",\n" +
+																			 "    \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n" +
+																			 "    \"owner\": \"dotcms.org.1\",\n" +
+																			 "    \"variable\": \"TheContentType1\",\n" +
+																			 "    \"fixed\": false,\n" +
+																			 "    \"system\": false,\n" +
+																			 "    \"folder\": \"SYSTEM_FOLDER\",\n" +
+																			 "    \"systemActionMappings\": {\n" +
+																			 "      \"NEW\": \"ceca71a0-deee-4999-bd47-b01baa1bcfc8\",\n" +
+																			 "      \"PUBLISH\": \"ceca71a0-deee-4999-bd47-b01baa1bcfc8\"\n" +
+																			 "    },\n" +
+																			 "    \"workflow\": [\n" +
+																			 "      \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n" +
+																			 "    ]\n" +
+																			 "  },\n" +
+																			 "  {\n" +
+																			 "    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																			 "    \"defaultType\": false,\n" +
+																			 "    \"name\": \"The Content Type 2\",\n" +
+																			 "    \"description\": \"THE DESCRIPTION\",\n" +
+																			 "    \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n" +
+																			 "    \"owner\": \"dotcms.org.1\",\n" +
+																			 "    \"variable\": \"TheContentType2\",\n" +
+																			 "    \"fixed\": false,\n" +
+																			 "    \"system\": false,\n" +
+																			 "    \"folder\": \"SYSTEM_FOLDER\",\n" +
+																			 "    \"workflow\": [\n" +
+																			 "      \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n" +
+																			 "    ]\n" +
+																			 "  }\n" +
+																			 "]"
+															 )
+													 }
+											 )
+									 ) final ContentTypeForm form)
+			throws DotDataException, DotSecurityException, IllegalArgumentException, ForbiddenException, URISyntaxException {
 		final InitDataObject initData =
 				new WebResource.InitBuilder(webResource)
 						.requestAndResponse(req, res)
@@ -290,62 +490,43 @@ public class ContentTypeResource implements Serializable {
 						.rejectWhenNoUser(true)
 						.init();
 		final User user = initData.getUser();
-		try {
-			checkNotNull(form, "The 'form' parameter is required");
-			Logger.debug(this, ()->String.format("Creating Content Type(s): %s", form.getRequestJson()));
-			final HttpSession session = req.getSession(false);
-			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
-			final List<Map<Object, Object>> savedContentTypes = new ArrayList<>();
 
-			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
-				final ContentType type = contentTypeHelper.evaluateContentTypeRequest(
-						entry.contentType, user, true
-				);
+		checkNotNull(form, "The 'form' parameter is required");
+		Logger.debug(this, ()->String.format("Creating Content Type(s): %s", form.getRequestJson()));
+		final HttpSession session = req.getSession(false);
+		final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
+		final List<Map<Object, Object>> savedContentTypes = new ArrayList<>();
 
-				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
-					return ExceptionMapperUtil.createResponse(null, String.format("Content Type ID " +
-							"'%s' is either not set, or is not a valid UUID", type.id()));
-				}
+		for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
+			final ContentType type = contentTypeHelper.evaluateContentTypeRequest(
+					entry.contentType, user, true
+			);
 
-				final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>>  tuple2 =
-						this.saveContentTypeAndDependencies(type, initData.getUser(),
-								entry.workflows,
-							form.getSystemActions(), APILocator.getContentTypeAPI(user, true), true);
-				final ContentType contentTypeSaved = tuple2._1;
-				final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
-						.putAll(contentTypeHelper.contentTypeToMap(contentTypeSaved, user))
-						.put(MAP_KEY_WORKFLOWS,
-								this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(),
-										initData.getUser()))
-						.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS, tuple2._2.stream()
-								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
-						.build();
-				savedContentTypes.add(responseMap);
-				// save the last one to the session to be compliant with #13719
-				if(null != session){
-                  session.removeAttribute(SELECTED_STRUCTURE_KEY);
-				}
+			if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
+				return ExceptionMapperUtil.createResponse(null, String.format("Content Type ID " +
+						"'%s' is either not set, or is not a valid UUID", type.id()));
 			}
-			return Response.ok(new ResponseEntityView<>(savedContentTypes)).build();
-		} catch (final IllegalArgumentException e) {
-			final String errorMsg = String.format("Missing required information when creating Content Type(s): " +
-					"%s", ExceptionUtil.getErrorMessage(e));
-			Logger.error(this, errorMsg, e);
-			return ExceptionMapperUtil.createResponse(null, errorMsg);
-		}catch (final DotStateException | DotDataException e) {
-			final String errorMsg = String.format("Failed to create Content Type(s): %s", ExceptionUtil.getErrorMessage(e));
-			Logger.error(this, errorMsg, e);
-			return ExceptionMapperUtil.createResponse(null, errorMsg);
-		} catch (final DotSecurityException e) {
-			Logger.error(this, String.format("User '%s' does not have permission to create " +
-					"Content Type(s)", user.getUserId()), e);
-			throw new ForbiddenException(e);
-		} catch (final Exception e) {
-			final String errorMsg = String.format("An error occurred when creating Content Type(s): " +
-					"%s", ExceptionUtil.getErrorMessage(e));
-			Logger.error(this, errorMsg, e);
-			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+
+			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>>  tuple2 =
+					this.saveContentTypeAndDependencies(type, initData.getUser(),
+							entry.workflows,
+						form.getSystemActions(), APILocator.getContentTypeAPI(user, true), true);
+			final ContentType contentTypeSaved = tuple2._1;
+			final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+					.putAll(contentTypeHelper.contentTypeToMap(contentTypeSaved, user))
+					.put(MAP_KEY_WORKFLOWS,
+							this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(),
+									initData.getUser()))
+					.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS, tuple2._2.stream()
+							.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
+					.build();
+			savedContentTypes.add(responseMap);
+			// save the last one to the session to be compliant with #13719
+			if(null != session){
+			  session.removeAttribute(SELECTED_STRUCTURE_KEY);
+			}
 		}
+		return Response.ok(new ResponseEntityView<>(savedContentTypes)).build();
 	}
 
 	/**
@@ -361,12 +542,101 @@ public class ContentTypeResource implements Serializable {
 	 */
 	@PUT
 	@Path("/id/{idOrVar}")
+	@Operation(
+			operationId = "putContentTypeUpdate",
+			summary = "Updates a content type",
+			description = "Updates the content type based on the given ID or Velocity variable name.\n\n" +
+						  "Returns a copy of the updated content type object.\n\n" +
+						  "> **Caution:** When updating a content type, any editable fields omitted from the request body " +
+						  "will be removed from the content type. To update selected properties without deleting others," +
+						  "submit the full JSON entity with the desired items edited.",
+			tags = {"Content Type"}
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Content type updated successfully",
+					content = @Content(mediaType = "application/json",
+							examples = {
+									@ExampleObject(
+											value = "{\n" +
+													"  \"entity\": {\n" +
+													"    \"baseType\": \"string\",\n" +
+													"    \"clazz\": \"string\",\n" +
+													"    \"defaultType\": true,\n" +
+													"    \"fields\": [],\n" +
+													"    \"fixed\": true,\n" +
+													"    \"folder\": \"string\",\n" +
+													"    \"folderPath\": \"string\",\n" +
+													"    \"host\": \"string\",\n" +
+													"    \"iDate\": 0,\n" +
+													"    \"icon\": \"string\",\n" +
+													"    \"id\": \"string\",\n" +
+													"    \"layout\": [],\n" +
+													"    \"metadata\": {},\n" +
+													"    \"modDate\": 0,\n" +
+													"    \"multilingualable\": true,\n" +
+													"    \"name\": \"string\",\n" +
+													"    \"siteName\": \"string\",\n" +
+													"    \"sortOrder\": 0,\n" +
+													"    \"system\": true,\n" +
+													"    \"systemActionMappings\": {},\n" +
+													"    \"variable\": \"string\",\n" +
+													"    \"versionable\": true,\n" +
+													"    \"workflows\": []\n" +
+													"  },\n" +
+													"  \"errors\": [],\n" +
+													"  \"i18nMessagesMap\": {},\n" +
+													"  \"messages\": [],\n" +
+													"  \"pagination\": null,\n" +
+													"  \"permissions\": []\n" +
+													"}"
+									)
+							}
+					)
+			),
+			@ApiResponse(responseCode = "400", description = "Bad Request"),
+			@ApiResponse(responseCode = "403", description = "Forbidden"),
+			@ApiResponse(responseCode = "404", description = "Not Found"),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public Response updateType(@PathParam("idOrVar") final String idOrVar, final ContentTypeForm form,
-							   @Context final HttpServletRequest req, @Context final HttpServletResponse res) {
+	public Response updateType(@PathParam("idOrVar") @Parameter(description = "The ID or Velocity variable name of the content type to update") final String idOrVar,
+							   @RequestBody(
+									   description = "The minimum required properties for a successful update are `clazz`, `id`, and `name`.\n\n" +
+													 "May also optionally include the following special properties:\n\n" +
+													 "| Property | Value | Description |\n" +
+													 "|-|-|-|\n" +
+													 "| `systemActionMappings` | JSON Object | Maps " +
+													 "[Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) " +
+													 "to workflow action identifiers (as values) for this content type.|\n" +
+													 "| `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.",
+									   required = true,
+									   content = @Content(
+											   examples = {
+													   @ExampleObject(
+															   value = "{\n" +
+																	   "  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																	   "  \"defaultType\": false,\n" +
+																	   "  \"id\": \"39fecdb0-46cc-40a9-a056-f2e1a80ea78c\",\n" +
+																	   "  \"name\": \"The Content Type 2\",\n" +
+																	   "  \"description\": \"THE DESCRIPTION 2\",\n" +
+																	   "  \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n" +
+																	   "  \"owner\": \"dotcms.org.1\",\n" +
+																	   "  \"variable\": \"TheContentType1\",\n" +
+																	   "  \"fixed\": false,\n" +
+																	   "  \"system\": false,\n" +
+																	   "  \"folder\": \"SYSTEM_FOLDER\",\n" +
+																	   "  \"workflow\": [\n" +
+																	   "    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n" +
+																	   "  ]\n" +
+																	   "}"
+													   )
+											   }
+									   )
+							   ) final ContentTypeForm form,
+							   @Context final HttpServletRequest req, @Context final HttpServletResponse res) throws DotDataException, DotSecurityException, URISyntaxException {
 		final InitDataObject initData =
 				new WebResource.InitBuilder(webResource)
 						.requestAndResponse(req, res)
@@ -376,50 +646,30 @@ public class ContentTypeResource implements Serializable {
 						.init();
 		final User user = initData.getUser();
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
-		try {
-			checkNotNull(form, "The 'form' parameter is required");
-			final ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
-					idOrVar, form.getContentType(), user, false
-			);
-			Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
-			checkNotEmpty(contentType.id(), BadRequestException.class,
-					"Content Type 'id' attribute must be set");
+		checkNotNull(form, "The 'form' parameter is required");
+		final ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
+				idOrVar, form.getContentType(), user, false
+		);
+		Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
+		checkNotEmpty(contentType.id(), BadRequestException.class,
+				"Content Type 'id' attribute must be set");
 
-			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
-					this.saveContentTypeAndDependencies(contentType, user,
-							form.getWorkflows(), form.getSystemActions(),
-							contentTypeAPI, false);
-			final ImmutableMap.Builder<Object, Object> builderMap =
-					ImmutableMap.builder()
-							.putAll(contentTypeHelper.contentTypeToMap(
-									contentTypeAPI.find(tuple2._1.variable()), user))
-							.put(MAP_KEY_WORKFLOWS,
-									this.workflowHelper.findSchemesByContentType(
-											contentType.id(), initData.getUser()))
-							.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS, tuple2._2.stream()
-									.collect(Collectors.toMap(
-											SystemActionWorkflowActionMapping::getSystemAction,
-											mapping -> mapping)));
-			return Response.ok(new ResponseEntityView<>(builderMap.build())).build();
-		} catch (final NotFoundInDbException e) {
-			Logger.error(this, String.format("Content Type with ID or var name '%s' was not found", idOrVar), e);
-			return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-		} catch (final IllegalArgumentException e) {
-			return ExceptionMapperUtil.createResponse(null, e.getMessage());
-		} catch (final DotStateException | DotDataException e) {
-			final String errorMsg = String.format("Failed to update Content Type with ID or var name " +
-					"'%s': %s", idOrVar, ExceptionUtil.getErrorMessage(e));
-			Logger.error(this, errorMsg, e);
-			return ExceptionMapperUtil.createResponse(null, errorMsg);
-		} catch (final DotSecurityException e) {
-			Logger.error(this, String.format("User '%s' does not have permission to update Content Type with ID or var name " +
-					"'%s'", user.getUserId(), idOrVar), e);
-			throw new ForbiddenException(e);
-		} catch (final Exception e) {
-			Logger.error(this, String.format("An error occurred when updating Content Type with ID or var name " +
-					"'%s': %s", idOrVar, ExceptionUtil.getErrorMessage(e)), e);
-			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-		}
+		final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
+				this.saveContentTypeAndDependencies(contentType, user,
+						form.getWorkflows(), form.getSystemActions(),
+						contentTypeAPI, false);
+		final ImmutableMap.Builder<Object, Object> builderMap =
+				ImmutableMap.builder()
+						.putAll(contentTypeHelper.contentTypeToMap(
+								contentTypeAPI.find(tuple2._1.variable()), user))
+						.put(MAP_KEY_WORKFLOWS,
+								this.workflowHelper.findSchemesByContentType(
+										contentType.id(), initData.getUser()))
+						.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS, tuple2._2.stream()
+								.collect(Collectors.toMap(
+										SystemActionWorkflowActionMapping::getSystemAction,
+										mapping -> mapping)));
+		return Response.ok(new ResponseEntityView<>(builderMap.build())).build();
 	}
 
 	/**
@@ -428,7 +678,7 @@ public class ContentTypeResource implements Serializable {
 	 *
 	 * @param contentType          The {@link ContentType} to save.
 	 * @param user                 The {@link User} executing this action.
-	 * @param workflowsIds         The {@link Set} of Workflow IDs to associate to the Content
+	 * @param workflows            The {@link Set} of Workflows to associate to the Content
 	 *                             Type.
 	 * @param systemActionMappings The {@link List} of {@link Tuple2} containing the
 	 *                             {@link WorkflowAPI.SystemAction} and the {@link String}
@@ -648,99 +898,170 @@ public class ContentTypeResource implements Serializable {
 
 	@DELETE
 	@Path("/id/{idOrVar}")
+	@Operation(
+			operationId = "deleteContentType",
+			summary = "Deletes a content type",
+			description = "Deletes the content type based on the provided ID or Velocity variable name.\n\n" +
+						  "Returns JSON string containing the identifier of the deleted content type.",
+			tags = {"Content Type"}
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Content type deleted successfully",
+					content = @Content(mediaType = "application/json",
+							examples = {
+									@ExampleObject(
+											value = "{\n" +
+													"  \"entity\": \"{\\\"deleted\\\":\\\"string\\\"}\",\n" +
+													"  \"errors\": [],\n" +
+													"  \"i18nMessagesMap\": {},\n" +
+													"  \"messages\": [],\n" +
+													"  \"pagination\": null,\n" +
+													"  \"permissions\": []\n" +
+													"}"
+									)
+							}
+					)
+			),
+			@ApiResponse(responseCode = "403", description = "Forbidden"),
+			@ApiResponse(responseCode = "404", description = "Not Found"),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response deleteType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res)
-			throws JSONException {
+	public Response deleteType(@PathParam("idOrVar") @Parameter(description = "The ID or Velocity variable name of the content type to delete") final String idOrVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res)
+			throws JSONException, DotDataException, DotSecurityException {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
 
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 
-		try {
-			ContentType type;
-			try {
-				type = contentTypeAPI.find(idOrVar);
-			} catch (NotFoundInDbException nfdb) {
-				return Response.status(404).build();
-			}
+		ContentType type;
 
-			contentTypeAPI.delete(type);
+		type = contentTypeAPI.find(idOrVar);
 
-			JSONObject joe = new JSONObject();
-			joe.put("deleted", type.id());
+		contentTypeAPI.delete(type);
 
-			return Response.ok(new ResponseEntityView<>(joe.toString())).build();
-		} catch (final DotSecurityException e) {
-			throw new ForbiddenException(e);
-		} catch (final Exception e) {
-			Logger.error(this, String.format("Error deleting content type identified by (%s) ",idOrVar), e);
-			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-		}
+		JSONObject joe = new JSONObject();
+		joe.put("deleted", type.id());
+
+		return Response.ok(new ResponseEntityView<>(joe.toString())).build();
 	}
 
 	@GET
 	@Path("/id/{idOrVar}")
+	@Operation(
+			operationId = "getContentTypeIdVar",
+			summary = "Retrieves a single content type",
+			description = "Returns one content type based on the provided ID or Velocity variable name.",
+			tags = {"Content Type"}
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
+					content = @Content(mediaType = "application/json",
+							examples = {
+									@ExampleObject(
+											value = "{\n" +
+													"  \"entity\": [\n" +
+													"    {\n" +
+													"      \"baseType\": \"string\",\n" +
+													"      \"clazz\": \"string\",\n" +
+													"      \"defaultType\": true,\n" +
+													"      \"description\": \"string\",\n" +
+													"      \"fields\": [],\n" +
+													"      \"fixed\": false,\n" +
+													"      \"folder\": \"string\",\n" +
+													"      \"folderPath\": \"string\",\n" +
+													"      \"host\": \"string\",\n" +
+													"      \"iDate\": 0,\n" +
+													"      \"icon\": \"string\",\n" +
+													"      \"id\": \"string\",\n" +
+													"      \"layout\": [],\n" +
+													"      \"metadata\": {},\n" +
+													"      \"modDate\": 0,\n" +
+													"      \"multilingualable\": true,\n" +
+													"      \"name\": \"string\",\n" +
+													"      \"siteName\": \"string\",\n" +
+													"      \"sortOrder\": 0,\n" +
+													"      \"system\": true,\n" +
+													"      \"variable\": \"string\",\n" +
+													"      \"systemActionMappings\": {},\n" +
+													"      \"variable\": \"string\",\n" +
+													"      \"versionable\": true,\n" +
+													"      \"workflows\": []\n" +
+													"    }\n" +
+													"  ],\n" +
+													"  \"errors\": [],\n" +
+													"  \"i18nMessagesMap\": {},\n" +
+													"  \"messages\": [],\n" +
+													"  \"pagination\": {\n" +
+													"    \"currentPage\": 0,\n" +
+													"    \"perPage\": 0,\n" +
+													"    \"totalEntries\": 0\n" +
+													"  },\n" +
+													"  \"permissions\": []\n" +
+													"}\n"
+									)
+							}
+					)
+			),
+			@ApiResponse(responseCode = "403", description = "Forbidden"),
+			@ApiResponse(responseCode = "404", description = "Not Found"),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public Response getType(
-			@PathParam("idOrVar") final String idOrVar,
+			@PathParam("idOrVar") @Parameter(description = "The ID or Velocity variable name of the content type to retrieve.\n\nExample: `htmlpageasset`") final String idOrVar,
 			@Context final HttpServletRequest req,
 			@Context final HttpServletResponse res,
-			@QueryParam("languageId") final Long languageId,
-			@QueryParam("live") final Boolean paramLive)
-			throws DotDataException {
+			@QueryParam("languageId") @Parameter(description = "The language ID for localization") final Long languageId,
+			@QueryParam("live") @Parameter(description = "Determines whether live versions of language variables are used in the returned content object.") final Boolean paramLive)
+			throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
 		final User user = initData.getUser();
 		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
         final HttpSession session = req.getSession(false);
-		try {
 
-			Logger.debug(this, ()-> "Getting the Type: " + idOrVar);
+		Logger.debug(this, ()-> "Getting the Type: " + idOrVar);
 
-			final ContentType type = tapi.find(idOrVar);
-			if (null == type) {
-				// Humoring sonarlint, this block should never be reached as the find method will
-				// throw an exception if the type is not found.
-				throw new NotFoundInDbException(
-						String.format("Content Type with ID or var name '%s' was not found", idOrVar
-						));
-			}
-
-			if (null != session) {
-				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
-			}
-
-			final boolean live = paramLive == null ?
-					(PageMode.get(Try.of(HttpServletRequestThreadLocal.INSTANCE::getRequest).getOrNull())).showLive
-					: paramLive;
-
-			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
-					new ContentTypeInternationalization(languageId, live, user) : null;
-			final ImmutableMap<Object, Object> resultMap = ImmutableMap.builder()
-					.putAll(contentTypeHelper.contentTypeToMap(type,
-							contentTypeInternationalization, user))
-					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
-							type.id(), initData.getUser()))
-					.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
-							this.workflowHelper.findSystemActionsByContentType(
-									type, initData.getUser()).stream()
-							.collect(Collectors.toMap(mapping -> mapping.getSystemAction(),
-									mapping -> mapping))).build();
-
-			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
-					Response.ok(new ResponseEntityView<>(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
-					Response.ok(new ResponseEntityView<>(resultMap)).build();
-		} catch (final DotSecurityException e) {
-			throw new ForbiddenException(e);
-		} catch (final NotFoundInDbException nfdb2) {
-			// nothing to do here, will throw a 404
+		final ContentType type = tapi.find(idOrVar);
+		if (null == type) {
+			// Humoring sonarlint, this block should never be reached as the find method will
+			// throw an exception if the type is not found.
+			throw new NotFoundInDbException(
+					String.format("Content Type with ID or var name '%s' was not found", idOrVar
+					));
 		}
+
+		if (null != session) {
+			session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
+		}
+
+		final boolean live = paramLive == null ?
+				(PageMode.get(Try.of(HttpServletRequestThreadLocal.INSTANCE::getRequest).getOrNull())).showLive
+				: paramLive;
+
+		final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
+				new ContentTypeInternationalization(languageId, live, user) : null;
+		final ImmutableMap<Object, Object> resultMap = ImmutableMap.builder()
+				.putAll(contentTypeHelper.contentTypeToMap(type,
+						contentTypeInternationalization, user))
+				.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
+						type.id(), initData.getUser()))
+				.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
+						this.workflowHelper.findSystemActionsByContentType(
+								type, initData.getUser()).stream()
+						.collect(Collectors.toMap(mapping -> mapping.getSystemAction(),
+								mapping -> mapping))).build();
+
+		response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
+				Response.ok(new ResponseEntityView<>(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
+				Response.ok(new ResponseEntityView<>(resultMap)).build();
 
 		return response;
 	}
@@ -776,13 +1097,96 @@ public class ContentTypeResource implements Serializable {
 	 */
 	@POST
 	@Path("/_filter")
+	@Operation(
+			operationId = "postContentTypeFilter",
+			summary = "Filters content types",
+			description = "Returns the list of content type objects that match the specified filter, with optional pagination criteria.",
+			tags = {"Content Type"}
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Content types filtered successfully",
+					content = @Content(mediaType = "application/json",
+							examples = {
+									@ExampleObject(
+											value = "{\n" +
+													"  \"entity\": [\n" +
+													"    {\n" +
+													"      \"baseType\": \"string\",\n" +
+													"      \"clazz\": \"string\",\n" +
+													"      \"defaultType\": true,\n" +
+													"      \"description\": \"string\",\n" +
+													"      \"fixed\": false,\n" +
+													"      \"folder\": \"string\",\n" +
+													"      \"folderPath\": \"string\",\n" +
+													"      \"host\": \"string\",\n" +
+													"      \"iDate\": 0,\n" +
+													"      \"icon\": \"string\",\n" +
+													"      \"id\": \"string\",\n" +
+													"      \"layout\": [],\n" +
+													"      \"metadata\": {},\n" +
+													"      \"modDate\": 0,\n" +
+													"      \"multilingualable\": true,\n" +
+													"      \"nEntries\": 0,\n" +
+													"      \"name\": \"string\",\n" +
+													"      \"siteName\": \"string\",\n" +
+													"      \"sortOrder\": 0,\n" +
+													"      \"system\": true,\n" +
+													"      \"variable\": \"string\",\n" +
+													"      \"versionable\": true,\n" +
+													"      \"workflows\": []\n" +
+													"    }\n" +
+													"  ],\n" +
+													"  \"errors\": [],\n" +
+													"  \"i18nMessagesMap\": {},\n" +
+													"  \"messages\": [],\n" +
+													"  \"pagination\": {\n" +
+													"    \"currentPage\": 0,\n" +
+													"    \"perPage\": 0,\n" +
+													"    \"totalEntries\": 0\n" +
+													"  },\n" +
+													"  \"permissions\": []\n" +
+													"}\n"
+									)
+							}
+					)
+			),
+			@ApiResponse(responseCode = "400", description = "Bad Request"),
+			@ApiResponse(responseCode = "403", description = "Forbidden"),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response filteredContentTypes(@Context final HttpServletRequest req,
 											   @Context final HttpServletResponse res,
-											   final FilteredContentTypesForm form) {
+											   @RequestBody(
+													   description = "Requires POST body consisting of a JSON object with the following properties:\n\n" +
+																	 "| Property |  Type  | Description |\n" +
+																	 "|----------|--------|-------------|\n" +
+																	 "| `filter`   | JSON Object | Contains two properties: <ul><li style=\"margin-bottom:0.75rem;\">`query`: A query string returning full or partial matches.</li><li>`types`: A comma-separated list of specific content type variables.</li></ul> |\n" +
+																	 "| `page` | Integer | Which page of results to show. Defaults to `1`. |\n" +
+																	 "| `perPage`   | Integer | Number of results to display per page. Defaults to `10`. |\n" +
+																	 "| `orderBy`   | String | Sorting parameter: `name` (default), `velocity_var_name`, `mod_date`, or `sort_order`. |\n" +
+																	 "| `direction`   | String | `ASC` (default) or `DESC` for ascending or descending. |",
+													   required = true,
+													   content = @Content(
+															   examples = {
+																	   @ExampleObject(
+																			   value = "{\n" +
+																					   "  \"filter\": {\n" +
+																					   "    \"query\": \"\",\n" +
+																					   "    \"types\": \"Blog,Activity\"\n" +
+																					   "  },\n" +
+																					   "  \"page\": 1,\n" +
+																					   "  \"perPage\": 10,\n" +
+																					   "  \"orderBy\": \"name\",\n" +
+																					   "  \"direction\": \"ASC\"\n" +
+																					   "}"
+																	   )
+															   }
+													   )
+											   ) final FilteredContentTypesForm form) throws ForbiddenException {
 		if (null == form) {
 			return ExceptionMapperUtil.createResponse(null, "Requests to '_filter' need a POST JSON body");
 		}
@@ -796,36 +1200,55 @@ public class ContentTypeResource implements Serializable {
 		if (UtilMethods.isSet(typeVarNames)) {
 			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
 		}
-		try {
-			final PaginationUtil paginationUtil =
-					new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-			response = paginationUtil.getPage(req, user, filter, form.getPage(), form.getPerPage(), form.getOrderBy(),
-					OrderDirection.valueOf(form.getDirection()), extraParams);
-		} catch (final Exception e) {
-			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
-				throw new ForbiddenException(e);
-			}
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-			Logger.error(this, e.getMessage(), e);
-		}
+		final PaginationUtil paginationUtil =
+				new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+		response = paginationUtil.getPage(req, user, filter, form.getPage(), form.getPerPage(), form.getOrderBy(),
+				OrderDirection.valueOf(form.getDirection()), extraParams);
+
 		return response;
 	}
 
 	@GET
 	@Path("/basetypes")
+	@Operation(
+			operationId = "getContentTypeBaseTypes",
+			summary = "Retrieves base content types",
+			description = "Returns a list of base content types.",
+			tags = {"Content Type"}
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Base content types retrieved successfully",
+					content = @Content(mediaType = "application/json",
+							examples = {
+									@ExampleObject(
+											value = "{\n" +
+													"  \"entity\": [\n" +
+													"    {\n" +
+													"      \"label\": \"string\",\n" +
+													"      \"name\": \"string\",\n" +
+													"      \"types\": null\n" +
+													"    }\n" +
+													"  ],\n" +
+													"  \"errors\": [],\n" +
+													"  \"i18nMessagesMap\": {},\n" +
+													"  \"messages\": [],\n" +
+													"  \"pagination\": null,\n" +
+													"  \"permissions\": []\n" +
+													"}"
+									)
+							}
+					)
+			),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
 	@JSONP
 	@InitRequestRequired
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response getRecentBaseTypes(@Context final HttpServletRequest request) {
+	public final Response getRecentBaseTypes(@Context final HttpServletRequest request) throws LanguageException {
 		Response response;
-		try {
-			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
-			response = Response.ok(new ResponseEntityView<>(types)).build();
-		} catch (Exception e) { // this is an unknown error, so we report as a 500.
-
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-		}
+		final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
+		response = Response.ok(new ResponseEntityView<>(types)).build();
 
 		return response;
 	} // getTypes.
@@ -862,52 +1285,98 @@ public class ContentTypeResource implements Serializable {
 	 * @throws DotDataException An error occurred when retrieving information from the database.
 	 */
 	@GET
+	@Operation(
+			operationId = "getContentType",
+			summary = "Retrieves a list of content types",
+			description = "Returns a list of content type objects based on the filtering criteria.",
+			tags = {"Content Type"}
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Content types retrieved successfully",
+					content = @Content(
+							mediaType = "application/json",
+							examples = {
+									@ExampleObject(
+											value = "{\n" +
+													"  \"entity\": [\n" +
+													"    {\n" +
+													"      \"baseType\": \"string\",\n" +
+													"      \"clazz\": \"string\",\n" +
+													"      \"defaultType\": true,\n" +
+													"      \"description\": \"string\",\n" +
+													"      \"fixed\": true,\n" +
+													"      \"folder\": \"string\",\n" +
+													"      \"folderPath\": \"string\",\n" +
+													"      \"host\": \"string\",\n" +
+													"      \"iDate\": 0,\n" +
+													"      \"icon\": \"string\",\n" +
+													"      \"id\": \"string\",\n" +
+													"      \"layout\": [],\n" +
+													"      \"metadata\": {},\n" +
+													"      \"modDate\": 0,\n" +
+													"      \"multilingualable\": true,\n" +
+													"      \"nEntries\": 0,\n" +
+													"      \"name\": \"string\",\n" +
+													"      \"siteName\": \"string\",\n" +
+													"      \"sortOrder\": 0,\n" +
+													"      \"system\": true,\n" +
+													"      \"variable\": \"string\",\n" +
+													"      \"versionable\": true,\n" +
+													"      \"workflows\": []\n" +
+													"    }\n" +
+													"  ],\n" +
+													"  \"errors\": [],\n" +
+													"  \"i18nMessagesMap\": {},\n" +
+													"  \"messages\": [],\n" +
+													"  \"pagination\": {\n" +
+													"    \"currentPage\": 0,\n" +
+													"    \"perPage\": 0,\n" +
+													"    \"totalEntries\": 0\n" +
+													"  },\n" +
+													"  \"permissions\": []\n" +
+													"}\n"
+									)
+							}
+					)
+			),
+			@ApiResponse(responseCode = "403", description = "Forbidden"),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getContentTypes(@Context final HttpServletRequest httpRequest,
 										  @Context final HttpServletResponse httpResponse,
-										  @QueryParam(PaginationUtil.FILTER) final String filter,
-										  @QueryParam(PaginationUtil.PAGE) final int page,
-										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderByParam,
-										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
-										  @QueryParam("type") String type,
-										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) final String siteId,
-										  @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) final String sites) throws DotDataException {
+										  @QueryParam(PaginationUtil.FILTER) @Parameter(description = "String to filter/search for specific content types; leave blank to return all.", allowEmptyValue = true) final String filter,
+										  @QueryParam(PaginationUtil.PAGE) @Parameter(description = "Page number in response pagination.\n\nDefault: `1`", allowEmptyValue = true) final int page,
+										  @QueryParam(PaginationUtil.PER_PAGE) @Parameter(description = "Number of results per page for pagination.\n\nDefault: `10`", allowEmptyValue = true) final int perPage,
+										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) @Parameter(description = "Column to sort the results.\n\nExample values: `name`, `velocity_var_name`, `mod_date`, `sort_order`") String orderByParam,
+										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) @Parameter(description = "Sort direction: `ASC` or `DESC` for ascending or descending.") String direction,
+										  @QueryParam("type") @Parameter(description = "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types).\n\nPossible values include `CONTENT`, `WIDGET`, `KEY_VALUE`, etc.\n\nSee also `/contenttype/basetypes` endpoint for full listing.") String type,
+										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(description = "Filter by site identifier.") final String siteId,
+										  @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) @Parameter(description = "Multi-site filter: Takes comma-separated list of site identifiers or site Keys.") final String sites) throws DotDataException, ForbiddenException {
 
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(httpRequest, httpResponse)
 				.rejectWhenNoUser(true)
 				.init().getUser();
 		final String orderBy = this.getOrderByRealName(orderByParam);
-		try {
-			final Map<String, Object> extraParams = new HashMap<>();
-			if (null != type) {
-				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, type);
-			}
-			if (null != siteId) {
-				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
-			}
-			if (UtilMethods.isSet(sites)) {
-				extraParams.put(ContentTypesPaginator.SITES_PARAMETER_NAME,
-						Arrays.asList(sites.split(COMMA)));
-			}
-			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-			return paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
-					OrderDirection.valueOf(direction), extraParams);
-		} catch (final IllegalArgumentException e) {
-			throw new DotDataException(String.format("An error occurred when listing Content Types: " +
-					"%s", ExceptionUtil.getErrorMessage(e)));
-		} catch (final Exception e) {
-			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
-				throw new ForbiddenException(e);
-			}
-			Logger.error(this, String.format("An error occurred when listing Content Types: " +
-					"%s", ExceptionUtil.getErrorMessage(e)), e);
-			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+
+		final Map<String, Object> extraParams = new HashMap<>();
+		if (null != type) {
+			extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, type);
 		}
+		if (null != siteId) {
+			extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
+		}
+		if (UtilMethods.isSet(sites)) {
+			extraParams.put(ContentTypesPaginator.SITES_PARAMETER_NAME,
+					Arrays.asList(sites.split(COMMA)));
+		}
+		final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+		return paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+				OrderDirection.valueOf(direction), extraParams);
 	}
 
 	private String getOrderByRealName(final String orderbyParam) {

@@ -38,6 +38,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -455,7 +456,7 @@ public class ContentTypeResourceTest {
 	@Test
 	@UseDataProvider("dataProviderExcludeTypesCommunity")
 	public void testGetRecentBaseTypes_whenCommunity_excludeTypes(final TestCase testCase)
-		throws DotSecurityException, DotDataException {
+            throws DotSecurityException, DotDataException, LanguageException {
 
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject dataObject = mock(InitDataObject.class);
