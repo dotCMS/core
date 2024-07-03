@@ -1,11 +1,11 @@
 package com.dotcms.api.provider;
 
 import com.dotcms.api.AuthenticationContext;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.util.Optional;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
 
 
 /**

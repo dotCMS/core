@@ -39,35 +39,15 @@ public class EmbeddingsFactory {
     public static final Lazy<EmbeddingsFactory> impl = Lazy.of(EmbeddingsFactory::new);
 
     private EmbeddingsFactory() {
-        initVectorExtension();
-        initVectorDbTable();
+        initVector();
     }
 
     /**
      * Initializes the PGVector extension in the database.
-     * This method is called when the class is instantiated.
      */
-    public void initVectorExtension() {
-        if (!doesExtensionExist()) {
-            Logger.info(EmbeddingsFactory.class, "Adding PGVector extension to database");
-            runSQL(EmbeddingsSQL.INIT_VECTOR_EXTENSION);
-        } else {
-            Logger.info(EmbeddingsFactory.class, "PGVector exists, skipping extension installation");
-        }
-    }
-
-    /**
-     * Initializes the database table for storing embeddings.
-     * This method is called when the class is instantiated.
-     */
-    public void initVectorDbTable() {
-        try {
-            internalInitVectorDbTable();
-        } catch (Exception e) {
-            Logger.info(EmbeddingsFactory.class, "Create Table Failed : " + e.getMessage());
-            moveVectorDbTable();
-            internalInitVectorDbTable();
-        }
+    public void initVector() {
+        initVectorExtension();
+        initVectorDbTable();
     }
 
     /**
@@ -116,6 +96,33 @@ public class EmbeddingsFactory {
             return !new DotConnect().setSQL(EmbeddingsSQL.CHECK_IF_VECTOR_EXISTS).loadObjectResults(conn).isEmpty();
         } catch (Exception  e) {
             throw new DotRuntimeException(e);
+        }
+    }
+
+    /**
+     * Initializes the PGVector extension in the database.
+     * This method is called when the class is instantiated.
+     */
+    private void initVectorExtension() {
+        if (!doesExtensionExist()) {
+            Logger.info(EmbeddingsFactory.class, "Adding PGVector extension to database");
+            runSQL(EmbeddingsSQL.INIT_VECTOR_EXTENSION);
+        } else {
+            Logger.info(EmbeddingsFactory.class, "PGVector exists, skipping extension installation");
+        }
+    }
+
+    /**
+     * Initializes the database table for storing embeddings.
+     * This method is called when the class is instantiated.
+     */
+    private void initVectorDbTable() {
+        try {
+            internalInitVectorDbTable();
+        } catch (Exception e) {
+            Logger.info(EmbeddingsFactory.class, "Create Table Failed : " + e.getMessage());
+            moveVectorDbTable();
+            internalInitVectorDbTable();
         }
     }
 
@@ -319,7 +326,7 @@ public class EmbeddingsFactory {
      * @param dto the DTO to get parameters from
      * @return a list of parameters
      */
-    List<Object> appendParams(final StringBuilder sql, final EmbeddingsDTO dto) {
+    private List<Object> appendParams(final StringBuilder sql, final EmbeddingsDTO dto) {
         final List<Object> params = new ArrayList<>();
 
         appendParam(sql, UtilMethods::isSet, params, INODE_KEY, EQUALS_OPERATOR, null, dto.inode);
@@ -328,9 +335,12 @@ public class EmbeddingsFactory {
         appendParams(sql, params, INODE_KEY, NOT_EQUALS_OPERATOR, null, dto.excludeInodes);
         appendParam(sql, lang -> lang > 0, params, "language", EQUALS_OPERATOR, null, dto.language);
 
-        if (UtilMethods.isSet(dto.contentType)) {
+        if (UtilMethods.isSet(dto.contentType) && dto.contentType.length > 0) {
             sql.append(" and ( false ");
-            appendParams(sql, params, "lower(content_type)", EQUALS_OPERATOR, LOWER_FN, dto.contentType);
+            Arrays.stream(dto.contentType).forEach(ct -> {
+                sql.append(" OR lower(content_type)=lower(?)");
+                params.add(ct);
+            });
             sql.append(") ") ;
         }
 
@@ -416,10 +426,10 @@ public class EmbeddingsFactory {
      * @return a map of index names to counts
      */
     public Map<String, Map<String, Object>> countEmbeddingsByIndex() {
-        final StringBuilder sql = new StringBuilder(EmbeddingsSQL.COUNT_EMBEDDINGS_BY_INDEX);
+        final String sql = EmbeddingsSQL.COUNT_EMBEDDINGS_BY_INDEX;
 
         try (final Connection conn = getPGVectorConnection();
-             final PreparedStatement statement = conn.prepareStatement(sql.toString())) {
+             final PreparedStatement statement = conn.prepareStatement(sql)) {
 
             final Map<String, Map<String, Object>> results = new TreeMap<>();
             final ResultSet rs = statement.executeQuery();

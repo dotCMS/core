@@ -121,7 +121,8 @@ describe('DotEmaInfoDisplayComponent', () => {
                 spectator.triggerEventHandler(infoAction, 'onClick', {});
 
                 expect(updateEditorDataSpy).toHaveBeenCalledWith({
-                    mode: EDITOR_MODE.EDIT
+                    mode: EDITOR_MODE.EDIT,
+                    device: null
                 });
             });
 
@@ -149,7 +150,8 @@ describe('DotEmaInfoDisplayComponent', () => {
                 spectator.triggerEventHandler(infoAction, 'onClick', {});
 
                 expect(updateEditorDataSpy).toHaveBeenCalledWith({
-                    mode: EDITOR_MODE.EDIT_VARIANT
+                    mode: EDITOR_MODE.EDIT_VARIANT,
+                    device: null
                 });
             });
 
@@ -177,7 +179,8 @@ describe('DotEmaInfoDisplayComponent', () => {
                 spectator.triggerEventHandler(infoAction, 'onClick', {});
 
                 expect(updateEditorDataSpy).toHaveBeenCalledWith({
-                    mode: EDITOR_MODE.PREVIEW_VARIANT
+                    mode: EDITOR_MODE.PREVIEW_VARIANT,
+                    device: null
                 });
             });
         });

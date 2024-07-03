@@ -8,7 +8,7 @@ import java.io.Serializable;
 import org.immutables.value.Value.Default;
 import org.jboss.logging.Logger;
 import org.immutables.value.Value;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * Just a class to compile all the params shared by various Traverse APIs
