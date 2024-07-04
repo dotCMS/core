@@ -53,6 +53,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
@@ -73,6 +75,8 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 public class LanguageUtil {
 
 	public static final String DEFAULT_ENCODING = "UTF-8";
+	private static final Pattern DASH_PATTERN = Pattern.compile("^[a-zA-Z0-9]+-[a-zA-Z0-9]+$");
+	private static final Pattern UNDERSCORE_PATTERN = Pattern.compile("^[a-zA-Z0-9]+_[a-zA-Z0-9]+$");
 
 	/**
 	 * Returns the locale (if could) from the string representation: could be a language code, language code + country (en, en-US, es_US)
@@ -136,11 +140,16 @@ public class LanguageUtil {
 		String countryCode  		   = null;
 		String [] languageCountryCodes = null;
 
-		if (languageCountryCode.contains(StringPool.DASH)) {
+		//More robust way to identify the language and country code
+		//negative numbers were triggering a language code db lookup
+		final Matcher dashMatcher = DASH_PATTERN.matcher(languageCountryCode);
+		final Matcher underscoreMatcher = UNDERSCORE_PATTERN.matcher(languageCountryCode);
+
+		if (dashMatcher.matches()) {
 
 			languageCountryCodes = languageCountryCode.split(StringPool.DASH);
 
-		} else if (languageCountryCode.contains(StringPool.UNDERLINE)) {
+		} else if (underscoreMatcher.matches()) {
 
 			languageCountryCodes = languageCountryCode.split(StringPool.UNDERLINE);
 		}
