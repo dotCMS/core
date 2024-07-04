@@ -50,7 +50,7 @@ export const addMetadata = (
  * Deep copy of the matrix
  * @param array
  */
-const deepCopy = <T>(array: T[][]): T[][] => {
+export const categoryDeepCopy = <T>(array: T[][]): T[][] => {
     return array.map((items) =>
         items.map((item) => (typeof item === 'object' ? { ...item } : item))
     );
@@ -65,7 +65,7 @@ export const clearCategoriesAfterIndex = (
     array: DotCategoryFieldCategory[][],
     index: number
 ): DotCategoryFieldCategory[][] => {
-    const newArray = deepCopy<DotCategoryFieldCategory>(array);
+    const newArray = categoryDeepCopy<DotCategoryFieldCategory>(array);
     newArray.splice(index + 1);
 
     return newArray;

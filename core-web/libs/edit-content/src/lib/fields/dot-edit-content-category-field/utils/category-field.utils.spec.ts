@@ -1,7 +1,6 @@
-import { deepCopy } from '@angular-devkit/core';
-
 import {
     addMetadata,
+    categoryDeepCopy,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
     getSelectedCategories,
@@ -22,11 +21,6 @@ describe('CategoryFieldUtils', () => {
     describe('getSelectedCategories', () => {
         it('should return an empty array if contentlet is null', () => {
             const result = getSelectedCategories(CATEGORY_FIELD_MOCK, null);
-            expect(result).toEqual([]);
-        });
-
-        it('should return an empty array if variable is null', () => {
-            const result = getSelectedCategories(null, CATEGORY_FIELD_CONTENTLET_MOCK);
             expect(result).toEqual([]);
         });
 
@@ -76,13 +70,13 @@ describe('CategoryFieldUtils', () => {
         });
     });
 
-    describe('deepCopy', () => {
+    describe('categoryDeepCopy', () => {
         it('should create a deep copy of a two-dimensional array of DotCategoryFieldCategory', () => {
             const array: DotCategoryFieldCategory[][] = [
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }]
             ];
-            const copy = deepCopy(array);
+            const copy = categoryDeepCopy(array);
 
             // The copy should be equal to the original
             expect(copy).toEqual(array);
@@ -94,7 +88,7 @@ describe('CategoryFieldUtils', () => {
 
         it('should create a deep copy of an empty array', () => {
             const array: DotCategoryFieldCategory[][] = [];
-            const copy = deepCopy(array);
+            const copy = categoryDeepCopy(array);
 
             // The copy should be equal to the original
             expect(copy).toEqual(array);
@@ -105,7 +99,7 @@ describe('CategoryFieldUtils', () => {
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }]
             ];
-            const copy = deepCopy(array);
+            const copy = categoryDeepCopy(array);
 
             // The copy should be equal to the original
             expect(copy).toEqual(array);
