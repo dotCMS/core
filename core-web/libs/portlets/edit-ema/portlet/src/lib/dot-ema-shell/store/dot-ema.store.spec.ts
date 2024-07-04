@@ -841,9 +841,11 @@ describe('EditEmaStore', () => {
                                 canLock: true,
                                 isLocked: false,
                                 lockedByUser: ''
-                            }
+                            },
+                            variantId: undefined
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
                     done();
                 });
