@@ -138,7 +138,7 @@ public class HostFactoryImpl implements HostFactory {
 
     // query that Exact matches should be at the top of the search results.
     private static final String PRIORITIZE_EXACT_MATCHES =
-            "ORDER BY CASE WHEN LOWER(%s) = ? THEN 0 ELSE 1 END";
+            " ORDER BY CASE WHEN LOWER(%s) = ? THEN 0 ELSE 1 END";
 
     /**
      * Default class constructor.
