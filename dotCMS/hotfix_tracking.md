@@ -26,4 +26,4 @@ This maintenance release includes the following code fixes:
 20. https://github.com/dotCMS/core/issues/28897 : Content Resource v1 hits the db #28897
 21. https://github.com/dotCMS/core/issues/28890 : LanguageUtil.getLanguageId is always hitting the db #28890
 22. https://github.com/dotCMS/core/issues/26316 : Edit embedded content-let's through Block Editor field #26316
-23. 
+23. https://github.com/dotCMS/core/issues/28863 : Redis implementation should support ACL (username + password) authentication #28863
