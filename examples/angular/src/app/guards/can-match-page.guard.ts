@@ -28,9 +28,7 @@ export const canMatchPage: CanMatchFn = async (
     const { vanityUrl } = entity;
 
     if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
-      router.navigate([vanityUrl.forwardTo]);
-
-      return false;
+      return router.createUrlTree([vanityUrl.forwardTo]);
     }
 
     // Add the page asset to the route data
