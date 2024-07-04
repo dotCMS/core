@@ -1,16 +1,12 @@
 package com.dotmarketing.portlets.categories.business;
 
-import java.util.Collection;
+
 import java.util.List;
 
-import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.liferay.portal.model.User;
+import com.dotmarketing.portlets.categories.model.HierarchedCategory;
 
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.QueryParam;
 
 /**
  * 
@@ -287,7 +283,7 @@ public abstract class CategoryFactory {
 	 *
 	 * @param searchCriteria Search Criteria
 	 *
-	 * @return List of Category filtered
+	 * @return List of Category filteredx
 	 */
-	public abstract List<Category> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException;
+	public abstract List<HierarchedCategory> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException;
 }
