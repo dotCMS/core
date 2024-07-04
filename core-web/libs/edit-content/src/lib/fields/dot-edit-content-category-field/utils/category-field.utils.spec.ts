@@ -4,7 +4,8 @@ import {
     addMetadata,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
-    getSelectedCategories
+    getSelectedCategories,
+    updateChecked
 } from './category-field.utils';
 
 import {
@@ -196,6 +197,91 @@ describe('CategoryFieldUtils', () => {
             // The resulting array should be empty
             expect(result.length).toBe(0);
             expect(result).toEqual([]);
+        });
+    });
+
+    describe('updateChecked', () => {
+        it('should add a new item if it is selected and not already in storedSelected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName
+                }
+            ];
+            const selected = [storedSelected[0].key, CATEGORY_LEVEL_1[1].key];
+            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[1] };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [
+                ...storedSelected,
+                {
+                    key: CATEGORY_LEVEL_1[1].key,
+                    value: CATEGORY_LEVEL_1[1].categoryName
+                }
+            ];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should not add a duplicate item if it is already in storedSelected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName
+                }
+            ];
+            const selected = [storedSelected[0].key];
+            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[0] };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should remove an item if it is not selected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName
+                },
+                {
+                    key: CATEGORY_LEVEL_1[1].key,
+                    value: CATEGORY_LEVEL_1[1].categoryName
+                }
+            ];
+            const selected = [storedSelected[0].key];
+            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[1] };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName
+                }
+            ];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should not remove an item that is not in storedSelected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName
+                }
+            ];
+            const selected = [storedSelected[0].key];
+            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[1] };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
         });
     });
 });

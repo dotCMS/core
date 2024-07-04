@@ -1,4 +1,4 @@
-import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import {
     DotCategoryFieldCategory,
@@ -93,17 +93,17 @@ export const checkIfClickedIsLastItem = (
 };
 
 /**
- * Updates the checked items in the stored selected array based on the selected items and the target item.
+ * Updates the array of selected items based on the current selection and most recently interacted with item.
  *
- * @param {DotCategoryFieldKeyValueObj[]} storedSelected - The current array of selected items.
- * @param {string[]} selected - The array of currently selected items.
- * @param {DotCategory} item - The target item to update.
- * @returns {DotCategoryFieldKeyValueObj[]} - The updated array of selected items.
+ * @param {DotCategoryFieldKeyValueObj[]} storedSelected - An array of objects currently marked as selected.
+ * @param {string[]} selected - An array of 'keys' representing currently selected items as indicated by checkbox inputs.
+ * @param {DotCategoryFieldCategory} item - The most recent item interacted with (clicked). Can be already checked (if it is, it needs to be removed from the array upon unchecking).
+ * @returns {DotCategoryFieldKeyValueObj[]} - An updated array reflecting the current selected items after considering the status of the 'item'.
  */
 export const updateChecked = (
     storedSelected: DotCategoryFieldKeyValueObj[],
     selected: string[],
-    item: DotCategory
+    item: DotCategoryFieldCategory
 ): DotCategoryFieldKeyValueObj[] => {
     let currentChecked = [...storedSelected];
 
