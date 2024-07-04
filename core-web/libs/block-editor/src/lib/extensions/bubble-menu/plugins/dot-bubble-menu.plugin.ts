@@ -211,7 +211,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     updateComponent() {
         const { items } = this.component.instance;
         const { activeItem } = this.getActiveNode();
-        const activeMarks = this.getActiveMarks(['left', 'center', 'right']);
+        const activeMarks = this.getActiveMarks(['justify', 'left', 'center', 'right']);
 
         // Update
         this.component.instance.selected = activeItem?.label;
@@ -333,6 +333,10 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
             case 'underline':
                 this.editor.commands.toggleUnderline();
+                break;
+
+            case 'justify':
+                this.toggleTextAlign(action, active);
                 break;
 
             case 'left':
