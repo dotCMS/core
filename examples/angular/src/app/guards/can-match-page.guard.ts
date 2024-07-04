@@ -1,17 +1,20 @@
-import { inject } from '@angular/core';
+import { inject, InjectionToken } from '@angular/core';
 import { CanMatchFn, Route, Router, UrlSegment } from '@angular/router';
 
-import { getPageRequestParams } from '@dotcms/client';
-import { DotCMSPageAsset } from '@dotcms/angular';
-
-import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
+import { DotCmsClient, getPageRequestParams } from '@dotcms/client';
+import { DOTCMS_CLIENT_TOKEN, DotCMSPageAsset } from '@dotcms/angular';
 
 export const canMatchPage: CanMatchFn = async (
   route: Route,
-  segments: UrlSegment[],
+  segments: UrlSegment[]
 ) => {
   const router = inject(Router);
-  const client = inject(DOTCMS_CLIENT_TOKEN);
+
+  // TODO: WE NEED TO FIX THIS SOMEHOW
+  // IF WE DONT DO THIS WE WILL GET A TYPE ERROR ON DEVELOPMENT BECAUSE THE TOKEN USES THE TYPES FROM CORE WEB AND THE INJECT FUNCTION IS USING THE TYPES FROM THE EXAMPLE
+  const client = inject<DotCmsClient>(
+    DOTCMS_CLIENT_TOKEN as unknown as InjectionToken<DotCmsClient>
+  );
 
   try {
     const { queryParams } = router.getCurrentNavigation()?.initialUrl || {};

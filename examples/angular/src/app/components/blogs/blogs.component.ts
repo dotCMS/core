@@ -1,8 +1,16 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { DOTCMS_CLIENT_TOKEN } from '../../client-token/dotcms-client';
+import {
+  Component,
+  InjectionToken,
+  OnInit,
+  inject,
+  signal,
+} from '@angular/core';
+
 import { GenericContentlet } from '../../utils';
 import { ContentletsComponent } from '../contentlets/contentlets.component';
 import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
+import { DOTCMS_CLIENT_TOKEN } from '@dotcms/angular';
+import { DotCmsClient } from '@dotcms/client';
 
 @Component({
   selector: 'app-blogs',
@@ -16,7 +24,9 @@ import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
   </div>`,
 })
 export class BlogsComponent implements OnInit {
-  private readonly client = inject(DOTCMS_CLIENT_TOKEN);
+  private readonly client = inject<DotCmsClient>(
+    DOTCMS_CLIENT_TOKEN as unknown as InjectionToken<DotCmsClient>
+  );
 
   readonly blogs = signal<Contentlet<GenericContentlet>[]>([]);
 

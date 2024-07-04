@@ -1,9 +1,7 @@
-import { EnvironmentProviders, InjectionToken, makeEnvironmentProviders } from '@angular/core';
+import { EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
 
-import { ClientConfig, DotCmsClient, dotcmsClient } from '@dotcms/client';
-
-// TODO: Export this from the client token
-export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIENT');
+import { ClientConfig, dotcmsClient } from '@dotcms/client';
+import { DOTCMS_CLIENT_TOKEN } from '@dotcms/angular';
 
 /**
  * This is a provider for the `DOTCMS_CLIENT_TOKEN` token.
@@ -11,11 +9,13 @@ export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIE
  * @param {*} config
  * @return {*}
  */
-export const provideDotcmsClient = (config: ClientConfig): EnvironmentProviders => {
-    return makeEnvironmentProviders([
-        {
-            provide: DOTCMS_CLIENT_TOKEN,
-            useValue: dotcmsClient.init(config)
-        }
-    ]);
+export const provideDotcmsClient = (
+  config: ClientConfig
+): EnvironmentProviders => {
+  return makeEnvironmentProviders([
+    {
+      provide: DOTCMS_CLIENT_TOKEN,
+      useValue: dotcmsClient.init(config),
+    },
+  ]);
 };
