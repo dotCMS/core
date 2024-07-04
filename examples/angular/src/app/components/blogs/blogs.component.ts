@@ -24,6 +24,8 @@ import { DotCmsClient } from '@dotcms/client';
   </div>`,
 })
 export class BlogsComponent implements OnInit {
+  // TODO: WE NEED TO FIX THIS SOMEHOW
+  // IF WE DONT DO THIS WE WILL GET A TYPE ERROR ON DEVELOPMENT BECAUSE THE TOKEN USES THE TYPES FROM CORE WEB AND THE INJECT FUNCTION IS USING THE TYPES FROM THE EXAMPLE
   private readonly client = inject<DotCmsClient>(
     DOTCMS_CLIENT_TOKEN as unknown as InjectionToken<DotCmsClient>
   );
