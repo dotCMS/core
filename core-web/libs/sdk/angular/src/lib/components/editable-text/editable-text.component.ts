@@ -3,7 +3,14 @@ import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { ChangeDetectionStrategy, Component, Input, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { CUSTOMER_ACTIONS, isInsideEditor, postMessageToEditor } from '@dotcms/client';
+import {
+    CUSTOMER_ACTIONS,
+    DotCmsClient,
+    isInsideEditor,
+    postMessageToEditor
+} from '@dotcms/client';
+
+import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
 
 @Component({
     selector: 'editable-text',
@@ -14,7 +21,10 @@ import { CUSTOMER_ACTIONS, isInsideEditor, postMessageToEditor } from '@dotcms/c
     providers: [
         {
             provide: TINYMCE_SCRIPT_SRC,
-            useValue: 'http://localhost:8080/html/tinymce/tinymce.min.js'
+            deps: [DOTCMS_CLIENT_TOKEN],
+            useFactory: (client: DotCmsClient) => {
+                return `${client.dotcmsUrl}/html/tinymce/tinymce.min.js`;
+            }
         }
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
