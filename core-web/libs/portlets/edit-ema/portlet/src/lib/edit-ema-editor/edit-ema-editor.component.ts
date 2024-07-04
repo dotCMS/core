@@ -1066,6 +1066,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     });
             },
             [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
+                // console.log("LLAMADO - UPDATE_CONTENTLET_INLINE_EDITING");
                 const payload = <UpdatedContentlet>data.payload;
 
                 if (!payload) {

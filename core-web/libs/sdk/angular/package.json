@@ -8,6 +8,9 @@
         "@dotcms/client": "0.0.1-alpha.23",
         "rxjs": "^7.8.0"
     },
+    "whitelistedNonPeerDependencies": [
+        "@tinymce/tinymce-angular"
+    ],
     "description": "Official Angular Components library to render a dotCMS page.",
     "repository": {
         "type": "git",

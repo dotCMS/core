@@ -1,0 +1,12 @@
+@if (isInsideEditor) {
+    <form [formGroup]="form">
+        <editor
+            formControlName="content"
+            [init]="init"
+            [inline]="true"
+            (onFocusOut)="onFocusOut($event)">
+        </editor>
+    </form>
+} @else {
+    {{ this.content }}
+}
