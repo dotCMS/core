@@ -1,6 +1,14 @@
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 
-import { ChangeDetectionStrategy, Component, Input, OnInit, ViewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    inject,
+    InjectionToken,
+    Input,
+    OnInit,
+    ViewChild
+} from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import {
@@ -38,6 +46,12 @@ export class EditableTextComponent implements OnInit {
     @Input() langId = '';
     @Input() content = '';
 
+    // TODO: WE NEED TO FIX THIS SOMEHOW
+    // IF WE DONT DO THIS WE WILL GET A TYPE ERROR ON DEVELOPMENT BECAUSE THE TOKEN USES THE TYPES FROM CORE WEB AND THE INJECT FUNCTION IS USING THE TYPES FROM THE EXAMPLE
+    private readonly client = inject<DotCmsClient>(
+        DOTCMS_CLIENT_TOKEN as unknown as InjectionToken<DotCmsClient>
+    );
+
     constructor() {
         // eslint-disable-next-line no-console
         console.log('EditableTextComponent constructor');
@@ -46,7 +60,7 @@ export class EditableTextComponent implements OnInit {
     protected form!: FormGroup;
     protected isInsideEditor = isInsideEditor();
     protected readonly init: EditorComponent['init'] = {
-        base_url: 'http://localhost:8080/html/tinymce', // Root for resources
+        base_url: `${this.client.dotcmsUrl}/html/tinymce`, // Root for resources
         suffix: '.min', // Suffix to use when loading resources
         license_key: 'gpl',
         plugins: 'lists link image table code help wordcount',
