@@ -1,4 +1,4 @@
-import { DotDevice, DotExperiment } from '@dotcms/dotcms-models';
+import { DotDevice, DotExperiment, DotLanguage } from '@dotcms/dotcms-models';
 
 import { EDITOR_MODE, EDITOR_STATE } from './enums';
 
@@ -115,6 +115,7 @@ export interface EditEmaState {
     currentExperiment?: DotExperiment;
     dragItem?: EmaDragItem;
     shouldReload: boolean;
+    languages: DotLanguage[];
 }
 
 export interface MessageInfo {
@@ -197,4 +198,22 @@ export type DraggedPayload = ContentletDragPayload | ContentTypeDragPayload | Te
 export interface SaveInlineEditing {
     contentlet: { [fieldName: string]: string; inode: string };
     params: DotPageApiParams;
+}
+
+export interface DotPage {
+    title: string;
+    identifier: string;
+    inode: string;
+    canEdit: boolean;
+    canRead: boolean;
+    canLock?: boolean;
+    locked?: boolean;
+    lockedBy?: string;
+    lockedByName?: string;
+    pageURI: string;
+    rendered?: string;
+    contentType: string;
+    live: boolean;
+    liveInode?: string;
+    stInode?: string;
 }
