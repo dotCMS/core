@@ -41,7 +41,6 @@ export function isInsideEditor() {
  * @param conf - Optional configuration for the editor.
  */
 export function initEditor(config?: DotCMSPageEditorConfig) {
-    // TODO: Fix this
     getPageDataInsideEditor(config?.pathname || '');
     listenEditorMessages();
     listenHoveredContentlet();
