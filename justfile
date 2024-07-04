@@ -139,6 +139,40 @@ docker-test-ext-run tag='master':
 docker-ext-stop tag='latest':
     ./mvnw -pl :dotcms-core -Pdocker-stop -Dcontext.name=ext-{{ tag }}
 
+
+# Generate a cli uber-jar
+cli-build-uber-jar:
+    ./mvnw -pl :dotcms-cli package -DskipTests=true
+
+cli-build-native: check-native-deps
+    #!/usr/bin/env bash
+    set -eo pipefail # Exit on error
+    source ${HOME}/.sdkman/bin/sdkman-init.sh  # Load SDKMAN normally in you .bashrc or .zshrc
+    # The above is not required when running from your shell if you have SDKMAN in your .bashrc or .zshrc
+    sdk env install # ensure right version of java is downloaded and used for the branch
+    sdk install java 21.0.2-graalce # Does nothing if already installed
+    export GRAALVM_HOME=$(sdk home java 21.0.2-graalce) # Could be added to your .bashrc or .zshrc
+    ./mvnw -pl :dotcms-cli -DskipTests -Pnative package
+
+
+cli-build-test-native: check-native-deps
+    #!/usr/bin/env bash
+    set -eo pipefail
+    source ${HOME}/.sdkman/bin/sdkman-init.sh
+    # The above is not required when running from your shell if you have SDKMAN in your .bashrc or .zshrc
+    sdk env install # ensure right version of java is downloaded and used for the branch
+    sdk install java 21.0.2-graalce # Does nothing if already installed
+    export GRAALVM_HOME=$(sdk home java 21.0.2-graalce) # Env var Could be added to your .bashrc or .zshrc
+    ./mvnw -pl :dotcms-cli -Pnative verify
+
+run-built-cli *ARGS:
+    java -jar tools/dotcms-cli/cli/target/dotcms-cli-1.0.0-SNAPSHOT-runner.jar {{ARGS}}
+
+
+run-java-cli-native *ARGS:
+    tools/dotcms-cli/cli/target/dotcms-cli-1.0.0-SNAPSHOT-runner {{ARGS}}
+
+
 ###########################################################
 # Useful Maven Helper Commands
 ###########################################################
@@ -163,6 +197,35 @@ maven-check-plugin-updates:
 maven-property-updates:
     ./mvnw versions:display-property-updates
 
+# Check if xcode is installed if on a mac.  Only required for native builds
+check-native-deps:
+    #!/usr/bin/env bash
+    set -eo pipefail
+    # Determine the operating system
+    OS=$(uname)
+
+    # Install dependencies based on the package manager
+    if [ "$OS" = "Linux" ]; then
+        if command -v apt-get >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y build-essential libz-dev zlib1g-dev
+        elif command -v dnf >/dev/null; then
+            sudo dnf install -y gcc glibc-devel zlib-devel libstdc++-static
+        else
+            echo "Unsupported package manager. Please install the required packages manually. See https://quarkus.io/guides/building-native-image"
+            exit 1
+        fi
+    elif [ "$OS" = "Darwin" ]; then
+        if ! command -v xcode-select >/dev/null; then
+            echo "Xcode is not installed. Installing Xcode...";
+            xcode-select --install;
+        else
+            echo "Xcode is already installed.";
+        fi
+    else
+        echo "Unsupported operating system. Please install the required packages manually."
+        exit 1
+    fi
 
 ###########################################################
 # Dependency Commands
