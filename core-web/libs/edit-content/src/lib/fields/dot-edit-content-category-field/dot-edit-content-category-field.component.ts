@@ -11,7 +11,7 @@ import {
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ControlContainer, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -90,6 +90,15 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     #componentRef: ComponentRef<DotCategoryFieldSidebarComponent>;
 
     /**
+     * Retrieve the category field control.
+     *
+     * @return {FormControl} The category field control.
+     */
+    get categoryFieldControl(): FormControl {
+        return this.#form.get(this.store.fieldVariableName()) as FormControl;
+    }
+
+    /**
      * Determines if there are any selected categories.
      *
      * @returns {Boolean} - True if there are selected categories, false otherwise.
@@ -128,9 +137,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     }
 
     private updateCategoryFieldControl(): void {
-        this.#form
-            .get(this.store.fieldVariableName())
-            .setValue(this.store.selectedCategoriesValues());
+        this.categoryFieldControl.setValue(this.store.selectedCategoriesValues());
     }
 
     private removeDotCategoryFieldSidebarComponent() {
