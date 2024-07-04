@@ -15,7 +15,7 @@ import {
     ViewChildren
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -37,14 +37,7 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 @Component({
     selector: 'dot-category-field-category-list',
     standalone: true,
-    imports: [
-        CommonModule,
-        TreeModule,
-        CheckboxModule,
-        ButtonModule,
-        ReactiveFormsModule,
-        FormsModule
-    ],
+    imports: [CommonModule, TreeModule, CheckboxModule, ButtonModule, FormsModule],
     templateUrl: './dot-category-field-category-list.component.html',
     styleUrl: './dot-category-field-category-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,6 +60,7 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
      * Represent the selected item saved in the contentlet
      */
     selected = input.required<string[]>();
+
     /**
      * Generate the empty columns
      */
@@ -85,7 +79,7 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
     @Output() itemClicked = new EventEmitter<{ index: number; item: DotCategory }>();
 
     /**
-     * Emit the item checked to the parent component
+     * Emit the item checked or selected to the parent component
      */
     @Output() itemChecked = new EventEmitter<{ selected: string[]; item: DotCategory }>();
 
@@ -96,7 +90,7 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
 
     readonly #destroyRef = inject(DestroyRef);
 
-    #effectRef = effect(() => {
+    readonly #effectRef = effect(() => {
         // Todo: find a better way to update this
         // Initial selected items from the contentlet
         this.itemsSelected = this.selected();

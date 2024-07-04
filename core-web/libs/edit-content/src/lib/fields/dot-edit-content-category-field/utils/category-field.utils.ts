@@ -1,4 +1,4 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import {
     DotCategoryFieldCategory,
@@ -90,4 +90,30 @@ export const checkIfClickedIsLastItem = (
     categories: DotCategoryFieldCategory[][]
 ) => {
     return index + 1 === categories.length;
+};
+
+/**
+ * Updates the checked items in the stored selected array based on the selected items and the target item.
+ *
+ * @param {DotCategoryFieldKeyValueObj[]} storedSelected - The current array of selected items.
+ * @param {string[]} selected - The array of currently selected items.
+ * @param {DotCategory} item - The target item to update.
+ * @returns {DotCategoryFieldKeyValueObj[]} - The updated array of selected items.
+ */
+export const updateChecked = (
+    storedSelected: DotCategoryFieldKeyValueObj[],
+    selected: string[],
+    item: DotCategory
+): DotCategoryFieldKeyValueObj[] => {
+    let currentChecked = [...storedSelected];
+
+    if (selected.includes(item.key)) {
+        if (!currentChecked.some((entry) => entry.key === item.key)) {
+            currentChecked = [...currentChecked, { key: item.key, value: item.categoryName }];
+        }
+    } else {
+        currentChecked = currentChecked.filter((entry) => entry.key !== item.key);
+    }
+
+    return currentChecked;
 };

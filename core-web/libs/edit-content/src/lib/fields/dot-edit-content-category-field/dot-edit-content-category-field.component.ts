@@ -1,4 +1,4 @@
-import { JsonPipe, NgClass } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -29,10 +29,12 @@ import { CategoriesService } from './services/categories.service';
 import { CategoryFieldStore } from './store/content-category-field.store';
 
 /**
- * Component for editing content category field.
- *
  * @class
  * @name DotEditContentCategoryFieldComponent
+ * @description Angular component for editing a content category field.
+ *
+ * The `DotEditContentCategoryFieldComponent` component provides functionality for editing a content category field.
+ * It is responsible for handling user interactions and updating the state of the component.
  */
 @Component({
     selector: 'dot-edit-content-category-field',
@@ -45,8 +47,7 @@ import { CategoryFieldStore } from './store/content-category-field.store';
         NgClass,
         TooltipModule,
         DotMessagePipe,
-        DotDynamicDirective,
-        JsonPipe
+        DotDynamicDirective
     ],
     templateUrl: './dot-edit-content-category-field.component.html',
     styleUrl: './dot-edit-content-category-field.component.scss',
@@ -73,17 +74,16 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
 
     /**
      * The `field` variable is of type `DotCMSContentTypeField` and is a required input.
-     *
-     * @name field
-     * @description The variable represents a field of a DotCMS content type.
+     * @description The variable represents a field of a DotCMS content type and is a required input.
      */
     field = input.required<DotCMSContentTypeField>();
 
     /**
-     * Represents a DotCMS contentlet.
-     *
+     * Represents a DotCMS contentlet and is a required input
+     * @description DotCMSContentlet input representing a DotCMS contentlet.
      */
     contentlet = input.required<DotCMSContentlet>();
+
     readonly store = inject(CategoryFieldStore);
     readonly #form = inject(ControlContainer).control as FormGroup;
     readonly #destroyRef = inject(DestroyRef);
@@ -99,7 +99,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     }
 
     /**
-     * Open the "DotEditContentCategoryFieldDialogComponent" dialog to show categories.
+     * Open the "DotEditContentCategoryFieldDialogComponent" dialog to show the list of categories.
      *
      * @returns {void}
      */

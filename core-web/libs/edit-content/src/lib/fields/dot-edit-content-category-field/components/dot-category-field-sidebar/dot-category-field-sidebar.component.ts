@@ -5,8 +5,7 @@ import {
     EventEmitter,
     inject,
     OnInit,
-    Output,
-    ViewChild
+    Output
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -21,7 +20,12 @@ import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
 
 /**
- * Component for the sidebar that appears when editing content category field.
+ * The DotCategoryFieldSidebarComponent is a sidebar panel that allows editing of content category field.
+ * It provides interfaces for item selection and click handling, and communicates with a store
+ * to fetch and update the categories' data.
+ *
+ * @property {boolean} visible - Indicates the visibility of the sidebar. Default is `true`.
+ * @property {EventEmitter<void>} closedSidebar - Event emitted when the sidebar is closed.
  */
 @Component({
     selector: 'dot-category-field-sidebar',
@@ -38,9 +42,6 @@ import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-cat
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCategoryFieldSidebarComponent implements OnInit {
-    @ViewChild(DotCategoryFieldCategoryListComponent)
-    listComponent: DotCategoryFieldCategoryListComponent;
-
     /**
      * Indicates whether the sidebar is visible or not.
      */
@@ -53,7 +54,7 @@ export class DotCategoryFieldSidebarComponent implements OnInit {
 
     readonly store = inject(CategoryFieldStore);
 
-    #destroyRef = inject(DestroyRef);
+    readonly #destroyRef = inject(DestroyRef);
 
     ngOnInit(): void {
         this.store.getCategories();
@@ -64,10 +65,9 @@ export class DotCategoryFieldSidebarComponent implements OnInit {
     }
 
     /**
-     * Handles the click event on an item.
-     *
-     * @param {number} index - The index of the item being clicked.
-     * @param {DotCategory} item - The item being clicked.
+     * Handles click events on items.
+     * @param {number} index - The index of the column being clicked.
+     * @param item - item clicked
      * @returns {void}
      */
     itemClicked({ index, item }: DotCategoryFieldItem): void {
@@ -75,7 +75,7 @@ export class DotCategoryFieldSidebarComponent implements OnInit {
     }
 
     /**
-     * Handle the selection of an item
+     * Handles the selection (via checkbox) of displayed items.
      * @param $event
      * @param item
      */

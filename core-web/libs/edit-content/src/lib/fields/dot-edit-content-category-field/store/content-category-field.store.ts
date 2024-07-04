@@ -25,14 +25,15 @@ import {
     checkIfClickedIsLastItem,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
-    getSelectedCategories
+    getSelectedCategories,
+    updateChecked
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
-    field: DotCMSContentTypeField; // field and configurations
-    selected: DotCategoryFieldKeyValueObj[]; // selected items from form and UI
-    categories: DotCategoryFieldCategory[][]; // list of categories
-    parentPath: string[]; // Parent patch of selected UI
+    field: DotCMSContentTypeField;
+    selected: DotCategoryFieldKeyValueObj[];
+    categories: DotCategoryFieldCategory[][];
+    parentPath: string[];
     state: ComponentStatus;
 };
 
@@ -48,14 +49,6 @@ export const initialState: CategoryFieldState = {
  * A Signal store responsible for managing category fields. It keeps track of the state of
  * different categories, provides access to selected categories, and offers methods for
  * loading, retrieving, and cleaning up categories.
- *
- * @typedef {Object} CategoryFieldStore
- *
- *   @property {Array<string>} selectedCategories - The keys of the currently selected items from the contentlet.
- *   @property {Array<Object>} categoryList - The list of categories ready for rendering, where each category has additional properties.
- *   @property {function} load - Sets a given iNode as the parent and loads selected categories into the store.
- *   @property {function} getCategories - Fetches categories of a given iNode category parent.
- *   @property {function} clean - Clears all categories from the store.
  */
 export const CategoryFieldStore = signalStore(
     withState(initialState),
@@ -64,6 +57,7 @@ export const CategoryFieldStore = signalStore(
          * Current selected items (key) from the contentlet
          */
         selectedCategoriesValues: computed(() => selected().map((item) => item.key)),
+
         /**
          * Categories for render with added properties
          */
@@ -71,9 +65,19 @@ export const CategoryFieldStore = signalStore(
             categories().map((column) => addMetadata(column, parentPath()))
         ),
 
-        hasSelectedCategories: computed(() => !!selected().map((item) => item.key).length),
+        /**
+         * Indicates whether any categories are selected.
+         */
+        hasSelectedCategories: computed(() => !!selected().length),
 
+        /**
+         * Get the root category inode.
+         */
         rootCategoryInode: computed(() => field().values),
+
+        /**
+         * Retrieves the value of the field variable.
+         */
         fieldVariableName: computed(() => field().variable)
     })),
     withMethods((store, categoryService = inject(CategoriesService)) => ({
@@ -88,22 +92,15 @@ export const CategoryFieldStore = signalStore(
             });
         },
 
+        /**
+         * Updates the selected items based on the provided item.
+         */
         updateSelected(selected: string[], item: DotCategory): void {
-            if (!Array.isArray(selected)) {
-                console.error('Expected selected to be an array, but got:', selected);
-
-                return;
-            }
-
-            const currentChecked = [...store.selected()];
-            if (selected.includes(item.key)) {
-                currentChecked.push({ key: item.key, value: item.categoryName });
-            } else {
-                const index = currentChecked.findIndex((entry) => entry.key === item.key);
-                if (index > -1) {
-                    currentChecked.splice(index, 1);
-                }
-            }
+            const currentChecked: DotCategoryFieldKeyValueObj[] = updateChecked(
+                store.selected(),
+                selected,
+                item
+            );
 
             patchState(store, {
                 selected: currentChecked
