@@ -27,7 +27,7 @@ import {
 
 import { DotLocaleConfirmationDialogComponent } from '../../share/ui/DotLocaleConfirmationDialog/DotLocaleConfirmationDialog.component';
 import { getLocaleISOCode } from '../../share/utils';
-import { DotLocaleCreateEditComponent } from '../components/dot-locale-create-edit/DotLocaleCreateEdit.component';
+import { DotLocaleCreateEditComponent } from '../components/dot-locale-create-edit/dot-locale-create-edit.component';
 
 /**
  * Interface for language row data
@@ -122,8 +122,8 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
         );
     });
 
-    readonly openAddEditDialog = this.effect<number | null>((_languageId$) =>
-        _languageId$.pipe(
+    readonly openAddEditDialog = this.effect<number | null>((languageId$) =>
+        languageId$.pipe(
             withLatestFrom(this.state$),
             map(([languageId, { languages, countries, locales }]) => {
                 const localeToEdit = locales.find((l) => l.id === languageId);

@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive } from '@angular/core';
+import { AfterViewInit, Directive, inject } from '@angular/core';
 
 import { TableState } from 'primeng/api';
 import { Table } from 'primeng/table';
@@ -19,19 +19,19 @@ const enum StorageType {
     standalone: true
 })
 export class DotStateRestoreDirective implements AfterViewInit {
-    constructor(private table: Table) {}
+    #table = inject(Table);
 
     ngAfterViewInit(): void {
-        if (!this.table?.stateStorage && !this.table?.stateKey) {
+        const stateKey = this.#table?.stateKey;
+
+        if (!this.#table?.stateStorage || !stateKey) {
             console.warn('DotStateRestoreDirective: stateStorage or stateKey not found');
 
             return;
         }
 
-        const stateKey = this.table.stateKey;
-
         const stateString =
-            StorageType.Session === this.table.stateStorage
+            StorageType.Session === this.#table.stateStorage
                 ? sessionStorage.getItem(stateKey)
                 : localStorage.getItem(stateKey);
 
@@ -42,7 +42,7 @@ export class DotStateRestoreDirective implements AfterViewInit {
     }
 
     applyStateSort(state: TableState): void {
-        this.table.sortField = state.sortField;
-        this.table.sortOrder = state.sortOrder;
+        this.#table.sortField = state.sortField;
+        this.#table.sortOrder = state.sortOrder;
     }
 }

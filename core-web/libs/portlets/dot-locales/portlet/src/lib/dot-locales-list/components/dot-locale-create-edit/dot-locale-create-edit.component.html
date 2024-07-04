@@ -21,10 +21,9 @@
         <div class="field">
             <label for="isoCodeEdit">{{ 'locale.id' | dm }}</label>
             <span class="p-input-icon-right">
-                <dot-copy-button
-                    [copy]="localeIDInput.value"
-                    *ngIf="localeIDInput.value"
-                    customClass="p-button-rounded" />
+                @if (localeIDInput.value) {
+                    <dot-copy-button [copy]="localeIDInput.value" customClass="p-button-rounded" />
+                }
                 <input
                     id="isoCodeEdit"
                     #localeIDInput
@@ -37,10 +36,11 @@
         <div class="field">
             <label for="id">{{ 'locale.language.id' | dm }}</label>
             <span class="p-input-icon-right">
-                <dot-copy-button
-                    [copy]="languageIDInput.value"
-                    *ngIf="languageIDInput.value"
-                    customClass="p-button-rounded" />
+                @if (languageIDInput.value) {
+                    <dot-copy-button
+                        [copy]="languageIDInput.value"
+                        customClass="p-button-rounded" />
+                }
                 <input
                     id="id"
                     #languageIDInput
@@ -111,10 +111,11 @@
             <div class="field">
                 <label for="isoCode">{{ 'locale.id' | dm }}</label>
                 <span class="p-input-icon-right">
-                    <dot-copy-button
-                        [copy]="isoCodeInput.value"
-                        *ngIf="isoCodeInput.value"
-                        customClass="p-button-rounded" />
+                    @if (isoCodeInput.value) {
+                        <dot-copy-button
+                            [copy]="isoCodeInput.value"
+                            customClass="p-button-rounded" />
+                    }
                     <input
                         [placeholder]="'locale.id.placeholder' | dm"
                         id="isoCode"

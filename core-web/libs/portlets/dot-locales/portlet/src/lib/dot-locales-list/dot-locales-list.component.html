@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <div class="locales-list__header">
         <span class="p-input-icon-right">
             <i class="pi pi-search"></i>
@@ -10,7 +10,7 @@
                 pInputText />
         </span>
         <button
-            (click)="store.openAddEditDialog()"
+            (click)="store.openAddEditDialog(null)"
             [label]="'locales.add.locale' | dm"
             pButton
             type="button"
@@ -44,10 +44,9 @@
             <tr>
                 <td [ngClass]="{ 'tag-padding': locale.defaultLanguage }" data-testId="locale-cell">
                     {{ locale.language }} ({{ locale.isoCode }})
-                    <p-tag
-                        *ngIf="locale.defaultLanguage"
-                        [value]="'Default' | dm"
-                        class="sm p-tag-success" />
+                    @if (locale.defaultLanguage) {
+                        <p-tag [value]="'Default' | dm" class="sm p-tag-success" />
+                    }
                 </td>
                 <td>{{ locale.language }} - {{ locale.languageCode }}</td>
                 <td>{{ locale.country }} - {{ locale.countryCode }}</td>
@@ -58,7 +57,7 @@
             </tr>
         </ng-template>
     </p-table>
-</ng-container>
+}
 
 <p-confirmDialog [key]="dialogKey" [style]="{ width: '30vw' }" />
 <p-toast></p-toast>
