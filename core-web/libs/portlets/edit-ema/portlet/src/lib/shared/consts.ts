@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+
 import { InjectionToken } from '@angular/core';
 
 import { mockSites } from '@dotcms/dotcms-js';
@@ -19,10 +21,9 @@ import { ActionPayload } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 
-export const EDIT_CONTENTLET_URL =
-    '/c/portal/layout?p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=';
+export const LAYOUT_URL = '/c/portal/layout';
 
-export const ADD_CONTENTLET_URL = `/html/ng-contentlet-selector.jsp?ng=true&container_id=*CONTAINER_ID*&add=*BASE_TYPES*&language_id=*LANGUAGE_ID*`;
+export const CONTENTLET_SELECTOR_URL = `/html/ng-contentlet-selector.jsp`;
 
 export const HOST = 'http://localhost:3000';
 
@@ -181,7 +182,8 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         canLock: true,
         locked: false,
         lockedBy: '',
-        lockedByName: ''
+        lockedByName: '',
+        live: true
     },
     viewAs: {
         language: {
@@ -418,4 +420,62 @@ export const SHOW_CONTENTLET_TOOLS_PATCH_MOCK = {
             }
         }
     }
+};
+
+export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
+    1: of({
+        page: {
+            title: 'hello world',
+            identifier: '123',
+            inode: '123',
+            canEdit: true,
+            canRead: true,
+            pageURI: 'index',
+            liveInode: '1234',
+            stInode: '12345',
+            live: true
+        },
+        viewAs: {
+            language: {
+                id: 1,
+                language: 'English',
+                countryCode: 'US',
+                languageCode: 'EN',
+                country: 'United States'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        site: mockSites[0],
+        template: {
+            drawed: true
+        }
+    }),
+
+    2: of({
+        page: {
+            title: 'hello world',
+            identifier: '123',
+            inode: '123',
+            canEdit: true,
+            canRead: true,
+            pageURI: 'index',
+            liveInode: '1234',
+            stInode: '12345',
+            live: true
+        },
+        viewAs: {
+            language: {
+                id: 2,
+                languageCode: 'IT',
+                countryCode: '',
+                language: 'Italian',
+                country: 'Italy'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        site: mockSites[0],
+        template: {
+            drawed: true
+        }
+    })
 };

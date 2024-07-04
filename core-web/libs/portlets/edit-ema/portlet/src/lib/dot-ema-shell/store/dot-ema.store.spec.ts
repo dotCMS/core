@@ -7,11 +7,13 @@ import { MessageService } from 'primeng/api';
 import {
     DotContentletLockerService,
     DotExperimentsService,
+    DotLanguagesService,
     DotLicenseService,
     DotMessageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
+    DotLanguagesServiceMock,
     getDraftExperimentMock,
     getRunningExperimentMock,
     getScheduleExperimentMock,
@@ -19,6 +21,7 @@ import {
     mockDotLayout,
     MockDotMessageService,
     mockDotTemplate,
+    mockLanguageArray,
     mockSites
 } from '@dotcms/utils-testing';
 
@@ -43,7 +46,10 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         canLock: true,
         locked: false,
         lockedBy: '',
-        lockedByName: ''
+        lockedByName: '',
+        live: true,
+        liveInode: '1234',
+        stInode: '12345'
     },
     viewAs: {
         language: {
@@ -120,6 +126,10 @@ describe('EditEmaStore', () => {
                     useValue: {
                         getCurrentUser: () => of({})
                     }
+                },
+                {
+                    provide: DotLanguagesService,
+                    useValue: new DotLanguagesServiceMock()
                 }
             ]
         });
@@ -623,7 +633,8 @@ describe('EditEmaStore', () => {
                                 lockedByUser: ''
                             }
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
                     done();
                 });
@@ -666,7 +677,8 @@ describe('EditEmaStore', () => {
                             },
                             variantId: undefined
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
                     expect(spyGetPage).toHaveBeenCalledWith(params);
                     expect(spyWhenReloaded).toHaveBeenCalled();
@@ -1083,7 +1095,8 @@ describe('EditEmaStore', () => {
                             },
                             variantId: undefined
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
 
                     done();
@@ -1149,7 +1162,8 @@ describe('EditEmaStore', () => {
                             },
                             variantId: '123'
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
 
                     done();
@@ -1202,6 +1216,10 @@ describe('EditEmaStore', () => {
                     useValue: {
                         getCurrentUser: () => of({})
                     }
+                },
+                {
+                    provide: DotLanguagesService,
+                    useValue: new DotLanguagesServiceMock()
                 }
             ]
         });
@@ -1353,7 +1371,8 @@ describe('EditEmaStore', () => {
                             },
                             variantId: undefined
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
                     done();
                 });

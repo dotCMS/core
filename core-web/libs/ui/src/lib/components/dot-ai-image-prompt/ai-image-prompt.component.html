@@ -14,7 +14,8 @@
                     (valueChange)="store.setFormValue($event)"
                     (generate)="store.generateImage()"
                     [value]="vm.images[vm.galleryActiveIndex]"
-                    [isLoading]="vm.isLoading" />
+                    [isLoading]="vm.isLoading"
+                    [hasEditorContent]="vm.hasEditorContent" />
             }
             <div [class.dialog-prompt_gallery]="vm.images.length || vm.isLoading">
                 <dot-ai-image-prompt-gallery

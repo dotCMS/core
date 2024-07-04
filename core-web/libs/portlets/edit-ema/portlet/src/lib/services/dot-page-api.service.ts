@@ -18,24 +18,11 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { PAGE_MODE } from '../shared/enums';
-import { SavePagePayload } from '../shared/models';
+import { DotPage, SavePagePayload } from '../shared/models';
 import { createPageApiUrlWithQueryParams } from '../utils';
 
 export interface DotPageApiResponse {
-    page: {
-        title: string;
-        identifier: string;
-        inode: string;
-        canEdit: boolean;
-        canRead: boolean;
-        canLock?: boolean;
-        locked?: boolean;
-        lockedBy?: string;
-        lockedByName?: string;
-        pageURI: string;
-        rendered?: string;
-        contentType: string;
-    };
+    page: DotPage;
     site: Site;
     viewAs: {
         language: DotLanguage;

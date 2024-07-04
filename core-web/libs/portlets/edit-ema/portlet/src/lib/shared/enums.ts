@@ -17,7 +17,9 @@ export enum NG_CUSTOM_EVENTS {
     SAVE_MENU_ORDER = 'save-menu-order',
     ERROR_SAVING_MENU_ORDER = 'error-saving-menu-order',
     CANCEL_SAVING_MENU_ORDER = 'cancel-save-menu-order',
-    OPEN_WIZARD = 'workflow-wizard'
+    OPEN_WIZARD = 'workflow-wizard',
+    DIALOG_CLOSED = 'dialog-closed',
+    EDIT_CONTENTLET_UPDATED = 'edit-contentlet-data-updated'
 }
 
 // The current state of the editor

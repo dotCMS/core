@@ -32,10 +32,11 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { delay, filter, skip, tap } from 'rxjs/operators';
 
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
@@ -96,7 +97,8 @@ type SystemOptionsType = {
         InputTextModule,
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent,
-        DotAIImagePromptComponent
+        DotAIImagePromptComponent,
+        TooltipModule
     ],
     providers: [
         DotBinaryFieldEditImageService,
@@ -104,6 +106,7 @@ type SystemOptionsType = {
         DotLicenseService,
         DotBinaryFieldValidatorService,
         DotAiImagePromptStore,
+        DotAiService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -130,13 +133,24 @@ export class DotEditContentBinaryFieldComponent
     readonly #dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
     readonly #cd = inject(ChangeDetectorRef);
     readonly #controlContainer = inject(ControlContainer);
+    readonly #dotAiService = inject(DotAiService);
+
+    $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
+        initialValue: false
+    });
+    $tooltipTextAIBtn = computed(() => {
+        const isAIPluginInstalled = this.$isAIPluginInstalled();
+        if (!isAIPluginInstalled) {
+            return this.#dotMessageService.get('dot.binary.field.action.generate.with.tooltip');
+        }
+
+        return null;
+    });
 
     $field = input.required<DotCMSContentTypeField>({
         alias: 'field'
     });
-    $variable = computed(() => {
-        return this.field.variable;
-    });
+    $variable = computed(() => this.field.variable);
     $contentlet = input.required<DotCMSContentlet>({
         alias: 'contentlet'
     });
