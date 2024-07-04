@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "e48ada2d-189e-48a7-87a2-c97346e5ce83",
+		"_postman_id": "fdc982a5-aa9c-4b16-b049-44c53e1efac8",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "3028555"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -1228,6 +1228,85 @@
 						"body": {
 							"mode": "raw",
 							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions"
+							]
+						},
+						"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
+					},
+					"response": []
+				},
+				{
+					"name": "CheckAsyncronous",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW ASYNC\\\"\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Valid response async\", function () {",
+									"    pm.expect(jsonData.entity.asynchronous).to.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"stepId\": \"{{stepId}}\",\n      \"actionName\": \"saveContent FROM REST NEW ASYNC\",\n      \"schemeId\": \"{{schemeId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"async\":true,\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions",

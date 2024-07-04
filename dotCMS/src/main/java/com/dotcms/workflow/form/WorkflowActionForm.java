@@ -28,6 +28,7 @@ import java.util.Set;
 @JsonDeserialize(builder = WorkflowActionForm.Builder.class)
 public class WorkflowActionForm extends Validated {
 
+
     private final String        actionId;
 
     @NotNull
@@ -56,6 +57,8 @@ public class WorkflowActionForm extends Validated {
     private final String        actionNextAssign;
     private final String        actionCondition;
     private static final String METADATA_SUBTYPE_ATTR = "subtype";
+    private static final String METADATA_ASYNCHRONOUS_ATTR = "asynchronous";
+
     private final Map<String, Object> metadata;
 
     public String getStepId() {
@@ -161,11 +164,20 @@ public class WorkflowActionForm extends Validated {
         this.actionAssignable           = builder.actionAssignable;
         this.actionRoleHierarchyForAssign = builder.actionRoleHierarchyForAssign;
         this.roleHierarchyForAssign     = (actionAssignable && actionRoleHierarchyForAssign);
-        this.metadata = builder.metadata;
+        this.metadata = buildMetadata(builder);
         this.checkValid();
     }
 
+    private Map<String, Object> buildMetadata(final Builder builder) {
+        final Map<String, Object> metadata = new HashMap<>(builder.metadata);
+        metadata.put(METADATA_ASYNCHRONOUS_ATTR, builder.asynchronous);
+        return metadata;
+    }
+
     public static final class Builder {
+
+        @JsonProperty()
+        private boolean       asynchronous;
 
         @JsonProperty()
         private String        actionId;
@@ -216,6 +228,11 @@ public class WorkflowActionForm extends Validated {
 
         public Builder stepId(String stepId) {
             this.stepId = stepId;
+            return this;
+        }
+
+        public Builder asynchronous(boolean asynchronous) {
+            this.asynchronous = asynchronous;
             return this;
         }
 

@@ -33,7 +33,8 @@ import java.util.Set;
 @Deprecated(forRemoval = true)
 public class WfActionAjax extends WfBaseAction {
 
-    private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+
+	private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
 	private final UserWebAPI     userWebAPI     = WebAPILocator.getUserWebAPI();
 
     public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -137,6 +138,7 @@ public class WfActionAjax extends WfBaseAction {
 					.actionNextStep(request.getParameter(ACTION_NEXT_STEP_PARAM))
 					.actionNextAssign(request.getParameter(ACTION_ASSIGN_TO_SELECT_PARAM))
 					.actionCondition(request.getParameter(ACTION_CONDITION_PARAM))
+					.asynchronous(request.getParameter(ACTION_ASYNCHRONOUS_PARAM) != null)
 					.showOn(WorkflowState.toSet(request.getParameterValues(SHOW_ON_PARAM)));
 		} else {
 			builder.separator(request.getParameter(SCHEME_ID_PARAM), request.getParameter(STEP_ID_PARAM));

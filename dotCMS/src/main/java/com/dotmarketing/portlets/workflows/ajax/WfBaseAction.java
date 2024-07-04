@@ -29,6 +29,7 @@ abstract class WfBaseAction extends AjaxAction {
 	protected static final String ACTION_NEXT_STEP_PARAM = "actionNextStep";
 	protected static final String ACTION_ASSIGN_TO_SELECT_PARAM = "actionAssignToSelect";
 	protected static final String ACTION_CONDITION_PARAM = "actionCondition";
+	protected static final String ACTION_ASYNCHRONOUS_PARAM = "async";
 	protected static final String SHOW_ON_PARAM = "showOn";
 	protected static final String WHO_CAN_USE_PARAM = "whoCanUse";
 	protected static final String ORDER_PARAM = "order";

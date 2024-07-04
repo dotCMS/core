@@ -82,6 +82,14 @@ public class WorkflowAction implements Permissionable, Serializable{
 	}
 
 	/**
+	 * Returns true if the action is asynchronous.
+	 * Note: the value will be storage on the metadata map with the key "asynchronous"
+	 * @return
+	 */
+	public boolean isAsynchronous() {
+		return metadata.containsKey("asynchronous") && (boolean) metadata.get("asynchronous");
+	}
+	/**
 	 * True if the action should be show on archived status.
 	 * @return boolean
 	 */
