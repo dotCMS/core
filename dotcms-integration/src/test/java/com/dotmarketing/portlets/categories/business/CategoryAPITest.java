@@ -34,6 +34,7 @@ import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchedCategory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -1545,7 +1546,7 @@ public class CategoryAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link CategoryAPIImpl#findAll(CategoryFactory.CategorySearchCriteria, User, boolean)}
+     * Method to test: {@link CategoryAPIImpl#findAll(CategorySearchCriteria, User, boolean)}
      * When: Call the API method
      * Should: it should
      * - Use the {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)} to search the {@link Category}
@@ -1567,12 +1568,12 @@ public class CategoryAPITest extends IntegrationTestBase {
 
         final User user = mock();
 
-        final Category category1 = mock(Category.class);
-        final Category category2 = mock(Category.class);
-        final Category category3 = mock(Category.class);
+        final HierarchedCategory category1 = mock(HierarchedCategory.class);
+        final HierarchedCategory category2 = mock(HierarchedCategory.class);
+        final HierarchedCategory category3 = mock(HierarchedCategory.class);
 
-        final List<Category> categoriesAfterSearch = list(category1, category2, category3);
-        final List<Category> categoriesAfterPermission = list(category1, category2);
+        final List<HierarchedCategory> categoriesAfterSearch = list(category1, category2, category3);
+        final List<HierarchedCategory> categoriesAfterPermission = list(category1, category2);
 
         final CategoryFactory categoryFactory = mock();
         when(categoryFactory.findAll(searchingCriteria)).thenReturn(categoriesAfterSearch);
@@ -1621,19 +1622,19 @@ public class CategoryAPITest extends IntegrationTestBase {
                         .offset(5)
                         .build();
 
-        final Category category1 = mock(Category.class);
-        final Category category2 = mock(Category.class);
-        final Category category3 = mock(Category.class);
-        final Category category4 = mock(Category.class);
-        final Category category5 = mock(Category.class);
-        final Category category6 = mock(Category.class);
-        final Category category7 = mock(Category.class);
-        final Category category8 = mock(Category.class);
-        final Category category9 = mock(Category.class);
+        final HierarchedCategory category1 = mock(HierarchedCategory.class);
+        final HierarchedCategory category2 = mock(HierarchedCategory.class);
+        final HierarchedCategory category3 = mock(HierarchedCategory.class);
+        final HierarchedCategory category4 = mock(HierarchedCategory.class);
+        final HierarchedCategory category5 = mock(HierarchedCategory.class);
+        final HierarchedCategory category6 = mock(HierarchedCategory.class);
+        final HierarchedCategory category7 = mock(HierarchedCategory.class);
+        final HierarchedCategory category8 = mock(HierarchedCategory.class);
+        final HierarchedCategory category9 = mock(HierarchedCategory.class);
 
         final User user = mock();
 
-        final List<Category> categories = list(category1, category2, category3, category4, category5, category6,
+        final List<HierarchedCategory> categories = list(category1, category2, category3, category4, category5, category6,
                 category7, category8, category9);
 
         final CategoryFactory categoryFactory = mock();
