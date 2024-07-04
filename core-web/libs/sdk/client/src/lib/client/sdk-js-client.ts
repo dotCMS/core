@@ -147,8 +147,10 @@ function getHostURL(url: string): URL | undefined {
  *
  */
 export class DotCmsClient {
-    private config: ClientConfig;
-    private requestOptions!: ClientOptions;
+    #config: ClientConfig;
+    #requestOptions!: ClientOptions;
+
+    dotcmsUrl?: string;
 
     content: Content;
 
@@ -159,9 +161,9 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'dotcmsUrl' is required");
         }
 
-        const dotcmsHost = getHostURL(config.dotcmsUrl);
+        this.dotcmsUrl = getHostURL(config.dotcmsUrl)?.origin;
 
-        if (!dotcmsHost) {
+        if (!this.dotcmsUrl) {
             throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
         }
 
@@ -169,20 +171,20 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'authToken' is required");
         }
 
-        this.config = {
+        this.#config = {
             ...config,
-            dotcmsUrl: dotcmsHost.origin
+            dotcmsUrl: this.dotcmsUrl
         };
 
-        this.requestOptions = {
-            ...this.config.requestOptions,
+        this.#requestOptions = {
+            ...this.#config.requestOptions,
             headers: {
-                Authorization: `Bearer ${this.config.authToken}`,
-                ...this.config.requestOptions?.headers
+                Authorization: `Bearer ${this.#config.authToken}`,
+                ...this.#config.requestOptions?.headers
             }
         };
 
-        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
+        this.content = new Content(this.#requestOptions, this.#config.dotcmsUrl);
     }
 
     page = {
@@ -215,7 +217,7 @@ export class DotCmsClient {
                 }
             }
 
-            const queryHostId = options.siteId ?? this.config.siteId ?? '';
+            const queryHostId = options.siteId ?? this.#config.siteId ?? '';
 
             if (queryHostId) {
                 queryParamsObj['host_id'] = queryHostId;
@@ -224,11 +226,11 @@ export class DotCmsClient {
             const queryParams = new URLSearchParams(queryParamsObj).toString();
 
             const formattedPath = options.path.startsWith('/') ? options.path : `/${options.path}`;
-            const url = `${this.config.dotcmsUrl}/api/v1/page/json${formattedPath}${
+            const url = `${this.#config.dotcmsUrl}/api/v1/page/json${formattedPath}${
                 queryParams ? `?${queryParams}` : ''
             }`;
 
-            const response = await fetch(url, this.requestOptions);
+            const response = await fetch(url, this.#requestOptions);
             if (!response.ok) {
                 const error = {
                     status: response.status,
@@ -273,11 +275,11 @@ export class DotCmsClient {
 
             // Format the URL correctly depending on the 'path' value
             const formattedPath = path === '/' ? '/' : `/${path}`;
-            const url = `${this.config.dotcmsUrl}/api/v1/nav${formattedPath}${
+            const url = `${this.#config.dotcmsUrl}/api/v1/nav${formattedPath}${
                 queryParams ? `?${queryParams}` : ''
             }`;
 
-            const response = await fetch(url, this.requestOptions);
+            const response = await fetch(url, this.#requestOptions);
 
             return response.json();
         }
