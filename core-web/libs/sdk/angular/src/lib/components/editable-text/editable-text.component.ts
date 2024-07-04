@@ -11,7 +11,12 @@ import { CUSTOMER_ACTIONS, isInsideEditor, postMessageToEditor } from '@dotcms/c
     templateUrl: './editable-text.component.html',
     styleUrl: './editable-text.component.css',
     imports: [EditorComponent, FormsModule, ReactiveFormsModule],
-    providers: [{ provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' }],
+    providers: [
+        {
+            provide: TINYMCE_SCRIPT_SRC,
+            useValue: 'http://localhost:8080/html/tinymce/tinymce.min.js'
+        }
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditableTextComponent implements OnInit {
@@ -31,7 +36,7 @@ export class EditableTextComponent implements OnInit {
     protected form!: FormGroup;
     protected isInsideEditor = isInsideEditor();
     protected readonly init: EditorComponent['init'] = {
-        base_url: '/tinymce', // Root for resources
+        base_url: 'http://localhost:8080/html/tinymce', // Root for resources
         suffix: '.min', // Suffix to use when loading resources
         license_key: 'gpl',
         plugins: 'lists link image table code help wordcount',
@@ -40,20 +45,17 @@ export class EditableTextComponent implements OnInit {
 
     ngOnInit() {
         this.form = new FormGroup({
-            content: new FormControl(this.content || 'Test')
+            content: new FormControl(this.content)
         });
     }
 
-    onFocusOut(event: unknown) {
+    onFocusOut(_event: unknown) {
         // eslint-disable-next-line no-console
-        console.log('Event:', event);
-        const textContent = this.editorComponent.editor.getContent({ format: 'text' });
-
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
             // Todo: Changes this is a more practical way to send the date to the editor
             payload: {
-                innerHTML: textContent,
+                innerHTML: this.form.get('content')?.value,
                 dataset: {
                     inode: this.inode,
                     langId: this.langId,

@@ -2,6 +2,7 @@ import { EnvironmentProviders, InjectionToken, makeEnvironmentProviders } from '
 
 import { ClientConfig, DotCmsClient, dotcmsClient } from '@dotcms/client';
 
+// TODO: Export this from the client token
 export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIENT');
 
 /**

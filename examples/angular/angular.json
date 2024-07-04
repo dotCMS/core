@@ -22,14 +22,10 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/favicon.ico",
-              "src/assets",
-              { "glob": "**/*", "input": "node_modules/tinymce", "output": "/tinymce/" }
+              "src/assets"
             ],
             "styles": [
               "src/styles.css"
-            ],
-            "scripts": [
-              "node_modules/tinymce/tinymce.min.js"
             ]
           },
           "configurations": {
