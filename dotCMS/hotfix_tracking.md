@@ -25,3 +25,5 @@ This maintenance release includes the following code fixes:
 19. https://github.com/dotCMS/core/issues/23131 : Remove 10k Push Publishing Limit #23131
 20. https://github.com/dotCMS/core/issues/28897 : Content Resource v1 hits the db #28897
 21. https://github.com/dotCMS/core/issues/28890 : LanguageUtil.getLanguageId is always hitting the db #28890
+22. https://github.com/dotCMS/core/issues/26316 : Edit embedded content-let's through Block Editor field #26316
+23. 
