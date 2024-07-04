@@ -78,6 +78,9 @@ export class EditableTextComponent implements OnInit {
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
             // Todo: Changes this is a more practical way to send the date to the editor
+            // Todo: Add a way to know when to sanitize the content before sending it to the editor, because for banners we dont want to send HTML Tags to the backend
+            // Should we always sanitize if it's not a wysiwyg field?
+            // How do we know it is a wysiwyg field?
             payload: {
                 innerHTML: this.form.get('content')?.value,
                 dataset: {
