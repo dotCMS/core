@@ -12,10 +12,8 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { SidebarModule } from 'primeng/sidebar';
 
-import { DotCategory } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotCategoryFieldItem } from '../../models/dot-category-field.models';
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
 
@@ -62,24 +60,5 @@ export class DotCategoryFieldSidebarComponent implements OnInit {
         this.#destroyRef.onDestroy(() => {
             this.store.clean();
         });
-    }
-
-    /**
-     * Handles click events on items.
-     * @param {number} index - The index of the column being clicked.
-     * @param item - item clicked
-     * @returns {void}
-     */
-    itemClicked({ index, item }: DotCategoryFieldItem): void {
-        this.store.getCategories({ index, item });
-    }
-
-    /**
-     * Handles the selection (via checkbox) of displayed items.
-     * @param $event
-     * @param item
-     */
-    itemChecked({ selected, item }: { selected: string[]; item: DotCategory }) {
-        this.store.updateSelected(selected, item);
     }
 }
