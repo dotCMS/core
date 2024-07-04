@@ -19,7 +19,7 @@ const enum StorageType {
     standalone: true
 })
 export class DotStateRestoreDirective implements AfterViewInit {
-    #table = inject(Table);
+    readonly #table = inject(Table);
 
     ngAfterViewInit(): void {
         const stateKey = this.#table?.stateKey;
