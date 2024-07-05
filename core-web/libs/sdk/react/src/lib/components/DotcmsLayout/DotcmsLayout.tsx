@@ -39,7 +39,6 @@ export type DotcmsPageProps = {
  */
 export function DotcmsLayout({ pageContext, config }: DotcmsPageProps): JSX.Element {
     const { isInsideEditor } = useDotcmsEditor(config);
-    pageContext = { ...pageContext, pageAsset: pageContext.pageAsset };
 
     return (
         <PageProvider pageContext={{ ...pageContext, isInsideEditor }}>

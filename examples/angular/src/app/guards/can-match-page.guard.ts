@@ -48,7 +48,7 @@ export const canMatchPage: CanMatchFn = async (
     return !!entity;
   } catch (error: any) {
     console.error(error); // Log the error
-    route.data = { ...route.data, pageAsset: null }; // Add the page asset to the route data
+    route.data = { ...route.data, pageAsset: { layout: {} } }; // Add the page asset to the route data
     return !(error?.status === 404); // If the page is not found, return false.
   }
 };

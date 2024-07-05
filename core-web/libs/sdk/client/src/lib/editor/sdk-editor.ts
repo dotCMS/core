@@ -40,8 +40,8 @@ export function isInsideEditor() {
  *
  * @param conf - Optional configuration for the editor.
  */
-export function initEditor(config?: DotCMSPageEditorConfig) {
-    getPageDataInsideEditor(config?.pathname || '');
+export function initEditor(config: DotCMSPageEditorConfig) {
+    getPageDataInsideEditor(config.pathname);
     listenEditorMessages();
     listenHoveredContentlet();
     scrollHandler();

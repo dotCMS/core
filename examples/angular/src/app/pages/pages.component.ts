@@ -15,11 +15,7 @@ import { NavigationComponent } from './components/navigation/navigation.componen
 
 import { DYNAMIC_COMPONENTS } from '../utils';
 
-import {
-  DotCMSPageAsset,
-  DotcmsLayoutComponent,
-  PageContextService,
-} from '@dotcms/angular';
+import { DotcmsLayoutComponent, PageContextService } from '@dotcms/angular';
 import { onFetchPageAssetFromUVE } from '@dotcms/client';
 import { JsonPipe } from '@angular/common';
 
@@ -42,7 +38,6 @@ export class DotCMSPagesComponent implements OnInit {
 
   protected readonly context = signal<any>(null);
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
-  #cdr = inject(ChangeDetectorRef);
 
   pageContextService = inject(PageContextService);
 

@@ -60,6 +60,8 @@ export class DotcmsLayoutComponent implements OnInit {
 
     ngOnChanges() {
         //Each time the layout changes, we need to update the context
-        this.pageContextService.setContext(this.pageAsset as DotCMSPageAsset, this.components);
+        if (this.pageAsset !== null) {
+            this.pageContextService.setContext(this.pageAsset, this.components);
+        }
     }
 }

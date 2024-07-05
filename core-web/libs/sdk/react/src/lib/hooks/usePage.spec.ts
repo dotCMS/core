@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react-hooks';
 
 import * as dotcmsClient from '@dotcms/client';
 
-import { useDotcmsEditorPageAsset } from './useDotcmsEditorPageAsset';
+import { usePage } from './usePage';
 
 import { DotCMSPageContext } from '../models';
 
@@ -16,7 +16,7 @@ const mockCurrentPageAsset = {
     url: '/current-page'
 } as unknown as DotCMSPageContext['pageAsset'];
 
-describe('useDotcmsEditorPageAsset', () => {
+describe('usePage', () => {
     let onFetchPageAssetFromUVESpy: jest.SpyInstance<() => void>;
 
     // Mock the onFetchPageAssetFromUVE function
@@ -42,7 +42,7 @@ describe('useDotcmsEditorPageAsset', () => {
         // Override the actual implementation with the mock
         onFetchPageAssetFromUVESpy.mockImplementation(mockOnFetchPageAssetFromUVE);
 
-        const { result } = renderHook(() => useDotcmsEditorPageAsset(mockCurrentPageAsset));
+        const { result } = renderHook(() => usePage(mockCurrentPageAsset));
 
         expect(result.current).toEqual(mockCurrentPageAsset);
 
@@ -59,7 +59,7 @@ describe('useDotcmsEditorPageAsset', () => {
     test('should clean up event listener on unmount', () => {
         const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
 
-        const { unmount } = renderHook(() => useDotcmsEditorPageAsset(mockCurrentPageAsset));
+        const { unmount } = renderHook(() => usePage(mockCurrentPageAsset));
 
         unmount();
 

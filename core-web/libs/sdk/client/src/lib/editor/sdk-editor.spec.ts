@@ -89,7 +89,7 @@ describe('DotCMSPageEditor', () => {
 
         it('should init editor calling listeners', () => {
             initEditor({ pathname: 'some-url' });
-            expect(getPageDataInsideEditor).toHaveBeenCalled();
+            expect(getPageDataInsideEditor).toHaveBeenCalledWith('some-url');
             expect(listenEditorMessages).toHaveBeenCalled();
             expect(listenHoveredContentlet).toHaveBeenCalled();
             expect(scrollHandler).toHaveBeenCalled();
