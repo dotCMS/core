@@ -11,7 +11,10 @@
                     class="flex align-content-center align-items-center category-list__item"
                     [ngClass]="{ 'category-list__item--selected': item.checked }"
                     (click)="itemClicked.emit({ index, item })">
-                    <p-checkbox [(ngModel)]="itemsSelected" [value]="item.key" />
+                    <p-checkbox
+                        [(ngModel)]="itemsSelected"
+                        [value]="item.key"
+                        (onChange)="itemChecked.emit({ selected: $event.checked, item })" />
 
                     <label
                         data-testId="category-item-label"

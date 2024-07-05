@@ -3,10 +3,10 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    inject,
     Input,
     OnInit,
-    Output,
-    inject
+    Output
 } from '@angular/core';
 import {
     FormBuilder,
@@ -53,14 +53,13 @@ import { FIELD_TYPES } from '../dot-edit-content-field/utils';
     ]
 })
 export class DotEditContentFormComponent implements OnInit {
-    @Input() formData!: EditContentPayload;
+    @Input()
+    formData!: EditContentPayload;
     @Output() changeValue = new EventEmitter();
-
+    form!: FormGroup;
+    protected tabs: DotCMSContentTypeLayoutTab[] = [];
     private readonly fb = inject(FormBuilder);
     private readonly dotMessageService = inject(DotMessageService);
-
-    protected tabs: DotCMSContentTypeLayoutTab[] = [];
-    form!: FormGroup;
 
     get areMultipleTabs(): boolean {
         return this.tabs.length > 1;
@@ -96,6 +95,30 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
+     /**
+     * Emits the form value through the `formSubmit` event.
+     *
+     * @param {*} value
+     * @memberof DotEditContentFormComponent
+     */
+    onFormChange(value) {
+        this.formData.contentType.fields.forEach(({ variable, fieldType }) => {
+            // Shorthand for conditional assignment
+
+            if (FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
+                value[variable] = value[variable]?.join(',');
+            }
+
+            if (CALENDAR_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
+                value[variable] = value[variable]
+                    ?.toISOString()
+                    .replace(/T|\.\d{3}Z/g, (match: string) => (match === 'T' ? ' ' : '')); // To remove the T and .000Z from the date)
+            }
+        });
+        this.changeValue.emit(value);
+    }
+
+    /**
      * Initializes a form control for a given DotCMSContentTypeField.
      *
      * @private
@@ -125,30 +148,6 @@ export class DotEditContentFormComponent implements OnInit {
             },
             { validators }
         );
-    }
-
-    /**
-    /**
-     * Emits the form value through the `formSubmit` event.
-     *
-     * @param {*} value
-     * @memberof DotEditContentFormComponent
-     */
-    onFormChange(value) {
-        this.formData.contentType.fields.forEach(({ variable, fieldType }) => {
-            // Shorthand for conditional assignment
-
-            if (FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
-                value[variable] = value[variable]?.join(',');
-            }
-
-            if (CALENDAR_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
-                value[variable] = value[variable]
-                    ?.toISOString()
-                    .replace(/T|\.\d{3}Z/g, (match: string) => (match === 'T' ? ' ' : '')); // To remove the T and .000Z from the date)
-            }
-        });
-        this.changeValue.emit(value);
     }
 
     /**
