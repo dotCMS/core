@@ -140,7 +140,7 @@ interface AsyncWorkflowRunner extends Runnable, Serializable {
      * @throws DotRuntimeException if an exception occurs during the execution of the workflow.
      */
     default void handleError(final Exception e, final User user) {
-        final String errorMsg = "Error: " + ExceptionUtil.getErrorMessage(e);
+        final String errorMsg = String.format("Error: %s", ExceptionUtil.getErrorMessage(e));
         final SystemMessageBuilder message = new SystemMessageBuilder()
                 .setMessage(errorMsg)
                 .setLife(5000)
