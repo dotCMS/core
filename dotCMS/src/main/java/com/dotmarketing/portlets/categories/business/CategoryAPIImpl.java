@@ -17,6 +17,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.InodeUtils;
@@ -25,14 +26,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -978,4 +973,17 @@ public class CategoryAPIImpl implements CategoryAPI {
 		return getCategoriesSubList(searchCriteria.offset, searchCriteria.limit, categories, null);
 	}
 
+	/**
+	 * Default implementation of {@link CategoryAPI}
+	 *
+	 * @param inodes List of inodes to search
+	 * @return
+	 *
+	 * @throws DotDataException
+	 */
+	@CloseDBIfOpened
+	@Override
+	public List<HierarchyShortCategory> findHierarchy(final Collection<String> inodes) throws DotDataException {
+		return categoryFactory.findHierarchy(inodes);
+	}
 }

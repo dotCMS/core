@@ -31,6 +31,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -274,6 +275,21 @@ public class CategoriesResource {
         }
 
         return response;
+    }
+
+    @GET
+        @Path(("/hierarchy"))
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final Response getHierarchy(@Context final HttpServletRequest httpRequest,
+                                       @Context final HttpServletResponse httpResponse,
+                                       final CategoryInodesForm form) throws DotDataException, DotSecurityException {
+
+        webResource.init(null, httpRequest, httpResponse, true, null);
+
+        return Response.ok(
+                new HierarchyShortCategoriesResponseView(categoryAPI.findHierarchy(form.getInodes()))).build();
     }
 
     /**
