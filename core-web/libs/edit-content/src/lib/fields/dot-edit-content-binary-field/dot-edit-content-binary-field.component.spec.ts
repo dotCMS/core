@@ -166,7 +166,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
     it('should not emit new value is is equal to current value', () => {
         spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
         const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
-        spectator.component.formControl.setValue(MOCK_DOTCMS_FILE.binaryField);
+        spectator.component.writeValue(MOCK_DOTCMS_FILE.binaryField);
         store.setValue(MOCK_DOTCMS_FILE.binaryField);
         spectator.detectChanges();
         expect(spyEmit).not.toHaveBeenCalled();
