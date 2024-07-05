@@ -254,7 +254,7 @@ export class DotEditContentBinaryFieldComponent
     ngAfterViewInit() {
         this.setFieldVariables();
 
-        if (!this.contentlet || !this.variable || !this.checkMetadata()) {
+        if (!this.contentlet || !this.getValue() || !this.checkMetadata()) {
             return;
         }
 
