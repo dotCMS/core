@@ -22,7 +22,7 @@ params:
                           "pattern": ".*",
                           "url": "https://myspa.com:3000",
                           "options": {
-                              "devURLWhitelist": [
+                              "allowedDevURLs": [
                                   "http://localhost:3000",
                                   "http://localhost:3001",
                                   "https://myspa.dev.com"
@@ -33,4 +33,4 @@ params:
               }
               ```
               <br/><br/>
-              You have a specific configuration for pages that start with '/blogs/' and a generic configuration for all other pages, i.e., '.*'. The 'devURLWhitelist' option allows you to specify a list of URLs that are allowed to access the UVE through the clientHost query parameter.
+              You have a specific configuration for pages that start with '/blogs/' and a generic configuration for all other pages, i.e., '.*'. The 'allowedDevURLs' option allows you to specify a list of URLs that are allowed to access the UVE through the clientHost query parameter.
