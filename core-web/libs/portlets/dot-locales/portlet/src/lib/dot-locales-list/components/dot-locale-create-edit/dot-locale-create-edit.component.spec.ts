@@ -9,7 +9,7 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockLanguagesISO, mockLocales } from '@dotcms/utils-testing';
 
-import { DotLocaleCreateEditComponent } from './DotLocaleCreateEdit.component';
+import { DotLocaleCreateEditComponent } from './dot-locale-create-edit.component';
 
 const messageServiceMock = new MockDotMessageService({
     Cancel: 'Cancel'

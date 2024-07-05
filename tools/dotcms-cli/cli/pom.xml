@@ -24,6 +24,7 @@
         <java.keytar.version>1.0.0</java.keytar.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
+        <quarkus.native.additional-build-args>--native-compiler-options=-Wno-nullability-completeness, -H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
     </properties>
 
     <dependencyManagement>
@@ -257,9 +258,6 @@
                     </plugin>
                 </plugins>
             </build>
-            <properties>
-                <quarkus.native.additional-build-args>-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
-            </properties>
         </profile>
         <profile>
             <id>dist-windows</id>
@@ -279,6 +277,7 @@
                     <name>native</name>
                 </property>
             </activation>
+
             <build>
                 <plugins>
                     <plugin>
@@ -295,37 +294,6 @@
                                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                         <maven.home>${maven.home}</maven.home>
                                     </systemPropertyVariables>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            <properties>
-                <quarkus.package.type>native</quarkus.package.type>
-                <quarkus.native.additional-build-args>-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json</quarkus.native.additional-build-args>
-            </properties>
-        </profile>
-        <profile>
-            <id>uber-jar</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>${quarkus.platform.group-id}</groupId>
-                        <artifactId>quarkus-maven-plugin</artifactId>
-                        <version>${quarkus.platform.version}</version>
-                        <extensions>true</extensions>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>build</goal>
-                                    <goal>generate-code</goal>
-                                    <goal>generate-code-tests</goal>
-                                </goals>
-                                <configuration>
-                                    <systemProperties>
-                                        <testcontainers.docker.image>${testcontainers.docker.image}</testcontainers.docker.image>
-                                    </systemProperties>
                                     <manifestEntries>
                                         <Implementation-URL>${project.url}</Implementation-URL>
                                         <Java-Vendor>${java.vendor}</Java-Vendor>
@@ -348,7 +316,7 @@
                 </plugins>
             </build>
             <properties>
-                <quarkus.package.type>uber-jar</quarkus.package.type>
+                <quarkus.package.type>native</quarkus.package.type>
             </properties>
         </profile>
     </profiles>

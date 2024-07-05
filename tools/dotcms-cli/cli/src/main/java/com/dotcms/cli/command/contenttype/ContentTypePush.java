@@ -80,7 +80,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
         }
 
         File inputFile = this.getPushMixin().path().toFile();
-        if (!inputFile.isAbsolute()) {
+        if (!inputFile.isAbsolute() && inputFile.isFile()) {
             inputFile = Path.of(workspace.get().contentTypes().toString(), inputFile.getName())
                     .toFile();
         }

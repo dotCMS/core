@@ -35,11 +35,12 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAIImagePromptComponent {
-    protected readonly vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
     protected readonly ComponentStatus = ComponentStatus;
     private dotMessageService = inject(DotMessageService);
     private confirmationService = inject(ConfirmationService);
     store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
+
+    protected readonly vm$: Observable<VmAiImagePrompt> = this.store.vm$;
 
     closeDialog(): void {
         this.confirmationService.confirm({

@@ -5,7 +5,8 @@ export const mockDotLanguage: DotLanguage = {
     languageCode: 'en',
     countryCode: 'US',
     language: 'English',
-    country: 'United States'
+    country: 'United States',
+    translated: true
 };
 
 export const mockDotLanguageWithoutCountryCode: DotLanguage = {
@@ -13,6 +14,7 @@ export const mockDotLanguageWithoutCountryCode: DotLanguage = {
     languageCode: 'IT',
     countryCode: '',
     language: 'Italian',
+    translated: false,
     country: 'Italy'
 };
 

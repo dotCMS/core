@@ -215,15 +215,36 @@ public class DotExecutionStrategy implements IExecutionStrategy {
     }
 
     int handleWatchPush(final IExecutionStrategy underlyingStrategy, final ParseResult parseResult, final DotPush push) {
-        final PushMixin pushMixin = push.getPushMixin();
-        push.getOutput().println("Running in Watch Mode on " + push.workingRootDir());
+
+        final Path watchedPath = watchedPath(push);
+        push.getOutput().println("Running in Watch Mode on " + watchedPath);
         try {
-            return watch(underlyingStrategy, parseResult, push.workingRootDir(), pushMixin.interval);
+            final PushMixin pushMixin = push.getPushMixin();
+            return watch(underlyingStrategy, parseResult, watchedPath, pushMixin.interval);
         } catch (IOException e) {
             throw new ExecutionException(parseResult.commandSpec().commandLine(), "Failure starting watch service", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ExecutionException(parseResult.commandSpec().commandLine(), "Watch service interrupted", e);
+        }
+    }
+
+    /**
+     * Returns the path to watch for the given push command.
+     * @param push the push command
+     * @return the path to watch
+     */
+    private Path watchedPath(final DotPush push) {
+        final PushMixin pushMixin = push.getPushMixin();
+        if (pushMixin.isUserProvidedPath()) {
+            return pushMixin.path();
+        }
+        try {
+            return push.workingRootDir();
+        } catch (IllegalArgumentException e) {
+            // If we can't find a workspace, we default to the user provided path
+            //I'm catching this exception here, so it can be properly handled in the calling command when it figures out that the given path isn't a workspace
+            return pushMixin.path();
         }
     }
 
