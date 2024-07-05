@@ -246,6 +246,7 @@ export class DotCmsClient {
         /**
          * `page.on` is an asynchronous method of the `DotCmsClient` class that allows you to react to actions issued by the UVE.
          *
+         *  NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
          * @param action - The name of the name emitted by UVE
          * @param callbackFn - The function to execute when the UVE emits the action
          */
@@ -264,6 +265,7 @@ export class DotCmsClient {
         /**
          * `page.of` is an synchronous method of the `DotCmsClient` class that allows you to stop listening and reacting to an action issued by UVE.
          *
+         *  NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
          * @param action
          */
         off: (action: string) => {
