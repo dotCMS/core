@@ -1,0 +1,34 @@
+package com.dotcms.concurrent;
+
+import com.dotmarketing.util.Logger;
+
+/**
+ * This is a simple implementation of the TaskMonitor interface that does just logging of the progress.
+ * @author jsanca
+ */
+public class LoggingTaskMonitor implements TaskMonitor {
+
+    @Override
+    public void onTaskStarted(final Object processId) {
+
+        Logger.debug(this.getClass(), "Task started: " + processId);
+    }
+
+    @Override
+    public void onTaskProgress(final Object processId, final int progress) {
+
+        Logger.debug(this.getClass(), "Task progress: " + processId + " - " + progress + "%");
+    }
+
+    @Override
+    public void onTaskCompleted(final Object processId) {
+
+        Logger.debug(this.getClass(), "Task completed: " + processId);
+    }
+
+    @Override
+    public void onTaskFailed(Object processId, Exception error) {
+
+        Logger.error(this.getClass(), "Task failed: " + processId, error);
+    }
+}
