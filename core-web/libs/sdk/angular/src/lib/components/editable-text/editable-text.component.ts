@@ -4,7 +4,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     inject,
-    InjectionToken,
     Input,
     OnInit,
     ViewChild
@@ -46,17 +45,7 @@ export class EditableTextComponent implements OnInit {
     @Input() langId = '';
     @Input() content = '';
 
-    // TODO: WE NEED TO FIX THIS SOMEHOW
-    // IF WE DONT DO THIS WE WILL GET A TYPE ERROR ON DEVELOPMENT BECAUSE OF TYPES FROM OUR SYM LINK, COULD BE ANGULAR VERSIONS
-    private readonly client = inject<DotCmsClient>(
-        DOTCMS_CLIENT_TOKEN as unknown as InjectionToken<DotCmsClient>
-    );
-
-    constructor() {
-        // eslint-disable-next-line no-console
-        console.log('EditableTextComponent constructor');
-    }
-
+    private readonly client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
     protected form!: FormGroup;
     protected isInsideEditor = isInsideEditor();
     protected readonly init: EditorComponent['init'] = {
@@ -74,7 +63,6 @@ export class EditableTextComponent implements OnInit {
     }
 
     onFocusOut(_event: unknown) {
-        // eslint-disable-next-line no-console
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
             // Todo: Changes this is a more practical way to send the date to the editor

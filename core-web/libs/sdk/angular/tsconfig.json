@@ -7,10 +7,7 @@
         "noImplicitOverride": true,
         "noPropertyAccessFromIndexSignature": true,
         "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "paths": {
-            "@dotcms/client": ["../client"]
-        }
+        "noFallthroughCasesInSwitch": true
     },
     "files": [],
     "include": [],
