@@ -9,26 +9,26 @@ import com.dotmarketing.util.Logger;
 public class LoggingTaskMonitor implements TaskMonitor {
 
     @Override
-    public void onTaskStarted(final Object processId, String message) {
+    public void onTaskStarted(final Object processId, final String message) {
 
-        Logger.debug(this.getClass(), "Task started: " + processId);
+        Logger.debug(this.getClass(), "Task started: " + processId + " - msg:" + message);
     }
 
     @Override
-    public void onTaskProgress(final Object processId, String message, final int progress) {
+    public void onTaskProgress(final Object processId, final String message, final int progress) {
 
-        Logger.debug(this.getClass(), "Task progress: " + processId + " - " + progress + "%");
+        Logger.debug(this.getClass(), "Task progress: " + processId + " - " + progress + "%"  + " - msg:" + message);
     }
 
     @Override
-    public void onTaskCompleted(final Object processId, String message) {
+    public void onTaskCompleted(final Object processId, final String message) {
 
-        Logger.debug(this.getClass(), "Task completed: " + processId);
+        Logger.debug(this.getClass(), "Task completed: " + processId + " - msg:" + message);
     }
 
     @Override
-    public void onTaskFailed(Object processId, String message, Exception error) {
+    public void onTaskFailed(final Object processId, final String message, final Exception error) {
 
-        Logger.error(this.getClass(), "Task failed: " + processId, error);
+        Logger.error(this.getClass(), "Task failed: " + processId  + " - msg:" + message, error);
     }
 }
