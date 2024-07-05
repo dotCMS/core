@@ -571,6 +571,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 PropertyDataFetcher.fetching(ContainerStructure::getContainerId)));
         containerStructureFields.put("code", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching(ContainerStructure::getCode)));
+        containerStructureFields.put("contentTypeVar", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ContainerStructure::getContentTypeVar)));
 
         typesMap.put(DOT_PAGE_CONTAINER_STRUCTURE, TypeUtil.createObjectType(DOT_PAGE_CONTAINER_STRUCTURE,
                 containerStructureFields));
