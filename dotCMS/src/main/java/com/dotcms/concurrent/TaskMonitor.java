@@ -10,24 +10,24 @@ public interface TaskMonitor {
     /**
      * Called when the task starts.
      */
-    void onTaskStarted(Object processId);
+    void onTaskStarted(Object processId, String message);
 
     /**
      * Called to update the progress of the task.
      *
      * @param progress The current progress of the task, represented as a percentage (0-100).
      */
-    void onTaskProgress(Object processId, int progress);
+    void onTaskProgress(Object processId, String message, int progress);
 
     /**
      * Called when the task completes successfully.
      */
-    void onTaskCompleted(Object processId);
+    void onTaskCompleted(Object processId, String message);
 
     /**
      * Called when the task fails.
      *
      * @param error The error that caused the task to fail.
      */
-    void onTaskFailed(Object processId, Exception error);
+    void onTaskFailed(Object processId, String message, Exception error);
 }
