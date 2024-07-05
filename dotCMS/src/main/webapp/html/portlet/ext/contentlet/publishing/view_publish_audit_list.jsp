@@ -65,14 +65,15 @@
     try{limit = Integer.parseInt(request.getParameter("limit"));}catch(Exception e){}
     if(limit <0 || limit > 500) limit=50;
 
-
+	final String auditFilterQuery = request.getParameter("q");
 
     List<PublishAuditStatus> iresults =  null;
     int counter =  0;
 
     try{
-   		iresults =  publishAuditAPI.getAllPublishAuditStatus(limit, offset, MAX_ASSETS_TO_SHOW);
-   		counter =   publishAuditAPI.countAllPublishAuditStatus().intValue();
+   		iresults =  publishAuditAPI.getPublishAuditStatus(
+				   limit, offset, MAX_ASSETS_TO_SHOW, auditFilterQuery);
+   		counter =   publishAuditAPI.countPublishAuditStatus(auditFilterQuery).intValue();
     }catch(DotPublisherException e){
     	iresults = new ArrayList();
     	nastyError = e.toString();
