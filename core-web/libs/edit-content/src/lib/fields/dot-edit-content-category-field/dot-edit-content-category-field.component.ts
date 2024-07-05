@@ -11,7 +11,7 @@ import {
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -29,10 +29,12 @@ import { CategoriesService } from './services/categories.service';
 import { CategoryFieldStore } from './store/content-category-field.store';
 
 /**
- * Component for editing content category field.
- *
  * @class
  * @name DotEditContentCategoryFieldComponent
+ * @description Angular component for editing a content category field.
+ *
+ * The `DotEditContentCategoryFieldComponent` component provides functionality for editing a content category field.
+ * It is responsible for handling user interactions and updating the state of the component.
  */
 @Component({
     selector: 'dot-edit-content-category-field',
@@ -50,39 +52,51 @@ import { CategoryFieldStore } from './store/content-category-field.store';
     templateUrl: './dot-edit-content-category-field.component.html',
     styleUrl: './dot-edit-content-category-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        '[class.dot-category-field__container--has-categories]': 'hasSelectedCategories()',
+        '[class.dot-category-field__container]': '!hasSelectedCategories()'
+    },
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
-    host: {
-        '[class.dot-category-field__container--has-categories]': 'hasSelectedCategories()',
-        '[class.dot-category-field__container]': '!hasSelectedCategories()'
-    },
     providers: [CategoriesService, CategoryFieldStore]
 })
 export class DotEditContentCategoryFieldComponent implements OnInit {
+    /**
+     * Disable the button to open the sidebar
+     */
     disableSelectCategoriesButton = signal(false);
+
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
 
     /**
      * The `field` variable is of type `DotCMSContentTypeField` and is a required input.
-     *
-     * @name field
-     * @description The variable represents a field of a DotCMS content type.
+     * @description The variable represents a field of a DotCMS content type and is a required input.
      */
     field = input.required<DotCMSContentTypeField>();
 
     /**
-     * Represents a DotCMS contentlet.
-     *
+     * Represents a DotCMS contentlet and is a required input
+     * @description DotCMSContentlet input representing a DotCMS contentlet.
      */
     contentlet = input.required<DotCMSContentlet>();
 
     readonly store = inject(CategoryFieldStore);
+    readonly #form = inject(ControlContainer).control as FormGroup;
     readonly #destroyRef = inject(DestroyRef);
     #componentRef: ComponentRef<DotCategoryFieldSidebarComponent>;
+
+    /**
+     * Retrieve the category field control.
+     *
+     * @return {FormControl} The category field control.
+     */
+    get categoryFieldControl(): FormControl {
+        return this.#form.get(this.store.fieldVariableName()) as FormControl;
+    }
 
     /**
      * Determines if there are any selected categories.
@@ -94,7 +108,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     }
 
     /**
-     * Open the "DotEditContentCategoryFieldDialogComponent" dialog to show categories.
+     * Open the "DotEditContentCategoryFieldDialogComponent" dialog to show the list of categories.
      *
      * @returns {void}
      */
@@ -115,8 +129,18 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
         this.#componentRef.instance.closedSidebar
             .pipe(takeUntilDestroyed(this.#destroyRef), delay(CLOSE_SIDEBAR_CSS_DELAY_MS))
             .subscribe(() => {
+                this.updateCategoryFieldControl();
+                // enable the show sidebar button
                 this.disableSelectCategoriesButton.set(false);
-                this.sidebarHost.viewContainerRef.clear();
+                this.removeDotCategoryFieldSidebarComponent();
             });
+    }
+
+    private updateCategoryFieldControl(): void {
+        this.categoryFieldControl.setValue(this.store.selectedCategoriesValues());
+    }
+
+    private removeDotCategoryFieldSidebarComponent() {
+        this.sidebarHost.viewContainerRef.clear();
     }
 }

@@ -48,8 +48,8 @@ export interface DotLocaleCreateEditData {
         TooltipModule,
         DotCopyButtonComponent
     ],
-    templateUrl: './DotLocaleCreateEdit.component.html',
-    styleUrl: './DotLocaleCreateEdit.component.scss',
+    templateUrl: './dot-locale-create-edit.component.html',
+    styleUrl: './dot-locale-create-edit.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLocaleCreateEditComponent implements OnInit {

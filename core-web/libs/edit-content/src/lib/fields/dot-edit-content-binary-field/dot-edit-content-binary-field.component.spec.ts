@@ -20,7 +20,7 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { ButtonModule } from 'primeng/button';
+import { ButtonModule, Button } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
 import {
@@ -83,6 +83,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
     let store: DotBinaryFieldStore;
 
     let dotBinaryFieldEditImageService: SpyObject<DotBinaryFieldEditImageService>;
+    let dotAiService: DotAiService;
     let ngZone: NgZone;
 
     const createComponent = createComponentFactory({
@@ -90,14 +91,14 @@ describe('DotEditContentBinaryFieldComponent', () => {
         componentProviders: [
             DotBinaryFieldStore,
             DotAiImagePromptStore,
-            DotBinaryFieldEditImageService
+            DotBinaryFieldEditImageService,
+            DotAiService
         ],
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ],
         providers: [
             DotBinaryFieldValidatorService,
-            DotAiService,
             {
                 provide: DotLicenseService,
                 useValue: {
@@ -136,6 +137,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
         store = spectator.inject(DotBinaryFieldStore, true);
         dotBinaryFieldEditImageService = spectator.inject(DotBinaryFieldEditImageService, true);
+        dotAiService = spectator.inject(DotAiService, true);
         ngZone = spectator.inject(NgZone);
     });
 
@@ -164,7 +166,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
     it('should not emit new value is is equal to current value', () => {
         spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
         const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
-        spectator.component.formControl.setValue(MOCK_DOTCMS_FILE.binaryField);
+        spectator.component.writeValue(MOCK_DOTCMS_FILE.binaryField);
         store.setValue(MOCK_DOTCMS_FILE.binaryField);
         spectator.detectChanges();
         expect(spyEmit).not.toHaveBeenCalled();
@@ -358,7 +360,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
         beforeEach(() => {
             const systemOptions = {
                 allowURLImport: false,
-                allowCodeWrite: false
+                allowCodeWrite: false,
+                allowGenerateImg: false
             };
 
             const JSONString = JSON.stringify(systemOptions);
@@ -398,6 +401,62 @@ describe('DotEditContentBinaryFieldComponent', () => {
             const codeEditorButton = spectator.query(byTestId('action-editor-btn'));
 
             expect(codeEditorButton).toBeNull();
+        });
+
+        it('should show code ai button if not setted in settings', async () => {
+            spectator.detectChanges();
+            const codeEditorButton = spectator.query(byTestId('action-ai-btn'));
+
+            expect(codeEditorButton).toBeNull();
+        });
+    });
+
+    describe('Ai option', () => {
+        beforeEach(() => {
+            const systemOptions = {
+                allowURLImport: true,
+                allowCodeWrite: true,
+                allowGenerateImg: true
+            };
+
+            const JSONString = JSON.stringify(systemOptions);
+
+            const newField = {
+                ...BINARY_FIELD_MOCK,
+                fieldVariables: [
+                    ...BINARY_FIELD_MOCK.fieldVariables,
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
+                        id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
+                        key: 'systemOptions',
+                        value: JSONString
+                    }
+                ]
+            };
+
+            spectator = createComponent({
+                detectChanges: false,
+                props: {
+                    field: newField,
+                    contentlet: null
+                }
+            });
+        });
+
+        it('should show ai button', async () => {
+            spectator.detectChanges();
+            const codeEditorButton = spectator.query(byTestId('action-ai-btn'));
+            expect(codeEditorButton).toBeTruthy();
+        });
+
+        it('should AI button is disabled when plugin is not installed', async () => {
+            dotAiService.checkPluginInstallation = jest.fn().mockReturnValue(of(false));
+            spectator.detectChanges();
+            const buttons = spectator.queryAll(Button);
+            const aiBtn = buttons[2];
+            expect(aiBtn.disabled).toBe(true);
+            expect(aiBtn.styleClass).toContain('pointer-events-auto');
         });
     });
 

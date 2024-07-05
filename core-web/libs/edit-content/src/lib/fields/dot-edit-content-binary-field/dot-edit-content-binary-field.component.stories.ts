@@ -24,7 +24,9 @@ import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import { DotEditContentBinaryFieldComponent } from './dot-edit-content-binary-field.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
-import { CONTENTLET, CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD, TEMP_FILES_MOCK } from './utils/mock';
+import { CONTENTLET, CONTENTTYPE_FIELDS_MESSAGE_MOCK, TEMP_FILES_MOCK } from './utils/mock';
+
+import { BINARY_FIELD_MOCK } from '../../utils/mocks';
 
 export default {
     title: 'Library / Edit Content / Binary Field',
@@ -79,7 +81,7 @@ export default {
     ],
     args: {
         contentlet: CONTENTLET,
-        field: FIELD
+        field: BINARY_FIELD_MOCK
     },
     argTypes: {
         contentlet: {
@@ -88,7 +90,7 @@ export default {
             description: 'Contentlet Object'
         },
         field: {
-            defaultValue: FIELD,
+            defaultValue: BINARY_FIELD_MOCK,
             control: 'Object',
             description: 'Content Type Field Object'
         }

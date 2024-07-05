@@ -13,7 +13,7 @@ import {
     EventEmitter,
     forwardRef,
     inject,
-    input,
+    Input,
     OnDestroy,
     OnInit,
     Output,
@@ -22,20 +22,16 @@ import {
     ViewChild
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import {
-    ControlContainer,
-    ControlValueAccessor,
-    FormControl,
-    NG_VALUE_ACCESSOR
-} from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { delay, filter, skip, tap } from 'rxjs/operators';
 
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
@@ -96,7 +92,8 @@ type SystemOptionsType = {
         InputTextModule,
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent,
-        DotAIImagePromptComponent
+        DotAIImagePromptComponent,
+        TooltipModule
     ],
     providers: [
         DotBinaryFieldEditImageService,
@@ -104,16 +101,11 @@ type SystemOptionsType = {
         DotLicenseService,
         DotBinaryFieldValidatorService,
         DotAiImagePromptStore,
+        DotAiService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotEditContentBinaryFieldComponent)
-        }
-    ],
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
     templateUrl: './dot-edit-content-binary-field.component.html',
@@ -129,20 +121,32 @@ export class DotEditContentBinaryFieldComponent
     readonly #dotBinaryFieldEditImageService = inject(DotBinaryFieldEditImageService);
     readonly #dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
     readonly #cd = inject(ChangeDetectorRef);
-    readonly #controlContainer = inject(ControlContainer);
+    readonly #dotAiService = inject(DotAiService);
 
-    $field = input.required<DotCMSContentTypeField>({
-        alias: 'field'
+    $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
+        initialValue: false
     });
-    $variable = computed(() => {
-        return this.field.variable;
+    $tooltipTextAIBtn = computed(() => {
+        const isAIPluginInstalled = this.$isAIPluginInstalled();
+        if (!isAIPluginInstalled) {
+            return this.#dotMessageService.get('dot.binary.field.action.generate.with.tooltip');
+        }
+
+        return null;
     });
-    $contentlet = input.required<DotCMSContentlet>({
-        alias: 'contentlet'
-    });
-    $imageEditor = input(false, {
-        alias: 'imageEditor'
-    });
+
+    value: string | null = null;
+
+    @Input({ required: true })
+    set field(contentTypeField: DotCMSContentTypeField) {
+        this.$field.set(contentTypeField);
+    }
+    @Input({ required: true }) contentlet: DotCMSContentlet;
+    @Input() imageEditor = false;
+
+    $field = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
+    $variable = computed(() => this.$field()?.variable);
+
     @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
     @ViewChild('inputFile') inputFile: ElementRef;
     readonly dialogFullScreenStyles = { height: '90%', width: '90%' };
@@ -158,7 +162,7 @@ export class DotEditContentBinaryFieldComponent
         const field = this.$field();
 
         return {
-            ...this.parseCustomMonacoOptions(field.fieldVariables)
+            ...this.parseCustomMonacoOptions(field?.fieldVariables)
         };
     });
     private onChange: (value: string) => void;
@@ -207,14 +211,6 @@ export class DotEditContentBinaryFieldComponent
         );
     }
 
-    get formControl(): FormControl {
-        return this.#controlContainer.control.get(this.variable) as FormControl<string>;
-    }
-
-    get value(): string {
-        return this.formControl.value;
-    }
-
     get maxFileSize(): number {
         return this.#dotBinaryFieldValidatorService.maxFileSize;
     }
@@ -227,19 +223,11 @@ export class DotEditContentBinaryFieldComponent
         return this.$variable();
     }
 
-    get field() {
-        return this.$field();
-    }
-
-    get contentlet() {
-        return this.$contentlet();
-    }
-
     ngOnInit() {
         this.#dotBinaryFieldStore.value$
             .pipe(
                 skip(1),
-                filter(({ value }) => value !== this.value)
+                filter(({ value }) => value !== this.getValue())
             )
             .subscribe(({ value, fileName }) => {
                 this.tempId = value; // If the value changes, it means that a new file was uploaded
@@ -266,13 +254,13 @@ export class DotEditContentBinaryFieldComponent
     ngAfterViewInit() {
         this.setFieldVariables();
 
-        if (!this.contentlet || !this.value || !this.checkMetadata()) {
+        if (!this.contentlet || !this.getValue() || !this.checkMetadata()) {
             return;
         }
 
         this.#dotBinaryFieldStore.setFileFromContentlet({
             ...this.contentlet,
-            value: this.value,
+            value: this.getValue(),
             fieldVariable: this.variable
         });
 
@@ -280,6 +268,7 @@ export class DotEditContentBinaryFieldComponent
     }
 
     writeValue(value: string): void {
+        this.value = value;
         this.#dotBinaryFieldStore.setValue(value);
     }
 
@@ -431,7 +420,7 @@ export class DotEditContentBinaryFieldComponent
             accept: string;
             maxFileSize: string;
             systemOptions: string;
-        }>(field.fieldVariables);
+        }>(field?.fieldVariables);
 
         this.#dotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
         this.#dotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
@@ -507,5 +496,13 @@ export class DotEditContentBinaryFieldComponent
         };
 
         return tempFile;
+    }
+
+    private getValue() {
+        if (this.value !== null) {
+            return this.value;
+        }
+
+        return this.contentlet?.[this.variable] ?? this.$field().defaultValue;
     }
 }

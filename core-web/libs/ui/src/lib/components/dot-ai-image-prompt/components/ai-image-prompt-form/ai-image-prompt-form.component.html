@@ -7,25 +7,21 @@
             <div class="field ai-image-prompt__input">
                 <label dotFieldRequired>{{ 'block-editor.extension.ai-image.input' | dm }}</label>
                 <div>
-                    <p-radioButton
-                        formControlName="type"
-                        inputId="optionOne"
-                        value="input"></p-radioButton>
+                    <p-radioButton formControlName="type" inputId="optionOne" value="input" />
                     <label class="ml-2" for="optionOne">{{
                         'block-editor.extension.ai-image.custom.prompt' | dm
                     }}</label>
                 </div>
                 <span>{{ 'block-editor.extension.ai-image.custom.prompt.desc' | dm }}</span>
-                <div>
-                    <p-radioButton
-                        formControlName="type"
-                        inputId="option2"
-                        value="auto"></p-radioButton>
-                    <label class="ml-2" for="option2">{{
-                        'block-editor.extension.ai-image.existing.content' | dm
-                    }}</label>
-                </div>
-                <span>{{ 'block-editor.extension.ai-image.existing.content.desc' | dm }}</span>
+                @if (hasEditorContent) {
+                    <div data-testid="ai-existing-content">
+                        <p-radioButton formControlName="type" inputId="option2" value="auto" />
+                        <label class="ml-2" for="option2">{{
+                            'block-editor.extension.ai-image.existing.content' | dm
+                        }}</label>
+                    </div>
+                    <span>{{ 'block-editor.extension.ai-image.existing.content.desc' | dm }}</span>
+                }
             </div>
             <div class="field ai-image-prompt__orientation">
                 <label dotFieldRequired for="orientation">{{
