@@ -155,7 +155,7 @@ code {
     align-items: center;
     gap: $spacing-1;
     min-height: 32px;
-    font-size: $font-size-smd;
+    font-size: $font-size-sm;
     width: 100%;
 
     a {
@@ -166,7 +166,7 @@ code {
 }
 
 .file-info__title {
-    font-size: $font-size-smd;
+    font-size: $font-size-sm;
     font-style: normal;
     font-weight: 600;
 }
