@@ -1164,6 +1164,15 @@
 
     <profiles>
         <profile>
+            <id>prod</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <!-- Placeholder currently overridden in core-web -->
+            </properties>
+        </profile>
+        <profile>
             <id>jprofiler</id>
             <properties>
                 <docker.debug.args>-agentpath:/jprofiler/bin/linux-aarch64/libjprofilerti.so=port=8849,nowait</docker.debug.args>

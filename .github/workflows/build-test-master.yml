@@ -25,7 +25,7 @@ jobs:
       reuse-previous-build: ${{ inputs.reuse-previous-build || github.event_name != 'workflow_dispatch' }}
       build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || github.event_name != 'workflow_dispatch' }}
   build:
-    name: PR Build
+    name: Trunk Build
     needs: [ initialize ]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/reusable-ci-build.yml
@@ -33,7 +33,7 @@ jobs:
       contents: read
       packages: write
   test:
-    name: PR Test
+    name: Trunk Test
     needs: [ initialize,build ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/reusable-ci-test.yml
@@ -46,7 +46,7 @@ jobs:
       contents: read
       packages: write
   sonar:
-    name: PR SonarQube
+    name: Trunk SonarQube
     needs: [ initialize,test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/reusable-sonarqube.yml
