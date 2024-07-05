@@ -33,7 +33,6 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
         MonacoEditorModule
     ],
     providers: [DotMessageService, DotUploadService]
-    // bootstrap: [AppComponent]
 })
 export class AppModule implements DoBootstrap {
     constructor(private readonly injector: Injector) {}
