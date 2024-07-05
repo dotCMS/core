@@ -7,12 +7,17 @@ import { computed, inject } from '@angular/core';
 
 import { filter, switchMap, tap } from 'rxjs/operators';
 
-import { ComponentStatus, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCategory,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 
 import {
     DotCategoryFieldCategory,
     DotCategoryFieldItem,
-    DotKeyValueObj
+    DotCategoryFieldKeyValueObj
 } from '../models/dot-category-field.models';
 import { CategoriesService } from '../services/categories.service';
 import {
@@ -20,21 +25,22 @@ import {
     checkIfClickedIsLastItem,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
-    getSelectedCategories
+    getSelectedCategories,
+    updateChecked
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
-    rootCategoryInode: string;
+    field: DotCMSContentTypeField;
+    selected: DotCategoryFieldKeyValueObj[];
     categories: DotCategoryFieldCategory[][];
-    categoriesValue: DotKeyValueObj[];
     parentPath: string[];
     state: ComponentStatus;
 };
 
 export const initialState: CategoryFieldState = {
-    rootCategoryInode: '',
+    field: {} as DotCMSContentTypeField,
+    selected: [],
     categories: [],
-    categoriesValue: [],
     parentPath: [],
     state: ComponentStatus.IDLE
 };
@@ -43,22 +49,15 @@ export const initialState: CategoryFieldState = {
  * A Signal store responsible for managing category fields. It keeps track of the state of
  * different categories, provides access to selected categories, and offers methods for
  * loading, retrieving, and cleaning up categories.
- *
- * @typedef {Object} CategoryFieldStore
- *
- *   @property {Array<string>} selectedCategories - The keys of the currently selected items from the contentlet.
- *   @property {Array<Object>} categoryList - The list of categories ready for rendering, where each category has additional properties.
- *   @property {function} load - Sets a given iNode as the parent and loads selected categories into the store.
- *   @property {function} getCategories - Fetches categories of a given iNode category parent.
- *   @property {function} clean - Clears all categories from the store.
  */
 export const CategoryFieldStore = signalStore(
     withState(initialState),
-    withComputed(({ categories, categoriesValue, parentPath }) => ({
+    withComputed(({ field, categories, selected, parentPath }) => ({
         /**
          * Current selected items (key) from the contentlet
          */
-        selectedCategories: computed(() => categoriesValue().map((item) => item.key)),
+        selectedCategoriesValues: computed(() => selected().map((item) => item.key)),
+
         /**
          * Categories for render with added properties
          */
@@ -66,17 +65,46 @@ export const CategoryFieldStore = signalStore(
             categories().map((column) => addMetadata(column, parentPath()))
         ),
 
-        hasSelectedCategories: computed(() => {
-            return !!categoriesValue().map((item) => item.key).length;
-        })
+        /**
+         * Indicates whether any categories are selected.
+         */
+        hasSelectedCategories: computed(() => !!selected().length),
+
+        /**
+         * Get the root category inode.
+         */
+        rootCategoryInode: computed(() => field().values),
+
+        /**
+         * Retrieves the value of the field variable.
+         */
+        fieldVariableName: computed(() => field().variable)
     })),
     withMethods((store, categoryService = inject(CategoriesService)) => ({
         /**
          * Sets a given iNode as the main parent and loads selected categories into the store.
          */
-        load({ variable, values }: DotCMSContentTypeField, contentlet: DotCMSContentlet): void {
-            const categoriesValue = getSelectedCategories(variable, contentlet);
-            patchState(store, { rootCategoryInode: values, categoriesValue });
+        load(field: DotCMSContentTypeField, contentlet: DotCMSContentlet): void {
+            const selected = getSelectedCategories(field, contentlet);
+            patchState(store, {
+                field,
+                selected
+            });
+        },
+
+        /**
+         * Updates the selected items based on the provided item.
+         */
+        updateSelected(selected: string[], item: DotCategory): void {
+            const currentChecked: DotCategoryFieldKeyValueObj[] = updateChecked(
+                store.selected(),
+                selected,
+                item
+            );
+
+            patchState(store, {
+                selected: currentChecked
+            });
         },
 
         /**
