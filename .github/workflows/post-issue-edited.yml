@@ -1,0 +1,16 @@
+name: Post Issue Edited
+on:
+  issues:
+    types: [edited, labeled]
+
+jobs:
+  frontend-notify:
+    name: Issue Resolve Actions
+    if: success()
+    uses: ./.github/workflows/frontend-notify.yml
+    with:
+      edit_type: LABEL
+    secrets:
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

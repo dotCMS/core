@@ -1,6 +1,6 @@
-@if (store.selectedCategories().length) {
+@if (store.selected().length) {
 <div class="dot-category-field__categories" data-testId="category-chip-list">
-    @for (category of store.categoriesValue(); track category.key) {
+    @for (category of store.selected(); track category.key) {
     <p-chip
         [pTooltip]="category.value"
         [removable]="true"

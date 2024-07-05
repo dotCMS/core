@@ -326,8 +326,10 @@ public class FieldAPIImpl implements FieldAPI {
             throws DotDataException {
 
         if (!oldField.contentTypeId().equals(field.contentTypeId())) {
-            throw new DotDataValidationException("Field content type can not be modified, "
-                    + "please use the following: " + oldField.contentTypeId());
+            throw new DotDataValidationException(
+                    String.format("Content type property in fields can not be "
+                            + "modified, use [%s] instead", oldField.contentTypeId())
+            );
         }
 
         if (oldField instanceof RelationshipField && null != oldField.relationType()

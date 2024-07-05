@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import {
     Component,
     DestroyRef,
@@ -55,7 +54,6 @@ import { DotValidators } from './../../../../validators/dotValidators';
         ReactiveFormsModule,
         FormsModule,
         DropdownModule,
-        NgIf,
         InputTextareaModule,
         DotFieldRequiredDirective,
         DotMessagePipe,
@@ -72,6 +70,9 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
     @Input()
     isLoading = false;
+
+    @Input()
+    hasEditorContent = true;
 
     /**
      * An event that is emitted when the value of form change.

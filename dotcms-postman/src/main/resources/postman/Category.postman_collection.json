@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "cd61fd14-c09a-45be-8d96-1759b1e0b294",
+		"_postman_id": "d13b8154-b0c4-46eb-afcd-902105508f76",
 		"name": "Category",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30436704"
 	},
 	"item": [
 		{
@@ -1421,12 +1422,7 @@
 									"type": "file",
 									"src": "/home/hmb-g8/Desktop/categories_10_6_2022.csv"
 								}
-							],
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/categories/_import",
@@ -1514,12 +1510,7 @@
 									"type": "file",
 									"src": "/home/hmb-g8/Desktop/categories_10_6_2022.csv"
 								}
-							],
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/categories/_import",
@@ -2464,6 +2455,602 @@
 						}
 					},
 					"response": []
+				}
+			]
+		},
+		{
+			"name": "Getting Category Children",
+			"item": [
+				{
+					"name": "Create Top Level category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"PostmanTest Top level Category\");",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"topCategoryInode\", jsonData.entity.inode);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"PostmanTest TOP_LEVEL\",\n    \"categoryName\" : \"PostmanTest Top level Category\",\n    \"categoryVelocityVarName\" : \"PostmanTest_childrenTopLevel\",\n    \"sortOrder\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create First child Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"PostmanTest Child 1\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"PostmanTest Child 1\",\n    \"categoryName\" : \"PostmanTest Child 1\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"PostmanTest_ChildTestKey_1\",\n    \"parent\" : \"{{topCategoryInode}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Second child Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"PostmanTest Child 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"PostmanTest Child 2\",\n    \"categoryName\" : \"PostmanTest Child 2\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"PostmanTest_ChildTestKey_2\",\n    \"parent\" : \"{{topCategoryInode}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Third child Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 3\");",
+									"});",
+									"",
+									"",
+									"pm.collectionVariables.set(\"child3Inode\", jsonData.entity.inode);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Child 3\",\n    \"categoryName\" : \"Child 3\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"ChildTestKey_3\",\n    \"parent\" : \"{{topCategoryInode}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Grandchild Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"PostmanTest Grandchild 1\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"PostmanTest ChiGrandchildld 1\",\n    \"categoryName\" : \"PostmanTest Grandchild 1\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"PostmanTest_GrandcßhildTestKey_1\",\n    \"parent\" : \"{{child3Inode}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Second Top Level category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"Second  TOP_LEVEL\",\n    \"categoryName\" : \"Top level Category\",\n    \"categoryVelocityVarName\" : \"second_childrenTopLevel\",\n    \"sortOrder\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories by filter AND looking on the entire tree",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.expect(3).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['categoryName']);   ",
+									"",
+									"        if (i === 0) {",
+									"            pm.expect('PostmanTest Child 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
+									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"        } else if (i === 1) {",
+									"            pm.expect('PostmanTest Child 2').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
+									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"        } else if (i === 2) {",
+									"            pm.expect('PostmanTest Grandchild 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(2).to.have.equals(jsonData.entity[i].parentList.length);",
+									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"            pm.expect('Child 3').to.have.equals(jsonData.entity[i].parentList[1].categoryName);",
+									"        }     ",
+									"    }",
+									"",
+									"    data.includes(\"PostmanTest Child 1\");",
+									"    data.includes(\"PostmanTest Child 2\");",
+									"    data.includes(\"PostmanTest Grandchild 1\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&allLevels=true&inode={{topCategoryInode}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"children"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "PostmanTest"
+								},
+								{
+									"key": "allLevels",
+									"value": "true"
+								},
+								{
+									"key": "inode",
+									"value": "{{topCategoryInode}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories by filter AND looking just in children",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.expect(2).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['categoryName']);       ",
+									"    }",
+									"",
+									"    data.includes(\"PostmanTest Child 1\");",
+									"    data.includes(\"PostmanTest Child 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&inode={{topCategoryInode}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"children"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "PostmanTest"
+								},
+								{
+									"key": "inode",
+									"value": "{{topCategoryInode}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"if (!pm.environment.get('jwt')) {",
+							"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+							"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+							"",
+							"    if (!pm.environment.get('jwt')) {",
+							"        const username = 'admin@dotcms.com';",
+							"        const password = 'admin';",
+							"        const basicAuth = btoa(`${username}:${password}`);",
+							"",
+							"        const requestOptions = {",
+							"            url: apiUrl,",
+							"            method: \"POST\",",
+							"            header: {",
+							"                \"accept\": \"*/*\",",
+							"                \"content-type\": \"application/json\",",
+							"                \"Authorization\": `Basic ${basicAuth}`",
+							"            },",
+							"            body: {",
+							"                mode: \"raw\",",
+							"                raw: JSON.stringify({",
+							"                    \"expirationSeconds\": 7200,",
+							"                    \"userId\": \"dotcms.org.1\",",
+							"                    \"network\": \"0.0.0.0/0\",",
+							"                    \"claims\": {\"label\": \"postman-tests\"}",
+							"                })",
+							"            }",
+							"        };",
+							"",
+							"        pm.sendRequest(requestOptions, function (err, response) {",
+							"            if (err) {",
+							"                console.log(err);",
+							"            } else {",
+							"                const jwt = response.json().entity.jwt;",
+							"                pm.environment.set('jwt', jwt);",
+							"            }",
+							"        });",
+							"    }",
+							"}"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -4806,6 +5393,14 @@
 		},
 		{
 			"key": "categoryKey",
+			"value": ""
+		},
+		{
+			"key": "topCategoryInode",
+			"value": ""
+		},
+		{
+			"key": "child3Inode",
 			"value": ""
 		}
 	]

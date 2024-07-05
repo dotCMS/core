@@ -22,6 +22,7 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -48,8 +49,13 @@ public class CategoryAPIImpl implements CategoryAPI {
 	private final PermissionAPI permissionAPI;
 
 	public CategoryAPIImpl () {
-		categoryFactory = FactoryLocator.getCategoryFactory();
-		permissionAPI = APILocator.getPermissionAPI();
+		this(FactoryLocator.getCategoryFactory(), APILocator.getPermissionAPI());
+	}
+
+	@VisibleForTesting
+	public CategoryAPIImpl (final CategoryFactory categoryFactory, final PermissionAPI permissionAPI) {
+		this.categoryFactory = categoryFactory;
+		this.permissionAPI = permissionAPI;
 	}
 
 	/**
@@ -941,6 +947,35 @@ public class CategoryAPIImpl implements CategoryAPI {
 		return contentType.fields()
 				.stream().anyMatch(CategoryField.class::isInstance);
 
+	}
+
+	/**
+	 * Default implementation.
+	 *
+	 * @param searchCriteria Searching criteria
+	 * @param user User to check Permission
+	 * @param respectFrontendRoles true if you must respect Frontend Roles
+	 *
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@CloseDBIfOpened
+	@Override
+	public PaginatedCategories findAll(final CategorySearchCriteria searchCriteria,
+									   final User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+
+		if (searchCriteria.limit < 1) {
+			throw new IllegalArgumentException("Limit must be greater than 0");
+		}
+
+		final List<Category> allCategories = new ArrayList<>(categoryFactory.findAll(searchCriteria));
+
+		final List<Category> categories = permissionAPI.filterCollection(allCategories,
+				PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+
+		return getCategoriesSubList(searchCriteria.offset, searchCriteria.limit, categories, null);
 	}
 
 }
