@@ -324,6 +324,14 @@
 			}
 
 			if(permAPI.doesUserHavePermission(pp, PermissionAPI.PERMISSION_PUBLISH, user) || bundleAssets.keySet().size()==0) {
+				final String [] bundleIdParts = c.getBundleId().split("-");
+				final StringBuilder shortBundleId = new StringBuilder(bundleIdParts[0]);
+				for (int i = 1; i < bundleIdParts.length; i++) {
+					if (shortBundleId.length() + bundleIdParts[i].length() >= 24) {
+						break;
+					}
+					shortBundleId.append("-").append(bundleIdParts[i]);
+				}
 		%>
 			<tr <%=errorclass%>>
 				<td style="width:30px;text-align:center;" valign="top">
@@ -336,7 +344,7 @@
 				</td>
 
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-					<%=c.getBundleId().split("-")[0]%>...
+					<%=shortBundleId.toString()%>
 				</td>
 				<%--BundleName--%>
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
