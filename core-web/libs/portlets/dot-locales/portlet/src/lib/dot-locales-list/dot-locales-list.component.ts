@@ -14,7 +14,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 
-import { DotActionMenuButtonComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotActionMenuButtonComponent, DotMessagePipe, DotStateRestoreDirective } from '@dotcms/ui';
 
 import {
     DotLocaleListViewModel,
@@ -35,7 +35,8 @@ import {
         TagModule,
         ConfirmDialogModule,
         ConfirmPopupModule,
-        ToastModule
+        ToastModule,
+        DotStateRestoreDirective
     ],
     templateUrl: './dot-locales-list.component.html',
     styleUrl: './dot-locales-list.component.scss',
@@ -46,7 +47,6 @@ export class DotLocalesListComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
     store = inject(DotLocalesListStore);
     dialogKey = LOCALE_CONFIRM_DIALOG_KEY;
-
     vm$: Observable<DotLocaleListViewModel> = this.store.vm$;
 
     ngOnInit() {

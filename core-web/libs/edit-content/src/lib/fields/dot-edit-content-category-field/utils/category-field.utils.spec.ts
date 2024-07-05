@@ -1,41 +1,36 @@
-import { deepCopy } from '@angular-devkit/core';
-
 import {
     addMetadata,
+    categoryDeepCopy,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
-    getSelectedCategories
+    getSelectedCategories,
+    updateChecked
 } from './category-field.utils';
 
 import {
     CATEGORY_FIELD_CONTENTLET_MOCK,
-    CATEGORY_FIELD_VARIABLE_NAME,
+    CATEGORY_FIELD_MOCK,
     CATEGORY_LEVEL_1
 } from '../mocks/category-field.mocks';
-import { DotCategoryFieldCategory, DotKeyValueObj } from '../models/dot-category-field.models';
+import {
+    DotCategoryFieldCategory,
+    DotCategoryFieldKeyValueObj
+} from '../models/dot-category-field.models';
 
 describe('CategoryFieldUtils', () => {
     describe('getSelectedCategories', () => {
         it('should return an empty array if contentlet is null', () => {
-            const result = getSelectedCategories(CATEGORY_FIELD_VARIABLE_NAME, null);
-            expect(result).toEqual([]);
-        });
-        it('should return an empty array if variable is null', () => {
-            const result = getSelectedCategories(null, CATEGORY_FIELD_CONTENTLET_MOCK);
-            expect(result).toEqual([]);
-        });
-        it("should return an empty array if variable is ''", () => {
-            const result = getSelectedCategories('', CATEGORY_FIELD_CONTENTLET_MOCK);
+            const result = getSelectedCategories(CATEGORY_FIELD_MOCK, null);
             expect(result).toEqual([]);
         });
 
         it('should return parsed the values', () => {
-            const expected: DotKeyValueObj[] = [
+            const expected: DotCategoryFieldKeyValueObj[] = [
                 { key: '33333', value: 'Electrical' },
                 { key: '22222', value: 'Doors & Windows' }
             ];
             const result = getSelectedCategories(
-                CATEGORY_FIELD_VARIABLE_NAME,
+                CATEGORY_FIELD_MOCK,
                 CATEGORY_FIELD_CONTENTLET_MOCK
             );
 
@@ -53,6 +48,7 @@ describe('CategoryFieldUtils', () => {
             const result = addMetadata(CATEGORY_LEVEL_1, PARENT_PATH_MOCK);
             expect(result).toEqual(expected);
         });
+
         it('should `checked: false` when category has children and do not exist in the parentPath', () => {
             const PATH_MOCK = [];
             const expected = CATEGORY_LEVEL_1.map((item) => {
@@ -74,13 +70,13 @@ describe('CategoryFieldUtils', () => {
         });
     });
 
-    describe('deepCopy', () => {
+    describe('categoryDeepCopy', () => {
         it('should create a deep copy of a two-dimensional array of DotCategoryFieldCategory', () => {
             const array: DotCategoryFieldCategory[][] = [
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }]
             ];
-            const copy = deepCopy(array);
+            const copy = categoryDeepCopy(array);
 
             // The copy should be equal to the original
             expect(copy).toEqual(array);
@@ -92,7 +88,7 @@ describe('CategoryFieldUtils', () => {
 
         it('should create a deep copy of an empty array', () => {
             const array: DotCategoryFieldCategory[][] = [];
-            const copy = deepCopy(array);
+            const copy = categoryDeepCopy(array);
 
             // The copy should be equal to the original
             expect(copy).toEqual(array);
@@ -103,7 +99,7 @@ describe('CategoryFieldUtils', () => {
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }]
             ];
-            const copy = deepCopy(array);
+            const copy = categoryDeepCopy(array);
 
             // The copy should be equal to the original
             expect(copy).toEqual(array);
@@ -195,6 +191,91 @@ describe('CategoryFieldUtils', () => {
             // The resulting array should be empty
             expect(result.length).toBe(0);
             expect(result).toEqual([]);
+        });
+    });
+
+    describe('updateChecked', () => {
+        it('should add a new item if it is selected and not already in storedSelected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName
+                }
+            ];
+            const selected = [storedSelected[0].key, CATEGORY_LEVEL_1[1].key];
+            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[1] };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [
+                ...storedSelected,
+                {
+                    key: CATEGORY_LEVEL_1[1].key,
+                    value: CATEGORY_LEVEL_1[1].categoryName
+                }
+            ];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should not add a duplicate item if it is already in storedSelected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName
+                }
+            ];
+            const selected = [storedSelected[0].key];
+            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[0] };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should remove an item if it is not selected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName
+                },
+                {
+                    key: CATEGORY_LEVEL_1[1].key,
+                    value: CATEGORY_LEVEL_1[1].categoryName
+                }
+            ];
+            const selected = [storedSelected[0].key];
+            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[1] };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName
+                }
+            ];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should not remove an item that is not in storedSelected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName
+                }
+            ];
+            const selected = [storedSelected[0].key];
+            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[1] };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
         });
     });
 });
