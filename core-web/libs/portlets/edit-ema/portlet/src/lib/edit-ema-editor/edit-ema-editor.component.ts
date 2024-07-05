@@ -1066,7 +1066,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     });
             },
             [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
-                // console.log("LLAMADO - UPDATE_CONTENTLET_INLINE_EDITING");
                 const payload = <UpdatedContentlet>data.payload;
 
                 if (!payload) {
@@ -1084,7 +1083,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.saveFromInlineEditedContentlet({
                     contentlet: {
                         inode: payload.dataset['inode'],
-                        [payload.dataset.fieldName]: payload.innerHTML
+                        [payload.dataset.fieldName]: payload.content
                     },
                     params: this.queryParams
                 });

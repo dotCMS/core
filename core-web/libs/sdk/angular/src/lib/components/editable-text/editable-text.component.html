@@ -1,12 +1,14 @@
 @if (isInsideEditor) {
-<form [formGroup]="form">
-    <editor
-        formControlName="content"
-        [init]="init"
-        [inline]="true"
-        (onFocusOut)="onFocusOut($event)">
-    </editor>
-</form>
+
+<editor
+    [initialValue]="contentlet[field]"
+    [init]="init"
+    [inline]="true"
+    (onFocus)="onFocus($event)"
+    (onFocusOut)="onFocusOut($event)" />
+
 } @else {
-{{ this.content }}
+
+<!-- This won't work for wysiwyg fields, but it will work for text fields -->
+{{ this.contentlet[field] }}
 }

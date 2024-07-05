@@ -1,14 +1,6 @@
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    inject,
-    Input,
-    OnInit,
-    ViewChild
-} from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, Input, ViewChild } from '@angular/core';
 
 import {
     CUSTOMER_ACTIONS,
@@ -17,6 +9,7 @@ import {
     postMessageToEditor
 } from '@dotcms/client';
 
+import { DotCMSContentlet } from '../../models';
 import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
 
 @Component({
@@ -24,7 +17,7 @@ import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
     standalone: true,
     templateUrl: './editable-text.component.html',
     styleUrl: './editable-text.component.css',
-    imports: [EditorComponent, FormsModule, ReactiveFormsModule],
+    imports: [EditorComponent],
     providers: [
         {
             provide: TINYMCE_SCRIPT_SRC,
@@ -36,17 +29,15 @@ import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditableTextComponent implements OnInit {
+export class EditableTextComponent {
     @ViewChild(EditorComponent) editorComponent!: EditorComponent;
 
     @Input() mode = '';
-    @Input() inode = '';
+    @Input() contentlet!: DotCMSContentlet;
     @Input() field = '';
-    @Input() langId = '';
-    @Input() content = '';
 
     private readonly client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
-    protected form!: FormGroup;
+
     protected isInsideEditor = isInsideEditor();
     protected readonly init: EditorComponent['init'] = {
         base_url: `${this.client.dotcmsUrl}/html/tinymce`, // Root for resources
@@ -56,27 +47,42 @@ export class EditableTextComponent implements OnInit {
         menubar: false
     };
 
-    ngOnInit() {
-        this.form = new FormGroup({
-            content: new FormControl(this.content)
-        });
+    get editor() {
+        return this.editorComponent.editor;
+    }
+
+    onFocus(_event: unknown) {
+        // console.log('onFocus', this.contentlet);
+        // postMessageToEditor({
+        //     action: CUSTOMER_ACTIONS.EDITABLE_TEXT_FOCUS,
+        //     payload: {
+        //         inode: this.contentlet.inode,
+        //         langId: this.contentlet.languageId,
+        //         fieldName: this.field
+        //     }
+        // });
     }
 
     onFocusOut(_event: unknown) {
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
-            // Todo: Changes this is a more practical way to send the date to the editor
-            // Todo: Add a way to know when to sanitize the content before sending it to the editor, because for banners we dont want to send HTML Tags to the backend
-            // Should we always sanitize if it's not a wysiwyg field?
-            // How do we know it is a wysiwyg field?
-            payload: {
-                innerHTML: this.form.get('content')?.value,
-                dataset: {
-                    inode: this.inode,
-                    langId: this.langId,
-                    fieldName: this.field
-                }
-            }
+        const content = this.editor.getContent({
+            // TODO: We should change the format based on the field type, if is wysiwyg it should be html, if is text should be text
+            format: 'text'
         });
+
+        if (this.editor.isDirty()) {
+            const dataset = {
+                inode: this.contentlet.inode,
+                langId: this.contentlet.languageId,
+                fieldName: this.field
+            };
+
+            postMessageToEditor({
+                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                payload: {
+                    content,
+                    dataset
+                }
+            });
+        }
     }
 }

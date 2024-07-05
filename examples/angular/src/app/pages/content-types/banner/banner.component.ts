@@ -11,23 +11,19 @@ import { DotCMSContentlet, EditableTextComponent } from '@dotcms/angular';
     class="relative w-full bg-gray-200 h-96 flex justify-center items-center overflow-hidden"
   >
     @if (contentlet.image; as image) {
-      <img
-        class="object-cover w-full"
-        [ngSrc]="image"
-        [alt]="contentlet.title"
-        fill
-        priority
-      />
+    <img
+      class="object-cover w-full"
+      [ngSrc]="image"
+      [alt]="contentlet.title"
+      fill
+      priority
+    />
     }
     <div
       class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white"
     >
       <h2 class="mb-2 text-6xl font-bold text-shadow">
-        <editable-text
-          [inode]="contentlet.inode"
-          [field]="'title'"
-          [content]="contentlet.title"
-        />
+        <editable-text [field]="'title'" [contentlet]="contentlet" />
       </h2>
       <p class="mb-4 text-xl text-shadow">{{ contentlet['caption'] }}</p>
       <a
@@ -43,8 +39,4 @@ import { DotCMSContentlet, EditableTextComponent } from '@dotcms/angular';
 })
 export class BannerComponent {
   @Input() contentlet!: DotCMSContentlet;
-
-  constructor() {
-    console.log(this.contentlet);
-  }
 }
