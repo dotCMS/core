@@ -1,15 +1,22 @@
-import { describe, expect, it } from '@jest/globals';
-import { ActivatedRouteStub } from '@ngneat/spectator';
-import { SpectatorRouting, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
+import { describe, expect } from '@jest/globals';
+import { ActivatedRouteStub, createMouseEvent } from '@ngneat/spectator';
+import {
+    SpectatorRouting,
+    byTestId,
+    createRoutingFactory,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, ActivatedRouteSnapshot, Router, UrlSegment } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
@@ -46,19 +53,26 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
+import {
+    DEFAULT_PERSONA,
+    PAGE_RESPONSE_BY_LANGUAGE_ID,
+    PAYLOAD_MOCK,
+    WINDOW
+} from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 
 describe('DotEmaShellComponent', () => {
     let spectator: SpectatorRouting<DotEmaShellComponent>;
     let store: EditEmaStore;
     let siteService: SiteServiceMock;
+    let confirmationService: SpyObject<ConfirmationService>;
+    let confirmationServiceSpy: jest.SpyInstance;
     let router: Router;
     let route: ActivatedRoute;
 
     const createComponent = createRoutingFactory({
         component: DotEmaShellComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule],
+        imports: [RouterTestingModule, HttpClientTestingModule, ConfirmDialogModule],
         detectChanges: false,
         firstChild: new ActivatedRouteStub({
             url: [new UrlSegment('content', {})]
@@ -87,7 +101,6 @@ describe('DotEmaShellComponent', () => {
             DotMessageService,
             DialogService,
             DotWorkflowActionsFireService,
-
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
@@ -124,31 +137,8 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get() {
-                        return of({
-                            page: {
-                                title: 'hello world',
-                                identifier: '123',
-                                inode: '123',
-                                canEdit: true,
-                                canRead: true,
-                                pageURI: 'index'
-                            },
-                            viewAs: {
-                                language: {
-                                    id: 1,
-                                    language: 'English',
-                                    countryCode: 'US',
-                                    languageCode: 'EN',
-                                    country: 'United States'
-                                },
-                                persona: DEFAULT_PERSONA
-                            },
-                            site: mockSites[0],
-                            template: {
-                                drawed: true
-                            }
-                        });
+                    get({ language_id }) {
+                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
                     },
                     save() {
                         return of({});
@@ -188,7 +178,9 @@ describe('DotEmaShellComponent', () => {
             siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
             store = spectator.inject(EditEmaStore, true);
             router = spectator.inject(Router, true);
+            confirmationService = spectator.inject(ConfirmationService, true);
             jest.spyOn(store, 'load');
+            confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
 
             spectator.triggerNavigation({
                 url: [],
@@ -641,6 +633,254 @@ describe('DotEmaShellComponent', () => {
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
             });
+        });
+
+        describe('language checking', () => {
+            it('should not trigger the confirmation service if the page is translated to the current language', () => {
+                spectator.detectChanges();
+
+                expect(confirmationServiceSpy).not.toHaveBeenCalled();
+            });
+
+            it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                tick();
+
+                expect(confirmationServiceSpy).toHaveBeenCalledWith({
+                    accept: expect.any(Function),
+                    acceptEvent: expect.any(Object),
+                    reject: expect.any(Function),
+                    rejectEvent: expect.any(Object),
+                    rejectIcon: 'hidden',
+                    acceptIcon: 'hidden',
+                    key: 'shell-confirm-dialog',
+                    header: 'editpage.language-change-missing-lang-populate.confirm.header',
+                    message: 'editpage.language-change-missing-lang-populate.confirm.message'
+                });
+            }));
+
+            it('should trigger a navigation to default language when the user rejects the creation', fakeAsync(() => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                tick(1000);
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                const clickEvent = createMouseEvent('click');
+
+                confirmDialog.querySelector('.p-confirm-dialog-reject').dispatchEvent(clickEvent);
+
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { language_id: 1 },
+                    queryParamsHandling: 'merge'
+                });
+            }));
+
+            it('should open a dialog to create the page in the new language when the user accepts the creation', fakeAsync(() => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                const dialog = spectator.component.dialog;
+
+                const translatePageSpy = jest.spyOn(dialog, 'translatePage');
+
+                tick(1000);
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-accept')
+                    .dispatchEvent(new MouseEvent('click'));
+
+                expect(translatePageSpy).toHaveBeenCalledWith({
+                    newLanguage: 2,
+                    page: {
+                        canEdit: true,
+                        canRead: true,
+                        identifier: '123',
+                        inode: '123',
+                        live: true,
+                        liveInode: '1234',
+                        pageURI: 'index',
+                        stInode: '12345',
+                        title: 'hello world'
+                    }
+                });
+            }));
+
+            it('should open a dialog to create the page and navigate to default language if the user closes the dialog', fakeAsync(() => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                tick(1000);
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                const clickEvent = createMouseEvent('click');
+
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK
+                });
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { language_id: 1 },
+                    queryParamsHandling: 'merge'
+                });
+            }));
+
+            it('should open a dialog to create the page and do nothing when the user creates the page correctly', fakeAsync(() => {
+                const reloadSpy = jest.spyOn(store, 'reload');
+
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                tick(1000);
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                const clickEvent = createMouseEvent('click');
+
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK
+                });
+
+                spectator.detectChanges();
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK
+                });
+
+                spectator.detectChanges();
+
+                expect(router.navigate).not.toHaveBeenCalled();
+
+                expect(reloadSpy).toHaveBeenLastCalledWith({
+                    params: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                        clientHost: undefined,
+                        variantName: undefined
+                    }
+                });
+            }));
+
+            it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE', fakeAsync(() => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                tick(1000);
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                const clickEvent = createMouseEvent('click');
+
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.SAVE_PAGE
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK
+                });
+
+                spectator.detectChanges();
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK
+                });
+                spectator.detectChanges();
+
+                expect(router.navigate).not.toHaveBeenCalled();
+            }));
         });
 
         describe('Site Changes', () => {
