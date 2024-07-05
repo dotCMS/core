@@ -17,11 +17,10 @@ import {
     CATEGORY_LEVEL_2,
     SELECTED_LIST_MOCK
 } from '../mocks/category-field.mocks';
-import { DotKeyValueObj } from '../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
 import { CategoriesService } from '../services/categories.service';
 
 const EMPTY_ARRAY = [];
-const EMPTY_STRING = '';
 
 describe('CategoryFieldStore', () => {
     let spectator: SpectatorService<InstanceType<typeof CategoryFieldStore>>;
@@ -47,19 +46,18 @@ describe('CategoryFieldStore', () => {
     });
 
     it('should initialize with default state', () => {
-        expect(store.rootCategoryInode()).toEqual(EMPTY_STRING);
         expect(store.categories()).toEqual(EMPTY_ARRAY);
-        expect(store.categoriesValue()).toEqual(EMPTY_ARRAY);
+        expect(store.selectedCategoriesValues()).toEqual(EMPTY_ARRAY);
         expect(store.parentPath()).toEqual(EMPTY_ARRAY);
         expect(store.state()).toEqual(ComponentStatus.IDLE);
         // computed
-        expect(store.selectedCategories()).toEqual(EMPTY_ARRAY);
+        expect(store.selected()).toEqual(EMPTY_ARRAY);
         expect(store.categoryList()).toEqual(EMPTY_ARRAY);
     });
 
     describe('withMethods', () => {
         it('should set the correct rootCategoryInode and categoriesValue', () => {
-            const expectedCategoryValues: DotKeyValueObj[] = [
+            const expectedCategoryValues: DotCategoryFieldKeyValueObj[] = [
                 {
                     key: '33333',
                     value: 'Electrical'
@@ -73,7 +71,7 @@ describe('CategoryFieldStore', () => {
             store.load(CATEGORY_FIELD_MOCK, CATEGORY_FIELD_CONTENTLET_MOCK);
 
             expect(store.rootCategoryInode()).toEqual(CATEGORY_FIELD_MOCK.values);
-            expect(store.categoriesValue()).toEqual(expectedCategoryValues);
+            expect(store.selected()).toEqual(expectedCategoryValues);
         });
 
         describe('getCategories', () => {
@@ -116,7 +114,7 @@ describe('CategoryFieldStore', () => {
         it('should show item after load the values', () => {
             const expectedSelectedValues = SELECTED_LIST_MOCK;
             store.load(CATEGORY_FIELD_MOCK, CATEGORY_FIELD_CONTENTLET_MOCK);
-            expect(store.selectedCategories().sort()).toEqual(expectedSelectedValues.sort());
+            expect(store.selectedCategoriesValues().sort()).toEqual(expectedSelectedValues.sort());
 
             expect(store.categoryList()).toEqual(EMPTY_ARRAY);
         });
