@@ -3,15 +3,26 @@ import { MockComponent } from 'ng-mocks';
 
 import { HttpClient } from '@angular/common/http';
 import { fakeAsync } from '@angular/core/testing';
+import { ControlContainer, FormControl, FormGroup } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotCategoryFieldSidebarComponent } from './components/dot-category-field-sidebar/dot-category-field-sidebar.component';
 import { DotEditContentCategoryFieldComponent } from './dot-edit-content-category-field.component';
 import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.const';
-import { CATEGORY_FIELD_CONTENTLET_MOCK, CATEGORY_FIELD_MOCK } from './mocks/category-field.mocks';
+import {
+    CATEGORY_FIELD_CONTENTLET_MOCK,
+    CATEGORY_FIELD_MOCK,
+    CATEGORY_FIELD_VARIABLE_NAME
+} from './mocks/category-field.mocks';
 import { CategoriesService } from './services/categories.service';
 import { CategoryFieldStore } from './store/content-category-field.store';
+
+import { createFormGroupDirectiveMock } from '../../utils/mocks';
+
+const FAKE_FORM_GROUP = new FormGroup({
+    [CATEGORY_FIELD_VARIABLE_NAME]: new FormControl()
+});
 
 describe('DotEditContentCategoryFieldComponent', () => {
     let spectator: Spectator<DotEditContentCategoryFieldComponent>;
@@ -19,7 +30,13 @@ describe('DotEditContentCategoryFieldComponent', () => {
     const createComponent = createComponentFactory({
         component: DotEditContentCategoryFieldComponent,
         imports: [MockComponent(DotCategoryFieldSidebarComponent)],
-        componentViewProviders: [CategoryFieldStore],
+        componentViewProviders: [
+            CategoryFieldStore,
+            {
+                provide: ControlContainer,
+                useValue: createFormGroupDirectiveMock(FAKE_FORM_GROUP)
+            }
+        ],
         providers: [
             mockProvider(DotMessageService),
             mockProvider(CategoriesService),
@@ -101,7 +118,10 @@ describe('DotEditContentCategoryFieldComponent', () => {
         });
 
         it('should remove DotEditContentCategoryFieldSidebarComponent when `closedSidebar` emit', fakeAsync(() => {
+            const formMock = spectator.inject(ControlContainer, true).control as FormGroup;
+            const setValueSpy = jest.spyOn(formMock.get(CATEGORY_FIELD_VARIABLE_NAME), 'setValue');
             const selectBtn = spectator.query(byTestId('show-sidebar-btn')) as HTMLButtonElement;
+
             expect(selectBtn).not.toBeNull();
             spectator.click(selectBtn);
 
@@ -115,9 +135,15 @@ describe('DotEditContentCategoryFieldComponent', () => {
             // Due to a delay in the pipe of the subscription
             spectator.tick(CLOSE_SIDEBAR_CSS_DELAY_MS + 100);
 
+            // Check if the sidebar component is removed
             expect(spectator.query(DotCategoryFieldSidebarComponent)).toBeNull();
 
+            // Check if the button is enabled again
             expect(selectBtn.disabled).toBe(false);
+
+            // Check if the form is updated
+
+            expect(setValueSpy).toHaveBeenCalledWith(['33333', '22222']);
         }));
     });
 });
