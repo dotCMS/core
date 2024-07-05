@@ -243,6 +243,47 @@ describe('DotCmsClient', () => {
             });
         });
 
+        describe('page.on', () => {
+            it('should listen to FETCH_PAGE_ASSET_FROM_UVE event', () => {
+                const callback = jest.fn();
+                client.page.on('FETCH_PAGE_ASSET_FROM_UVE', callback);
+
+                const mockMessageEvent = {
+                    data: {
+                        name: 'SET_PAGE_DATA',
+                        payload: { some: 'test' }
+                    }
+                };
+
+                window.dispatchEvent(new MessageEvent('message', mockMessageEvent));
+
+                expect(callback).toHaveBeenCalledWith(mockMessageEvent.data.payload);
+            });
+        });
+
+        describe('page.off', () => {
+            it('should remove a page event listener', () => {
+                const windowSpy = jest.spyOn(window, 'removeEventListener');
+                const callback = jest.fn();
+                client.page.on('FETCH_PAGE_ASSET_FROM_UVE', callback);
+
+                client.page.off('FETCH_PAGE_ASSET_FROM_UVE');
+
+                expect(windowSpy).toHaveBeenCalledWith('message', expect.anything());
+
+                const mockMessageEvent = {
+                    data: {
+                        name: 'SET_PAGE_DATA',
+                        payload: { some: 'test' }
+                    }
+                };
+
+                window.dispatchEvent(new MessageEvent('message', mockMessageEvent));
+
+                expect(callback).not.toHaveBeenCalled();
+            });
+        });
+
         describe('content', () => {
             it('should have an instance of the content API', () => {
                 expect(client.content instanceof Content).toBeTruthy();

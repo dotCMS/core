@@ -16,8 +16,8 @@ import { NavigationComponent } from './components/navigation/navigation.componen
 import { DYNAMIC_COMPONENTS } from '../utils';
 
 import { DotcmsLayoutComponent, PageContextService } from '@dotcms/angular';
-import { onFetchPageAssetFromUVE } from '@dotcms/client';
 import { JsonPipe } from '@angular/common';
+import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 
 @Component({
   selector: 'dotcms-pages',
@@ -38,8 +38,7 @@ export class DotCMSPagesComponent implements OnInit {
 
   protected readonly context = signal<any>(null);
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
-
-  pageContextService = inject(PageContextService);
+  private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
   ngOnInit() {
     // Get the context data from the route
@@ -49,7 +48,7 @@ export class DotCMSPagesComponent implements OnInit {
         this.context.set(data['context']);
       });
 
-    onFetchPageAssetFromUVE((pageAsset) => {
+    this.client.page.on('FETCH_PAGE_ASSET_FROM_UVE', (pageAsset) => {
       this.context.update((context) => ({ ...context, pageAsset }));
     });
   }

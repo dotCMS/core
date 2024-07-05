@@ -1,5 +1,5 @@
 import {
-    getPageDataInsideEditor,
+    fetchPageDataFromInsideUVE,
     listenEditorMessages,
     listenHoveredContentlet,
     preserveScrollOnIframe,
@@ -108,7 +108,7 @@ describe('listeners', () => {
     });
 
     it('should get page data post message to editor', () => {
-        getPageDataInsideEditor('some-url');
+        fetchPageDataFromInsideUVE('some-url');
         expect(postMessageToEditor).toHaveBeenCalledWith({
             action: CUSTOMER_ACTIONS.GET_PAGE_DATA,
             payload: {

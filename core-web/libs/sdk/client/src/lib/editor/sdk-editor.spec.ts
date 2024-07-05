@@ -1,7 +1,7 @@
 import {
     listenEditorMessages,
     listenHoveredContentlet,
-    getPageDataInsideEditor,
+    fetchPageDataFromInsideUVE,
     scrollHandler
 } from './listeners/listeners';
 import { postMessageToEditor, CUSTOMER_ACTIONS } from './models/client.model';
@@ -31,7 +31,7 @@ jest.mock('./listeners/listeners', () => ({
     listenHoveredContentlet: jest.fn(),
     scrollHandler: jest.fn(),
     listenContentChange: jest.fn(),
-    getPageDataInsideEditor: jest.fn()
+    fetchPageDataFromInsideUVE: jest.fn()
 }));
 
 describe('DotCMSPageEditor', () => {
@@ -89,7 +89,7 @@ describe('DotCMSPageEditor', () => {
 
         it('should init editor calling listeners', () => {
             initEditor({ pathname: 'some-url' });
-            expect(getPageDataInsideEditor).toHaveBeenCalledWith('some-url');
+            expect(fetchPageDataFromInsideUVE).toHaveBeenCalledWith('some-url');
             expect(listenEditorMessages).toHaveBeenCalled();
             expect(listenHoveredContentlet).toHaveBeenCalled();
             expect(scrollHandler).toHaveBeenCalled();

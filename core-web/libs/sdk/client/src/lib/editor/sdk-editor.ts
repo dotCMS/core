@@ -1,5 +1,5 @@
 import {
-    getPageDataInsideEditor,
+    fetchPageDataFromInsideUVE,
     listenEditorMessages,
     listenHoveredContentlet,
     scrollHandler,
@@ -41,7 +41,7 @@ export function isInsideEditor() {
  * @param conf - Optional configuration for the editor.
  */
 export function initEditor(config: DotCMSPageEditorConfig) {
-    getPageDataInsideEditor(config.pathname);
+    fetchPageDataFromInsideUVE(config.pathname);
     listenEditorMessages();
     listenHoveredContentlet();
     scrollHandler();
@@ -77,23 +77,4 @@ export function addClassToEmptyContentlets() {
 
         contentlet.classList.add('empty-contentlet');
     });
-}
-
-/**
- * Executes a callback when the editor fetches the page data from the UVE.
- *
- * @param {unknown} callback - The callback to execute when the page data is fetched.
- */
-export function onFetchPageAssetFromUVE(callback: (payload: unknown) => void) {
-    const messageCallback = (event: MessageEvent) => {
-        if (event.data.name === 'SET_PAGE_DATA') {
-            callback(event.data.payload);
-        }
-    };
-
-    window.addEventListener('message', messageCallback);
-
-    return () => {
-        window.removeEventListener('message', messageCallback);
-    };
 }

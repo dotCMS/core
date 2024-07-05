@@ -12,9 +12,11 @@ import Header from "./layout/header";
 import Footer from "./layout/footer/footer";
 import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";
-import { DotcmsLayout, usePage } from "@dotcms/react";
+import { DotcmsLayout } from "@dotcms/react";
 import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
+
+import { usePageAsset } from "../hooks/usePageAsset";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -55,7 +57,7 @@ export function MyPage({ pageAsset, nav }) {
           })
         : DotcmsLayout;
 
-    pageAsset = usePage(pageAsset);
+    pageAsset = usePageAsset(pageAsset);
 
     return (
         <div className="flex flex-col min-h-screen gap-6 bg-lime-50">

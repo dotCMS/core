@@ -2,7 +2,7 @@ import { MyPage } from "@/components/my-page";
 import { ErrorPage } from "@/components/error";
 
 import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
-import { client, getRequestParams } from "@/utils/dotcmsClient";
+import { client } from "@/utils/dotcmsClient";
 import { getPageRequestParams } from "@dotcms/client";
 
 /**
@@ -54,7 +54,6 @@ export default async function Home({ searchParams, params }) {
             return { data: null, nav: null, error };
         }
     };
-
     const { data, nav, error } = await getPageData();
 
     if (error) {

@@ -211,7 +211,7 @@ export function preserveScrollOnIframe() {
  * @private
  * @memberof DotCMSPageEditor
  */
-export function getPageDataInsideEditor(pathname: string) {
+export function fetchPageDataFromInsideUVE(pathname: string) {
     postMessageToEditor({
         action: CUSTOMER_ACTIONS.GET_PAGE_DATA,
         payload: {
