@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -169,9 +170,13 @@ public class WorkflowActionForm extends Validated {
     }
 
     private Map<String, Object> buildMetadata(final Builder builder) {
-        final Map<String, Object> metadata = new HashMap<>(builder.metadata);
-        metadata.put(METADATA_ASYNCHRONOUS_ATTR, builder.asynchronous);
-        return metadata;
+        if (Objects.nonNull(builder.metadata)) {
+            final Map<String, Object> metadata = new HashMap<>(builder.metadata);
+            metadata.put(METADATA_ASYNCHRONOUS_ATTR, builder.asynchronous);
+            return metadata;
+        }
+
+        return builder.metadata;
     }
 
     public static final class Builder {
