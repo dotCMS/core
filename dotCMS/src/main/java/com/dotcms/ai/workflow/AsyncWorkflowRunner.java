@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -138,14 +139,15 @@ interface AsyncWorkflowRunner extends Runnable, Serializable {
      * @param user the user who is running the workflow.
      * @throws DotRuntimeException if an exception occurs during the execution of the workflow.
      */
-    default void handleError(Exception e, final User user) {
+    default void handleError(final Exception e, final User user) {
+        final String errorMsg = String.format("Error: %s", ExceptionUtil.getErrorMessage(e));
         final SystemMessageBuilder message = new SystemMessageBuilder()
-                .setMessage("Error:" + e.getMessage())
+                .setMessage(errorMsg)
                 .setLife(5000)
                 .setType(MessageType.SIMPLE_MESSAGE)
                 .setSeverity(MessageSeverity.ERROR);
         SystemMessageEventUtil.getInstance().pushMessage(message.create(), List.of(user.getUserId()));
-        Logger.warn(this.getClass(), "Error:" + e.getMessage(), e);
+        Logger.error(this.getClass(), errorMsg, e);
         throw new DotRuntimeException(e);
     }
 
