@@ -31,6 +31,8 @@ import org.apache.logging.log4j.util.Strings;
  */
 public class LegacyLangVarMigrationHelper {
 
+    static final Language plainEnglish = new Language(1, "en", null, "English", null);
+
     final ContentletAPI contentletAPI;
 
     final String langVarContentTypeInode;
@@ -175,7 +177,12 @@ public class LegacyLangVarMigrationHelper {
      * @return a map with the languages grouped by language code
      */
     Map<String, List<Language>> mapLanguagesByCode(final List<Language> languages) {
-        return languages.stream().collect(
+        //We're adding the root language english (no country)
+        //to force a match with a file ending in _en.properties
+        //So we're simply adding it here to force a match with that file
+        final List<Language> mutable = new ArrayList<>(languages);
+        mutable.add(plainEnglish);
+        return mutable.stream().collect(
                 Collectors.groupingBy(lang -> lang.getLanguageCode().toLowerCase(), Collectors.toList()));
     }
 
