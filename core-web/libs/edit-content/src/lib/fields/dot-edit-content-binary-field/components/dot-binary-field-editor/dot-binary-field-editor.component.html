@@ -1,5 +1,6 @@
 <form (ngSubmit)="onSubmit()" [formGroup]="form" class="editor-mode__form">
-    <div *ngIf="allowFileNameEdit" class="editor-mode__input-container">
+    @if (allowFileNameEdit) {
+    <div class="editor-mode__input-container">
         <label class="p-label-input-required" data-testId="editor-label" for="file-name">{{
             'dot.binary.field.action.create.new.file.label' | dm
         }}</label>
@@ -18,6 +19,7 @@
                 data-testId="error-message"></dot-field-validation-message>
         </div>
     </div>
+    }
     <div class="binary-field__editor-container">
         <ngx-monaco-editor
             (init)="onEditorInit()"

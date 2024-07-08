@@ -17,14 +17,14 @@ import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import jakarta.enterprise.context.Dependent;
-import jakarta.enterprise.context.control.ActivateRequestContext;
-import jakarta.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
@@ -122,9 +122,19 @@ public class FilePullHandler extends PullHandler<FileTraverseResult> {
                     getOrDefault(INCLUDE_EMPTY_FOLDERS, false);
         }
 
-        output.info(startPullingHeader(contents));
+        var isPullingHeaderDisplayed = false;
 
         for (final var content : contents) {
+
+            // If the traversal process failed, there is no point in trying to pull the content
+            if (!content.exceptions().isEmpty()) {
+                continue;
+            }
+
+            if (!isPullingHeaderDisplayed) {
+                output.info(startPullingHeader(contents));
+                isPullingHeaderDisplayed = true;
+            }
 
             var errors = pullTree(
                     content,

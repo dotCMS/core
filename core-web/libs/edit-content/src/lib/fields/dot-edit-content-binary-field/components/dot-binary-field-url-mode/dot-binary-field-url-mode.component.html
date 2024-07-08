@@ -1,9 +1,5 @@
-<form
-    *ngIf="vm$ | async as vm"
-    (ngSubmit)="onSubmit()"
-    [formGroup]="form"
-    class="url-mode__form"
-    data-testId="form">
+@if (vm$ | async; as vm) {
+<form (ngSubmit)="onSubmit()" [formGroup]="form" class="url-mode__form" data-testId="form">
     <div class="url-mode__input-container">
         <label for="url-input">{{ 'dot.binary.field.action.import.from.url' | dm }}</label>
         <input
@@ -17,16 +13,16 @@
             aria-label="URL input field"
             data-testId="url-input" />
         <div class="error-messsage__container">
+            @if (!vm.error) {
             <dot-field-validation-message
-                *ngIf="!vm.error; else serverError"
                 [message]="'dot.binary.field.action.import.from.url.error.message' | dm"
                 [field]="form.get('url')"
                 data-testId="error-message"></dot-field-validation-message>
-            <ng-template #serverError>
-                <small class="p-invalid" data-testId="error-msg">
-                    {{ vm.error | dm: [acceptTypes] }}
-                </small>
-            </ng-template>
+            } @else {
+            <small class="p-invalid" data-testId="error-msg">
+                {{ vm.error | dm : [acceptTypes] }}
+            </small>
+            }
         </div>
     </div>
     <div class="url-mode__actions">
@@ -37,23 +33,22 @@
             type="button"
             aria-label="Cancel button"
             data-testId="cancel-button"></p-button>
-
         <div [style]="{ width: '6.85rem' }">
+            @if (!vm.isLoading) {
             <p-button
-                *ngIf="!vm.isLoading; else loadingButton"
                 [label]="'dot.common.import' | dm"
                 [icon]="'pi pi-download'"
                 type="submit"
                 aria-label="Import button"
                 data-testId="import-button"></p-button>
-
-            <ng-template #loadingButton>
-                <p-button
-                    [icon]="'pi pi-spin pi-spinner'"
-                    type="button"
-                    aria-label="Loading button"
-                    data-testId="loading-button"></p-button>
-            </ng-template>
+            } @else {
+            <p-button
+                [icon]="'pi pi-spin pi-spinner'"
+                type="button"
+                aria-label="Loading button"
+                data-testId="loading-button"></p-button>
+            }
         </div>
     </div>
 </form>
+}
