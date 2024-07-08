@@ -2,6 +2,7 @@ import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models'
 
 import {
     DotCategoryFieldCategory,
+    DotCategoryFieldCategorySearchedItems,
     DotCategoryFieldKeyValueObj
 } from '../models/dot-category-field.models';
 
@@ -42,6 +43,25 @@ export const addMetadata = (
         return {
             ...category,
             checked: parentPath.includes(category.inode) && category.childrenCount > 0
+        };
+    });
+};
+
+export const transformedData = (
+    categories: DotCategoryFieldCategory[]
+): DotCategoryFieldCategorySearchedItems[] => {
+    return categories.map((item) => {
+        // const path = item.parentList.map((parent) => parent.categoryName).join(' / ');
+        const path = item.parentList
+            .slice(1)
+            .map((parent) => parent.categoryName)
+            .join(' / ');
+
+        return {
+            categoryName: item.categoryName,
+            key: item.key,
+            inode: item.inode,
+            path: path
         };
     });
 };
@@ -90,6 +110,39 @@ export const checkIfClickedIsLastItem = (
     categories: DotCategoryFieldCategory[][]
 ) => {
     return index + 1 === categories.length;
+};
+
+/**
+ * Update storedSelected from search results.
+ *
+ * @param {DotCategoryFieldKeyValueObj[]} storedSelected - The array of items currently stored as selected.
+ * @param {DotCategoryFieldCategorySearchedItems[]} selected - The array of items that were selected from the search results.
+ * @param {DotCategoryFieldCategory[]} searchedItems - The array of items obtained from the search.
+ * @returns {DotCategoryFieldKeyValueObj[]} The updated array of selected items.
+ */
+export const updateSelectedFromSearch = (
+    storedSelected: DotCategoryFieldKeyValueObj[],
+    selected: DotCategoryFieldCategorySearchedItems[],
+    searchedItems: DotCategoryFieldCategory[]
+): DotCategoryFieldKeyValueObj[] => {
+    // Create a map for quick lookup of searched items
+    const searchedItemsMap = new Map(searchedItems.map((item) => [item.key, item]));
+
+    // Remove items from storedSelected that are in searchedItems
+    const currentChecked = storedSelected.filter((item) => !searchedItemsMap.has(item.key));
+
+    // Add new selected items to currentChecked
+    for (const item of selected) {
+        if (!currentChecked.some((checkedItem) => checkedItem.key === item.key)) {
+            currentChecked.push({
+                value: item.categoryName,
+                key: item.key,
+                path: item.path
+            });
+        }
+    }
+
+    return currentChecked;
 };
 
 /**

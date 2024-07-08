@@ -5,7 +5,7 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { filter, switchMap, tap } from 'rxjs/operators';
+import { delay, filter, switchMap, tap } from 'rxjs/operators';
 
 import {
     ComponentStatus,
@@ -14,8 +14,10 @@ import {
     DotCMSContentTypeField
 } from '@dotcms/dotcms-models';
 
+import { CategoryFieldViewMode } from '../components/dot-category-field-sidebar/dot-category-field-sidebar.component';
 import {
     DotCategoryFieldCategory,
+    DotCategoryFieldCategorySearchedItems,
     DotCategoryFieldItem,
     DotCategoryFieldKeyValueObj
 } from '../models/dot-category-field.models';
@@ -26,7 +28,9 @@ import {
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
     getSelectedCategories,
-    updateChecked
+    transformedData,
+    updateChecked,
+    updateSelectedFromSearch
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
@@ -35,6 +39,10 @@ export type CategoryFieldState = {
     categories: DotCategoryFieldCategory[][];
     parentPath: string[];
     state: ComponentStatus;
+    // search
+    mode: CategoryFieldViewMode;
+    filter: string;
+    searchCategories: DotCategoryFieldCategory[];
 };
 
 export const initialState: CategoryFieldState = {
@@ -42,7 +50,10 @@ export const initialState: CategoryFieldState = {
     selected: [],
     categories: [],
     parentPath: [],
-    state: ComponentStatus.IDLE
+    state: ComponentStatus.IDLE,
+    mode: 'list',
+    filter: '',
+    searchCategories: []
 };
 
 /**
@@ -52,33 +63,46 @@ export const initialState: CategoryFieldState = {
  */
 export const CategoryFieldStore = signalStore(
     withState(initialState),
-    withComputed(({ field, categories, selected, parentPath }) => ({
+    withComputed((store) => ({
         /**
          * Current selected items (key) from the contentlet
          */
-        selectedCategoriesValues: computed(() => selected().map((item) => item.key)),
+        selectedCategoriesValues: computed(() => store.selected().map((item) => item.key)),
 
         /**
          * Categories for render with added properties
          */
         categoryList: computed(() =>
-            categories().map((column) => addMetadata(column, parentPath()))
+            store.categories().map((column) => addMetadata(column, store.parentPath()))
         ),
 
         /**
          * Indicates whether any categories are selected.
          */
-        hasSelectedCategories: computed(() => !!selected().length),
+        hasSelectedCategories: computed(() => !!store.selected().length),
 
         /**
          * Get the root category inode.
          */
-        rootCategoryInode: computed(() => field().values),
+        rootCategoryInode: computed(() => store.field().values),
 
         /**
          * Retrieves the value of the field variable.
          */
-        fieldVariableName: computed(() => field().variable)
+        fieldVariableName: computed(() => store.field().variable),
+
+        // Search
+        getSearchedCategories: computed(() => transformedData(store.searchCategories())), // remove this one
+
+        isSearchLoading: computed(
+            () => store.mode() === 'search' && store.state() === ComponentStatus.LOADING
+        ),
+        searchCategoriesFound: computed(
+            () =>
+                store.mode() === 'search' &&
+                store.state() === ComponentStatus.LOADED &&
+                store.filter()
+        )
     })),
     withMethods((store, categoryService = inject(CategoriesService)) => ({
         /**
@@ -89,6 +113,14 @@ export const CategoryFieldStore = signalStore(
             patchState(store, {
                 field,
                 selected
+            });
+        },
+
+        setMode(mode: 'list' | 'search'): void {
+            patchState(store, {
+                mode,
+                searchCategories: [],
+                filter: ''
             });
         },
 
@@ -105,6 +137,25 @@ export const CategoryFieldStore = signalStore(
             patchState(store, {
                 selected: currentChecked
             });
+        },
+
+        updateSelectedFromSearch(selectedItems: DotCategoryFieldCategorySearchedItems[]): void {
+            const currentChecked: DotCategoryFieldKeyValueObj[] = updateSelectedFromSearch(
+                store.selected(),
+                selectedItems,
+                store.searchCategories()
+            );
+
+            patchState(store, {
+                selected: [...currentChecked]
+            });
+        },
+
+        /**
+         * Clears all categories from the store, effectively resetting state related to categories and their parent paths.
+         */
+        clean() {
+            patchState(store, { categories: [], parentPath: [], mode: 'list', filter: '' });
         },
 
         /**
@@ -169,11 +220,27 @@ export const CategoryFieldStore = signalStore(
             )
         ),
 
-        /**
-         * Clears all categories from the store, effectively resetting state related to categories and their parent paths.
-         */
-        clean() {
-            patchState(store, { categories: [], parentPath: [] });
-        }
+        search: rxMethod<string>(
+            pipe(
+                tap(() => patchState(store, { mode: 'search', state: ComponentStatus.LOADING })),
+                switchMap((filter) => {
+                    return categoryService.getChildren(store.rootCategoryInode(), { filter }).pipe(
+                        delay(300),
+                        tapResponse({
+                            next: (categories) => {
+                                patchState(store, {
+                                    searchCategories: categories,
+                                    state: ComponentStatus.LOADED
+                                });
+                            },
+                            error: () => {
+                                // TODO: Add Error Handler
+                                patchState(store, { state: ComponentStatus.IDLE });
+                            }
+                        })
+                    );
+                })
+            )
+        )
     }))
 );

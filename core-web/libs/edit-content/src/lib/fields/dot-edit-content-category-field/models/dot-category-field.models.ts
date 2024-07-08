@@ -24,3 +24,8 @@ export type DotCategoryFieldItem = { index: number; item: DotCategory };
 export interface DotCategoryFieldCategory extends DotCategory {
     checked?: boolean;
 }
+
+export interface DotCategoryFieldCategorySearchedItems
+    extends Pick<DotCategory, 'categoryName' | 'key' | 'inode'> {
+    path: string;
+}

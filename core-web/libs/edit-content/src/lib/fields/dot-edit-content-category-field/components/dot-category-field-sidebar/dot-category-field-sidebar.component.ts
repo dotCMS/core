@@ -1,3 +1,4 @@
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -10,12 +11,19 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 import { SidebarModule } from 'primeng/sidebar';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotCategoryFieldCategorySearchedItems } from '../../models/dot-category-field.models';
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
+import { DotCategoryFieldSearchComponent } from '../dot-category-field-search/dot-category-field-search.component';
+import {
+    DotCategoryFieldSearchListComponent
+} from "../dot-category-field-search-list/dot-category-field-search-list.component";
+
 /**
  * The DotCategoryFieldSidebarComponent is a sidebar panel that allows editing of content category field.
  * It provides interfaces for item selection and click handling, and communicates with a store
@@ -32,11 +40,25 @@ import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-cat
         ButtonModule,
         DotMessagePipe,
         SidebarModule,
-        DotCategoryFieldCategoryListComponent
+        DotCategoryFieldCategoryListComponent,
+        InputTextModule,
+        DotCategoryFieldSearchComponent,
+        DotCategoryFieldSearchListComponent
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    animations: [
+        trigger('fadeAnimation', [
+            state(
+                'void',
+                style({
+                    opacity: 0
+                })
+            ),
+            transition(':enter, :leave', [animate('50ms ease-in-out')])
+        ])
+    ]
 })
 export class DotCategoryFieldSidebarComponent implements OnInit {
     /**
@@ -59,5 +81,9 @@ export class DotCategoryFieldSidebarComponent implements OnInit {
         this.#destroyRef.onDestroy(() => {
             this.store.clean();
         });
+    }
+
+    selectedSearch($event: DotCategoryFieldCategorySearchedItems[]) {
+        this.store.updateSelectedFromSearch($event);
     }
 }
