@@ -139,9 +139,6 @@ public class CategoriesResource {
      * <li>per_page: limit of items to return</li>
      * <li>ordeby: field to order by</li>
      * <li>direction: asc for upward order and desc for downward order</li>
-     * <li>showChildrenCount: true for including children categories count and false to exclude it</li>
-     * <li>allLevels: A Boolean value.  If TRUE, the search will include categories at any level, ignoring the childrenCategories parameter,
-     * if showChildrenCount is equals to TRUE then this is ignored.</li>
      * </ul>
      * <p>
      * Url example: /api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true
@@ -199,22 +196,30 @@ public class CategoriesResource {
 
     /**
      * Return a list of {@link com.dotmarketing.portlets.categories.model.Category}, entity response
-     * syntax:.
+     * Syntax:.
      *
-     * <code> { contentTypes: array of Category total: total number of Categories } <code/>
+     * <code>
+     * {
+     *   contentTypes: array of Category,
+     *   total: total number of Categories
+     * }
+     * <code/>
+     *
      * <p>
      * Url syntax:
      * api/v1/categories/children?filter=filter-string&page=page-number&per_page=per-page&orderby=order-field-name&direction=order-direction&inode=parentId
      * <p>
-     * where:
      *
-     * <ul>
-     * <li>filter-string: just return Category whose content this pattern into its name</li>
-     * <li>page: page to return</li>
-     * <li>per_page: limit of items to return</li>
-     * <li>ordeby: field to order by</li>
-     * <li>direction: asc for upward order and desc for downward order</li>
-     * </ul>
+     * Parameeters:
+     *
+     * - filter-string: Return categories whose names contain this pattern.
+     * - page: The page number to return.
+     * - per_page: The limit of items to return.
+     * - orderby: The field to order by.
+     * - direction: Sorting direction, asc for ascending and desc for descending.
+     * - showChildrenCount: true to include the count of child categories, false to exclude it.
+     * - allLevels: A Boolean value. If TRUE, the search will include categories at any level, ignoring the childrenCategories parameter. If showChildrenCount is TRUE, this parameter is ignored.
+     *
      * <p>
      * Url example: v1/categories/children?filter=test&page=0&per_page=5&orderby=category_name
      *
