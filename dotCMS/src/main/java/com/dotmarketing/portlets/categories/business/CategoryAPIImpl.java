@@ -984,7 +984,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 	@CloseDBIfOpened
 	@Override
 	public List<HierarchyShortCategory> findHierarchy(final Collection<String> inodes) throws DotDataException {
-		Logger.info(this, "Geeting parentList for the follow Categories: " + inodes);
+		Logger.debug(this, "Getting parentList for the follow Categories: " + inodes);
 		return categoryFactory.findHierarchy(inodes);
 	}
 }
