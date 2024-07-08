@@ -12,14 +12,12 @@
         [style]="{ height: '90%', width: '90%' }"
         (onHide)="store.hideDialog()">
         <div class="dialog-prompt__wrapper">
-            @if (vm.showDialog) {
-                <dot-ai-image-prompt-form
-                    (valueChange)="store.setFormValue($event)"
-                    (generate)="store.generateImage()"
-                    [value]="vm.images[vm.galleryActiveIndex]"
-                    [isLoading]="vm.isLoading"
-                    [hasEditorContent]="vm.hasEditorContent" />
-            }
+            <dot-ai-image-prompt-form
+                (valueChange)="store.setFormValue($event)"
+                (generate)="store.generateImage()"
+                [value]="vm.images[vm.galleryActiveIndex]"
+                [isLoading]="vm.isLoading"
+                [hasEditorContent]="false" />
             <div [class.dialog-prompt_gallery]="vm.images.length || vm.isLoading">
                 <dot-ai-image-prompt-gallery
                     (activeIndexChange)="store.setGalleryActiveIndex($event)"

@@ -1,5 +1,5 @@
 import {
-    AfterViewInit,
+    ChangeDetectionStrategy,
     Component,
     DestroyRef,
     EventEmitter,
@@ -60,9 +60,10 @@ import { DotValidators } from './../../../../validators/dotValidators';
         DotMessagePipe,
         DotCopyButtonComponent
     ],
-    styleUrls: ['./ai-image-prompt-form.component.scss']
+    styleUrls: ['./ai-image-prompt-form.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AiImagePromptFormComponent implements OnChanges, OnInit, AfterViewInit {
+export class AiImagePromptFormComponent implements OnChanges, OnInit {
     /**
      * The value of the generated AI image.
      */
@@ -115,15 +116,6 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit, AfterViewI
     ];
     private isUpdatingValidators = false;
     private destroyRef = inject(DestroyRef);
-    loadedAccordion = false;
-
-    ngOnInit(): void {
-        this.initForm();
-    }
-
-    ngAfterViewInit() {
-        this.loadedAccordion = true;
-    }
 
     ngOnChanges(changes: SimpleChanges): void {
         const { value, isLoading } = changes;
@@ -133,6 +125,10 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit, AfterViewI
         this.setSubmitButtonLabel(isLoading?.currentValue);
 
         this.toggleFormState(isLoading?.currentValue && !isLoading.firstChange);
+    }
+
+    ngOnInit(): void {
+        this.initForm();
     }
 
     private initForm(): void {
