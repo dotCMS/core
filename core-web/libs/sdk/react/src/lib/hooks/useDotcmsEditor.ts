@@ -4,26 +4,27 @@ import {
     DotCMSPageEditorConfig,
     destroyEditor,
     initEditor,
-    isInsideEditor,
+    isInsideEditor as isInsideEditorFn,
     updateNavigation
 } from '@dotcms/client';
-export const useDotcmsEditor = (config?: DotCMSPageEditorConfig) => {
-    const [isInsideEditorPage, setIsInsideEditorPage] = useState(false);
-    useEffect(() => {
-        const insideEditor = isInsideEditor();
-        if (insideEditor) {
-            initEditor(config);
-            updateNavigation(config?.pathname || '/');
-        }
 
-        setIsInsideEditorPage(insideEditor);
+export const useDotcmsEditor = ({ pathname }: DotCMSPageEditorConfig) => {
+    const [isInsideEditor, setIsInsideEditor] = useState(false);
+
+    useEffect(() => {
+        const insideEditor = isInsideEditorFn();
+        if (insideEditor) {
+            initEditor({ pathname });
+            updateNavigation(pathname || '/');
+            setIsInsideEditor(insideEditor);
+        }
 
         return () => {
             if (insideEditor) {
                 destroyEditor();
             }
         };
-    }, [config]);
+    }, [pathname]);
 
-    return isInsideEditorPage;
+    return { isInsideEditor };
 };

@@ -42,11 +42,14 @@ export enum CUSTOMER_ACTIONS {
      * Tell the editor to save inline edited contentlet
      */
     UPDATE_CONTENTLET_INLINE_EDITING = 'update-contentlet-inline-editing',
-
     /**
      * Tell the editor to trigger a menu reorder
      */
     REORDER_MENU = 'reorder-menu',
+    /**
+     * Tell the editor to send the page info to iframe
+     */
+    GET_PAGE_DATA = 'get-page-data',
 
     NOOP = 'noop'
 }

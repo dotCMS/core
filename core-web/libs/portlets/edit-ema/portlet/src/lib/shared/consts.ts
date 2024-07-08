@@ -27,8 +27,6 @@ export const CONTENTLET_SELECTOR_URL = `/html/ng-contentlet-selector.jsp`;
 
 export const HOST = 'http://localhost:3000';
 
-export const EDIT_MODE = 'EDIT_MODE';
-
 export const WINDOW = new InjectionToken<Window>('WindowToken');
 
 export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
