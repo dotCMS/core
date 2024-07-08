@@ -1,7 +1,7 @@
 import {
-  ChangeDetectorRef,
   Component,
   DestroyRef,
+  OnDestroy,
   OnInit,
   inject,
   signal,
@@ -32,7 +32,7 @@ import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
   templateUrl: './pages.component.html',
   styleUrl: './pages.component.css',
 })
-export class DotCMSPagesComponent implements OnInit {
+export class DotCMSPagesComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -51,5 +51,9 @@ export class DotCMSPagesComponent implements OnInit {
     this.client.editor.on('changes', (pageAsset) => {
       this.context.update((context) => ({ ...context, pageAsset }));
     });
+  }
+
+  ngOnDestroy() {
+    this.client.editor.off('changes');
   }
 }
