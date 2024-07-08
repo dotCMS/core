@@ -276,7 +276,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a load when changing the clientHost and it is on the devURLWhitelist', () => {
+            it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -288,7 +288,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: ['http://localhost:1111']
+                                allowedDevURLs: ['http://localhost:1111']
                             }
                         }
                     }
@@ -303,7 +303,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a load when changing the clientHost and it is on the devURLWhitelist with a slash at the end', () => {
+            it('should trigger a load when changing the clientHost and it is on the allowedDevURLs with a slash at the end', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -315,7 +315,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: ['http://localhost:1111/']
+                                allowedDevURLs: ['http://localhost:1111/']
                             }
                         }
                     }
@@ -330,7 +330,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a load when changing the clientHost has an slash at the and it is on the devURLWhitelist without the slash at the end', () => {
+            it('should trigger a load when changing the clientHost has an slash at the and it is on the allowedDevURLs without the slash at the end', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -342,7 +342,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: ['http://localhost:1111']
+                                allowedDevURLs: ['http://localhost:1111']
                             }
                         }
                     }
@@ -357,7 +357,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a load when changing the clientHost has an slash at the and it is on the devURLWhitelist with the slash at the end', () => {
+            it('should trigger a load when changing the clientHost has an slash at the and it is on the allowedDevURLs with the slash at the end', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -369,7 +369,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: ['http://localhost:1111/']
+                                allowedDevURLs: ['http://localhost:1111/']
                             }
                         }
                     }
@@ -384,7 +384,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a navigate without the clientHost queryParam when the url is not in the devURLWhitelist', () => {
+            it('should trigger a navigate without the clientHost queryParam when the url is not in the allowedDevURLs', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -396,7 +396,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: ['http://localhost:4200']
+                                allowedDevURLs: ['http://localhost:4200']
                             }
                         }
                     }
@@ -422,7 +422,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a navigate without the clientHost queryParam when the devURLWhitelistis empty', () => {
+            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -434,7 +434,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: []
+                                allowedDevURLs: []
                             }
                         }
                     }
@@ -459,7 +459,7 @@ describe('DotEmaShellComponent', () => {
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
             });
-            it('should trigger a navigate without the clientHost queryParam when the devURLWhitelistis has a wrong data type', () => {
+            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is has a wrong data type', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -471,7 +471,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: "I'm not an array"
+                                allowedDevURLs: "I'm not an array"
                             }
                         }
                     }
@@ -497,7 +497,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a navigate without the clientHost queryParam when the devURLWhitelistis is not present', () => {
+            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is is not present', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
