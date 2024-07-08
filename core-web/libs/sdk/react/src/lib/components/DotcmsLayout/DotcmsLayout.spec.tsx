@@ -33,7 +33,12 @@ jest.mock('../PageProvider/PageProvider', () => {
 
 describe('DotcmsLayout', () => {
     it('renders correctly with PageProvider and rows', () => {
-        render(<DotcmsLayout pageContext={{ ...mockPageContext, isInsideEditor: true }} />);
+        render(
+            <DotcmsLayout
+                pageContext={{ ...mockPageContext, isInsideEditor: true }}
+                config={{ pathname: 'some-url' }}
+            />
+        );
         expect(screen.getAllByTestId('mockRow').length).toBe(
             mockPageContext.pageAsset.layout.body.rows.length
         );
