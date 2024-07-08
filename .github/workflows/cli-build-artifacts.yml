@@ -158,25 +158,48 @@ jobs:
           echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: 'Cache Maven Repository'
-        id: cache-maven
-        uses: actions/cache@v4
+      - name: Download Build Artifact
+        id: data-download
+        uses: dawidd6/action-download-artifact@v3.1.4
         with:
-          path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
-          restore-keys: |
-            mavencore-${{ steps.get-date.outputs.date }}
+          github_token: ${{ github.token }}
+          workflow_search: true
+          commit: ${{ github.sha }}
+          workflow_conclusion: success
+          search_artifacts: true
+          dry_run: true
+          name: maven-repo
+          path: .
+          if_no_artifact_found: warn            
+
+      - name: 'Check if artifact exists'
+        id: check
+        run: |
+          build_artifact_exists=${{ steps.data-download.outputs.found_artifact }}
+          if [[ ${build_artifact_exists} == "true" ]]; then
+              run_id=`echo '${{ steps.data-download.outputs.artifacts }}' | jq -r '.[0].workflow_run.id'`
+              found_artifacts=true
+              echo "Artifact Run id: $run_id"
+          else
+              echo "No artifact found"
+              run_id="${{ github.run_id }}"
+              found_artifacts=false
+          fi
+          echo "run_id=$run_id" >> $GITHUB_OUTPUT
+          echo "found_artifacts=$found_artifacts" >> $GITHUB_OUTPUT
+      
+      - name: 'Download Maven Repo'
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.check.outputs.run_id }}
+          github-token: ${{ github.token }}
+          name: maven-repo
+          path: ~/.m2/repository            
 
       - name: 'Compile source code'
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=$SKIP_TESTS -am -pl :dotcms-cli
-
-      - name: 'Build uber-jar'
-        if: ${{ matrix.label == 'Linux' }}
-        working-directory: ${{ github.workspace }}
-        run: |
-          ./mvnw package -Puber-jar -DskipTests=$SKIP_TESTS -pl :dotcms-cli
 
       # Builds a native image of the CLI using GRAALVM (Linux/macOS)
       # Runs on a matrix for different operating systems
