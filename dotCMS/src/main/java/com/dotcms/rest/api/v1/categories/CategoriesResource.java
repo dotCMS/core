@@ -343,6 +343,9 @@ public class CategoriesResource {
                                        @Context final HttpServletResponse httpResponse,
                                        final CategoryInodesForm form) throws DotDataException, DotSecurityException {
 
+        Logger.debug(this, () -> "Getting the List of Parents for the follow categories: " +
+                form.getInodes().stream().collect(Collectors.joining(",")));
+
         webResource.init(null, httpRequest, httpResponse, true, null);
 
         return Response.ok(

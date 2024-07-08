@@ -986,8 +986,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			return Collections.emptyList();
 		}
 
-		final String queryTemplate = "WITH RECURSIVE CategoryHierarchy AS ( " +
-			"SELECT 	" +
+		final String queryTemplate = "WITH RECURSIVE CategoryHierarchy AS ( SELECT " +
 					"c.inode," +
 					"c.inode AS root_inode," +
 					"1 AS level," +
