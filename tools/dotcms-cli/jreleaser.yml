@@ -51,14 +51,6 @@ distributions:
         platform: 'linux-x86_64'
         extraProperties:
           optional: 'true'
-      # - path: '{{artifactsDir}}/{{artifactsDir}}-osx-aarch_64/dotcms-cli-{{projectVersion}}-runner.jar'
-      #   platform: 'osx-aarch_64'
-      #   extraProperties:
-      #     optional: 'true'
-      # - path: '{{artifactsDir}}/{{artifactsDir}}-osx-x86_64/dotcms-cli-{{projectVersion}}-runner.jar'
-      #   platform: 'osx-x86_64'
-      #   extraProperties:
-      #     optional: 'true'
 
   dotcms-cli-native:
     type: BINARY
