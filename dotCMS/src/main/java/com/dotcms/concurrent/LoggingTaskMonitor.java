@@ -9,26 +9,26 @@ import com.dotmarketing.util.Logger;
 public class LoggingTaskMonitor implements TaskMonitor {
 
     @Override
-    public void onTaskStarted(final Object processId, final String message) {
+    public void onTaskStarted(final Object processId, final Object subProcessId) {
 
-        Logger.debug(this.getClass(), "Task started: " + processId + " - msg:" + message);
+        Logger.debug(this.getClass(), "Task started, process id: " + processId + " - sub process id:" + subProcessId);
     }
 
     @Override
-    public void onTaskProgress(final Object processId, final String message, final int progress) {
+    public void onTaskProgress(final Object processId, final Object subProcessId, final int progress) {
 
-        Logger.debug(this.getClass(), "Task progress: " + processId + " - " + progress + "%"  + " - msg:" + message);
+        Logger.debug(this.getClass(), "Task progress, process id: " + processId + " - " + progress + "%"  + " - sub process id:" + subProcessId);
     }
 
     @Override
-    public void onTaskCompleted(final Object processId, final String message) {
+    public void onTaskCompleted(final Object processId, final Object subProcessId) {
 
-        Logger.debug(this.getClass(), "Task completed: " + processId + " - msg:" + message);
+        Logger.debug(this.getClass(), "Task completed, process id: " + processId + " - sub process id:" + subProcessId);
     }
 
     @Override
-    public void onTaskFailed(final Object processId, final String message, final Exception error) {
+    public void onTaskFailed(final Object processId, final Object subProcessId, final Exception error) {
 
-        Logger.error(this.getClass(), "Task failed: " + processId  + " - msg:" + message, error);
+        Logger.error(this.getClass(), "Task failed, process id: " + processId  + " - sub process id:" + subProcessId, error);
     }
 }
