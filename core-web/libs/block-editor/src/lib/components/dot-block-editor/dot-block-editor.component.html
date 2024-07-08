@@ -1,8 +1,8 @@
 @if (editor) {
     <div
         [ngClass]="{
-            'editor-wrapper--fullscreen': isFullscreen === 'true',
-            'editor-wrapper--default': isFullscreen !== 'true'
+            'editor-wrapper--fullscreen': isFullscreen === true,
+            'editor-wrapper--default': isFullscreen !== true
         }"
         [style]="customStyles"
         class="editor-wrapper">

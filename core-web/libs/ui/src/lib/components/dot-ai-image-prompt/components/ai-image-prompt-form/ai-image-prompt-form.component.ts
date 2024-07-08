@@ -1,4 +1,5 @@
 import {
+    AfterViewInit,
     Component,
     DestroyRef,
     EventEmitter,
@@ -61,7 +62,7 @@ import { DotValidators } from './../../../../validators/dotValidators';
     ],
     styleUrls: ['./ai-image-prompt-form.component.scss']
 })
-export class AiImagePromptFormComponent implements OnChanges, OnInit {
+export class AiImagePromptFormComponent implements OnChanges, OnInit, AfterViewInit {
     /**
      * The value of the generated AI image.
      */
@@ -114,9 +115,14 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     ];
     private isUpdatingValidators = false;
     private destroyRef = inject(DestroyRef);
+    loadedAccordion = false;
 
     ngOnInit(): void {
         this.initForm();
+    }
+
+    ngAfterViewInit() {
+        this.loadedAccordion = true;
     }
 
     ngOnChanges(changes: SimpleChanges): void {
