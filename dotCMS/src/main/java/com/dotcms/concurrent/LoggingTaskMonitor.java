@@ -1,5 +1,6 @@
 package com.dotcms.concurrent;
 
+import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -17,7 +18,7 @@ public class LoggingTaskMonitor implements TaskMonitor {
     @Override
     public void onTaskProgress(final Object processId, final Object subProcessId, final int progress) {
 
-        Logger.debug(this.getClass(), "Task progress, process id: " + processId + " - " + progress + "%"  + " - sub process id:" + subProcessId);
+        Logger.debug(this.getClass(), "Task progress, process id: " + processId + " - sub process id:" + subProcessId + " - " + progress + "%");
     }
 
     @Override

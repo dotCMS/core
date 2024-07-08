@@ -541,7 +541,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     public TaskMonitor getTaskMonitor(final String taskMonitorName) {
 
         // this should be more configurable and diff implementations
-        return new LoggingTaskMonitor();
+        return new ToastTaskMonitor();//new LoggingTaskMonitor();
     }
     /**
      * Create a composite completable futures and results any of the first results done of the futures parameter.
