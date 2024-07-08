@@ -1,15 +1,18 @@
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     DestroyRef,
     EventEmitter,
     inject,
     Input,
     OnChanges,
-    OnInit,
     Output,
+    signal,
     SimpleChange,
-    SimpleChanges
+    SimpleChanges,
+    ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -20,7 +23,7 @@ import {
     Validators
 } from '@angular/forms';
 
-import { AccordionModule } from 'primeng/accordion';
+import { AccordionModule, Accordion } from 'primeng/accordion';
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
@@ -63,7 +66,7 @@ import { DotValidators } from './../../../../validators/dotValidators';
     styleUrls: ['./ai-image-prompt-form.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AiImagePromptFormComponent implements OnChanges, OnInit {
+export class AiImagePromptFormComponent implements OnChanges, AfterViewInit {
     /**
      * The value of the generated AI image.
      */
@@ -75,6 +78,23 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
     @Input()
     hasEditorContent = true;
+
+    activeIndex = signal(0);
+
+    @Input()
+    set showDialog(state: boolean) {
+        if (state) {
+            this.activeIndex.set(0);
+        }
+
+        if (this.accordion) {
+            this.accordion.activeIndex = 0;
+
+            this.accordion.changeDetector.detectChanges();
+        }
+
+        this.changeDetectorRef.detectChanges();
+    }
 
     /**
      * An event that is emitted when the value of form change.
@@ -116,6 +136,12 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     ];
     private isUpdatingValidators = false;
     private destroyRef = inject(DestroyRef);
+    private changeDetectorRef = inject(ChangeDetectorRef);
+    @ViewChild(Accordion) accordion: Accordion;
+
+    constructor() {
+        this.initForm();
+    }
 
     ngOnChanges(changes: SimpleChanges): void {
         const { value, isLoading } = changes;
@@ -127,8 +153,8 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
         this.toggleFormState(isLoading?.currentValue && !isLoading.firstChange);
     }
 
-    ngOnInit(): void {
-        this.initForm();
+    ngAfterViewInit() {
+        this.accordion.updateActiveIndex();
     }
 
     private initForm(): void {

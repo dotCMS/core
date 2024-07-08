@@ -1,5 +1,10 @@
 <form (ngSubmit)="generate.emit()" [formGroup]="form">
-    <p-accordion [activeIndex]="0" collapseIcon="pi pi-angle-up" expandIcon="pi pi-angle-down">
+    <p>{{ activeIndex() }}</p>
+    <p-accordion
+        [multiple]="false"
+        [activeIndex]="activeIndex()"
+        collapseIcon="pi pi-angle-up"
+        expandIcon="pi pi-angle-down">
         <p-accordionTab
             [disabled]="isLoading"
             [header]="'block-editor.extension.ai-image.settings' | dm"
