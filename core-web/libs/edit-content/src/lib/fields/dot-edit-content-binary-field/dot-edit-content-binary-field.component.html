@@ -42,7 +42,7 @@
                             [label]="'dot.binary.field.action.import.from.url' | dm"
                             data-testId="action-url-btn"
                             icon="pi pi-link"
-                            styleClass="p-button-link p-button-secondary p-button-sm" />
+                            styleClass="p-button-link p-button-sm" />
                     }
                     @if (systemOptions().allowCodeWrite) {
                         <p-button
@@ -50,7 +50,7 @@
                             [label]="'dot.binary.field.action.create.new.file' | dm"
                             data-testId="action-editor-btn"
                             icon="pi pi-code"
-                            styleClass="p-button-link p-button-secondary p-button-sm" />
+                            styleClass="p-button-link p-button-sm" />
                     }
                     @if (systemOptions().allowGenerateImg) {
                         <p-button
@@ -60,7 +60,7 @@
                             (click)="openDialog(BinaryFieldMode.AI)"
                             [label]="'dot.binary.field.action.generate.with.dotai' | dm"
                             data-testId="action-ai-btn"
-                            styleClass="p-button-link p-button-secondary p-button-sm pointer-events-auto">
+                            styleClass="p-button-link p-button-sm pointer-events-auto">
                             <svg
                                 fill="none"
                                 height="22"

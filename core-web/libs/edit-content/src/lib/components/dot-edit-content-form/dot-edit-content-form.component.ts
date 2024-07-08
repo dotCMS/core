@@ -129,7 +129,8 @@ export class DotEditContentFormComponent implements OnInit {
     private initializeFormControl(field: DotCMSContentTypeField): FormControl {
         const validators = [];
 
-        const value = resolutionValue[field.fieldType](this.formData.contentlet, field);
+        const resolutionFn = resolutionValue[field.fieldType];
+        const value = resolutionFn ? resolutionFn(this.formData.contentlet, field) : '';
 
         if (field.required) validators.push(Validators.required);
         if (field.regexCheck) {
