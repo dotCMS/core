@@ -210,11 +210,15 @@ const meta: Meta<Args> = {
                 },
                 {
                     provide: DotAiService,
-                    useClass: DotAiServiceMock
+                    useClass:
+                        process.env.USE_MIDDLEWARE === 'true' ? DotAiService : DotAiServiceMock
                 },
                 {
                     provide: DotMessageService,
-                    useClass: DotMessageServiceMock
+                    useClass:
+                        process.env.USE_MIDDLEWARE === 'true'
+                            ? DotMessageService
+                            : DotMessageServiceMock
                 }
             ], // We need these here because they are dynamically rendered
             entryComponents: [

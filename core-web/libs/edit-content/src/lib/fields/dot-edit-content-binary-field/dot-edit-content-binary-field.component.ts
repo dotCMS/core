@@ -19,8 +19,7 @@ import {
     Output,
     signal,
     Signal,
-    ViewChild,
-    ViewContainerRef
+    ViewChild
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -123,7 +122,6 @@ export class DotEditContentBinaryFieldComponent
     readonly #dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
     readonly #cd = inject(ChangeDetectorRef);
     readonly #dotAiService = inject(DotAiService);
-    readonly #viewContainerRef = inject(ViewContainerRef);
 
     $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
         initialValue: false
