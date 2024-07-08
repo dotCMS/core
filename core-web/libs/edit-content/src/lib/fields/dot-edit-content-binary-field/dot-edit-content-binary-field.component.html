@@ -90,7 +90,7 @@
                     (editImage)="onEditImage()"
                     (removeFile)="removeFile()"
                     [contentlet]="vm.contentlet"
-                    [editableImage]="vm.isEnterprise && $imageEditor()"
+                    [editableImage]="vm.isEnterprise && imageEditor"
                     [tempFile]="vm.tempFile"
                     [fieldVariable]="$variable()"
                     data-testId="preview" />
