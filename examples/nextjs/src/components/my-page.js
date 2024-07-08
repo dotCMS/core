@@ -16,6 +16,8 @@ import { DotcmsLayout } from "@dotcms/react";
 import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
 
+import { usePageAsset } from "../hooks/usePageAsset";
+
 /**
  * Configure experiment settings below. If you are not using experiments,
  * you can ignore or remove the experiment-related code and imports.
@@ -39,7 +41,7 @@ const componentsMap = {
 };
 
 export function MyPage({ pageAsset, nav }) {
-    const { refresh, replace } = useRouter();
+    const { replace } = useRouter();
     const pathname = usePathname();
 
     /**
@@ -55,6 +57,8 @@ export function MyPage({ pageAsset, nav }) {
           })
         : DotcmsLayout;
 
+    pageAsset = usePageAsset(pageAsset);
+    
     return (
         <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
             {pageAsset.layout.header && (
@@ -62,15 +66,17 @@ export function MyPage({ pageAsset, nav }) {
                     <Navigation items={nav} />
                 </Header>
             )}
+
             <main className="container flex flex-col gap-8 m-auto">
                 <DotLayoutComponent
                     pageContext={{
                         components: componentsMap,
                         pageAsset: pageAsset,
                     }}
-                    config={{ onReload: refresh, pathname }}
+                    config={{ pathname }}
                 />
             </main>
+
             {pageAsset.layout.footer && <Footer />}
         </div>
     );

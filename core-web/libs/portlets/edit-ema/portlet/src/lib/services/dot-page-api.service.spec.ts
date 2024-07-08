@@ -10,35 +10,39 @@ describe('DotPageApiService', () => {
         spectator = createHttp();
     });
 
-    it('should send a GET request (with render) to retrieve page data', () => {
-        spectator.service
-            .get({
-                url: 'test-url',
-                language_id: 'en',
-                'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-            })
-            .subscribe();
+    describe('with clientHost', () => {
+        it('should send a GET request with JSON  to retrieve page data', () => {
+            spectator.service
+                .get({
+                    url: 'test-url',
+                    language_id: 'en',
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    clientHost: 'some-host'
+                })
+                .subscribe();
 
-        spectator.expectOne(
-            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
-            HttpMethod.GET
-        );
+            spectator.expectOne(
+                '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                HttpMethod.GET
+            );
+        });
     });
 
-    it('should send a GET request (with json) to retrieve page data', () => {
-        spectator.service
-            .get({
-                url: 'test-url',
-                language_id: 'en',
-                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                clientHost: 'some-host'
-            })
-            .subscribe();
+    describe('without clientHost', () => {
+        it('should send a GET request with RENDER and EDIT MODE to retrieve page data', () => {
+            spectator.service
+                .get({
+                    url: 'test-url',
+                    language_id: 'en',
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                })
+                .subscribe();
 
-        spectator.expectOne(
-            '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
-            HttpMethod.GET
-        );
+            spectator.expectOne(
+                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                HttpMethod.GET
+            );
+        });
     });
 
     it('should send a POST request to save the data', () => {

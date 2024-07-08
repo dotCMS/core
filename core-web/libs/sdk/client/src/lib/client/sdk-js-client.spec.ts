@@ -2,6 +2,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Content } from './content/content-api';
 import { DotCmsClient, dotcmsClient } from './sdk-js-client';
+
+import * as dotcmsEditor from '../editor/sdk-editor';
+
 global.fetch = jest.fn();
 
 // Utility function to mock fetch responses
@@ -19,6 +22,7 @@ const mockFetchResponse = (body: any, ok = true, status = 200) => {
 describe('DotCmsClient', () => {
     describe('with full configuration', () => {
         let client: DotCmsClient;
+        let isInsideEditorSpy: jest.SpyInstance<boolean>;
 
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
@@ -28,6 +32,8 @@ describe('DotCmsClient', () => {
                 siteId: '123456',
                 authToken: 'ABC'
             });
+
+            isInsideEditorSpy = jest.spyOn(dotcmsEditor, 'isInsideEditor');
         });
 
         describe('init', () => {
@@ -240,6 +246,69 @@ describe('DotCmsClient', () => {
                     status: 401,
                     message: 'Unauthorized. Check the token and try again.'
                 });
+            });
+        });
+
+        describe('editor.on', () => {
+            it('should listen to FETCH_PAGE_ASSET_FROM_UVE event', () => {
+                isInsideEditorSpy.mockReturnValue(true);
+
+                const callback = jest.fn();
+                client.editor.on('changes', callback);
+
+                const mockMessageEvent = {
+                    data: {
+                        name: 'SET_PAGE_DATA',
+                        payload: { some: 'test' }
+                    }
+                };
+
+                window.dispatchEvent(new MessageEvent('message', mockMessageEvent));
+
+                expect(callback).toHaveBeenCalledWith(mockMessageEvent.data.payload);
+            });
+
+            it('should do nothing if is outside editor', () => {
+                isInsideEditorSpy.mockReturnValue(false);
+
+                const callback = jest.fn();
+                client.editor.on('FETCH_PAGE_ASSET_FROM_UVE', callback);
+
+                const mockMessageEvent = {
+                    data: {
+                        name: 'SET_PAGE_DATA',
+                        payload: { some: 'test' }
+                    }
+                };
+
+                window.dispatchEvent(new MessageEvent('message', mockMessageEvent));
+
+                expect(callback).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('editor.off', () => {
+            it('should remove a page event listener', () => {
+                isInsideEditorSpy.mockReturnValue(true);
+
+                const windowSpy = jest.spyOn(window, 'removeEventListener');
+                const callback = jest.fn();
+                client.editor.on('changes', callback);
+
+                client.editor.off('changes');
+
+                expect(windowSpy).toHaveBeenCalledWith('message', expect.anything());
+
+                const mockMessageEvent = {
+                    data: {
+                        name: 'SET_PAGE_DATA',
+                        payload: { some: 'test' }
+                    }
+                };
+
+                window.dispatchEvent(new MessageEvent('message', mockMessageEvent));
+
+                expect(callback).not.toHaveBeenCalled();
             });
         });
 
