@@ -647,7 +647,23 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		return categories;
 	}
 
-
+	/**
+	 * Create a set of Object {@link ShortCategory} from a JSON with the follow syntax:
+	 *
+	 * <code>
+	 *    [
+	 *       {
+	 *           'categoryName': 'Category name value',
+	 *           'key': 'Key value',
+	 *           'inode': 'inode value'
+	 *       }
+	 *    ]
+	 *
+	 * </code>
+	 *
+	 * @param parentsASJsonArray
+	 * @return
+	 */
 	private static List<ShortCategory> getShortCategories(String parentsASJsonArray) {
         try {
             return ((List<Map<String, String>>) JsonUtil.getObjectFromJson(parentsASJsonArray, List.class))

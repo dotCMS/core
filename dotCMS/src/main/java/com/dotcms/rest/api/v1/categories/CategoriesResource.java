@@ -277,6 +277,61 @@ public class CategoriesResource {
         return response;
     }
 
+    /**
+     * Response with the list of parents for a specific set of {@link Category}.
+     *
+     * This ned point receive a list the {@link Category}'s endpoint as follow:
+     *
+     * <code>
+     *     {
+     *         "inodes": ["352ca17e238357ce12e9dff10afc8516", "c0ab974897f8d37c98afa4bba74ef9f1"]
+     *     }
+     * </code>
+     *
+     * The output is going to be something like:
+     *
+     * <code>
+     *     {
+     *         entity: [
+     *              {
+     *                  "inode": "352ca17e238357ce12e9dff10afc8516",
+     *                  "parentList": [
+     *                       {
+     *                          'categoryName': 'Grand Parent Name',
+     *                          'key': 'Grand Parent  Key',
+     *                          'inode': 'Grand Parent  inode'
+     *                      },
+     *                       {
+     *                          'categoryName': 'Parent Name',
+     *                          'key': 'Parent  Key',
+     *                          'inode': 'Parent  inode'
+     *                      }
+     *                  ]
+     *              },
+     *              {
+     *                  "inode": "c0ab974897f8d37c98afa4bba74ef9f1",
+     *                  "parentList": [
+     *                       {
+     *                          'categoryName': 'Category name value',
+     *                          'key': 'Key value',
+     *                          'inode': 'inode value'
+     *                      }
+     *                  ]
+     *              }
+     *         ]
+     *     }
+     * </code>
+     *
+     *  parentList is the list of parents where the 0 is the more top level parent and the last one is the direct
+     *  parent.
+     *
+     * @param httpRequest
+     * @param httpResponse
+     * @param form
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @GET
         @Path(("/hierarchy"))
     @JSONP

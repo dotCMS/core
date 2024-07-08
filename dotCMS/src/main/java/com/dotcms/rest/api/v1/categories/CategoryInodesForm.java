@@ -9,8 +9,6 @@ import java.util.List;
 
 /**
  * Category Input Form
- *
- * @author Hassan Mustafa Baig
  */
 @JsonDeserialize(builder = CategoryInodesForm.Builder.class)
 public class CategoryInodesForm extends Validated {

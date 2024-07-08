@@ -40,7 +40,7 @@ import org.junit.runner.RunWith;
 /***
  * Category Factory Test
  */
-//@RunWith(DataProviderRunner.class)
+@RunWith(DataProviderRunner.class)
 public class CategoryFactoryTest extends IntegrationTestBase {
 
     private static CategoryFactory categoryFactory;
@@ -299,7 +299,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         assertTrue(categoryFactory.hasDependencies(root));
     }
 
-    //@DataProvider
+    @DataProvider
     public static Object[] findCategoriesFilters() {
         final String stringToFilterBy = new RandomString().nextString();
 
@@ -330,8 +330,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      *
      * Return five categories: the three children of topLevelCategory_1 that include the filter and the two grandchildren.
      */
-    //@Test
-    //@UseDataProvider("findCategoriesFilters")
+    @Test
+    @UseDataProvider("findCategoriesFilters")
     public void getAllCategoriesFiltered(final FilterTestCase filterTestCase) throws DotDataException {
 
         final String stringToFilterBy = filterTestCase.filter;
