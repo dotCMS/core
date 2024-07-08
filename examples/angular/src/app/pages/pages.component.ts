@@ -48,7 +48,7 @@ export class DotCMSPagesComponent implements OnInit {
         this.context.set(data['context']);
       });
 
-    this.client.page.on('FETCH_PAGE_ASSET_FROM_UVE', (pageAsset) => {
+    this.client.editor.on('changes', (pageAsset) => {
       this.context.update((context) => ({ ...context, pageAsset }));
     });
   }

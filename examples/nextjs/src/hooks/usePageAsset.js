@@ -5,7 +5,7 @@ export const usePageAsset = (currentPageAsset) => {
     const [pageAsset, setPageAsset] = useState(null);
 
     useEffect(() => {
-        client.page.on("FETCH_PAGE_ASSET_FROM_UVE", (page) => {
+        client.editor.on("changes", (page) => {
             if (!page) {
                 return;
             }
@@ -13,7 +13,7 @@ export const usePageAsset = (currentPageAsset) => {
         });
 
         return () => {
-            client.page.off("FETCH_PAGE_ASSET_FROM_UVE");
+            client.editor.off("changes");
         };
     }, [currentPageAsset]);
 

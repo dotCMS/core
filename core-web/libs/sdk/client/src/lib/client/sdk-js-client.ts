@@ -2,6 +2,8 @@ import { Content } from './content/content-api';
 import { ErrorMessages } from './models';
 import { DotcmsClientListener } from './models/types';
 
+import { isInsideEditor } from '../editor/sdk-editor';
+
 export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
 export interface ClientConfig {
@@ -242,16 +244,23 @@ export class DotCmsClient {
             }
 
             return response.json();
-        },
+        }
+    };
+
+    editor = {
         /**
-         * `page.on` is an asynchronous method of the `DotCmsClient` class that allows you to react to actions issued by the UVE.
+         * `editor.on` is an asynchronous method of the `DotCmsClient` class that allows you to react to actions issued by the UVE.
          *
          *  NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
          * @param action - The name of the name emitted by UVE
          * @param callbackFn - The function to execute when the UVE emits the action
          */
         on: (action: string, callbackFn: (payload: unknown) => void) => {
-            if (action === 'FETCH_PAGE_ASSET_FROM_UVE') {
+            if (!isInsideEditor()) {
+                return;
+            }
+
+            if (action === 'changes') {
                 const messageCallback = (event: MessageEvent) => {
                     if (event.data.name === 'SET_PAGE_DATA') {
                         callbackFn(event.data.payload);
@@ -263,7 +272,7 @@ export class DotCmsClient {
             }
         },
         /**
-         * `page.of` is an synchronous method of the `DotCmsClient` class that allows you to stop listening and reacting to an action issued by UVE.
+         * `editor.off` is an synchronous method of the `DotCmsClient` class that allows you to stop listening and reacting to an action issued by UVE.
          *
          *  NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
          * @param action
