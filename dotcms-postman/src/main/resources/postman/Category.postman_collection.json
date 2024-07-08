@@ -2890,7 +2890,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&inode={{child3Inode}}&showChildrenCount=true&per_page=7000&direction=ASC",
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&inode={{topCategoryInode}}&showChildrenCount=true&per_page=7000&direction=ASC",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2912,7 +2912,7 @@
 								},
 								{
 									"key": "inode",
-									"value": "{{child3Inode}}"
+									"value": "{{topCategoryInode}}"
 								},
 								{
 									"key": "showChildrenCount",
@@ -3499,7 +3499,46 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(404);",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"var child2CategoryInodeHierarchy = pm.collectionVariables.get(\"child2CategoryInodeHierarchy\"); ",
+									"var grantChildCategoryInodeHierarchy = pm.collectionVariables.get(\"grantChildCategoryInodeHierarchy\"); ;",
+									"",
+									"pm.expect(2).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"",
+									"        if (jsonData.entity[i]['inode'] === child2CategoryInodeHierarchy) {",
+									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
+									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
+									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
+									"        } else if (jsonData.entity[i]['inode'] === grantChildCategoryInodeHierarchy) {",
+									"            pm.expect(2).to.have.equals(jsonData.entity[i].parentList.length);",
+									"",
+									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
+									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
+									"",
+									"            pm.expect(\"Hierarchy Child 3\").to.have.equals(jsonData.entity[i].parentList[1].categoryName);",
+									"            pm.expect(pm.collectionVariables.get(\"child3CategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[1].inode);",
+									"            pm.expect(\"Hierarchy_Child_3\").to.have.equals(jsonData.entity[i].parentList[1].key);",
+									"        } else  {",
+									"            pm.expect(true).to.be.equals(false);",
+									"        }     ",
+									"    }",
+									"",
 									"});",
 									""
 								],
