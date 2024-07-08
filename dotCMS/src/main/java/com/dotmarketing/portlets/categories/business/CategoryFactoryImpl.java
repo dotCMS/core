@@ -981,6 +981,11 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	 */
 	@Override
 	public List<HierarchyShortCategory> findHierarchy(final Collection<String> inodes) throws DotDataException {
+
+		if (inodes == null || inodes.isEmpty()) {
+			return Collections.emptyList();
+		}
+
 		final String queryTemplate = "WITH RECURSIVE CategoryHierarchy AS ( " +
 			"SELECT 	" +
 					"c.inode," +
