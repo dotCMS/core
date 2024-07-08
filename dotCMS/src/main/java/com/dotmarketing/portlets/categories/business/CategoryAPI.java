@@ -512,7 +512,7 @@ public interface CategoryAPI {
 	 * | 2      | Child       | child       | Top Category   |
 	 * | 3      | Grand Child | grand_child | Child          |
 	 *
-	 * And you find by inode 3 then you got:
+	 * And you search by inode 3 then you got:
 	 *
 	 * Inode: 3
 	 * parentList <code>[
