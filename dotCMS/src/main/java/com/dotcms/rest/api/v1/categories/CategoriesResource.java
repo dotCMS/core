@@ -140,6 +140,8 @@ public class CategoriesResource {
      * <li>ordeby: field to order by</li>
      * <li>direction: asc for upward order and desc for downward order</li>
      * <li>showChildrenCount: true for including children categories count and false to exclude it</li>
+     * <li>allLevels: A Boolean value.  If TRUE, the search will include categories at any level, ignoring the childrenCategories parameter,
+     * if showChildrenCount is equals to TRUE then this is ignored.</li>
      * </ul>
      * <p>
      * Url example: /api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true
