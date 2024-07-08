@@ -146,6 +146,7 @@
                         <configuration>
                             <systemProperties>
                                 <testcontainers.docker.image>${testcontainers.docker.image}</testcontainers.docker.image>
+                                <attachRunnerAsMainArtifact>true</attachRunnerAsMainArtifact>
                             </systemProperties>
                         </configuration>
                     </execution>
