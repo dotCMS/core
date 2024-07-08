@@ -2890,7 +2890,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&inode={{topCategoryInode}}&showChildrenCount=true&per_page=7000&direction=ASC",
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&allLevels=true&inode={{topCategoryInode}}&per_page=7000&direction=ASC",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2907,8 +2907,107 @@
 								},
 								{
 									"key": "allLevels",
+									"value": "true"
+								},
+								{
+									"key": "inode",
+									"value": "{{topCategoryInode}}"
+								},
+								{
+									"key": "showChildrenCount",
 									"value": "true",
 									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "7000"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories by filter AND looking on the entire tree (Enabled showChildrenCount)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.expect(2).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['categoryName']);   ",
+									"",
+									"        if (i === 0) {",
+									"            pm.expect('PostmanTest Child 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.undefined;",
+									"        } else if (i === 1) {",
+									"            pm.expect('PostmanTest Child 2').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.undefined;",
+									"        }  ",
+									"    }",
+									"",
+									"    data.includes(\"PostmanTest Child 1\");",
+									"    data.includes(\"PostmanTest Child 2\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&allLevels=true&inode={{topCategoryInode}}&showChildrenCount=true&per_page=7000&direction=ASC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"children"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "PostmanTest"
+								},
+								{
+									"key": "allLevels",
+									"value": "true"
 								},
 								{
 									"key": "inode",
@@ -5979,44 +6078,46 @@
 				"type": "text/javascript",
 				"packages": {},
 				"exec": [
-					"if (!pm.environment.get('jwt')) {",
-					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
 					"",
-					"    if (!pm.environment.get('jwt')) {",
-					"        const username = 'admin@dotcms.com';",
-					"        const password = 'admin';",
-					"        const basicAuth = btoa(`${username}:${password}`);",
+					"// If we are unable to get the JWT we need to generate a new one",
+					"   if (!pm.environment.get('jwt')) {",
+					"       const username = pm.environment.get(\"user\");",
+					"       const password = pm.environment.get(\"password\");",
+					"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
 					"",
-					"        const requestOptions = {",
-					"            url: apiUrl,",
-					"            method: \"POST\",",
-					"            header: {",
-					"                \"accept\": \"*/*\",",
-					"                \"content-type\": \"application/json\",",
-					"                \"Authorization\": `Basic ${basicAuth}`",
-					"            },",
-					"            body: {",
-					"                mode: \"raw\",",
-					"                raw: JSON.stringify({",
-					"                    \"expirationSeconds\": 7200,",
-					"                    \"userId\": \"dotcms.org.1\",",
-					"                    \"network\": \"0.0.0.0/0\",",
-					"                    \"claims\": {\"label\": \"postman-tests\"}",
-					"                })",
-					"            }",
-					"        };",
 					"",
-					"        pm.sendRequest(requestOptions, function (err, response) {",
-					"            if (err) {",
-					"                console.log(err);",
-					"            } else {",
-					"                const jwt = response.json().entity.jwt;",
-					"                pm.environment.set('jwt', jwt);",
-					"            }",
-					"        });",
-					"    }",
-					"}"
+					"       const requestOptions = {",
+					"           url: apiUrl,",
+					"           method: \"POST\",",
+					"           header: {",
+					"               \"accept\": \"*/*\",",
+					"               \"content-type\": \"application/json\",",
+					"               \"Authorization\": `Basic ${basicAuth}`",
+					"           },",
+					"           body: {",
+					"               mode: \"raw\",",
+					"               raw: JSON.stringify({",
+					"                   \"expirationSeconds\": 7200,",
+					"                   \"userId\": \"dotcms.org.1\",",
+					"                   \"network\": \"0.0.0.0/0\",",
+					"                   \"claims\": {\"label\": \"postman-tests\"}",
+					"               })",
+					"           }",
+					"       };",
+					"",
+					"",
+					"       pm.sendRequest(requestOptions, function (err, response) {",
+					"           if (err) {",
+					"               console.log(err);",
+					"           } else {",
+					"               const jwt = response.json().entity.jwt;",
+					"               pm.environment.set('jwt', jwt);",
+					"               console.log(jwt);",
+					"           }",
+					"       });",
+					"   }"
 				]
 			}
 		},
