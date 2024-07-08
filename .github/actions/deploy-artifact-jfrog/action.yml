@@ -213,7 +213,7 @@ runs:
         echo "::endgroup::"
       shell: bash
 
-    - name:
+    - name: 'JFrog CLI context'
       env:
         ARTIFACTORY_URL: ${{ inputs.artifactory-url || steps.maven-artifact-repository.outputs.url }}
         ARTIFACTORY_ACCESS_TOKEN: ${{ inputs.artifactory-access-token }}
