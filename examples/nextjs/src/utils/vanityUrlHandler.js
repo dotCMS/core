@@ -21,4 +21,4 @@ export function handleVanityUrlRedirect({
     } else if (isPermanentRedirect) {
         permanentRedirect(forwardTo, "replace");
     }
-};
+}

@@ -968,7 +968,7 @@ describe('EditEmaEditorComponent', () => {
                         const dialog = spectator.component.dialog;
                         spyContentlet = jest.spyOn(dotContentletService, 'getContentletByInode');
                         spyDialog = jest.spyOn(dialog, 'editUrlContentMapContentlet');
-                        spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframe');
+                        spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframeContent');
                         spyUpdateQueryParams = jest.spyOn(router, 'navigate');
                         spyStoreReload = jest.spyOn(store, 'reload');
 
@@ -2728,7 +2728,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
+                        'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
                     );
                 });
 

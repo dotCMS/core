@@ -27,10 +27,8 @@ export const canMatchPage: CanMatchFn = async (
 
     const { vanityUrl } = entity;
 
-    if (vanityUrl?.permanentRedirect) {
-      router.navigate([vanityUrl.forwardTo]);
-
-      return false;
+    if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
+      return router.createUrlTree([vanityUrl.forwardTo]);
     }
 
     // Add the page asset to the route data
@@ -50,6 +48,7 @@ export const canMatchPage: CanMatchFn = async (
     return !!entity;
   } catch (error: any) {
     console.error(error); // Log the error
+    route.data = { ...route.data, pageAsset: { layout: {} } }; // Add the page asset to the route data
     return !(error?.status === 404); // If the page is not found, return false.
   }
 };
