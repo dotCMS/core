@@ -1,8 +1,7 @@
 <form (ngSubmit)="generate.emit()" [formGroup]="form">
-    <p>{{ activeIndex() }}</p>
     <p-accordion
         [multiple]="false"
-        [activeIndex]="activeIndex()"
+        [activeIndex]="0"
         collapseIcon="pi pi-angle-up"
         expandIcon="pi pi-angle-down">
         <p-accordionTab

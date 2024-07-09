@@ -1,7 +1,5 @@
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     DestroyRef,
     EventEmitter,
@@ -9,7 +7,6 @@ import {
     Input,
     OnChanges,
     Output,
-    signal,
     SimpleChange,
     SimpleChanges,
     ViewChild
@@ -66,7 +63,7 @@ import { DotValidators } from './../../../../validators/dotValidators';
     styleUrls: ['./ai-image-prompt-form.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AiImagePromptFormComponent implements OnChanges, AfterViewInit {
+export class AiImagePromptFormComponent implements OnChanges {
     /**
      * The value of the generated AI image.
      */
@@ -78,23 +75,6 @@ export class AiImagePromptFormComponent implements OnChanges, AfterViewInit {
 
     @Input()
     hasEditorContent = true;
-
-    activeIndex = signal(0);
-
-    @Input()
-    set showDialog(state: boolean) {
-        if (state) {
-            this.activeIndex.set(0);
-        }
-
-        if (this.accordion) {
-            this.accordion.activeIndex = 0;
-
-            this.accordion.changeDetector.detectChanges();
-        }
-
-        this.changeDetectorRef.detectChanges();
-    }
 
     /**
      * An event that is emitted when the value of form change.
@@ -136,7 +116,6 @@ export class AiImagePromptFormComponent implements OnChanges, AfterViewInit {
     ];
     private isUpdatingValidators = false;
     private destroyRef = inject(DestroyRef);
-    private changeDetectorRef = inject(ChangeDetectorRef);
     @ViewChild(Accordion) accordion: Accordion;
 
     constructor() {
@@ -151,10 +130,6 @@ export class AiImagePromptFormComponent implements OnChanges, AfterViewInit {
         this.setSubmitButtonLabel(isLoading?.currentValue);
 
         this.toggleFormState(isLoading?.currentValue && !isLoading.firstChange);
-    }
-
-    ngAfterViewInit() {
-        this.accordion.updateActiveIndex();
     }
 
     private initForm(): void {
