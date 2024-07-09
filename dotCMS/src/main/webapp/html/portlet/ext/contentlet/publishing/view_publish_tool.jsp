@@ -51,6 +51,19 @@
         refreshAuditList("");
     }
 
+    // clear the audit search field
+    function clearAuditFilter () {
+        dijit.byId('auditFilter').attr('value', '');
+        doAuditFilter();
+    }
+
+    const debounce = (callback, time = 250, interval) =>
+        (...args) => {
+            clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
+
+        }
+    const debouncedAuditFilter = debounce(doAuditFilter, 250);
+
     var lastUrlParams;
 
     function refreshQueueList(urlParams) {
@@ -73,8 +86,8 @@
     }
 
     function refreshAuditList(urlParams) {
-        var ran = new Date().getTime();
-        var url = "/html/portlet/ext/contentlet/publishing/view_publish_audit_list.jsp?v=" + ran + "&" + urlParams;
+        var auditFilterQuery = dojo.byId("auditFilter").value.trim();
+        var url = "/html/portlet/ext/contentlet/publishing/view_publish_audit_list.jsp?q=" + encodeURIComponent(auditFilterQuery) + "&" + urlParams;
 
         var myCp = dijit.byId("auditContent");
 
@@ -289,7 +302,12 @@
         
         <div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
             <div class="portlet-toolbar">
-				<div class="portlet-toolbar__actions-primary"></div>
+				<div class="portlet-toolbar__actions-primary">
+                    <div class="inline-form">
+                        <input  name="auditFilter" id="auditFilter" onkeyup="debouncedAuditFilter();" type="text" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "download.bundle.filter") %>">
+                        <button dojoType="dijit.form.Button" onclick="clearAuditFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+                    </div>
+                </div>
 				<div class="portlet-toolbar__actions-secondary">
                     <button  dojoType="dijit.form.Button" onClick="retryBundles();" iconClass="repeatIcon">
                         <%= LanguageUtil.get(pageContext, "publisher_retry_bundles") %>
