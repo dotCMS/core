@@ -45,29 +45,24 @@
 
 package com.dotcms.enterprise.publishing.remote.bundler;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publishing.*;
-import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publisher.pusher.wrapper.HostWrapper;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.IPublisher;
+import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.util.EnterpriseFeature;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -81,6 +76,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -89,27 +85,37 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
- * This bundler will take the list of {@link Contentlet} (Host) objects that are
- * being pushed and will write them in the file system in the form of an XML
- * file. This information will be part of the bundle that will be pushed to the
- * destination server.
- * 
+ * This bundler will take the list of {@link Contentlet} (Host) objects that are being pushed and
+ * will write them in the file system in the form of an XML file. This information will be part of
+ * the bundle that will be pushed to the destination server.
+ *
  * @author Jorge Urdaneta
  * @version 1.0
  * @since Mar 7, 2013
- *
  */
 public class HostBundler implements IBundler {
 
 	private PushPublisherConfig config;
 	private User systemUser;
 	private ContentletAPI conAPI = null;
-	private UserAPI uAPI = null;
-	private PublisherAPI pubAPI = null;
-	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
+    private PublisherAPI pubAPI = null;
+	private LanguageAPI langAPI = null;
+	private final PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 
 	public final static String HOST_EXTENSION = ".host.xml" ;
 
@@ -119,15 +125,15 @@ public class HostBundler implements IBundler {
 	}
 
 	@Override
-	public void setConfig(PublisherConfig pc) {
+	public void setConfig(final PublisherConfig pc) {
 		config = (PushPublisherConfig) pc;
 		conAPI = APILocator.getContentletAPI();
-		uAPI = APILocator.getUserAPI();
+        final UserAPI uAPI = APILocator.getUserAPI();
 		pubAPI = PublisherAPI.getInstance();
-
+		this.langAPI = APILocator.getLanguageAPI();
 		try {
 			systemUser = uAPI.getSystemUser();
-		} catch (DotDataException e) {
+		} catch (final DotDataException e) {
 			Logger.fatal(HostBundler.class,e.getMessage(),e);
 		}
 	}
@@ -137,18 +143,17 @@ public class HostBundler implements IBundler {
     }
 
 	@Override
-	public void generate(BundleOutput output, BundlerStatus status)
-			throws DotBundleException {
-	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
-	        throw new RuntimeException("need an enterprise pro license to run this bundler");
-	    }
+	@EnterpriseFeature
+	public void generate(final BundleOutput output, final BundlerStatus status) throws DotBundleException {
+		final Set<String> siteIds = config.getHostSet();
 		try {
-			Set<String> contents = config.getHostSet();
-
 			//Updating audit table
 			PublishAuditHistory currentStatusHistory = null;
 			if (!config.isDownloading()) {
-				currentStatusHistory = this.pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
+				final PublishAuditStatus publishAuditStatus = this.pubAuditAPI.getPublishAuditStatus(this.config.getId());
+				if (null != publishAuditStatus) {
+					currentStatusHistory = this.pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
+				}
 				if (currentStatusHistory == null) {
 					currentStatusHistory = new PublishAuditHistory();
 				}
@@ -158,66 +163,67 @@ public class HostBundler implements IBundler {
 						currentStatusHistory);
 			}
             
-			if(UtilMethods.isSet(contents) && !contents.isEmpty()) { // this content set is a dependency of other assets, like htmlpages
-				List<Contentlet> contentList = new ArrayList<>();
-				for (String contentIdentifier : contents) {
-					try{
-						Contentlet workingContentlet;
-						List<Contentlet> results = APILocator.getContentletAPI()
-								.search("+identifier:" + contentIdentifier + " +working:true",
+			if (UtilMethods.isSet(siteIds)) { // this content set is a dependency of other assets, like html pages
+				final List<Contentlet> siteAsContentList = new ArrayList<>();
+				for (final String siteIdentifier : siteIds) {
+					try {
+						Contentlet workingSite;
+						final List<Contentlet> results = this.conAPI
+								.search("+identifier:" + siteIdentifier + " +working:true",
 									1, 0, null, systemUser, false);
 						if (UtilMethods.isSet(results)) {
-							workingContentlet = results.get(0);
+							workingSite = results.get(0);
 						} else {
-							workingContentlet = APILocator.getContentletAPI()
-									.findContentletByIdentifier(contentIdentifier, false,
-									APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+							workingSite = this.conAPI
+									.findContentletByIdentifier(siteIdentifier, false,
+											this.langAPI.getDefaultLanguage().getId(), systemUser, false);
 						}
 
-						Contentlet liveContentlet = null;
+						Contentlet liveSite = null;
 						try {
-							List<Contentlet> returnedContent = APILocator.getContentletAPI()
-									.search("+identifier:" + contentIdentifier + " +live:true",
+							List<Contentlet> returnedContent = this.conAPI
+									.search("+identifier:" + siteIdentifier + " +live:true",
 										1, 0, null, systemUser, false);
 
 							if(UtilMethods.isSet(returnedContent)) {
-								liveContentlet = returnedContent.get(0);
+								liveSite = returnedContent.get(0);
 							} else {
-								liveContentlet = APILocator.getContentletAPI()
-										.findContentletByIdentifier(contentIdentifier, true,
-										APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+								liveSite = this.conAPI
+										.findContentletByIdentifier(siteIdentifier, true,
+											this.langAPI.getDefaultLanguage().getId(), systemUser, false);
 							}
 
-							if (liveContentlet == null) {
-								Logger.info(HostBundler.class, "Unable to find live version of contentlet with"
-										+ " identifier '"+ contentIdentifier);
+							if (liveSite == null) {
+								Logger.warn(this, String.format("Unable to find live version of contentlet with identifier " +
+										"'%s'", siteIdentifier));
 							}
-						} catch (DotDataException | DotSecurityException | DotContentletStateException e) {
+						} catch (final DotDataException | DotSecurityException | DotContentletStateException e) {
 							// the process can work with only the working version, unpublished
-							Logger.info(HostBundler.class, "Error retrieving live contentlet with identifier '"
-								+ contentIdentifier +"' ("+ e.getMessage() +")");
+							Logger.warn(this, String.format("Could not retrieve live contentlet with identifier " +
+									"'%s' (the process can continue): %s", siteIdentifier, ExceptionUtil.getErrorMessage(e)));
 						}
 
 						// there should always be a working version
-						if(workingContentlet != null)
-							contentList.add(workingContentlet);
-						else
-							throw new DotBundleException("No working version of host " + contentIdentifier);
+						if (workingSite != null) {
+							siteAsContentList.add(workingSite);
+						} else {
+							throw new DotBundleException(String.format("No working version of Site with ID '%s'" +
+									" was found", siteIdentifier));
+						}
 						// the process can work with only the working version, unpublished
-						if(liveContentlet != null)
-							contentList.add(liveContentlet);
-
-					}catch(DotDataException de){
-						throw new DotBundleException("Data error on host content " + contentIdentifier, de);
-					}catch(DotSecurityException ds){
-						throw new DotBundleException("Security error on host content " + contentIdentifier, ds);
-					}catch(DotContentletStateException dc){
-						throw new DotBundleException("Content error on host " + contentIdentifier, dc);
+						if (liveSite != null) {
+							siteAsContentList.add(liveSite);
+						}
+					} catch (final DotDataException de) {
+						throw new DotBundleException(String.format("Data error on Site with ID '%s'", siteIdentifier), de);
+					} catch (final DotSecurityException ds) {
+						throw new DotBundleException(String.format("Security error on Site with ID '%s'", siteIdentifier), ds);
+					} catch (final DotContentletStateException dc) {
+						throw new DotBundleException(String.format("Content error on Site with ID '%s'", siteIdentifier), dc);
 					}
 				}
-				Set<Contentlet> contentsToProcessWithFiles = getRelatedFilesAndContent(contentList);
-
-				for (Contentlet con : contentsToProcessWithFiles) {
+				final Set<Contentlet> contentsToProcessWithFiles = this.getRelatedFilesAndContent(siteAsContentList);
+				for (final Contentlet con : contentsToProcessWithFiles) {
 					writeFileToDisk(output, con);
 					status.addCount();
 				}
@@ -230,51 +236,60 @@ public class HostBundler implements IBundler {
 				this.pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.BUNDLING,
 						currentStatusHistory);
 			}
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			status.addFailure();
-
-			throw new DotBundleException(this.getClass().getName() + " : " + "generate()"
-			+ e.getMessage() + ": Unable to pull content", e);
+			Logger.error(this, String.format("Failed to pull Sites with IDs: %s", siteIds), e);
+			throw new DotBundleException(String.format("Failed to pull content for Host Bundler: " +
+					"%s", ExceptionUtil.getErrorMessage(e)), e);
 		}
 	}
 
 	/**
-	 * 
-	 * @param cs
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * Takes the list of Sites that are being bundled and generates a list of Contentlets that are
+	 * related to them. Such relationships may exist because of the following reasons:
+	 * <ul>
+	 *     <li>The Site has at least one field of type {@code Relationship}.</li>
+	 *     <li>The Site has at least one field of type {@code File}</li>
+	 * </ul>
+	 *
+	 * @param siteAsContentList The list of {@link Contentlet} objects representing a Site being
+	 *                          bundled.
+	 *
+	 * @return A set of {@link Contentlet} objects that are related to the Sites being bundled,
+	 * including the Sites themselves.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the data source.
+	 * @throws DotSecurityException Related data could not be retrieved.
 	 */
-	private Set<Contentlet> getRelatedFilesAndContent(List<Contentlet> cs) throws DotDataException,
+	private Set<Contentlet> getRelatedFilesAndContent(final List<Contentlet> siteAsContentList) throws DotDataException,
 			DotSecurityException {
+		final Set<Contentlet> contentsToProcess = new HashSet<>();
 
-		Set<Contentlet> contentsToProcess = new HashSet<>();
+		// Getting all contents related to every Site in the list
+		for (Contentlet siteAsContent : siteAsContentList) {
+			final Map<Relationship, List<Contentlet>> contentRel =
+					conAPI.findContentRelationships(siteAsContent, systemUser);
 
-		//Getting all related content
-		for (Contentlet con : cs) {
-			Map<Relationship, List<Contentlet>> contentRel =
-					conAPI.findContentRelationships(con, systemUser);
-
-			for (Relationship rel : contentRel.keySet()) {
+			for (final Relationship rel : contentRel.keySet()) {
 				contentsToProcess.addAll(contentRel.get(rel));
 			}
-
-			contentsToProcess.add(con);
+			contentsToProcess.add(siteAsContent);
 		}
 
-		Set<Contentlet> contentsToProcessWithFiles = new HashSet<>();
+		final Set<Contentlet> contentsToProcessWithFiles = new HashSet<>();
 		//Getting all linked files
-		for(Contentlet con: contentsToProcess) {
-			List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
-			for(Field ff : fields) {
-				if(ff.getFieldType().toString().equals(Field.FieldType.FILE.toString())) {
-					String identifier = (String) con.get(ff.getVelocityVarName());
-                                        if(UtilMethods.isSet(identifier)) {
-					    contentsToProcessWithFiles.addAll(conAPI.search("+identifier:"+identifier, 0, -1, null, systemUser, false));
-			                }
-                                }
+		for (final Contentlet contentlet : contentsToProcess) {
+			final List<Field> contentTypeFields = FieldsCache.getFieldsByStructureInode(contentlet.getContentTypeId());
+			for (final Field field : contentTypeFields) {
+				if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
+					final String identifier = (String) contentlet.get(field.getVelocityVarName());
+					if (UtilMethods.isSet(identifier)) {
+					    contentsToProcessWithFiles.addAll(
+								this.conAPI.search("+identifier:" + identifier, 0, -1, null, systemUser, false));
+			        }
+				}
 			}
-			contentsToProcessWithFiles.add(con);
+			contentsToProcessWithFiles.add(contentlet);
 		}
 		return contentsToProcessWithFiles;
 	}

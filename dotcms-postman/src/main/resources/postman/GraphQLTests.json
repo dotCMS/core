@@ -4,7 +4,8 @@
 		"name": "GraphQL",
 		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-69f6ea4e-5b29-4a77-b599-47f07dc3eb80?action=share&source=collection_link&creator=5403727"
 	},
 	"item": [
 		{
@@ -1899,15 +1900,13 @@
 					"name": "Checking Layout and Container Properties",
 					"item": [
 						{
-							"name": "importDestinationsCostaRicaWithSidebar",
+							"name": "Importing Bundle with Costa Rica page with Sidebar",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"",
 											"    var jsonData = pm.response.json();",
 											"    console.log(jsonData);",
 											"",
@@ -1967,27 +1966,20 @@
 							"response": []
 						},
 						{
-							"name": "GivenRequestByURI_LayoutFieldContainsAllFields",
+							"name": "Checking All Page Layout Properties",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
-											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"'Page' includes all properties\", function () {",
+											"pm.test(\"'layout' includes all properties\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var layout = jsonData.data.page.layout;",
 											"",
 											"    // layout fields",
-											"    // pm.expect(layout.footer, 'FAILED:[layout.footer]').equal(true);",
 											"    pm.expect(layout.width, 'FAILED:[layout.width]').equal(null);",
-											"    // pm.expect(layout.header, 'FAILED:[layout.header]').equal(true);",
 											"    pm.expect(layout.title, 'FAILED:[layout.title]').equal(\"anonymouslayout1598564677000\");",
 											"",
 											"    // rows fields",
@@ -2078,7 +2070,7 @@
 							"response": []
 						},
 						{
-							"name": "GivenRequestByURI_ContainersFieldContainsFirstLevelFields",
+							"name": "Containers Property Has All First Level Fields",
 							"event": [
 								{
 									"listen": "test",
@@ -2087,14 +2079,9 @@
 											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"'Page' includes all properties\", function () {",
+											"pm.test(\"'containers' includes all properties (first level fields)\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var containers = jsonData.data.page.containers;",
-											"",
 											"    var container1 = containers[0];",
 											"",
 											"    // containers fields",
@@ -2132,9 +2119,7 @@
 											"    pm.expect(container1.useDiv, 'FAILED:[container1.useDiv]').equal(false);",
 											"    pm.expect(container1.versionId, 'FAILED:[container1.versionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
 											"    pm.expect(container1.versionType, 'FAILED:[container1.versionType]').equal(\"containers\");",
-											"    pm.expect(container1.working, 'FAILED:[container1.working]').equal(true);",
-											"    ",
-											"    ",
+											"    pm.expect(container1.working, 'FAILED:[container1.working]').equal(true);    ",
 											"});",
 											""
 										],
@@ -2185,23 +2170,17 @@
 							"response": []
 						},
 						{
-							"name": "GivenRequestByURI_ContainersFieldSuccess_WhenANONUser",
+							"name": "Containers Property is Returned With Anon User",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
-											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"'Page' includes all properties\", function () {",
+											"pm.test(\"'containers' includes all properties (with Anon User)\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var containers = jsonData.data.page.containers;",
-											"",
 											"    var container1 = containers[0];",
 											"",
 											"    // containers fields",
@@ -2211,7 +2190,8 @@
 											"   });",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -2266,17 +2246,11 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"'Page' includes all properties\", function () {",
+											"pm.test(\"'containers' includes all properties (first level fields and no language)\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var containers = jsonData.data.page.containers;",
-											"",
 											"    var container1 = containers[0];",
 											"",
 											"    // containers fields",
@@ -2314,9 +2288,7 @@
 											"    pm.expect(container1.useDiv, 'FAILED:[container1.useDiv]').equal(false);",
 											"    pm.expect(container1.versionId, 'FAILED:[container1.versionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
 											"    pm.expect(container1.versionType, 'FAILED:[container1.versionType]').equal(\"containers\");",
-											"    pm.expect(container1.working, 'FAILED:[container1.working]').equal(true);",
-											"    ",
-											"    ",
+											"    pm.expect(container1.working, 'FAILED:[container1.working]').equal(true);    ",
 											"});",
 											""
 										],
@@ -2373,14 +2345,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"'Page' includes all properties\", function () {",
+											"pm.test(\"'containers' includes all properties (with rendered)\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var containers = jsonData.data.page.containers;",
 											"",
@@ -2473,14 +2440,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"",
 											"let contains = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"'Containers Field' includes all Container Structures\", function () {",
+											"pm.test(\"'containers' includes all container-structures data\", function () {",
 											"    var jsonData = pm.response.json();",
 											"",
 											"    pm.expect(jsonData.data.page.containers.length, 'FAILED:[jsonData.data.page.containers.length]').equal(2);",
@@ -2573,15 +2535,13 @@
 							"response": []
 						},
 						{
-							"name": "pre_ImportBundleWithContentWithTagsAndCats",
+							"name": "Adding Tags and Categories to Costa Rica Page",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
-											"    pm.response.to.have.status(200);",
-											"",
 											"    var jsonData = pm.response.json();",
 											"    console.log(jsonData);",
 											"",
@@ -2650,12 +2610,7 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
-											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
 											"",
 											"pm.test(\"'Page' includes all properties\", function () {",
 											"    var jsonData = pm.response.json();",
@@ -2700,7 +2655,7 @@
 											"    pm.expect(containerContentlets6.contentlets[0].identifier, 'FAILED:[containerContentlets6.contentlets[0]].identifier').equal(\"3e6533b7-c3ba-4ec4-8bca-6a88d54cd037\");",
 											"    pm.expect(containerContentlets6.contentlets[0].title, 'FAILED:[containerContentlets6.contentlets[0]].title').equal(\"Costa Rica Family Adventure\");",
 											"    // tags ",
-											"    pm.expect(containerContentlets6.contentlets[0].taggies, 'FAILED:[containerContentlets6.contentlets[0].taggies]').equal(\"costa rica,winterenthusiast:persona\");",
+											"    pm.expect(containerContentlets6.contentlets[0].taggies, 'FAILED:[containerContentlets6.contentlets[0].taggies]').equal(\"costa rica,winterenthusiast\");",
 											"    // cats ",
 											"    pm.expect(JSON.stringify(containerContentlets6.contentlets[0].cats), 'FAILED:[containerContentlets6.contentlets[0].cats]').equal(JSON.stringify([{\"allInclusive\": \"All Inclusive\"}, {\"tours\": \"Tours\"}]));",
 											"",
@@ -2722,10 +2677,6 @@
 											"    pm.expect(containerContentlets9.uuid, 'FAILED:[containerContentlets9.uuid]').equal(\"uuid-8\");",
 											"    pm.expect(containerContentlets9.contentlets[0].identifier, 'FAILED:[containerContentlets9.contentlets[0]].identifier').equal(\"bfee8f08-a6d1-4fd7-8f70-476e62663eca\");",
 											"    pm.expect(containerContentlets9.contentlets[0].title, 'FAILED:[containerContentlets9.contentlets[0]].title').equal(\"Fall into Costa Rica\");",
-											"",
-											"  ",
-											"    ",
-											"    ",
 											"});",
 											""
 										],
@@ -2776,7 +2727,32 @@
 							"response": []
 						}
 					],
-					"description": "Verifies that Layout and Container properties are returned as expected."
+					"description": "Verifies that Layout and Container properties are returned as expected, usnig the `/destinations/costa-rica` HTML Page.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
 				},
 				{
 					"name": "pre_ImportBundleWithMexicoPageAndRule",
