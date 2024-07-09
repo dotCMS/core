@@ -240,25 +240,21 @@ public class ContentTool implements ViewTool {
 	public PaginatedContentList<ContentMap> pullPerPage(String query, int currentPage, int contentsPerPage, String sort){
 		PaginatedContentList<ContentMap> ret = new PaginatedContentList<>();
 		try {
-    	    PaginatedArrayList<Contentlet> cons = ContentUtils.pullPerPage(
-    	    		ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req), currentPage, contentsPerPage, sort,
-					user, tmDate);
+			final PaginatedContentList<Contentlet> cons = ContentUtils.pullPerPage(
+					ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req), currentPage,
+					contentsPerPage, sort, user, tmDate);
     	    for(Contentlet cc : cons) {
     	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
     	    }
-    
-    	    if(cons != null && cons.size() > 0){
-    			long minIndex = (currentPage - 1) * contentsPerPage;
-    	        long totalCount = cons.getTotalResults();
-    	        long maxIndex = contentsPerPage * currentPage;
-    	        if((minIndex + contentsPerPage) >= totalCount){
-    	        	maxIndex = totalCount;
-    	        }
-    			ret.setTotalResults(cons.getTotalResults());
-    			ret.setTotalPages((int)Math.ceil(((double)cons.getTotalResults())/((double)contentsPerPage)));
-    			ret.setNextPage(maxIndex < totalCount);
-    			ret.setPreviousPage(minIndex > 0);
-    	    }
+
+			ret.setQuery(cons.getQuery());
+			ret.setLimit(cons.getLimit());
+			ret.setOffset(cons.getOffset());
+			ret.setCurrentPage(cons.getCurrentPage());
+			ret.setTotalResults(cons.getTotalResults());
+			ret.setTotalPages(cons.getTotalPages());
+			ret.setNextPage(cons.isNextPage());
+			ret.setPreviousPage(cons.isPreviousPage());
 		}
 		catch(Throwable ex) {
 		    if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {

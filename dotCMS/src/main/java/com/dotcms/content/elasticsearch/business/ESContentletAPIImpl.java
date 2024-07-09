@@ -18,6 +18,7 @@ import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.content.elasticsearch.util.PaginationUtil;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -1224,48 +1225,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 luceneQuery, limit, offset, sortBy, user, respectFrontendRoles
         );
 
-        // Calculate the pagination
-        var totalResults = contents.getTotalResults();
-        int contentsPerPage = limit;
-        if (limit <= 0) {
-            contentsPerPage = MAX_LIMIT;
-        }
-
-        int currentPage = 1;
-        if (offset > 0) {
-            currentPage = (offset / contentsPerPage) + 1;
-        } else {
-            offset = 0;
-        }
-
-        var paginatedContentList = new PaginatedContentList<Contentlet>();
-        paginatedContentList.setLimit(contentsPerPage);
-        paginatedContentList.setOffset(offset);
-
-        if (totalResults > 0) {
-
-            paginatedContentList.setCurrentPage(currentPage);
-
-            // Calculate the pagination
-            long minIndex = (currentPage - 1) * contentsPerPage;
-            long maxIndex = contentsPerPage * currentPage;
-            if ((minIndex + contentsPerPage) >= totalResults) {
-                maxIndex = totalResults;
-            }
-            paginatedContentList.setTotalResults(totalResults);
-            paginatedContentList.setTotalPages(
-                    (int) Math.ceil(((double) totalResults) / ((double) contentsPerPage))
-            );
-            paginatedContentList.setNextPage(maxIndex < totalResults);
-            paginatedContentList.setPreviousPage(minIndex > 0);
-
-            if (!contents.isEmpty()) {
-                // Add the content to the paginated list
-                paginatedContentList.addAll(contents);
-            }
-        }
-
-        return paginatedContentList;
+        return PaginationUtil.paginatedArrayListToPaginatedContentList(contents, limit, offset);
     }
 
     @Override
