@@ -329,7 +329,7 @@ describe('utils functions', () => {
             const queryParams = {};
             const result = createPageApiUrlWithQueryParams('test', queryParams);
             expect(result).toBe(
-                'test?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
+                'test?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
             );
         });
 
@@ -340,7 +340,7 @@ describe('utils functions', () => {
             };
             const result = createPageApiUrlWithQueryParams('test', queryParams);
             expect(result).toBe(
-                'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE'
+                'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
             );
         });
     });

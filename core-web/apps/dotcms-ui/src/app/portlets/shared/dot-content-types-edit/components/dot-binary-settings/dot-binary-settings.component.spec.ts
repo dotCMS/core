@@ -23,7 +23,8 @@ const messageServiceMock = new MockDotMessageService({
 
 const SYSTEM_OPTIONS = JSON.stringify({
     allowURLImport: false,
-    allowCodeWrite: true
+    allowCodeWrite: true,
+    allowGenerateImg: false
 });
 
 describe('DotBinarySettingsComponent', () => {
@@ -82,8 +83,8 @@ describe('DotBinarySettingsComponent', () => {
         ]
     });
 
-    beforeEach(async () => {
-        spectator = createComponent({});
+    beforeEach(() => {
+        spectator = createComponent();
         dotFieldVariableService = spectator.inject(DotFieldVariablesService);
         dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
 
@@ -94,7 +95,8 @@ describe('DotBinarySettingsComponent', () => {
         expect(component.form.get('accept').value).toBe('image/*');
         expect(component.form.get('systemOptions').value).toEqual({
             allowURLImport: false,
-            allowCodeWrite: true
+            allowCodeWrite: true,
+            allowGenerateImg: false
         });
     });
 
@@ -137,15 +139,18 @@ describe('DotBinarySettingsComponent', () => {
         expect(dotFieldVariableService.save).not.toHaveBeenCalledTimes(2); // One for accept and one for systemOptions, accept should not call save or delete
     });
 
-    it('should have 2 switches with the corresponding control name', () => {
+    it('should have 3 switches with the corresponding control name', () => {
         const switches = spectator.queryAll(byTestId('setting-switch'));
 
-        expect(switches.length).toBe(2);
+        expect(switches.length).toBe(3);
         expect(
             switches.find((s) => s.getAttribute('ng-reflect-name') === 'allowURLImport')
         ).not.toBeNull();
         expect(
             switches.find((s) => s.getAttribute('ng-reflect-name') === 'allowCodeWrite')
+        ).not.toBeNull();
+        expect(
+            switches.find((s) => s.getAttribute('ng-reflect-name') === 'allowGenerateImg')
         ).not.toBeNull();
     });
 

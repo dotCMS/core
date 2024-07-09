@@ -34,6 +34,7 @@ export interface VmAiImagePrompt {
     galleryActiveIndex: number;
     isLoading: boolean;
     formValue: AIImagePrompt;
+    hasEditorContent: boolean;
 }
 
 const initialState: DotAiImagePromptComponentState = {
@@ -63,12 +64,14 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
 
     //Updaters
 
-    readonly showDialog = this.updater((state, editorContent: string) => ({
-        ...state,
-        showDialog: true,
-        selectedPromptType: DEFAULT_INPUT_PROMPT,
-        editorContent
-    }));
+    readonly showDialog = this.updater((state, editorContent: string) => {
+        return {
+            ...state,
+            showDialog: true,
+            selectedPromptType: DEFAULT_INPUT_PROMPT,
+            editorContent
+        };
+    });
 
     readonly cleanError = this.updater((state) => ({
         ...state,
@@ -103,13 +106,17 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
     readonly vm$: Observable<VmAiImagePrompt> = this.select(
         this.state$,
         this.isLoading$,
-        ({ showDialog, status, images, galleryActiveIndex, formValue }, isLoading) => ({
+        (
+            { showDialog, status, images, galleryActiveIndex, formValue, editorContent },
+            isLoading
+        ) => ({
             showDialog,
             status,
             images,
             galleryActiveIndex,
             formValue,
-            isLoading
+            isLoading,
+            hasEditorContent: !!editorContent
         })
     );
 

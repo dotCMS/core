@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "e48ada2d-189e-48a7-87a2-c97346e5ce83",
+		"_postman_id": "80351f19-aaf7-4b68-858a-183be686e11e",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "3028555"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -17180,6 +17180,139 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "CreateKeyValueWRONGMap",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Response include proper message\", function () {",
+									"   var response = pm.response.json();",
+									"    pm.expect(response.message).to.include(\"Invalid JSON field provided\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"keyValueContentType\",\n        \"title\": \"supporttest\",\n        \"titleFeature\": \"WRONG\",\n        \"titleEurope\": {\"12345\":\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\"}\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						},
+						"description": "Tries to create a key value map with wrong value, should return 400"
+					},
+					"response": []
+				},
+				{
+					"name": "CreateKeyValueRepeatedKey",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Check keyValueContentType content type\", function () {",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"keyValueContentType\");",
+									"});",
+									"",
+									"pm.test(\"Check keyValueContentType content type\", function () {",
+									"    pm.expect(jsonData.entity.titleEurope['12345']).to.eql(\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"keyValueContentType\",\n        \"title\": \"supporttest\",\n        \"titleFeature\": {\"12345\":\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\",\"12345\":\"yyyy\"},\n        \"titleEurope\": {\"12345\":\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\"}\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						},
+						"description": "Fires an action with repeated key, by now the last repeated key overrides the previous and gets 200"
+					},
+					"response": []
 				}
 			],
 			"description": "This test creates a type with a key value field and fires a new\n\nThe idea is to be able to create contentlet, since key values before where throwing errors",
@@ -17190,44 +17323,46 @@
 						"type": "text/javascript",
 						"packages": {},
 						"exec": [
-							"if (!pm.environment.get('jwt')) {",
-							"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-							"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+							"const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+							"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
 							"",
-							"    if (!pm.environment.get('jwt')) {",
-							"        const username = 'admin@dotcms.com';",
-							"        const password = 'admin';",
-							"        const basicAuth = btoa(`${username}:${password}`);",
+							"// If we are unable to get the JWT we need to generate a new one",
+							"   if (!pm.environment.get('jwt')) {",
+							"       const username = pm.environment.get(\"user\");",
+							"       const password = pm.environment.get(\"password\");",
+							"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
 							"",
-							"        const requestOptions = {",
-							"            url: apiUrl,",
-							"            method: \"POST\",",
-							"            header: {",
-							"                \"accept\": \"*/*\",",
-							"                \"content-type\": \"application/json\",",
-							"                \"Authorization\": `Basic ${basicAuth}`",
-							"            },",
-							"            body: {",
-							"                mode: \"raw\",",
-							"                raw: JSON.stringify({",
-							"                    \"expirationSeconds\": 7200,",
-							"                    \"userId\": \"dotcms.org.1\",",
-							"                    \"network\": \"0.0.0.0/0\",",
-							"                    \"claims\": {\"label\": \"postman-tests\"}",
-							"                })",
-							"            }",
-							"        };",
 							"",
-							"        pm.sendRequest(requestOptions, function (err, response) {",
-							"            if (err) {",
-							"                console.log(err);",
-							"            } else {",
-							"                const jwt = response.json().entity.jwt;",
-							"                pm.environment.set('jwt', jwt);",
-							"            }",
-							"        });",
-							"    }",
-							"}"
+							"       const requestOptions = {",
+							"           url: apiUrl,",
+							"           method: \"POST\",",
+							"           header: {",
+							"               \"accept\": \"*/*\",",
+							"               \"content-type\": \"application/json\",",
+							"               \"Authorization\": `Basic ${basicAuth}`",
+							"           },",
+							"           body: {",
+							"               mode: \"raw\",",
+							"               raw: JSON.stringify({",
+							"                   \"expirationSeconds\": 7200,",
+							"                   \"userId\": \"dotcms.org.1\",",
+							"                   \"network\": \"0.0.0.0/0\",",
+							"                   \"claims\": {\"label\": \"postman-tests\"}",
+							"               })",
+							"           }",
+							"       };",
+							"",
+							"",
+							"       pm.sendRequest(requestOptions, function (err, response) {",
+							"           if (err) {",
+							"               console.log(err);",
+							"           } else {",
+							"               const jwt = response.json().entity.jwt;",
+							"               pm.environment.set('jwt', jwt);",
+							"               console.log(jwt);",
+							"           }",
+							"       });",
+							"   }"
 						]
 					}
 				},

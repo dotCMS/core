@@ -11,6 +11,7 @@ import { catchError, map, shareReplay, switchMap, take, tap, filter } from 'rxjs
 import {
     DotContentletLockerService,
     DotExperimentsService,
+    DotLanguagesService,
     DotLicenseService,
     DotMessageService
 } from '@dotcms/data-access';
@@ -90,7 +91,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         private readonly dotMessageService: DotMessageService,
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotContentletLockerService: DotContentletLockerService,
-        private readonly loginService: LoginService
+        private readonly loginService: LoginService,
+        private readonly dotLanguagesService: DotLanguagesService
     ) {
         super();
     }
@@ -163,6 +165,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         (clientHost, pageURI) => `${clientHost || window.location.origin}${pageURI}`
     );
 
+    private readonly languages$ = this.select((state) => state.languages);
+
+    readonly translateProps$ = this.select(
+        this.languages$,
+        this.page$,
+        this.languageId$,
+        (languages, page, pageLanguageId) => ({
+            languages,
+            page,
+            pageLanguageId
+        }),
+        {
+            debounce: true
+        }
+    );
+
     /**
      * Before this was layoutProperties, but are separate to "temp" selector.
      * And then is merged with templateIdentifier in layoutProperties$.
@@ -189,20 +207,23 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private readonly personalization$ = this.select((state) =>
         getPersonalization(state.editor.viewAs.persona)
     );
-    private readonly shellProps$ = this.select(
+
+    readonly shellProps$ = this.select(
         this.page$,
         this.siteId$,
         this.languageId$,
         this.currentUrl$,
         this.clientHost$,
         this.error$,
-        (page, siteId, languageId, currentUrl, host, error) => ({
+        this.templateDrawed$,
+        (page, siteId, languageId, currentUrl, host, error, templateDrawed) => ({
             page,
             siteId,
             languageId,
             currentUrl,
             host,
-            error
+            error,
+            templateDrawed
         })
     );
     readonly editorMode$ = this.select((state) => state.editorData.mode);
@@ -331,12 +352,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         })
     );
 
-    readonly shellProperties$ = this.select(
-        this.shellProps$,
-        this.templateDrawed$,
-        (props, templateDrawed) => ({ ...props, templateDrawed })
-    );
-
     // This data is needed to save the page on CRUD operation
     readonly pageData$ = this.select(
         this.containers$,
@@ -373,7 +388,25 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         return params$.pipe(
             switchMap((params) => {
                 return forkJoin({
-                    pageData: this.dotPageApiService.get(params),
+                    pageData: this.dotPageApiService.get(params).pipe(
+                        switchMap((pageData) => {
+                            if (!pageData.vanityUrl) {
+                                return of(pageData);
+                            }
+
+                            const newParams = {
+                                ...params,
+                                url: pageData.vanityUrl.forwardTo.replace('/', '')
+                            };
+
+                            return this.dotPageApiService.get(newParams).pipe(
+                                map((newPageData) => ({
+                                    ...newPageData,
+                                    vanityUrl: pageData.vanityUrl
+                                }))
+                            );
+                        })
+                    ),
                     licenseData: this.dotLicenseService.isEnterprise().pipe(take(1), shareReplay()),
                     currentUser: this.loginService.getCurrentUser()
                 }).pipe(
@@ -383,9 +416,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                         }
                     }),
                     switchMap(({ pageData, licenseData, currentUser }) =>
-                        this.getExperiment(params.experimentId).pipe(
+                        forkJoin({
+                            experiment: this.getExperiment(params.experimentId),
+                            languages: this.dotLanguagesService.getLanguagesUsedPage(
+                                pageData.page.identifier
+                            )
+                        }).pipe(
                             tap({
-                                next: (experiment) => {
+                                next: ({ experiment, languages }) => {
                                     // Can be blocked by an experiment if there is a running experiment or a scheduled one
                                     const editingBlockedByExperiment = [
                                         DotExperimentStatus.RUNNING,
@@ -429,7 +467,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                 lockedByUser: pageData.page.lockedByName
                                             }
                                         },
-                                        shouldReload: true
+                                        shouldReload: true,
+                                        languages
                                     });
                                 }
                             })
@@ -445,10 +484,21 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
             switchMap(({ params, whenReloaded }) => {
                 return this.dotPageApiService.get(params).pipe(
+                    switchMap((pageData) =>
+                        this.dotLanguagesService
+                            .getLanguagesUsedPage(pageData.page.identifier)
+                            .pipe(
+                                map((languages) => ({
+                                    editor: pageData,
+                                    languages
+                                }))
+                            )
+                    ),
                     tapResponse({
-                        next: (editor) => {
+                        next: ({ editor, languages }) => {
                             this.patchState({
                                 editor,
+                                languages,
                                 editorState: EDITOR_STATE.IDLE,
                                 shouldReload: true
                             });
@@ -685,8 +735,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     });
 
     private createPageURL(state: EditEmaState): string {
+        const vanityUrl = state.editor.vanityUrl;
+
+        const vanityURI = vanityUrl?.response === 200 ? vanityUrl.url : vanityUrl?.forwardTo;
+
         const params = {
-            url: state.editor.page.pageURI,
+            url: vanityUrl ? vanityURI : state.editor.page.pageURI,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
             variantName: state.editorData.variantId
@@ -889,6 +943,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     inode: '',
                     pageURI: '',
                     contentType: '',
+                    live: false,
                     ...permissions
                 },
                 site: {
@@ -918,7 +973,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             editorData: {
                 mode: EDITOR_MODE.EDIT
             },
-            shouldReload: false
+            shouldReload: false,
+            languages: []
         });
     }
 

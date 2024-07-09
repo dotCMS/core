@@ -78,7 +78,7 @@ export const CATEGORY_FIELD_MOCK: DotCMSContentTypeField = {
     sortOrder: 2,
     unique: false,
     values: 'b3da6475e34655bed79919984bc34fc4',
-    variable: 'categorias'
+    variable: CATEGORY_FIELD_VARIABLE_NAME
 };
 
 /**
