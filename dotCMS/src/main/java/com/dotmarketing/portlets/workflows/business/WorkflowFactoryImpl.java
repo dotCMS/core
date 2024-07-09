@@ -1861,7 +1861,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final WorkflowScheme proxyScheme = new WorkflowScheme();
         proxyScheme.setId(action.getSchemeId());
         cache.removeActions(proxyScheme);
-
+        cache.removeAction(action);
         // update workflowScheme mod date
         final WorkflowScheme scheme = findScheme(action.getSchemeId());
         saveScheme(scheme);
