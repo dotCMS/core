@@ -1,23 +1,26 @@
+import { Subject } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     computed,
-    DestroyRef,
     effect,
     ElementRef,
     EventEmitter,
-    inject,
     input,
+    OnDestroy,
     Output,
-    Renderer2,
     signal,
     ViewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
+
+import { debounceTime } from 'rxjs/operators';
 
 import { DotCategory } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -38,7 +41,7 @@ import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skele
     styleUrl: './dot-category-field-search-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCategoryFieldSearchListComponent implements AfterViewInit {
+export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDestroy {
     /**
      * Represents a reference to a table container element in the DOM to calculate the
      * viewport to use in the virtual scroll
@@ -90,13 +93,20 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit {
      * Represents an array of temporary selected items.
      */
     temporarySelectedAll: string[] = [];
-    #renderer = inject(Renderer2);
-    #destroyRef = inject(DestroyRef);
 
     readonly #effectRef = effect(() => {
         // Todo: find a better way to update this
         this.itemsSelected = this.selected();
     });
+
+    readonly #resize$ = new Subject<ResizeObserverEntry>();
+    readonly #resizeObserver = new ResizeObserver((entries) => this.#resize$.next(entries[0]));
+
+    constructor() {
+        this.#resize$.pipe(debounceTime(500), takeUntilDestroyed()).subscribe(() => {
+            this.setTableScrollHeight();
+        });
+    }
 
     /**
      * This method is called when an item is selected.
@@ -138,12 +148,12 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit {
 
     ngAfterViewInit(): void {
         this.setTableScrollHeight();
-        this.#renderer.listen('window', 'resize', this.setTableScrollHeight.bind(this));
+        this.#resizeObserver.observe(this.tableContainer.nativeElement);
+    }
 
-        this.#destroyRef.onDestroy(() => {
-            this.#renderer.listen('window', 'resize', null);
-            this.#effectRef.destroy();
-        });
+    ngOnDestroy() {
+        this.#effectRef.destroy();
+        this.#resizeObserver.unobserve(this.tableContainer.nativeElement);
     }
 
     /**

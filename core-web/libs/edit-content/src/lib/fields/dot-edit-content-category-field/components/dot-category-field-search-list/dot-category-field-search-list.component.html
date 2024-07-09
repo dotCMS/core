@@ -1,44 +1,42 @@
 <div #tableContainer class="category-field__search-list">
     @if (!isLoading()) {
-    <p-table
-        [scrollHeight]="$scrollHeight()"
-        [scrollable]="true"
-        [value]="$searchResults()"
-        dataKey="key"
-        selectionMode="multiple"
-        [(selection)]="itemsSelected"
-        (onHeaderCheckboxToggle)="onHeaderCheckboxToggle($event)"
-        (onRowSelect)="onSelectItem($event)"
-        (onRowUnselect)="onRemoveItem($event)"
-        styleClass="dotTable ">
-        <ng-template pTemplate="header">
-            <tr>
-                <th>
-                    <p-tableHeaderCheckbox style="width: 4rem"></p-tableHeaderCheckbox>
-                </th>
-                <th>{{ 'edit.content.category-field.search.name' | dm }}</th>
-                <th>{{ 'edit.content.category-field.search.assignee' | dm }}</th>
-            </tr>
-        </ng-template>
+        <p-table
+            [scrollHeight]="$scrollHeight()"
+            [scrollable]="true"
+            [value]="$searchResults()"
+            dataKey="key"
+            selectionMode="multiple"
+            [(selection)]="itemsSelected"
+            (onHeaderCheckboxToggle)="onHeaderCheckboxToggle($event)"
+            (onRowSelect)="onSelectItem($event)"
+            (onRowUnselect)="onRemoveItem($event)"
+            styleClass="dotTable ">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>
+                        <p-tableHeaderCheckbox style="width: 4rem"></p-tableHeaderCheckbox>
+                    </th>
+                    <th>{{ 'edit.content.category-field.search.name' | dm }}</th>
+                    <th>{{ 'edit.content.category-field.search.assignee' | dm }}</th>
+                </tr>
+            </ng-template>
 
-        <ng-template let-category pTemplate="body">
-            <tr>
-                <td>
-                    <p-tableCheckbox [value]="category"></p-tableCheckbox>
-                </td>
-                <td>{{ category.value }}</td>
-                <td>{{ category.path }}</td>
-            </tr>
-        </ng-template>
-    </p-table>
+            <ng-template let-category pTemplate="body">
+                <tr>
+                    <td>
+                        <p-tableCheckbox [value]="category"></p-tableCheckbox>
+                    </td>
+                    <td>{{ category.value }}</td>
+                    <td>{{ category.path }}</td>
+                </tr>
+            </ng-template>
+        </p-table>
     } @else {
-
-    <dot-table-skeleton
-        [columns]="[
-            '',
-            'edit.content.category-field.search.name' | dm,
-            'edit.content.category-field.search.assignee' | dm
-        ]" />
-
+        <dot-table-skeleton
+            [columns]="[
+                '',
+                'edit.content.category-field.search.name' | dm,
+                'edit.content.category-field.search.assignee' | dm
+            ]" />
     }
 </div>
