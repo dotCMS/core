@@ -15,7 +15,8 @@ import {
     DotMessageService,
     DotPropertiesService,
     DotUploadFileService,
-    FileStatus
+    FileStatus,
+    DotAiService
 } from '@dotcms/data-access';
 import { DotSpinnerModule } from '@dotcms/ui';
 
@@ -32,12 +33,11 @@ import { ContentletBlockComponent } from '../../nodes';
 import {
     ASSET_MOCK,
     CONTENTLETS_MOCK,
-    DotAiService,
     SuggestionsComponent,
     SuggestionsService
 } from '../../shared';
+import { DotAiServiceMock } from '../../shared/mocks/dot-ai-service.mock';
 import { DotMessageServiceMock } from '../../shared/mocks/dot-message.service.mock';
-import { DotAiServiceMock } from '../../shared/services/dot-ai/dot-ai-service.mock';
 
 export default {
     title: 'Library/Block Editor'

@@ -1,4 +1,4 @@
-import { ActivatedRouteSnapshot, Router } from '@angular/router';
+import { ActivatedRouteSnapshot } from '@angular/router';
 import { DotCMSPageAsset, DotcmsNavigationItem } from '@dotcms/angular';
 import { inject } from '@angular/core';
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';

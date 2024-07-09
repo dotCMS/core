@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
+import com.dotcms.cli.command.files.FilesCommand;
+import com.dotcms.cli.command.files.FilesPull;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -340,7 +342,7 @@ class PushCommandIT extends CommandTest {
     /**
      * Given scenario: A push command is executed in watch mode. Then we simulate changes in the file system using a separate thread
      * Expected Result: The command that starts in watch mode remains suspended until changes are made. Then it should process the changes and exit.
-     * We simply verify that the command reports the it
+     * We simply verify that the command reports it
      * @throws IOException
      * @throws InterruptedException
      */
@@ -441,6 +443,131 @@ class PushCommandIT extends CommandTest {
         }
     }
 
+
+    /**
+     * Given scenario: A push command is executed in watch mode. Then we simulate changes in the file system using a separate thread
+     * The path to the workspace is a relative path e.g.  files/live/en-us/default
+     * We're trying to simulate a case on which we're running the command from a valid existing workspace
+     * But passing a relative path to the files folder we want to push
+     * Expected Result: The command that starts in watch mode remains suspended until changes are made. Then it should process the changes and exit.
+     * It should be able to resolve any relative path and succeed at pushing the changes. No exceptions should be thrown
+     * we should be able to deal with relative paths
+     * examples
+     *    -  push files/demo.com/en-us/live/folder-to-watch --watch
+     *    -  push ./files/demo.com/en-us/live/folder-to-watch --watch
+     *
+     * @throws IOException if there's a problem accessing the files and folders needed for the test.
+     * @throws InterruptedException if there's a problem with the thread synchronization.
+     */
+    @Test
+    void testPullThenPushUsingRelativePathInWatchMode() throws IOException, InterruptedException {
+        // Create a temporary folder for the push
+        Path tempFolder = createTempFolder();
+        // And a workspace for it
+        workspaceManager.getOrCreate(tempFolder);
+        try {
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                commandLine.setOut(out);
+                //Let's seed the workspace with some content
+                int status = commandLine.execute(PullCommand.NAME,
+                        "--workspace", tempFolder.toAbsolutePath().toString());
+
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                Assertions.assertTrue(tempFolder.toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve("content-types").toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve("languages").toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve("sites").toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve("files").toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve(Path.of("files","live")).toFile().isDirectory());
+                Assertions.assertTrue(tempFolder.resolve(Path.of("files","working")).toFile().isDirectory());
+
+                //Now let's create a relative path to the workspace
+                final Path folderToWatchPath = Path.of("files", "live", "en-us", "default", "folder-to-watch");
+                final Path resolvedFolderToWatchPath = tempFolder.resolve(folderToWatchPath);
+                final Path relativePath = tempFolder.relativize(resolvedFolderToWatchPath);
+                //Create the directory we're going to watch
+                Files.createDirectories(resolvedFolderToWatchPath);
+
+                // Latch to signal when the changes are done
+                CountDownLatch changeLatch = new CountDownLatch(1);
+                // Latch to wait for command processing time
+                CountDownLatch commandLatch = new CountDownLatch(1);
+                // Latch to signal that the command has started
+                CountDownLatch commandStartLatch = new CountDownLatch(1);
+                logger.debug("Starting command thread. Command will remain suspended until changes are made in a separate thread");
+                // Start the command execution in a new thread This time using a relative path
+                Thread commandThread = new Thread(() -> {
+                    commandLine.setOut(out);
+                    commandLine.setErr(out);
+                    try {
+                        commandStartLatch.countDown(); // Signal that the command has started
+                        commandLine.execute(PushCommand.NAME,
+                                // Path to the files folder
+                                relativePath.toString(),
+                                // Path to the workspace
+                                "--workspace", tempFolder.toAbsolutePath().toString(),
+                                "--watch", "1");
+                    } catch (Exception e) {
+                        // Quietly ignore exceptions
+                    } finally {
+                        commandLatch.countDown();
+                    }
+                });
+                commandThread.start();
+
+                // Wait for the command to start
+                commandStartLatch.await();
+
+                //Now Let's introduce a change in the workspace
+                final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+
+                // Simulate changes in the tempFolder with a delay
+                Runnable changeTask = () -> {
+                    try {
+                        final Path newFile = tempFolder.resolve("newFile.txt");
+                        Files.createFile(newFile);
+                        for (int i = 0; i < 5; i++) {
+                            // Create a new file
+                            Files.writeString(newFile, "Hello, world! " + i + "\n");
+                            // Use a latch to control timing
+                            CountDownLatch innerLatch = new CountDownLatch(1);
+                            logger.debug(" File updated now will be waiting for 1 second");
+                            scheduler.schedule(innerLatch::countDown, 1, TimeUnit.SECONDS);
+                            innerLatch.await();
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        // Quietly ignore exceptions
+                    } finally {
+                        changeLatch.countDown();
+                    }
+                };
+
+                // Schedule the change task to run immediately
+                scheduler.execute(changeTask);
+
+                // Wait for changes to be made
+                changeLatch.await();
+
+                // Allow some time for the command to process the changes
+                commandLatch.await(10, TimeUnit.SECONDS);
+                logger.debug("Running assertions");
+                // Validate the output of the command
+                final String output = writer.toString();
+                Assertions.assertTrue(output.contains("Running in Watch Mode on"));
+                Assertions.assertTrue(output.contains("No changes in Languages to push"));
+                Assertions.assertTrue(output.contains("No changes in Sites to push"));
+                Assertions.assertTrue(output.contains("No changes in ContentTypes to push"));
+                //Asser no exceptions were thrown
+                Assertions.assertFalse(output.contains("Exception"));
+                Assertions.assertFalse(output.contains("Unable to access the path"));
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
 
 
 }

@@ -11,12 +11,14 @@ import { MessageService } from 'primeng/api';
 import {
     DotContentletLockerService,
     DotExperimentsService,
+    DotLanguagesService,
     DotLicenseService,
     DotMessageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotExperimentsServiceMock,
+    DotLanguagesServiceMock,
     DotLicenseServiceMock,
     getRunningExperimentMock,
     mockDotDevices
@@ -39,6 +41,10 @@ describe('DotEmaInfoDisplayComponent', () => {
         providers: [
             EditEmaStore,
             MessageService,
+            {
+                provide: DotLanguagesService,
+                useValue: new DotLanguagesServiceMock()
+            },
             {
                 provide: DotExperimentsService,
                 useValue: DotExperimentsServiceMock

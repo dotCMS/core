@@ -970,7 +970,9 @@ public class CategoryAPIImpl implements CategoryAPI {
 			throw new IllegalArgumentException("Limit must be greater than 0");
 		}
 
-		final List<Category> categories = permissionAPI.filterCollection(categoryFactory.findAll(searchCriteria),
+		final List<Category> allCategories = new ArrayList<>(categoryFactory.findAll(searchCriteria));
+
+		final List<Category> categories = permissionAPI.filterCollection(allCategories,
 				PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 
 		return getCategoriesSubList(searchCriteria.offset, searchCriteria.limit, categories, null);
