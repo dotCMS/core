@@ -1,6 +1,5 @@
-package com.dotcms.rendering.velocity.viewtools.content;
+package com.dotmarketing.util;
 
-import com.dotmarketing.util.PaginatedArrayList;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class PaginatedContentList<E> extends PaginatedArrayList<E> {
@@ -11,8 +10,11 @@ public class PaginatedContentList<E> extends PaginatedArrayList<E> {
 	private static final long serialVersionUID = -3041937930751284374L;
 	private boolean previousPage;
 	private boolean nextPage;
-	private long totalPages;
-		
+	private int totalPages;
+	private int offset;
+	private int limit;
+	private int currentPage;
+
 	/**
 	 * @return the previousPage
 	 */
@@ -37,16 +39,59 @@ public class PaginatedContentList<E> extends PaginatedArrayList<E> {
 	public void setNextPage(boolean nextPage) {
 		this.nextPage = nextPage;
 	}
+
+	/**
+	 * @param offset the offset to set
+	 */
+	public void setOffset(int offset) {
+		this.offset = offset;
+	}
+
+	/**
+	 * @return the offset
+	 */
+	public int getOffset() {
+		return offset;
+	}
+
+	/**
+	 * @param limit the limit to set
+	 */
+	public void setLimit(int limit) {
+		this.limit = limit;
+	}
+
+	/**
+	 * @return the limit
+	 */
+	public int getLimit() {
+		return limit;
+	}
+
+	/**
+	 * @param currentPage the page to set
+	 */
+	public void setCurrentPage(int currentPage) {
+		this.currentPage = currentPage;
+	}
+
+	/**
+	 * @return the current page
+	 */
+	public int getCurrentPage() {
+		return currentPage;
+	}
+
 	/**
 	 * @return the totalPages
 	 */
-	public long getTotalPages() {
+	public int getTotalPages() {
 		return totalPages;
 	}
 	/**
 	 * @param totalPages the totalPages to set
 	 */
-	public void setTotalPages(long totalPages) {
+	public void setTotalPages(int totalPages) {
 		this.totalPages = totalPages;
 	}
 	

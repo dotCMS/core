@@ -3,7 +3,7 @@ package com.dotcms.rendering.velocity.viewtools.content.util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
@@ -359,7 +359,7 @@ public class ContentUtils {
 		        }
 				ret.addAll(cmaps);
 				ret.setTotalResults(cmaps.getTotalResults());
-				ret.setTotalPages((long)Math.ceil(((double)cmaps.getTotalResults())/((double)contentsPerPage)));
+				ret.setTotalPages((int)Math.ceil(((double)cmaps.getTotalResults())/((double)contentsPerPage)));
 				ret.setNextPage(maxIndex < totalCount);
 				ret.setPreviousPage(minIndex > 0);
 				cmaps = null;

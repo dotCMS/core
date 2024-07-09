@@ -1,5 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -148,6 +154,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.TrashUtils;
@@ -175,25 +182,12 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -215,12 +209,17 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -1198,6 +1197,76 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
     } // publishRelatedLinks.
+
+    @Override
+    public PaginatedContentList<Contentlet> searchPaginatedByPage(final String luceneQuery,
+            final int contentsPerPage, int page, final String sortBy, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        // Calculate the offset
+        if (page < 1) {
+            page = 1;
+        }
+        var offset = contentsPerPage * (page - 1);
+
+        return searchPaginated(
+                luceneQuery, contentsPerPage, offset, sortBy, user, respectFrontendRoles
+        );
+    }
+
+    @Override
+    public PaginatedContentList<Contentlet> searchPaginated(final String luceneQuery,
+            final int limit, int offset, final String sortBy, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        // Perform the search
+        PaginatedArrayList<Contentlet> contents = (PaginatedArrayList<Contentlet>) search(
+                luceneQuery, limit, offset, sortBy, user, respectFrontendRoles
+        );
+
+        // Calculate the pagination
+        var totalResults = contents.getTotalResults();
+        int contentsPerPage = limit;
+        if (limit <= 0) {
+            contentsPerPage = MAX_LIMIT;
+        }
+
+        int currentPage = 1;
+        if (offset > 0) {
+            currentPage = (offset / contentsPerPage) + 1;
+        } else {
+            offset = 0;
+        }
+
+        var paginatedContentList = new PaginatedContentList<Contentlet>();
+        paginatedContentList.setLimit(contentsPerPage);
+        paginatedContentList.setOffset(offset);
+
+        if (totalResults > 0) {
+
+            paginatedContentList.setCurrentPage(currentPage);
+
+            // Calculate the pagination
+            long minIndex = (currentPage - 1) * contentsPerPage;
+            long maxIndex = contentsPerPage * currentPage;
+            if ((minIndex + contentsPerPage) >= totalResults) {
+                maxIndex = totalResults;
+            }
+            paginatedContentList.setTotalResults(totalResults);
+            paginatedContentList.setTotalPages(
+                    (int) Math.ceil(((double) totalResults) / ((double) contentsPerPage))
+            );
+            paginatedContentList.setNextPage(maxIndex < totalResults);
+            paginatedContentList.setPreviousPage(minIndex > 0);
+
+            if (!contents.isEmpty()) {
+                // Add the content to the paginated list
+                paginatedContentList.addAll(contents);
+            }
+        }
+
+        return paginatedContentList;
+    }
 
     @Override
     public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy,

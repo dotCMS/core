@@ -3,7 +3,6 @@ package com.dotcms.rendering.velocity.viewtools.content;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.Host;
@@ -23,6 +22,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -255,7 +255,7 @@ public class ContentTool implements ViewTool {
     	        	maxIndex = totalCount;
     	        }
     			ret.setTotalResults(cons.getTotalResults());
-    			ret.setTotalPages((long)Math.ceil(((double)cons.getTotalResults())/((double)contentsPerPage)));
+    			ret.setTotalPages((int)Math.ceil(((double)cons.getTotalResults())/((double)contentsPerPage)));
     			ret.setNextPage(maxIndex < totalCount);
     			ret.setPreviousPage(minIndex > 0);
     	    }

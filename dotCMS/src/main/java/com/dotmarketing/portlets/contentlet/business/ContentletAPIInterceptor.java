@@ -32,10 +32,9 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
-import org.elasticsearch.action.search.SearchResponse;
-
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -45,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.elasticsearch.action.search.SearchResponse;
 
 /**
  * This interceptor class allows developers to execute Java <b>code</b> before
@@ -1897,6 +1897,64 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.restoreVersion(contentlet, user, respectFrontendRoles);
 		}
+	}
+
+	@Override
+	public PaginatedContentList<Contentlet> searchPaginatedByPage(final String luceneQuery,
+			final int contentsPerPage, final int page, final String sortBy, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.searchPaginatedByPage(
+					luceneQuery, contentsPerPage, page, sortBy, user, respectFrontendRoles
+			);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException(
+						"The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		var result = conAPI.searchPaginatedByPage(
+				luceneQuery, contentsPerPage, page, sortBy, user, respectFrontendRoles
+		);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.searchPaginatedByPage(
+					luceneQuery, contentsPerPage, page, sortBy, user, respectFrontendRoles
+			);
+		}
+
+		return result;
+	}
+
+	@Override
+	public PaginatedContentList<Contentlet> searchPaginated(final String luceneQuery,
+			final int limit, final int offset, final String sortBy, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.searchPaginated(
+					luceneQuery, limit, offset, sortBy, user, respectFrontendRoles
+			);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException(
+						"The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		var result = conAPI.searchPaginated(
+				luceneQuery, limit, offset, sortBy, user, respectFrontendRoles
+		);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.searchPaginated(
+					luceneQuery, limit, offset, sortBy, user, respectFrontendRoles
+			);
+		}
+
+		return result;
 	}
 
 	@Override
