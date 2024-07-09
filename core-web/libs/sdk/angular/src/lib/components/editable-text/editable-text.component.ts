@@ -1,4 +1,5 @@
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
+import { EventObj } from '@tinymce/tinymce-angular/editor/Events';
 
 import { Component, inject, Input, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -36,6 +37,7 @@ export class EditableTextComponent implements OnInit {
     @Input() inode = '';
     @Input() field = '';
     @Input() content = '';
+    @Input() onNumberOfPages = 1;
     @Input() langId = 1;
     @Input() mode: TINYMCE_MODE = 'minimal';
     @Input() format: TINYMCE_FORMAT = 'html';
@@ -60,7 +62,31 @@ export class EditableTextComponent implements OnInit {
         return this.editorComponent.editor;
     }
 
-    onFocusOut(_event: unknown) {
+    onMouseDown(eventObj: EventObj<MouseEvent>) {
+        if (!(this.onNumberOfPages > 1)) {
+            return;
+        }
+
+        const { event } = eventObj; // Prevent focus
+        event.stopPropagation();
+        event.preventDefault();
+
+        const dataset = {
+            inode: this.inode,
+            mode: this.mode,
+            language: this.langId.toString(),
+            fieldName: this.field
+        };
+
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+            payload: {
+                dataset
+            }
+        });
+    }
+
+    onFocusOut(_event: EventObj<FocusEvent>) {
         if (!this.editor.isDirty()) {
             return;
         }

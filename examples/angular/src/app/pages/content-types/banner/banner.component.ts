@@ -28,6 +28,7 @@ import { DotCMSContentlet, EditableTextComponent } from '@dotcms/angular';
           [inode]="contentlet.inode"
           [langId]="contentlet.languageId"
           [content]="contentlet.title"
+          [onNumberOfPages]="contentlet['onNumberOfPages']"
         />
       </h2>
       <p class="mb-4 text-xl text-shadow">{{ contentlet['caption'] }}</p>
