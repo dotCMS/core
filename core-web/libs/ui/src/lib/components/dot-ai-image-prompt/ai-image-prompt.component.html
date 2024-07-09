@@ -1,13 +1,16 @@
 @if (vm$ | async; as vm) {
     <p-dialog
-        (onHide)="store.hideDialog()"
         [(visible)]="vm.showDialog"
-        [dismissableMask]="true"
+        [appendTo]="'body'"
+        [closeOnEscape]="false"
         [draggable]="false"
+        [header]="'block-editor.extension.ai-image.dialog-title' | dm"
+        [keepInViewport]="false"
+        [maskStyleClass]="'p-dialog-mask-transparent'"
+        [modal]="true"
         [resizable]="false"
-        [style]="{ width: '1040px' }"
-        appendTo="body"
-        header="{{ 'block-editor.extension.ai-image.dialog-title' | dm }}">
+        [style]="{ height: '90%', width: '90%' }"
+        (onHide)="store.hideDialog()">
         <div class="dialog-prompt__wrapper">
             @if (vm.showDialog) {
                 <dot-ai-image-prompt-form
@@ -17,6 +20,7 @@
                     [isLoading]="vm.isLoading"
                     [hasEditorContent]="vm.hasEditorContent" />
             }
+
             <div [class.dialog-prompt_gallery]="vm.images.length || vm.isLoading">
                 <dot-ai-image-prompt-gallery
                     (activeIndexChange)="store.setGalleryActiveIndex($event)"

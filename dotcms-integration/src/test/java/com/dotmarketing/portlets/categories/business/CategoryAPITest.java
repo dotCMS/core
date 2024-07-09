@@ -8,8 +8,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -35,6 +34,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.categories.model.HierarchedCategory;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -1660,5 +1660,39 @@ public class CategoryAPITest extends IntegrationTestBase {
         assertEquals(9, (int) secondPage.getTotalCount());
         assertEquals(4, secondPage.getCategories().size());
         assertTrue(list(category6, category7, category8, category9).containsAll(secondPage.getCategories()));
+    }
+
+    /**
+     * Method to test: {@link CategoryAPIImpl#findAll(CategorySearchCriteria, User, boolean)}
+     * When: Call the API method
+     * Should: it should
+     * - Use the {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)} to search the {@link Category}
+     * - Use the {@link PermissionAPI#filterCollection(List, int, boolean, User)} method to check permission
+     */
+    @Test
+    public void findHierarchy() throws DotDataException, DotSecurityException {
+        final String inode = new RandomString().nextString();
+
+        final HierarchyShortCategory category1 = mock(HierarchyShortCategory.class);
+        when(category1.getInode()).thenReturn(inode);
+
+        final HierarchyShortCategory category2 = mock(HierarchyShortCategory.class);
+        final HierarchyShortCategory category3 = mock(HierarchyShortCategory.class);
+
+        final List<HierarchyShortCategory> categoriesAExpected = list(category2, category3);
+
+        final List<String> inodes = list(category1.getInode());
+        final CategoryFactory categoryFactory = mock();
+        when(categoryFactory.findHierarchy(inodes)).thenReturn(categoriesAExpected);
+
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+
+        final CategoryAPI categoryAPI = new CategoryAPIImpl(categoryFactory, permissionAPI);
+        final List<HierarchyShortCategory> hierarchy = categoryAPI.findHierarchy(inodes);
+
+        assertEquals(categoriesAExpected.size(), hierarchy.size());
+        assertTrue(categoriesAExpected.containsAll(hierarchy));
+
+        verify(categoryFactory).findHierarchy(inodes);
     }
 }
