@@ -12,6 +12,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.concurrent.TaskMonitor;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
@@ -3369,13 +3370,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			);
 		}
 
+		final Object taskId = DotConcurrentFactory.getInstance().getCurrentTaskId();
+		final TaskMonitor taskMonitor = DotConcurrentFactory.getInstance().getTaskMonitor("workflowTaskMonitor");
+
+		ThreadContextUtil.getOrCreateContext().setTaskMonitor(taskMonitor);
+		taskMonitor.onTaskStarted(taskId, "FireContentWorkflow");
 		setWorkflowPropertiesToContentlet(contentlet, dependencies);
 
 		this.validateActionStepAndWorkflow(contentlet, dependencies.getModUser());
 		this.checkShorties (contentlet);
 
 		final WorkflowProcessor processor   = ThreadContextUtil.wrapReturnNoReindex(()-> this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser()));
-
+		processor.setTaskMonitor(taskMonitor);
 		processor.setContentletDependencies(dependencies);
 		processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
@@ -3389,6 +3395,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                     : "Unknown")));
         }
 
+		taskMonitor.onTaskCompleted(taskId, "FireContentWorkflow");
 		return processor.getContentlet();
 	} // fireContentWorkflow
 

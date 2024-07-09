@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.model;
 import static com.dotmarketing.business.APILocator.getRoleAPI;
 import static com.dotmarketing.business.APILocator.getWorkflowAPI;
 
+import com.dotcms.concurrent.TaskMonitor;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -41,6 +42,7 @@ public class WorkflowProcessor {
 	private final Map<String, Object> contextMap = new HashMap<>();
 
 	private ConcurrentMap<String,Object> actionsContext;
+	private TaskMonitor taskMonitor;
 
 	/**
 	 * True if the processor was aborted
@@ -310,5 +312,13 @@ public class WorkflowProcessor {
 
 	public ConcurrentMap<String,Object> getActionsContext() {
 		return actionsContext;
+	}
+
+	public void setTaskMonitor(final TaskMonitor taskMonitor) {
+		this.taskMonitor = taskMonitor;
+	}
+
+	public TaskMonitor getTaskMonitor() {
+		return this.taskMonitor;
 	}
 }

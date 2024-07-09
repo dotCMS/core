@@ -7,6 +7,7 @@ import com.dotcms.concurrent.lock.DotKeyLockManagerFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.ReflectionUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.util.Config;
@@ -315,6 +316,15 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
     }
 
+    /**
+     * Return the current task id based on the server id and the thread id
+     * @return Object
+     */
+    public Object getCurrentTaskId() {
+
+        return APILocator.getServerAPI().readServerId() + Thread.currentThread().getId();
+    }
+
     private static class SingletonHolder {
         private static final DotConcurrentFactory INSTANCE = new DotConcurrentFactory();
     }
@@ -528,6 +538,11 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
        return this.identifierStripedLock;
     }
 
+    public TaskMonitor getTaskMonitor(final String taskMonitorName) {
+
+        // this should be more configurable and diff implementations
+        return new ToastTaskMonitor();//new LoggingTaskMonitor();
+    }
     /**
      * Create a composite completable futures and results any of the first results done of the futures parameter.
      * @param futures

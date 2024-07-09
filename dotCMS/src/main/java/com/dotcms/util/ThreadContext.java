@@ -1,5 +1,7 @@
 package com.dotcms.util;
 
+import com.dotcms.concurrent.TaskMonitor;
+
 /**
  * Encapsulates Thread Local context information
  * @author jsanca
@@ -13,6 +15,8 @@ public class ThreadContext {
     private boolean includeDependencies = false;
 
     private String tag;
+
+    private TaskMonitor taskMonitor;
 
     public boolean isReindex() {
         return reindex;
@@ -37,4 +41,13 @@ public class ThreadContext {
     public void setTag(String tag) {
         this.tag = tag;
     }
+
+    public void setTaskMonitor(final TaskMonitor taskMonitor) {
+        this.taskMonitor = taskMonitor;
+    }
+
+    public TaskMonitor getTaskMonitor() {
+        return this.taskMonitor;
+    }
+
 }

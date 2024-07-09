@@ -5,6 +5,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.TaskMonitor;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
@@ -4911,6 +4912,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 false);
     }
 
+    private TaskMonitor getTaskMonitor() {
+
+        final TaskMonitor taskMonitor = ThreadContextUtil.getOrCreateContext().getTaskMonitor();
+        return Objects.nonNull(taskMonitor)?taskMonitor: DotConcurrentFactory.getInstance().getTaskMonitor("workflowTaskMonitor");
+    }
     /**
      * @param contentletIn
      * @param contentRelationships
@@ -4933,9 +4939,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         Contentlet contentletOut = null;
         Boolean autoAssign = null;
-
+        final Object taskId = DotConcurrentFactory.getInstance().getCurrentTaskId();
+        final TaskMonitor taskMonitor = this.getTaskMonitor();
+        
         try {
 
+            taskMonitor.onTaskStarted(taskId, "CheckinContentlet");
             String wfPublishDate = contentletIn.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
             String wfExpireDate = contentletIn.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
             final boolean isWorkflowInProgress = contentletIn.isWorkflowInProgress();
@@ -5013,6 +5022,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             return contentletOut;
         } finally {
+
+            getTaskMonitor().onTaskCompleted(taskId, "CheckinContentlet");
             this.cleanup(contentletOut);
         }
     }
@@ -5238,6 +5249,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
         }
 
+        final Object taskId = DotConcurrentFactory.getInstance().getCurrentTaskId();
+        final TaskMonitor taskMonitor = this.getTaskMonitor();
+
         if (contentRelationships == null) {
 
             //Obtain all relationships
@@ -5353,6 +5367,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getContentletAPI()
                     .validateContentlet(contentlet, contentRelationships, categories);
 
+            taskMonitor.onTaskProgress(taskId, "CheckingContentlet", 25);
             if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null) {
                 canLock(contentlet, user, respectFrontendRoles);
             }
@@ -5402,6 +5417,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //While the original contentlet first will get stuff marked for delete and then refreshed after saved in the database.
             final Contentlet contentletRaw = populateHost(contentlet);
 
+            taskMonitor.onTaskProgress(taskId, "CheckingContentlet", 50);
             if (contentlet.getMap().get("_use_mod_date") != null) {
                     /*
                      When a content is sent using the remote push publishing we want to respect the modification
@@ -5500,6 +5516,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         categories, user, respectFrontendRoles);
             }
 
+            taskMonitor.onTaskProgress(taskId, "CheckingContentlet", 75);
             // Refreshing permissions
             if (structureHasAHostField && !isNewContent) {
                 permissionAPI.resetPermissionReferences(contentlet);
