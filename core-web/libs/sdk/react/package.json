@@ -1,10 +1,10 @@
 {
     "name": "@dotcms/react",
-    "version": "0.0.1-alpha.23",
+    "version": "0.0.1-alpha.24",
     "peerDependencies": {
         "react": ">=18",
         "react-dom": ">=18",
-        "@dotcms/client": "0.0.1-alpha.23"
+        "@dotcms/client": "0.0.1-alpha.24"
     },
     "description": "Official React Components library to render a dotCMS page.",
     "repository": {

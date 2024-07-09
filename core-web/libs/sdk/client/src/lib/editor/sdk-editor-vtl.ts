@@ -1,7 +1,6 @@
 import {
     listenEditorMessages,
     listenHoveredContentlet,
-    pingEditor,
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners/listeners';
@@ -24,7 +23,6 @@ declare global {
  *
  */
 if (isInsideEditor()) {
-    pingEditor();
     listenEditorMessages();
     scrollHandler();
     preserveScrollOnIframe();
