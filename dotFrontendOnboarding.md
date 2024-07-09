@@ -185,7 +185,7 @@ In this section, you'll find advanced configuration options to optimize your dev
   ```yaml
   services:
     dotcms:
-      image: dotcms/dotcms:trunk_149bea9
+      image: dotcms/dotcms:trunk
       environment:
         ...
         # ENABLE THE FOLLOWING FEATURES
@@ -311,3 +311,48 @@ To resolve this issue, follow the steps documented in this guide: [How to fix M1
     ```
 
 By following these steps, you should be able to resolve the Puppeteer Chromium binary issue and prevent it from occurring in the future, allowing you to proceed with your development tasks.
+
+## dotCMS Utilities
+
+**dotCMS Utilities** is a collection of internal tools designed to streamline various Git-related tasks and processes within our development workflow. These utilities help developers by automating tasks such as creating new branches, switching contexts, and creating pull requests.
+
+### How to Use dotCMS Utilities
+
+1. **Installation**:
+  To install [dotCMS Utilities](https://github.com/dotCMS/dotcms-utilities), run the following `curl` command:
+
+	```sh
+	curl -sSL https://raw.githubusercontent.com/dotCMS/dotcms-utilities/main/install.sh | bash
+	```
+2. **Basic Commands/Usage**:
+	Once installed, you can use the utilities for managing your Git workflow. Here are some examples of how to use the utilities:
+
+	#### Switch to a different branch
+	This Git extension script, git issue-branch, helps select an issue from the list assigned to the current user and creates a new branch for that issue. The branch will be prefixed automatically with the issue id and a default suffix will be created based upon the issue title. The user can specify their own suffix also.
+
+	Provides an interactive selection menu for branches.
+
+	```sh
+	git switch-branch <branch-name>
+	```
+
+	#### Create a new branch
+	This Git extension script, git smart-switch, enhances branch switching and creation by providing additional features like interactive branch selection, WIP commit management, and optional remote branch pushing.
+
+	Creates and switches to a new branch based on issue number and title and ensures consistent branch naming.
+	
+	```sh
+	git create-branch <branch-name>
+	```
+
+	#### Create a pull request
+	This Git extension script, git issue-pr, helps to create a new PR from the command line and relate it to the issue id defined on the current branch.
+
+	Creates a pull request from the current branch and integrates with GitHub CLI to fetch issue details.
+
+	```sh
+	git create-pull-request
+	```
+
+## Resources and Further Reading
+For more advanced actions and commands, you can consult the `justfile` in the project repository. The `justfile` contains several scripts that simplify common tasks and automate complex processes, making it a valuable reference for efficient development workflows.

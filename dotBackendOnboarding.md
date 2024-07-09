@@ -151,7 +151,7 @@ Advanced configurations allow you to customize and optimize your development env
 
 **Configure initial admin password**:
 
-* Set up the following env variables in the `~/.zshrc` file.
+* Set up the following env variables:
 	```sh
 	export DOT_INITIAL_ADMIN_PASSWORD=admin
 	```
@@ -165,7 +165,7 @@ Advanced configurations allow you to customize and optimize your development env
 	```
 * Alternatively, you can go directly to the following folder: **_core/dotCMS/target/starter/_** , and drop the starter’s ZIP file in there. Just make sure you rename it to **starter.zip**, as usual.
 
-* Another way is to set up the following environment variable in the `~/.zshrc` file:
+* Another way is to set up the following environment variable:
 	```sh
 	DOT_STARTER_DATA_LOAD =	'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240213/starter-20240213.zip'
 	```
@@ -175,28 +175,6 @@ Advanced configurations allow you to customize and optimize your development env
 	|--|--|
 	| `just build-no-docker`| `./mvnw clean install -DskipTests -Ddocker.skip`  |	
 
-
-### Local DB and ES settings
-
-**Configure a local PostgresSQL**:
-
-* Set up the following env variables in the `~/.zshrc` file.
-	```sh
-	export DB_BASE_URL=jdbc:postgresql://localhost/dotcms
-	export DB_DRIVER=org.postgresql.Driver
-	export DB_PASSWORD=XXXXXXXXXX
-	export DB_USERNAME=dotcmsdbuser
-	export DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS=com.dotmarketing.db.SystemEnvDataSourceStrategy
-	```
-**Configure a local Elasticsearch**:
-
-* Set up the following env variables in the `~/.zshrc` file.
-	```sh
-	export DOT_ES_ENDPOINTS=[https://localhost:9200](https://localhost:9200)
-	export DOT_ES_AUTH_BASIC_PASSWORD=admin
-	export DOT_ES_AUTH_BASIC_USER=admin
-	export DOT_ES_AUTH_TYPE=BASIC
-	```
 
 ## Troubleshooting
 
@@ -310,6 +288,48 @@ To resolve this issue, follow the steps documented in this guide: [How to fix M1
     ```
 
 By following these steps, you should be able to resolve the Puppeteer Chromium binary issue and prevent it from occurring in the future, allowing you to proceed with your development tasks.
+
+## dotCMS Utilities
+
+**dotCMS Utilities** is a collection of internal tools designed to streamline various Git-related tasks and processes within our development workflow. These utilities help developers by automating tasks such as creating new branches, switching contexts, and creating pull requests.
+
+### How to Use dotCMS Utilities
+
+1. **Installation**:
+  To install [dotCMS Utilities](https://github.com/dotCMS/dotcms-utilities), run the following `curl` command:
+
+	```sh
+	curl -sSL https://raw.githubusercontent.com/dotCMS/dotcms-utilities/main/install.sh | bash
+	```
+2. **Basic Commands/Usage**:
+	Once installed, you can use the utilities for managing your Git workflow. Here are some examples of how to use the utilities:
+
+	#### Switch to a different branch
+	This Git extension script, git issue-branch, helps select an issue from the list assigned to the current user and creates a new branch for that issue. The branch will be prefixed automatically with the issue id and a default suffix will be created based upon the issue title. The user can specify their own suffix also.
+
+	Provides an interactive selection menu for branches.
+
+	```sh
+	git switch-branch <branch-name>
+	```
+
+	#### Create a new branch
+	This Git extension script, git smart-switch, enhances branch switching and creation by providing additional features like interactive branch selection, WIP commit management, and optional remote branch pushing.
+
+	Creates and switches to a new branch based on issue number and title and ensures consistent branch naming.
+	
+	```sh
+	git create-branch <branch-name>
+	```
+
+	#### Create a pull request
+	This Git extension script, git issue-pr, helps to create a new PR from the command line and relate it to the issue id defined on the current branch.
+
+	Creates a pull request from the current branch and integrates with GitHub CLI to fetch issue details.
+
+	```sh
+	git create-pull-request
+	```
 
 ## Resources and Further Reading
 For more advanced actions and commands, you can consult the `justfile` in the project repository. The `justfile` contains several scripts that simplify common tasks and automate complex processes, making it a valuable reference for efficient development workflows.
