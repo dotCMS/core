@@ -1,6 +1,5 @@
-package com.dotcms.concurrent;
+package com.dotcms.concurrent.monitor;
 
-import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotmarketing.util.Logger;
 
 /**

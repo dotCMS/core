@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.workflows.model;
 import static com.dotmarketing.business.APILocator.getRoleAPI;
 import static com.dotmarketing.business.APILocator.getWorkflowAPI;
 
-import com.dotcms.concurrent.TaskMonitor;
+import com.dotcms.concurrent.monitor.TaskMonitor;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;

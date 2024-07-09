@@ -5,6 +5,9 @@ import com.dotcms.concurrent.lock.ClusterLockManagerFactory;
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
 import com.dotcms.concurrent.lock.DotKeyLockManagerFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
+import com.dotcms.concurrent.monitor.LoggingTaskMonitor;
+import com.dotcms.concurrent.monitor.TaskMonitor;
+import com.dotcms.concurrent.monitor.ToastTaskMonitor;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
@@ -92,6 +95,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     public static final String BULK_ACTIONS_THREAD_POOL = "bulkActionsPool";
 
     public static final String LOCK_MANAGER = "IdentifierStripedLock";
+
+    private final Map<String, TaskMonitor> taskMonitorMap = new ConcurrentHashMap<>();
 
     /**
      * Used to keep the instance of the submitter
@@ -192,6 +197,9 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         this.delayQueueConsumer = new DelayQueueConsumer();
         getScheduledThreadPoolExecutor().scheduleWithFixedDelay(this.delayQueueConsumer, 0,
                 Config.getLongProperty("dotcms.concurrent.delayqueue.waitmillis", 100), TimeUnit.MILLISECONDS);
+        this.taskMonitorMap.put("logging", new LoggingTaskMonitor());
+        this.taskMonitorMap.put("toast",   new LoggingTaskMonitor());
+        this.taskMonitorMap.put("progress", new LoggingTaskMonitor());
     }
 
     private void subscribeDelayQueue(final BlockingQueue<DelayedDelegate> delayedQueue) {
@@ -538,10 +546,15 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
        return this.identifierStripedLock;
     }
 
+/**
+     * Get the task monitor
+     * @param taskMonitorName {@link String}
+     * @return TaskMonitor
+     */
     public TaskMonitor getTaskMonitor(final String taskMonitorName) {
 
-        // this should be more configurable and diff implementations
-        return new ToastTaskMonitor();//new LoggingTaskMonitor();
+        final String defaultTaskMonitorName = Config.getStringProperty("DOT_DEFAULT_TASK_MONITOR_NAME","logging");
+        return this.taskMonitorMap.getOrDefault(taskMonitorName, this.taskMonitorMap.get(defaultTaskMonitorName));
     }
     /**
      * Create a composite completable futures and results any of the first results done of the futures parameter.

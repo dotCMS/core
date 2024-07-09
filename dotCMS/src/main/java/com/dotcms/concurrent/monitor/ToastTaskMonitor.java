@@ -1,4 +1,4 @@
-package com.dotcms.concurrent;
+package com.dotcms.concurrent.monitor;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
@@ -35,7 +35,7 @@ public class ToastTaskMonitor implements TaskMonitor {
                     .setLife(15000) // 15 secs for testing
                     .setSeverity(MessageSeverity.INFO).create();
             this.systemEventsAPI.push(new SystemEvent(SystemEventType.MESSAGE,
-                    new Payload(systemMessage, Visibility.GLOBAL, null)));
+                    new Payload(systemMessage)));
         } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error pushing system event", e);
         }

@@ -5,7 +5,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.TaskMonitor;
+import com.dotcms.concurrent.monitor.TaskMonitor;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
@@ -194,7 +194,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -4941,7 +4940,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Boolean autoAssign = null;
         final Object taskId = DotConcurrentFactory.getInstance().getCurrentTaskId();
         final TaskMonitor taskMonitor = this.getTaskMonitor();
-        
+
         try {
 
             taskMonitor.onTaskStarted(taskId, "CheckinContentlet");

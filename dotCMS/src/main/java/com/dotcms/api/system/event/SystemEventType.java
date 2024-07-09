@@ -262,5 +262,8 @@ public enum SystemEventType {
 	SESSION_LOGOUT,
 
 	// Analytics App
-	ANALYTICS_APP
+	ANALYTICS_APP,
+
+	// Progress of action tasks
+	PROGRESS
 }

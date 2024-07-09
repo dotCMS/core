@@ -1,4 +1,4 @@
-package com.dotcms.concurrent;
+package com.dotcms.concurrent.monitor;
 
 /**
  * Interface for monitoring the progress of a task/process.

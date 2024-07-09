@@ -1,6 +1,6 @@
 package com.dotcms.util;
 
-import com.dotcms.concurrent.TaskMonitor;
+import com.dotcms.concurrent.monitor.TaskMonitor;
 
 /**
  * Encapsulates Thread Local context information
