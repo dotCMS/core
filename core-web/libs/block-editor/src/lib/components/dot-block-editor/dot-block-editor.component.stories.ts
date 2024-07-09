@@ -1,10 +1,4 @@
-import {
-    Meta,
-    StoryObj,
-    moduleMetadata,
-    componentWrapperDecorator,
-    argsToTemplate
-} from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -24,7 +18,6 @@ import {
     FileStatus,
     DotAiService
 } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotSpinnerModule } from '@dotcms/ui';
 
 import { DotBlockEditorComponent } from './dot-block-editor.component';
@@ -46,40 +39,11 @@ import {
 import { DotAiServiceMock } from '../../shared/mocks/dot-ai-service.mock';
 import { DotMessageServiceMock } from '../../shared/mocks/dot-message.service.mock';
 
-export const BLOCK_EDITOR_FIELD_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
-    contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
-    dataType: 'LONG_TEXT',
-    fieldType: 'Story-Block',
-    fieldTypeLabel: 'Block Editor',
-    fieldVariables: [
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
-            fieldId: '71fe962eb681c5ffd6cd1623e5fc575a',
-            id: 'b19e1d5d-47ad-40d7-b2bf-ccd0a5a86590',
-            key: 'contentTypes',
-            value: 'Activity,CallToAction,calendarEvent,Product,Destination'
-        }
-    ],
-    fixed: false,
-    iDate: 1649791703000,
-    id: '71fe962eb681c5ffd6cd1623e5fc575a',
-    indexed: false,
-    listed: false,
-    hint: 'A helper text',
-    modDate: 1699364930000,
-    name: 'Blog Content',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 13,
-    unique: false,
-    variable: 'blogContent'
+export default {
+    title: 'Library/Block Editor'
 };
 
-type Args = DotBlockEditorComponent;
-
-const meta: Meta<Args> = {
+export const Primary = () => ({
     title: 'Library/Block Editor',
     component: DotBlockEditorComponent,
     decorators: [
@@ -97,7 +61,9 @@ const meta: Meta<Args> = {
                 {
                     provide: DotPropertiesService,
                     useValue: {
-                        getKey: () => of('true')
+                        getKey(_key) {
+                            return of('true');
+                        }
                     }
                 },
                 {
@@ -229,27 +195,6 @@ const meta: Meta<Args> = {
                 BubbleLinkFormComponent,
                 AssetFormComponent
             ]
-        }),
-        componentWrapperDecorator(
-            (story) =>
-                `<div class="card flex justify-content-center w-25rem h-25rem">${story}</div>`
-        )
-    ],
-    args: {
-        contentlet: CONTENTLETS_MOCK[1] as unknown as DotCMSContentlet,
-        field: BLOCK_EDITOR_FIELD_MOCK,
-        isFullscreen: true
-    },
-    render: (args: Args) => ({
-        props: {
-            ...args
-        },
-        template: `<dot-block-editor ${argsToTemplate(args)} />`
-    })
-};
-
-export default meta;
-
-type Story = StoryObj<Args>;
-
-export const Default: Story = {};
+        })
+    ]
+});
