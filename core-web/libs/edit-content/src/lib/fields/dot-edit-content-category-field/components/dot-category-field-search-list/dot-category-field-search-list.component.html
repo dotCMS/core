@@ -1,9 +1,9 @@
 <div #tableContainer class="category-field__search-list">
     @if (!isLoading()) {
     <p-table
-        [scrollHeight]="scrollHeight()"
+        [scrollHeight]="$scrollHeight()"
         [scrollable]="true"
-        [value]="searchResults()"
+        [value]="$searchResults()"
         dataKey="key"
         selectionMode="multiple"
         [(selection)]="itemsSelected"

@@ -1,9 +1,6 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import {
-    DotCategoryFieldCategory,
-    DotCategoryFieldKeyValueObj
-} from '../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
 
 /**
  * Retrieves selected categories from a contentlet.
@@ -36,10 +33,10 @@ export const transformSelectedCategories = (
  * @returns Transformed category or array of transformed categories with additional properties
  */
 export const transformCategories = (
-    categories: DotCategoryFieldCategory | DotCategoryFieldCategory[],
+    categories: DotCategory | DotCategory[],
     keyParentPath: string[]
 ): DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[] => {
-    const transformCategory = (category: DotCategoryFieldCategory): DotCategoryFieldKeyValueObj => {
+    const transformCategory = (category: DotCategory): DotCategoryFieldKeyValueObj => {
         const { key, inode, categoryName, childrenCount } = category;
         const hasChildren = childrenCount > 0;
 
@@ -75,10 +72,10 @@ export const categoryDeepCopy = <T>(array: T[][]): T[][] => {
  * @param index
  */
 export const clearCategoriesAfterIndex = (
-    array: DotCategoryFieldCategory[][],
+    array: DotCategory[][],
     index: number
-): DotCategoryFieldCategory[][] => {
-    const newArray = categoryDeepCopy<DotCategoryFieldCategory>(array);
+): DotCategory[][] => {
+    const newArray = categoryDeepCopy<DotCategory>(array);
     newArray.splice(index + 1);
 
     return newArray;
@@ -98,10 +95,7 @@ export const clearParentPathAfterIndex = (parentPath: string[], index: number): 
  * @param index
  * @param categories
  */
-export const checkIfClickedIsLastItem = (
-    index: number,
-    categories: DotCategoryFieldCategory[][]
-) => {
+export const checkIfClickedIsLastItem = (index: number, categories: DotCategory[][]) => {
     return index + 1 === categories.length;
 };
 
@@ -137,14 +131,18 @@ export const updateChecked = (
 /**
  * Retrieves the parent path of a given category item.
  *
- * @param {DotCategoryFieldCategory} item - The category item.
+ * @param {DotCategory} item - The category item.
  * @returns {string} - The parent path of the category item.
  */
-export const getParentPath = (item: DotCategoryFieldCategory): string => {
-    return item.parentList
-        .slice(1)
-        .map((parent) => parent.categoryName)
-        .join(' / ');
+export const getParentPath = (item: DotCategory): string => {
+    if (item.parentList) {
+        return item.parentList
+            .slice(1)
+            .map((parent) => parent.categoryName)
+            .join(' / ');
+    }
+
+    return '';
 };
 
 /**

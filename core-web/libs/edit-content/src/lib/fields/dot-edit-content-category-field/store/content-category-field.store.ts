@@ -5,13 +5,17 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { delay, filter, switchMap, tap } from 'rxjs/operators';
+import { filter, switchMap, tap } from 'rxjs/operators';
 
-import { ComponentStatus, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCategory,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 
 import { CategoryFieldViewMode } from '../components/dot-category-field-sidebar/dot-category-field-sidebar.component';
 import {
-    DotCategoryFieldCategory,
     DotCategoryFieldItem,
     DotCategoryFieldKeyValueObj
 } from '../models/dot-category-field.models';
@@ -30,13 +34,13 @@ import {
 export type CategoryFieldState = {
     field: DotCMSContentTypeField;
     selected: DotCategoryFieldKeyValueObj[]; // <- source of selected
-    categories: DotCategoryFieldCategory[][];
+    categories: DotCategory[][];
     keyParentPath: string[]; // Delete when we have the endpoint for this
     state: ComponentStatus;
     mode: CategoryFieldViewMode;
     // search
     filter: string;
-    searchCategories: DotCategoryFieldCategory[];
+    searchCategories: DotCategory[];
 };
 
 export const initialState: CategoryFieldState = {
@@ -89,12 +93,7 @@ export const CategoryFieldStore = signalStore(
         isSearchLoading: computed(
             () => store.mode() === 'search' && store.state() === ComponentStatus.LOADING
         ),
-        searchCategoriesFound: computed(
-            () =>
-                store.mode() === 'search' &&
-                store.state() === ComponentStatus.LOADED &&
-                store.filter()
-        ),
+
         /**
          * Categories for render with added properties
          */
@@ -241,11 +240,10 @@ export const CategoryFieldStore = signalStore(
                 tap(() => patchState(store, { mode: 'search', state: ComponentStatus.LOADING })),
                 switchMap((filter) => {
                     return categoryService.getChildren(store.rootCategoryInode(), { filter }).pipe(
-                        delay(300),
                         tapResponse({
                             next: (categories) => {
                                 patchState(store, {
-                                    searchCategories: categories,
+                                    searchCategories: [...categories],
                                     state: ComponentStatus.LOADED
                                 });
                             },

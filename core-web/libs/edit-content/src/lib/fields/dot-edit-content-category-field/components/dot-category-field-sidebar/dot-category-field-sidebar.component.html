@@ -31,7 +31,7 @@
             </div>
             <div class="flex-grow-1 category-field__categories">
                 @if (store.mode() === 'list') {
-                {{ store.searchCategories() | json }}
+
                 <dot-category-field-category-list
                     (itemChecked)="store.updateSelected($event.selected, $event.item)"
                     (rowClicked)="store.getCategories($event)"

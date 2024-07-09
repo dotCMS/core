@@ -1,23 +1,20 @@
-import { fromEvent } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
-    ElementRef,
     EventEmitter,
     inject,
     input,
-    Output,
-    ViewChild
+    Output
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, filter, map } from 'rxjs/operators';
+import { debounceTime, filter } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -27,13 +24,13 @@ const MINIMUM_CHARACTERS = 3;
 @Component({
     selector: 'dot-category-field-search',
     standalone: true,
-    imports: [CommonModule, DotMessagePipe, InputTextModule],
+    imports: [CommonModule, DotMessagePipe, InputTextModule, ReactiveFormsModule],
     templateUrl: './dot-category-field-search.component.html',
     styleUrl: './dot-category-field-search.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCategoryFieldSearchComponent implements AfterViewInit {
-    @ViewChild('searchInput') searchInput!: ElementRef;
+    searchControl = new FormControl();
 
     /**
      * Represent a EventEmitter for the term the user want to filter
@@ -45,6 +42,10 @@ export class DotCategoryFieldSearchComponent implements AfterViewInit {
      * Represent a EventEmitter to notify we want change the mode to `list`.
      */
     @Output() changeMode = new EventEmitter<string>();
+
+    /**
+     * Represents the boolean variable isLoading.
+     */
     isLoading = input.required<boolean>();
     #destroyRef = inject(DestroyRef);
 
@@ -58,7 +59,7 @@ export class DotCategoryFieldSearchComponent implements AfterViewInit {
      * @return {void}
      */
     clearInput(): void {
-        this.searchInput.nativeElement.value = '';
+        this.searchControl.setValue('');
         this.changeMode.emit('list');
     }
 
@@ -70,10 +71,9 @@ export class DotCategoryFieldSearchComponent implements AfterViewInit {
      * @private
      */
     private listenInputChanges(): void {
-        fromEvent(this.searchInput.nativeElement, 'input')
+        this.searchControl.valueChanges
             .pipe(
                 takeUntilDestroyed(this.#destroyRef),
-                map((event: Event) => (event.target as HTMLInputElement).value),
                 debounceTime(DEBOUNCE_TIME),
                 filter((value: string) => value.length >= MINIMUM_CHARACTERS)
             )

@@ -19,10 +19,10 @@
             <label
                 data-testId="category-item-label"
                 class="flex flex-grow-1 category-list__item-label"
-                [ngClass]="{ 'cursor-pointer': item.hasChildren }"
-                [for]="item.key"
-                >{{ item.value }}</label
-            >
+                [class.cursor-pointer]="item.hasChildren"
+                [for]="item.key">
+                {{ item.value }}
+            </label>
 
             @if (item.hasChildren) {
             <i

@@ -1,5 +1,3 @@
-import { Subject } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
@@ -13,28 +11,24 @@ import {
     inject,
     input,
     Output,
+    Renderer2,
     signal,
     ViewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
-import { debounceTime } from 'rxjs/operators';
-
+import { DotCategory } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
-    DotCategoryFieldCategory,
     DotCategoryFieldKeyValueObj,
     DotTableHeaderCheckboxSelectEvent,
     DotTableRowSelectEvent
 } from '../../models/dot-category-field.models';
 import { getParentPath } from '../../utils/category-field.utils';
 import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skeleton.component';
-
-const DELAY_FOR_LISTENER = 300;
 
 @Component({
     selector: 'dot-category-field-search-list',
@@ -50,83 +44,59 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit {
      * viewport to use in the virtual scroll
      */
     @ViewChild('tableContainer', { static: false }) tableContainer!: ElementRef;
-
     /**
      * The scrollHeight variable represents a signal with a default value of '0px'.
      * It can be used to track and manipulate the height of a scrollable element.
      */
-    scrollHeight = signal<string>('0px');
-
+    $scrollHeight = signal<string>('0px');
     /**
      * Represents the categories found with the filter
      */
-    categories = input.required<DotCategoryFieldCategory[]>();
-
+    categories = input.required<DotCategory[]>();
     /**
      * Represent the selected items in the store
      */
     selected = input.required<DotCategoryFieldKeyValueObj[]>();
-
     /**
      * EventEmitter for emit the selected category(ies).
      */
     @Output() itemChecked = new EventEmitter<
         DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]
     >();
-
     /**
      * EventEmitter that emits events to remove a selected item(s).
      */
     @Output() removeItem = new EventEmitter<string | string[]>();
-
     /**
      * Represents a variable indicating if the component is in loading state.
      */
     isLoading = input.required<boolean>();
-
     /**
      * Computed variable to store the search results parsed.
      *
      */
-    searchResults = computed<DotCategoryFieldKeyValueObj[]>(() => {
+    $searchResults = computed<DotCategoryFieldKeyValueObj[]>(() => {
         return this.categories().map((item) => {
             const path = getParentPath(item);
 
             return { key: item.key, value: item.categoryName, path: path, inode: item.inode };
         });
     });
-
     /**
      * Model of the items selected
      */
     itemsSelected: DotCategoryFieldKeyValueObj[];
-
     /**
      * Represents an array of temporary selected items.
      */
     temporarySelectedAll: string[] = [];
-
+    #renderer = inject(Renderer2);
     #destroyRef = inject(DestroyRef);
 
     readonly #effectRef = effect(() => {
         // Todo: find a better way to update this
         this.itemsSelected = this.selected();
     });
-
-    private resizeSubject = new Subject();
-
-    ngAfterViewInit(): void {
-        this.resizeSubject
-            .pipe(takeUntilDestroyed(this.#destroyRef), debounceTime(DELAY_FOR_LISTENER))
-            .subscribe(() => this.calculateScrollHeight());
-
-        window.addEventListener('resize', () => this.resizeSubject.next());
-
-        this.#destroyRef.onDestroy(() => {
-            window.removeEventListener('resize', () => this.resizeSubject.next());
-            this.#effectRef.destroy();
-        });
-    }
 
     /**
      * This method is called when an item is selected.
@@ -157,8 +127,8 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit {
      */
     onHeaderCheckboxToggle({ checked }: DotTableHeaderCheckboxSelectEvent): void {
         if (checked) {
-            const values = this.searchResults().map((item) => item.key);
-            this.itemChecked.emit(this.searchResults());
+            const values = this.$searchResults().map((item) => item.key);
+            this.itemChecked.emit(this.$searchResults());
             this.temporarySelectedAll = [...values];
         } else {
             this.removeItem.emit(this.temporarySelectedAll);
@@ -166,12 +136,24 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit {
         }
     }
 
+    ngAfterViewInit(): void {
+        this.setTableScrollHeight();
+        this.#renderer.listen('window', 'resize', this.setTableScrollHeight.bind(this));
+
+        this.#destroyRef.onDestroy(() => {
+            this.#renderer.listen('window', 'resize', null);
+            this.#effectRef.destroy();
+        });
+    }
+
     /**
      * Calculate the high of the container for the virtual scroll
      * @private
      */
-    private calculateScrollHeight(): void {
-        const containerHeight = this.tableContainer.nativeElement.offsetHeight;
-        this.scrollHeight.set(`${containerHeight}px`);
+    private setTableScrollHeight() {
+        if (this.tableContainer) {
+            const containerHeight = this.tableContainer.nativeElement.clientHeight;
+            this.$scrollHeight.set(`${containerHeight}px`);
+        }
     }
 }

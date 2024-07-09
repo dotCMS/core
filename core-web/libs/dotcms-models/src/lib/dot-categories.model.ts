@@ -29,9 +29,11 @@ export interface DotCategory {
     parentPermissionable?: {
         hostname: string;
     };
-    parentList?: Array<{
-        categoryName: string;
-        key: string;
-        inode: string;
-    }>;
+    parentList?: DotCategoryParent[];
 }
+
+type DotCategoryParent = {
+    categoryName: string;
+    key: string;
+    inode: string;
+};

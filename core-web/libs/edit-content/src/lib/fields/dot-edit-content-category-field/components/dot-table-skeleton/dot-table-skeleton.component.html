@@ -1,7 +1,7 @@
 <p-table
     [columns]="columns()"
     [tableStyle]="{ 'min-width': '50rem' }"
-    [value]="data()"
+    [value]="$data()"
     styleClass="dotTable">
     <ng-template let-columns pTemplate="header">
         <tr>

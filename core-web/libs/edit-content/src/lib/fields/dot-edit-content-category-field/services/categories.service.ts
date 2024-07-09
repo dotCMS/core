@@ -6,8 +6,7 @@ import { inject, Injectable } from '@angular/core';
 import { pluck } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
-
-import { DotCategoryFieldCategory } from '../models/dot-category-field.models';
+import { DotCategory } from '@dotcms/dotcms-models';
 
 export const API_URL = '/api/v1/categories';
 
@@ -45,15 +44,12 @@ export class CategoriesService {
      * @param params
      * @returns {Observable<DotCategory[]>} - An Observable that emits the children of the given inode as an array of DotCategory objects.
      */
-    getChildren(
-        inode: string,
-        params: Partial<GetChildrenParams> = {}
-    ): Observable<DotCategoryFieldCategory[]> {
+    getChildren(inode: string, params: Partial<GetChildrenParams> = {}): Observable<DotCategory[]> {
         const mergedParams = this.mergeParams({ ...params, inode });
         const httpParams = this.toHttpParams(mergedParams);
 
         return this.#http
-            .get<DotCMSResponse<DotCategoryFieldCategory[]>>(`${API_URL}/children`, {
+            .get<DotCMSResponse<DotCategory[]>>(`${API_URL}/children`, {
                 params: httpParams
             })
             .pipe(pluck('entity'));

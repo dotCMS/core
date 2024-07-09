@@ -30,8 +30,7 @@ export class DotTableSkeletonComponent {
      */
     rows = input<number>(5);
 
-    data = computed<string[]>(() => {
+    $data = computed<string[]>(() => {
         return Array.from({ length: this.rows() }).map((_, i) => `${i}`);
-        // return Array(this.rows()).fill(null);
     });
 }
