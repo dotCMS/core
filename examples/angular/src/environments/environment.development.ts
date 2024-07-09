@@ -5,6 +5,6 @@ export const environment = {
    * for security purposes, make sure is read-only.
    * More info: https://www.dotcms.com/docs/latest/permissions
    */
-  authToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkyMzhmNzM2OC0yYTExLTRlMTItOTI2Zi1iZDFmMzE1YjIxY2IiLCJ4bW9kIjoxNzIwMTE3NjQwMDAwLCJuYmYiOjE3MjAxMTc2NDAsImlzcyI6ImZlYTZkZDE5MzciLCJsYWJlbCI6IlVWRSIsImV4cCI6MTgxNDY3MzYwMCwiaWF0IjoxNzIwMTE3NjQwLCJqdGkiOiJhOGY0NjVjMy0yMmI1LTRmZDUtYWUwMC1lZGYwYTY1NzI1MTEifQ._DeteNEy4QH0cVUN2qDzNHkO7dG_DOLIff1ZznqXgzM',
+  authToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk2M2Y0YTUxMi03MDRkLTQ5YjAtYjZlNi1kZWM0MTZjMzNkMmMiLCJ4bW9kIjoxNzIwNTQxMzMxMDAwLCJuYmYiOjE3MjA1NDEzMzEsImlzcyI6ImQ0MDI0OTM2MDEiLCJsYWJlbCI6IlVWRSIsImV4cCI6MTgxNTEwNTYwMCwiaWF0IjoxNzIwNTQxMzMxLCJqdGkiOiIzNDA3OGJiMS0yNmM0LTQ2MmYtYTY2Mi04MjdhYTU5NDBlN2EifQ.BWoJ_O9GungNUB2QUiZoZKepLXuHjXmTw9hWNwq7XRY',
   siteId: 'true',
 };

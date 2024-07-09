@@ -2,11 +2,6 @@
 name: 'Notification for Frontend'
 on:
   workflow_call:
-    inputs:
-      edit_type:
-        description: 'Type of edition, whether it''s BODY or LABEL'
-        required: true
-        type: string
     secrets:
       CI_MACHINE_USER:
         description: 'CI machine user'
@@ -23,9 +18,13 @@ jobs:
     outputs:
       issue_number: ${{ steps.evaluate-actions.outputs.issue_number }}
     steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+
       - name: Check if Technology body changed
         id: body-technology-check
-        if: github.event.action == 'edited' && inputs.edit_type == 'BODY'
+        if: github.event.action == 'edited'
         uses: actions/github-script@v7
         with:
           script: |
@@ -77,7 +76,7 @@ jobs:
 
       - name: Check if Technology label changed
         id: label-technology-check
-        if: github.event.action == 'labeled' && inputs.edit_type == 'LABEL'
+        if: github.event.action == 'labeled'
         uses: actions/github-script@v7
         with:
           script: |
@@ -101,13 +100,15 @@ jobs:
       - name: Resolve detected actions
         id: resolve-actions
         run: |
-          if [[ '${{ github.event.action == 'edited' || inputs.edit_type == 'BODY' }}' == 'true' ]]; then
+          if [[ '${{ github.event.action == 'edited' }}' == 'true' ]]; then
             actions="${{ toJSON(steps.body-technology-check.outputs.actions) }}"
-          elif [[ '${{ github.event.action == 'labeled' || inputs.edit_type == 'LABEL' }}' == 'true' ]]; then
+          elif [[ '${{ github.event.action == 'labeled' }}' == 'true' ]]; then
             actions="${{ toJSON(steps.label-technology-check.outputs.actions) }}"
           else
             actions='[]'
           fi
+          
+          [[ "${actions}" == 'null ]] && actions='[]'
 
           echo "actions: ${actions}"
           echo "actions=${actions}" >> $GITHUB_OUTPUT

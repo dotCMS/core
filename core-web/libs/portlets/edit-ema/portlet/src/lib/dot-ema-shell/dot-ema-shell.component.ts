@@ -206,7 +206,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 if (queryParams.clientHost) {
                     const canAccessClientHost = this.checkClientHostAccess(
                         queryParams.clientHost,
-                        data?.options?.devURLWhitelist
+                        data?.options?.allowedDevURLs
                     ); // If we don't have a whitelist we can't access the clientHost;
 
                     // If we can't access the clientHost we need to navigate to the default page
@@ -286,7 +286,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 }
 
                 if (this.#currentComponent instanceof EditEmaEditorComponent) {
-                    this.#currentComponent.reloadIframe();
+                    this.#currentComponent.reloadIframeContent();
                 }
 
                 this.#activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
@@ -319,13 +319,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      *
      * @private
      * @param {string} clientHost
-     * @param {*} [devURLWhitelist=[]]
+     * @param {*} [allowedDevURLs=[]]
      * @return {*}
      * @memberof DotEmaShellComponent
      */
-    private checkClientHostAccess(clientHost: string, devURLWhitelist: string[] = []): boolean {
+    private checkClientHostAccess(clientHost: string, allowedDevURLs: string[] = []): boolean {
         // If we don't have a whitelist or a clientHost we can't access it
-        if (!clientHost || !Array.isArray(devURLWhitelist) || !devURLWhitelist.length) {
+        if (!clientHost || !Array.isArray(allowedDevURLs) || !allowedDevURLs.length) {
             return false;
         }
 
@@ -333,12 +333,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const sanitizedClientHost = clientHost.endsWith('/') ? clientHost.slice(0, -1) : clientHost;
 
         // We need to sanitize the whitelist as well
-        const sanitizedDevURLWhitelist = devURLWhitelist.map((url) =>
+        const sanitizedAllowedDevURLs = allowedDevURLs.map((url) =>
             url.endsWith('/') ? url.slice(0, -1) : url
         );
 
         // If the clientHost is in the whitelist we can access it
-        return sanitizedDevURLWhitelist.includes(sanitizedClientHost);
+        return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
     }
 
     /**

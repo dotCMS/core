@@ -567,7 +567,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 if (isVTL) {
                     this.setIframeContent(code);
                 } else {
-                    this.reloadIframe();
+                    this.reloadIframeContent();
                 }
 
                 this.store.setShouldReload(false);
@@ -1011,12 +1011,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.IFRAME_SCROLL_END]: () => {
                 this.store.updateEditorDragState();
             },
-            [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
-                this.iframe?.nativeElement?.contentWindow.postMessage(
-                    NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
-                    this.host
-                );
-            },
             [CUSTOMER_ACTIONS.INIT_INLINE_EDITING]: () => {
                 // The iframe says that the editor is ready to start inline editing
                 // The dataset of the inline-editing contentlet is ready inside the service.
@@ -1096,6 +1090,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
+            [CUSTOMER_ACTIONS.GET_PAGE_DATA]: () => {
+                this.reloadIframeContent();
+            },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
@@ -1108,9 +1105,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @private
      * @memberof DotEmaComponent
      */
-    reloadIframe() {
+    reloadIframeContent() {
         this.iframe?.nativeElement?.contentWindow?.postMessage(
-            NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
+            { name: NOTIFY_CUSTOMER.SET_PAGE_DATA, payload: this.store.state().editor },
             this.host
         );
     }

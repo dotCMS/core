@@ -388,7 +388,25 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         return params$.pipe(
             switchMap((params) => {
                 return forkJoin({
-                    pageData: this.dotPageApiService.get(params),
+                    pageData: this.dotPageApiService.get(params).pipe(
+                        switchMap((pageData) => {
+                            if (!pageData.vanityUrl) {
+                                return of(pageData);
+                            }
+
+                            const newParams = {
+                                ...params,
+                                url: pageData.vanityUrl.forwardTo.replace('/', '')
+                            };
+
+                            return this.dotPageApiService.get(newParams).pipe(
+                                map((newPageData) => ({
+                                    ...newPageData,
+                                    vanityUrl: pageData.vanityUrl
+                                }))
+                            );
+                        })
+                    ),
                     licenseData: this.dotLicenseService.isEnterprise().pipe(take(1), shareReplay()),
                     currentUser: this.loginService.getCurrentUser()
                 }).pipe(
@@ -717,8 +735,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     });
 
     private createPageURL(state: EditEmaState): string {
+        const vanityUrl = state.editor.vanityUrl;
+
+        const vanityURI = vanityUrl?.response === 200 ? vanityUrl.url : vanityUrl?.forwardTo;
+
         const params = {
-            url: state.editor.page.pageURI,
+            url: vanityUrl ? vanityURI : state.editor.page.pageURI,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id': state.editor.viewAs.persona?.identifier,
             variantName: state.editorData.variantId
