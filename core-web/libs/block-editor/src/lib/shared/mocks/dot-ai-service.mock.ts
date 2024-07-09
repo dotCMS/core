@@ -23,7 +23,6 @@ export class DotAiServiceMock {
         }).pipe(delay(DEFAULT_DELAY));
     }
 
-
     checkPluginInstallation() {
         return of(true);
     }

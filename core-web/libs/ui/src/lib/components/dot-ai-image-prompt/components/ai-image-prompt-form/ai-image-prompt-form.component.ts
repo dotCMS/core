@@ -8,8 +8,7 @@ import {
     OnChanges,
     Output,
     SimpleChange,
-    SimpleChanges,
-    ViewChild
+    SimpleChanges
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -20,7 +19,7 @@ import {
     Validators
 } from '@angular/forms';
 
-import { AccordionModule, Accordion } from 'primeng/accordion';
+import { AccordionModule } from 'primeng/accordion';
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
@@ -116,7 +115,6 @@ export class AiImagePromptFormComponent implements OnChanges {
     ];
     private isUpdatingValidators = false;
     private destroyRef = inject(DestroyRef);
-    @ViewChild(Accordion) accordion: Accordion;
 
     constructor() {
         this.initForm();
