@@ -305,6 +305,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	 * @return List of {@link PublishAuditStatus}
 	 * @throws DotPublisherException if any error occurs
 	 */
+	@CloseDBIfOpened
 	@Override
 	public List<PublishAuditStatus> getPublishAuditStatus(
 			final int limit, final int offset, final int limitAssets, final String filter)
@@ -450,6 +451,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	 * @return number of rows that match the filter
 	 * @throws DotPublisherException if any error occurs
 	 */
+	@CloseDBIfOpened
 	@Override
 	public Integer countPublishAuditStatus(String filter) throws DotPublisherException {
 		try{
