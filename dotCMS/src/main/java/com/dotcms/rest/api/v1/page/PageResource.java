@@ -69,6 +69,15 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
@@ -403,9 +412,16 @@ public class PageResource {
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{pageId}/layout")
+    @Operation(operationId = "postPageLayout",
+                summary = "Links template and HTML",
+                description = "Takes a saved template and links it to an HTML page.\n\n" +
+                                "Any pages with a template already linked will update with the new link.\n\n" +
+                                "Otherwise a new template will be created without making any changes to previous templates.\n\n" +
+                                "Returns the updated page view for specified page.\n\n",
+                tags = {"Page"})
     public Response saveLayout(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("pageId") final String pageId,
+            @PathParam("pageId") @Parameter(description = "The ID for the page that the template will link to") final String pageId,
             @QueryParam("variantName") final String variantNameParam,
             final PageForm form) throws DotSecurityException {
 
