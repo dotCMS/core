@@ -723,10 +723,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             WorkflowAction thisAction = (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
                     WorkflowAction.class).get(0);
             cache.addAction(thisAction);
+            return thisAction;
         } catch (IndexOutOfBoundsException ioob) {
-            // no action found
+            return null;
         }
-        return null;
+
     }
 
     @Override

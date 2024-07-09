@@ -341,11 +341,11 @@ public class ImportContentletsAction extends DotPortletAction {
 					}
 				};
 
-				
-				if(Config.getBooleanProperty("IMPORT_CONTENTLETS_ASYNC", false)) {
-					runnable.run();
-				}else{
+
+				if(Config.getBooleanProperty("IMPORT_CONTENTLETS_ASYNC", true)) {
 					DotConcurrentFactory.getInstance().getSubmitter("importContentlets").submit(runnable);
+				}else{
+					runnable.run();
 				}
 
 
