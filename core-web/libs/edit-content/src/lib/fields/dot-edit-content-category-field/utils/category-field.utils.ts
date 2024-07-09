@@ -2,7 +2,6 @@ import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models'
 
 import {
     DotCategoryFieldCategory,
-    DotCategoryFieldCategorySearchedItems,
     DotCategoryFieldKeyValueObj
 } from '../models/dot-category-field.models';
 
@@ -13,7 +12,7 @@ import {
  * @param {DotCMSContentlet} contentlet - The contentlet from which to retrieve the selected categories.
  * @returns {DotCategoryFieldKeyValueObj[]} - An array of objects representing the selected categories.
  */
-export const getSelectedCategories = (
+export const transformSelectedCategories = (
     { variable }: DotCMSContentTypeField,
     contentlet: DotCMSContentlet
 ): DotCategoryFieldKeyValueObj[] => {
@@ -32,38 +31,32 @@ export const getSelectedCategories = (
 
 /**
  * Add calculated properties to the categories
- * @param categories
- * @param parentPath
+ * @param categories - Single category or array of categories to transform
+ * @param keyParentPath - Path of keys to determine clicked state
+ * @returns Transformed category or array of transformed categories with additional properties
  */
-export const addMetadata = (
-    categories: DotCategoryFieldCategory[],
-    parentPath: string[]
-): DotCategoryFieldCategory[] => {
-    return categories.map((category) => {
-        return {
-            ...category,
-            checked: parentPath.includes(category.inode) && category.childrenCount > 0
-        };
-    });
-};
-
-export const transformedData = (
-    categories: DotCategoryFieldCategory[]
-): DotCategoryFieldCategorySearchedItems[] => {
-    return categories.map((item) => {
-        // const path = item.parentList.map((parent) => parent.categoryName).join(' / ');
-        const path = item.parentList
-            .slice(1)
-            .map((parent) => parent.categoryName)
-            .join(' / ');
+export const transformCategories = (
+    categories: DotCategoryFieldCategory | DotCategoryFieldCategory[],
+    keyParentPath: string[]
+): DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[] => {
+    const transformCategory = (category: DotCategoryFieldCategory): DotCategoryFieldKeyValueObj => {
+        const { key, inode, categoryName, childrenCount } = category;
+        const hasChildren = childrenCount > 0;
 
         return {
-            categoryName: item.categoryName,
-            key: item.key,
-            inode: item.inode,
-            path: path
+            key,
+            inode,
+            value: categoryName,
+            hasChildren,
+            clicked: hasChildren && keyParentPath.includes(key)
         };
-    });
+    };
+
+    if (Array.isArray(categories)) {
+        return categories.map(transformCategory);
+    } else {
+        return transformCategory(categories);
+    }
 };
 
 /**
@@ -113,39 +106,6 @@ export const checkIfClickedIsLastItem = (
 };
 
 /**
- * Update storedSelected from search results.
- *
- * @param {DotCategoryFieldKeyValueObj[]} storedSelected - The array of items currently stored as selected.
- * @param {DotCategoryFieldCategorySearchedItems[]} selected - The array of items that were selected from the search results.
- * @param {DotCategoryFieldCategory[]} searchedItems - The array of items obtained from the search.
- * @returns {DotCategoryFieldKeyValueObj[]} The updated array of selected items.
- */
-export const updateSelectedFromSearch = (
-    storedSelected: DotCategoryFieldKeyValueObj[],
-    selected: DotCategoryFieldCategorySearchedItems[],
-    searchedItems: DotCategoryFieldCategory[]
-): DotCategoryFieldKeyValueObj[] => {
-    // Create a map for quick lookup of searched items
-    const searchedItemsMap = new Map(searchedItems.map((item) => [item.key, item]));
-
-    // Remove items from storedSelected that are in searchedItems
-    const currentChecked = storedSelected.filter((item) => !searchedItemsMap.has(item.key));
-
-    // Add new selected items to currentChecked
-    for (const item of selected) {
-        if (!currentChecked.some((checkedItem) => checkedItem.key === item.key)) {
-            currentChecked.push({
-                value: item.categoryName,
-                key: item.key,
-                path: item.path
-            });
-        }
-    }
-
-    return currentChecked;
-};
-
-/**
  * Updates the array of selected items based on the current selection and most recently interacted with item.
  *
  * @param {DotCategoryFieldKeyValueObj[]} storedSelected - An array of objects currently marked as selected.
@@ -156,17 +116,72 @@ export const updateSelectedFromSearch = (
 export const updateChecked = (
     storedSelected: DotCategoryFieldKeyValueObj[],
     selected: string[],
-    item: DotCategoryFieldCategory
+    item: DotCategoryFieldKeyValueObj
 ): DotCategoryFieldKeyValueObj[] => {
     let currentChecked = [...storedSelected];
 
     if (selected.includes(item.key)) {
         if (!currentChecked.some((entry) => entry.key === item.key)) {
-            currentChecked = [...currentChecked, { key: item.key, value: item.categoryName }];
+            currentChecked = [
+                ...currentChecked,
+                { key: item.key, value: item.value, inode: item.inode }
+            ];
         }
     } else {
         currentChecked = currentChecked.filter((entry) => entry.key !== item.key);
     }
 
     return currentChecked;
+};
+
+/**
+ * Retrieves the parent path of a given category item.
+ *
+ * @param {DotCategoryFieldCategory} item - The category item.
+ * @returns {string} - The parent path of the category item.
+ */
+export const getParentPath = (item: DotCategoryFieldCategory): string => {
+    return item.parentList
+        .slice(1)
+        .map((parent) => parent.categoryName)
+        .join(' / ');
+};
+
+/**
+ * Removes items from an array of objects based on a specified key or an array of keys.
+ *
+ * @param {DotCategoryFieldKeyValueObj[]} array - The array of objects to remove items from.
+ * @param {string | string[]} key - The key (or keys if an array) used to identify the items to remove.
+ * @returns {DotCategoryFieldKeyValueObj[]} The updated array without the removed items.
+ */
+export const removeItemByKey = (
+    array: DotCategoryFieldKeyValueObj[],
+    key: string | string[]
+): DotCategoryFieldKeyValueObj[] => {
+    if (Array.isArray(key)) {
+        const keysSet = new Set(key);
+
+        return array.filter((item) => !keysSet.has(item.key));
+    } else {
+        return array.filter((item) => item.key !== key);
+    }
+};
+
+/**
+ * Adds selected items to the existing array of DotCategoryFieldKeyValueObj.
+ *
+ * @param {DotCategoryFieldKeyValueObj[]} array - The original array.
+ * @param {DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]} items - The item(s) to be added to the array.
+ * @returns {DotCategoryFieldKeyValueObj[]} - The updated array with the selected items added.
+ */
+export const addSelected = (
+    array: DotCategoryFieldKeyValueObj[],
+    items: DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]
+): DotCategoryFieldKeyValueObj[] => {
+    const itemsArray = Array.isArray(items) ? items : [items];
+    const itemSet = new Set(array.map((item) => item.key));
+
+    const newItems = itemsArray.filter((item) => !itemSet.has(item.key));
+
+    return [...array, ...newItems];
 };

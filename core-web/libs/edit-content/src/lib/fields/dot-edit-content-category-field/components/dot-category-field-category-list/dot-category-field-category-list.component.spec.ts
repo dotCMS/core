@@ -62,7 +62,7 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     });
 
     it('should emit the correct item when clicked', () => {
-        const emitSpy = jest.spyOn(spectator.component.itemClicked, 'emit');
+        const emitSpy = jest.spyOn(spectator.component.rowClicked, 'emit');
         const items = spectator.queryAll(byTestId('category-item'));
         spectator.click(items[0]);
 

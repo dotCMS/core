@@ -1,4 +1,4 @@
-import { NgClass } from '@angular/common';
+import { JsonPipe, NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -80,7 +80,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      */
     contentlet = input.required<DotCMSContentlet>();
 
-    readonly store = inject(CategoryFieldStore);
+    readonly store: InstanceType<typeof CategoryFieldStore> = inject(CategoryFieldStore);
     readonly #form = inject(ControlContainer).control as FormGroup;
     readonly #destroyRef = inject(DestroyRef);
     #componentRef: ComponentRef<DotCategoryFieldSidebarComponent>;

@@ -31,17 +31,20 @@
             </div>
             <div class="flex-grow-1 category-field__categories">
                 @if (store.mode() === 'list') {
+                {{ store.searchCategories() | json }}
                 <dot-category-field-category-list
                     (itemChecked)="store.updateSelected($event.selected, $event.item)"
-                    (itemClicked)="store.getCategories($event)"
+                    (rowClicked)="store.getCategories($event)"
                     [categories]="store.categoryList()"
                     [selected]="store.selectedCategoriesValues()" />
                 } @else {
                 <dot-category-field-search-list
                     @fadeAnimation
+                    (itemChecked)="store.addSelected($event)"
+                    (removeItem)="store.removeSelected($event)"
                     [isLoading]="store.isSearchLoading()"
-                    [categories]="store.getSearchedCategories()"
-                    (selected)="selectedSearch($event)" />
+                    [categories]="store.searchCategories()"
+                    [selected]="store.selected()" />
                 }
             </div>
         </div>

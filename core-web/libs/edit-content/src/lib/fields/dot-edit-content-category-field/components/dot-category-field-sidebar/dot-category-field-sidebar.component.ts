@@ -1,4 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -16,7 +17,6 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotCategoryFieldCategorySearchedItems } from '../../models/dot-category-field.models';
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
 import { DotCategoryFieldSearchComponent } from '../dot-category-field-search/dot-category-field-search.component';
@@ -43,7 +43,8 @@ import {
         DotCategoryFieldCategoryListComponent,
         InputTextModule,
         DotCategoryFieldSearchComponent,
-        DotCategoryFieldSearchListComponent
+        DotCategoryFieldSearchListComponent,
+        JsonPipe
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',
@@ -71,7 +72,7 @@ export class DotCategoryFieldSidebarComponent implements OnInit {
      */
     @Output() closedSidebar = new EventEmitter<void>();
 
-    readonly store = inject(CategoryFieldStore);
+    readonly store: InstanceType<typeof CategoryFieldStore> = inject(CategoryFieldStore);
 
     readonly #destroyRef = inject(DestroyRef);
 
@@ -81,9 +82,5 @@ export class DotCategoryFieldSidebarComponent implements OnInit {
         this.#destroyRef.onDestroy(() => {
             this.store.clean();
         });
-    }
-
-    selectedSearch($event: DotCategoryFieldCategorySearchedItems[]) {
-        this.store.updateSelectedFromSearch($event);
     }
 }

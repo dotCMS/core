@@ -1,9 +1,9 @@
 import {
-    addMetadata,
     categoryDeepCopy,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
-    getSelectedCategories,
+    transformCategories,
+    transformSelectedCategories,
     updateChecked
 } from './category-field.utils';
 
@@ -20,7 +20,7 @@ import {
 describe('CategoryFieldUtils', () => {
     describe('getSelectedCategories', () => {
         it('should return an empty array if contentlet is null', () => {
-            const result = getSelectedCategories(CATEGORY_FIELD_MOCK, null);
+            const result = transformSelectedCategories(CATEGORY_FIELD_MOCK, null);
             expect(result).toEqual([]);
         });
 
@@ -29,7 +29,7 @@ describe('CategoryFieldUtils', () => {
                 { key: '33333', value: 'Electrical' },
                 { key: '22222', value: 'Doors & Windows' }
             ];
-            const result = getSelectedCategories(
+            const result = transformSelectedCategories(
                 CATEGORY_FIELD_MOCK,
                 CATEGORY_FIELD_CONTENTLET_MOCK
             );
@@ -45,7 +45,7 @@ describe('CategoryFieldUtils', () => {
                 index === 0 ? { ...item, checked: true } : { ...item, checked: false }
             );
 
-            const result = addMetadata(CATEGORY_LEVEL_1, PARENT_PATH_MOCK);
+            const result = transformCategories(CATEGORY_LEVEL_1, PARENT_PATH_MOCK);
             expect(result).toEqual(expected);
         });
 
@@ -55,7 +55,7 @@ describe('CategoryFieldUtils', () => {
                 return { ...item, checked: false };
             });
 
-            const result = addMetadata(CATEGORY_LEVEL_1, PATH_MOCK);
+            const result = transformCategories(CATEGORY_LEVEL_1, PATH_MOCK);
             expect(result).toEqual(expected);
         });
 
@@ -65,7 +65,7 @@ describe('CategoryFieldUtils', () => {
                 return { ...item, checked: false };
             });
 
-            const result = addMetadata(CATEGORY_LEVEL_1, PATH_MOCK);
+            const result = transformCategories(CATEGORY_LEVEL_1, PATH_MOCK);
             expect(result).toEqual(expected);
         });
     });

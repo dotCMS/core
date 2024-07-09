@@ -1,9 +1,13 @@
+import { Subject } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
+    computed,
     DestroyRef,
+    effect,
     ElementRef,
     EventEmitter,
     inject,
@@ -12,17 +16,25 @@ import {
     signal,
     ViewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
+
+import { debounceTime } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     DotCategoryFieldCategory,
-    DotCategoryFieldCategorySearchedItems
+    DotCategoryFieldKeyValueObj,
+    DotTableHeaderCheckboxSelectEvent,
+    DotTableRowSelectEvent
 } from '../../models/dot-category-field.models';
+import { getParentPath } from '../../utils/category-field.utils';
 import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skeleton.component';
+
+const DELAY_FOR_LISTENER = 300;
 
 @Component({
     selector: 'dot-category-field-search-list',
@@ -33,34 +45,131 @@ import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skele
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCategoryFieldSearchListComponent implements AfterViewInit {
+    /**
+     * Represents a reference to a table container element in the DOM to calculate the
+     * viewport to use in the virtual scroll
+     */
     @ViewChild('tableContainer', { static: false }) tableContainer!: ElementRef;
+
+    /**
+     * The scrollHeight variable represents a signal with a default value of '0px'.
+     * It can be used to track and manipulate the height of a scrollable element.
+     */
     scrollHeight = signal<string>('0px');
 
     /**
-     * Represents the required categories input for DotCategoryFieldCategory.
-     *
-     * @typedef {DotCategoryFieldCategory[]} RequiredCategories
+     * Represents the categories found with the filter
      */
-    categories = input.required<DotCategoryFieldCategorySearchedItems[]>();
-
-    @Output() selected = new EventEmitter<DotCategoryFieldCategorySearchedItems[]>();
+    categories = input.required<DotCategoryFieldCategory[]>();
 
     /**
-     * Represents the selected categories in the DotCategoryFieldCategory class.
+     * Represent the selected items in the store
      */
-    selectedCategories: DotCategoryFieldCategory;
+    selected = input.required<DotCategoryFieldKeyValueObj[]>();
+
+    /**
+     * EventEmitter for emit the selected category(ies).
+     */
+    @Output() itemChecked = new EventEmitter<
+        DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]
+    >();
+
+    /**
+     * EventEmitter that emits events to remove a selected item(s).
+     */
+    @Output() removeItem = new EventEmitter<string | string[]>();
+
+    /**
+     * Represents a variable indicating if the component is in loading state.
+     */
     isLoading = input.required<boolean>();
+
+    /**
+     * Computed variable to store the search results parsed.
+     *
+     */
+    searchResults = computed<DotCategoryFieldKeyValueObj[]>(() => {
+        return this.categories().map((item) => {
+            const path = getParentPath(item);
+
+            return { key: item.key, value: item.categoryName, path: path, inode: item.inode };
+        });
+    });
+
+    /**
+     * Model of the items selected
+     */
+    itemsSelected: DotCategoryFieldKeyValueObj[];
+
+    /**
+     * Represents an array of temporary selected items.
+     */
+    temporarySelectedAll: string[] = [];
+
     #destroyRef = inject(DestroyRef);
 
+    readonly #effectRef = effect(() => {
+        // Todo: find a better way to update this
+        this.itemsSelected = this.selected();
+    });
+
+    private resizeSubject = new Subject();
+
     ngAfterViewInit(): void {
-        this.calculateScrollHeight();
-        window.addEventListener('resize', this.calculateScrollHeight.bind(this));
+        this.resizeSubject
+            .pipe(takeUntilDestroyed(this.#destroyRef), debounceTime(DELAY_FOR_LISTENER))
+            .subscribe(() => this.calculateScrollHeight());
+
+        window.addEventListener('resize', () => this.resizeSubject.next());
 
         this.#destroyRef.onDestroy(() => {
-            window.removeEventListener('resize', this.calculateScrollHeight.bind(this));
+            window.removeEventListener('resize', () => this.resizeSubject.next());
+            this.#effectRef.destroy();
         });
     }
 
+    /**
+     * This method is called when an item is selected.
+     *
+     * @param {$event: DotTableRowSelectEvent<DotCategoryFieldKeyValueObj>} $event - The event object containing the selected item data.
+     * @return {void}
+     */
+    onSelectItem({ data }: DotTableRowSelectEvent<DotCategoryFieldKeyValueObj>): void {
+        this.itemChecked.emit(data);
+    }
+
+    /**
+     * Removes an item from the list.
+     *
+     * @param {DotTableRowSelectEvent<DotCategoryFieldKeyValueObj>} $event - The event that triggered the item removal.
+     * @return {void}
+     */
+    onRemoveItem({ data: { key } }: DotTableRowSelectEvent<DotCategoryFieldKeyValueObj>): void {
+        this.removeItem.emit(key);
+    }
+
+    /**
+     * Handles the event when the header checkbox is toggled.
+     *
+     * @param {DotTableHeaderCheckboxSelectEvent} event - The event triggered when the header checkbox is toggled.
+     *
+     * @return {void}
+     */
+    onHeaderCheckboxToggle({ checked }: DotTableHeaderCheckboxSelectEvent): void {
+        if (checked) {
+            const values = this.searchResults().map((item) => item.key);
+            this.itemChecked.emit(this.searchResults());
+            this.temporarySelectedAll = [...values];
+        } else {
+            this.removeItem.emit(this.temporarySelectedAll);
+            this.temporarySelectedAll = [];
+        }
+    }
+
+    /**
+     * Calculate the high of the container for the virtual scroll
+     * @private
+     */
     private calculateScrollHeight(): void {
         const containerHeight = this.tableContainer.nativeElement.offsetHeight;
         this.scrollHeight.set(`${containerHeight}px`);

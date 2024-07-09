@@ -1,12 +1,15 @@
 <div #tableContainer class="category-field__search-list">
     @if (!isLoading()) {
     <p-table
-        (selectionChange)="selected.emit($event)"
         [scrollHeight]="scrollHeight()"
         [scrollable]="true"
-        [value]="categories()"
+        [value]="searchResults()"
         dataKey="key"
         selectionMode="multiple"
+        [(selection)]="itemsSelected"
+        (onHeaderCheckboxToggle)="onHeaderCheckboxToggle($event)"
+        (onRowSelect)="onSelectItem($event)"
+        (onRowUnselect)="onRemoveItem($event)"
         styleClass="dotTable ">
         <ng-template pTemplate="header">
             <tr>
@@ -23,7 +26,7 @@
                 <td>
                     <p-tableCheckbox [value]="category"></p-tableCheckbox>
                 </td>
-                <td>{{ category.categoryName }}</td>
+                <td>{{ category.value }}</td>
                 <td>{{ category.path }}</td>
             </tr>
         </ng-template>
