@@ -8,6 +8,7 @@ import com.dotcms.mock.request.HttpServletRequestParameterDecoratorWrapper;
 import com.dotcms.mock.request.LanguageIdParameterDecorator;
 import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
@@ -46,6 +47,8 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -71,6 +74,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -166,7 +171,7 @@ public class PageResourceHelper implements Serializable {
                     CollectionsUtils.computeSubValueIfAbsent(
                             multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
                             CollectionsUtils::add,
-                            (String key, MultiTree multitree) -> CollectionsUtils.list(multitree));
+                            (String key, MultiTree multitree) -> list(multitree));
 
                     HibernateUtil.addCommitListener(new FlushCacheRunnable() {
 
@@ -373,8 +378,20 @@ public class PageResourceHelper implements Serializable {
             template.setDrawed(true);
 
             template.setModDate(new Date());
-            // permissions have been updated above
-            return this.templateAPI.saveAndUpdateLayout(template, pageForm.getLayout(), site, APILocator.systemUser(), false);
+
+            final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+            TemplateLayout oldTemplateLayout = DotTemplateTool.getTemplateLayout(oldTemplate.getDrawedBody());
+
+
+            final TemplateSaveParameters templateSaveParameters = new TemplateSaveParameters.Builder()
+                    .setNewTemplate(template)
+                    .setOldTemplateLayout(oldTemplateLayout)
+                    .setPageIds(list(page.getIdentifier()))
+                    .setNewLayout(pageForm.getLayout())
+                    .setSite(site)
+                    .build();
+
+            return this.templateAPI.saveAndUpdateLayout(templateSaveParameters, APILocator.systemUser(), false);
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("An error occurred when saving Template '%s' [ %s ]: %s",
                     template.getTitle(), template.getIdentifier(), ExceptionUtil.getErrorMessage(e));

@@ -428,17 +428,16 @@ public interface TemplateAPI {
 	 * This method calculate the changes on the current {@link TemplateLayout} of the Template and then update
 	 * the {@link com.dotmarketing.beans.MultiTree} using the {@link com.dotmarketing.factories.MultiTreeAPI#updateMultiTrees(LayoutChanges, Collection)}
 	 *
+	 * @see TemplateSaveParameters
 	 *
-	 * @param template
-	 * @param newLayout
-	 * @param site
+	 * @param templateSaveParameters Paremters to Update the Tenplate and Layout
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-    Template saveAndUpdateLayout(Template template, TemplateLayout newLayout, Host site, User user,
+    Template saveAndUpdateLayout(final TemplateSaveParameters templateSaveParameters, User user,
 								 boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**

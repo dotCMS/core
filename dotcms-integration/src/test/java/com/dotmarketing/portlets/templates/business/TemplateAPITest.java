@@ -1459,8 +1459,12 @@ public class TemplateAPITest extends IntegrationTestBase {
         final Template template = new TemplateDataGen().drawed(true).nextPersisted();
         final TemplateLayout oldTemplateLayout = DotTemplateTool.getTemplateLayout(template.getDrawedBody());
 
-        APILocator.getTemplateAPI().saveAndUpdateLayout(template, oldTemplateLayout, defaultHost, APILocator.systemUser(),
-                false);
+        APILocator.getTemplateAPI().saveAndUpdateLayout(
+                new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(oldTemplateLayout)
+                        .setSite(defaultHost)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(template.getInode(), APILocator.systemUser(),
                 false);
@@ -1589,8 +1593,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "3")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(newTemplateLayout)
+                        .setSite(host)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -1758,8 +1765,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "4")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(newTemplateLayout)
+                        .setSite(host)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -1922,8 +1932,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "4")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(newTemplateLayout)
+                        .setSite(host)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -2074,8 +2087,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                     .withContainer(container, "4")
                     .next();
 
-            final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                    host, APILocator.systemUser(), false);
+            final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                            .setNewTemplate(template)
+                            .setNewLayout(newTemplateLayout)
+                            .setSite(host)
+                            .build(), APILocator.systemUser(), false);
 
             final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                     false);
@@ -2248,8 +2264,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "4")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(newTemplateLayout)
+                        .setSite(host)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -2431,8 +2450,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "4")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(newTemplateLayout)
+                        .setSite(host)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -2614,8 +2636,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "4")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(newTemplateLayout)
+                        .setSite(host)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -2810,8 +2835,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "-1")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(newTemplateLayout)
+                        .setSite(host)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -3000,8 +3028,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "2")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(newTemplateLayout)
+                        .setSite(host)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -3190,8 +3221,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container_3, "1")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(newTemplateLayout)
+                        .setSite(host)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -3374,8 +3408,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container_2, "2")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                        .setNewTemplate(template)
+                        .setNewLayout(newTemplateLayout)
+                        .setSite(host)
+                        .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -3555,8 +3592,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container_3, "1")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -3730,8 +3770,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container_2, "2")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -3909,8 +3952,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                     .withContainer(container_3, "1")
                     .next();
 
-            final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                    host, APILocator.systemUser(), false);
+            final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                    .setNewTemplate(template)
+                    .setNewLayout(newTemplateLayout)
+                    .setSite(host)
+                    .build(), APILocator.systemUser(), false);
 
             final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                     false);
@@ -4094,8 +4140,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                     .withContainer(container_2, "2")
                     .next();
 
-            final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                    host, APILocator.systemUser(), false);
+            final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                    .setNewTemplate(template)
+                    .setNewLayout(newTemplateLayout)
+                    .setSite(host)
+                    .build(), APILocator.systemUser(), false);
 
             final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                     false);
@@ -4281,8 +4330,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container_3, "1")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -4464,8 +4516,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container_1, "-1")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -4662,8 +4717,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container_3, "1")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -4853,8 +4911,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container_3, "1")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -5030,8 +5091,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container_3, "1")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -5214,8 +5278,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container_3, "1")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -5385,8 +5452,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "3")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -5560,8 +5630,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "4")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -5732,8 +5805,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "4")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -5953,8 +6029,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "3")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -6166,8 +6245,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "3")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);
@@ -6375,8 +6457,11 @@ public class TemplateAPITest extends IntegrationTestBase {
                 .withContainer(container, "3")
                 .next();
 
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(template, newTemplateLayout,
-                host, APILocator.systemUser(), false);
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
 
         final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
                 false);

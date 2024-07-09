@@ -59,6 +59,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import jdk.jshell.execution.Util;
 import org.apache.commons.io.IOUtils;
 
 import java.net.URL;
@@ -1251,11 +1252,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	}
 
 	/**
-	 * Default implementation for {@link TemplateAPI#saveAndUpdateLayout(Template, TemplateLayout, Host, User, boolean)}
+	 * Default implementation for {@link TemplateAPI#saveAndUpdateLayout(TemplateSaveParameters, User, boolean)}
 	 *
-	 * @param template
-	 * @param layout
-	 * @param site
+	 * @param templateSaveParameters
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return
@@ -1263,31 +1262,42 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	 * @throws DotSecurityException
 	 */
 	@Override
-	public Template saveAndUpdateLayout(final Template template, final TemplateLayout layout, final Host site,
-										final User user, final boolean respectFrontendRoles)
-			throws DotDataException, DotSecurityException {
+	public Template saveAndUpdateLayout(final TemplateSaveParameters templateSaveParameters, final User user,
+										final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		final Template templateFromDB = UtilMethods.isSet(template.getIdentifier()) ?
-				APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(), user, false)
-				: null;
+		TemplateLayout oldTemplateLayout = null;
 
-		if (templateFromDB != null) {
-			final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+		if (!UtilMethods.isSet(templateSaveParameters.getOldTemplateLayout())) {
+			if (UtilMethods.isSet(templateSaveParameters.getNewTemplate().getIdentifier())) {
+				final Template templateFromDB = UtilMethods.isSet(templateSaveParameters.getNewTemplate().getIdentifier()) ?
+						APILocator.getTemplateAPI().findWorkingTemplate(templateSaveParameters.getNewTemplate().getIdentifier(), user, false)
+						: null;
 
-			LayoutChanges changes = getChange(templateLayoutFromDB, layout);
+				if (templateFromDB.getDrawedBody() != null) {
+					oldTemplateLayout = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+				}
+			}
+		} else {
+			oldTemplateLayout = templateSaveParameters.getOldTemplateLayout();
+		}
 
-			final List<String> pageIds = APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles)
-					.stream()
-					.map(Contentlet::getIdentifier)
-					.collect(Collectors.toList());
+		if (UtilMethods.isSet(oldTemplateLayout)) {
+			LayoutChanges changes = getChange(oldTemplateLayout, templateSaveParameters.getNewLayout());
+
+			final List<String> pageIds = UtilMethods.isSet(templateSaveParameters.getPageIds()) ?
+					templateSaveParameters.getPageIds() :
+					APILocator.getHTMLPageAssetAPI().findPagesByTemplate(templateSaveParameters.getNewTemplate(), user, respectFrontendRoles)
+							.stream()
+							.map(Contentlet::getIdentifier)
+							.collect(Collectors.toList());
 
 			multiTreeAPI.updateMultiTrees(changes, pageIds);
 		}
 
-		template.setDrawedBody(reOrder(layout));
-		template.setDrawed(true);
+		templateSaveParameters.getNewTemplate().setDrawedBody(reOrder(templateSaveParameters.getNewLayout()));
+		templateSaveParameters.getNewTemplate().setDrawed(true);
 
-		return saveTemplate(template, site, user, respectFrontendRoles);
+		return saveTemplate(templateSaveParameters.getNewTemplate(), templateSaveParameters.getSite(), user, respectFrontendRoles);
 	}
 
 	/**
