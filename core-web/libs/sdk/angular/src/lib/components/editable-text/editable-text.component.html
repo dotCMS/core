@@ -1,14 +1,8 @@
 @if (isInsideEditor) {
-
-<editor
-    [initialValue]="contentlet[field]"
-    [init]="init"
-    [inline]="true"
-    (onFocus)="onFocus($event)"
-    (onFocusOut)="onFocusOut($event)" />
-
+<editor [init]="init" [inline]="true" [initialValue]="content" (onFocusOut)="onFocusOut($event)">
+</editor>
+} @else { @if(format === 'html') {
+<div [innerHTML]="safeContent"></div>
 } @else {
-
-<!-- This won't work for wysiwyg fields, but it will work for text fields -->
-{{ this.contentlet[field] }}
-}
+{{ content }}
+} }

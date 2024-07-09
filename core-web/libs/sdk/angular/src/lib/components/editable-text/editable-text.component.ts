@@ -1,6 +1,7 @@
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 
-import { ChangeDetectionStrategy, Component, inject, Input, ViewChild } from '@angular/core';
+import { Component, inject, Input, OnInit, ViewChild } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import {
     CUSTOMER_ACTIONS,
@@ -9,7 +10,8 @@ import {
     postMessageToEditor
 } from '@dotcms/client';
 
-import { DotCMSContentlet } from '../../models';
+import { TINYMCE_CONFIG, TINYMCE_FORMAT, TINYMCE_MODE } from './utils';
+
 import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
 
 @Component({
@@ -26,63 +28,58 @@ import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
                 return `${client.dotcmsUrl}/html/tinymce/tinymce.min.js`;
             }
         }
-    ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    ]
 })
-export class EditableTextComponent {
+export class EditableTextComponent implements OnInit {
     @ViewChild(EditorComponent) editorComponent!: EditorComponent;
 
-    @Input() mode = '';
-    @Input() contentlet!: DotCMSContentlet;
+    @Input() inode = '';
     @Input() field = '';
+    @Input() content = '';
+    @Input() langId = 1;
+    @Input() mode: TINYMCE_MODE = 'minimal';
+    @Input() format: TINYMCE_FORMAT = 'html';
 
-    private readonly client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
+    protected init!: EditorComponent['init'];
+    protected safeContent!: SafeHtml;
+    protected readonly isInsideEditor = isInsideEditor();
 
-    protected isInsideEditor = isInsideEditor();
-    protected readonly init: EditorComponent['init'] = {
-        base_url: `${this.client.dotcmsUrl}/html/tinymce`, // Root for resources
-        suffix: '.min', // Suffix to use when loading resources
-        license_key: 'gpl',
-        plugins: 'lists link image table code help wordcount',
-        menubar: false
-    };
+    readonly #client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
+    readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
+
+    ngOnInit() {
+        this.init = {
+            base_url: `${this.#client.dotcmsUrl}/html/tinymce`, // Root for resources
+            ...TINYMCE_CONFIG[this.mode]
+        };
+
+        this.safeContent = this.#sanitizer.bypassSecurityTrustHtml(this.content);
+    }
 
     get editor() {
         return this.editorComponent.editor;
     }
 
-    onFocus(_event: unknown) {
-        // console.log('onFocus', this.contentlet);
-        // postMessageToEditor({
-        //     action: CUSTOMER_ACTIONS.EDITABLE_TEXT_FOCUS,
-        //     payload: {
-        //         inode: this.contentlet.inode,
-        //         langId: this.contentlet.languageId,
-        //         fieldName: this.field
-        //     }
-        // });
-    }
-
     onFocusOut(_event: unknown) {
-        const content = this.editor.getContent({
-            // TODO: We should change the format based on the field type, if is wysiwyg it should be html, if is text should be text
-            format: 'text'
+        if (!this.editor.isDirty()) {
+            return;
+        }
+
+        const content = this.editor.getContent({ format: this.format });
+        const dataset = {
+            inode: this.inode,
+            langId: this.langId,
+            fieldName: this.field
+        };
+
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+            payload: {
+                content,
+                dataset
+            }
         });
 
-        if (this.editor.isDirty()) {
-            const dataset = {
-                inode: this.contentlet.inode,
-                langId: this.contentlet.languageId,
-                fieldName: this.field
-            };
-
-            postMessageToEditor({
-                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
-                payload: {
-                    content,
-                    dataset
-                }
-            });
-        }
+        this.editor.setDirty(false); // Reset dirty state
     }
 }
