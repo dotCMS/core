@@ -1,7 +1,15 @@
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { EventObj } from '@tinymce/tinymce-angular/editor/Events';
 
-import { Component, inject, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
+import {
+    Component,
+    HostListener,
+    inject,
+    Input,
+    OnChanges,
+    OnInit,
+    ViewChild
+} from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import {
@@ -13,6 +21,7 @@ import {
 
 import { TINYMCE_CONFIG, TINYMCE_FORMAT, TINYMCE_MODE } from './utils';
 
+import { DotCMSContentlet } from '../../models';
 import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
 
 @Component({
@@ -34,46 +43,46 @@ import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
 export class DotEditableTextComponent implements OnInit, OnChanges {
     @ViewChild(EditorComponent) editorComponent!: EditorComponent;
 
-    @Input() inode = '';
-    @Input() field = '';
-    @Input() content = '';
-    @Input() onNumberOfPages = 1;
-    @Input() langId = 1;
+    @Input() fieldName = '';
     @Input() mode: TINYMCE_MODE = 'plain';
     @Input() format: TINYMCE_FORMAT = 'text';
+    @Input() contentlet!: DotCMSContentlet;
 
     protected init!: EditorComponent['init'];
+    protected content!: string;
     protected safeContent!: SafeHtml;
     protected readonly isInsideEditor = isInsideEditor();
 
     readonly #client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
     readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
 
-    ngOnInit() {
-        this.init = {
-            base_url: `${this.#client.dotcmsUrl}/html/tinymce`, // Root for resources
-            ...TINYMCE_CONFIG[this.mode]
-        };
+    @HostListener('window:message', ['$event'])
+    onMessage(event: MessageEvent) {
+        if (event.data.name !== 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS') {
+            return;
+        }
 
-        this.safeContent = this.#sanitizer.bypassSecurityTrustHtml(this.content);
-        window.addEventListener('message', (event) => {
-            if (event.data.name !== 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS') {
-                return;
-            }
-
-            this.editorComponent.editor.focus();
-        });
-    }
-
-    ngOnChanges() {
-        // eslint-disable-next-line no-console
-        console.log('onChanges', this.inode);
-        // eslint-disable-next-line no-console
-        console.log('onChanges', this.onNumberOfPages);
+        this.editorComponent.editor.focus();
     }
 
     get editor() {
         return this.editorComponent.editor;
+    }
+
+    get onNumberOfPages() {
+        return this.contentlet['onNumberOfPages'];
+    }
+
+    ngOnInit() {
+        this.init = {
+            ...TINYMCE_CONFIG[this.mode],
+            base_url: `${this.#client.dotcmsUrl}/html/tinymce`
+        };
+    }
+
+    ngOnChanges() {
+        this.content = this.contentlet[this.fieldName];
+        this.safeContent = this.#sanitizer.bypassSecurityTrustHtml(this.content);
     }
 
     onMouseDown(eventObj: EventObj<MouseEvent>) {
@@ -81,21 +90,20 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
             return;
         }
 
-        const { event } = eventObj; // Prevent focus
+        const { inode, languageId: language } = this.contentlet;
+        const { event } = eventObj;
+
         event.stopPropagation();
         event.preventDefault();
-
-        const dataset = {
-            inode: this.inode,
-            mode: this.mode,
-            language: this.langId.toString(),
-            fieldName: this.field
-        };
 
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
             payload: {
-                dataset
+                dataset: {
+                    inode,
+                    language,
+                    fieldName: this.fieldName
+                }
             }
         });
     }
@@ -111,17 +119,17 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
             return;
         }
 
-        const dataset = {
-            inode: this.inode,
-            langId: this.langId,
-            fieldName: this.field
-        };
+        const { inode, languageId: langId } = this.contentlet;
 
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
             payload: {
                 content,
-                dataset
+                dataset: {
+                    inode,
+                    langId,
+                    fieldName: this.fieldName
+                }
             }
         });
     }

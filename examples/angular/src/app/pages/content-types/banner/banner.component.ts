@@ -23,13 +23,7 @@ import { DotCMSContentlet, DotEditableTextComponent } from '@dotcms/angular';
       class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white"
     >
       <h2 class="mb-2 text-6xl font-bold text-shadow">
-        <dot-editable-text
-          [field]="'title'"
-          [inode]="contentlet.inode"
-          [langId]="contentlet.languageId"
-          [content]="contentlet.title"
-          [onNumberOfPages]="contentlet['onNumberOfPages']"
-        />
+        <dot-editable-text [fieldName]="'title'" [contentlet]="contentlet" />
       </h2>
       <p class="mb-4 text-xl text-shadow">{{ contentlet['caption'] }}</p>
       <a
