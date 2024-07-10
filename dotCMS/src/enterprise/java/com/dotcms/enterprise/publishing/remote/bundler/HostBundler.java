@@ -66,7 +66,6 @@ import com.dotcms.util.EnterpriseFeature;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -99,6 +98,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+
 /**
  * This bundler will take the list of {@link Contentlet} (Host) objects that are being pushed and
  * will write them in the file system in the form of an XML file. This information will be part of
@@ -128,11 +129,10 @@ public class HostBundler implements IBundler {
 	public void setConfig(final PublisherConfig pc) {
 		config = (PushPublisherConfig) pc;
 		conAPI = APILocator.getContentletAPI();
-        final UserAPI uAPI = APILocator.getUserAPI();
 		pubAPI = PublisherAPI.getInstance();
 		this.langAPI = APILocator.getLanguageAPI();
 		try {
-			systemUser = uAPI.getSystemUser();
+			this.systemUser = APILocator.getUserAPI().getSystemUser();
 		} catch (final DotDataException e) {
 			Logger.fatal(HostBundler.class,e.getMessage(),e);
 		}
@@ -147,100 +147,139 @@ public class HostBundler implements IBundler {
 	public void generate(final BundleOutput output, final BundlerStatus status) throws DotBundleException {
 		final Set<String> siteIds = config.getHostSet();
 		try {
-			//Updating audit table
-			PublishAuditHistory currentStatusHistory = null;
-			if (!config.isDownloading()) {
-				final PublishAuditStatus publishAuditStatus = this.pubAuditAPI.getPublishAuditStatus(this.config.getId());
-				if (null != publishAuditStatus) {
-					currentStatusHistory = this.pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
-				}
-				if (currentStatusHistory == null) {
-					currentStatusHistory = new PublishAuditHistory();
-				}
-				currentStatusHistory.setBundleStart(new Date());
-				PushPublishLogger.log(this.getClass(), "Status Update: Bundling.");
-				this.pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.BUNDLING,
-						currentStatusHistory);
-			}
-            
-			if (UtilMethods.isSet(siteIds)) { // this content set is a dependency of other assets, like html pages
-				final List<Contentlet> siteAsContentList = new ArrayList<>();
-				for (final String siteIdentifier : siteIds) {
-					try {
-						Contentlet workingSite;
-						final List<Contentlet> results = this.conAPI
-								.search("+identifier:" + siteIdentifier + " +working:true",
-									1, 0, null, systemUser, false);
-						if (UtilMethods.isSet(results)) {
-							workingSite = results.get(0);
-						} else {
-							workingSite = this.conAPI
-									.findContentletByIdentifier(siteIdentifier, false,
-											this.langAPI.getDefaultLanguage().getId(), systemUser, false);
-						}
-
-						Contentlet liveSite = null;
-						try {
-							List<Contentlet> returnedContent = this.conAPI
-									.search("+identifier:" + siteIdentifier + " +live:true",
-										1, 0, null, systemUser, false);
-
-							if(UtilMethods.isSet(returnedContent)) {
-								liveSite = returnedContent.get(0);
-							} else {
-								liveSite = this.conAPI
-										.findContentletByIdentifier(siteIdentifier, true,
-											this.langAPI.getDefaultLanguage().getId(), systemUser, false);
-							}
-
-							if (liveSite == null) {
-								Logger.warn(this, String.format("Unable to find live version of contentlet with identifier " +
-										"'%s'", siteIdentifier));
-							}
-						} catch (final DotDataException | DotSecurityException | DotContentletStateException e) {
-							// the process can work with only the working version, unpublished
-							Logger.warn(this, String.format("Could not retrieve live contentlet with identifier " +
-									"'%s' (the process can continue): %s", siteIdentifier, ExceptionUtil.getErrorMessage(e)));
-						}
-
-						// there should always be a working version
-						if (workingSite != null) {
-							siteAsContentList.add(workingSite);
-						} else {
-							throw new DotBundleException(String.format("No working version of Site with ID '%s'" +
-									" was found", siteIdentifier));
-						}
-						// the process can work with only the working version, unpublished
-						if (liveSite != null) {
-							siteAsContentList.add(liveSite);
-						}
-					} catch (final DotDataException de) {
-						throw new DotBundleException(String.format("Data error on Site with ID '%s'", siteIdentifier), de);
-					} catch (final DotSecurityException ds) {
-						throw new DotBundleException(String.format("Security error on Site with ID '%s'", siteIdentifier), ds);
-					} catch (final DotContentletStateException dc) {
-						throw new DotBundleException(String.format("Content error on Site with ID '%s'", siteIdentifier), dc);
-					}
-				}
+			final PublishAuditHistory currentAuditHistory = this.getCurrentPublishAuditHistory();
+			if (UtilMethods.isSet(siteIds)) {
+				// This content set is a dependency of other assets, like html pages
+				final List<Contentlet> siteAsContentList = this.getSitesAsContentlets(siteIds);
 				final Set<Contentlet> contentsToProcessWithFiles = this.getRelatedFilesAndContent(siteAsContentList);
 				for (final Contentlet con : contentsToProcessWithFiles) {
-					writeFileToDisk(output, con);
+					this.writeFileToDisk(output, con);
 					status.addCount();
 				}
 			}
-			if (currentStatusHistory != null && !this.config.isDownloading()) {
-				// Updating audit table
-				currentStatusHistory = pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
-				currentStatusHistory.setBundleEnd(new Date());
-				PushPublishLogger.log(this.getClass(), "Status Update: Bundling.");
-				this.pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.BUNDLING,
-						currentStatusHistory);
-			}
+			this.updateAuditHistory(currentAuditHistory);
 		} catch (final Exception e) {
 			status.addFailure();
 			Logger.error(this, String.format("Failed to pull Sites with IDs: %s", siteIds), e);
 			throw new DotBundleException(String.format("Failed to pull content for Host Bundler: " +
 					"%s", ExceptionUtil.getErrorMessage(e)), e);
+		}
+	}
+
+	/**
+	 * Returns the Publishing Audit History for the current bundle. Keep in mind that, depending on
+	 * the system load or the available resources of the dotCMS instance, parts of the audit
+	 * history may not be ready yet, which is expected.
+	 *
+	 * @return The current {@link PublishAuditHistory} object for the current bundle.
+	 *
+	 * @throws DotPublisherException An error occurred when retrieving or updating the bundle
+	 *                               status.
+	 */
+	private PublishAuditHistory getCurrentPublishAuditHistory() throws DotPublisherException {
+		PublishAuditHistory currentAuditHistory = null;
+		if (!config.isDownloading()) {
+			final PublishAuditStatus publishAuditStatus = this.pubAuditAPI.getPublishAuditStatus(this.config.getId());
+			if (null != publishAuditStatus) {
+				currentAuditHistory = this.pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
+			}
+			currentAuditHistory = null == currentAuditHistory ? new PublishAuditHistory() : currentAuditHistory;
+			currentAuditHistory.setBundleStart(new Date());
+			PushPublishLogger.log(this.getClass(), "Status Update: Bundling.");
+			this.pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.BUNDLING,
+					currentAuditHistory);
+		}
+		return currentAuditHistory;
+	}
+
+	/**
+	 * Takes the list of Site IDs that have been included in this bundle, and returns them as a
+	 * list of their working and live versions in the form of {@link Contentlet} objects. Please
+	 * take into consideration that, even though not having a live version of a Site is permitted,
+	 * <b>there must ALWAYS be a working version of it</b>.
+	 *
+	 * @param siteIds The list of Site IDs to retrieve.
+	 *
+	 * @return A list of {@link Contentlet} objects representing the Sites to be bundled.
+	 *
+	 * @throws DotBundleException An error occurred when retrieving the Sites, or thw working
+	 *                            version of a Site was not found.
+	 */
+	private List<Contentlet> getSitesAsContentlets(final Set<String> siteIds) throws DotBundleException {
+		final List<Contentlet> siteAsContentList = new ArrayList<>();
+		for (final String siteIdentifier : siteIds) {
+			try {
+				final Contentlet workingSite = this.getSiteAsContentlet(siteIdentifier, false);
+				// There must always be a working version
+				if (null == workingSite) {
+					throw new DotBundleException(String.format("No working version of Site with ID '%s'" +
+							" was found", siteIdentifier));
+				}
+				siteAsContentList.add(workingSite);
+				try {
+					final Contentlet liveSite = this.getSiteAsContentlet(siteIdentifier, true);
+					if (liveSite != null) {
+						siteAsContentList.add(liveSite);
+					} else {
+						// The bundling process can work with only the working version, unpublished
+						Logger.warn(this, String.format("Unable to find live version of contentlet with identifier " +
+								"'%s'. The process will continue", siteIdentifier));
+					}
+				} catch (final DotDataException | DotSecurityException | DotContentletStateException e) {
+					// the process can work with only the working version, unpublished
+					Logger.warn(this, String.format("Could not retrieve live version of Site with ID " +
+							"'%s' (the process can continue): %s", siteIdentifier, ExceptionUtil.getErrorMessage(e)));
+				}
+			} catch (final DotDataException de) {
+				throw new DotBundleException(String.format("Data error on Site with ID '%s'", siteIdentifier), de);
+			} catch (final DotSecurityException ds) {
+				throw new DotBundleException(String.format("Security error on Site with ID '%s'", siteIdentifier), ds);
+			} catch (final DotContentletStateException dc) {
+				throw new DotBundleException(String.format("Content error on Site with ID '%s'", siteIdentifier), dc);
+			}
+		}
+		return siteAsContentList;
+	}
+
+	/**
+	 * Returns the specified Site ID as a Contentlet object. The Elasticsearch API will be used as
+	 * the first data source. If not present, the database will be used as a fallback.
+	 *
+	 * @param siteIdentifier The identifier of the Site to retrieve.
+	 * @param live           If the live version of the Site is required, set this to {@code true}.
+	 *
+	 * @return The Site as a {@link Contentlet} object.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the data source.
+	 * @throws DotSecurityException A User permission error has occurred.
+	 */
+	private Contentlet getSiteAsContentlet(final String siteIdentifier, final boolean live) throws DotDataException, DotSecurityException {
+		final List<Contentlet> results = this.conAPI
+				.search("+identifier:" + siteIdentifier + (live ? " +live:true" : " +working:true"),
+						1, 0, null, this.systemUser, DONT_RESPECT_FRONT_END_ROLES);
+		if (UtilMethods.isSet(results)) {
+			return results.get(0);
+		}
+		return this.conAPI.findContentletByIdentifier(siteIdentifier, live,
+				this.langAPI.getDefaultLanguage().getId(), this.systemUser, DONT_RESPECT_FRONT_END_ROLES);
+	}
+
+	/**
+	 * Updates the current {@link PublishAuditHistory} object with a new status indicating that the
+	 * bundle is being built right now.
+	 *
+	 * @param currentAuditHistory The current {@link PublishAuditHistory} object.
+	 *
+	 * @throws DotPublisherException An error occurred when updating the bundle status.
+	 */
+	private void updateAuditHistory(PublishAuditHistory currentAuditHistory) throws DotPublisherException {
+		if (currentAuditHistory != null && !this.config.isDownloading()) {
+			// Updating audit table
+			currentAuditHistory = pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
+			currentAuditHistory.setBundleEnd(new Date());
+			PushPublishLogger.log(this.getClass(), "Status Update: Bundling.");
+			this.pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.BUNDLING,
+					currentAuditHistory);
 		}
 	}
 
@@ -264,15 +303,11 @@ public class HostBundler implements IBundler {
 	private Set<Contentlet> getRelatedFilesAndContent(final List<Contentlet> siteAsContentList) throws DotDataException,
 			DotSecurityException {
 		final Set<Contentlet> contentsToProcess = new HashSet<>();
-
 		// Getting all contents related to every Site in the list
-		for (Contentlet siteAsContent : siteAsContentList) {
-			final Map<Relationship, List<Contentlet>> contentRel =
+		for (final Contentlet siteAsContent : siteAsContentList) {
+			final Map<Relationship, List<Contentlet>> contentRelationships =
 					conAPI.findContentRelationships(siteAsContent, systemUser);
-
-			for (final Relationship rel : contentRel.keySet()) {
-				contentsToProcess.addAll(contentRel.get(rel));
-			}
+			contentRelationships.forEach((key, value) -> contentsToProcess.addAll(value));
 			contentsToProcess.add(siteAsContent);
 		}
 
@@ -285,7 +320,7 @@ public class HostBundler implements IBundler {
 					final String identifier = (String) contentlet.get(field.getVelocityVarName());
 					if (UtilMethods.isSet(identifier)) {
 					    contentsToProcessWithFiles.addAll(
-								this.conAPI.search("+identifier:" + identifier, 0, -1, null, systemUser, false));
+								this.conAPI.search("+identifier:" + identifier, 0, -1, null, this.systemUser, DONT_RESPECT_FRONT_END_ROLES));
 			        }
 				}
 			}
@@ -432,19 +467,17 @@ public class HostBundler implements IBundler {
 	}
 
 	/**
-	 * A simple file filter that looks for contentlet data files inside a
-	 * bundle.
+	 * A simple file filter that looks for Site data files inside a bundle.
 	 * 
 	 * @author Jorge Urdaneta
 	 * @version 1.0
 	 * @since Mar 7, 2013
 	 *
 	 */
-	public class HostBundlerFilter implements FileFilter{
+	public static class HostBundlerFilter implements FileFilter {
 
 		@Override
-		public boolean accept(File pathname) {
-
+		public boolean accept(final File pathname) {
 			return (pathname.isDirectory() || pathname.getName().endsWith(HOST_EXTENSION));
 		}
 

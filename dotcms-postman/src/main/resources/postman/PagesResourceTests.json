@@ -5346,7 +5346,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy{{pagePost2}}\",\n        \"url\":\"testPageCopy{{pagePost2}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy{{pagePost2}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"testPageCopy{{pagePost2}}\",\n        \"url\": \"testPageCopy{{pagePost2}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"testPageCopy{{pagePost2}}\",\n        \"cachettl\": 0,\n        \"workflow\": [\n            \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n        ]\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -5384,12 +5384,13 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test Available actions successfully\", function () {",
+									"pm.test(\"Checking that Worklfow Actions for the test HTML Page are available\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.expect(jsonData.entity.actions.length).to.greaterThan(0);",
 									"    pm.expect(jsonData.entity.page.pageUrl).to.contains('testPageCopy');",
-									"});"
+									"});",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
