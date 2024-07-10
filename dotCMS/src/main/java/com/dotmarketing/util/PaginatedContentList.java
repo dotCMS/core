@@ -1,12 +1,10 @@
 package com.dotmarketing.util;
 
+import java.util.Objects;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class PaginatedContentList<E> extends PaginatedArrayList<E> {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -3041937930751284374L;
 	private boolean previousPage;
 	private boolean nextPage;
@@ -94,7 +92,36 @@ public class PaginatedContentList<E> extends PaginatedArrayList<E> {
 	public void setTotalPages(int totalPages) {
 		this.totalPages = totalPages;
 	}
-	
+
+	@Override
+	public boolean equals(Object o) {
+
+		if (this == o) {
+			return true;
+		}
+		if (!(o instanceof PaginatedContentList)) {
+			return false;
+		}
+		if (!super.equals(o)) {
+			return false;
+		}
+
+		PaginatedContentList<?> that = (PaginatedContentList<?>) o;
+		return previousPage == that.previousPage &&
+				nextPage == that.nextPage &&
+				totalPages == that.totalPages &&
+				offset == that.offset &&
+				limit == that.limit &&
+				currentPage == that.currentPage;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(
+				super.hashCode(), previousPage, nextPage, totalPages, offset, limit, currentPage
+		);
+	}
+
 	@Override
 	public String toString() {
 		return ToStringBuilder.reflectionToString(this) + "\r\n" + super.toString();

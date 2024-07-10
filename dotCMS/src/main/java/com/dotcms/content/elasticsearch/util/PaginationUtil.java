@@ -52,8 +52,8 @@ public class PaginationUtil {
             paginatedContentList.setCurrentPage(currentPage);
 
             // Calculate the pagination
-            long minIndex = (currentPage - 1) * contentsPerPage;
-            long maxIndex = contentsPerPage * currentPage;
+            long minIndex = (currentPage - 1L) * contentsPerPage;
+            long maxIndex = (long) contentsPerPage * currentPage;
             if ((minIndex + contentsPerPage) >= totalResults) {
                 maxIndex = totalResults;
             }
