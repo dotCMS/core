@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "7b014251-f194-49cf-b7c2-d9562ac65c92",
+		"_postman_id": "f2269d5b-3bf9-4148-b27d-51787ab73aa1",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "31066048"
 	},
 	"item": [
 		{
@@ -291,7 +291,6 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"name": "Content-Type",
 										"type": "text"
 									}
 								],
@@ -342,7 +341,6 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"name": "Content-Type",
 										"type": "text"
 									}
 								],
@@ -410,7 +408,6 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"name": "Content-Type",
 										"type": "text"
 									}
 								],
@@ -533,7 +530,6 @@
 									{
 										"key": "Content-Type",
 										"value": "application/json",
-										"name": "Content-Type",
 										"type": "text"
 									}
 								],
@@ -4401,7 +4397,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -4463,7 +4458,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -4505,7 +4499,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -4642,7 +4635,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -4708,7 +4700,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -4757,7 +4748,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -4831,7 +4821,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -4896,7 +4885,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -5280,7 +5268,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -5342,7 +5329,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -5400,7 +5386,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -5442,7 +5427,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -5500,7 +5484,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -5641,7 +5624,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -6112,7 +6094,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -7257,7 +7238,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -7304,7 +7284,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -7415,7 +7394,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -7664,7 +7642,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -7793,7 +7770,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -7840,7 +7816,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -7951,7 +7926,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -8200,7 +8174,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -8337,7 +8310,6 @@
 													{
 														"key": "Content-Type",
 														"value": "application/json",
-														"name": "Content-Type",
 														"type": "text"
 													}
 												],
@@ -8384,7 +8356,6 @@
 													{
 														"key": "Content-Type",
 														"value": "application/json",
-														"name": "Content-Type",
 														"type": "text"
 													}
 												],
@@ -8499,7 +8470,6 @@
 													{
 														"key": "Content-Type",
 														"value": "application/json",
-														"name": "Content-Type",
 														"type": "text"
 													}
 												],
@@ -8769,7 +8739,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -8816,7 +8785,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -8933,7 +8901,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -9207,7 +9174,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -9254,7 +9220,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -9365,7 +9330,6 @@
 											{
 												"key": "Content-Type",
 												"value": "application/json",
-												"name": "Content-Type",
 												"type": "text"
 											}
 										],
@@ -10233,7 +10197,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -10282,7 +10245,6 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json",
-								"name": "Content-Type",
 								"type": "text"
 							}
 						],
@@ -10377,6 +10339,1102 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Pagination",
+			"item": [
+				{
+					"name": "Create ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Storing content type id\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
+									"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"testContentType{{$timestamp}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"description": "Creates a content type to prepare the test data."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Preparing the data for the next test",
+									"pm.collectionVariables.set(\"contentCount\", 22);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{contentTypeId}}"
+							]
+						},
+						"description": "Searched for a content type by id validating the content type was created."
+					},
+					"response": []
+				},
+				{
+					"name": "Save Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var currentCount = pm.collectionVariables.get(\"contentCount\");",
+									"if (currentCount > 1){",
+									"    currentCount = currentCount - 1;",
+									"    pm.collectionVariables.set(\"contentCount\", currentCount);",
+									"    pm.execution.setNextRequest(\"Save Content\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Test content {{contentCount}}\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "wait_for"
+								}
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in Collection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(1);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(100);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(1);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query, the collection does not have parameters."
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in Collection with parameters",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(1);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(\n    limit: 10,\n    offset: 0,\n    sortBy: \"score\"\n  ) {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query, in the collection we are pasing some pagination parameters."
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in Collection with page param - Page 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(1);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(\n    limit: 10,\n    page: 1,\n    sortBy: \"score\"\n  ) {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query and with the page param to test the pagination response is correct."
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in Collection with page param - Page 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(2);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(10);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(\n    limit: 10,\n    page: 2,\n    sortBy: \"score\"\n  ) {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query and with the page param to test the pagination response is correct."
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in Collection with page param - Page 3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(2);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(20);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(\n    limit: 10,\n    page: 3,\n    sortBy: \"score\"\n  ) {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query and with the page param to test the pagination response is correct."
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in Collection with offset param - Offset 0",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(1);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(\n    limit: 10,\n    offset: 0,\n    sortBy: \"score\"\n  ) {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query and with the offset param to test the pagination response is correct."
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in Collection with offset param - Offset 10",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(2);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(10);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(\n    limit: 10,\n    offset: 10,\n    sortBy: \"score\"\n  ) {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query and with the offset param to test the pagination response is correct."
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in Collection with offset param - Offset 20",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(2);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(20);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(\n    limit: 10,\n    offset: 20,\n    sortBy: \"score\"\n  ) {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query and with the offset param to test the pagination response is correct."
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in Collection with limit and offset params - Checking page calculation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(8);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(6);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(15);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(\n    limit: 3,\n    offset: 15,\n    sortBy: \"score\"\n  ) {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query with a limit and offset that allow us to validate the pagination is calculated properly."
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in query search with default parameters",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(\"search\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(1);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(10000);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(1);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query {\n  search(\n    query: \"+contentType:{{contentTypeVariable}}\"\n    limit: -1\n    offset: 0\n    sortBy: \"title\"\n  ) {\n    identifier\n    ... on {{contentTypeVariable}} {\n      name\n    }\n  }\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a query search using default pagination parameters."
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in query search with limit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(\"search\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(8);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(1);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query {\n  search(\n    query: \"+contentType:{{contentTypeVariable}}\"\n    limit: 3\n    offset: 0\n    sortBy: \"title\"\n  ) {\n    identifier\n    ... on {{contentTypeVariable}} {\n      name\n    }\n  }\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a query search using an specific limit"
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in query collection with parameters",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(3);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(22);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(4);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(true);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(2);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(18);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query ContentAPI {\n  {{contentTypeVariable}}Collection(\n    limit: 10,\n    offset: 18,\n    sortBy: \"score\"\n  ) {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a query collection search using specific parameters"
+					},
+					"response": []
+				},
+				{
+					"name": "Check pagination in query collection NO results",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check Pagination\", function () {",
+									"",
+									"    var contentTypeVariable = pm.collectionVariables.get(\"contentTypeVariable\");",
+									"",
+									"    pm.expect(jsonData.data.Pagination[0].fieldName).to.equal(contentTypeVariable + \"Collection\");",
+									"    pm.expect(jsonData.data.Pagination[0].totalPages).to.equal(0);",
+									"    pm.expect(jsonData.data.Pagination[0].totalRecords).to.equal(0);",
+									"    pm.expect(jsonData.data.Pagination[0].pageRecords).to.equal(0);",
+									"    pm.expect(jsonData.data.Pagination[0].hasNextPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].hasPreviousPage).to.equal(false);",
+									"    pm.expect(jsonData.data.Pagination[0].pageSize).to.equal(10);",
+									"    pm.expect(jsonData.data.Pagination[0].page).to.equal(0);",
+									"    pm.expect(jsonData.data.Pagination[0].offset).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query ContentAPI {\n  {{contentTypeVariable}}Collection(\n    query: \"+name:SHOULD RETURN NO RECORDS\",\n    limit: 10,\n    offset: 0,\n    sortBy: \"score\"\n  ) {\n    name\n  }\n\n  Pagination {\n    fieldName\n    totalPages\n    totalRecords\n    pageRecords\n    hasNextPage\n    hasPreviousPage\n    pageSize\n    page\n    offset\n  }\n\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a query collection search when there are no results."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{contentTypeId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Collection with a number of tests to validate the pagination fields in collection queries"
 		}
 	],
 	"event": [
@@ -10466,6 +11524,14 @@
 		},
 		{
 			"key": "dotAssetIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "contentCount",
 			"value": ""
 		}
 	]
