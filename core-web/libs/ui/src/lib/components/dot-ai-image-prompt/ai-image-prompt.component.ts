@@ -10,7 +10,6 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from './../../dot-message/dot-message.pipe';
 import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
@@ -35,21 +34,20 @@ import { AiImagePromptGalleryComponent } from './components/ai-image-prompt-gall
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAIImagePromptComponent {
-    protected readonly ComponentStatus = ComponentStatus;
-    private dotMessageService = inject(DotMessageService);
-    private confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #confirmationService = inject(ConfirmationService);
     store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
     protected readonly vm$: Observable<VmAiImagePrompt> = this.store.vm$;
 
     closeDialog(): void {
-        this.confirmationService.confirm({
+        this.#confirmationService.confirm({
             key: 'ai-image-prompt',
-            header: this.dotMessageService.get('block-editor.extension.ai.confirmation.header'),
-            message: this.dotMessageService.get('block-editor.extension.ai.confirmation.message'),
+            header: this.#dotMessageService.get('block-editor.extension.ai.confirmation.header'),
+            message: this.#dotMessageService.get('block-editor.extension.ai.confirmation.message'),
             icon: 'pi pi-exclamation-triangle',
-            acceptLabel: this.dotMessageService.get('Discard'),
-            rejectLabel: this.dotMessageService.get('Cancel'),
+            acceptLabel: this.#dotMessageService.get('Discard'),
+            rejectLabel: this.#dotMessageService.get('Cancel'),
             accept: () => {
                 this.store.hideDialog();
             }
