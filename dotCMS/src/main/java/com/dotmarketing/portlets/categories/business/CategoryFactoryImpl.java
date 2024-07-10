@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.categories.business;
 
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.JsonUtil;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -15,21 +17,24 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchedCategory;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
+import com.dotmarketing.portlets.categories.model.ShortCategory;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.util.StringPool;
+import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.sql.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +45,7 @@ import java.util.stream.Collectors;
  */
 public class CategoryFactoryImpl extends CategoryFactory {
 
+	public static final String INODE = "inode";
 	CategoryCache catCache;
 	final CategorySQL categorySQL;
 	
@@ -602,19 +608,80 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	 * @param sqlResults sql query results
 	 * @return a list of categories objects
 	 */
-	 List<Category> convertForCategories(final List<Map<String, Object>> sqlResults) {
-
+	List<Category> convertForCategories(final List<Map<String, Object>> sqlResults) {
 		List<Category> categories = new ArrayList<>();
 
 		if ( sqlResults != null ) {
 
 			for ( Map<String, Object> row : sqlResults ) {
-				Category category = convertForCategory(row);
+				Category category = convertForCategory(row, Category.class);
 				categories.add(category);
 			}
 		}
 
 		return categories;
+	}
+
+	private List<HierarchedCategory> convertForHierarchedCategories(final List<Map<String, Object>> sqlResults) {
+		List<HierarchedCategory> categories = new ArrayList<>();
+
+		if ( sqlResults != null ) {
+
+			for ( Map<String, Object> row : sqlResults ) {
+				HierarchedCategory category = (HierarchedCategory) convertForCategory(row, HierarchedCategory.class);
+
+                try {
+					if (row !=null && row.get("path") != null ) {
+						final String parentsASJsonArray = "[" + row.get("path") + "]";
+						final List<ShortCategory> parentList = getShortCategories(parentsASJsonArray);
+						category.setParentList(parentList.subList(0, parentList.size() - 1));
+					}
+
+					categories.add(category);
+                } catch ( Exception e) {
+					Logger.warn(CategoryFactoryImpl.class, e::getMessage);
+                }
+			}
+		}
+
+		return categories;
+	}
+
+	/**
+	 * Create a set of Object {@link ShortCategory} from a JSON with the follow syntax:
+	 *
+	 * <code>
+	 *    [
+	 *       {
+	 *           'categoryName': 'Category name value',
+	 *           'key': 'Key value',
+	 *           'inode': 'inode value'
+	 *       }
+	 *    ]
+	 *
+	 * </code>
+	 *
+	 * @param parentsASJsonArray
+	 * @return
+	 */
+	private static List<ShortCategory> getShortCategories(String parentsASJsonArray) {
+        try {
+            return ((List<Map<String, String>>) JsonUtil.getObjectFromJson(parentsASJsonArray, List.class))
+                    .stream()
+                    .map(map -> new ShortCategory.Builder()
+                            .setCategoryName(map.get("categoryName"))
+                            .setKey(map.get("key"))
+                            .setInode(map.get(INODE))
+                            .build()
+                    )
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+	private Category convertForCategory(final Map<String, Object> sqlResult) {
+		 return convertForCategory(sqlResult, Category.class);
 	}
 
 	/**
@@ -625,15 +692,15 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	 * @param sqlResult - The data of a specific category from the database.
 	 * @return The {@link Category} object.
 	 */
-	private Category convertForCategory(final Map<String, Object> sqlResult) {
+	private Category convertForCategory(final Map<String, Object> sqlResult, Class<? extends Category> clazz) {
 
 		Category category = null;
 		if ( sqlResult != null ) {
-			category = new Category();
+			category = ReflectionUtils.newInstance(clazz);
 
 			Object sortOrder = sqlResult.get("sort_order");
 
-			category.setInode((String) sqlResult.get("inode"));
+			category.setInode((String) sqlResult.get(INODE));
 			category.setCategoryName((String) sqlResult.get("category_name"));
 			category.setKey((String) sqlResult.get("category_key"));
 			if ( sortOrder != null ) {
@@ -805,7 +872,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
     private void putResultInCatCache( final ResultSet rs ) throws SQLException, DotDataException {
         while(rs.next()) {
 			// calling find will put it into cache internally
-			find(rs.getString("inode"));
+			find(rs.getString(INODE));
         }
     }
 
@@ -841,11 +908,11 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Category> findAll(final CategorySearchCriteria searchCriteria)
+	public List<HierarchedCategory> findAll(final CategorySearchCriteria searchCriteria)
 			throws DotDataException {
 
-		if (!UtilMethods.isSet(searchCriteria.rootInode) && !UtilMethods.isSet(searchCriteria.filter)) {
-			return findAll();
+		if (searchCriteria.rootInode == null) {
+			throw new IllegalArgumentException();
 		}
 
 		final String query = getFindAllSQLQuery(searchCriteria);
@@ -862,10 +929,12 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			dc.addObject("%" + searchCriteria.filter.toLowerCase() + "%");
 		}
 
-		final List<Category> categories = convertForCategories(UtilMethods.isSet(searchCriteria.rootInode) ?
+		final List<Map<String, Object>> results = UtilMethods.isSet(searchCriteria.rootInode) ?
 				dc.loadObjectResults().stream()
-						.filter(map -> !map.get("inode").equals(searchCriteria.rootInode))
-						.collect(Collectors.toList()) : dc.loadObjectResults());
+						.filter(map -> !map.get(INODE).equals(searchCriteria.rootInode))
+						.collect(Collectors.toList()) : dc.loadObjectResults();
+
+		final List<HierarchedCategory> categories = convertForHierarchedCategories(results);
 
 		updateCache(categories);
 		return categories;
@@ -873,11 +942,13 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 	private static String getFindAllSQLQuery(CategorySearchCriteria searchCriteria) {
 		final String queryTemplate = "WITH RECURSIVE CategoryHierarchy AS ( " +
-				"SELECT c.* FROM Category c %s " +
+				"SELECT c.*, json_build_object('inode', inode, 'categoryName', category_name, 'key', category_key)::varchar AS path " +
+				"FROM Category c %s " +
 				"UNION ALL " +
-				"SELECT c.* FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode " +
+				"SELECT c.*, CONCAT(ch.path, ',', json_build_object('inode', c.inode, 'categoryName', c.category_name, 'key', c.category_key)::varchar) AS path " +
+				"FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode " +
 			") " +
-			"SELECT * FROM CategoryHierarchy %s ORDER BY %s %s";
+			"SELECT distinct *,path FROM CategoryHierarchy %s ORDER BY %s %s";
 
 		final String rootCategoryFilter = UtilMethods.isSet(searchCriteria.rootInode) ? "WHERE c.inode = ?" : StringPool.BLANK;
 
@@ -886,12 +957,11 @@ public class CategoryFactoryImpl extends CategoryFactory {
 						"LOWER(category_key) LIKE ?  OR " +
 						"LOWER(category_velocity_var_name) LIKE ?" : StringPool.BLANK;
 
-		final String query = String.format(queryTemplate, rootCategoryFilter, filterCategories, searchCriteria.orderBy,
+		return String.format(queryTemplate, rootCategoryFilter, filterCategories, searchCriteria.orderBy,
 				searchCriteria.direction.toString());
-		return query;
 	}
 
-	private void updateCache(List<Category> categories) throws DotDataException {
+	private void updateCache(List<? extends Category> categories) throws DotDataException {
 		for(final Category category : categories) {
 			if(catCache.get(category.getInode()) == null)
 				try {
@@ -901,5 +971,55 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				}
 		}
 	}
+
+	/**
+	 * Default implementation of {@link CategoryFactory#findHierarchy(Collection)}
+	 *
+	 * @param inodes list of inodes to search
+	 * @return
+	 * @throws DotDataException
+	 */
+	@Override
+	public List<HierarchyShortCategory> findHierarchy(final Collection<String> inodes) throws DotDataException {
+
+		if (inodes == null || inodes.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		final String queryTemplate = "WITH RECURSIVE CategoryHierarchy AS ( SELECT " +
+					"c.inode," +
+					"c.inode AS root_inode," +
+					"1 AS level," +
+					"json_build_object('inode', c.inode, 'categoryName', c.category_name, 'key', c.category_key)::varchar AS path " +
+				"FROM Category c " +
+				"WHERE c.inode IN (%s) " +
+			"UNION ALL " +
+			"SELECT " +
+					"c.inode, " +
+					"ch.root_inode AS root_inode, " +
+					"ch.level + 1 AS level, " +
+					"CONCAT(json_build_object('inode', c.inode, 'categoryName', c.category_name, 'key', c.category_key)::varchar, ',', ch.path) AS path " +
+				"FROM Category c JOIN tree t ON c.inode = t.parent JOIN CategoryHierarchy ch ON t.child = ch.inode " +
+			"),"  +
+			"MaxLevels AS (SELECT root_inode, MAX(level) AS max_level FROM CategoryHierarchy GROUP BY root_inode) " +
+			"SELECT " +
+				"ch.root_inode as inode, " +
+				"CONCAT('[', path, ']')::jsonb as path " +
+			"FROM CategoryHierarchy ch JOIN MaxLevels ml ON ch.root_inode = ml.root_inode AND ch.level = ml.max_level;";
+
+
+		final DotConnect dc = new DotConnect()
+				.setSQL(String.format(queryTemplate, DotConnect.createParametersPlaceholder(inodes.size())));
+
+		inodes.forEach(dc::addParam);
+
+		return dc.loadObjectResults().stream().map(row -> {
+			final List<ShortCategory> parentList = getShortCategories(row.get("path").toString());
+
+			return new HierarchyShortCategory(row.get(INODE).toString(), parentList.subList(0, parentList.size() - 1));
+		}).collect(Collectors.toList());
+	}
+
+
 
 }

@@ -20,13 +20,13 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.dotmarketing.portlets.categories.model.HierarchedCategory;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
+import com.dotmarketing.portlets.categories.model.ShortCategory;
 import com.liferay.util.StringUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -313,7 +313,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link CategoryFactoryImpl#findAll(CategoryFactory.CategorySearchCriteria)}
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When:
      *
      * - Create a random string to be used as the filter for the test.
@@ -404,7 +404,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         List<String> categoriesExpected = list(childCategory_1, childCategory_2, childCategory_3, grandchildCategory_1,
                 grandchildCategory_2, childCategory_6, childCategory_7).stream().map(Category::getInode).collect(Collectors.toList());
 
-        final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria categorySearchCriteria = new CategorySearchCriteria.Builder()
                 .filter(filterTestCase.transformToSearch())
                 .rootInode(topLevelCategory_1.getInode())
                 .build();
@@ -416,48 +416,40 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link CategoryFactoryImpl#findAll(CategoryFactory.CategorySearchCriteria)}
-     * When: call the method with filter and inode equals to null
-     * Should: return all the Categories
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
+     * When: Create root inode is null and filter is not null
+     * Should: throw a {@link IllegalArgumentException}
      *
      * @throws DotDataException
      */
-    @Test
-    public void getAllCategoriesWithNullFilterAndInode() throws DotDataException {
-        final Category topLevelCategory_1 = new CategoryDataGen().setCategoryName("Top Level Category")
-                .setKey("top_level_categoria")
-                .setCategoryVelocityVarName("top_level_categoria")
-                .nextPersisted();
+    @Test(expected = IllegalArgumentException.class)
+    public void getAllCategoriesWithNullInode() throws DotDataException {
 
-        final Category childCategory_1 = new CategoryDataGen().setCategoryName("Child Category 1")
-                .setKey("child_category_1")
-                .setCategoryVelocityVarName("child_category_1")
-                .parent(topLevelCategory_1)
-                .nextPersisted();
-
-        final Category childCategory_2 = new CategoryDataGen().setCategoryName("Child Category 2")
-                .setKey("child_category_2")
-                .setCategoryVelocityVarName("child_category_2")
-                .parent(topLevelCategory_1)
-                .nextPersisted();
-
-        final Category grandchildCategory_1 = new CategoryDataGen().setCategoryName("Grand Child Category 1")
-                .setKey("grand_child_category_1")
-                .setCategoryVelocityVarName("grand_child_category_1")
-                .parent(childCategory_2)
-                .nextPersisted();
-
-        final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria categorySearchCriteria = new CategorySearchCriteria.Builder()
+                .filter("testing")
                 .build();
 
-        final Collection<Category> categoriesWithFilter = FactoryLocator.getCategoryFactory().findAll(categorySearchCriteria);
-        final List<Category> categoriesWithoutFilter = FactoryLocator.getCategoryFactory().findAll();
+        FactoryLocator.getCategoryFactory().findAll(categorySearchCriteria);
 
-        assertTrue(Objects.deepEquals(categoriesWithoutFilter, categoriesWithFilter));
     }
 
     /**
-     * Method to test: {@link CategoryFactoryImpl#findAll(CategoryFactory.CategorySearchCriteria)}
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
+     * When: Called the method with filter and inode set to null
+     * Should: throw a {@link IllegalArgumentException}
+     *
+     * @throws DotDataException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void getAllCategoriesWithNullFilterAndInode() throws DotDataException {
+
+        final CategorySearchCriteria categorySearchCriteria = new CategorySearchCriteria.Builder().build();
+
+        FactoryLocator.getCategoryFactory().findAll(categorySearchCriteria);
+    }
+
+    /**
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When: call the method with filter  equals to null and inode not null
      * Should: return all children  Categories
      *
@@ -517,7 +509,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .parent(topLevelCategory_2)
                 .nextPersisted();
 
-        final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria categorySearchCriteria = new CategorySearchCriteria.Builder()
                 .rootInode(topLevelCategory_1.getInode())
                 .build();
 
@@ -531,7 +523,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link CategoryFactoryImpl#findAll(CategoryFactory.CategorySearchCriteria)}
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When: Create a set of {@link Category} and called the method ordering by key
      * Should: return all children  Categories ordered
      *
@@ -562,7 +554,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .parent(childCategory_2)
                 .nextPersisted();
 
-        final CategoryFactory.CategorySearchCriteria categorySearchCriteria = new CategoryFactory.CategorySearchCriteria.Builder()
+        final CategorySearchCriteria categorySearchCriteria = new CategorySearchCriteria.Builder()
                 .orderBy("category_key")
                 .direction(OrderDirection.ASC)
                 .rootInode(topLevelCategory_1.getInode())
@@ -582,6 +574,57 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     }
 
+    @Test
+    public void hierarchyCategory() throws DotDataException {
+        final Category topLevelCategory = new CategoryDataGen().setCategoryName("Top Level Category")
+                .setKey("top_level")
+                .setCategoryVelocityVarName("top_level_categoria")
+                .nextPersisted();
+
+        final Category childCategory = new CategoryDataGen().setCategoryName("Child Category")
+                .setKey("child")
+                .setCategoryVelocityVarName("child_category")
+                .parent(topLevelCategory)
+                .nextPersisted();
+
+        final Category grandChildCategory = new CategoryDataGen().setCategoryName("Grand Child Category")
+                .setKey("grand_child")
+                .setCategoryVelocityVarName("grand_child_category")
+                .parent(childCategory)
+                .nextPersisted();
+
+        final Category greatGrandchildCategory = new CategoryDataGen().setCategoryName("Great Grand Child Category")
+                .setKey("great_grand_child")
+                .setCategoryVelocityVarName("great_grand_child_category")
+                .parent(grandChildCategory)
+                .nextPersisted();
+
+        final CategorySearchCriteria categorySearchCriteria = new CategorySearchCriteria.Builder()
+                .rootInode(topLevelCategory.getInode())
+                .filter("Great Grand Child")
+                .build();
+
+        final List<HierarchedCategory> categories = FactoryLocator.getCategoryFactory().findAll(categorySearchCriteria);
+
+        assertEquals(1, categories.size());
+        assertEquals(greatGrandchildCategory.getInode(), categories.get(0).getInode());
+
+        final List<ShortCategory> hierarchy = categories.get(0).getParentList();
+        assertEquals(3, hierarchy.size());
+
+        assertEquals(hierarchy.get(0).getCategoryName(), topLevelCategory.getCategoryName());
+        assertEquals(hierarchy.get(0).getKey(), topLevelCategory.getKey());
+        assertEquals(hierarchy.get(0).getInode(), topLevelCategory.getInode());
+
+        assertEquals(hierarchy.get(1).getCategoryName(), childCategory.getCategoryName());
+        assertEquals(hierarchy.get(1).getKey(), childCategory.getKey());
+        assertEquals(hierarchy.get(1).getInode(), childCategory.getInode());
+
+        assertEquals(hierarchy.get(2).getCategoryName(), grandChildCategory.getCategoryName());
+        assertEquals(hierarchy.get(2).getKey(), grandChildCategory.getKey());
+        assertEquals(hierarchy.get(2).getInode(), grandChildCategory.getInode());
+    }
+
     private static class FilterTestCase {
         private String filter;
         private Function<String, String> transformToSearch;
@@ -593,6 +636,58 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
         public String transformToSearch(){
             return transformToSearch.apply(filter);
+        }
+    }
+
+    /**
+     * Method to test: {@link com.dotmarketing.portlets.categories.model.HierarchyShortCategory}
+     * when: Create 4 Category each is a child of the previous one and find for the great grand child and the grand child
+     * should: Return the great grand child we all the parent list
+     * @throws DotDataException
+     */
+    @Test
+    public void findHierarchy() throws DotDataException {
+        final Category topLevelCategory = new CategoryDataGen().setCategoryName("Top Level Category")
+                .setKey("top_level")
+                .setCategoryVelocityVarName("top_level_categoria")
+                .nextPersisted();
+
+        final Category childCategory = new CategoryDataGen().setCategoryName("Child Category")
+                .setKey("child")
+                .setCategoryVelocityVarName("child_category")
+                .parent(topLevelCategory)
+                .nextPersisted();
+
+        final Category grandChildCategory = new CategoryDataGen().setCategoryName("Grand Child Category")
+                .setKey("grand_child")
+                .setCategoryVelocityVarName("grand_child_category")
+                .parent(childCategory)
+                .nextPersisted();
+
+        final Category greatGrandchildCategory = new CategoryDataGen().setCategoryName("Great Grand Child Category")
+                .setKey("great_grand_child")
+                .setCategoryVelocityVarName("great_grand_child_category")
+                .parent(grandChildCategory)
+                .nextPersisted();
+
+        final List<HierarchyShortCategory> categories = FactoryLocator.getCategoryFactory()
+                .findHierarchy(list(grandChildCategory.getInode(), greatGrandchildCategory.getInode()));
+
+        assertEquals(2, categories.size());
+
+        for (final HierarchyShortCategory category : categories) {
+            if (grandChildCategory.getInode().equals(category.getInode())) {
+                assertEquals(2, category.getParentList().size());
+                assertEquals("Top Level Category", category.getParentList().get(0).getCategoryName());
+                assertEquals("Child Category", category.getParentList().get(1).getCategoryName());
+            } else if (greatGrandchildCategory.getInode().equals(category.getInode())) {
+                assertEquals(3, category.getParentList().size());
+                assertEquals("Top Level Category", category.getParentList().get(0).getCategoryName());
+                assertEquals("Child Category", category.getParentList().get(1).getCategoryName());
+                assertEquals("Grand Child Category", category.getParentList().get(2).getCategoryName());
+            } else {
+                throw new AssertionError("Unexpected Category");
+            }
         }
     }
 }

@@ -27,7 +27,10 @@ class DotcmsSDKMockComponent {
 jest.mock('@dotcms/client', () => ({
     isInsideEditor: jest.fn().mockReturnValue(true),
     initEditor: jest.fn(),
-    updateNavigation: jest.fn()
+    updateNavigation: jest.fn(),
+    CUSTOMER_ACTIONS: {
+        GET_PAGE_DATA: 'get-page-data'
+    }
 }));
 
 describe('DotcmsLayoutComponent', () => {
@@ -82,6 +85,14 @@ describe('DotcmsLayoutComponent', () => {
             spectator.detectChanges();
             expect(initEditorSpy).toHaveBeenCalled();
             expect(updateNavigationSpy).toHaveBeenCalled();
+        });
+
+        it('should listen to SET_PAGE_DATA message', () => {
+            spectator.detectChanges();
+            window.dispatchEvent(
+                new MessageEvent('message', { data: { name: 'SET_PAGE_DATA', payload: {} } })
+            );
+            expect(spectator.inject(PageContextService).setContext).toHaveBeenCalled();
         });
     });
 });

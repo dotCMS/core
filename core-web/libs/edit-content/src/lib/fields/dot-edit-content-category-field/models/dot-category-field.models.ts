@@ -4,9 +4,10 @@ import { DotCategory } from '@dotcms/dotcms-models';
  * Object representing a key-value pair.
  * @interface
  */
-export interface DotKeyValueObj {
+export interface DotCategoryFieldKeyValueObj {
     key: string;
     value: string;
+    path?: string;
 }
 
 /**

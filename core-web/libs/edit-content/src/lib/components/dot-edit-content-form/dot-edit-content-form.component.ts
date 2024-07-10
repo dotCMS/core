@@ -3,10 +3,10 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    inject,
     Input,
     OnInit,
-    Output,
-    inject
+    Output
 } from '@angular/core';
 import {
     FormBuilder,
@@ -53,14 +53,13 @@ import { FIELD_TYPES } from '../dot-edit-content-field/utils';
     ]
 })
 export class DotEditContentFormComponent implements OnInit {
-    @Input() formData!: EditContentPayload;
+    @Input()
+    formData!: EditContentPayload;
     @Output() changeValue = new EventEmitter();
-
+    form!: FormGroup;
+    protected tabs: DotCMSContentTypeLayoutTab[] = [];
     private readonly fb = inject(FormBuilder);
     private readonly dotMessageService = inject(DotMessageService);
-
-    protected tabs: DotCMSContentTypeLayoutTab[] = [];
-    form!: FormGroup;
 
     get areMultipleTabs(): boolean {
         return this.tabs.length > 1;
@@ -96,39 +95,7 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Initializes a form control for a given DotCMSContentTypeField.
-     *
-     * @private
-     * @param {DotCMSContentTypeField} field
-     * @return {*}
-     * @memberof DotEditContentFormComponent
-     */
-    private initializeFormControl(field: DotCMSContentTypeField): FormControl {
-        const validators = [];
-
-        const value = resolutionValue[field.fieldType](this.formData.contentlet, field);
-
-        if (field.required) validators.push(Validators.required);
-        if (field.regexCheck) {
-            try {
-                const regex = new RegExp(field.regexCheck);
-                validators.push(Validators.pattern(regex));
-            } catch (e) {
-                console.error('Invalid regex', e);
-            }
-        }
-
-        return this.fb.control(
-            {
-                value: getFinalCastedValue(value, field) ?? null,
-                disabled: field.readOnly
-            },
-            { validators }
-        );
-    }
-
-    /**
-    /**
+     /**
      * Emits the form value through the `formSubmit` event.
      *
      * @param {*} value
@@ -149,6 +116,39 @@ export class DotEditContentFormComponent implements OnInit {
             }
         });
         this.changeValue.emit(value);
+    }
+
+    /**
+     * Initializes a form control for a given DotCMSContentTypeField.
+     *
+     * @private
+     * @param {DotCMSContentTypeField} field
+     * @return {*}
+     * @memberof DotEditContentFormComponent
+     */
+    private initializeFormControl(field: DotCMSContentTypeField): FormControl {
+        const validators = [];
+
+        const resolutionFn = resolutionValue[field.fieldType];
+        const value = resolutionFn ? resolutionFn(this.formData.contentlet, field) : '';
+
+        if (field.required) validators.push(Validators.required);
+        if (field.regexCheck) {
+            try {
+                const regex = new RegExp(field.regexCheck);
+                validators.push(Validators.pattern(regex));
+            } catch (e) {
+                console.error('Invalid regex', e);
+            }
+        }
+
+        return this.fb.control(
+            {
+                value: getFinalCastedValue(value, field) ?? null,
+                disabled: field.readOnly
+            },
+            { validators }
+        );
     }
 
     /**

@@ -31,6 +31,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -138,7 +139,6 @@ public class CategoriesResource {
      * <li>per_page: limit of items to return</li>
      * <li>ordeby: field to order by</li>
      * <li>direction: asc for upward order and desc for downward order</li>
-     * <li>showChildrenCount: true for including children categories count and false to exclude it</li>
      * </ul>
      * <p>
      * Url example: /api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true
@@ -196,22 +196,30 @@ public class CategoriesResource {
 
     /**
      * Return a list of {@link com.dotmarketing.portlets.categories.model.Category}, entity response
-     * syntax:.
+     * Syntax:.
      *
-     * <code> { contentTypes: array of Category total: total number of Categories } <code/>
+     * <code>
+     * {
+     *   contentTypes: array of Category,
+     *   total: total number of Categories
+     * }
+     * <code/>
+     *
      * <p>
      * Url syntax:
      * api/v1/categories/children?filter=filter-string&page=page-number&per_page=per-page&orderby=order-field-name&direction=order-direction&inode=parentId
      * <p>
-     * where:
      *
-     * <ul>
-     * <li>filter-string: just return Category whose content this pattern into its name</li>
-     * <li>page: page to return</li>
-     * <li>per_page: limit of items to return</li>
-     * <li>ordeby: field to order by</li>
-     * <li>direction: asc for upward order and desc for downward order</li>
-     * </ul>
+     * Parameeters:
+     *
+     * - filter-string: Return categories whose names contain this pattern.
+     * - page: The page number to return.
+     * - per_page: The limit of items to return.
+     * - orderby: The field to order by.
+     * - direction: Sorting direction, asc for ascending and desc for descending.
+     * - showChildrenCount: true to include the count of child categories, false to exclude it.
+     * - allLevels: A Boolean value. If TRUE, the search will include categories at any level, ignoring the childrenCategories parameter. If showChildrenCount is TRUE, this parameter is ignored.
+     *
      * <p>
      * Url example: v1/categories/children?filter=test&page=0&per_page=5&orderby=category_name
      *
@@ -238,7 +246,8 @@ public class CategoriesResource {
             @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
             @QueryParam("inode") final String inode,
-            @QueryParam("showChildrenCount") final boolean showChildrenCount) throws DotDataException, DotSecurityException {
+            @QueryParam("showChildrenCount") final boolean showChildrenCount,
+            @QueryParam("allLevels") final boolean allLevels) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -257,6 +266,7 @@ public class CategoriesResource {
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put("inode", inode);
         extraParams.put("childrenCategories", true);
+        extraParams.put("searchInAllLevels", allLevels);
 
         try {
             response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
@@ -272,6 +282,79 @@ public class CategoriesResource {
         }
 
         return response;
+    }
+
+    /**
+     * Response with the list of parents for a specific set of {@link Category}.
+     *
+     * This ned point receive a list the {@link Category}'s endpoint as follow:
+     *
+     * <code>
+     *     {
+     *         "inodes": ["352ca17e238357ce12e9dff10afc8516", "c0ab974897f8d37c98afa4bba74ef9f1"]
+     *     }
+     * </code>
+     *
+     * The output is going to be something like:
+     *
+     * <code>
+     *     {
+     *         entity: [
+     *              {
+     *                  "inode": "352ca17e238357ce12e9dff10afc8516",
+     *                  "parentList": [
+     *                       {
+     *                          'categoryName': 'Grand Parent Name',
+     *                          'key': 'Grand Parent  Key',
+     *                          'inode': 'Grand Parent  inode'
+     *                      },
+     *                       {
+     *                          'categoryName': 'Parent Name',
+     *                          'key': 'Parent  Key',
+     *                          'inode': 'Parent  inode'
+     *                      }
+     *                  ]
+     *              },
+     *              {
+     *                  "inode": "c0ab974897f8d37c98afa4bba74ef9f1",
+     *                  "parentList": [
+     *                       {
+     *                          'categoryName': 'Category name value',
+     *                          'key': 'Key value',
+     *                          'inode': 'inode value'
+     *                      }
+     *                  ]
+     *              }
+     *         ]
+     *     }
+     * </code>
+     *
+     *  parentList is the list of parents where the 0 is the more top level parent and the last one is the direct
+     *  parent.
+     *
+     * @param httpRequest
+     * @param httpResponse
+     * @param form
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+        @Path(("/hierarchy"))
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final Response getHierarchy(@Context final HttpServletRequest httpRequest,
+                                       @Context final HttpServletResponse httpResponse,
+                                       final CategoryInodesForm form) throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> "Getting the List of Parents for the follow categories: " +
+                form.getInodes().stream().collect(Collectors.joining(",")));
+
+        webResource.init(null, httpRequest, httpResponse, true, null);
+
+        return Response.ok(
+                new HierarchyShortCategoriesResponseView(categoryAPI.findHierarchy(form.getInodes()))).build();
     }
 
     /**
@@ -463,7 +546,7 @@ public class CategoriesResource {
                 : this.getChildren(httpRequest, httpResponse, categoryEditForm.getFilter(),
                         categoryEditForm.getPage(),
                         categoryEditForm.getPerPage(), "", categoryEditForm.getDirection(),
-                        categoryEditForm.getParentInode(), true);
+                        categoryEditForm.getParentInode(), true, false);
     }
 
     /**

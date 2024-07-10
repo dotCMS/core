@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     ChangeDetectionStrategy,
     Component,
@@ -7,7 +8,7 @@ import {
     inject
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { filter } from 'rxjs/operators';
 
@@ -29,18 +30,17 @@ import { RowComponent } from '../row/row.component';
     selector: 'dotcms-layout',
     standalone: true,
     imports: [RowComponent],
-    template: `@for (row of pageAsset.layout.body.rows; track $index) {
+    template: `@for (row of this.pageAsset?.layout?.body?.rows; track $index) {
         <dotcms-row [row]="row" />
     }`,
     styleUrl: './dotcms-layout.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotcmsLayoutComponent implements OnInit {
-    @Input({ required: true }) pageAsset!: DotCMSPageAsset;
+    @Input({ required: true }) pageAsset: DotCMSPageAsset | null = null;
     @Input({ required: true }) components!: Record<string, DynamicComponentEntity>;
 
     private readonly route = inject(ActivatedRoute);
-    private readonly router = inject(Router);
     private readonly pageContextService = inject(PageContextService);
     private readonly destroyRef$ = inject(DestroyRef);
 
@@ -52,22 +52,16 @@ export class DotcmsLayoutComponent implements OnInit {
             )
             .subscribe((urlSegments) => {
                 const pathname = '/' + urlSegments.join('/');
-                const config = {
-                    pathname,
-                    onReload: () => {
-                        // Reload the page when the user edit the page
-                        this.router.navigate([pathname], {
-                            onSameUrlNavigation: 'reload' // Force Angular to reload the page
-                        });
-                    }
-                };
-                initEditor(config);
+
+                initEditor({ pathname });
                 updateNavigation(pathname || '/');
             });
     }
 
     ngOnChanges() {
         //Each time the layout changes, we need to update the context
-        this.pageContextService.setContext(this.pageAsset, this.components);
+        if (this.pageAsset !== null) {
+            this.pageContextService.setContext(this.pageAsset, this.components);
+        }
     }
 }
