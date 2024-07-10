@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Actionlet(onlyBatch = true)
 public class DotEmbeddingsActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID = 1L;
