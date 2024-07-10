@@ -1,11 +1,9 @@
 @if (isInsideEditor) {
 <editor
     [init]="init"
-    [inline]="true"
     [initialValue]="content"
     (onMouseDown)="onMouseDown($event)"
-    (onFocusIn)="onFocusIn($event)"
-    (onFocusOut)="onFocusOut($event)" />
+    (onFocusOut)="onFocusOut()" />
 } @else { @if(format === 'html') {
 <div [innerHTML]="safeContent"></div>
 } @else {

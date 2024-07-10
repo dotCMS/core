@@ -43,18 +43,26 @@ import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
 export class DotEditableTextComponent implements OnInit, OnChanges {
     @ViewChild(EditorComponent) editorComponent!: EditorComponent;
 
-    @Input() fieldName = '';
     @Input() mode: TINYMCE_MODE = 'plain';
     @Input() format: TINYMCE_FORMAT = 'text';
     @Input() contentlet!: DotCMSContentlet;
+    @Input() fieldName = '';
 
-    protected init!: EditorComponent['init'];
-    protected content!: string;
+    protected content = '';
     protected safeContent!: SafeHtml;
+    protected init!: EditorComponent['init'];
     protected readonly isInsideEditor = isInsideEditor();
 
     readonly #client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
     readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
+
+    get editor() {
+        return this.editorComponent.editor;
+    }
+
+    get onNumberOfPages() {
+        return this.contentlet['onNumberOfPages'];
+    }
 
     @HostListener('window:message', ['$event'])
     onMessage(event: MessageEvent) {
@@ -65,14 +73,6 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
         this.editorComponent.editor.focus();
     }
 
-    get editor() {
-        return this.editorComponent.editor;
-    }
-
-    get onNumberOfPages() {
-        return this.contentlet['onNumberOfPages'];
-    }
-
     ngOnInit() {
         this.init = {
             ...TINYMCE_CONFIG[this.mode],
@@ -81,38 +81,49 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges() {
-        this.content = this.contentlet[this.fieldName];
+        this.content = this.contentlet[this.fieldName] || '';
         this.safeContent = this.#sanitizer.bypassSecurityTrustHtml(this.content);
     }
 
-    onMouseDown(eventObj: EventObj<MouseEvent>) {
-        if (!(this.onNumberOfPages > 1) || this.editorComponent.editor.hasFocus()) {
+    /**
+     * Handle mouse down event
+     *
+     * @param {EventObj<MouseEvent>} { event }
+     * @return {*}
+     * @memberof DotEditableTextComponent
+     */
+    onMouseDown({ event }: EventObj<MouseEvent>) {
+        if (this.onNumberOfPages <= 1 || this.editorComponent.editor.hasFocus()) {
             return;
         }
 
         const { inode, languageId: language } = this.contentlet;
-        const { event } = eventObj;
 
         event.stopPropagation();
         event.preventDefault();
 
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
-            payload: {
-                dataset: {
-                    inode,
-                    language,
-                    fieldName: this.fieldName
+        try {
+            postMessageToEditor({
+                action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                payload: {
+                    dataset: {
+                        inode,
+                        language,
+                        fieldName: this.fieldName
+                    }
                 }
-            }
-        });
+            });
+        } catch (error) {
+            console.error('Failed to post message to editor:', error);
+        }
     }
-
-    onFocusIn(_event: EventObj<FocusEvent>) {
-        this.editor.setDirty(false);
-    }
-
-    onFocusOut(_event: EventObj<FocusEvent>) {
+    /**
+     * Handle focus out event
+     *
+     * @return {*}
+     * @memberof DotEditableTextComponent
+     */
+    onFocusOut() {
         const content = this.editor.getContent({ format: this.format });
 
         if (!this.editor.isDirty() || !this.didContentChange(content)) {
@@ -121,19 +132,31 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
 
         const { inode, languageId: langId } = this.contentlet;
 
-        postMessageToEditor({
-            action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
-            payload: {
-                content,
-                dataset: {
-                    inode,
-                    langId,
-                    fieldName: this.fieldName
+        try {
+            postMessageToEditor({
+                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                payload: {
+                    content,
+                    dataset: {
+                        inode,
+                        langId,
+                        fieldName: this.fieldName
+                    }
                 }
-            }
-        });
+            });
+        } catch (error) {
+            console.error('Failed to post message to editor:', error);
+        }
     }
 
+    /**
+     * Check if the content has changed
+     *
+     * @private
+     * @param {string} editedContent
+     * @return {*}
+     * @memberof DotEditableTextComponent
+     */
     private didContentChange(editedContent: string) {
         return this.content !== editedContent;
     }
