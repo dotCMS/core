@@ -54,7 +54,7 @@ public @interface Actionlet {
     boolean pushPublish() default false;
 
     /**
-     * Set this to true if the actionlet is only runnable on batches
+     * Set this to true if the actionlet is runnable only on batches
      */
     boolean onlyBatch() default false;
 }
