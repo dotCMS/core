@@ -8,7 +8,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DialogStatus, DotEmaDialogStore } from './dot-ema-dialog.store';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
-import { EDIT_CONTENTLET_URL, PAYLOAD_MOCK } from '../../../shared/consts';
+import { LAYOUT_URL, PAYLOAD_MOCK } from '../../../shared/consts';
+import { DotPage } from '../../../shared/models';
 
 describe('DotEmaDialogStoreService', () => {
     let spectator: SpectatorService<DotEmaDialogStore>;
@@ -69,9 +70,19 @@ describe('DotEmaDialogStoreService', () => {
             title: 'test'
         });
 
+        const queryParams = new URLSearchParams({
+            p_p_id: 'content',
+            p_p_action: '1',
+            p_p_state: 'maximized',
+            p_p_mode: 'view',
+            _content_struts_action: '/ext/contentlet/edit_contentlet',
+            _content_cmd: 'edit',
+            inode: '123'
+        });
+
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
-                url: EDIT_CONTENTLET_URL + '123',
+                url: LAYOUT_URL + '?' + queryParams.toString(),
                 status: DialogStatus.LOADING,
                 header: 'test',
                 type: 'content'
@@ -86,9 +97,19 @@ describe('DotEmaDialogStoreService', () => {
             title: 'test'
         });
 
+        const queryParams = new URLSearchParams({
+            p_p_id: 'content',
+            p_p_action: '1',
+            p_p_state: 'maximized',
+            p_p_mode: 'view',
+            _content_struts_action: '/ext/contentlet/edit_contentlet',
+            _content_cmd: 'edit',
+            inode: '123'
+        });
+
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
-                url: EDIT_CONTENTLET_URL + '123&isURLMap=true',
+                url: LAYOUT_URL + '?' + queryParams.toString() + '&isURLMap=true',
                 status: DialogStatus.LOADING,
                 header: 'test',
                 type: 'content'
@@ -220,6 +241,44 @@ describe('DotEmaDialogStoreService', () => {
                 type: 'content'
             });
             done();
+        });
+    });
+
+    it('should update the state to show dialog for a translation', () => {
+        spectator.service.translatePage({
+            page: {
+                inode: '123',
+                liveInode: '1234',
+                stInode: '12345',
+                live: true,
+                title: 'test'
+            } as DotPage,
+            newLanguage: 2
+        });
+
+        const queryParams = new URLSearchParams({
+            p_p_id: 'content',
+            p_p_action: '1',
+            p_p_state: 'maximized',
+            angularCurrentPortlet: 'edit-page',
+            _content_sibbling: '1234',
+            _content_cmd: 'edit',
+            p_p_mode: 'view',
+            _content_sibblingStructure: '1234',
+            _content_struts_action: '/ext/contentlet/edit_contentlet',
+            inode: '',
+            lang: '2',
+            populateaccept: 'true',
+            reuseLastLang: 'true'
+        });
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state).toEqual({
+                url: LAYOUT_URL + '?' + queryParams.toString(),
+                status: DialogStatus.LOADING,
+                header: 'test',
+                type: 'content'
+            });
         });
     });
 });

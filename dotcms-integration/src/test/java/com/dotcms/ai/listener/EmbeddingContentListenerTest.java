@@ -19,6 +19,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.liferay.portal.model.User;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -30,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.dotmarketing.util.ThreadUtils.sleep;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -205,7 +208,10 @@ public class EmbeddingContentListenerTest {
     }
 
     private static void removeContentRelated() {
-        contentlets.forEach(contentlet -> {
+        // As we use the same mechanism to create contentlets,
+        // using deterministic identifiers this collection might have duplicates
+        contentlets.stream().filter(distinctByKey(Contentlet::getIdentifier)).collect(Collectors.toList())
+        .forEach(contentlet -> {
             try {
                 contentletApi.archive(contentlet, user, false);
                 contentletApi.delete(contentlet, user, false);
@@ -217,5 +223,17 @@ public class EmbeddingContentListenerTest {
                 contentTypeApi.delete(contentType);
             } catch (DotDataException | DotSecurityException e) {}
         });
+    }
+
+    /**
+     * Returns a predicate that filters elements based on a key extracted from each element.
+     * @param keyExtractor the key extractor
+     * @return the predicate
+     * @param <T> the type of the input to the predicate
+     */
+    public static <T> java.util.function.Predicate<T> distinctByKey(
+            Function<? super T, Object> keyExtractor) {
+        Set<Object> seen = ConcurrentHashMap.newKeySet();
+        return t -> seen.add(keyExtractor.apply(t));
     }
 }

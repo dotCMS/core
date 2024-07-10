@@ -11,12 +11,14 @@ import { MessageService } from 'primeng/api';
 import {
     DotContentletLockerService,
     DotExperimentsService,
+    DotLanguagesService,
     DotLicenseService,
     DotMessageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotExperimentsServiceMock,
+    DotLanguagesServiceMock,
     DotLicenseServiceMock,
     getRunningExperimentMock,
     mockDotDevices
@@ -39,6 +41,10 @@ describe('DotEmaInfoDisplayComponent', () => {
         providers: [
             EditEmaStore,
             MessageService,
+            {
+                provide: DotLanguagesService,
+                useValue: new DotLanguagesServiceMock()
+            },
             {
                 provide: DotExperimentsService,
                 useValue: DotExperimentsServiceMock
@@ -121,7 +127,8 @@ describe('DotEmaInfoDisplayComponent', () => {
                 spectator.triggerEventHandler(infoAction, 'onClick', {});
 
                 expect(updateEditorDataSpy).toHaveBeenCalledWith({
-                    mode: EDITOR_MODE.EDIT
+                    mode: EDITOR_MODE.EDIT,
+                    device: null
                 });
             });
 
@@ -149,7 +156,8 @@ describe('DotEmaInfoDisplayComponent', () => {
                 spectator.triggerEventHandler(infoAction, 'onClick', {});
 
                 expect(updateEditorDataSpy).toHaveBeenCalledWith({
-                    mode: EDITOR_MODE.EDIT_VARIANT
+                    mode: EDITOR_MODE.EDIT_VARIANT,
+                    device: null
                 });
             });
 
@@ -177,7 +185,8 @@ describe('DotEmaInfoDisplayComponent', () => {
                 spectator.triggerEventHandler(infoAction, 'onClick', {});
 
                 expect(updateEditorDataSpy).toHaveBeenCalledWith({
-                    mode: EDITOR_MODE.PREVIEW_VARIANT
+                    mode: EDITOR_MODE.PREVIEW_VARIANT,
+                    device: null
                 });
             });
         });

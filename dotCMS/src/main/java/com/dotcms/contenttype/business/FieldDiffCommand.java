@@ -8,14 +8,13 @@ import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.diff.Differentiator;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableMap;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
@@ -51,7 +50,7 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
         final DiffResult.Builder<FieldDiffItemsKey, Field> builder = new DiffResult.Builder<>();
 
         final Map<FieldDiffItemsKey, Field> fieldsToDelete = currentObjects.entrySet().stream()
-                .filter(entry -> !newObjects.containsKey(entry.getKey()))
+                .filter(entry -> findField(newObjects.values(), entry.getValue()).isEmpty())
                 .collect(Collectors.toMap(
                         entry ->
                                 new FieldDiffItemsKey(
@@ -62,7 +61,7 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
                 ));
 
         final Map<FieldDiffItemsKey, Field> fieldsToAdd = newObjects.entrySet().stream()
-                .filter(entry -> !currentObjects.containsKey(entry.getKey()))
+                .filter(entry -> findField(currentObjects.values(), entry.getValue()).isEmpty())
                 .collect(Collectors.toMap(
                         entry ->
                                 new FieldDiffItemsKey(
@@ -75,11 +74,14 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
         final Map<FieldDiffItemsKey, Field> fieldsToUpdate = new HashMap<>();
         for (final Map.Entry<String, Field> entry : newObjects.entrySet()) {
 
-            if (currentObjects.containsKey(entry.getKey())) {
+            final var foundFieldOptional = findField(currentObjects.values(), entry.getValue());
+            if (foundFieldOptional.isPresent()) {
 
-                final Collection<DiffItem> diffItems = this.fieldDifferentiator.diff(currentObjects.get(entry.getKey()), entry.getValue());
+                final Collection<DiffItem> diffItems = this.fieldDifferentiator.diff(
+                        foundFieldOptional.get(), entry.getValue()
+                );
+
                 if (UtilMethods.isSet(diffItems)) {
-
                     fieldsToUpdate.put(
                             new FieldDiffItemsKey(entry.getKey(), diffItems),
                             ensureFieldContentTypeId(contentTypeId, entry.getValue())
@@ -90,6 +92,37 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
 
         return builder.putAllToDelete(fieldsToDelete).
                 putAllToAdd(fieldsToAdd).putAllToUpdate(fieldsToUpdate).build();
+    }
+
+    /**
+     * Find a field in a collection of fields. It tries to find the field by id first, and if it is
+     * not found, it tries to find the field by variable.
+     *
+     * @param fields   the collection of fields to search
+     * @param toSearch the field to be found
+     * @return an Optional containing the found field, or an empty Optional if the field is not
+     * found
+     */
+    private Optional<Field> findField(final Collection<Field> fields, final Field toSearch) {
+
+        for (final Field field : fields) {
+
+            // Trying first with id
+            if ((StringUtils.isNotEmpty(field.id()) && StringUtils.isNotEmpty(toSearch.id()))
+                    && field.id().equals(toSearch.id())) {
+                return Optional.of(field);
+            }
+
+            // Trying with the variable
+            if ((StringUtils.isNotEmpty(field.variable())
+                    && StringUtils.isNotEmpty(toSearch.variable()))
+                    && field.variable().equalsIgnoreCase(toSearch.variable())) {
+                return Optional.of(field);
+            }
+
+        }
+
+        return Optional.empty();
     }
 
     private Collection<DiffItem> diff(final Field field1, final Field field2) {
@@ -149,11 +182,6 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
         if (this.diff(field1.name(), field2.name()))  {
 
             diffItems.add(new DiffItem.Builder().variable("name").message(field1.name() + " != " + field2.name()).build());
-        }
-
-        if (this.diff(field1.id(), field2.id()))  {
-
-            diffItems.add(new DiffItem.Builder().variable("id").message(field1.id() + " != " + field2.id()).build());
         }
 
         if (this.diff(field1.hint(), field2.hint()))  {

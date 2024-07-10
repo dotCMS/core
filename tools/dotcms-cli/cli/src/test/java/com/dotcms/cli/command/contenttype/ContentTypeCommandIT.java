@@ -43,8 +43,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -378,6 +378,26 @@ class ContentTypeCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: We want to filter the content types by var name and direction asc
+     * Expected result: The output should come back ordered by varName and direction ASC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Ascending_Lower_Case() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "asc");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedAsc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
      * Given scenario: We want to filter the content types by var name
      * Expected result: The output should come back ordered by varName and direction DESC
      */
@@ -389,6 +409,26 @@ class ContentTypeCommandIT extends CommandTest {
             commandLine.setOut(out);
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
                     "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "DESC");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final List<String> strings = extractRowsByFieldName("variable",output);
+            Assertions.assertEquals( 3, strings.size());
+            Assertions.assertTrue(isSortedDesc(strings),()->"The strings: "+strings);
+        }
+    }
+
+    /**
+     * Given scenario: We want to filter the content types by var name and direction desc
+     * Expected result: The output should come back ordered by varName and direction DESC
+     */
+    @Test
+    void Test_Command_Content_Order_By_Variable_Descending_Lower_Case() {
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,
+                    "--page", "0", "--pageSize", "3", "--order", "variable", "--direction", "desc");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             final List<String> strings = extractRowsByFieldName("variable",output);
@@ -1158,7 +1198,7 @@ class ContentTypeCommandIT extends CommandTest {
                 contentTypeAPI.getContentType(newContentType3, 1L, false);
                 Assertions.fail(" 404 Exception should have been thrown here.");
             } catch (Exception e) {
-                Assertions.assertTrue(e instanceof NotFoundException);
+                Assertions.assertInstanceOf(NotFoundException.class, e);
             }
 
             byVarName = contentTypeAPI.getContentType(newContentType4.variable(), 1L, false);

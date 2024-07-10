@@ -1,11 +1,14 @@
 package com.dotcms.common;
 
+import static com.dotcms.common.WorkspaceManager.*;
+
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.config.WorkspaceInfo;
 import com.dotcms.model.config.WorkspaceInfo.Builder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.DefaultBean;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,8 +16,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 @DefaultBean
 @ApplicationScoped
@@ -129,7 +131,17 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     }
 
     public Optional<Workspace> findWorkspace(Path currentPath) {
-        final Optional<Path> projectRoot = findProjectRoot(currentPath);
+        // Resolve the path as it may be relative
+        final Path resolvedPath = resolvePath(currentPath);
+        logger.debugf("currentPath = %s", resolvedPath);
+
+        final File file = resolvedPath.toFile();
+        if (!file.exists()) {
+            throw new IllegalArgumentException(
+                    String.format("Path [%s] does not exist", resolvedPath)
+            );
+        }
+        final Optional<Path> projectRoot = findProjectRoot(resolvedPath);
         return projectRoot.map(this::workspace);
     }
 

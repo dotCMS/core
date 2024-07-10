@@ -95,8 +95,8 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                         json))
                 .getOrElseThrow(DotRuntimeException::new);
         final JSONObject dotCMSResponse = EmbeddingsAPI.impl().reduceChunksToContent(searcher, localResults);
-
         dotCMSResponse.put(AiKeys.OPEN_AI_RESPONSE, new JSONObject(openAiResponse));
+
         return dotCMSResponse;
     }
 
@@ -111,16 +111,16 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     @Override
-    public JSONObject raw(final JSONObject jsonObject) {
+    public JSONObject raw(final JSONObject json) {
         if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-            Logger.info(this.getClass(), "OpenAI request:" + jsonObject.toString(2));
+            Logger.info(this.getClass(), "OpenAI request:" + json.toString(2));
         }
 
         final String response = OpenAIRequest.doRequest(
                 config.get().getApiUrl(),
                 HttpMethod.POST,
                 config.get().getApiKey(),
-                jsonObject);
+                json);
         if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(this.getClass(), "OpenAI response:" + response);
         }
@@ -136,9 +136,9 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     @Override
     public void rawStream(final CompletionsForm promptForm, final OutputStream out) {
-        final JSONObject jsonObject = buildRequestJson(promptForm);
-        jsonObject.put(AiKeys.STREAM, true);
-        OpenAIRequest.doRequest(config.get().getApiUrl(), HttpMethod.POST, config.get().getApiKey(), jsonObject, out);
+        final JSONObject json = buildRequestJson(promptForm);
+        json.put(AiKeys.STREAM, true);
+        OpenAIRequest.doRequest(config.get().getApiUrl(), HttpMethod.POST, config.get().getApiKey(), json, out);
     }
 
     private void buildMessages(final String systemPrompt, final String userPrompt, final JSONObject json) {

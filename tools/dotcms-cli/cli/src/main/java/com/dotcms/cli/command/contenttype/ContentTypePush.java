@@ -17,8 +17,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -80,7 +80,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
         }
 
         File inputFile = this.getPushMixin().path().toFile();
-        if (!inputFile.isAbsolute()) {
+        if (!inputFile.isAbsolute() && inputFile.isFile()) {
             inputFile = Path.of(workspace.get().contentTypes().toString(), inputFile.getName())
                     .toFile();
         }

@@ -1,5 +1,8 @@
 import { Content } from './content/content-api';
 import { ErrorMessages } from './models';
+import { DotcmsClientListener } from './models/types';
+
+import { isInsideEditor } from '../editor/sdk-editor';
 
 export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
@@ -123,13 +126,11 @@ type NavApiOptions = {
     languageId?: number;
 };
 
-function isValidUrl(url: string): boolean {
+function getHostURL(url: string): URL | undefined {
     try {
-        new URL(url);
-
-        return true;
+        return new URL(url);
     } catch (error) {
-        return false;
+        return undefined;
     }
 }
 
@@ -151,6 +152,7 @@ function isValidUrl(url: string): boolean {
 export class DotCmsClient {
     private config: ClientConfig;
     private requestOptions!: ClientOptions;
+    private listeners: DotcmsClientListener[] = [];
 
     content: Content;
 
@@ -161,7 +163,9 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'dotcmsUrl' is required");
         }
 
-        if (!isValidUrl(config.dotcmsUrl)) {
+        const dotcmsHost = getHostURL(config.dotcmsUrl);
+
+        if (!dotcmsHost) {
             throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
         }
 
@@ -169,7 +173,10 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'authToken' is required");
         }
 
-        this.config = config;
+        this.config = {
+            ...config,
+            dotcmsUrl: dotcmsHost.origin
+        };
 
         this.requestOptions = {
             ...this.config.requestOptions,
@@ -237,6 +244,48 @@ export class DotCmsClient {
             }
 
             return response.json();
+        }
+    };
+
+    editor = {
+        /**
+         * `editor.on` is an asynchronous method of the `DotCmsClient` class that allows you to react to actions issued by the UVE.
+         *
+         *  NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
+         * @param action - The name of the name emitted by UVE
+         * @param callbackFn - The function to execute when the UVE emits the action
+         */
+        on: (action: string, callbackFn: (payload: unknown) => void) => {
+            if (!isInsideEditor()) {
+                return;
+            }
+
+            if (action === 'changes') {
+                const messageCallback = (event: MessageEvent) => {
+                    if (event.data.name === 'SET_PAGE_DATA') {
+                        callbackFn(event.data.payload);
+                    }
+                };
+
+                window.addEventListener('message', messageCallback);
+                this.listeners.push({ event: 'message', callback: messageCallback, action });
+            }
+        },
+        /**
+         * `editor.off` is an synchronous method of the `DotCmsClient` class that allows you to stop listening and reacting to an action issued by UVE.
+         *
+         *  NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
+         * @param action
+         */
+        off: (action: string) => {
+            const listenerIndex = this.listeners.findIndex(
+                (listener) => listener.action === action
+            );
+            if (listenerIndex !== -1) {
+                const listener = this.listeners[listenerIndex];
+                window.removeEventListener(listener.event, listener.callback);
+                this.listeners.splice(listenerIndex, 1);
+            }
         }
     };
 

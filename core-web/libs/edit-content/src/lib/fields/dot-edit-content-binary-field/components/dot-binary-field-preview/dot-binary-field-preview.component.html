@@ -1,23 +1,21 @@
 <div
     [ngClass]="{ 'preview-container--fade': this.metadata?.editableAsText }"
     class="preview-container">
-    <div
-        *ngIf="this.metadata?.editableAsText; else contentThumnail"
-        (click)="this.editFile.emit()"
-        class="preview-code_container"
-        data-testId="code-preview">
-        <code>{{ content() }}</code>
-    </div>
-
-    <ng-template #contentThumnail>
+    @if (this.metadata?.editableAsText) {
+        <div
+            (click)="this.editFile.emit()"
+            class="preview-code_container"
+            data-testId="code-preview">
+            <code>{{ content() }}</code>
+        </div>
+    } @else {
         <div class="preview-image__container">
-            <dot-temp-file-thumbnail
-                *ngIf="tempFile; else contentletThumbnail"
-                [tempFile]="tempFile"
-                [iconSize]="'48px'"
-                data-testId="temp-file-thumbnail"></dot-temp-file-thumbnail>
-
-            <ng-template #contentletThumbnail>
+            @if (tempFile) {
+                <dot-temp-file-thumbnail
+                    [tempFile]="tempFile"
+                    [iconSize]="'48px'"
+                    data-testId="temp-file-thumbnail"></dot-temp-file-thumbnail>
+            } @else {
                 <dot-contentlet-thumbnail
                     [fieldVariable]="contentlet.fieldVariable"
                     [iconSize]="'48px'"
@@ -25,73 +23,80 @@
                     [playableVideo]="true"
                     data-testId="contentlet-thumbnail">
                 </dot-contentlet-thumbnail>
-            </ng-template>
+            }
         </div>
-
         <div class="preview-metadata__container">
             <span class="preview-metadata_header">{{ title }}</span>
-            <div *ngIf="metadata.width && metadata.height" class="preview-metadata">
-                <i class="pi pi-arrows-alt"></i>
-                <span>{{ metadata.width }} x {{ metadata.height }}</span>
-            </div>
-            <div *ngIf="metadata.fileSize" class="preview-metadata">
-                <i class="pi pi-file"></i>
-                <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
-            </div>
+            @if (metadata.width && metadata.height) {
+                <div class="preview-metadata">
+                    <i class="pi pi-arrows-alt"></i>
+                    <span>{{ metadata.width }} x {{ metadata.height }}</span>
+                </div>
+            }
+            @if (metadata.fileSize) {
+                <div class="preview-metadata">
+                    <i class="pi pi-file"></i>
+                    <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
+                </div>
+            }
         </div>
-    </ng-template>
+    }
 
     <div class="preview-resource-links__actions">
         <p-button
             (click)="visibility = !visibility"
-            styleClass="p-button-rounded p-button-sm p-button-secondary p-button-outlined"
+            styleClass="p-button-rounded p-button-sm p-button-outlined"
             data-testId="info-btn"
             icon="pi pi-info" />
 
-        <p-button
-            (click)="downloadAsset()"
-            styleClass="p-button-rounded p-button-sm p-button-secondary p-button-outlined"
-            data-testId="download-btn"
-            icon="pi pi-download" />
+        @if (contentlet) {
+            <p-button
+                (click)="downloadAsset()"
+                styleClass="p-button-rounded p-button-sm p-button-outlined"
+                data-testId="download-btn"
+                icon="pi pi-download" />
+        }
     </div>
 
     <div class="preview-metadata__actions">
         <p-button
             (click)="removeFile.emit()"
             [label]="'dot.common.remove' | dm"
-            styleClass="p-button-link p-button-sm p-button-secondary"
+            styleClass="p-button-link p-button-sm"
             data-testId="remove-button"
             icon="pi pi-trash"></p-button>
-        <p-button
-            *ngIf="isEditable"
-            (click)="onEdit()"
-            [label]="'dot.common.edit' | dm"
-            severity="secondary"
-            styleClass="p-button-outlined p-button-sm p-button-secondary"
-            data-testId="edit-button"
-            icon="pi pi-pencil"></p-button>
+        @if (isEditable) {
+            <p-button
+                (click)="onEdit()"
+                [label]="'dot.common.edit' | dm"
+                severity="secondary"
+                styleClass="p-button-outlined p-button-sm "
+                data-testId="edit-button"
+                icon="pi pi-pencil"></p-button>
+        }
     </div>
 
     <div class="preview-metadata__action--responsive">
-        <p-button
-            *ngIf="isEditable"
-            (click)="onEdit()"
-            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
-            data-testId="edit-button-responsive"
-            icon="pi pi-pencil"></p-button>
+        @if (isEditable) {
+            <p-button
+                (click)="onEdit()"
+                styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+                data-testId="edit-button-responsive"
+                icon="pi pi-pencil"></p-button>
+        }
         <p-button
             (click)="visibility = !visibility"
-            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
             data-testId="infor-button-responsive"
             icon="pi pi-info"></p-button>
         <p-button
             (click)="downloadAsset()"
-            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
             data-testId="download-btn-responsive"
             icon="pi pi-download" />
         <p-button
             (click)="removeFile.emit()"
-            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
             data-testId="remove-button-responsive"
             icon="pi pi-trash"></p-button>
     </div>
@@ -122,7 +127,7 @@
     </div>
 
     @if (contentlet) {
-        @for (sourceLink of this.resourceLinks(); track $index; let last = $last) {
+        @for (sourceLink of this.resourceLinks(); track $index) {
             @if (sourceLink.show) {
                 <div [attr.data-testId]="'resource-link-' + sourceLink.key" class="file-info__item">
                     <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
@@ -151,7 +156,7 @@
         <p-button
             (click)="visibility = false"
             [label]="'Cancel' | dm"
-            styleClass="p-button-secondary p-button-outlined"
+            styleClass="p-button-outlined"
             data-testId="dialog-cancel" />
     </ng-template>
 </p-dialog>

@@ -18,8 +18,8 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -87,7 +87,7 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>, 
         }
 
         File inputFile = this.getPushMixin().path().toFile();
-        if (!inputFile.isAbsolute()) {
+        if (!inputFile.isAbsolute() && inputFile.isFile()) {
             inputFile = Path.of(workspace.get().sites().toString(), inputFile.getName())
                     .toFile();
         }

@@ -12,12 +12,13 @@ import com.dotcms.cli.exception.ForceSilentExitException;
 import io.quarkus.arc.Arc;
 import io.quarkus.devtools.messagewriter.MessageWriter;
 import io.quarkus.logging.Log;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.resteasy.specimpl.BuiltResponse;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.ColorScheme;
@@ -25,6 +26,10 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
 
 public class OutputOptionMixin implements MessageWriter {
+
+    // Configuration values for exception message abbreviation.
+    Boolean exceptionAbbreviateEnabled;
+    Integer exceptionMaxWidth;
 
     static final boolean picocliDebugEnabled = "DEBUG".equalsIgnoreCase(System.getProperty("picocli.trace"));
 
@@ -282,9 +287,9 @@ public class OutputOptionMixin implements MessageWriter {
      */
     private String getMessage(final Exception originalException, final Exception handledEx) {
 
-        var message =  abbreviate(handledEx.getMessage(), "...", 200);
+        var message = abbreviateMessageIfNeeded(handledEx);
 
-        if(handledEx instanceof WebApplicationException){
+        if (handledEx instanceof WebApplicationException) {
             message = getWebApplicationExceptionMessage((WebApplicationException) handledEx);
         }
 
@@ -295,16 +300,61 @@ public class OutputOptionMixin implements MessageWriter {
             if (message != null) {
                 message = String.format(
                         "%s %n %s",
-                        abbreviate(originalException.getMessage(), "...", 200),
-                        abbreviate(message, "...", 200)
+                        abbreviateMessageIfNeeded(originalException.getMessage()),
+                        abbreviateMessageIfNeeded(message)
                 );
             } else {
-                message = abbreviate(originalException.getMessage(), "...", 200);
+                message = abbreviateMessageIfNeeded(originalException);
             }
         }
 
         return message != null ? message : "An exception " + handledEx.getClass().getSimpleName()
                 + " Occurred With no error message provided.";
+    }
+
+    /**
+     * Abbreviates the exception message if needed based on the configuration.
+     *
+     * @param exception the exception with the message to abbreviate.
+     * @return the abbreviated exception message, if enabled; otherwise, the complete exception
+     * message.
+     */
+    private String abbreviateMessageIfNeeded(final Exception exception) {
+        return abbreviateMessageIfNeeded(exception.getMessage());
+    }
+
+    /**
+     * Abbreviates the message if needed based on the configuration.
+     *
+     * @param message the message to abbreviate.
+     * @return the abbreviated message, if enabled; otherwise, the original message.
+     */
+    private String abbreviateMessageIfNeeded(final String message) {
+
+        // If the configuration values are not set, read them from the configuration.
+        if (exceptionAbbreviateEnabled == null) {
+            readAbbreviateConfig();
+        }
+
+        if (exceptionAbbreviateEnabled) {
+            return abbreviate(message, "...", exceptionMaxWidth);
+        }
+
+        return message;
+    }
+
+    /**
+     * Reads the configuration for exception message abbreviation. Sets the values of
+     * `exceptionAbbreviateEnabled` and `exceptionMaxWidth` based on the configuration. If the
+     * configuration values are not present, the default values of `false` and `200` are used.
+     */
+    private void readAbbreviateConfig() {
+        this.exceptionAbbreviateEnabled = ConfigProvider.getConfig()
+                .getOptionalValue("exception.message.abbreviate.enabled", Boolean.class)
+                .orElse(false);
+        this.exceptionMaxWidth = ConfigProvider.getConfig()
+                .getOptionalValue("exception.message.abbreviate.maxWidth", Integer.class)
+                .orElse(200);
     }
 
     /**

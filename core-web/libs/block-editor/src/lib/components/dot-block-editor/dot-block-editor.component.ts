@@ -31,7 +31,7 @@ import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotPropertiesService, DotAiService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -63,7 +63,6 @@ import {
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
-    DotAiService,
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,

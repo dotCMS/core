@@ -48,7 +48,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-
+/**
+ * Endpoint for managing environments
+ @author jsanca
+ */
 @Path("/environment")
 public class EnvironmentResource {
 
@@ -242,7 +245,7 @@ public class EnvironmentResource {
 			if (Objects.nonNull(existingEnvironment)) {
 
 				Logger.info(getClass(), "Can't save Environment. An Environment with the given name already exists. ");
-				throw new IllegalArgumentException("An Environment with the given name" + environmentName + " already exist.");
+				throw new IllegalArgumentException("An Environment with the given name " + environmentName + " already exists.");
 			}
 
 			Logger.debug(this, ()-> "Creating environment: " + environmentName);
@@ -256,7 +259,9 @@ public class EnvironmentResource {
 
 			final Map<String, Permission> permissionsMap = new HashMap<>();
 
-			processRoles(whoCanUseList, modUser, permissionsMap, environment);
+			if (Objects.nonNull(whoCanUseList)) {
+				processRoles(whoCanUseList, modUser, permissionsMap, environment);
+			}
 
 			APILocator.getEnvironmentAPI().saveEnvironment(environment,
 					new ArrayList<>(permissionsMap.values()));
@@ -332,13 +337,23 @@ public class EnvironmentResource {
 													final User modUser) throws DotDataException, DotSecurityException {
 		
 		final String environmentName = environmentForm.getName();
-		final Environment existingEnvironment = APILocator.getEnvironmentAPI().
-				findEnvironmentByName(environmentName);
+		final Environment existingEnvironmentById = APILocator.getEnvironmentAPI()
+				.findEnvironmentById(id);
 
-		if (Objects.nonNull(existingEnvironment) && !existingEnvironment.getId().equals(id)) {
+		final Environment existingEnvironmentByName = APILocator.getEnvironmentAPI()
+				.findEnvironmentByName(environmentName);
+		if (Objects.isNull(existingEnvironmentById)
+				|| !existingEnvironmentById.getId().equals(id)) {
+
+			Logger.info(getClass(), "Can't save Environment. An Environment id that does not exist. ");
+			throw new IllegalArgumentException("An Environment with the given id " + id + " does not exist.");
+		}
+
+		if (Objects.nonNull(existingEnvironmentByName) // if trying to give an existing name
+				&& (!existingEnvironmentByName.getId().equals(id) && existingEnvironmentByName.getName().equals(environmentName))) {
 
 			Logger.info(getClass(), "Can't save Environment. An Environment with the given name already exists. ");
-			throw new IllegalArgumentException("An Environment with the given name" + environmentName + " already exist.");
+			throw new IllegalArgumentException("An Environment with the given name " + environmentName + " already exists.");
 		}
 
 		Logger.debug(this, ()-> "Updating environment: " + environmentName);
@@ -353,7 +368,9 @@ public class EnvironmentResource {
 
 		final Map<String, Permission> permissionsMap = new HashMap<>();
 
-		processRoles(whoCanUseList, modUser, permissionsMap, environment);
+		if (Objects.nonNull(whoCanUseList)) {
+			processRoles(whoCanUseList, modUser, permissionsMap, environment);
+		}
 
 		APILocator.getEnvironmentAPI().updateEnvironment(environment,
 				new ArrayList<>(permissionsMap.values()));

@@ -7,7 +7,7 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import picocli.CommandLine.ExitCode;
 
 /**

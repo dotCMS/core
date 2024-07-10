@@ -1,7 +1,7 @@
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, EDIT_MODE } from '../shared/consts';
+import { DEFAULT_PERSONA } from '../shared/consts';
 import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
@@ -96,11 +96,11 @@ export function deleteContentletFromContainer(action: ActionPayload): {
  */
 export function areContainersEquals(
     currentContainer: PageContainer,
-    containerToFind: ContainerPayload
+    containerToFind?: ContainerPayload
 ): boolean {
     return (
-        currentContainer.identifier === containerToFind.identifier &&
-        currentContainer.uuid === containerToFind.uuid
+        currentContainer.identifier === containerToFind?.identifier &&
+        currentContainer.uuid === containerToFind?.uuid
     );
 }
 
@@ -196,8 +196,7 @@ export function createPageApiUrlWithQueryParams(
         language_id: params.language_id ?? '1',
         'com.dotmarketing.persona.id':
             params['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
-        variantName: params.variantName ?? DEFAULT_VARIANT_ID,
-        mode: params.mode ?? EDIT_MODE
+        variantName: params.variantName ?? DEFAULT_VARIANT_ID
     };
 
     // Filter out undefined values and url
