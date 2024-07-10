@@ -4,6 +4,7 @@
     [inline]="true"
     [initialValue]="content"
     (onMouseDown)="onMouseDown($event)"
+    (onFocusIn)="onFocusIn($event)"
     (onFocusOut)="onFocusOut($event)" />
 } @else { @if(format === 'html') {
 <div [innerHTML]="safeContent"></div>

@@ -1,7 +1,7 @@
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { EventObj } from '@tinymce/tinymce-angular/editor/Events';
 
-import { Component, inject, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import {
@@ -16,10 +16,10 @@ import { TINYMCE_CONFIG, TINYMCE_FORMAT, TINYMCE_MODE } from './utils';
 import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
 
 @Component({
-    selector: 'editable-text',
+    selector: 'dot-editable-text',
     standalone: true,
-    templateUrl: './editable-text.component.html',
-    styleUrl: './editable-text.component.css',
+    templateUrl: './dot-editable-text.component.html',
+    styleUrl: './dot-editable-text.component.css',
     imports: [EditorComponent],
     providers: [
         {
@@ -31,7 +31,7 @@ import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
         }
     ]
 })
-export class EditableTextComponent implements OnInit {
+export class DotEditableTextComponent implements OnInit, OnChanges {
     @ViewChild(EditorComponent) editorComponent!: EditorComponent;
 
     @Input() inode = '';
@@ -39,8 +39,8 @@ export class EditableTextComponent implements OnInit {
     @Input() content = '';
     @Input() onNumberOfPages = 1;
     @Input() langId = 1;
-    @Input() mode: TINYMCE_MODE = 'minimal';
-    @Input() format: TINYMCE_FORMAT = 'html';
+    @Input() mode: TINYMCE_MODE = 'plain';
+    @Input() format: TINYMCE_FORMAT = 'text';
 
     protected init!: EditorComponent['init'];
     protected safeContent!: SafeHtml;
@@ -56,6 +56,20 @@ export class EditableTextComponent implements OnInit {
         };
 
         this.safeContent = this.#sanitizer.bypassSecurityTrustHtml(this.content);
+        window.addEventListener('message', (event) => {
+            if (event.data.name !== 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS') {
+                return;
+            }
+
+            this.editorComponent.editor.focus();
+        });
+    }
+
+    ngOnChanges() {
+        // eslint-disable-next-line no-console
+        console.log('onChanges', this.inode);
+        // eslint-disable-next-line no-console
+        console.log('onChanges', this.onNumberOfPages);
     }
 
     get editor() {
@@ -63,7 +77,7 @@ export class EditableTextComponent implements OnInit {
     }
 
     onMouseDown(eventObj: EventObj<MouseEvent>) {
-        if (!(this.onNumberOfPages > 1)) {
+        if (!(this.onNumberOfPages > 1) || this.editorComponent.editor.hasFocus()) {
             return;
         }
 
@@ -86,12 +100,17 @@ export class EditableTextComponent implements OnInit {
         });
     }
 
+    onFocusIn(_event: EventObj<FocusEvent>) {
+        this.editor.setDirty(false);
+    }
+
     onFocusOut(_event: EventObj<FocusEvent>) {
-        if (!this.editor.isDirty()) {
+        const content = this.editor.getContent({ format: this.format });
+
+        if (!this.editor.isDirty() || !this.didContentChange(content)) {
             return;
         }
 
-        const content = this.editor.getContent({ format: this.format });
         const dataset = {
             inode: this.inode,
             langId: this.langId,
@@ -105,7 +124,9 @@ export class EditableTextComponent implements OnInit {
                 dataset
             }
         });
+    }
 
-        this.editor.setDirty(false); // Reset dirty state
+    private didContentChange(editedContent: string) {
+        return this.content !== editedContent;
     }
 }

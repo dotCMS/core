@@ -1,12 +1,12 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DotCMSContentlet, EditableTextComponent } from '@dotcms/angular';
+import { DotCMSContentlet, DotEditableTextComponent } from '@dotcms/angular';
 
 @Component({
   selector: 'app-banner',
   standalone: true,
-  imports: [RouterLink, NgOptimizedImage, EditableTextComponent],
+  imports: [RouterLink, NgOptimizedImage, DotEditableTextComponent],
   template: `<div
     class="relative w-full bg-gray-200 h-96 flex justify-center items-center overflow-hidden"
   >
@@ -23,7 +23,7 @@ import { DotCMSContentlet, EditableTextComponent } from '@dotcms/angular';
       class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white"
     >
       <h2 class="mb-2 text-6xl font-bold text-shadow">
-        <editable-text
+        <dot-editable-text
           [field]="'title'"
           [inode]="contentlet.inode"
           [langId]="contentlet.languageId"
