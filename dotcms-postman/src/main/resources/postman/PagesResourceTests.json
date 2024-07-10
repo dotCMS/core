@@ -5274,6 +5274,51 @@
 			"name": "Getting Available Workflow Actions In Page",
 			"item": [
 				{
+					"name": "Find the Default Site ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Saving the Default Site's ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"host_id\", jsonData.entity.identifier);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"siteName\": \"default\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/_byname",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"_byname"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Switch To Default Site",
 					"event": [
 						{
@@ -5295,7 +5340,7 @@
 						"method": "PUT",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/site/switch/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"raw": "{{serverURL}}/api/v1/site/switch/{{host_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -5304,7 +5349,7 @@
 								"v1",
 								"site",
 								"switch",
-								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								"{{host_id}}"
 							]
 						}
 					},
@@ -5346,7 +5391,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"testPageCopy{{pagePost2}}\",\n        \"url\": \"testPageCopy{{pagePost2}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"testPageCopy{{pagePost2}}\",\n        \"cachettl\": 0,\n        \"workflow\": [\n            \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n        ]\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"languageId\": 1,\n        \"title\": \"testPageCopy{{pagePost2}}\",\n        \"url\": \"testPageCopy{{pagePost2}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"testPageCopy{{pagePost2}}\",\n        \"cachettl\": 0,\n        \"workflow\": [\n            \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n        ]\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -5416,7 +5461,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"hostId\":\"{{host_id}}\",\n    \"url\":\"/testPageCopy{{pagePost2}}\"\n}",
+							"raw": "{\n    \"hostId\":\"{{host_id}}\",\n    \"url\":\"/testPageCopy{{pagePost2}}\",\n    \"languageId\": \"1\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
