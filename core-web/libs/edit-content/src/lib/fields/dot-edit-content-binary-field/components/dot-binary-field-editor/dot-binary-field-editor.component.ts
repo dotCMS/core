@@ -205,8 +205,8 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
 
     private updateLanguageForFileExtension(fileExtension: string) {
         const { id, mimetypes, extensions } = this.getLanguage(fileExtension) || {};
-        this.mimeType = mimetypes?.[0];
-        this.extension = extensions?.[0];
+        this.mimeType = mimetypes?.[0] || 'plain/text';
+        this.extension = extensions?.[0] || 'txt';
         this.updateEditorLanguage(id);
     }
 
