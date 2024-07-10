@@ -1,5 +1,9 @@
 <form (ngSubmit)="generate.emit()" [formGroup]="form">
-    <p-accordion [activeIndex]="0" collapseIcon="pi pi-angle-up" expandIcon="pi pi-angle-down">
+    <p-accordion
+        [multiple]="false"
+        [activeIndex]="0"
+        collapseIcon="pi pi-angle-up"
+        expandIcon="pi pi-angle-down">
         <p-accordionTab
             [disabled]="isLoading"
             [header]="'block-editor.extension.ai-image.settings' | dm"
@@ -31,7 +35,7 @@
                     [options]="orientationOptions"
                     formControlName="size"
                     inputId="orientation"
-                    styleClass="w-full"></p-dropdown>
+                    styleClass="w-full" />
             </div>
         </p-accordionTab>
         <p-accordionTab
