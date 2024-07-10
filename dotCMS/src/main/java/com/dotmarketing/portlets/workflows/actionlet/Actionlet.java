@@ -52,4 +52,9 @@ public @interface Actionlet {
      * Set this to true if the actionlet push publish a content
      */
     boolean pushPublish() default false;
+
+    /**
+     * Set this to true if the actionlet is only runnable on batches
+     */
+    boolean onlyBatch() default false;
 }
