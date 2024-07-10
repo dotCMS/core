@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotcms.content.business.json.ContentletJsonAPI;
-import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -91,7 +90,7 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
         final boolean hasJsonFields = (contentletJsonAPI.isPersistContentAsJson() && UtilMethods.isSet(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON)));
         if(hasJsonFields){
           try {
-              String json  = replaceBadContentTypes(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString(), type.variable());
+              String json  = replaceBadContentTypes(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString(),type.id());
               json = UtilMethods.escapeHTMLCodeFromJSON(json);//Escape HTML chars from JSON
               contentlet = contentletJsonAPI.mapContentletFieldsFromJson(json);
           }catch (Exception e){
@@ -143,7 +142,8 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
      */
     private static String replaceBadContentTypes(String jsonStringIn, String contentType){
 
-        if(replaceBadContentTypesInJson.get()){
+        if(Boolean.TRUE.equals(replaceBadContentTypesInJson.get()) && !jsonStringIn.contains("\"contentType\": \"" + contentType+"\"")){
+
             JSONObject jsonObject = new JSONObject(jsonStringIn);
             jsonObject.put("contentType", contentType);
             return jsonObject.toString();
