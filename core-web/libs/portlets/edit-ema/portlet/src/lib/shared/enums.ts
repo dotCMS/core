@@ -2,7 +2,8 @@ export enum NOTIFY_CUSTOMER {
     EMA_RELOAD_PAGE = 'ema-reload-page', // We need to reload the ema page
     EMA_REQUEST_BOUNDS = 'ema-request-bounds',
     EMA_EDITOR_PONG = 'ema-editor-pong',
-    EMA_SCROLL_INSIDE_IFRAME = 'scroll-inside-iframe'
+    EMA_SCROLL_INSIDE_IFRAME = 'scroll-inside-iframe',
+    SET_PAGE_DATA = 'SET_PAGE_DATA'
 }
 
 // All the custom events that come from the JSP Iframe
@@ -39,4 +40,10 @@ export enum EDITOR_MODE {
     SOCIAL_MEDIA = 'social-media',
     INLINE_EDITING = 'inline-editing',
     LOCKED = 'locked'
+}
+
+export enum PAGE_MODE {
+    EDIT = 'EDIT_MODE',
+    PREVIEW = 'PREVIEW_MODE',
+    LIVE = 'LIVE'
 }
