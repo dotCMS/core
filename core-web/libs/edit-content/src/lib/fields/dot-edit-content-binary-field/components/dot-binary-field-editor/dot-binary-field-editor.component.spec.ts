@@ -181,8 +181,8 @@ describe('DotBinaryFieldEditorComponent', () => {
 
             tick(355);
 
-            expect(component.monacoOptions()).not.toEqual(expectedMonacoOptions);
-            expect(component.mimeType).not.toBe('text/x-velocity');
+            expect(component.monacoOptions()).toEqual(expectedMonacoOptions);
+            expect(component.mimeType).toBe('text/x-velocity');
         }));
         it('should fallback with plain text if language is not found', fakeAsync(() => {
             const expectedMonacoOptions = {
