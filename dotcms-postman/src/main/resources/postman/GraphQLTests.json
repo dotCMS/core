@@ -10451,7 +10451,7 @@
 					"response": []
 				},
 				{
-					"name": "Save Content",
+					"name": "Save test content for pagination",
 					"event": [
 						{
 							"listen": "test",
@@ -10467,7 +10467,7 @@
 									"if (currentCount > 1){",
 									"    currentCount = currentCount - 1;",
 									"    pm.collectionVariables.set(\"contentCount\", currentCount);",
-									"    pm.execution.setNextRequest(\"Save Content\");",
+									"    postman.setNextRequest(\"Save test content for pagination\");",
 									"}"
 								],
 								"type": "text/javascript",
