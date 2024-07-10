@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "b6d2acb2-66fa-49d6-bc67-8f7de74d7417",
+		"_postman_id": "19243b00-9530-4d9f-9a89-ee76d61a0108",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -5271,43 +5271,10 @@
 			]
 		},
 		{
-			"name": "GetAvailableActionsPerPage",
+			"name": "Getting Available Workflow Actions In Page",
 			"item": [
 				{
-					"name": "CallLogout",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Check response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Logout successfully\");",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/logout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "SwitchToDefaultSiteJustInCase",
+					"name": "Switch To Default Site",
 					"event": [
 						{
 							"listen": "test",
@@ -5344,7 +5311,7 @@
 					"response": []
 				},
 				{
-					"name": "Create Test Page",
+					"name": "Create a Test Page",
 					"event": [
 						{
 							"listen": "test",
@@ -5356,9 +5323,7 @@
 									"    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
 									"    pm.collectionVariables.set(\"host_id\", jsonData.entity.host);",
 									"});",
-									"",
-									"// ignoring following test for now",
-									"postman.setNextRequest(\"Put Create Page With CacheTTL 100\")"
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -5413,7 +5378,7 @@
 					"response": []
 				},
 				{
-					"name": "GetAvailableActions",
+					"name": "Get Workflow Actions",
 					"event": [
 						{
 							"listen": "test",
@@ -5425,6 +5390,20 @@
 									"    pm.expect(jsonData.entity.actions.length).to.greaterThan(0);",
 									"    pm.expect(jsonData.entity.page.pageUrl).to.contains('testPageCopy');",
 									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.test(\"Waiting for the test HTML Page to be ready\", function () {",
+									"    var timeout = 2000;",
+									"    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
+									"});",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -5461,6 +5440,7 @@
 					"response": []
 				}
 			],
+			"description": "Retrieves the list of Workflow Actions that are availbale for a given HTML Page.",
 			"event": [
 				{
 					"listen": "prerequest",
