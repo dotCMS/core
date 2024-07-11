@@ -14,9 +14,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlContainer, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
-import { ChipsModule } from 'primeng/chips';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { delay } from 'rxjs/operators';
 
@@ -41,12 +38,9 @@ import { CategoryFieldStore } from './store/content-category-field.store';
     selector: 'dot-edit-content-category-field',
     standalone: true,
     imports: [
-        ChipsModule,
         ReactiveFormsModule,
         ButtonModule,
-        ChipModule,
         NgClass,
-        TooltipModule,
         DotMessagePipe,
         DotDynamicDirective,
         DotCategoryFieldChipsComponent
