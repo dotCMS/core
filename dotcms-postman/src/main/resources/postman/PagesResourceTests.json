@@ -5356,6 +5356,27 @@
 					"response": []
 				},
 				{
+					"name": "Set Default as Default Site",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/{{host_id}}/_makedefault",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"{{host_id}}",
+								"_makedefault"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Create a Test Page",
 					"event": [
 						{
@@ -5367,6 +5388,9 @@
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
 									"    pm.collectionVariables.set(\"host_id\", jsonData.entity.host);",
+									"",
+									"    console.log(\"Created page data - path: \" + jsonData.entity.path);",
+									"    console.log(\"Created page data - site: \" + jsonData.entity.host);",
 									"});",
 									""
 								],
@@ -5449,7 +5473,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/testPageCopy{{pagePost2}}",
+							"raw": "{{serverURL}}/api/v1/page/json/testPageCopy{{pagePost2}}?host_id={{host_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -5459,6 +5483,12 @@
 								"page",
 								"json",
 								"testPageCopy{{pagePost2}}"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "{{host_id}}"
+								}
 							]
 						}
 					},
@@ -5523,6 +5553,27 @@
 								"v1",
 								"page",
 								"actions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Set demo.dotcms.com as Default Site",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/48190c8c-42c4-46af-8d1a-0cd5db894797/_makedefault",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797",
+								"_makedefault"
 							]
 						}
 					},
