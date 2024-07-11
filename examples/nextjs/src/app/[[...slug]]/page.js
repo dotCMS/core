@@ -21,7 +21,7 @@ export async function generateMetadata({ params, searchParams }) {
 
     try {
         const data = await client.page.get(pageRequestParams);
-        const page = data.entity?.page;
+        const page = data.page;
         const title = page?.friendlyName || page?.title;
 
         return {
@@ -42,29 +42,29 @@ export default async function Home({ searchParams, params }) {
                 path,
                 params: searchParams,
             });
-            const data = await client.page.get(pageRequestParams);
+            const pageAsset = await client.page.get(pageRequestParams);
             const nav = await client.nav.get({
                 path: "/",
                 depth: 2,
                 languageId: searchParams.language_id,
             });
 
-            return { data, nav };
+            return { pageAsset, nav };
         } catch (error) {
-            return { data: null, nav: null, error };
+            return { pageAsset: null, nav: null, error };
         }
     };
-    const { data, nav, error } = await getPageData();
+    const { pageAsset, nav, error } = await getPageData();
 
     if (error) {
         return <ErrorPage error={error} />;
     }
 
-    const { vanityUrl } = data?.entity;
+    const { vanityUrl } = pageAsset;
 
     if (vanityUrl) {
         handleVanityUrlRedirect(vanityUrl);
     }
 
-    return <MyPage nav={nav.entity.children} pageAsset={data.entity}></MyPage>;
+    return <MyPage nav={nav.entity.children} pageAsset={pageAsset}></MyPage>;
 }
