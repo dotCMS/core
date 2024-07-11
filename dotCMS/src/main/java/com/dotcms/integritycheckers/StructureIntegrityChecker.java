@@ -224,14 +224,6 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                         + oldStructureInode + "'" );
 
 
-                dc.setSQL("UPDATE contentlet SET contentlet_as_json['contentType'] = '\"" +TEMP_INODE+ "\"' "
-                                + " WHERE structure_inode = ? and "
-                                + " contentlet_as_json['contentType'] <>  '\"" + TEMP_INODE + "\"'")
-                                .addParam(oldStructureInode)
-                                .loadResult();
-
-
-
                 dc.executeStatement("update contentlet set structure_inode = '" + TEMP_INODE + "' where structure_inode = '"
                         + oldStructureInode + "'" );
                 dc.executeStatement("update field set structure_inode = '" + TEMP_INODE + "' where structure_inode = '"
@@ -337,8 +329,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 
 
                 dc.setSQL("UPDATE contentlet SET contentlet_as_json['contentType'] = '\"" + newStructureInode + "\"'"
-                                + " WHERE structure_inode = ? and "
-                                + " contentlet_as_json['contentType']  <> '\"" + newStructureInode + "\"'")
+                                + " WHERE structure_inode = ? ")
                         .addParam(TEMP_INODE)
                         .loadResult();
 
