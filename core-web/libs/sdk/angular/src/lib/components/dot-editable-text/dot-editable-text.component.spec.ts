@@ -9,6 +9,7 @@ import { By } from '@angular/platform-browser';
 import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 
 import { DotEditableTextComponent } from './dot-editable-text.component';
+import { TINYMCE_CONFIG } from './utils';
 
 import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
 import { dotcmsContentletMock } from '../../utils/testing.utils';
@@ -22,12 +23,24 @@ jest.mock('@dotcms/client', () => ({
 
 const TINYMCE_EDITOR_MOCK: unknown = {
     focus: jest.fn(),
+    getContent: (_data: unknown) => '',
     isDirty: () => false,
     hasFocus: () => false
 };
 
 const TINYMCE_EDITOR_PROPERTY_MOCK = {
     get: jest.fn(() => TINYMCE_EDITOR_MOCK as Editor)
+};
+
+const mockEditorFn = (Spectator: Spectator<DotEditableTextComponent>) => {
+    // Mock the editor property of the EditorComponent
+    // We need to test that the methods of the editor are called
+    // We do not care about how the editor handles the calls under the hood
+    Object.defineProperty(
+        Spectator.component.editorComponent,
+        'editor',
+        TINYMCE_EDITOR_PROPERTY_MOCK
+    );
 };
 
 describe('DotEditableTextComponent', () => {
@@ -58,19 +71,94 @@ describe('DotEditableTextComponent', () => {
             },
             detectChanges: false
         });
+    });
 
-        spectator.detectChanges();
-        // Mock the editor property of the EditorComponent
-        // We need to test that the methods of the editor are called
-        // We do not care about how the editor handles the calls under the hood
-        Object.defineProperty(
-            spectator.component.editorComponent,
-            'editor',
-            TINYMCE_EDITOR_PROPERTY_MOCK
-        );
+    describe('Configuration', () => {
+        describe('Editor Configuration', () => {
+            it('should set a plain mode by default', () => {
+                spectator.detectChanges();
+
+                const editorComponent = spectator.query(EditorComponent);
+
+                expect(spectator.component.mode).toBe('plain');
+                expect(editorComponent?.init).toEqual({
+                    ...TINYMCE_CONFIG['plain'],
+                    base_url: 'http://localhost:8080/html/tinymce'
+                });
+            });
+
+            it('should set a minimal mode when the mode is set to minimal', () => {
+                spectator.setInput('mode', 'minimal');
+                spectator.detectChanges();
+
+                const editorComponent = spectator.query(EditorComponent);
+
+                expect(spectator.component.mode).toBe('minimal');
+                expect(editorComponent?.init).toEqual({
+                    ...TINYMCE_CONFIG['minimal'],
+                    base_url: 'http://localhost:8080/html/tinymce'
+                });
+            });
+
+            it('should set a full mode when the mode is set to full', () => {
+                spectator.setInput('mode', 'full');
+                spectator.detectChanges();
+
+                const editorComponent = spectator.query(EditorComponent);
+
+                expect(spectator.component.mode).toBe('full');
+                expect(editorComponent?.init).toEqual({
+                    ...TINYMCE_CONFIG['full'],
+                    base_url: 'http://localhost:8080/html/tinymce'
+                });
+            });
+        });
+
+        describe('format', () => {
+            let getContentSpy: jest.SpyInstance;
+            let editorDebugElement: DebugElement;
+            let customEvent: {
+                event: FocusEvent;
+                editor: unknown;
+            };
+
+            beforeEach(() => {
+                spectator.detectChanges();
+                mockEditorFn(spectator);
+
+                const editor = spectator.component.editorComponent.editor;
+                getContentSpy = jest.spyOn(editor, 'getContent');
+                customEvent = { event: new FocusEvent('focusout'), editor: TINYMCE_EDITOR_MOCK };
+                editorDebugElement = spectator.debugElement.query(By.directive(EditorComponent));
+            });
+
+            it('should get the content as text by default', () => {
+                spectator.triggerEventHandler(editorDebugElement, 'onFocusOut', customEvent);
+                expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
+            });
+
+            it('should get the content as text when format is set to text', () => {
+                spectator.setInput('format', 'text');
+                spectator.detectChanges();
+                spectator.triggerEventHandler(editorDebugElement, 'onFocusOut', customEvent);
+                expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
+            });
+
+            it('should get the content as html when format is set to html', () => {
+                spectator.setInput('format', 'html');
+                spectator.detectChanges();
+                spectator.triggerEventHandler(editorDebugElement, 'onFocusOut', customEvent);
+                expect(getContentSpy).toHaveBeenCalledWith({ format: 'html' });
+            });
+        });
     });
 
     describe('events', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+            mockEditorFn(spectator);
+        });
+
         describe('Window Message', () => {
             let focusSpy: jest.SpyInstance;
             beforeEach(() => {
@@ -101,6 +189,10 @@ describe('DotEditableTextComponent', () => {
         describe('mousedown', () => {
             let event: MouseEvent;
             let editorDebugElement: DebugElement;
+            let customEvent: {
+                event: MouseEvent;
+                editor: unknown;
+            };
 
             beforeEach(() => {
                 spectator.setInput('contentlet', {
@@ -110,6 +202,7 @@ describe('DotEditableTextComponent', () => {
                 spectator.detectChanges();
 
                 event = new MouseEvent('mousedown');
+                customEvent = { event, editor: TINYMCE_EDITOR_MOCK };
                 editorDebugElement = spectator.debugElement.query(By.directive(EditorComponent));
 
                 jest.spyOn(event, 'stopPropagation');
@@ -117,11 +210,6 @@ describe('DotEditableTextComponent', () => {
             });
 
             it('should postMessage the UVE if the content is in multiple pages', () => {
-                const customEvent = {
-                    event,
-                    editor: TINYMCE_EDITOR_MOCK
-                };
-
                 spectator.triggerEventHandler(editorDebugElement, 'onMouseDown', customEvent);
 
                 const payload = {
@@ -146,11 +234,6 @@ describe('DotEditableTextComponent', () => {
                     onNumberOfPages: 1
                 });
                 spectator.detectChanges();
-
-                const customEvent = {
-                    event,
-                    editor: TINYMCE_EDITOR_MOCK
-                };
                 spectator.triggerEventHandler(editorDebugElement, 'onMouseDown', customEvent);
                 expect(postMessageToEditor).not.toHaveBeenCalled();
                 expect(event.stopPropagation).not.toHaveBeenCalled();
@@ -163,16 +246,82 @@ describe('DotEditableTextComponent', () => {
                     .mockReturnValue(true);
 
                 spectator.detectChanges();
-
-                const customEvent = {
-                    event,
-                    editor: TINYMCE_EDITOR_MOCK
-                };
                 spectator.triggerEventHandler(editorDebugElement, 'onMouseDown', customEvent);
                 expect(postMessageToEditor).not.toHaveBeenCalled();
                 expect(event.stopPropagation).not.toHaveBeenCalled();
                 expect(event.preventDefault).not.toHaveBeenCalled();
                 expect(hasFocusSpy).toHaveBeenCalled();
+            });
+        });
+
+        describe('focusout', () => {
+            let isDirtySpy: jest.SpyInstance;
+            let getContentSpy: jest.SpyInstance;
+            let event: FocusEvent;
+            let editorDebugElement: DebugElement;
+            let customEvent: {
+                event: FocusEvent;
+                editor: unknown;
+            };
+
+            beforeEach(() => {
+                const editor = spectator.component.editorComponent.editor;
+                isDirtySpy = jest.spyOn(editor, 'isDirty');
+                getContentSpy = jest.spyOn(editor, 'getContent');
+
+                event = new FocusEvent('focusout');
+                customEvent = { event, editor: TINYMCE_EDITOR_MOCK };
+
+                editorDebugElement = spectator.debugElement.query(By.directive(EditorComponent));
+            });
+
+            it('should not postMessage the UVE if the editor is not dirty', () => {
+                isDirtySpy.mockReturnValue(false);
+                getContentSpy.mockReturnValue("I'm not dirty");
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(editorDebugElement, 'onFocusOut', customEvent);
+
+                expect(isDirtySpy).toHaveBeenCalled();
+                expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
+                expect(postMessageToEditor).not.toHaveBeenCalled();
+            });
+
+            it('should not postMessage the UVE if the content did not change', () => {
+                isDirtySpy.mockReturnValue(true);
+                getContentSpy.mockReturnValue(dotcmsContentletMock.title);
+
+                spectator.detectChanges();
+                spectator.triggerEventHandler(editorDebugElement, 'onFocusOut', customEvent);
+
+                expect(isDirtySpy).toHaveBeenCalled();
+                expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
+                expect(postMessageToEditor).not.toHaveBeenCalled();
+            });
+
+            it('should postMessage the UVE if the content changed', () => {
+                isDirtySpy.mockReturnValue(true);
+                getContentSpy.mockReturnValue('New content');
+
+                spectator.detectChanges();
+                spectator.triggerEventHandler(editorDebugElement, 'onFocusOut', customEvent);
+
+                const postMessageData = {
+                    action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                    payload: {
+                        content: 'New content',
+                        dataset: {
+                            inode: dotcmsContentletMock.inode,
+                            langId: dotcmsContentletMock.languageId,
+                            fieldName: 'title'
+                        }
+                    }
+                };
+
+                expect(isDirtySpy).toHaveBeenCalled();
+                expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
+                expect(postMessageToEditor).toHaveBeenCalledWith(postMessageData);
             });
         });
     });
