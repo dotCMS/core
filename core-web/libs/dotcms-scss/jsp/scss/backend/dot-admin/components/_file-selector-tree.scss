@@ -156,7 +156,7 @@
     }
 
     div[class$="Icon"] {
-        font-size: 72px;
+        font-size: 4.5rem;
         height: 72px;
         line-height: 1;
         width: 72px;
@@ -169,7 +169,7 @@
     }
 
     .label {
-        font-size: 16px;
+        font-size: $font-size-md;
         padding: 1.5rem 1rem;
         text-overflow: ellipsis;
         white-space: nowrap;

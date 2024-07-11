@@ -365,7 +365,7 @@ $finder-s-input: ".ui.input input";
     }
 
     .cw-header-info-arrow {
-        font-size: 16px;
+        font-size: $font-size-md;
         font-weight: bold;
         padding: 0.5em;
     }
@@ -530,7 +530,7 @@ $finder-s-input: ".ui.input input";
         text-align: center;
 
         i {
-            font-size: 120px;
+            font-size: 7.5rem;
             color: $color-palette-gray-500;
             border: 7px solid;
             border-radius: 10px;

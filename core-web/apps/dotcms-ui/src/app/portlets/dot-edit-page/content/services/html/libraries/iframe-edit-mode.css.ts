@@ -275,7 +275,7 @@ export const getEditPageCss = (
         background-color: #ffffff !important;
         box-shadow: ${mdShadow1} !important;
         font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif !important;
-        font-size: 13px !important;
+        font-size: 0.8125rem !important;
         list-style: none !important;
         margin: 0 !important;
         min-width: 100px !important;
@@ -317,7 +317,7 @@ export const getEditPageCss = (
         position: absolute !important;
         top: 4px !important;
         background: rgba(0,0,0,.7);
-        font-size: 12px;
+        font-size: 0.75rem;
         color: #fff;
         padding: 4px;
         border-radius: 3px;
@@ -356,7 +356,7 @@ export const getEditPageCss = (
         border-right: solid 5px var(--color-palette-secondary-op-20) !important;
         border-top: solid 5px var(--color-palette-secondary-op-20) !important;
         display: inline-block !important;
-        font-size: 10px !important;
+        font-size: 0.625rem !important;
         overflow: hidden !important;
         position: relative !important;
         text-indent: -9999em !important;

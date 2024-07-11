@@ -3088,9 +3088,7 @@
   width: 0;
 }
 
-#font-icon-base, .arrowLeftIcon, .arrowRightIcon, .chevronExpandIcon, .deleteIcon, .editIcon, .folderIcon, .folderOpenIcon, .folderSelectedIcon,
-.toggleCloseIcon,
-.toggleOpenIcon, .dijitIconCopy, #dijit-icon, .tagLink.persona:before, .wmaIcon, .wavIcon, .raIcon, .mpaIcon, .mp3Icon, .midIcon, .m3uIcon, .iffIcon, .aifIcon, .aacIcon, .docxIcon, .docIcon, .pptxIcon, .pptIcon, .keynoteIcon, .pdfIcon, .svgIcon, .webpIcon, .gifIcon, .pngIcon, .pctIcon, .jpgIcon, .jpegIcon, .imageIcon, .bmpIcon, .xlsxIcon, .xlsIcon, .wksIcon, .numbersIcon, .csvIcon, .vobIcon, .rmIcon, .ogvIcon, .oggIcon, .mpgIcon, .mp4Icon, .movIcon, .aviIcon, .asfIcon, .wysiwygIcon, .workStreamIcon, .workingIcon, .workflowIcon, .windowsIcon, .vtlIcon, .vanityIcon, .userIcon, .uploadIcon, .unpublishIcon, .unlockIcon, .unarchiveIcon, .trashIcon, .toggleOpenIcon, .toggleCloseIcon, .thumbnailViewIcon, .textFieldIcon, .tagIcon, .tabIcon, .stopIcon, .statisticsIcon, .sServerIcon, .splitterIcon, .spellIcon, .shrinkIcon, .selectIcon, .searchIcon, .scrollPaneIcon, .saveAssignIcon, .statusIcon, .saveIcon, .rServerIcon, .rolesIcon, .resolveWorkflowIcon, .resolveIcon, .resetIcon, .requiredIcon, .republishIcon, .repeatIcon, .reorderIcon, .reopenWorkflowIcon, .rememberIcon, .reindexIcon, .radioIcon, .queryIcon, .publishIcon, .propertyIcon, .previousIcon, .previewIcon, .plusIcon, .personaIcon, .pasteIcon, .pagePropIcon, .pageIcon, .nextIcon, .newWorkflowIcon, .newTaskIcon, .newPageIcon, .multiSelectIcon, .movePageIcon, .mobileIcon, .minusIcon, .mapPinIcon, .mailListIcon, .loginAsIcon, .loginIcon, .lockIcon, .liveIcon, .listViewIcon, .linkAddIcon, .licenseIcon, .languageVarIcon, .keyvalueIcon, .keyIcon, .infoIcon, .imageNewIcon, .hourGlassIcon, .hostStoppedIcon, .hostDefaultIcon, .hostArchivedIcon, .hostIcon, .hintIcon, .hideIcon, .helpIcon, .greyDotIcon, .gearPlusIcon, .gearPencilIcon, .gearMinusIcon, .gearIcon, .formNewIcon, .formIcon, .folderGlobeIcon, .folderFilesIcon, .folderEditIcon, .folderDeleteIcon, .folderCopyIcon, .folderAddIcon, .fixIcon, .fileNewIcon, .fileMultiIcon, .fileIcon, .femaleIcon, .exclamationIcon, .exclamation-redIcon, .encryptIcon, .editScriptIcon, .dropIcon, .downloadIcon, .dotAssetIcon, .documentIcon, .docTextIcon, .docNumIcon, .docCopyIcon, .docConvertIcon, .detailViewIcon, .deleteWorkflowIcon, .cutIcon, .copyIcon, .contentIcon, .colorIcon, .closeIcon, .chevronIcon, .checkBoxIcon, .cartIcon, .cancelWorkflowIcon, .cancelIcon, .calWeekIcon, .calMonthIcon, .calListIcon, .calDayIcon, .calClockIcon, .bundleIcon, .bugIcon, .browseIcon, .bgIcon, .backupIcon, .assignWorkflowIcon, .archivedIcon, .archiveIcon, .appMonitorIcon, .appleIcon, .androidIcon, .addIcon, .actionIcon, .uknIcon, .dijitIcon {
+#font-icon-base, .arrowLeftIcon, .arrowRightIcon, .chevronExpandIcon, .deleteIcon, .editIcon, .folderIcon, .folderOpenIcon, .folderSelectedIcon, .toggleCloseIcon, .toggleOpenIcon, .dijitIconCopy, #dijit-icon, .tagLink.persona:before, .wmaIcon, .wavIcon, .raIcon, .mpaIcon, .mp3Icon, .midIcon, .m3uIcon, .iffIcon, .aifIcon, .aacIcon, .docxIcon, .docIcon, .pptxIcon, .pptIcon, .keynoteIcon, .pdfIcon, .svgIcon, .webpIcon, .gifIcon, .pngIcon, .pctIcon, .jpgIcon, .jpegIcon, .imageIcon, .bmpIcon, .xlsxIcon, .xlsIcon, .wksIcon, .numbersIcon, .csvIcon, .vobIcon, .rmIcon, .ogvIcon, .oggIcon, .mpgIcon, .mp4Icon, .movIcon, .aviIcon, .asfIcon, .wysiwygIcon, .workStreamIcon, .workingIcon, .workflowIcon, .windowsIcon, .vtlIcon, .vanityIcon, .userIcon, .uploadIcon, .unpublishIcon, .unlockIcon, .unarchiveIcon, .trashIcon, .thumbnailViewIcon, .textFieldIcon, .tagIcon, .tabIcon, .stopIcon, .statisticsIcon, .sServerIcon, .splitterIcon, .spellIcon, .shrinkIcon, .selectIcon, .searchIcon, .scrollPaneIcon, .saveAssignIcon, .statusIcon, .saveIcon, .rServerIcon, .rolesIcon, .resolveWorkflowIcon, .resolveIcon, .resetIcon, .requiredIcon, .republishIcon, .repeatIcon, .reorderIcon, .reopenWorkflowIcon, .rememberIcon, .reindexIcon, .radioIcon, .queryIcon, .publishIcon, .propertyIcon, .previousIcon, .previewIcon, .plusIcon, .personaIcon, .pasteIcon, .pagePropIcon, .pageIcon, .nextIcon, .newWorkflowIcon, .newTaskIcon, .newPageIcon, .multiSelectIcon, .movePageIcon, .mobileIcon, .minusIcon, .mapPinIcon, .mailListIcon, .loginAsIcon, .loginIcon, .lockIcon, .liveIcon, .listViewIcon, .linkAddIcon, .licenseIcon, .languageVarIcon, .keyvalueIcon, .keyIcon, .infoIcon, .imageNewIcon, .hourGlassIcon, .hostStoppedIcon, .hostDefaultIcon, .hostArchivedIcon, .hostIcon, .hintIcon, .hideIcon, .helpIcon, .greyDotIcon, .gearPlusIcon, .gearPencilIcon, .gearMinusIcon, .gearIcon, .formNewIcon, .formIcon, .folderGlobeIcon, .folderFilesIcon, .folderEditIcon, .folderDeleteIcon, .folderCopyIcon, .folderAddIcon, .fixIcon, .fileNewIcon, .fileMultiIcon, .fileIcon, .femaleIcon, .exclamationIcon, .exclamation-redIcon, .encryptIcon, .editScriptIcon, .dropIcon, .downloadIcon, .dotAssetIcon, .documentIcon, .docTextIcon, .docNumIcon, .docCopyIcon, .docConvertIcon, .detailViewIcon, .deleteWorkflowIcon, .cutIcon, .copyIcon, .contentIcon, .colorIcon, .closeIcon, .chevronIcon, .checkBoxIcon, .cartIcon, .cancelWorkflowIcon, .cancelIcon, .calWeekIcon, .calMonthIcon, .calListIcon, .calDayIcon, .calClockIcon, .bundleIcon, .bugIcon, .browseIcon, .bgIcon, .backupIcon, .assignWorkflowIcon, .archivedIcon, .archiveIcon, .appMonitorIcon, .appleIcon, .androidIcon, .addIcon, .actionIcon, .uknIcon, .dijitIcon {
   font: normal normal normal 14px/1 FontAwesome;
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
@@ -3355,7 +3353,7 @@
   color: #14151a;
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 0.5rem;
-  font-size: 1rem;
+  font-size: 0.875rem;
   min-height: 9.375rem;
   resize: vertical;
 }
@@ -3549,7 +3547,7 @@
 }
 .dijitButtonNode {
   border: none;
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 .dijitButtonHover {
   background-color: var(--color-palette-primary-100);
@@ -6131,7 +6129,7 @@ select[multiple]:hover {
 
 .account-flyout h3 {
   margin: 20px 0 0 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: bold;
   padding: 0 15px;
 }
@@ -6172,7 +6170,7 @@ select[multiple]:hover {
 }
 
 .copyright {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: #555;
   text-align: center;
 }
@@ -6211,7 +6209,7 @@ select[multiple]:hover {
   opacity: 0.7;
   color: #ddd;
   line-height: 14px;
-  font-size: 11px;
+  font-size: 0.625rem;
   box-shadow: 0px 0px 5px var(--color-palette-black-op-50);
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
@@ -6446,7 +6444,7 @@ tr.active {
 .lockedAgo {
   display: block;
   color: #999;
-  font-size: 11px;
+  font-size: 0.625rem;
   font-style: italic;
   line-height: 14px;
 }
@@ -6476,7 +6474,7 @@ tr.active {
 .contentHint {
   display: block;
   color: #999;
-  font-size: 11px;
+  font-size: 0.625rem;
   font-weight: normal;
   line-height: 14px;
   white-space: normal;
@@ -6638,7 +6636,7 @@ tr.active {
 
 .suggestHeading {
   padding: 7px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: bold;
   color: #555;
   background: url("/html/images/skin/skin-sprite.png") repeat-x scroll 0 -325px transparent;
@@ -7577,7 +7575,7 @@ table.dojoxLegendNode td {
 }
 
 .dojoxColorPickerOptional input {
-  font-size: 11px;
+  font-size: 0.625rem;
   border: 1px solid #a7a7a7;
   width: 25px;
   padding: 1px 3px 1px 3px;
@@ -7586,7 +7584,7 @@ table.dojoxLegendNode td {
 
 .dojoxColorPickerHex input {
   width: 55px;
-  font-size: 11px;
+  font-size: 0.625rem;
 }
 
 /* Image Picker */
@@ -8802,7 +8800,7 @@ Styles for commons fields along the backend
   border-radius: 0.125rem;
   border: solid 1.5px #d1d4db;
   display: inline-block;
-  font-size: 12px;
+  font-size: 0.75rem;
   margin: 2px 5px 2px 0px;
   padding: 0.25rem 0.5rem 0.25rem 0.25rem;
   position: relative;
@@ -8936,7 +8934,7 @@ Styles for commons fields along the backend
   background: var(--color-palette-primary-200);
   border-radius: 0.25rem;
   color: var(--color-palette-primary-500);
-  font-size: 0.813rem;
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -8951,7 +8949,7 @@ Styles for commons fields along the backend
 .tagLink:after {
   color: var(--color-palette-primary-500);
   content: "✕";
-  font-size: 0.813rem;
+  font-size: 0.75rem;
   text-align: center;
 }
 .tagLink:hover {
@@ -9050,7 +9048,7 @@ Styles for commons fields along the backend
 }
 
 .hint-text {
-  font-size: 11px;
+  font-size: 0.625rem;
   color: #999;
   display: block;
   line-height: normal;
@@ -9444,7 +9442,7 @@ dd .buttonCaption {
 }
 
 .dayNumberSection {
-  font-size: 11px;
+  font-size: 0.625rem;
 }
 
 .dayNumber {
@@ -9707,7 +9705,7 @@ a.category_higlighted, a.tag_higlighted {
   text-overflow: clip;
   white-space: nowrap;
   font-family: Monaco, Menlo, sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .aceTextTemplate,
@@ -9724,7 +9722,7 @@ a.category_higlighted, a.tag_higlighted {
   text-overflow: clip;
   white-space: nowrap;
   font-family: Monaco, Menlo, sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .content-edit__main {
@@ -10398,7 +10396,7 @@ a.category_higlighted, a.tag_higlighted {
   color: #515667;
   cursor: pointer;
   display: block;
-  font-size: 1rem;
+  font-size: 0.875rem;
   height: 2.5rem;
   line-height: 2.5rem;
   padding: 0px 1.5rem;
@@ -10413,8 +10411,8 @@ a.category_higlighted, a.tag_higlighted {
   display: none;
 }
 .context-menu__item .arrowRightIcon {
-  font-size: 0.813rem;
-  margin-top: -0.4065rem;
+  font-size: 0.75rem;
+  margin-top: -0.375rem;
   position: absolute;
   right: 0.5rem;
   top: 50%;
@@ -10573,7 +10571,7 @@ a.category_higlighted, a.tag_higlighted {
   position: absolute;
 }
 .file-selector-tree__card .label {
-  font-size: 16px;
+  font-size: 1rem;
   padding: 1.5rem 1rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -11148,7 +11146,7 @@ Resize Handle
   border-radius: 0.375rem;
   color: #6c7389;
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 2.5rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
@@ -11194,7 +11192,6 @@ Resize Handle
 
 html {
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 1rem;
   color: #14151a;
 }
 
@@ -11207,7 +11204,7 @@ body {
   font-family: "Material Icons", sans-serif;
   font-weight: normal;
   font-style: normal;
-  font-size: 24px; /* Preferred icon size */
+  font-size: 1.5rem; /* Preferred icon size */
   display: inline-block;
   line-height: 1;
   text-transform: none;
