@@ -1,7 +1,7 @@
 import {
+    fetchPageDataFromInsideUVE,
     listenEditorMessages,
     listenHoveredContentlet,
-    pingEditor,
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners';
@@ -17,6 +17,7 @@ jest.mock('../models/client.model', () => ({
         IFRAME_SCROLL: 'scroll',
         PING_EDITOR: 'ping-editor',
         CONTENT_CHANGE: 'content-change',
+        GET_PAGE_DATA: 'get-page-data',
         NOOP: 'noop'
     }
 }));
@@ -106,10 +107,13 @@ describe('listeners', () => {
         expect(addEventListenerSpy).toHaveBeenCalledWith('load', expect.any(Function));
     });
 
-    it('should send ping to editor', () => {
-        pingEditor();
+    it('should get page data post message to editor', () => {
+        fetchPageDataFromInsideUVE('some-url');
         expect(postMessageToEditor).toHaveBeenCalledWith({
-            action: CUSTOMER_ACTIONS.PING_EDITOR
+            action: CUSTOMER_ACTIONS.GET_PAGE_DATA,
+            payload: {
+                pathname: 'some-url'
+            }
         });
     });
 });

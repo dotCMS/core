@@ -5,10 +5,20 @@ import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.util.I18NMessage;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
@@ -26,9 +36,13 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The OpenAIContentPromptRunner class is responsible for running workflows that generate content prompts using OpenAI.
- * It implements the AsyncWorkflowRunner interface and overrides its methods to provide the functionality needed.
- * This class is designed to handle long-running tasks in a separate thread and needs to be serialized to a persistent storage.
+ * This class is responsible for running workflows that generate content prompts using OpenAI. It
+ * implements the AsyncWorkflowRunner interface and overrides its methods to provide the
+ * functionality needed. This class is designed to handle long-running tasks in a separate thread
+ * and needs to be serialized to a persistent storage.
+ *
+ * @author Daniel Silva
+ * @since Mar 27th, 2024
  */
 public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
 
@@ -105,14 +119,15 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
     public void runInternal() {
 
         if (UtilMethods.isEmpty(prompt)) {
-            Logger.info(OpenAIContentPromptActionlet.class, "no prompt found");
+            Logger.error(OpenAIContentPromptActionlet.class, String.format("No prompt was found for Contentlet ID " +
+                    "'%s'", this.identifier));
             return;
         }
 
         final Contentlet workingContentlet = getLatest(identifier, language, user);
         final ContentType type = workingContentlet.getContentType();
 
-        Logger.info(this.getClass(), "Running OpenAI Modify Content for : " + workingContentlet.getTitle());
+        Logger.info(this.getClass(), "Running OpenAI Modify Content for: " + workingContentlet.getTitle());
 
         final Optional<Field> fieldToTry = Try.of(() -> type.fieldMap().get(this.fieldToWrite)).toJavaOptional();
 
@@ -128,12 +143,14 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
             }
 
             if (!contentNeedsSaving) {
-                Logger.warn(this.getClass(), "Nothing to save for OpenAI response: " + response);
+                Logger.warn(this.getClass(), String.format("Nothing to save in contentlet ID " +
+                        "'%s' for OpenAI response: %s", this.identifier, response));
                 return;
             }
 
             saveContentlet(contentToSave, user);
-        } catch (Exception e) {
+            this.sendSuccessNotification();
+        } catch (final Exception e) {
             handleError(e, user);
         }
     }
@@ -149,8 +166,9 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
                     .getJSONObject(0)
                     .getJSONObject("message")
                     .getString("content");
-        } catch (Exception e){
-            Logger.warn(this.getClass(), "unable to parse json:" + e.getMessage(), e);
+        } catch (final Exception e){
+            Logger.error(this.getClass(), String.format("Unable to parse JSON for Contentlet ID " +
+                    "'%s': %s", workingContentlet.getIdentifier(), ExceptionUtil.getErrorMessage(e)), e);
             throw new BadAIJsonFormatException(e.getMessage(),e);
         }
     }
@@ -165,13 +183,13 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
         }
 
         if (overwriteField || UtilMethods.isEmpty(contentlet.getStringProperty(fieldVar))) {
-            Logger.debug(this.getClass(), "setting field:" + fieldVar + " to " + value);
+            Logger.debug(this.getClass(), "setting field: " + fieldVar + " to " + value);
             final String cleanValue = cleanHTML(value);
             contentlet.setProperty(fieldVar, cleanValue);
             return true;
         }
 
-        Logger.info(this.getClass(), "field :" + fieldVar + " already set, skipping");
+        Logger.debug(this.getClass(), "field: " + fieldVar + " already set, skipping");
         return false;
     }
 
@@ -221,6 +239,32 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
         }
 
         return text;
+    }
+
+    /**
+     * Sends a notification to the dotCMS back-end indicating that the current Contentlet has been
+     * updated with AI-generated content.
+     */
+    private void sendSuccessNotification() {
+        final String msg = String.format("Content with ID '%s' has been updated by AI",
+                this.identifier);
+        SystemMessageEventUtil.getInstance().pushSimpleTextEvent(msg, this.user.getUserId());
+        try {
+            final User user = APILocator.getUserAPI().loadUserById(this.user.getUserId());
+            APILocator.getNotificationAPI().generateNotification(
+                    new I18NMessage("OpenAI Content Prompt"),
+                    new I18NMessage(msg),
+                    null,
+                    NotificationLevel.INFO,
+                    NotificationType.GENERIC,
+                    this.user.getUserId(),
+                    this.user.getLocale()
+            );
+            APILocator.getSystemEventsAPI().push(SystemEventType.AI_CONTENT_PROMPT,
+                    new Payload(this.identifier));
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.warnAndDebug(this.getClass(), ExceptionUtil.getErrorMessage(e), e);
+        }
     }
 
 }

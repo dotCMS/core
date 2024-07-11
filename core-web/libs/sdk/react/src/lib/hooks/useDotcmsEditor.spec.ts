@@ -19,38 +19,34 @@ describe('useDotcmsEditor', () => {
         jest.clearAllMocks();
     });
 
-    it('should call initEditor when inside editor', () => {
-        isInsideEditorSpy.mockReturnValueOnce(true);
+    describe('when outside editor', () => {
+        it('should not call initEditor or destroyEditor when outside editor', () => {
+            isInsideEditorSpy.mockReturnValue(false);
 
-        renderHook(() => useDotcmsEditor());
+            renderHook(() => useDotcmsEditor({ pathname: '' }));
 
-        expect(initEditorSpy).toHaveBeenCalled();
+            expect(initEditorSpy).not.toHaveBeenCalled();
+            expect(destroyEditorSpy).not.toHaveBeenCalled();
+        });
     });
 
-    it('should call destroyEditor on unmount when inside editor', () => {
-        isInsideEditorSpy.mockReturnValueOnce(true);
+    describe('when inside editor', () => {
+        it('should call initEditor when inside editor', () => {
+            isInsideEditorSpy.mockReturnValueOnce(true);
 
-        const { unmount } = renderHook(() => useDotcmsEditor());
+            renderHook(() => useDotcmsEditor({ pathname: '' }));
 
-        unmount();
+            expect(initEditorSpy).toHaveBeenCalled();
+        });
 
-        expect(destroyEditorSpy).toHaveBeenCalled();
-    });
+        it('should call destroyEditor on unmount when inside editor', () => {
+            isInsideEditorSpy.mockReturnValueOnce(true);
 
-    it('should not call initEditor or destroyEditor when outside editor', () => {
-        isInsideEditorSpy.mockReturnValueOnce(false);
+            const { unmount } = renderHook(() => useDotcmsEditor({ pathname: '' }));
 
-        renderHook(() => useDotcmsEditor());
+            unmount();
 
-        expect(initEditorSpy).not.toHaveBeenCalled();
-        expect(destroyEditorSpy).not.toHaveBeenCalled();
-    });
-
-    it('should call initEditor with options', () => {
-        isInsideEditorSpy.mockReturnValueOnce(true);
-
-        renderHook(() => useDotcmsEditor({ onReload: jest.fn() }));
-
-        expect(initEditorSpy).toHaveBeenCalledWith({ onReload: expect.any(Function) });
+            expect(destroyEditorSpy).toHaveBeenCalled();
+        });
     });
 });

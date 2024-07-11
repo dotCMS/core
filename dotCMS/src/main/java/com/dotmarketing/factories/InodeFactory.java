@@ -147,6 +147,9 @@ public class InodeFactory {
 		if(c.equals(Folder.class)){
 			throw new DotStateException("Folder mapping was deleted from hibernate files");
 		}
+		if (c.equals(Category.class)){
+			throw new DotStateException("Category mapping was deleted from hibernate files");
+		}
 		
 		
 		
