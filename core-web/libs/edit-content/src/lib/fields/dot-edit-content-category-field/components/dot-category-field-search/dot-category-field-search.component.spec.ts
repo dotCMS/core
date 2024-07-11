@@ -1,22 +1,33 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { expect } from '@jest/globals';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+
+import { DotMessageService } from '@dotcms/data-access';
 
 import { DotCategoryFieldSearchComponent } from './dot-category-field-search.component';
 
 describe('DotCategoryFieldSearchComponent', () => {
-    let component: DotCategoryFieldSearchComponent;
-    let fixture: ComponentFixture<DotCategoryFieldSearchComponent>;
+    let spectator: Spectator<DotCategoryFieldSearchComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotCategoryFieldSearchComponent]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(DotCategoryFieldSearchComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    const createComponent = createComponentFactory({
+        component: DotCategoryFieldSearchComponent,
+        providers: [mockProvider(DotMessageService)]
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                isLoading: false
+            }
+        });
+
+        spectator.detectChanges();
+    });
+
+    afterEach(() => {
+        jest.resetAllMocks();
+    });
+
+    it('should .....', () => {
+        expect(spectator.component).not.toBeNull();
     });
 });

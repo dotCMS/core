@@ -1,8 +1,9 @@
+import { DotCategory } from '@dotcms/dotcms-models';
+
 import {
     categoryDeepCopy,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
-    transformCategories,
     transformSelectedCategories,
     updateChecked
 } from './category-field.utils';
@@ -12,10 +13,7 @@ import {
     CATEGORY_FIELD_MOCK,
     CATEGORY_LEVEL_1
 } from '../mocks/category-field.mocks';
-import {
-    DotCategoryFieldCategory,
-    DotCategoryFieldKeyValueObj
-} from '../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
 
 describe('CategoryFieldUtils', () => {
     describe('getSelectedCategories', () => {
@@ -26,8 +24,8 @@ describe('CategoryFieldUtils', () => {
 
         it('should return parsed the values', () => {
             const expected: DotCategoryFieldKeyValueObj[] = [
-                { key: '33333', value: 'Electrical' },
-                { key: '22222', value: 'Doors & Windows' }
+                { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Electrical' },
+                { key: 'cb83dc32c0a198fd0ca427b3b587f4ce', value: 'Doors & Windows' }
             ];
             const result = transformSelectedCategories(
                 CATEGORY_FIELD_MOCK,
@@ -38,41 +36,9 @@ describe('CategoryFieldUtils', () => {
         });
     });
 
-    describe('addMetadata', () => {
-        it('should `checked: true` when category has children and exist in the parentPath', () => {
-            const PARENT_PATH_MOCK = [CATEGORY_LEVEL_1[0].inode];
-            const expected = CATEGORY_LEVEL_1.map((item, index) =>
-                index === 0 ? { ...item, checked: true } : { ...item, checked: false }
-            );
-
-            const result = transformCategories(CATEGORY_LEVEL_1, PARENT_PATH_MOCK);
-            expect(result).toEqual(expected);
-        });
-
-        it('should `checked: false` when category has children and do not exist in the parentPath', () => {
-            const PATH_MOCK = [];
-            const expected = CATEGORY_LEVEL_1.map((item) => {
-                return { ...item, checked: false };
-            });
-
-            const result = transformCategories(CATEGORY_LEVEL_1, PATH_MOCK);
-            expect(result).toEqual(expected);
-        });
-
-        it('should `checked: false` when category do not has children and do not exist in the parentPath', () => {
-            const PATH_MOCK = [];
-            const expected = CATEGORY_LEVEL_1.map((item) => {
-                return { ...item, checked: false };
-            });
-
-            const result = transformCategories(CATEGORY_LEVEL_1, PATH_MOCK);
-            expect(result).toEqual(expected);
-        });
-    });
-
     describe('categoryDeepCopy', () => {
         it('should create a deep copy of a two-dimensional array of DotCategoryFieldCategory', () => {
-            const array: DotCategoryFieldCategory[][] = [
+            const array: DotCategory[][] = [
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }]
             ];
@@ -87,7 +53,7 @@ describe('CategoryFieldUtils', () => {
         });
 
         it('should create a deep copy of an empty array', () => {
-            const array: DotCategoryFieldCategory[][] = [];
+            const array: DotCategory[][] = [];
             const copy = categoryDeepCopy(array);
 
             // The copy should be equal to the original
@@ -95,7 +61,7 @@ describe('CategoryFieldUtils', () => {
         });
 
         it('should handle mixed content arrays correctly', () => {
-            const array: DotCategoryFieldCategory[][] = [
+            const array: DotCategory[][] = [
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }]
             ];
@@ -112,7 +78,7 @@ describe('CategoryFieldUtils', () => {
 
     describe('clearCategoriesAfterIndex', () => {
         it('should remove all items after the specified index + 1', () => {
-            const array: DotCategoryFieldCategory[][] = [
+            const array: DotCategory[][] = [
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }],
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'Another Category' }]
@@ -129,7 +95,7 @@ describe('CategoryFieldUtils', () => {
         });
 
         it('should handle an empty array', () => {
-            const array: DotCategoryFieldCategory[][] = [];
+            const array: DotCategory[][] = [];
             const index = 0;
             const result = clearCategoriesAfterIndex(array, index);
 
@@ -139,7 +105,7 @@ describe('CategoryFieldUtils', () => {
         });
 
         it('should handle index greater than array length', () => {
-            const array: DotCategoryFieldCategory[][] = [
+            const array: DotCategory[][] = [
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }]
             ];
@@ -199,19 +165,18 @@ describe('CategoryFieldUtils', () => {
             const storedSelected: DotCategoryFieldKeyValueObj[] = [
                 {
                     key: CATEGORY_LEVEL_1[0].key,
-                    value: CATEGORY_LEVEL_1[0].categoryName
+                    value: CATEGORY_LEVEL_1[0].categoryName,
+                    inode: CATEGORY_LEVEL_1[0].inode
                 }
             ];
             const selected = [storedSelected[0].key, CATEGORY_LEVEL_1[1].key];
-            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[1] };
+            const item: DotCategoryFieldKeyValueObj = {
+                key: CATEGORY_LEVEL_1[1].key,
+                value: CATEGORY_LEVEL_1[1].categoryName,
+                inode: CATEGORY_LEVEL_1[1].inode
+            };
 
-            const expected: DotCategoryFieldKeyValueObj[] = [
-                ...storedSelected,
-                {
-                    key: CATEGORY_LEVEL_1[1].key,
-                    value: CATEGORY_LEVEL_1[1].categoryName
-                }
-            ];
+            const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected, item];
 
             const result = updateChecked(storedSelected, selected, item);
 
@@ -222,11 +187,16 @@ describe('CategoryFieldUtils', () => {
             const storedSelected: DotCategoryFieldKeyValueObj[] = [
                 {
                     key: CATEGORY_LEVEL_1[0].key,
-                    value: CATEGORY_LEVEL_1[0].categoryName
+                    value: CATEGORY_LEVEL_1[0].categoryName,
+                    inode: CATEGORY_LEVEL_1[1].inode
                 }
             ];
             const selected = [storedSelected[0].key];
-            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[0] };
+            const item: DotCategoryFieldKeyValueObj = {
+                key: CATEGORY_LEVEL_1[0].key,
+                value: CATEGORY_LEVEL_1[0].categoryName,
+                inode: CATEGORY_LEVEL_1[1].inode
+            };
 
             const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected];
 
@@ -239,20 +209,27 @@ describe('CategoryFieldUtils', () => {
             const storedSelected: DotCategoryFieldKeyValueObj[] = [
                 {
                     key: CATEGORY_LEVEL_1[0].key,
-                    value: CATEGORY_LEVEL_1[0].categoryName
+                    value: CATEGORY_LEVEL_1[0].categoryName,
+                    inode: CATEGORY_LEVEL_1[0].inode
                 },
                 {
                     key: CATEGORY_LEVEL_1[1].key,
-                    value: CATEGORY_LEVEL_1[1].categoryName
+                    value: CATEGORY_LEVEL_1[1].categoryName,
+                    inode: CATEGORY_LEVEL_1[1].inode
                 }
             ];
             const selected = [storedSelected[0].key];
-            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[1] };
+            const item: DotCategoryFieldKeyValueObj = {
+                key: CATEGORY_LEVEL_1[1].key,
+                value: CATEGORY_LEVEL_1[1].categoryName,
+                inode: CATEGORY_LEVEL_1[1].inode
+            };
 
             const expected: DotCategoryFieldKeyValueObj[] = [
                 {
                     key: CATEGORY_LEVEL_1[0].key,
-                    value: CATEGORY_LEVEL_1[0].categoryName
+                    value: CATEGORY_LEVEL_1[0].categoryName,
+                    inode: CATEGORY_LEVEL_1[0].inode
                 }
             ];
 
@@ -265,11 +242,16 @@ describe('CategoryFieldUtils', () => {
             const storedSelected: DotCategoryFieldKeyValueObj[] = [
                 {
                     key: CATEGORY_LEVEL_1[0].key,
-                    value: CATEGORY_LEVEL_1[0].categoryName
+                    value: CATEGORY_LEVEL_1[0].categoryName,
+                    inode: CATEGORY_LEVEL_1[0].inode
                 }
             ];
             const selected = [storedSelected[0].key];
-            const item: DotCategoryFieldCategory = { ...CATEGORY_LEVEL_1[1] };
+            const item: DotCategoryFieldKeyValueObj = {
+                key: CATEGORY_LEVEL_1[1].key,
+                value: CATEGORY_LEVEL_1[1].categoryName,
+                inode: CATEGORY_LEVEL_1[1].inode
+            };
 
             const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected];
 

@@ -1,22 +1,40 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+
+import { DotMessageService } from '@dotcms/data-access';
 
 import { DotCategoryFieldSearchListComponent } from './dot-category-field-search-list.component';
 
+import { MockResizeObserver } from '../../../../utils/mocks';
+import { CATEGORY_MOCK_TRANSFORMED, SELECTED_LIST_MOCK } from '../../mocks/category-field.mocks';
+
 describe('DotCategoryFieldSearchListComponent', () => {
-    let component: DotCategoryFieldSearchListComponent;
-    let fixture: ComponentFixture<DotCategoryFieldSearchListComponent>;
+    let spectator: Spectator<DotCategoryFieldSearchListComponent>;
+    const createComponent = createComponentFactory({
+        component: DotCategoryFieldSearchListComponent,
+        providers: [mockProvider(DotMessageService)]
+    });
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotCategoryFieldSearchListComponent]
-        }).compileComponents();
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                categories: CATEGORY_MOCK_TRANSFORMED,
+                selected: SELECTED_LIST_MOCK,
+                isLoading: false
+            }
+        });
 
-        fixture = TestBed.createComponent(DotCategoryFieldSearchListComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+        spectator.detectChanges();
+    });
+
+    beforeAll(() => {
+        global.ResizeObserver = MockResizeObserver;
+    });
+
+    afterEach(() => {
+        jest.resetAllMocks();
     });
 
     it('should create', () => {
-        expect(component).toBeTruthy();
+        expect(spectator.component).toBeTruthy();
     });
 });

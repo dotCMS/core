@@ -4,8 +4,8 @@
  */
 export interface DotCategoryFieldKeyValueObj {
     key: string;
-    inode: string;
     value: string;
+    inode?: string;
     path?: string;
     clicked?: boolean;
     hasChildren?: boolean;

@@ -8,7 +8,12 @@ import {
     MINIMUM_CATEGORY_COLUMNS
 } from './dot-category-field-category-list.component';
 
-import { CATEGORY_LIST_MOCK, SELECTED_LIST_MOCK } from '../../mocks/category-field.mocks';
+import {
+    CATEGORY_LIST_MOCK,
+    CATEGORY_LIST_MOCK_TRANSFORMED,
+    CATEGORY_MOCK_TRANSFORMED,
+    SELECTED_LIST_MOCK
+} from '../../mocks/category-field.mocks';
 
 describe('DotCategoryFieldCategoryListComponent', () => {
     let spectator: Spectator<DotCategoryFieldCategoryListComponent>;
@@ -21,7 +26,7 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                categories: CATEGORY_LIST_MOCK,
+                categories: CATEGORY_LIST_MOCK_TRANSFORMED,
                 selected: SELECTED_LIST_MOCK
             }
         });
@@ -68,19 +73,29 @@ describe('DotCategoryFieldCategoryListComponent', () => {
 
         expect(emitSpy).toHaveBeenCalledWith({
             index: 0,
-            item: CATEGORY_LIST_MOCK[0][0]
+            item: CATEGORY_LIST_MOCK_TRANSFORMED[0][0]
         });
     });
 
     it('should apply selected class to the correct item', () => {
+        spectator = createComponent({
+            props: {
+                categories: CATEGORY_MOCK_TRANSFORMED,
+                selected: SELECTED_LIST_MOCK
+            }
+        });
+
+        spectator.detectChanges();
+
         const items = spectator.queryAll(byTestId('category-item'));
-        expect(items[1].className).toContain('category-list__item--selected');
-        expect(items[2].className).toContain('category-list__item--selected');
+
+        expect(items[0].className).toContain('category-list__item--selected');
+        expect(items[1].className).not.toContain('category-list__item--selected');
     });
 
     it('should not render any empty columns when there are enough categories', () => {
         const minColumns = 4;
-        const testCategories = Array(minColumns).fill(CATEGORY_LIST_MOCK[0]);
+        const testCategories = Array(minColumns).fill(CATEGORY_LIST_MOCK_TRANSFORMED[0]);
 
         spectator = createComponent({
             props: {

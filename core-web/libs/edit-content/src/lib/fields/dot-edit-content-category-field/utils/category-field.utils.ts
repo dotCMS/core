@@ -32,9 +32,10 @@ export const transformSelectedCategories = (
  * @param keyParentPath - Path of keys to determine clicked state
  * @returns Transformed category or array of transformed categories with additional properties
  */
+
 export const transformCategories = (
     categories: DotCategory | DotCategory[],
-    keyParentPath: string[]
+    keyParentPath: string[] = []
 ): DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[] => {
     const transformCategory = (category: DotCategory): DotCategoryFieldKeyValueObj => {
         const { key, inode, categoryName, childrenCount } = category;
