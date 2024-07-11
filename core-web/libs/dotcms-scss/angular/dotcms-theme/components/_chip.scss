@@ -4,13 +4,14 @@
 $chip-height-sm: 1.5rem; // 24px
 $chip-height-md: 2.5rem; // 40px
 
-p-chip .p-chip {
-    background-color: $color-accessible-text-blue-bg;
-    color: $color-accessible-text-blue;
+.p-chip {
+    background-color: $color-palette-primary-500;
+    color: $white;
     border-radius: $border-radius-md;
     padding: 0 $spacing-1;
     height: $chip-height-md;
     gap: $spacing-1;
+    flex-direction: row-reverse;
 
     .p-chip-icon,
     .pi-chip-remove-icon {
@@ -29,23 +30,23 @@ p-chip .p-chip {
     }
 
     &.p-chip-secondary {
-        background-color: $color-accessible-text-purple-bg;
-        color: $color-accessible-text-purple;
+        background-color: $color-palette-secondary-500;
+        color: $white;
     }
 
     &.p-chip-warning {
-        background-color: $color-accessible-text-yellow-bg;
-        color: $color-accessible-text-yellow;
+        background-color: $color-alert-yellow;
+        color: $color-palette-gray-900;
     }
 
     &.p-chip-success {
-        background-color: $color-accessible-text-green-bg;
-        color: $color-accessible-text-green;
+        background-color: $color-alert-green;
+        color: $color-palette-gray-900;
     }
 
     &.p-chip-error {
-        background-color: $color-accessible-text-red-bg;
-        color: $color-accessible-text-red;
+        background-color: $color-alert-red;
+        color: $white;
     }
 
     &.p-chip-gray {

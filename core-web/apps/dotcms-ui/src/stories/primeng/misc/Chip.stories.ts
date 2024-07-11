@@ -13,6 +13,25 @@ type Args = Chip & {
     severity: string;
 };
 
+const DEFAULT = 'default';
+
+const mergeArgsClassNamesToString = (args: Args): string => {
+    const size = args.size ?? '';
+    const severity = args.severity ?? '';
+
+    const classes = [args.styleClass];
+
+    if (size !== DEFAULT) {
+        classes.push(size);
+    }
+
+    if (severity !== DEFAULT) {
+        classes.push(severity);
+    }
+
+    return classes.join(' ');
+};
+
 const meta: Meta<Args> = {
     title: 'PrimeNG/Misc/Chip',
     component: Chip,
@@ -36,8 +55,8 @@ const meta: Meta<Args> = {
     args: {
         label: 'Text',
         icon: 'pi pi-image',
-        size: 'default',
-        severity: 'default',
+        size: DEFAULT,
+        severity: DEFAULT,
         styleClass: '',
         removable: true
     },
@@ -54,12 +73,13 @@ const meta: Meta<Args> = {
             description: 'Whether to display a remove icon.'
         },
         size: {
-            options: ['p-chip-sm'],
+            options: [DEFAULT, 'p-chip-sm'],
             control: { type: 'radio' },
             description: 'Class name used in `styleClass` for the size of the chip'
         },
         severity: {
             options: [
+                DEFAULT,
                 'p-chip-secondary',
                 'p-chip-warning',
                 'p-chip-success',
@@ -70,13 +90,24 @@ const meta: Meta<Args> = {
             description: 'Class name used in `styleClass` for the severity of the chip'
         }
     },
-    render: (args: Args) => ({
-        props: {
-            ...args
-        },
-        template: `
-         <p-chip ${argsToTemplate(args)} />`
-    })
+    render: (args: Args) => {
+        const newArgs = { ...args };
+        delete newArgs.size;
+        delete newArgs.severity;
+
+        return {
+            props: {
+                ...args,
+                styleClass: mergeArgsClassNamesToString(args)
+            },
+            template: `
+            <p-chip ${argsToTemplate(newArgs)} >
+                <ng-template pTemplate="removeicon">
+                    <i class="pi pi-times"></i>
+                </ng-template>
+            </p-chip>`
+        };
+    }
 };
 
 export default meta;
