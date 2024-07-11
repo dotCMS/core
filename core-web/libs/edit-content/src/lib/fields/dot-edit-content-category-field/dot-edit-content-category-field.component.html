@@ -1,14 +1,7 @@
 @if (store.selected().length) {
-    <div class="dot-category-field__categories" data-testId="category-chip-list">
-        @for (category of store.selected(); track category.key) {
-            <p-chip
-                [pTooltip]="category.value"
-                [removable]="true"
-                [label]="category.value"
-                tooltipPosition="top"
-                styleClass="p-chip-sm" />
-        }
-    </div>
+<div class="dot-category-field__categories">
+    <dot-category-field-chips [max]="$maxChips()" [categories]="store.selected()" />
+</div>
 }
 
 <div class="dot-category-field__select">

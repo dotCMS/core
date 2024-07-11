@@ -5,13 +5,13 @@
         border-radius: 0 0 $border-radius-md $border-radius-md;
     }
 
-    &.dot-category-field__container--has-categories .dot-category-field__categories {
+    &.dot-category-field__container--has-categories dot-category-field-chips {
         border-bottom: none;
         padding: $spacing-1;
     }
 }
 
-.dot-category-field__categories,
+dot-category-field-chips,
 .dot-category-field__select {
     border: $field-border-size solid $color-palette-gray-400;
     display: flex;
@@ -19,7 +19,7 @@
     align-items: center;
 }
 
-.dot-category-field__categories {
+dot-category-field-chips {
     gap: $spacing-1;
     border-radius: $border-radius-md $border-radius-md 0 0;
 }

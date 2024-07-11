@@ -16,7 +16,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
-
 /**
  * The DotCategoryFieldSidebarComponent is a sidebar panel that allows editing of content category field.
  * It provides interfaces for item selection and click handling, and communicates with a store
