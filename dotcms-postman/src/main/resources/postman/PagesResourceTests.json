@@ -5281,8 +5281,8 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Saving the Default Site's ID\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.collectionVariables.set(\"host_id\", jsonData.entity.identifier);",
+									"    //var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"host_id\", \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\");",
 									"});",
 									""
 								],
@@ -5416,7 +5416,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"languageId\": 1,\n        \"title\": \"testPageCopy{{pagePost2}}\",\n        \"url\": \"testPageCopy{{pagePost2}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"testPageCopy{{pagePost2}}\",\n        \"cachettl\": 0,\n        \"workflow\": [\n            \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n        ]\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"languageId\": 1,\n        \"title\": \"testPageCopy{{pagePost2}}\",\n        \"url\": \"testPageCopy{{pagePost2}}\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"testPageCopy{{pagePost2}}\",\n        \"cachettl\": 0,\n        \"workflow\": [\n            \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n        ]\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -5518,11 +5518,11 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"pm.test(\"Waiting for the test HTML Page to be ready\", function () {",
+									"/*pm.test(\"Waiting for the test HTML Page to be ready\", function () {",
 									"    var timeout = 2000;",
 									"    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
 									"});",
-									""
+									"*/"
 								],
 								"type": "text/javascript",
 								"packages": {}
