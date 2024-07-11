@@ -5379,7 +5379,8 @@
 							"script": {
 								"exec": [
 									"const pagePost = Math.floor(Math.random()*100+1)",
-									"pm.globals.set(\"pagePost2\", pagePost)"
+									"//pm.globals.set(\"pagePost2\", pagePost)",
+									"pm.collectionVariables.set(\"pagePost2\", pagePost);"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -5423,6 +5424,47 @@
 					"response": []
 				},
 				{
+					"name": "Get Page As JSON",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Checking page properties\", function () {",
+									"    var page = pm.response.json().entity.page;",
+									"    const pageUrl = pm.collectionVariables.get(\"pagePost2\");",
+									"    const siteId = pm.collectionVariables.get(\"host_id\");",
+									"    pm.expect(page.path).to.equal(\"/testPageCopy\" + pageUrl, \"The Page URL is not the expected one\");",
+									"    pm.expect(page.host).to.equal(siteId, \"The Site ID is not the expected one\");",
+									"    pm.expect(pm.response.json().errors.length).to.equal(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/json/testPageCopy{{pagePost2}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"json",
+								"testPageCopy{{pagePost2}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Get Workflow Actions",
 					"event": [
 						{
@@ -5430,6 +5472,7 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Checking that Worklfow Actions for the test HTML Page are available\", function () {",
+									"    console.log(\"Response as text: \" + pm.response.text());",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.expect(jsonData.entity.actions.length).to.greaterThan(0);",

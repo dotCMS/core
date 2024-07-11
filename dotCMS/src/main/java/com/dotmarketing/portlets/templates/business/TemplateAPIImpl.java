@@ -102,6 +102,10 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, DotInitializer {
 
 	private static final String LAYOUT_FILE_NAME     = "com/dotmarketing/portlets/templates/business/layout.json";
+	private static final String SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG = "System template cannot be copied";
+	private static final String SYSTEM_TEMPLATE_CANNOT_BE_ARCHIVED_MSG = "System template can not be archived";
+	private static final String SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG = "System template can not be deleted";
+	private static final String SYSTEM_TEMPLATE_CANNOT_BE_MODIFIED_MSG = "System template can not be modified";
 
 	private final  PermissionAPI    permissionAPI          = APILocator.getPermissionAPI();
 	private final  IdentifierAPI    identifierAPI          = APILocator.getIdentifierAPI();
@@ -230,8 +234,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(sourceTemplate.getIdentifier())) {
 
-			Logger.debug(this, "System template can not be copied");
-			throw new IllegalArgumentException("System template can not be copied");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
 		}
 
 		final Identifier identifier = APILocator.getIdentifierAPI().find(sourceTemplate.getIdentifier());
@@ -251,8 +255,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(sourceTemplate.getIdentifier())) {
 
-			Logger.debug(this, "System template can not be copied");
-			throw new IllegalArgumentException("System template can not be copied");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
 		}
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
@@ -323,8 +327,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(sourceTemplate.getIdentifier())) {
 
-			Logger.debug(this, "System template can not be copied");
-			throw new IllegalArgumentException("System template can not be copied");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
 		}
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user,
@@ -503,8 +507,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			Logger.debug(this, "System template can not be archived");
-			throw new IllegalArgumentException("System template can not be archived");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_ARCHIVED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_ARCHIVED_MSG);
 		}
 
 		//Check Edit Permissions over Template
@@ -581,7 +585,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	public boolean isArchived(final Template template) throws DotDataException, DotStateException,DotSecurityException {
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
-			Logger.debug(this, "System template can not be archived");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_ARCHIVED_MSG);
 			// System template is never archived
 			return false;
 		}
@@ -598,7 +602,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			throw new IllegalArgumentException("System template can not be deleted");
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG);
 		}
 
 		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
@@ -674,8 +678,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(inode)) {
 
-			Logger.debug(this, "System template can not be deleted");
-			throw new IllegalArgumentException("System template can not be deleted");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG);
 		}
 
 		Try.run(()->FactoryLocator.getTemplateFactory().deleteTemplateByInode(inode)).onFailure(e -> new RuntimeException(e));
@@ -693,7 +697,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			throw new IllegalArgumentException("System template can not be modified");
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_MODIFIED_MSG);
 		}
 
 		if (UtilMethods.isSet(template.getInode()) && UtilMethods.isSet(template.getIdentifier())) {
@@ -761,8 +765,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			Logger.debug(this, "System template can not be modified");
-			throw new IllegalArgumentException("System template can not be modified");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_MODIFIED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_MODIFIED_MSG);
 		}
 
 		boolean existingId=false;
@@ -963,8 +967,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		Logger.debug(this, ()-> "Calling delete: " + template.getIdentifier());
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			Logger.debug(this, "System template can not be deleted");
-			throw new IllegalArgumentException("System template can not be deleted");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG);
 		}
 
 		if(permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
