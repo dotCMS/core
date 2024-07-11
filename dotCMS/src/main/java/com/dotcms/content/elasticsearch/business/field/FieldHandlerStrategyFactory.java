@@ -149,7 +149,7 @@ public class FieldHandlerStrategyFactory {
     private void doNothingStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
 
         Logger.debug(this,
-                "Cannot set contentlet field value on field type" + field.getClass().getName() + " with value: " + value);
+                "No strategy to set contentlet field value on field type" + field.getClass().getName() + " with value: " + value);
     }
 
     private void keyValueStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
@@ -191,7 +191,7 @@ public class FieldHandlerStrategyFactory {
                     contentlet.setBinary(field.variable(),
                             tempFileOptional.get().file);
                 } else {
-                    throw new DotStateException("Invalid Temp File provided");
+                    throw new DotStateException("Invalid Temp File provided, for the field: " + field.variable());
                 }
 
             }
@@ -280,11 +280,12 @@ public class FieldHandlerStrategyFactory {
                 contentlet.setBoolProperty(field.variable(), auxBoolean);
             } catch (Exception e) {
                 throw new DotContentletStateException(
-                        "Unable to set string value as a Boolean");
+                        "Unable to set string value as a Boolean for the field: " +
+                                field.variable());
             }
         } else {
             throw new DotContentletStateException(
-                    "Boolean fields must either be of type String or Boolean");
+                    "Boolean fields must either be of type String or Boolean for the field: " + field.variable());
         }
     }
 
@@ -301,7 +302,7 @@ public class FieldHandlerStrategyFactory {
                 if (value != null && value.toString().length() != 0) {
                     contentlet.getMap().put(field.variable(), (String) value);
                 }
-                throw new DotContentletStateException("Unable to set string value as a Float");
+                throw new DotContentletStateException("Unable to set string value as a Float for the field: " + field.variable());
             }
         }
     }
@@ -329,7 +330,7 @@ public class FieldHandlerStrategyFactory {
                         Long.valueOf((String)value));
             } catch (Exception e) {
                 //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
-                throw new DotContentletStateException("Unable to set string value as a Long");
+                throw new DotContentletStateException("Unable to set string value as a Long for the field: " + field.variable());
             }
         }
     }

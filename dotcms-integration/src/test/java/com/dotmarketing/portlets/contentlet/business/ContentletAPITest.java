@@ -8642,8 +8642,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         // publish contentlet
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
         final String value = "LOoooooooooooooooooooooooong teeeeeeeeeeeeext";
-        contentletDataGen.setProperty(keyPropName, value);
         final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
         ContentletDataGen.publish(publishedContentlet);
         final String contentInode = publishedContentlet.getInode();
 
@@ -8672,18 +8672,19 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .type(TextField.class)
                 .nextPersisted());
 
-        ContentTypeDataGen.addField(new FieldDataGen()
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
                 .velocityVarName(keyPropName)
                 .contentTypeId(contentType.id())
                 .type(DateField.class)
                 .defaultValue("now")
-                .nextPersisted());
+                .nextPersisted();
+        ContentTypeDataGen.addField(field);
 
         // publish contentlet
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
         final Date value = new Date();
-        contentletDataGen.setProperty(keyPropName, value);
         final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
         ContentletDataGen.publish(publishedContentlet);
         final String contentInode = publishedContentlet.getInode();
 
@@ -8712,18 +8713,19 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .type(TextField.class)
                 .nextPersisted());
 
-        ContentTypeDataGen.addField(new FieldDataGen()
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
                 .velocityVarName(keyPropName)
                 .contentTypeId(contentType.id())
                 .type(TextField.class)
                 .dataType(DataTypes.FLOAT)
-                .nextPersisted());
+                .nextPersisted();
+        ContentTypeDataGen.addField(field);
 
         // publish contentlet
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
         final Float value = 3.14f;
-        contentletDataGen.setProperty(keyPropName, value);
         final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
         ContentletDataGen.publish(publishedContentlet);
         final String contentInode = publishedContentlet.getInode();
 
@@ -8773,5 +8775,90 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         final File valueRetrieved = (File) contentRetrieved.get(keyPropName);
         assertEquals(value.getName(), valueRetrieved.getName());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with text and description and sets to it
+     * Should: should be properly set, taking a String as an input and returned as a boolean
+     */
+    @Test
+    public void test_setContentletProperty_bool() throws Exception {
+
+        String testVal = "true|true\r\nfalse|false";
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "description";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(RadioField.class)
+                .dataType(DataTypes.BOOL)
+                .values(testVal)
+                .nextPersisted();
+
+        ContentTypeDataGen.addField(field);
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final String value = "t";
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        final Boolean valueRetrieved = (Boolean) contentRetrieved.get(keyPropName);
+        assertTrue(valueRetrieved);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#setContentletProperty(Contentlet, Field, Object)}
+     * When: Create a content type with int and title and sets to it
+     * Should: should be properly set, taking a int as an input
+     */
+    @Test
+    public void test_setContentletProperty_int() throws Exception {
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String keyPropName = "number";
+        ContentTypeDataGen.addField(new FieldDataGen()
+                .velocityVarName("title")
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .nextPersisted());
+
+        final com.dotcms.contenttype.model.field.Field field = new FieldDataGen()
+                .velocityVarName(keyPropName)
+                .contentTypeId(contentType.id())
+                .type(TextField.class)
+                .dataType(DataTypes.INTEGER)
+                .nextPersisted();
+        ContentTypeDataGen.addField(field);
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final Integer value = 3;
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+
+        final Contentlet contentRetrieved = APILocator.getContentletAPI().find(contentInode, user, false);
+
+        assertNotNull(contentRetrieved);
+        assertEquals(contentInode, contentRetrieved.getInode());
+
+        final Number valueRetrieved = (Number) contentRetrieved.get(keyPropName);
+        assertEquals(value, valueRetrieved);
     }
 }
