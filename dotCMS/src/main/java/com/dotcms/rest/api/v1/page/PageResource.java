@@ -419,9 +419,21 @@ public class PageResource {
                                 "Otherwise a new template will be created without making any changes to previous templates.\n\n" +
                                 "Returns the updated page view for specified page.\n\n",
                 tags = {"Page"})
-    @ApiResponse(respondeCode = "200", 
+    @ApiResponses(value = {
+        @ApiResponse(
+                responseCode = "200", 
                 description = "Template saved and linked successfully",
-                content =)
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(
+                responseCode = "400", 
+                description = "Bad request or data exception",
+                content = @Content(mediaTpye = "text/plain")),
+        @ApiResponse(
+                responseCode = "404",
+                description = "Page not found",
+                content = @Content(mediaType = "text/plain")
+        )
+        })
     public Response saveLayout(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("pageId") @Parameter(description = "ID for the page that the template will link to") final String pageId,
