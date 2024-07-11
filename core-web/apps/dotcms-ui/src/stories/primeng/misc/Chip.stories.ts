@@ -1,30 +1,43 @@
-import { Meta, Story } from '@storybook/angular';
+import {
+    Meta,
+    StoryObj,
+    moduleMetadata,
+    componentWrapperDecorator,
+    argsToTemplate
+} from '@storybook/angular';
 
 import { Chip, ChipModule } from 'primeng/chip';
 
-const DEFAULT = 'default';
-const mergeArgsClassNamesToString = (args): string => {
-    const argsContainClassNames = ['style', 'size', 'severity'];
-
-    let classes = '';
-
-    argsContainClassNames.forEach((arg) => {
-        if (args[arg] && args[arg] !== DEFAULT) {
-            classes += args[arg] + ' ';
-        }
-    });
-
-    return classes;
+type Args = Chip & {
+    size: string;
+    severity: string;
 };
 
-export default {
-    title: 'PrimeNG/Chip',
+const meta: Meta<Args> = {
+    title: 'PrimeNG/Misc/Chip',
     component: Chip,
+    decorators: [
+        moduleMetadata({
+            imports: [ChipModule]
+        }),
+        componentWrapperDecorator(
+            (story) => `<div class="card flex justify-content-center">${story}</div>`
+        )
+    ],
+    parameters: {
+        layout: 'centered',
+        docs: {
+            description: {
+                component:
+                    'Chip represents entities using icons, labels and images: https://www.primefaces.org/primeng-v15-lts/chip'
+            }
+        }
+    },
     args: {
         label: 'Text',
         icon: 'pi pi-image',
-        size: DEFAULT,
-        severity: DEFAULT,
+        size: 'default',
+        severity: 'default',
         styleClass: '',
         removable: true
     },
@@ -41,13 +54,12 @@ export default {
             description: 'Whether to display a remove icon.'
         },
         size: {
-            options: [DEFAULT, 'p-chip-sm'],
+            options: ['p-chip-sm'],
             control: { type: 'radio' },
             description: 'Class name used in `styleClass` for the size of the chip'
         },
         severity: {
             options: [
-                DEFAULT,
                 'p-chip-secondary',
                 'p-chip-warning',
                 'p-chip-success',
@@ -57,24 +69,18 @@ export default {
             control: { type: 'radio' },
             description: 'Class name used in `styleClass` for the severity of the chip'
         }
-    }
-} as Meta;
-
-const ComponentStory: Story = (args) => ({
-    moduleMetadata: {
-        imports: [ChipModule]
     },
-    props: {
-        ...args,
-        styleClass: mergeArgsClassNamesToString(args)
-    },
-    template: `
-   <p-chip
-    [label]="label"
-    [icon]="icon"
-    [styleClass]="styleClass"
-    [removable]="removable"
-    [image]="image"></p-chip>`
-});
+    render: (args: Args) => ({
+        props: {
+            ...args
+        },
+        template: `
+         <p-chip ${argsToTemplate(args)} />`
+    })
+};
 
-export const Default = ComponentStory.bind({});
+export default meta;
+
+type Story = StoryObj<Args>;
+
+export const Default: Story = {};
