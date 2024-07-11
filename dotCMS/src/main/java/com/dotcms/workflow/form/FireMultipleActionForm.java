@@ -190,7 +190,7 @@ public class FireMultipleActionForm extends Validated {
             }
 
 
-            throw new DotRuntimeException("For the contentlet property pass in a single map, e.g. contentlet:{} or an array of maps, e.g. contentlet:[{},{}] ");
+            throw new DotRuntimeException("For the contentlets property pass in a single map, e.g. contentlets:{} or an array of maps, e.g. contentlets:[{},{}] ");
 
 
         }
