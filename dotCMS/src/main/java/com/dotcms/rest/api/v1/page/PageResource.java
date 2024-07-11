@@ -418,7 +418,8 @@ public class PageResource {
                                 "Any pages with a template already linked will update with the new link.\n\n" +
                                 "Otherwise a new template will be created without making any changes to previous templates.\n\n" +
                                 "Returns the updated page view for specified page.\n\n",
-                tags = {"Page"})
+                tags = {"Page"}
+        )
     @ApiResponses(value = {
         @ApiResponse(
                 responseCode = "200", 
@@ -438,7 +439,8 @@ public class PageResource {
             @Context final HttpServletResponse response,
             @PathParam("pageId") @Parameter(description = "ID for the page that the template will link to") final String pageId,
             @QueryParam("variantName") final String variantNameParam,
-            final PageForm form) throws DotSecurityException {
+            final PageForm form) 
+        throws DotSecurityException {
 
         final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
                 VariantAPI.DEFAULT_VARIANT.name();
