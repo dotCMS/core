@@ -5534,7 +5534,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"hostId\":\"{{host_id}}\",\n    \"url\":\"/testPageCopy{{pagePost2}}\",\n    \"languageId\": \"1\"\n}",
+							"raw": "{\n    \"host_id\":\"{{host_id}}\",\n    \"url\":\"/testPageCopy{{pagePost2}}\",\n    \"language_id\": \"1\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
