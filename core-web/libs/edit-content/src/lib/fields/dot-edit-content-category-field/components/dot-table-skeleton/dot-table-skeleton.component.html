@@ -6,7 +6,7 @@
     <ng-template let-columns pTemplate="header">
         <tr>
             @for (col of columns; track $index) {
-                <th [style.width.px]="$index === 0 ? 40 : null">{{ col }}</th>
+            <th [style.width.px]="$index === 0 ? 40 : null">{{ col }}</th>
             }
         </tr>
     </ng-template>
@@ -14,13 +14,13 @@
     <ng-template let-columns="columns" pTemplate="body">
         <tr>
             @for (col of columns; track $index) {
-                <td>
-                    @if (col === '') {
-                        <p-skeleton size="1rem" styleClass="mr-1"></p-skeleton>
-                    } @else {
-                        <p-skeleton></p-skeleton>
-                    }
-                </td>
+            <td>
+                @if (col === '') {
+                <p-skeleton size="1rem" styleClass="mr-1"></p-skeleton>
+                } @else {
+                <p-skeleton></p-skeleton>
+                }
+            </td>
             }
         </tr>
     </ng-template>

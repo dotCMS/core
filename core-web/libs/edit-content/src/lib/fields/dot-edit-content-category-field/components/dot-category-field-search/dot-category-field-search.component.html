@@ -6,14 +6,13 @@
         pInputText
         type="text" />
     @if (searchControl.value && !isLoading()) {
-        <span (click)="clearInput()" class="p-inputgroup-addon category-field__search-icon-clear">
-            <i class="pi pi-times cursor-pointer"></i>
-        </span>
-    }
-    @if (isLoading()) {
-        <span class="p-inputgroup-addon category-field__search-icon-loading">
-            <i class="pi pi-spin pi-spinner"></i>
-        </span>
+    <span (click)="clearInput()" class="p-inputgroup-addon category-field__search-icon-clear">
+        <i class="pi pi-times cursor-pointer"></i>
+    </span>
+    } @if (isLoading()) {
+    <span class="p-inputgroup-addon category-field__search-icon-loading">
+        <i class="pi pi-spin pi-spinner"></i>
+    </span>
     }
 
     <span class="p-inputgroup-addon category-field__search--icon-search">
