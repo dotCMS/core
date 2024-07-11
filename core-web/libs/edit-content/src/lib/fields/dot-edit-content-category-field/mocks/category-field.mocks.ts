@@ -1,6 +1,9 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DotCategoryFieldCategory } from '../models/dot-category-field.models';
+import {
+    DotCategoryFieldCategory,
+    DotCategoryFieldKeyValueObj
+} from '../models/dot-category-field.models';
 
 export const CATEGORY_FIELD_VARIABLE_NAME = 'categorias';
 
@@ -203,3 +206,16 @@ export const CATEGORY_LIST_MOCK: DotCategoryFieldCategory[][] = [
  * Represent the selected categories
  */
 export const SELECTED_LIST_MOCK = [CATEGORY_LEVEL_1[1].inode, CATEGORY_LEVEL_1[2].inode];
+
+export const CATEGORIES_KEY_VALUE: DotCategoryFieldKeyValueObj[] = [
+    {
+        key: '0ab5e687775e4793679970e561380560',
+        value: 'Electrical',
+        path: 'Electrical'
+    },
+    {
+        key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
+        value: 'Doors & Windows',
+        path: 'Doors & Windows'
+    }
+];

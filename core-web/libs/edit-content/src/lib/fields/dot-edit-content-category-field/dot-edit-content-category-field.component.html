@@ -1,5 +1,5 @@
 @if (store.selected().length) {
-<div class="dot-category-field__categories">
+<div class="dot-category-field__categories" data-testId="category-chip-list">
     <dot-category-field-chips [max]="$maxChips()" [categories]="store.selected()" />
 </div>
 }

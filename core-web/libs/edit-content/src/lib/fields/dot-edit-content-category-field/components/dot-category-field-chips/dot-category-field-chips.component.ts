@@ -23,8 +23,12 @@ import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.mod
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCategoryFieldChipsComponent {
+    /**
+     *  Represents the variable 'dotMessageService' which is of type 'DotMessageService'.
+     *
+     * @memberof DotCategoryFieldChipsComponent
+     */
     readonly #dotMessageService = inject(DotMessageService);
-
     /**
      * Represents the variable 'showAll' which is of type 'signal<boolean>'.
      *
