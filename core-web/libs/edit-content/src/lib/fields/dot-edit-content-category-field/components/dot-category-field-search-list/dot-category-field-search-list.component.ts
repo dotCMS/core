@@ -5,7 +5,6 @@ import {
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
-    computed,
     effect,
     ElementRef,
     EventEmitter,
@@ -22,7 +21,6 @@ import { TableModule } from 'primeng/table';
 
 import { debounceTime } from 'rxjs/operators';
 
-import { DotCategory } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
@@ -30,7 +28,6 @@ import {
     DotTableHeaderCheckboxSelectEvent,
     DotTableRowSelectEvent
 } from '../../models/dot-category-field.models';
-import { getParentPath } from '../../utils/category-field.utils';
 import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skeleton.component';
 
 @Component({
@@ -55,7 +52,8 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
     /**
      * Represents the categories found with the filter
      */
-    categories = input.required<DotCategory[]>();
+    categories = input.required<DotCategoryFieldKeyValueObj[]>();
+
     /**
      * Represent the selected items in the store
      */
@@ -74,17 +72,7 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
      * Represents a variable indicating if the component is in loading state.
      */
     isLoading = input.required<boolean>();
-    /**
-     * Computed variable to store the search results parsed.
-     *
-     */
-    $searchResults = computed<DotCategoryFieldKeyValueObj[]>(() => {
-        return this.categories().map((item) => {
-            const path = getParentPath(item);
 
-            return { key: item.key, value: item.categoryName, path: path, inode: item.inode };
-        });
-    });
     /**
      * Model of the items selected
      */
@@ -137,8 +125,8 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
      */
     onHeaderCheckboxToggle({ checked }: DotTableHeaderCheckboxSelectEvent): void {
         if (checked) {
-            const values = this.$searchResults().map((item) => item.key);
-            this.itemChecked.emit(this.$searchResults());
+            const values = this.categories().map((item) => item.key);
+            this.itemChecked.emit(this.categories());
             this.temporarySelectedAll = [...values];
         } else {
             this.removeItem.emit(this.temporarySelectedAll);

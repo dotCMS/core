@@ -42,7 +42,7 @@
                     (itemChecked)="store.addSelected($event)"
                     (removeItem)="store.removeSelected($event)"
                     [isLoading]="store.isSearchLoading()"
-                    [categories]="store.searchCategories()"
+                    [categories]="store.searchCategoryList()"
                     [selected]="store.selected()" />
                 }
             </div>

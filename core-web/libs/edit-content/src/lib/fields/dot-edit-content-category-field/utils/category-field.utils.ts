@@ -41,12 +41,15 @@ export const transformCategories = (
         const { key, inode, categoryName, childrenCount } = category;
         const hasChildren = childrenCount > 0;
 
+        const path = category.parentList ? getParentPath(category) : '';
+
         return {
             key,
             inode,
             value: categoryName,
             hasChildren,
-            clicked: hasChildren && keyParentPath.includes(key)
+            clicked: hasChildren && keyParentPath.includes(key),
+            path
         };
     };
 

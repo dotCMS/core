@@ -18,7 +18,8 @@ import { debounceTime, filter } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-const DEBOUNCE_TIME = 300;
+export const DEBOUNCE_TIME = 300;
+
 const MINIMUM_CHARACTERS = 3;
 
 @Component({

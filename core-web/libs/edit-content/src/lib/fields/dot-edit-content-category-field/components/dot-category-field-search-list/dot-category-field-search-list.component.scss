@@ -5,7 +5,7 @@
     overflow: hidden;
 }
 
-::ng-deep .dotTable.p-datatable > .p-datatable-wrapper {
+:host ::ng-deep .dotTable.p-datatable > .p-datatable-wrapper {
     border-radius: 0;
     border: none;
 }

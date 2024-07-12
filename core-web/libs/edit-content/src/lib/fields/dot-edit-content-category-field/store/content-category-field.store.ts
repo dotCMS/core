@@ -171,7 +171,13 @@ export const CategoryFieldStore = signalStore(
          * Clears all categories from the store, effectively resetting state related to categories and their parent paths.
          */
         clean() {
-            patchState(store, { categories: [], keyParentPath: [], mode: 'list', filter: '' });
+            patchState(store, {
+                categories: [],
+                keyParentPath: [],
+                mode: 'list',
+                filter: '',
+                searchCategories: []
+            });
         },
 
         /**
