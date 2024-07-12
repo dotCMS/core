@@ -8,11 +8,13 @@ import java.util.List;
  */
 public class HierarchyShortCategory implements Serializable {
     private final String inode;
+    private final String categoryName;
     private final List<ShortCategory> parentList;
 
-    public HierarchyShortCategory(final String inode, final List<ShortCategory> parentList) {
+    public HierarchyShortCategory(final String inode, final String categoryName, final List<ShortCategory> parentList) {
         this.inode = inode;
         this.parentList = parentList;
+        this.categoryName = categoryName;
     }
 
     public String getInode() {
@@ -21,5 +23,9 @@ public class HierarchyShortCategory implements Serializable {
 
     public List<ShortCategory> getParentList() {
         return parentList;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
     }
 }
