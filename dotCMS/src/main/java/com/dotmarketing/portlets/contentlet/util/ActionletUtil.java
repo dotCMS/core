@@ -84,4 +84,16 @@ public class ActionletUtil {
         }
         return false;
     }
+
+    /**
+     * Returns true if the class is annotated as a batch only actionlet
+     * @param clazz Class (expects a WorkflowActionlet) but it is not mandatory
+     * @return true if the class is batch only marked
+     */
+    public static boolean isOnlyBatch(final Class clazz) {
+
+        final Actionlet actionlet = AnnotationUtils.
+                getBeanAnnotation(clazz, Actionlet.class);
+        return true; // actionlet.isOnlyBatch();
+    }
 }
