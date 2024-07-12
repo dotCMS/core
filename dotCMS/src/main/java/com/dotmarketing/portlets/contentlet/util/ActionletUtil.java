@@ -14,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public class ActionletUtil {
@@ -120,6 +121,6 @@ public class ActionletUtil {
 
         final Actionlet actionlet = AnnotationUtils.
                 getBeanAnnotation(clazz, Actionlet.class);
-        return true; // actionlet.isOnlyBatch();
+        return Objects.nonNull(actionlet)?actionlet.onlyBatch():false;
     }
 }

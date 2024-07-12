@@ -11,6 +11,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.business.*" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="com.dotmarketing.portlets.contentlet.util.ActionletUtil" %>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -389,7 +390,7 @@
                             onChange="actionClassAdmin.addSelectedToActionClasses()">
 								<option value=""></option>
 								<%for(WorkFlowActionlet a : wapi.findActionlets()){%>
-								<option value="<%=a.getClass().getCanonicalName()%>"><%=a.getName() %></option>
+								<option onlyBatch="<%=ActionletUtil.isOnlyBatch(a.getClass())%>" value="<%=a.getClass().getCanonicalName()%>"><%=a.getName()+ActionletUtil.isOnlyBatch(a.getClass()) %></option>
 								<%} %>
 							</select>
 							<button dojoType="dijit.form.Button"
