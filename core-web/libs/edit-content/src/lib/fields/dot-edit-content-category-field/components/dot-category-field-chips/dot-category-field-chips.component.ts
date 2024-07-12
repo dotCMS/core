@@ -96,7 +96,6 @@ export class DotCategoryFieldChipsComponent {
 
         return null;
     });
-
     /**
      * Method to toogle the show all categories.
      *
