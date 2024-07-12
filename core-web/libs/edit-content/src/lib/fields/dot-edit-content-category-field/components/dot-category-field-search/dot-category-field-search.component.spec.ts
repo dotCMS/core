@@ -20,11 +20,10 @@ describe('DotCategoryFieldSearchComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            props: {
-                isLoading: false
-            }
+            detectChanges: false
         });
 
+        spectator.setInput('isLoading', false);
         spectator.detectChanges();
     });
 

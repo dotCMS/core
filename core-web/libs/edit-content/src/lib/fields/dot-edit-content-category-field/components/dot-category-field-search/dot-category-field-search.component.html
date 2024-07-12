@@ -6,14 +6,14 @@
         data-testId="search-input"
         pInputText
         type="text" />
-    @if (searchControl.value && !isLoading()) {
+    @if (searchControl.value && !$isLoading()) {
     <span
         data-testId="search-icon-clear"
         (click)="clearInput()"
         class="p-inputgroup-addon category-field__search-icon-clear">
         <i class="pi pi-times cursor-pointer"></i>
     </span>
-    } @if (isLoading()) {
+    } @if ($isLoading()) {
     <span
         data-testId="search-icon-loading"
         class="p-inputgroup-addon category-field__search-icon-loading">
