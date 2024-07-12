@@ -20,9 +20,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
 import { DotCategoryFieldSearchComponent } from '../dot-category-field-search/dot-category-field-search.component';
-import {
-    DotCategoryFieldSearchListComponent
-} from "../dot-category-field-search-list/dot-category-field-search-list.component";
+import { DotCategoryFieldSearchListComponent } from '../dot-category-field-search-list/dot-category-field-search-list.component';
 
 /**
  * The DotCategoryFieldSidebarComponent is a sidebar panel that allows editing of content category field.

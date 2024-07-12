@@ -1,8 +1,8 @@
 import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import {  DotCategoryFieldKeyValueObj } from "../models/dot-category-field.models";
-import { transformCategories } from "../utils/category-field.utils";
+import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
+import { transformCategories } from '../utils/category-field.utils';
 
 export const CATEGORY_FIELD_VARIABLE_NAME = 'categorias';
 

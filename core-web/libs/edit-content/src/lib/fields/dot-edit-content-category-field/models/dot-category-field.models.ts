@@ -35,3 +35,8 @@ export interface DotTableHeaderCheckboxSelectEvent {
     originalEvent?: Event;
     checked: boolean;
 }
+
+/**
+ * Represents the view mode for a category field.
+ */
+export type CategoryFieldViewMode = 'list' | 'search';

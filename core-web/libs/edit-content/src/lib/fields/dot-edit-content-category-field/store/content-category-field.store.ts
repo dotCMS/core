@@ -14,8 +14,8 @@ import {
     DotCMSContentTypeField
 } from '@dotcms/dotcms-models';
 
-import { CategoryFieldViewMode } from '../components/dot-category-field-sidebar/dot-category-field-sidebar.component';
 import {
+    CategoryFieldViewMode,
     DotCategoryFieldItem,
     DotCategoryFieldKeyValueObj
 } from '../models/dot-category-field.models';
