@@ -1312,7 +1312,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 		var clazz = select.getValue();
 		var name = select.attr('displayedValue');
         var isOnlyBatch = select.get('onlyBatch');
-		console.log("clazz", clazz, "name", name ,"isOnlyBatch", isOnlyBatch);
+		console.log("clazz", clazz, "name", name ,"select", select);
         if(clazz.length>0){
 		   this.addActionClass(clazz, name);
 		   select.setValue("");
@@ -1340,9 +1340,12 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
                         } else {
                             var x = dataOrError.split(":");
                             var entry = {id:x[0], name:x[1]};
+							var isOnlyBatch = x[2];
                             actionClassAdmin.actionClasses.push(entry);
 
                             actionClassAdmin.refreshActionClasses();
+
+							alert("isOnlyBatch: " + isOnlyBatch);
                             //showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Added")%>", false);
                         }
                     } else {

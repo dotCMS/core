@@ -390,7 +390,7 @@
                             onChange="actionClassAdmin.addSelectedToActionClasses()">
 								<option value=""></option>
 								<%for(WorkFlowActionlet a : wapi.findActionlets()){%>
-								<option onlyBatch="<%=ActionletUtil.isOnlyBatch(a.getClass())%>" value="<%=a.getClass().getCanonicalName()%>"><%=a.getName()+ActionletUtil.isOnlyBatch(a.getClass()) %></option>
+								<option onlyBatch="<%=ActionletUtil.isOnlyBatch(a.getClass())%>" value="<%=a.getClass().getCanonicalName()%>"><%=a.getName()%></option>
 								<%} %>
 							</select>
 							<button dojoType="dijit.form.Button"
