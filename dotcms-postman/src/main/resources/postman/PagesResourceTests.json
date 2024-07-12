@@ -5281,8 +5281,8 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Saving the Default Site's ID\", function () {",
-									"    //var jsonData = pm.response.json();",
-									"    pm.collectionVariables.set(\"host_id\", \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\");",
+									"    var entity = pm.response.json().entity;",
+									"    pm.collectionVariables.set(\"host_id\", entity.identifier);",
 									"});",
 									""
 								],
@@ -5325,11 +5325,11 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"Check response\", function () {",
+									"pm.test(\"Check that the Site has indeed switched to the 'default' Site\", function () {",
+									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity.hostSwitched).to.eql(true);",
-									"});"
+									"});",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -5356,41 +5356,16 @@
 					"response": []
 				},
 				{
-					"name": "Set Default as Default Site",
-					"request": {
-						"method": "PUT",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/site/{{host_id}}/_makedefault",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"site",
-								"{{host_id}}",
-								"_makedefault"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Create a Test Page",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Test Page created successfully\", function () {",
+									"pm.test(\"Check that the Test Page was created successfully\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
-									"    pm.collectionVariables.set(\"host_id\", jsonData.entity.host);",
-									"",
-									"    console.log(\"Created page data - path: \" + jsonData.entity.path);",
-									"    console.log(\"Created page data - site: \" + jsonData.entity.host);",
 									"});",
 									""
 								],
@@ -5403,7 +5378,6 @@
 							"script": {
 								"exec": [
 									"const pagePost = Math.floor(Math.random()*100+1)",
-									"//pm.globals.set(\"pagePost2\", pagePost)",
 									"pm.collectionVariables.set(\"pagePost2\", pagePost);"
 								],
 								"type": "text/javascript",
@@ -5416,7 +5390,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"languageId\": 1,\n        \"title\": \"testPageCopy{{pagePost2}}\",\n        \"url\": \"testPageCopy{{pagePost2}}\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"testPageCopy{{pagePost2}}\",\n        \"cachettl\": 0,\n        \"workflow\": [\n            \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n        ]\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"languageId\": 1,\n        \"title\": \"testPageCopy{{pagePost2}}\",\n        \"url\": \"testPageCopy{{pagePost2}}\",\n        \"hostFolder\": \"{{host_id}}\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"testPageCopy{{pagePost2}}\",\n        \"cachettl\": 0,\n        \"workflow\": [\n            \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n        ]\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -5448,61 +5422,13 @@
 					"response": []
 				},
 				{
-					"name": "Get Page As JSON",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Checking page properties\", function () {",
-									"    var page = pm.response.json().entity.page;",
-									"    const pageUrl = pm.collectionVariables.get(\"pagePost2\");",
-									"    const siteId = pm.collectionVariables.get(\"host_id\");",
-									"    pm.expect(page.path).to.equal(\"/testPageCopy\" + pageUrl, \"The Page URL is not the expected one\");",
-									"    pm.expect(page.host).to.equal(siteId, \"The Site ID is not the expected one\");",
-									"    pm.expect(pm.response.json().errors.length).to.equal(0);",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/testPageCopy{{pagePost2}}?host_id={{host_id}}",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"json",
-								"testPageCopy{{pagePost2}}"
-							],
-							"query": [
-								{
-									"key": "host_id",
-									"value": "{{host_id}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Get Workflow Actions",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Checking that Worklfow Actions for the test HTML Page are available\", function () {",
-									"    console.log(\"Response as text: \" + pm.response.text());",
+									"pm.test(\"Check that Workflow Actions for the test HTML Page are available\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.expect(jsonData.entity.actions.length).to.greaterThan(0);",
@@ -5518,11 +5444,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"/*pm.test(\"Waiting for the test HTML Page to be ready\", function () {",
-									"    var timeout = 2000;",
-									"    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
-									"});",
-									"*/"
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -5557,30 +5479,9 @@
 						}
 					},
 					"response": []
-				},
-				{
-					"name": "Set demo.dotcms.com as Default Site",
-					"request": {
-						"method": "PUT",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/site/48190c8c-42c4-46af-8d1a-0cd5db894797/_makedefault",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"site",
-								"48190c8c-42c4-46af-8d1a-0cd5db894797",
-								"_makedefault"
-							]
-						}
-					},
-					"response": []
 				}
 			],
-			"description": "Retrieves the list of Workflow Actions that are availbale for a given HTML Page.",
+			"description": "Retrieves the list of Workflow Actions that are availbale for a given HTML Page. These actions are basically the `Save`, `Publish`, `Archive`, or any other buttons you see in the Content Edit modal when you're creating or editing an HTML Page in the back-end.",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -5598,9 +5499,10 @@
 						"type": "text/javascript",
 						"packages": {},
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"});"
+							"});",
+							""
 						]
 					}
 				}
