@@ -8642,8 +8642,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         // publish contentlet
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
         final String value = "LOoooooooooooooooooooooooong teeeeeeeeeeeeext";
-        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        Contentlet publishedContentlet = contentletDataGen.nextPersisted();
         APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+        publishedContentlet = ContentletDataGen.checkin(publishedContentlet);
         ContentletDataGen.publish(publishedContentlet);
         final String contentInode = publishedContentlet.getInode();
 
@@ -8683,8 +8684,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         // publish contentlet
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
         final Date value = new Date();
-        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        Contentlet publishedContentlet = contentletDataGen.nextPersisted();
         APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+        publishedContentlet = ContentletDataGen.checkin(publishedContentlet);
         ContentletDataGen.publish(publishedContentlet);
         final String contentInode = publishedContentlet.getInode();
 
@@ -8724,8 +8726,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         // publish contentlet
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
         final Float value = 3.14f;
-        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        Contentlet publishedContentlet = contentletDataGen.nextPersisted();
         APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+        publishedContentlet = ContentletDataGen.checkin(publishedContentlet);
         ContentletDataGen.publish(publishedContentlet);
         final String contentInode = publishedContentlet.getInode();
 
@@ -8807,8 +8810,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         // publish contentlet
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
         final String value = "t";
-        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        Contentlet publishedContentlet = contentletDataGen.nextPersisted();
         APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+        publishedContentlet = ContentletDataGen.checkin(publishedContentlet);
         ContentletDataGen.publish(publishedContentlet);
         final String contentInode = publishedContentlet.getInode();
 
@@ -8848,8 +8852,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         // publish contentlet
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
         final Integer value = 3;
-        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        Contentlet publishedContentlet = contentletDataGen.nextPersisted();
         APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
+        publishedContentlet = ContentletDataGen.checkin(publishedContentlet);
         ContentletDataGen.publish(publishedContentlet);
         final String contentInode = publishedContentlet.getInode();
 
