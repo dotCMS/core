@@ -1,8 +1,8 @@
-@use "./colors" as *;
+@use "./colors";
 
 $font-code: "Red Hat Mono", "Monaco", "Consolas";
 $font-default: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-$font-color-base: $black;
+$font-color-base: colors.$black;
 
 /*
   ========================== WARNING ==========================
