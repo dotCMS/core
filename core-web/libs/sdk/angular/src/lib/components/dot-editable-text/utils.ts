@@ -4,7 +4,7 @@ export type TINYMCE_MODE = 'minimal' | 'full' | 'plain';
 
 export type TINYMCE_FORMAT = 'html' | 'text';
 
-const DEFAULT_TINYMCE_CONFIG = {
+const DEFAULT_TINYMCE_CONFIG: EditorComponent['init'] = {
     menubar: false,
     inline: true,
     valid_styles: {

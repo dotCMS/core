@@ -3,11 +3,13 @@ import { EventObj } from '@tinymce/tinymce-angular/editor/Events';
 
 import {
     Component,
+    ElementRef,
     HostListener,
     inject,
     Input,
     OnChanges,
     OnInit,
+    Renderer2,
     ViewChild
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -23,7 +25,6 @@ import { TINYMCE_CONFIG, TINYMCE_FORMAT, TINYMCE_MODE } from './utils';
 
 import { DotCMSContentlet } from '../../models';
 import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
-
 @Component({
     selector: 'dot-editable-text',
     standalone: true,
@@ -55,6 +56,8 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
 
     readonly #client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
     readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
+    readonly #renderer = inject<Renderer2>(Renderer2);
+    readonly #elementRef = inject<ElementRef>(ElementRef);
 
     get editor() {
         return this.editorComponent.editor;
@@ -65,15 +68,29 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
     }
 
     @HostListener('window:message', ['$event'])
-    onMessage(event: MessageEvent) {
-        if (event.data.name !== 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS') {
+    onMessage({ data }: MessageEvent) {
+        const { name, payload } = data;
+        if (name !== 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS') {
             return;
         }
 
-        this.editorComponent.editor.focus();
+        const { oldInode, inode } = payload;
+        const currentInode = this.contentlet.inode;
+
+        if (currentInode === oldInode || currentInode === inode) {
+            this.editorComponent.editor.focus();
+
+            return;
+        }
     }
 
     ngOnInit() {
+        if (!this.isInsideEditor) {
+            this.innerHTMLToElement();
+
+            return;
+        }
+
         this.init = {
             ...TINYMCE_CONFIG[this.mode],
             base_url: `${this.#client.dotcmsUrl}/html/tinymce`
@@ -147,6 +164,19 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
         } catch (error) {
             console.error('Failed to post message to editor:', error);
         }
+    }
+
+    /**
+     * inner HTML to element
+     *
+     * @private
+     * @param {string} editedContent
+     * @return {*}
+     * @memberof DotEditableTextComponent
+     */
+    private innerHTMLToElement() {
+        const element = this.#elementRef.nativeElement;
+        this.#renderer.setProperty(element, 'innerHTML', this.content);
     }
 
     /**

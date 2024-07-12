@@ -1,3 +1,4 @@
-:host {
-    display: block;
+:host ::ng-deep .mce-content-body:not(.mce-edit-focus) {
+    outline: 2px solid #006ce7;
+    border-radius: 4px;
 }

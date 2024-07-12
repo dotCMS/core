@@ -1043,18 +1043,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     )
                     .subscribe((res: DotCMSContentlet | null) => {
                         const data = {
+                            oldInode: payload.dataset.inode,
                             inode: res?.inode || payload.dataset.inode,
                             fieldName: payload.dataset.fieldName,
                             mode: payload.dataset.mode,
                             language: payload.dataset.language
                         };
 
-                        const message = {
-                            name: 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS',
-                            payload: data
-                        };
-
                         if (!this.isVTLPage()) {
+                            const message = {
+                                name: NOTIFY_CUSTOMER.COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                payload: data
+                            };
+
                             this.contentWindow?.postMessage(message, this.host);
 
                             return;
