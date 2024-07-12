@@ -1149,9 +1149,8 @@ public class PageResource {
                 .rejectWhenNoUser(true).requiredBackendUser(true).init().getUser();
 
         final PageMode mode = PageMode.get(request);
-        Logger.debug(this, ()-> "Finding available actions for the page path: " + findAvailableActionsForm.getPath()
-                + ", Site ID: " + findAvailableActionsForm.getHostId()
-                + ", Lang ID: " + findAvailableActionsForm.getLanguageId());
+        Logger.debug(this, () -> String.format("Finding available actions for page path: '%s' / Site ID: '%s' / Lang ID: %s",
+                findAvailableActionsForm.getPath(), findAvailableActionsForm.getHostId(), findAvailableActionsForm.getLanguageId()));
 
         final long languageId  = -1 != findAvailableActionsForm.getLanguageId()? findAvailableActionsForm.getLanguageId():
                 WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
@@ -1186,8 +1185,7 @@ public class PageResource {
             ));
         }
 
-        throw new DoesNotExistException(String.format("Page '%s' does not exist - is URL Map? %s - currentHost? %s - languageId? %d - showLive? %s",
-                findAvailableActionsForm.getPath(), urlMapInfoOptional.isPresent(), currentHost, languageId, mode.showLive));
+        throw new DoesNotExistException(String.format("Page path '%s' does not exist", findAvailableActionsForm.getPath()));
     } // findAvailableActions.
 
     /**
