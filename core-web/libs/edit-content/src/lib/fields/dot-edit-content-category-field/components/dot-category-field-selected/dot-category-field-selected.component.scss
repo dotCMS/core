@@ -1,0 +1,40 @@
+@use "variables" as *;
+
+.category-list {
+    list-style: none;
+    padding: $spacing-3;
+    margin: 0;
+}
+
+.category-list__item {
+    display: grid;
+    grid-template-columns: 1fr 40px;
+    align-items: center;
+    padding: $spacing-1 0;
+    border-bottom: 1px solid $color-palette-gray-300;
+}
+
+.category-list__item-content {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+}
+
+.category-list__title {
+    color: $black;
+    font-size: $font-size-smd;
+    font-weight: $font-weight-medium-bold;
+}
+
+.category-list__path {
+    color: $color-palette-gray-700;
+    font-weight: $font-weight-regular-bold;
+    display: flex;
+
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

@@ -1,0 +1,24 @@
+<ul class="category-list">
+    @for (category of $fix(); track category.key) {
+    <li class="category-list__item" @fadeAnimation>
+        <div class="category-list__item-content">
+            <div class="category-list__title">{{ category.value }}</div>
+            <div class="category-list__path">
+                @for (path of category.pathArray; track $index) {
+                <span>{{ path }}</span>
+                <i class="pi pi-angle-right"></i>
+                }
+            </div>
+        </div>
+
+        <button
+            (click)="removeItem.emit(category.key)"
+            icon="pi pi-times"
+            class="p-button-sm p-button-text p-button-secondary"
+            data-testId="category-list__remove-btn"
+            pButton></button>
+    </li>
+    } @empty {
+    <li>No Categories selected</li>
+    }
+</ul>

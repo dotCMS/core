@@ -9,6 +9,7 @@ export interface DotCategoryFieldKeyValueObj {
     path?: string;
     clicked?: boolean;
     hasChildren?: boolean;
+    pathArray?: string[];
 }
 
 /**
