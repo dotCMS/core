@@ -290,7 +290,7 @@ public abstract class CategoryFactory {
 	public abstract List<HierarchedCategory> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException;
 
 	/**
-	 * Find Categories by inodes and calculate its Hierarchy.
+	 * Find Categories by keys and calculate its Hierarchy.
 	 *
 	 * For Example if you have the follows categories:
 	 *
@@ -301,9 +301,11 @@ public abstract class CategoryFactory {
 	 * | 2      | Child       | child       | Top Category   |
 	 * | 3      | Grand Child | grand_child | Child          |
 	 *
-	 * And you search by inode 3 then you got:
+	 * And you search by key 'grand_child' then you got:
 	 *
 	 * Inode: 3
+	 * key: 'grand_child'
+	 * categoryName: 'Grand Child'
 	 * parentList <code>[
 	 *   {
 	 *       'categoryName':'Top Category',
@@ -317,9 +319,9 @@ public abstract class CategoryFactory {
 	 *   }
 	 * ]</code>
 	 *
-	 * @param inodes List of inodes to search
+	 * @param keys List of keys to search
 	 * @return
 	 * @throws DotDataException
 	 */
-	public abstract List<HierarchyShortCategory> findHierarchy(final Collection<String> inodes) throws DotDataException;
+	public abstract List<HierarchyShortCategory> findHierarchy(final Collection<String> keys) throws DotDataException;
 }
