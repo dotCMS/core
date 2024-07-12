@@ -1,5 +1,3 @@
-import { DotCategory } from '@dotcms/dotcms-models';
-
 /**
  * Object representing a key-value pair.
  * @interface
@@ -7,20 +5,38 @@ import { DotCategory } from '@dotcms/dotcms-models';
 export interface DotCategoryFieldKeyValueObj {
     key: string;
     value: string;
+    inode?: string;
     path?: string;
+    clicked?: boolean;
+    hasChildren?: boolean;
 }
 
 /**
  * Represents an clicked item in a DotCategoryField.
  */
-export type DotCategoryFieldItem = { index: number; item: DotCategory };
+export type DotCategoryFieldItem = { index: number; item: DotCategoryFieldKeyValueObj };
 
 /**
- * Represents a category for a Dot field with a checkbox.
+ * Represents an event when a row is selected in a table.
  *
- * @interface
- * @extends DotCategory
+ * @template T - The type of the data associated with the selected row.
  */
-export interface DotCategoryFieldCategory extends DotCategory {
-    checked?: boolean;
+export interface DotTableRowSelectEvent<T = never> {
+    originalEvent?: Event;
+    data?: T;
+    type?: string;
+    index?: number;
 }
+
+/**
+ * Represents an event emitted when the header checkbox of a table is selected.
+ */
+export interface DotTableHeaderCheckboxSelectEvent {
+    originalEvent?: Event;
+    checked: boolean;
+}
+
+/**
+ * Represents the view mode for a category field.
+ */
+export type CategoryFieldViewMode = 'list' | 'search';

@@ -6,6 +6,7 @@
     "trailingComma": "none",
     "arrowParens": "always",
     "bracketSameLine": true,
+    "htmlWhitespaceSensitivity": "ignore",
     "overrides": [
         {
             "files": "*.scss",
