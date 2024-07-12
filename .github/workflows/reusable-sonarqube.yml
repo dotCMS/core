@@ -26,6 +26,7 @@ jobs:
         uses: ./.github/actions/maven-job
         with:
           stage-name: "SonarQube Scan"
+          artifacts-from: ${{ inputs.artifact-run-id }}
           restore-classes: true
           require-master: true
           cache-sonar: true
