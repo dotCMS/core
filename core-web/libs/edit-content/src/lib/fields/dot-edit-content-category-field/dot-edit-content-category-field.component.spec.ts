@@ -159,7 +159,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
             ]);
         }));
 
-        it('should set categoryFieldControl when adding a new category', () => {
+        it('should set categoryFieldControl value when adding a new category', () => {
             store.addSelected({
                 key: '1234',
                 value: 'test'
@@ -176,7 +176,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
             ]);
         });
 
-        it('should set categoryFieldControl when removing a new category', () => {
+        it('should set categoryFieldControl value when removing a category', () => {
             store.removeSelected('1f208488057007cedda0e0b5d52ee3b3');
 
             spectator.flushEffects();
