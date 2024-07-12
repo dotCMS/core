@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    EventEmitter,
+    inject,
+    input,
+    Output,
+    signal
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -96,6 +105,7 @@ export class DotCategoryFieldChipsComponent {
 
         return null;
     });
+    @Output() remove = new EventEmitter<string>();
     /**
      * Method to toogle the show all categories.
      *
@@ -103,5 +113,14 @@ export class DotCategoryFieldChipsComponent {
      */
     toogleShowAll(): void {
         this.$showAll.update((showAll) => !showAll);
+    }
+    /**
+     * Method to remove a category.
+     *
+     * @param {DotCategoryFieldKeyValueObj} category
+     * @memberof DotCategoryFieldChipsComponent
+     */
+    onRemove(category: DotCategoryFieldKeyValueObj): void {
+        this.remove.emit(category.key);
     }
 }

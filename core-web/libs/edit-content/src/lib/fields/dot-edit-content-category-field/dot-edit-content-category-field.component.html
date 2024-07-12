@@ -1,6 +1,8 @@
 @if (store.selected().length) {
 <div class="dot-category-field__categories" data-testId="category-chip-list">
-    <dot-category-field-chips [categories]="store.selected()" />
+    <dot-category-field-chips
+        [categories]="store.selected()"
+        (remove)="store.removeSelected($event)" />
 </div>
 }
 
