@@ -6,7 +6,7 @@
     <ng-template let-columns pTemplate="header">
         <tr>
             @for (col of columns; track $index) {
-            <th [style.width.px]="$index === 0 ? 40 : null">{{ col }}</th>
+            <th id="head" scope="col" [style.width.px]="$index === 0 ? 40 : null">{{ col }}</th>
             }
         </tr>
     </ng-template>
