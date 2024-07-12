@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 public class CategoryFactoryImpl extends CategoryFactory {
 
 	public static final String INODE = "inode";
+	public static final String CATEGORY_NAME = "category_name";
 	CategoryCache catCache;
 	final CategorySQL categorySQL;
 	
@@ -989,6 +990,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		final String queryTemplate = "WITH RECURSIVE CategoryHierarchy AS ( SELECT " +
 					"c.inode," +
 					"c.inode AS root_inode," +
+					"c.category_name," +
+					"c.category_name AS root_category_name," +
 					"1 AS level," +
 					"json_build_object('inode', c.inode, 'categoryName', c.category_name, 'key', c.category_key)::varchar AS path " +
 				"FROM Category c " +
@@ -997,13 +1000,15 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			"SELECT " +
 					"c.inode, " +
 					"ch.root_inode AS root_inode, " +
+					"c.category_name, " +
+					"ch.root_category_name AS root_category_name, " +
 					"ch.level + 1 AS level, " +
 					"CONCAT(json_build_object('inode', c.inode, 'categoryName', c.category_name, 'key', c.category_key)::varchar, ',', ch.path) AS path " +
 				"FROM Category c JOIN tree t ON c.inode = t.parent JOIN CategoryHierarchy ch ON t.child = ch.inode " +
 			"),"  +
 			"MaxLevels AS (SELECT root_inode, MAX(level) AS max_level FROM CategoryHierarchy GROUP BY root_inode) " +
 			"SELECT " +
-				"ch.root_inode as inode, " +
+				"ch.root_inode as inode, ch.root_category_name as category_name, " +
 				"CONCAT('[', path, ']')::jsonb as path " +
 			"FROM CategoryHierarchy ch JOIN MaxLevels ml ON ch.root_inode = ml.root_inode AND ch.level = ml.max_level;";
 
@@ -1016,7 +1021,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		return dc.loadObjectResults().stream().map(row -> {
 			final List<ShortCategory> parentList = getShortCategories(row.get("path").toString());
 
-			return new HierarchyShortCategory(row.get(INODE).toString(), parentList.subList(0, parentList.size() - 1));
+			return new HierarchyShortCategory(row.get(INODE).toString(), row.get(CATEGORY_NAME).toString(),
+					parentList.subList(0, parentList.size() - 1));
 		}).collect(Collectors.toList());
 	}
 
