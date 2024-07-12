@@ -291,7 +291,7 @@ public class CategoriesResource {
      *
      * <code>
      *     {
-     *         "inodes": ["352ca17e238357ce12e9dff10afc8516", "c0ab974897f8d37c98afa4bba74ef9f1"]
+     *         "keys": ["key_1", "key_2"]
      *     }
      * </code>
      *
@@ -301,25 +301,29 @@ public class CategoriesResource {
      *     {
      *         entity: [
      *              {
-     *                  "inode": "352ca17e238357ce12e9dff10afc8516",
+     *                  "inode": "1",
+     *                  "key": "key_1",
+     *                  "name": "Name_1",
      *                  "parentList": [
      *                       {
-     *                          'categoryName': 'Grand Parent Name',
+     *                          'name': 'Grand Parent Name',
      *                          'key': 'Grand Parent  Key',
      *                          'inode': 'Grand Parent  inode'
      *                      },
      *                       {
-     *                          'categoryName': 'Parent Name',
+     *                          'name': 'Parent Name',
      *                          'key': 'Parent  Key',
      *                          'inode': 'Parent  inode'
      *                      }
      *                  ]
      *              },
      *              {
-     *                  "inode": "c0ab974897f8d37c98afa4bba74ef9f1",
+     *                  "inode": "2",
+     *                  "key": "key_2",
+     *                  "name": "Name_2",
      *                  "parentList": [
      *                       {
-     *                          'categoryName': 'Category name value',
+     *                          'name': 'Category name value',
      *                          'key': 'Key value',
      *                          'inode': 'inode value'
      *                      }
@@ -346,15 +350,15 @@ public class CategoriesResource {
     @Produces({MediaType.APPLICATION_JSON})
     public final Response getHierarchy(@Context final HttpServletRequest httpRequest,
                                        @Context final HttpServletResponse httpResponse,
-                                       final CategoryInodesForm form) throws DotDataException, DotSecurityException {
+                                       final CategoryKeysForm form) throws DotDataException, DotSecurityException {
 
         Logger.debug(this, () -> "Getting the List of Parents for the follow categories: " +
-                form.getInodes().stream().collect(Collectors.joining(",")));
+                String.join(",", form.getKeys()));
 
         webResource.init(null, httpRequest, httpResponse, true, null);
 
         return Response.ok(
-                new HierarchyShortCategoriesResponseView(categoryAPI.findHierarchy(form.getInodes()))).build();
+                new HierarchyShortCategoriesResponseView(categoryAPI.findHierarchy(form.getKeys()))).build();
     }
 
     /**
