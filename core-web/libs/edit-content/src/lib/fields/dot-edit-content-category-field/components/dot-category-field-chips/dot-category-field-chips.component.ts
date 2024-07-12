@@ -29,7 +29,10 @@ import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.mod
     standalone: true,
     imports: [ButtonModule, ChipModule, TooltipModule],
     templateUrl: './dot-category-field-chips.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'dot-category-field__categories'
+    }
 })
 export class DotCategoryFieldChipsComponent {
     /**
