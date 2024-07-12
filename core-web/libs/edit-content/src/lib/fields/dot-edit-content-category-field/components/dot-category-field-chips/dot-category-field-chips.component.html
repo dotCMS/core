@@ -6,7 +6,7 @@
         [label]="category.value"
         tooltipPosition="top"
         styleClass="p-chip-sm"
-        (onRemove)="onRemove(category)" />
+        (onRemove)="remove.emit(category.key)" />
     } @if ($showAllBtn()) {
     <button
         (click)="toogleShowAll()"

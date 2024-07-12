@@ -117,13 +117,4 @@ export class DotCategoryFieldChipsComponent {
     toogleShowAll(): void {
         this.$showAll.update((showAll) => !showAll);
     }
-    /**
-     * Method to remove a category.
-     *
-     * @param {DotCategoryFieldKeyValueObj} category
-     * @memberof DotCategoryFieldChipsComponent
-     */
-    onRemove(category: DotCategoryFieldKeyValueObj): void {
-        this.remove.emit(category.key);
-    }
 }
