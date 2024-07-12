@@ -19,7 +19,6 @@ import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.mod
     standalone: true,
     imports: [ButtonModule, ChipModule, TooltipModule],
     templateUrl: './dot-category-field-chips.component.html',
-    styleUrl: './dot-category-field-chips.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCategoryFieldChipsComponent {

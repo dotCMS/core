@@ -16,20 +16,16 @@ describe('DotCategoryFieldChipsComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
+            detectChanges: false,
             props: {
-                $max: 8,
-                $categories: CATEGORIES_KEY_VALUE
-            }
+                max: 8,
+                categories: CATEGORIES_KEY_VALUE
+            } as unknown as DotCategoryFieldChipsComponent
         });
-
-        spectator.detectChanges();
-    });
-
-    afterEach(() => {
-        jest.resetAllMocks();
     });
 
     it('should be created', () => {
+        spectator.detectChanges();
         expect(spectator.component).toBeTruthy();
     });
 });
