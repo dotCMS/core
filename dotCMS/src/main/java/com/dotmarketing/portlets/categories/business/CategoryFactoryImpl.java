@@ -48,6 +48,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	public static final String INODE = "inode";
 	public static final String CATEGORY_NAME = "category_name";
 	public static final String CATEGORY_KEY = "category_key";
+
 	CategoryCache catCache;
 	final CategorySQL categorySQL;
 	

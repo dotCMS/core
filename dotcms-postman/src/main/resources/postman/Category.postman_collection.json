@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "523736d4-190a-4f2f-a010-29f19ead54d5",
+		"_postman_id": "4aaa5f5d-78ea-498e-a1a4-3b367004de5e",
 		"name": "Category",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "30436704"
@@ -3526,6 +3526,7 @@
 									"    { ",
 									"",
 									"        if (jsonData.entity[i]['inode'] === child2CategoryInodeHierarchy) {",
+
 									"            pm.expect('Hierarchy Child 2').to.have.equals(jsonData.entity[i].name);",
 									"            pm.expect('Hierarchy_Child_2_key').to.have.equals(jsonData.entity[i].key);",
 									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
