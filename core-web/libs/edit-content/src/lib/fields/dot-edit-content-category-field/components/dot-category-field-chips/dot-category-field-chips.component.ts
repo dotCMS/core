@@ -6,6 +6,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 
+import { MAX_CHIPS } from '../../dot-edit-content-category-field.const';
 import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.models';
 
 /**
@@ -39,7 +40,7 @@ export class DotCategoryFieldChipsComponent {
      *
      * @memberof DotCategoryFieldChipsComponent
      */
-    $max = input.required<number>({ alias: 'max' });
+    $max = input<number>(MAX_CHIPS, { alias: 'max' });
     /**
      * Represents the variable 'categories' which is of type 'DotCategoryFieldKeyValueObj[]'.
      *
@@ -53,14 +54,11 @@ export class DotCategoryFieldChipsComponent {
      */
     $categoriesToShow = computed(() => {
         const categories = this.$categories();
-        const max = this.$max();
-        const showAll = this.$showAll();
-
-        if (showAll) {
+        if (this.$showAll()) {
             return categories;
         }
 
-        return categories.slice(0, max);
+        return categories.slice(0, this.$max());
     });
     /**
      * Represents the variable '$showAllBtn' which is of type 'computed<boolean>'.

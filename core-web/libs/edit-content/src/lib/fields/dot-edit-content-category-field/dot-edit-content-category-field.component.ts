@@ -22,7 +22,7 @@ import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoryFieldChipsComponent } from './components/dot-category-field-chips/dot-category-field-chips.component';
 import { DotCategoryFieldSidebarComponent } from './components/dot-category-field-sidebar/dot-category-field-sidebar.component';
-import { CLOSE_SIDEBAR_CSS_DELAY_MS, MAX_CHIPS } from './dot-edit-content-category-field.const';
+import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.const';
 import { CategoriesService } from './services/categories.service';
 import { CategoryFieldStore } from './store/content-category-field.store';
 
@@ -65,12 +65,6 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      * Disable the button to open the sidebar
      */
     disableSelectCategoriesButton = signal(false);
-    /**
-     * Represents the variable '$maxChips' which is of type 'signal<number>'.
-     *
-     * @memberof DotEditContentCategoryFieldComponent
-     */
-    $maxChips = signal(MAX_CHIPS);
 
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
 
