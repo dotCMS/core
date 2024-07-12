@@ -240,13 +240,14 @@ runs:
 
     - id: delete-built-artifacts-from-cache
       name: Delete Built Artifacts From Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.generate-artifacts == 'true' }}
       shell: bash
       run: find ~/.m2 -name \*-SNAPSHOT -type d -exec rm -rf {} +
 
     - id: save-cache-maven
       name: Save Maven Repository Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      # As we use a month based key we always save the cache in initial build to pick up any added entries
+      if: ${{ inputs.generate-artifacts == 'true' }}
       uses: actions/cache/save@v4
       with:
         path: ~/.m2/repository
@@ -270,7 +271,7 @@ runs:
 
     - id: save-cache-sonar
       name: Save SonarQube Cache
-      if: ${{ inputs.cache-sonar == 'true' }} && steps.cache-sonar.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.cache-sonar == 'true' && steps.cache-sonar.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v4
       with:
         path: ~/.sonar/cache
