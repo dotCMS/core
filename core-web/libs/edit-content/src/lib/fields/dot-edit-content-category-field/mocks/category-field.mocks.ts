@@ -1,6 +1,10 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotCategoryFieldCategory } from '../models/dot-category-field.models';
+import {
+    DotCategoryFieldCategory,
+    DotCategoryFieldKeyValueObj
+} from '../models/dot-category-field.models';
 
 export const CATEGORY_FIELD_VARIABLE_NAME = 'categorias';
 
@@ -203,3 +207,43 @@ export const CATEGORY_LIST_MOCK: DotCategoryFieldCategory[][] = [
  * Represent the selected categories
  */
 export const SELECTED_LIST_MOCK = [CATEGORY_LEVEL_1[1].inode, CATEGORY_LEVEL_1[2].inode];
+
+export const CATEGORIES_KEY_VALUE: DotCategoryFieldKeyValueObj[] = [
+    {
+        key: '0ab5e687775e4793679970e561380560',
+        value: 'Electrical',
+        path: 'Electrical'
+    },
+    {
+        key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
+        value: 'Doors & Windows',
+        path: 'Doors & Windows'
+    },
+    {
+        key: '1f208488057007cedda0e0b5d52ee3b3',
+        value: 'Cleaning Supplies',
+        path: 'Cleaning Supplies'
+    },
+    {
+        key: 'd2fb8e67c390e3b84cd613fa15aad5d4',
+        value: 'Concrete & Cement',
+        path: 'Concrete & Cement'
+    },
+    {
+        key: '3a3effac9f26593810c8687e692817a6',
+        value: 'Flooring',
+        path: 'Flooring'
+    },
+    {
+        key: '977ba2c4e2af65e303c748ec39f0f1ca',
+        value: 'Garage Organization',
+        path: 'Garage Organization'
+    }
+];
+
+const MESSAGES_MOCK = {
+    'edit.content.category-field.list.show.less': 'Less',
+    'edit.content.category-field.list.show.more': '{0} More'
+};
+
+export const CATEGORY_MESSAGE_MOCK = new MockDotMessageService(MESSAGES_MOCK);
