@@ -1265,7 +1265,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	public Template saveAndUpdateLayout(final TemplateSaveParameters templateSaveParameters, final User user,
 										final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		Optional<TemplateLayout> oldTemplateLayout = null;
+		Optional<TemplateLayout> oldTemplateLayout;
 
 		if (!UtilMethods.isSet(templateSaveParameters.getOldTemplateLayout()) &&
 				UtilMethods.isSet(templateSaveParameters.getNewTemplate().getIdentifier())) {
