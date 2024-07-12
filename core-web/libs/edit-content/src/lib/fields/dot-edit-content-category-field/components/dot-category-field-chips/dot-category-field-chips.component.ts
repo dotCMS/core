@@ -108,6 +108,11 @@ export class DotCategoryFieldChipsComponent {
 
         return null;
     });
+    /**
+     * Represents the output 'remove' which is of type 'EventEmitter<string>'.
+     *
+     * @memberof DotCategoryFieldChipsComponent
+     */
     @Output() remove = new EventEmitter<string>();
     /**
      * Method to toogle the show all categories.
