@@ -1273,11 +1273,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	}
 
 	/**
-	 * Default implementation for {@link TemplateAPI#saveAndUpdateLayout(Template, TemplateLayout, Host, User, boolean)}
+	 * Default implementation for {@link TemplateAPI#saveAndUpdateLayout(TemplateSaveParameters, User, boolean)}
 	 *
-	 * @param template
-	 * @param layout
-	 * @param site
+	 * @param templateSaveParameters
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return
@@ -1285,31 +1283,53 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	 * @throws DotSecurityException
 	 */
 	@Override
-	public Template saveAndUpdateLayout(final Template template, final TemplateLayout layout, final Host site,
-										final User user, final boolean respectFrontendRoles)
-			throws DotDataException, DotSecurityException {
+	public Template saveAndUpdateLayout(final TemplateSaveParameters templateSaveParameters, final User user,
+										final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		final Template templateFromDB = UtilMethods.isSet(template.getIdentifier()) ?
-				APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(), user, false)
-				: null;
+		Optional<TemplateLayout> oldTemplateLayout;
 
-		if (templateFromDB != null) {
-			final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+		if (!UtilMethods.isSet(templateSaveParameters.getOldTemplateLayout()) &&
+				UtilMethods.isSet(templateSaveParameters.getNewTemplate().getIdentifier())) {
 
-			LayoutChanges changes = getChange(templateLayoutFromDB, layout);
-
-			final List<String> pageIds = APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles)
-					.stream()
-					.map(Contentlet::getIdentifier)
-					.collect(Collectors.toList());
-
-			multiTreeAPI.updateMultiTrees(changes, pageIds);
+			oldTemplateLayout = getTemplateLayoutFromDatabase(templateSaveParameters.getNewTemplate().getIdentifier(), user);
+		} else {
+			oldTemplateLayout = Optional.ofNullable(templateSaveParameters.getOldTemplateLayout());
 		}
 
-		template.setDrawedBody(reOrder(layout));
-		template.setDrawed(true);
+		if (oldTemplateLayout.isPresent()) {
+			updateMultiTrees(templateSaveParameters, oldTemplateLayout.get(), user, respectFrontendRoles);
+		}
 
-		return saveTemplate(template, site, user, respectFrontendRoles);
+		templateSaveParameters.getNewTemplate().setDrawedBody(reOrder(templateSaveParameters.getNewLayout()));
+		templateSaveParameters.getNewTemplate().setDrawed(true);
+
+		return saveTemplate(templateSaveParameters.getNewTemplate(), templateSaveParameters.getSite(), user, respectFrontendRoles);
+	}
+
+	private void updateMultiTrees(final TemplateSaveParameters templateSaveParameters, TemplateLayout oldTemplateLayout,
+								  User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		LayoutChanges changes = getChange(oldTemplateLayout, templateSaveParameters.getNewLayout());
+
+		final List<String> pageIds = UtilMethods.isSet(templateSaveParameters.getPageIds()) ?
+				templateSaveParameters.getPageIds() :
+				APILocator.getHTMLPageAssetAPI().findPagesByTemplate(templateSaveParameters.getNewTemplate(), user, respectFrontendRoles)
+						.stream()
+						.map(Contentlet::getIdentifier)
+						.collect(Collectors.toList());
+
+		multiTreeAPI.updateMultiTrees(changes, pageIds);
+	}
+
+
+	private static Optional<TemplateLayout> getTemplateLayoutFromDatabase(final String templateId, final User user)
+			throws DotDataException, DotSecurityException {
+		final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(templateId, user, false);
+
+		if (templateFromDB.getDrawedBody() != null) {
+			return  Optional.of(DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody()));
+		}
+
+		return Optional.empty();
 	}
 
 	/**
