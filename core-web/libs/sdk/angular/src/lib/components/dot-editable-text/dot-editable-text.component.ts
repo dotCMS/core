@@ -45,7 +45,7 @@ import { DotCMSContentlet } from '../../models';
         {
             provide: TINYMCE_SCRIPT_SRC,
             useFactory: () => {
-                return `${DotCmsClient.dotcmsUrl}/html/js/tinymce-8.0/tinymce.min.js`;
+                return `${DotCmsClient.dotcmsUrl}/html/js/tinymcev7/tinymce.min.js`;
             }
         }
     ]
@@ -164,7 +164,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
 
         this.init = {
             ...TINYMCE_CONFIG[this.mode],
-            base_url: `${DotCmsClient.dotcmsUrl}/html/js/tinymce-8.0`
+            base_url: `${DotCmsClient.dotcmsUrl}/html/js/tinymcev7`
         };
     }
 
