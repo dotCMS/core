@@ -355,15 +355,9 @@ public class CategoriesResource {
     @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "getSchemes", summary = "Get the List of Parents from  set of categories",
             description = "Response with the list of parents for a specific set of categories. If any of the categories" +
-                    "does not exists then it is just ignored",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Success",
-                            content = @Content(mediaType = "application/json"
-                            )
-                    )
-            }
+                    "does not exists then it is just ignored"
     )
-    public final Response getHierarchy(@Context final HttpServletRequest httpRequest,
+    public final HierarchyShortCategoriesResponseView getHierarchy(@Context final HttpServletRequest httpRequest,
                                        @Context final HttpServletResponse httpResponse,
                                        final CategoryKeysForm form) throws DotDataException, DotSecurityException {
 
@@ -372,8 +366,7 @@ public class CategoriesResource {
 
         webResource.init(null, httpRequest, httpResponse, true, null);
 
-        return Response.ok(
-                new HierarchyShortCategoriesResponseView(categoryAPI.findHierarchy(form.getKeys()))).build();
+        return new HierarchyShortCategoriesResponseView(categoryAPI.findHierarchy(form.getKeys()));
     }
 
     /**
