@@ -343,8 +343,8 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @GET
-        @Path(("/hierarchy"))
+    @POST
+    @Path(("/hierarchy"))
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})

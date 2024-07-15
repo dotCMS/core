@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "523736d4-190a-4f2f-a010-29f19ead54d5",
+		"_postman_id": "9d037737-9cc4-45ed-a267-e5eca190eb3e",
 		"name": "Category",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "30436704"
@@ -2850,18 +2850,18 @@
 									"        data.push(jsonData.entity[i]['categoryName']);   ",
 									"",
 									"        if (i === 0) {",
-									"            pm.expect('PostmanTest Child 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect('PostmanTest Child 1').to.have.equals(jsonData.entity[i].name);",
 									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
 									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
 									"        } else if (i === 1) {",
-									"            pm.expect('PostmanTest Child 2').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect('PostmanTest Child 2').to.have.equals(jsonData.entity[i].name);",
 									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
 									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
 									"        } else if (i === 2) {",
-									"            pm.expect('PostmanTest Grandchild 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect('PostmanTest Grandchild 1').to.have.equals(jsonData.entity[i].name);",
 									"            pm.expect(2).to.have.equals(jsonData.entity[i].parentList.length);",
 									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
-									"            pm.expect('Child 3').to.have.equals(jsonData.entity[i].parentList[1].categoryName);",
+									"            pm.expect('Child 3').to.have.equals(jsonData.entity[i].parentList[1].name);",
 									"        }     ",
 									"    }",
 									"",
@@ -3556,9 +3556,6 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -3570,7 +3567,7 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
@@ -3652,9 +3649,6 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -3666,7 +3660,7 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
@@ -3717,9 +3711,6 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -3731,7 +3722,7 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
