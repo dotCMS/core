@@ -15,34 +15,43 @@ import {
 } from '@dotcms/dotcms-models';
 
 import {
-    DotCategoryFieldCategory,
+    CategoryFieldViewMode,
     DotCategoryFieldItem,
     DotCategoryFieldKeyValueObj
 } from '../models/dot-category-field.models';
 import { CategoriesService } from '../services/categories.service';
 import {
-    addMetadata,
+    addSelected,
     checkIfClickedIsLastItem,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
-    getSelectedCategories,
+    removeItemByKey,
+    transformCategories,
+    transformSelectedCategories,
     updateChecked
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
     field: DotCMSContentTypeField;
-    selected: DotCategoryFieldKeyValueObj[];
-    categories: DotCategoryFieldCategory[][];
-    parentPath: string[];
+    selected: DotCategoryFieldKeyValueObj[]; // <- source of selected
+    categories: DotCategory[][];
+    keyParentPath: string[]; // Delete when we have the endpoint for this
     state: ComponentStatus;
+    mode: CategoryFieldViewMode;
+    // search
+    filter: string;
+    searchCategories: DotCategory[];
 };
 
 export const initialState: CategoryFieldState = {
     field: {} as DotCMSContentTypeField,
     selected: [],
     categories: [],
-    parentPath: [],
-    state: ComponentStatus.IDLE
+    keyParentPath: [],
+    state: ComponentStatus.IDLE,
+    mode: 'list',
+    filter: '',
+    searchCategories: []
 };
 
 /**
@@ -52,50 +61,72 @@ export const initialState: CategoryFieldState = {
  */
 export const CategoryFieldStore = signalStore(
     withState(initialState),
-    withComputed(({ field, categories, selected, parentPath }) => ({
+    withComputed((store) => ({
         /**
          * Current selected items (key) from the contentlet
          */
-        selectedCategoriesValues: computed(() => selected().map((item) => item.key)),
+        selectedCategoriesValues: computed(() => store.selected().map((item) => item.key)),
 
         /**
          * Categories for render with added properties
          */
         categoryList: computed(() =>
-            categories().map((column) => addMetadata(column, parentPath()))
+            store.categories().map((column) => transformCategories(column, store.keyParentPath()))
         ),
 
         /**
          * Indicates whether any categories are selected.
          */
-        hasSelectedCategories: computed(() => !!selected().length),
+        hasSelectedCategories: computed(() => !!store.selected().length),
 
         /**
          * Get the root category inode.
          */
-        rootCategoryInode: computed(() => field().values),
+        rootCategoryInode: computed(() => store.field().values),
 
         /**
          * Retrieves the value of the field variable.
          */
-        fieldVariableName: computed(() => field().variable)
+        fieldVariableName: computed(() => store.field().variable),
+
+        // Search
+        isSearchLoading: computed(
+            () => store.mode() === 'search' && store.state() === ComponentStatus.LOADING
+        ),
+
+        /**
+         * Categories for render with added properties
+         */
+        searchCategoryList: computed(() =>
+            store
+                .searchCategories()
+                .map((column) => transformCategories(column, store.keyParentPath()))
+        )
     })),
     withMethods((store, categoryService = inject(CategoriesService)) => ({
         /**
          * Sets a given iNode as the main parent and loads selected categories into the store.
          */
         load(field: DotCMSContentTypeField, contentlet: DotCMSContentlet): void {
-            const selected = getSelectedCategories(field, contentlet);
+            const selected = transformSelectedCategories(field, contentlet);
             patchState(store, {
                 field,
                 selected
             });
         },
 
+        setMode(mode: 'list' | 'search'): void {
+            patchState(store, {
+                mode,
+                searchCategories: [],
+                filter: ''
+            });
+        },
+
         /**
          * Updates the selected items based on the provided item.
          */
-        updateSelected(selected: string[], item: DotCategory): void {
+        updateSelected(selected: string[], item: DotCategoryFieldKeyValueObj): void {
             const currentChecked: DotCategoryFieldKeyValueObj[] = updateChecked(
                 store.selected(),
                 selected,
@@ -104,6 +135,48 @@ export const CategoryFieldStore = signalStore(
 
             patchState(store, {
                 selected: currentChecked
+            });
+        },
+
+        /**
+         * Adds the selected item(s) to the store's selected state.
+         *
+         * @param {DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]} selectedItem - The item(s) to be added.
+         * @returns {void}
+         */
+        addSelected(
+            selectedItem: DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]
+        ): void {
+            const updatedSelected = addSelected(store.selected(), selectedItem);
+            patchState(store, {
+                selected: updatedSelected
+            });
+        },
+
+        /**
+         * Removes the selected items with the given key(s).
+         *
+         * @param {string | string[]} key - The key(s) of the item(s) to be removed.
+         * @return {void}
+         */
+        removeSelected(key: string | string[]): void {
+            const newSelected = removeItemByKey(store.selected(), key);
+
+            patchState(store, {
+                selected: newSelected
+            });
+        },
+
+        /**
+         * Clears all categories from the store, effectively resetting state related to categories and their parent paths.
+         */
+        clean() {
+            patchState(store, {
+                categories: [],
+                keyParentPath: [],
+                mode: 'list',
+                filter: '',
+                searchCategories: []
             });
         },
 
@@ -123,8 +196,8 @@ export const CategoryFieldStore = signalStore(
                                 categories: [
                                     ...clearCategoriesAfterIndex(currentCategories, index)
                                 ],
-                                parentPath: [
-                                    ...clearParentPathAfterIndex(store.parentPath(), index)
+                                keyParentPath: [
+                                    ...clearParentPathAfterIndex(store.keyParentPath(), index)
                                 ]
                             });
                         }
@@ -134,8 +207,7 @@ export const CategoryFieldStore = signalStore(
                 filter(
                     (event) =>
                         !event ||
-                        (event.item.childrenCount > 0 &&
-                            !store.parentPath().includes(event.item.inode))
+                        (event.item.hasChildren && !store.keyParentPath().includes(event.item.key))
                 ),
                 tap(() => patchState(store, { state: ComponentStatus.LOADING })),
                 switchMap((event) => {
@@ -150,7 +222,7 @@ export const CategoryFieldStore = signalStore(
                                     patchState(store, {
                                         categories: [...store.categories(), newCategories],
                                         state: ComponentStatus.LOADED,
-                                        parentPath: [...store.parentPath(), event.item.inode]
+                                        keyParentPath: [...store.keyParentPath(), event.item.key]
                                     });
                                 } else {
                                     patchState(store, {
@@ -169,11 +241,26 @@ export const CategoryFieldStore = signalStore(
             )
         ),
 
-        /**
-         * Clears all categories from the store, effectively resetting state related to categories and their parent paths.
-         */
-        clean() {
-            patchState(store, { categories: [], parentPath: [] });
-        }
+        search: rxMethod<string>(
+            pipe(
+                tap(() => patchState(store, { mode: 'search', state: ComponentStatus.LOADING })),
+                switchMap((filter) => {
+                    return categoryService.getChildren(store.rootCategoryInode(), { filter }).pipe(
+                        tapResponse({
+                            next: (categories) => {
+                                patchState(store, {
+                                    searchCategories: [...categories],
+                                    state: ComponentStatus.LOADED
+                                });
+                            },
+                            error: () => {
+                                // TODO: Add Error Handler
+                                patchState(store, { state: ComponentStatus.IDLE });
+                            }
+                        })
+                    );
+                })
+            )
+        )
     }))
 );
