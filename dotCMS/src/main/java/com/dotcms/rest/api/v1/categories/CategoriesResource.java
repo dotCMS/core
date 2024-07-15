@@ -41,6 +41,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.File;
@@ -348,6 +353,16 @@ public class CategoriesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "getSchemes", summary = "Get the List of Parents from  set of categories",
+            description = "Response with the list of parents for a specific set of categories. If any of the categories" +
+                    "does not exists then it is just ignored",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Success",
+                            content = @Content(mediaType = "application/json"
+                            )
+                    )
+            }
+    )
     public final Response getHierarchy(@Context final HttpServletRequest httpRequest,
                                        @Context final HttpServletResponse httpResponse,
                                        final CategoryKeysForm form) throws DotDataException, DotSecurityException {
