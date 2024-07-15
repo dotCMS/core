@@ -20,8 +20,9 @@ import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Listbox, ListboxModule } from 'primeng/listbox';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PaginatorModule } from 'primeng/paginator';
 
-import { catchError, map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
 import { DotPersona } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
@@ -41,7 +42,8 @@ import { DotPageApiService } from '../../../services/dot-page-api.service';
         ListboxModule,
         ConfirmDialogModule,
         FormsModule,
-        ChipModule
+        ChipModule,
+        PaginatorModule
     ],
     templateUrl: './edit-ema-persona-selector.component.html',
     styleUrls: ['./edit-ema-persona-selector.component.scss']
@@ -50,7 +52,18 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, O
     @ViewChild('listbox') listbox: Listbox;
 
     private readonly pageApiService = inject(DotPageApiService);
-    personas: DotPersona[];
+
+    MAX_PERSONAS_PER_PAGE = 10;
+
+    personas: {
+        items: DotPersona[];
+        totalRecords: number;
+        itemsPerPage: number;
+    } = {
+        items: [],
+        totalRecords: 0,
+        itemsPerPage: 0
+    };
 
     @Input() pageId: string;
     @Input() value: DotPersona;
@@ -121,16 +134,37 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, O
      *
      * @memberof EditEmaPersonaSelectorComponent
      */
-    fetchPersonas() {
+    fetchPersonas(page = 0) {
         this.pageApiService
             .getPersonas({
                 pageId: this.pageId,
-                perPage: 5000
+                perPage: 5000,
+                page
             })
             .pipe(
-                map((res) => res.data),
-                catchError(() => of([]))
+                catchError(() =>
+                    of({
+                        data: [],
+                        pagination: {
+                            currentPage: 0,
+                            perPage: 0,
+                            totalEntries: 0
+                        }
+                    })
+                )
             )
-            .subscribe((personas) => (this.personas = personas));
+            .subscribe(
+                (res) =>
+                    (this.personas = {
+                        items: res.data,
+                        totalRecords: res.pagination.totalEntries,
+                        itemsPerPage: res.pagination.perPage
+                    })
+            );
+    }
+
+    onPaginate(event) {
+        // PrimeNG paginator starts at 0, but the API starts at 1
+        this.fetchPersonas(event.page + 1);
     }
 }
