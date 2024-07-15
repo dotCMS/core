@@ -6,8 +6,11 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
@@ -51,10 +54,7 @@ import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -63,6 +63,8 @@ import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Note: If you dont find a test over here, check {@link com.dotcms.rest.api.v1.template.TemplateResourceTest}
@@ -1652,6 +1654,150 @@ public class TemplateAPITest extends IntegrationTestBase {
                     break;
                 default:
                     throw new AssertionError("UUID not expected: " + intanceId);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link MultiTreeAPIImpl#updateMultiTrees(LayoutChanges, Collection)}
+     * When: You have a Page with 2 instance of the same container and the follow layout:
+     * - Row 1, column 1:  instance 1 of the Container
+     * - Row 2, column 1:  instance 2 of the Container
+     *
+     * Also you have 2 Contentlets add as follows:
+     * - Contentlet_1 : Add to the instance 1
+     * - Contentlet_2 : Add to the instance 2
+     *
+     * And you move the last row to be the first one
+     *
+     * Should: The Layout should finish on the same way:
+     * The Contentlets should finish as:
+     *
+     * - Contentlet_1 : Add to the instance 2
+     * - Contentlet_2 : Add to the instance 1
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void moveContainerUpdateMultiTreesInSpecificVariant() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "2")
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawed(true)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        HttpServletRequest mockReqquest = mock(HttpServletRequest.class);
+        when(mockReqquest.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockReqquest);
+
+        HTMLPageDataGen.createNewVersion(page, variant, null);
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("1")
+                .setContentlet(contentlet_1)
+                .setVariant(variant)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setInstanceID("2")
+                .setContentlet(contentlet_2)
+                .setVariant(variant)
+                .nextPersisted();
+
+
+        final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "2")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .next();
+
+        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                .setNewTemplate(template)
+                .setNewLayout(newTemplateLayout)
+                .setSite(host)
+                .build(), APILocator.systemUser(), false);
+
+
+        final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
+                false);
+
+        final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+
+        final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "1")
+                .addRow()
+                .addColumn(100)
+                .withContainer(container, "2")
+                .next();
+
+        assertEquals(expectedTemplateLayout, templateLayoutFromDB);
+
+        final List<MultiTree> multiTreesFromDBDefaultVariant = APILocator.getMultiTreeAPI().getMultiTreesByVariant(page.getIdentifier(),
+                VariantAPI.DEFAULT_VARIANT.name());
+        assertEquals(2, multiTreesFromDBDefaultVariant.size());
+
+        for (final MultiTree multiTree : multiTreesFromDBDefaultVariant) {
+            if (multiTree.getVariantId().equals(VariantAPI.DEFAULT_VARIANT.name()) && multiTree.getRelationType().equals("1")) {
+                assertEquals(contentlet_1.getIdentifier(), multiTree.getContentlet());
+            } else if (multiTree.getVariantId().equals(VariantAPI.DEFAULT_VARIANT.name()) && multiTree.getRelationType().equals("2")) {
+                assertEquals(contentlet_2.getIdentifier(), multiTree.getContentlet());
+            } else {
+                throw new AssertionError();
+            }
+        }
+
+        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTreesByVariant(page.getIdentifier(),
+                variant.name());
+        assertEquals(2, multiTreesFromDB.size());
+
+        for (final MultiTree multiTree : multiTreesFromDB) {
+            if (multiTree.getVariantId().equals(variant.name()) && multiTree.getRelationType().equals("1")) {
+                assertEquals(contentlet_2.getIdentifier(), multiTree.getContentlet());
+            } else if (multiTree.getVariantId().equals(variant.name()) && multiTree.getRelationType().equals("2")) {
+                assertEquals(contentlet_1.getIdentifier(), multiTree.getContentlet());
+            } else {
+                throw new AssertionError();
             }
         }
     }
