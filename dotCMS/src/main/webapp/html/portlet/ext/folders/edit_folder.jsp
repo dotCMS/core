@@ -44,14 +44,14 @@
 
 		var form = document.getElementById(this.formName);
 		form.cmd.value = '<%=com.liferay.portal.util.Constants.ADD%>';
-		if (document.getElementById("titleField")) {
-			var name = document.getElementById("titleField").value;
+		if (document.getElementById("nameField")) {
+			var name = document.getElementById("nameField").value;
 			if(typeof String.prototype.trim !== 'function') {
-				document.getElementById("titleField").value = name.replace(/^\s+|\s+$/g, '');
+				document.getElementById("nameField").value = name.replace(/^\s+|\s+$/g, '');
 			} else {
-				document.getElementById("titleField").value = name.trim();
+				document.getElementById("nameField").value = name.trim();
 			}
-			if (document.getElementById("titleField").value === ""){
+			if (document.getElementById("nameField").value === ""){
 				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
 				dijit.byId('processingDialog').hide();
 				return false;
@@ -65,9 +65,9 @@
 		window.location.href = '<%=request.getParameter("referer")%>';
 	}
 
-	function beLazy(){
-		var titleField = document.getElementById("friendlyNameField");
-		var ele = document.getElementById("titleField");
+	function populateFolderNameAndFolderPath(){
+		var titleField = document.getElementById("titleField");
+		var nameField = document.getElementById("nameField");
 		var title = titleField.value;
 		title = title.replace(/^\s+/g, "");
 		title = title.replace(/\s/g, "-");
@@ -75,7 +75,7 @@
 		title = title.replace(arg,"");
 		title = title.replace(/-{2,}/g, "-");
 		<% if(Config.getBooleanProperty("AUTOPOPULATE_FOLDER_NAME_FIELD",true)){ %>
-		ele.value = title;
+		nameField.value = title;
 		<% } %>
 		<% if (parentFolder != null) { %>
 		dojo.byId("pathToFolder").innerText = "<%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %>"+title;
@@ -179,16 +179,16 @@
 							<%}%>
 						</dl>
 						<dl>
-					<dt><label for="friendlyNameField"><%= LanguageUtil.get(pageContext, "Title") %></label></dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox"  onchange="beLazy();" style="width:250px" name="title"  id="friendlyNameField" value="<%= UtilMethods.isSet(folder.getTitle()) ? UtilMethods.escapeDoubleQuotes(folder.getTitle()) : "" %>" /></dd>
+							<dt><label for="titleField"><%= LanguageUtil.get(pageContext, "Title") %></label></dt>
+							<dd><input type="text" dojoType="dijit.form.TextBox"  onchange="populateFolderNameAndFolderPath();" style="width:250px" name="title"  id="titleField" value="<%= UtilMethods.isSet(folder.getTitle()) ? UtilMethods.escapeDoubleQuotes(folder.getTitle()) : "" %>" /></dd>
 						</dl>
 						<dl>
 							<dt>
-						<label for="titleField" class="required">
+								<label for="nameField" class="required">
 									<%= LanguageUtil.get(pageContext, "Name-URL") %>
 								</label>
 							</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox"   style="width:250px" name="name"  id="titleField" value="<%= UtilMethods.isSet(folder.getName()) ? UtilMethods.escapeDoubleQuotes(folder.getName()) : "" %>" /></dd>
+							<dd><input type="text" dojoType="dijit.form.TextBox"   style="width:250px" name="name"  id="nameField" value="<%= UtilMethods.isSet(folder.getName()) ? UtilMethods.escapeDoubleQuotes(folder.getName()) : "" %>" /></dd>
 						</dl>
 						<dl>
 							<dt><label for="sortOrder"><%= LanguageUtil.get(pageContext, "Sort-Order") %></label></dt>
