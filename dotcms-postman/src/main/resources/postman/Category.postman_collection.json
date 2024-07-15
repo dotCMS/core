@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "12554162-5748-4f0b-a315-85639e82d87b",
+		"_postman_id": "4aaa5f5d-78ea-498e-a1a4-3b367004de5e",
 		"name": "Category",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "30436704"
@@ -3524,11 +3524,13 @@
 									"    { ",
 									"",
 									"        if (jsonData.entity[i]['inode'] === child2CategoryInodeHierarchy) {",
+									"            pm.expect('Hierarchy Child 2').to.have.equals(jsonData.entity[i].categoryName);",
 									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
 									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
 									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
 									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
 									"        } else if (jsonData.entity[i]['inode'] === grantChildCategoryInodeHierarchy) {",
+									"            pm.expect('Hierarchy Grandchild 1').to.have.equals(jsonData.entity[i].categoryName);",
 									"            pm.expect(2).to.have.equals(jsonData.entity[i].parentList.length);",
 									"",
 									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
