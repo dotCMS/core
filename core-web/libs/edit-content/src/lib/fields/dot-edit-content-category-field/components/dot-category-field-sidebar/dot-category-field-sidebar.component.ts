@@ -1,3 +1,5 @@
+import { animate, state, style, transition, trigger } from '@angular/animations';
+import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -10,12 +12,15 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 import { SidebarModule } from 'primeng/sidebar';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
+import { DotCategoryFieldSearchComponent } from '../dot-category-field-search/dot-category-field-search.component';
+import { DotCategoryFieldSearchListComponent } from '../dot-category-field-search-list/dot-category-field-search-list.component';
 
 /**
  * The DotCategoryFieldSidebarComponent is a sidebar panel that allows editing of content category field.
@@ -33,11 +38,26 @@ import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-cat
         ButtonModule,
         DotMessagePipe,
         SidebarModule,
-        DotCategoryFieldCategoryListComponent
+        DotCategoryFieldCategoryListComponent,
+        InputTextModule,
+        DotCategoryFieldSearchComponent,
+        DotCategoryFieldSearchListComponent,
+        JsonPipe
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    animations: [
+        trigger('fadeAnimation', [
+            state(
+                'void',
+                style({
+                    opacity: 0
+                })
+            ),
+            transition(':enter, :leave', [animate('50ms ease-in-out')])
+        ])
+    ]
 })
 export class DotCategoryFieldSidebarComponent implements OnInit {
     /**
@@ -50,7 +70,7 @@ export class DotCategoryFieldSidebarComponent implements OnInit {
      */
     @Output() closedSidebar = new EventEmitter<void>();
 
-    readonly store = inject(CategoryFieldStore);
+    readonly store: InstanceType<typeof CategoryFieldStore> = inject(CategoryFieldStore);
 
     readonly #destroyRef = inject(DestroyRef);
 

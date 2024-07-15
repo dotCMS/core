@@ -1,6 +1,8 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotCategoryFieldCategory } from '../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
+import { transformCategories } from '../utils/category-field.utils';
 
 export const CATEGORY_FIELD_VARIABLE_NAME = 'categorias';
 
@@ -13,10 +15,10 @@ export const CATEGORY_FIELD_CONTENTLET_MOCK: DotCMSContentlet = {
     baseType: 'CONTENT',
     [CATEGORY_FIELD_VARIABLE_NAME]: [
         {
-            '33333': 'Electrical'
+            '1f208488057007cedda0e0b5d52ee3b3': 'Electrical'
         },
         {
-            '22222': 'Doors & Windows'
+            cb83dc32c0a198fd0ca427b3b587f4ce: 'Doors & Windows'
         }
     ],
     contentType: 'TEST',
@@ -84,7 +86,7 @@ export const CATEGORY_FIELD_MOCK: DotCMSContentTypeField = {
 /**
  * Represent a Category List of level 1 with children `childrenCount`
  */
-export const CATEGORY_LEVEL_1: DotCategoryFieldCategory[] = [
+export const CATEGORY_LEVEL_1: DotCategory[] = [
     {
         active: true,
         categoryName: 'Cleaning Supplies',
@@ -115,8 +117,7 @@ export const CATEGORY_LEVEL_1: DotCategoryFieldCategory[] = [
         modDate: 1718916176666,
         owner: '',
         sortOrder: 0,
-        type: 'category',
-        checked: true
+        type: 'category'
     },
     {
         active: true,
@@ -132,15 +133,14 @@ export const CATEGORY_LEVEL_1: DotCategoryFieldCategory[] = [
         modDate: 1718916175804,
         owner: '',
         sortOrder: 0,
-        type: 'category',
-        checked: true
+        type: 'category'
     }
 ];
 
 /**
  * Represent a Category List of level 2
  */
-export const CATEGORY_LEVEL_2: DotCategoryFieldCategory[] = [
+export const CATEGORY_LEVEL_2: DotCategory[] = [
     {
         active: true,
         categoryName: 'Concrete & Cement',
@@ -194,12 +194,72 @@ export const CATEGORY_LEVEL_2: DotCategoryFieldCategory[] = [
 /**
  * Represent a Category List handling 2 levels
  */
-export const CATEGORY_LIST_MOCK: DotCategoryFieldCategory[][] = [
-    [...CATEGORY_LEVEL_1],
-    [...CATEGORY_LEVEL_2]
-];
+export const CATEGORY_LIST_MOCK: DotCategory[][] = [[...CATEGORY_LEVEL_1], [...CATEGORY_LEVEL_2]];
 
 /**
  * Represent the selected categories
  */
-export const SELECTED_LIST_MOCK = [CATEGORY_LEVEL_1[1].inode, CATEGORY_LEVEL_1[2].inode];
+export const SELECTED_LIST_MOCK = [CATEGORY_LEVEL_1[0].key, CATEGORY_LEVEL_1[1].key];
+
+export const CATEGORY_LIST_MOCK_TRANSFORMED: DotCategoryFieldKeyValueObj[][] =
+    CATEGORY_LIST_MOCK.map(
+        (categoryLevel) => transformCategories(categoryLevel) as DotCategoryFieldKeyValueObj[],
+        SELECTED_LIST_MOCK
+    );
+
+export const CATEGORY_MOCK_TRANSFORMED: DotCategoryFieldKeyValueObj[][] = [
+    [
+        {
+            key: CATEGORY_LEVEL_1[0].key,
+            value: CATEGORY_LEVEL_1[0].categoryName,
+            hasChildren: true,
+            clicked: true
+        },
+        {
+            key: CATEGORY_LEVEL_1[1].key,
+            value: CATEGORY_LEVEL_1[1].categoryName,
+            hasChildren: true,
+            clicked: false
+        }
+    ]
+];
+
+export const CATEGORIES_KEY_VALUE: DotCategoryFieldKeyValueObj[] = [
+    {
+        key: '0ab5e687775e4793679970e561380560',
+        value: 'Electrical',
+        path: 'Electrical'
+    },
+    {
+        key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
+        value: 'Doors & Windows',
+        path: 'Doors & Windows'
+    },
+    {
+        key: '1f208488057007cedda0e0b5d52ee3b3',
+        value: 'Cleaning Supplies',
+        path: 'Cleaning Supplies'
+    },
+    {
+        key: 'd2fb8e67c390e3b84cd613fa15aad5d4',
+        value: 'Concrete & Cement',
+        path: 'Concrete & Cement'
+    },
+    {
+        key: '3a3effac9f26593810c8687e692817a6',
+        value: 'Flooring',
+        path: 'Flooring'
+    },
+    {
+        key: '977ba2c4e2af65e303c748ec39f0f1ca',
+        value: 'Garage Organization',
+        path: 'Garage Organization'
+    }
+];
+
+const MESSAGES_MOCK = {
+    'edit.content.category-field.list.show.less': 'Less',
+    'edit.content.category-field.list.show.more': '{0} More'
+};
+
+export const CATEGORY_MESSAGE_MOCK = new MockDotMessageService(MESSAGES_MOCK);

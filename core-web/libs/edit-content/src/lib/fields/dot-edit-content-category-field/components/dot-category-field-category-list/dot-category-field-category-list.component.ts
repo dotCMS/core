@@ -21,9 +21,7 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TreeModule } from 'primeng/tree';
 
-import { DotCategory } from '@dotcms/dotcms-models';
-
-import { DotCategoryFieldCategory } from '../../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.models';
 
 export const MINIMUM_CATEGORY_COLUMNS = 4;
 
@@ -54,7 +52,7 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
     /**
      * Represents the variable 'categories' which is of type 'DotCategoryFieldCategory[][]'.
      */
-    categories = input.required<DotCategoryFieldCategory[][]>();
+    categories = input.required<DotCategoryFieldKeyValueObj[][]>();
 
     /**
      * Represent the selected item saved in the contentlet
@@ -76,12 +74,15 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
     /**
      * Emit the item clicked to the parent component
      */
-    @Output() itemClicked = new EventEmitter<{ index: number; item: DotCategory }>();
+    @Output() rowClicked = new EventEmitter<{ index: number; item: DotCategoryFieldKeyValueObj }>();
 
     /**
      * Emit the item checked or selected to the parent component
      */
-    @Output() itemChecked = new EventEmitter<{ selected: string[]; item: DotCategory }>();
+    @Output() itemChecked = new EventEmitter<{
+        selected: string[];
+        item: DotCategoryFieldKeyValueObj;
+    }>();
 
     /**
      * Model of the items selected
@@ -115,12 +116,14 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
                 return;
             }
 
+            const lastColumnIndex = columnsArray.length - 1;
+
             if (
                 columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1] &&
                 columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1].nativeElement.children.length >
                     0
             ) {
-                columnsArray[columnsArray.length - 1].nativeElement.scrollIntoView({
+                columnsArray[lastColumnIndex].nativeElement.scrollIntoView({
                     behavior: 'smooth',
                     block: 'end',
                     inline: 'end'

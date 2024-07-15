@@ -22,6 +22,9 @@ jobs:
     needs: [ initialize ]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/reusable-ci-build.yml
+    with:
+      core-build: true
+      run-pr-checks: true
     permissions:
       contents: read
       packages: write

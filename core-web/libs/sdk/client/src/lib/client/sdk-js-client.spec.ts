@@ -176,7 +176,7 @@ describe('DotCmsClient', () => {
         describe('page.get', () => {
             it('should fetch page data successfully', async () => {
                 const mockResponse = { content: 'Page data' };
-                mockFetchResponse(mockResponse);
+                mockFetchResponse({ entity: mockResponse });
 
                 const data = await client.page.get({ path: '/home' });
 
@@ -409,7 +409,7 @@ describe('DotCmsClient', () => {
 
         it('should fetch page data with extra headers and cache', async () => {
             const mockResponse = { content: 'Page data' };
-            mockFetchResponse(mockResponse);
+            mockFetchResponse({ entity: mockResponse });
 
             const data = await client.page.get({ path: '/home' });
 

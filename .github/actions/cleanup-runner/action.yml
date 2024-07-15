@@ -1,72 +1,108 @@
-# action.yml
 name: 'Cleanup Runner'
 description: 'Cleans up runner resources'
-author: 'victoralfaro-dotcms'
 runs:
   using: 'composite'
   steps:
-    - name: Show Disk Usage
+    - name: Show Initial Disk Usage
       shell: bash
       run: |
-        echo '# df -h'
+        echo '# Initial Disk Usage'
         df -h
+        echo "Runner OS: $RUNNER_OS"
         
-        echo '# docker images'
-        docker images || true
-        
-        echo '# du -sh /home/runner'
-        sudo du -sh /home/runner || true
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          HOME_DIR="/Users/runner"
+          echo '# du -sh $HOME_DIR'
+          sudo du -sh $HOME_DIR || true
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          HOME_DIR="/home/runner"
+          echo '# docker images'
+          docker images || true
+          echo '# du -sh $HOME_DIR'
+          sudo du -sh $HOME_DIR || true
+        fi
 
-    - name: Clean apt cache
+    - name: Clean Cache
       shell: bash
       run: |
-        echo 'Clean apt cache'
-        time sudo apt-get clean -y
-        time sudo apt-get autoclean -y
-        time sudo apt-get autoremove -y
-        time sudo rm -rf /var/lib/apt/lists/*
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          echo 'Clean Homebrew cache'
+          brew cleanup -s
+          rm -rf "$(brew --cache)"
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          echo 'Clean apt cache'
+          sudo apt-get clean -y
+          sudo apt-get autoclean -y
+          sudo apt-get autoremove -y
+          sudo rm -rf /var/lib/apt/lists/*
+        fi
 
     - name: Cleanup Docker
       shell: bash
       run: |
-        echo 'Cleanup Docker'
-        time docker system prune -f
-        time docker volume prune -f
-        time docker image prune -f
-        time docker container prune -f
-        time docker network prune -f
+        if [[ "$RUNNER_OS" == "Linux" ]] || [[ "$RUNNER_OS" == "macOS" ]]; then
+          echo 'Cleanup Docker'
+          docker system prune -f
+          docker volume prune -f
+          docker image prune -f
+          docker container prune -f
+          docker network prune -f
+        fi
 
     - name: Reclaim Disk Space
       shell: bash
       run: |
         removeIfExists() {
           local file=$1
-          [[ -e $file ]] && time sudo rm -rf $1 || true
+          [[ -e $file ]] && sudo rm -rf $1 || true
         }
-        
-        removeIfExists /usr/share/dotnet
-        removeIfExists /usr/share/swift
-        removeIfExists /usr/local/lib/android
-        removeIfExists /opt/ghc
-        removeIfExists /opt/pipx
 
-        removeIfExists /opt/hostedtoolcache/CodeQL
-        removeIfExists /imagegeneration/installers/go-*
-        removeIfExists /imagegeneration/installers/node-*
-        removeIfExists /imagegeneration/installers/python-*
-        
-        removeIfExists /home/runner/work/_temp/*
-        removeIfExists /home/runner/work/_tool/*
-        removeIfExists /home/runner/work/_config/*
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          HOME_DIR="/Users/runner"
+          removeIfExists ${HOME_DIR}/.cache
+          removeIfExists ${HOME_DIR}/Library/Logs
+          removeIfExists ${HOME_DIR}/Library/Caches
+          removeIfExists ${HOME_DIR}/work/_temp
+          removeIfExists ${HOME_DIR}/.cargo/bin/cargo
+          removeIfExists ${HOME_DIR}/.ghcup/bin/ghc
+          removeIfExists ${HOME_DIR}/Library/Android/sdk
 
-    - name: Show Disk Usage
+          removeIfExists /usr/local/bin/pipx             
+          removeIfExists /usr/bin/swift
+          removeIfExists /usr/local/bin/dotnet
+          removeIfExists /usr/local/Caskroom/
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          HOME_DIR="/home/runner"
+          removeIfExists /usr/share/dotnet
+          removeIfExists /usr/share/swift
+          removeIfExists /usr/local/lib/android
+          removeIfExists /opt/ghc
+          removeIfExists /opt/pipx
+
+          removeIfExists /opt/hostedtoolcache/CodeQL
+          removeIfExists /imagegeneration/installers/go-*
+          removeIfExists /imagegeneration/installers/node-*
+          removeIfExists /imagegeneration/installers/python-*
+
+          removeIfExists ${HOME_DIR}/work/_temp/*
+          removeIfExists ${HOME_DIR}/work/_tool/*
+          removeIfExists ${HOME_DIR}/work/_config/*
+        fi
+
+    - name: Show Final Disk Usage
       shell: bash
       run: |
-        echo "# df -h"
+        echo '# Final Disk Usage'
         df -h
 
-        echo '# docker images'
-        docker images || true
-
-        echo '# du -sh /home/runner'
-        sudo du -sh /home/runner || true
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          HOME_DIR="/Users/runner"
+          echo '# du -sh $HOME_DIR'
+          sudo du -sh $HOME_DIR || true
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          HOME_DIR="/home/runner"
+          echo '# docker images'
+          docker images || true
+          echo '# du -sh $HOME_DIR'
+          sudo du -sh $HOME_DIR || true
+        fi

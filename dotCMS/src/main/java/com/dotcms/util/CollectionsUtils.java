@@ -1,5 +1,6 @@
 package com.dotcms.util;
 
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
@@ -703,6 +704,18 @@ public class CollectionsUtils implements Serializable {
     public static <T> T[] concat(final T[] array1, final T[] array2) {
         return Stream.concat(Arrays.stream(array1), Arrays.stream(array2))
                 .toArray(size -> (T[]) Array.newInstance(array1.getClass().getComponentType(), size));
+    }
+
+    /**
+     * Utility method that returns the non-null value, or its default value.
+     *
+     * @param value    The value to be checked.
+     * @param fallback The fallback value in case the value is null.
+     *
+     * @return The value if it is not null, or the fallback value.
+     */
+    public static Object orElseGet(final Object value, final Object fallback) {
+        return UtilMethods.isSet(value) ? value : fallback;
     }
 
 }
