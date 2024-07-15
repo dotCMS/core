@@ -167,6 +167,3 @@ dotCMS/settings.gradle
 dotCMS/dependencies.gradle
 
 !/examples/nextjs/.npmrc
-
-# TODO: Remove when we agree on an approach
-dotCMS/src/main/webapp/html/tinymce/**
