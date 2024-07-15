@@ -164,7 +164,6 @@
 								<% } else { %>
 								<div id="pathToFolder" style="word-break: break-all;">/<%= folder.getName() %></div>
 								<% } %>
-								<!--<html:hidden property="name" />-->
 							</dd>
 							<%}else{%>
 							<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
@@ -174,7 +173,6 @@
 								<% } else { %>
 								<div id="pathToFolder" style="word-break: break-all;">/</div>
 								<% } %>
-								<!--<html:hidden property="name" />-->
 							</dd>
 							<%}%>
 						</dl>
@@ -219,7 +217,6 @@
 										store="fileAssetStructureStore"
 										searchDelay="300"
 										pageSize="15"
-										autoComplete="false"
 										ignoreCase="true"
 										labelAttr="name"
 										searchAttr="name"
