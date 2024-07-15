@@ -410,37 +410,49 @@ public class PageResource {
      */
     @NoCache
     @POST
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{pageId}/layout")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Tag(name = "Page",
+        description = "Endpoints performing operations for page resrouces.",
+        externalDocs = @ExternalDocumentation(description = "Additional information for Page API",
+                        url = "https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas")
+        )
     @Operation(operationId = "postPageLayout",
-                summary = "Links template and HTML",
-                description = "Takes a saved template and links it to an HTML page.\n\n" +
-                                "Any pages with a template already linked will update with the new link.\n\n" +
-                                "Otherwise a new template will be created without making any changes to previous templates.\n\n" +
-                                "Returns the updated page view for specified page.\n\n",
-                tags = {"Page"}
+        summary = "Links template and HTML",
+        description = "Takes a saved template and links it to an HTML page.\n\n" +
+                    "Any pages with a template already linked will update with the new link.\n\n" +
+                    "Otherwise a new template will be created without making any changes to previous templates.\n\n" +
+                    "Returns the updated page view for specified page.\n\n",
+        tags = {"Page"},
+        responses = {
+                @ApiResponse(responseCode = "200", description = "Page template linked to HTML and saved successfully",
+                        content = @Content(mediaType = "application/json", 
+                                schema = @Schema(implementation = ResponseEntityPageView.class,
+                                        examples = {
+                                                @ExampleObject()
+                                        })
+                                )
+                        ) 
+                @ApiResponse(responseCode = "200", description = "Template saved and linked successfully"),
+                @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
+                @ApiResponse(responseCode = "404", description = "Page not found")
+                }
         )
-    @ApiResponses(value = {
-        @ApiResponse(
-                responseCode = "200", 
-                description = "Template saved and linked successfully",
-                content = @Content(mediaType = "application/json")),
-        @ApiResponse(
-                responseCode = "400", 
-                description = "Bad request or data exception",
-                content = @Content(mediaTpye = "text/plain")),
-        @ApiResponse(
-                responseCode = "404",
-                description = "Page not found",
-                content = @Content(mediaType = "text/plain")
-        )
-        })
-    public Response saveLayout(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @PathParam("pageId") @Parameter(description = "ID for the page that the template will link to") final String pageId,
-            @QueryParam("variantName") final String variantNameParam,
-            final PageForm form) 
-        throws DotSecurityException {
+    public Response saveLayout(
+                @Context final HttpServletRequest request,
+                @Context final HttpServletResponse response,
+                @PathParam("pageId") @Parameter(description = "ID for the page will link to") final String pageId,
+                @QueryParam("variantName") final String variantNameParam,
+                final PageForm form) 
+                @RequestBody(description = "POST body consists of a JSON object containing " + 
+                                        "one property called 'PageForm', which contains a " +
+                                        "list of page scheme identification strings",
+                                required = true,
+                                content = @Content(
+                                        schema = @Schema(implementation = PageForm.class)
+                                )
+                        )
+        throws DotSecurityException {                
 
         final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
                 VariantAPI.DEFAULT_VARIANT.name();
