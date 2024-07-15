@@ -352,6 +352,18 @@ describe('DotCmsClient', () => {
         });
     });
 
+    describe('Properties', () => {
+        it('should return he current dotcmsUrl', () => {
+            DotCmsClient.init({
+                dotcmsUrl: 'http://localhost:8080',
+                siteId: '123456',
+                authToken: 'ABC'
+            });
+
+            expect(DotCmsClient.dotcmsUrl).toBe('http://localhost:8080');
+        });
+    });
+
     describe('with minimal configuration', () => {
         let client: DotCmsClient;
 

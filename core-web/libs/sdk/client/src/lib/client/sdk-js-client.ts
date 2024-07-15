@@ -332,11 +332,11 @@ export class DotCmsClient {
     };
 
     static init(config: ClientConfig): DotCmsClient {
-        return this.instance ?? (this.instance = new DotCmsClient(config));
+        return (this.instance = new DotCmsClient(config));
     }
 
     static get dotcmsUrl(): string {
-        return this.instance.#config?.dotcmsUrl || '';
+        return (this.instance && this.instance.#config.dotcmsUrl) || '';
     }
 
     private validatePageOptions(options: PageApiOptions): void {
