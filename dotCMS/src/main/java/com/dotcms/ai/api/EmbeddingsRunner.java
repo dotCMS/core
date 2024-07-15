@@ -5,6 +5,7 @@ import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -81,10 +82,12 @@ class EmbeddingsRunner implements Runnable {
                 saveEmbedding(buffer.toString());
             }
         } catch (Exception e) {
+            final String errorMsg = String.format("Failed to generate embeddings for contentlet ID " +
+                    "'%s': %s", contentlet.getIdentifier(), ExceptionUtil.getErrorMessage(e));
             if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-                Logger.warn(this.getClass(), "unable to embed content:" + contentlet.getIdentifier() + " error:" + e.getMessage(), e);
+                Logger.warn(this.getClass(), errorMsg, e);
             } else {
-                Logger.warnAndDebug(this.getClass(), "unable to embed content:" + contentlet.getIdentifier() + " error:" + e.getMessage(), e);
+                Logger.warnAndDebug(this.getClass(), errorMsg, e);
             }
         }
     }
