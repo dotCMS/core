@@ -51,7 +51,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
     protected content = '';
     protected safeContent!: SafeHtml;
     protected init!: EditorComponent['init'];
-    protected readonly isInsideEditor = isInsideEditor();
+    protected isInsideEditor!: boolean;
 
     readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
     readonly #renderer = inject<Renderer2>(Renderer2);
@@ -83,6 +83,8 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
     }
 
     ngOnInit() {
+        this.isInsideEditor = isInsideEditor();
+
         if (!this.isInsideEditor) {
             this.innerHTMLToElement();
 
@@ -97,7 +99,6 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
 
     ngOnChanges() {
         this.content = this.contentlet[this.fieldName] || '';
-        this.safeContent = this.#sanitizer.bypassSecurityTrustHtml(this.content);
     }
 
     /**
@@ -174,7 +175,8 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      */
     private innerHTMLToElement() {
         const element = this.#elementRef.nativeElement;
-        this.#renderer.setProperty(element, 'innerHTML', this.content);
+        this.safeContent = this.#sanitizer.bypassSecurityTrustHtml(this.content);
+        this.#renderer.setProperty(element, 'innerHTML', this.safeContent);
     }
 
     /**
