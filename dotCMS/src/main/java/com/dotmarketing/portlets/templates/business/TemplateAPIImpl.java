@@ -1325,11 +1325,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 			throws DotDataException, DotSecurityException {
 		final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(templateId, user, false);
 
-		if (templateFromDB.getDrawedBody() != null) {
-			return  Optional.of(DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody()));
-		}
-
-		return Optional.empty();
+		return Optional.ofNullable(templateFromDB.getDrawedBody()).map(DotTemplateTool::getTemplateLayout);
 	}
 
 	/**
