@@ -8825,6 +8825,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getContentletAPI().setContentletProperty(publishedContentlet, new LegacyFieldTransformer(field).asOldField(), value);
 
         final Number valueRetrieved = (Number) publishedContentlet.get(keyPropName);
-        assertEquals(value, valueRetrieved);
+        assertEquals(value.longValue(), valueRetrieved);
     }
 }
