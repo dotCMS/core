@@ -25,6 +25,15 @@ import { TINYMCE_CONFIG, TINYMCE_FORMAT, TINYMCE_MODE } from './utils';
 
 import { DotCMSContentlet } from '../../models';
 
+/**
+ * Dot editable text component.
+ * This component is responsible to render a text field that can be edited inline.
+ *
+ * @export
+ * @class DotEditableTextComponent
+ * @implements {OnInit}
+ * @implements {OnChanges}
+ */
 @Component({
     selector: 'dot-editable-text',
     standalone: true,
@@ -43,28 +52,97 @@ import { DotCMSContentlet } from '../../models';
 export class DotEditableTextComponent implements OnInit, OnChanges {
     @ViewChild(EditorComponent) editorComponent!: EditorComponent;
 
+    /**
+     * Represents the mode of the editor which can be  'plain', 'minimal', or 'full'
+     *
+     * @type {TINYMCE_MODE}
+     * @memberof DotEditableTextComponent
+     */
     @Input() mode: TINYMCE_MODE = 'plain';
+    /**
+     * Represents the format of the editor which can be 'text' or 'html'
+     *
+     * @type {TINYMCE_FORMAT}
+     * @memberof DotEditableTextComponent
+     */
     @Input() format: TINYMCE_FORMAT = 'text';
+    /**
+     * Represents the `contentlet` that can be inline edited
+     *
+     * @type {DotCMSContentlet}
+     * @memberof DotEditableTextComponent
+     */
     @Input() contentlet!: DotCMSContentlet;
+    /**
+     * Represents the field name of the `contentlet` that can be edited
+     *
+     * @memberof DotEditableTextComponent
+     */
     @Input() fieldName = '';
 
+    /**
+     * Represents the content of the `contentlet` that can be edited
+     *
+     * @protected
+     * @memberof DotEditableTextComponent
+     */
     protected content = '';
+    /**
+     * Represents the safe content of the `contentlet` that is rendered in preview mode
+     *
+     * @protected
+     * @type {SafeHtml}
+     * @memberof DotEditableTextComponent
+     */
     protected safeContent!: SafeHtml;
+    /**
+     * Represents the configuration of the editor
+     *
+     * @protected
+     * @type {EditorComponent['init']}
+     * @memberof DotEditableTextComponent
+     */
     protected init!: EditorComponent['init'];
+    /**
+     * Represents if the component is inside the editor
+     *
+     * @protected
+     * @type {boolean}
+     * @memberof DotEditableTextComponent
+     */
     protected isInsideEditor!: boolean;
 
     readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
     readonly #renderer = inject<Renderer2>(Renderer2);
     readonly #elementRef = inject<ElementRef>(ElementRef);
 
+    /**
+     * The TinyMCE editor
+     *
+     * @readonly
+     * @memberof DotEditableTextComponent
+     */
     get editor() {
         return this.editorComponent.editor;
     }
 
+    /**
+     * Returns the number of pages the contentlet is on
+     *
+     * @readonly
+     * @memberof DotEditableTextComponent
+     */
     get onNumberOfPages() {
         return this.contentlet['onNumberOfPages'];
     }
 
+    /**
+     * Handle copy contentlet inline editing success event
+     *
+     * @param {MessageEvent} { data }
+     * @return {*}
+     * @memberof DotEditableTextComponent
+     */
     @HostListener('window:message', ['$event'])
     onMessage({ data }: MessageEvent) {
         const { name, payload } = data;
