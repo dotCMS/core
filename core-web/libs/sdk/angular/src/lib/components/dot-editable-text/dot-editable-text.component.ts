@@ -24,7 +24,7 @@ import {
 import { TINYMCE_CONFIG, TINYMCE_FORMAT, TINYMCE_MODE } from './utils';
 
 import { DotCMSContentlet } from '../../models';
-import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
+
 @Component({
     selector: 'dot-editable-text',
     standalone: true,
@@ -34,9 +34,8 @@ import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
     providers: [
         {
             provide: TINYMCE_SCRIPT_SRC,
-            deps: [DOTCMS_CLIENT_TOKEN],
-            useFactory: (client: DotCmsClient) => {
-                return `${client.dotcmsUrl}/html/tinymce/tinymce.min.js`;
+            useFactory: () => {
+                return `${DotCmsClient.dotcmsUrl}/html/tinymce/tinymce.min.js`;
             }
         }
     ]
@@ -54,7 +53,6 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
     protected init!: EditorComponent['init'];
     protected readonly isInsideEditor = isInsideEditor();
 
-    readonly #client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
     readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
     readonly #renderer = inject<Renderer2>(Renderer2);
     readonly #elementRef = inject<ElementRef>(ElementRef);
@@ -93,7 +91,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
 
         this.init = {
             ...TINYMCE_CONFIG[this.mode],
-            base_url: `${this.#client.dotcmsUrl}/html/tinymce`
+            base_url: `${DotCmsClient.dotcmsUrl}/html/tinymce`
         };
     }
 

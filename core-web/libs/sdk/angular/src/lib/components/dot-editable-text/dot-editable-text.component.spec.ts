@@ -11,7 +11,6 @@ import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 import { DotEditableTextComponent } from './dot-editable-text.component';
 import { TINYMCE_CONFIG } from './utils';
 
-import { DOTCMS_CLIENT_TOKEN } from '../../tokens/client';
 import { dotcmsContentletMock } from '../../utils/testing.utils';
 
 // Mock @dotcms/client module
@@ -53,12 +52,6 @@ describe('DotEditableTextComponent', () => {
             {
                 provide: TINYMCE_SCRIPT_SRC,
                 useValue: 'tinymce/tinymce.min.js'
-            },
-            {
-                provide: DOTCMS_CLIENT_TOKEN,
-                useValue: {
-                    dotcmsUrl: 'http://localhost:8080'
-                }
             }
         ]
     });

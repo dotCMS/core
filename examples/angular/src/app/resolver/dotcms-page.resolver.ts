@@ -1,12 +1,12 @@
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import {
-  DOTCMS_CLIENT_TOKEN,
   DotCMSPageAsset,
   DotcmsNavigationItem,
 } from '@dotcms/angular';
 import { inject, InjectionToken } from '@angular/core';
 
 import { DotCmsClient } from '@dotcms/client';
+import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 
 /**
  * This resolver is used to fetch the page and navigation data from dotCMS.
@@ -21,11 +21,7 @@ export const DotCMSPageResolver = async (
   pageAsset: DotCMSPageAsset;
   nav: DotcmsNavigationItem;
 }> => {
-  // TODO: WE NEED TO FIX THIS SOMEHOW
-  // IF WE DONT DO THIS WE WILL GET A TYPE ERROR ON DEVELOPMENT BECAUSE OF TYPES FROM OUR SYM LINK, COULD BE ANGULAR VERSIONS
-  const client = inject<DotCmsClient>(
-    DOTCMS_CLIENT_TOKEN as unknown as InjectionToken<DotCmsClient>
-  );
+  const client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
   const pageAsset = route.data['pageAsset'] as DotCMSPageAsset;
 
   const { language_id } = route.queryParams;

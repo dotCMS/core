@@ -16,9 +16,9 @@ import { NavigationComponent } from './components/navigation/navigation.componen
 
 import { DYNAMIC_COMPONENTS } from '../utils';
 
-import { DOTCMS_CLIENT_TOKEN, DotcmsLayoutComponent } from '@dotcms/angular';
+import { DotcmsLayoutComponent } from '@dotcms/angular';
 import { JsonPipe } from '@angular/common';
-import { DotCmsClient } from '@dotcms/client';
+import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 
 @Component({
   selector: 'dotcms-pages',
@@ -39,7 +39,7 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
 
   protected readonly context = signal<any>(null);
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
-  private readonly client = inject(DOTCMS_CLIENT_TOKEN as unknown as InjectionToken<DotCmsClient>);
+  private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
   ngOnInit() {
     // Get the context data from the route

@@ -150,12 +150,12 @@ function getHostURL(url: string): URL | undefined {
  *
  */
 export class DotCmsClient {
+    static instance: DotCmsClient;
     #config: ClientConfig;
     #requestOptions!: ClientOptions;
     #listeners: DotcmsClientListener[] = [];
 
     dotcmsUrl?: string;
-
     content: Content;
 
     constructor(
@@ -331,6 +331,14 @@ export class DotCmsClient {
         }
     };
 
+    static init(config: ClientConfig): DotCmsClient {
+        return this.instance ?? (this.instance = new DotCmsClient(config));
+    }
+
+    static get dotcmsUrl(): string {
+        return this.instance.#config?.dotcmsUrl || '';
+    }
+
     private validatePageOptions(options: PageApiOptions): void {
         if (!options.path) {
             throw new Error("The 'path' parameter is required for the Page API");
@@ -343,25 +351,3 @@ export class DotCmsClient {
         }
     }
 }
-
-/**
- * `dotcmsClient` is an object that provides a method to initialize the DotCMS SDK client.
- * It has a single method `init` which takes a configuration object and returns an instance of the `DotCmsClient` class.
- *
- * @namespace dotcmsClient
- *
- * @method init(config: ClientConfig): DotCmsClient - Initializes the SDK client.
- */
-export const dotcmsClient = {
-    /**
-     * `init` is a method of the `dotcmsClient` object that initializes the SDK client.
-     * It takes a configuration object as a parameter and returns an instance of the `DotCmsClient` class.
-     *
-     * @method init
-     * @param {ClientConfig} config - The configuration object for the DotCMS client.
-     * @returns {DotCmsClient} - An instance of the {@link DotCmsClient} class.
-     */
-    init: (config: ClientConfig): DotCmsClient => {
-        return new DotCmsClient(config);
-    }
-};

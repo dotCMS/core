@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Content } from './content/content-api';
-import { DotCmsClient, dotcmsClient } from './sdk-js-client';
+import { DotCmsClient } from './sdk-js-client';
 
 import * as dotcmsEditor from '../editor/sdk-editor';
 
@@ -27,7 +27,7 @@ describe('DotCmsClient', () => {
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
 
-            client = dotcmsClient.init({
+            client = DotCmsClient.init({
                 dotcmsUrl: 'http://localhost',
                 siteId: '123456',
                 authToken: 'ABC'
@@ -44,7 +44,7 @@ describe('DotCmsClient', () => {
                     authToken: 'ABC'
                 };
 
-                const client = dotcmsClient.init(config);
+                const client = DotCmsClient.init(config);
                 expect(client).toBeDefined();
             });
 
@@ -56,7 +56,7 @@ describe('DotCmsClient', () => {
                 };
 
                 expect(() => {
-                    dotcmsClient.init(config);
+                    DotCmsClient.init(config);
                 }).toThrow("Invalid configuration - 'dotcmsUrl' is required");
             });
 
@@ -68,7 +68,7 @@ describe('DotCmsClient', () => {
                 };
 
                 expect(() => {
-                    dotcmsClient.init(config);
+                    DotCmsClient.init(config);
                 }).toThrow("Invalid configuration - 'dotcmsUrl' must be a valid URL");
             });
 
@@ -80,7 +80,7 @@ describe('DotCmsClient', () => {
                 };
 
                 expect(() => {
-                    dotcmsClient.init(config);
+                    DotCmsClient.init(config);
                 }).toThrow("Invalid configuration - 'authToken' is required");
             });
 
@@ -94,7 +94,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = dotcmsClient.init(config);
+                const client = DotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -116,7 +116,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = dotcmsClient.init(config);
+                const client = DotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -138,7 +138,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = dotcmsClient.init(config);
+                const client = DotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -160,7 +160,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = dotcmsClient.init(config);
+                const client = DotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -358,7 +358,7 @@ describe('DotCmsClient', () => {
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
 
-            client = dotcmsClient.init({
+            client = DotCmsClient.init({
                 dotcmsUrl: 'http://localhost',
                 authToken: 'ABC'
             });
@@ -382,7 +382,7 @@ describe('DotCmsClient', () => {
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
 
-            client = dotcmsClient.init({
+            client = DotCmsClient.init({
                 dotcmsUrl: 'http://localhost',
                 siteId: '123456',
                 authToken: 'ABC',
