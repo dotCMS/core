@@ -243,7 +243,7 @@ export class DotCmsClient {
                 throw error;
             }
 
-            return response.json();
+            return response.json().then((data) => data.entity);
         }
     };
 

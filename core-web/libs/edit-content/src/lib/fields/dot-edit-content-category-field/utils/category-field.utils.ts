@@ -1,9 +1,6 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import {
-    DotCategoryFieldCategory,
-    DotCategoryFieldKeyValueObj
-} from '../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
 
 /**
  * Retrieves selected categories from a contentlet.
@@ -12,7 +9,7 @@ import {
  * @param {DotCMSContentlet} contentlet - The contentlet from which to retrieve the selected categories.
  * @returns {DotCategoryFieldKeyValueObj[]} - An array of objects representing the selected categories.
  */
-export const getSelectedCategories = (
+export const transformSelectedCategories = (
     { variable }: DotCMSContentTypeField,
     contentlet: DotCMSContentlet
 ): DotCategoryFieldKeyValueObj[] => {
@@ -31,19 +28,36 @@ export const getSelectedCategories = (
 
 /**
  * Add calculated properties to the categories
- * @param categories
- * @param parentPath
+ * @param categories - Single category or array of categories to transform
+ * @param keyParentPath - Path of keys to determine clicked state
+ * @returns Transformed category or array of transformed categories with additional properties
  */
-export const addMetadata = (
-    categories: DotCategoryFieldCategory[],
-    parentPath: string[]
-): DotCategoryFieldCategory[] => {
-    return categories.map((category) => {
+
+export const transformCategories = (
+    categories: DotCategory | DotCategory[],
+    keyParentPath: string[] = []
+): DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[] => {
+    const transformCategory = (category: DotCategory): DotCategoryFieldKeyValueObj => {
+        const { key, inode, categoryName, childrenCount } = category;
+        const hasChildren = childrenCount > 0;
+
+        const path = category.parentList ? getParentPath(category) : '';
+
         return {
-            ...category,
-            checked: parentPath.includes(category.inode) && category.childrenCount > 0
+            key,
+            inode,
+            value: categoryName,
+            hasChildren,
+            clicked: hasChildren && keyParentPath.includes(key),
+            path
         };
-    });
+    };
+
+    if (Array.isArray(categories)) {
+        return categories.map(transformCategory);
+    } else {
+        return transformCategory(categories);
+    }
 };
 
 /**
@@ -62,10 +76,10 @@ export const categoryDeepCopy = <T>(array: T[][]): T[][] => {
  * @param index
  */
 export const clearCategoriesAfterIndex = (
-    array: DotCategoryFieldCategory[][],
+    array: DotCategory[][],
     index: number
-): DotCategoryFieldCategory[][] => {
-    const newArray = categoryDeepCopy<DotCategoryFieldCategory>(array);
+): DotCategory[][] => {
+    const newArray = categoryDeepCopy<DotCategory>(array);
     newArray.splice(index + 1);
 
     return newArray;
@@ -85,10 +99,7 @@ export const clearParentPathAfterIndex = (parentPath: string[], index: number): 
  * @param index
  * @param categories
  */
-export const checkIfClickedIsLastItem = (
-    index: number,
-    categories: DotCategoryFieldCategory[][]
-) => {
+export const checkIfClickedIsLastItem = (index: number, categories: DotCategory[][]) => {
     return index + 1 === categories.length;
 };
 
@@ -103,17 +114,76 @@ export const checkIfClickedIsLastItem = (
 export const updateChecked = (
     storedSelected: DotCategoryFieldKeyValueObj[],
     selected: string[],
-    item: DotCategoryFieldCategory
+    item: DotCategoryFieldKeyValueObj
 ): DotCategoryFieldKeyValueObj[] => {
     let currentChecked = [...storedSelected];
 
     if (selected.includes(item.key)) {
         if (!currentChecked.some((entry) => entry.key === item.key)) {
-            currentChecked = [...currentChecked, { key: item.key, value: item.categoryName }];
+            currentChecked = [
+                ...currentChecked,
+                { key: item.key, value: item.value, inode: item.inode }
+            ];
         }
     } else {
         currentChecked = currentChecked.filter((entry) => entry.key !== item.key);
     }
 
     return currentChecked;
+};
+
+/**
+ * Retrieves the parent path of a given category item.
+ *
+ * @param {DotCategory} item - The category item.
+ * @returns {string} - The parent path of the category item.
+ */
+export const getParentPath = (item: DotCategory): string => {
+    if (item.parentList) {
+        return item.parentList
+            .slice(1)
+            .map((parent) => parent.categoryName)
+            .join(' / ');
+    }
+
+    return '';
+};
+
+/**
+ * Removes items from an array of objects based on a specified key or an array of keys.
+ *
+ * @param {DotCategoryFieldKeyValueObj[]} array - The array of objects to remove items from.
+ * @param {string | string[]} key - The key (or keys if an array) used to identify the items to remove.
+ * @returns {DotCategoryFieldKeyValueObj[]} The updated array without the removed items.
+ */
+export const removeItemByKey = (
+    array: DotCategoryFieldKeyValueObj[],
+    key: string | string[]
+): DotCategoryFieldKeyValueObj[] => {
+    if (Array.isArray(key)) {
+        const keysSet = new Set(key);
+
+        return array.filter((item) => !keysSet.has(item.key));
+    } else {
+        return array.filter((item) => item.key !== key);
+    }
+};
+
+/**
+ * Adds selected items to the existing array of DotCategoryFieldKeyValueObj.
+ *
+ * @param {DotCategoryFieldKeyValueObj[]} array - The original array.
+ * @param {DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]} items - The item(s) to be added to the array.
+ * @returns {DotCategoryFieldKeyValueObj[]} - The updated array with the selected items added.
+ */
+export const addSelected = (
+    array: DotCategoryFieldKeyValueObj[],
+    items: DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]
+): DotCategoryFieldKeyValueObj[] => {
+    const itemsArray = Array.isArray(items) ? items : [items];
+    const itemSet = new Set(array.map((item) => item.key));
+
+    const newItems = itemsArray.filter((item) => !itemSet.has(item.key));
+
+    return [...array, ...newItems];
 };
