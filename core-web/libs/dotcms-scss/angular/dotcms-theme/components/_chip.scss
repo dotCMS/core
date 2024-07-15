@@ -1,17 +1,17 @@
 @use "variables" as *;
 @import "mixins";
 
-$chip-height-sm: 1.5rem; // 24px
-$chip-height-md: 2.5rem; // 40px
-
 .p-chip {
-    background-color: $color-palette-primary-500;
+    background-color: $color-palette-primary;
     color: $white;
     border-radius: $border-radius-md;
+    border-width: 1px;
+    border-style: solid;
+    border-color: $color-palette-primary;
     padding: 0 $spacing-1;
-    height: $chip-height-md;
     gap: $spacing-1;
     flex-direction: row-reverse;
+    height: $field-height-md;
 
     .p-chip-icon,
     .pi-chip-remove-icon {
@@ -29,49 +29,140 @@ $chip-height-md: 2.5rem; // 40px
         // Not implemented
     }
 
-    &.p-chip-secondary {
-        background-color: $color-palette-secondary-500;
-        color: $white;
+    &.p-chip-outlined {
+        border-color: $color-primary-shade;
+        background-color: $white;
+        color: $color-primary-shade;
+    }
+
+    &.p-chip-text {
+        border-color: $color-primary-tint;
+        background-color: $color-primary-tint;
+        color: $color-primary-shade;
     }
 
     &.p-chip-warning {
-        background-color: $color-alert-yellow;
+        border-color: $color-palette-yellow;
+        background-color: $color-palette-yellow;
         color: $color-palette-gray-900;
-    }
-
-    &.p-chip-success {
-        background-color: $color-alert-green;
-        color: $color-palette-gray-900;
+        &.p-chip-outlined {
+            border-color: $color-yellow-shade;
+            background-color: $white;
+            color: $color-yellow-shade;
+        }
+        &.p-chip-text {
+            border-color: $color-yellow-tint;
+            background-color: $color-yellow-tint;
+            color: $color-yellow-shade;
+        }
     }
 
     &.p-chip-error {
-        background-color: $color-alert-red;
+        border-color: $color-palette-red;
+        background-color: $color-palette-red;
+        color: $color-palette-gray-900;
+        &.p-chip-outlined {
+            border-color: $color-red-shade;
+            background-color: $white;
+            color: $color-red-shade;
+        }
+        &.p-chip-text {
+            border-color: $color-red-tint;
+            background-color: $color-red-tint;
+            color: $color-red-shade;
+        }
+    }
+
+    &.p-chip-secondary {
+        border-color: $color-palette-secondary;
+        background-color: $color-palette-secondary;
         color: $white;
+        &.p-chip-outlined {
+            border-color: $color-secondary-shade;
+            background-color: $white;
+            color: $color-secondary-shade;
+        }
+        &.p-chip-text {
+            border-color: $color-secondary-tint;
+            background-color: $color-secondary-tint;
+            color: $color-secondary-shade;
+        }
+    }
+
+    &.p-chip-fuchsia {
+        border-color: $color-palette-fuchsia;
+        background-color: $color-palette-fuchsia;
+        color: $white;
+        &.p-chip-outlined {
+            border-color: $color-fuchsia-shade;
+            background-color: $white;
+            color: $color-fuchsia-shade;
+        }
+        &.p-chip-text {
+            border-color: $color-fuchsia-tint;
+            background-color: $color-fuchsia-tint;
+            color: $color-fuchsia-shade;
+        }
+    }
+
+    &.p-chip-success {
+        border-color: $color-palette-success;
+        background-color: $color-palette-success;
+        color: $white;
+        &.p-chip-outlined {
+            border-color: $color-success-shade;
+            background-color: $white;
+            color: $color-success-shade;
+        }
+        &.p-chip-text {
+            border-color: $color-success-tint;
+            background-color: $color-success-tint;
+            color: $color-success-shade;
+        }
     }
 
     &.p-chip-gray {
-        background-color: $color-accessible-text-gray-bg;
-        color: $color-accessible-text-gray;
+        border-color: $color-palette-gray;
+        background-color: $color-palette-gray;
+        color: $white;
+        &.p-chip-outlined {
+            border-color: $color-gray-shade;
+            background-color: $white;
+            color: $color-gray-shade;
+        }
+        &.p-chip-text {
+            border-color: $color-gray-tint;
+            background-color: $color-gray-tint;
+            color: $color-gray-shade;
+        }
     }
 
-    &.p-chip-pink {
-        background: $color-alert-fuchsia;
-        color: $color-accessible-text-fuchsia;
-    }
-
-    &.p-chip-blue {
-        background-color: $color-accessible-text-blue-bg;
-        color: $color-accessible-text-blue;
+    &.p-chip-white {
+        border-color: $white;
+        background-color: $white;
+        color: $white;
     }
 
     &.p-chip-sm {
         gap: $spacing-0;
         padding: 0 $spacing-1;
         border-radius: $border-radius-sm;
-        height: $chip-height-sm;
+        font-size: $font-size-sm;
+        height: $field-height-sm;
 
         .p-chip-text {
-            font-size: $icon-sm;
+            font-size: $font-size-sm;
+        }
+    }
+
+    &.p-chip-lg {
+        height: $field-height-lg;
+        border-radius: $border-radius-lg;
+        font-size: $font-size-lg;
+        height: $field-height-lg;
+
+        .p-chip-text {
+            font-size: $font-size-lg;
         }
     }
 

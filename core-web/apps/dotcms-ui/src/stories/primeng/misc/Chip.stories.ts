@@ -11,6 +11,7 @@ import { Chip, ChipModule } from 'primeng/chip';
 type Args = Chip & {
     size: string;
     severity: string;
+    styles: string;
 };
 
 const DEFAULT = 'default';
@@ -18,6 +19,7 @@ const DEFAULT = 'default';
 const mergeArgsClassNamesToString = (args: Args): string => {
     const size = args.size ?? '';
     const severity = args.severity ?? '';
+    const styles = args.styles ?? '';
 
     const classes = [args.styleClass];
 
@@ -27,6 +29,10 @@ const mergeArgsClassNamesToString = (args: Args): string => {
 
     if (severity !== DEFAULT) {
         classes.push(severity);
+    }
+
+    if (styles !== DEFAULT) {
+        classes.push(styles);
     }
 
     return classes.join(' ');
@@ -57,6 +63,7 @@ const meta: Meta<Args> = {
         icon: 'pi pi-image',
         size: DEFAULT,
         severity: DEFAULT,
+        styles: DEFAULT,
         styleClass: '',
         removable: true
     },
@@ -72,19 +79,25 @@ const meta: Meta<Args> = {
             control: { type: 'boolean' },
             description: 'Whether to display a remove icon.'
         },
+        styles: {
+            options: [DEFAULT, 'p-chip-outlined', 'p-chip-text'],
+            control: { type: 'radio' }
+        },
         size: {
-            options: [DEFAULT, 'p-chip-sm'],
+            options: [DEFAULT, 'p-chip-sm', 'p-chip-lg'],
             control: { type: 'radio' },
             description: 'Class name used in `styleClass` for the size of the chip'
         },
         severity: {
             options: [
                 DEFAULT,
-                'p-chip-secondary',
                 'p-chip-warning',
-                'p-chip-success',
                 'p-chip-error',
-                'p-chip-gray'
+                'p-chip-secondary',
+                'p-chip-fuchsia',
+                'p-chip-success',
+                'p-chip-gray',
+                'p-chip-white'
             ],
             control: { type: 'radio' },
             description: 'Class name used in `styleClass` for the severity of the chip'
