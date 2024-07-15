@@ -1,0 +1,8 @@
+:host {
+    height: 100%;
+    width: 100%;
+
+    ::ng-deep .dotTable.p-datatable .p-datatable-tbody > tr > td {
+        height: 41px;
+    }
+}
