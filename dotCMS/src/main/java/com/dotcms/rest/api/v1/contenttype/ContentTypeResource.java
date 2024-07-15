@@ -50,6 +50,14 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -88,7 +96,11 @@ import org.glassfish.jersey.server.JSONP;
  * @since Sep 11th, 2016
  */
 @Path("/v1/contenttype")
-@Tag(name = "Content Type")
+@Tag(name = "Content Type",
+		description = "Endpoints that perform operations related to content types.",
+		externalDocs = @ExternalDocumentation(description = "Additional Content Type API information",
+				url = "https://www.dotcms.com/docs/latest/content-type-api")
+)
 public class ContentTypeResource implements Serializable {
 
 	private static final String MAP_KEY_WORKFLOWS = "workflows";
@@ -128,10 +140,112 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(
+			operationId = "postContentTypeCopy",
+			summary = "Copies a content type",
+			description = "Creates a new content type by copying an existing one.\n\nReturns resulting content type.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content type copied successfully",
+							content = @Content(mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"errors\": [\n" +
+															"    {\n" +
+															"      \"errorCode\": \"string\",\n" +
+															"      \"message\": \"string\",\n" +
+															"      \"fieldName\": \"string\"\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"entity\": {\n" +
+															"    \"baseType\": \"string\",\n" +
+															"    \"clazz\": \"string\",\n" +
+															"    \"defaultType\": true,\n" +
+															"    \"description\": \"string\",\n" +
+															"    \"fields\": [],\n" +
+															"    \"fixed\": true,\n" +
+															"    \"folder\": \"string\",\n" +
+															"    \"folderPath\": \"string\",\n" +
+															"    \"host\": \"string\",\n" +
+															"    \"iDate\": 0,\n" +
+															"    \"icon\": \"string\",\n" +
+															"    \"id\": \"string\",\n" +
+															"    \"layout\": [],\n" +
+															"    \"metadata\": {},\n" +
+															"    \"modDate\": 0,\n" +
+															"    \"multilingualable\": true,\n" +
+															"    \"name\": \"string1\",\n" +
+															"    \"siteName\": \"string\",\n" +
+															"    \"sortOrder\": 0,\n" +
+															"    \"system\": true,\n" +
+															"    \"systemActionMappings\": {},\n" +
+															"    \"variable\": \"string\",\n" +
+															"    \"versionable\": true,\n" +
+															"    \"workflows\": []\n" +
+															"  },\n" +
+															"  \"messages\": [\n" +
+															"    {\n" +
+															"      \"message\": \"string\"\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"i18nMessagesMap\": {\n" +
+															"    \"additionalProp1\": \"string\",\n" +
+															"    \"additionalProp2\": \"string\",\n" +
+															"    \"additionalProp3\": \"string\"\n" +
+															"  },\n" +
+															"  \"permissions\": [\n" +
+															"    \"string\"\n" +
+															"  ],\n" +
+															"  \"pagination\": {\n" +
+															"    \"currentPage\": 0,\n" +
+															"    \"perPage\": 0,\n" +
+															"    \"totalEntries\": 0\n" +
+															"  }\n" +
+															"}"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "400", description = "Bad Request"),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
 	public final Response copyType(@Context final HttpServletRequest req,
 								   @Context final HttpServletResponse res,
-								   @PathParam("baseVariableName") final String baseVariableName,
-								   final CopyContentTypeForm copyContentTypeForm) {
+								   @PathParam("baseVariableName") @Parameter(
+										   required = true,
+										   description = "The variable name of the content type to copy.\n\n" +
+														 "Example value: `htmlpageasset` (Default page content type)",
+										   schema = @Schema(type = "string")
+								   ) final String baseVariableName,
+								   @RequestBody(
+										   description = "Requires POST body consisting of a JSON object with the following properties:\n\n" +
+														 "| Property |  Type  | Description |\n" +
+														 "|----------|--------|-------------|\n" +
+														 "| `name`   | String | **Required.** Name of new content type |\n" +
+														 "| `variable` | String | System variable of new content type |\n" +
+														 "| `folder`   | String | Folder in which new content type will live |\n" +
+														 "| `host`   | String | Site or host to which the new content type will belong |\n" +
+														 "| `icon`   | String | System icon to represent content type |\n\n" +
+														 "Values not specified default to values of the original content type.",
+										   required = true,
+										   content = @Content(
+												   schema = @Schema(implementation = CopyContentTypeForm.class),
+												   examples = {
+														   @ExampleObject(
+																   value = "{\n" +
+																		   "  \"name\": \"Copied Content Type Name\",\n" +
+																		   "  \"variable\": \"copiedContentTypeVar\",\n" +
+																		   "  \"folder\": \"SYSTEM_FOLDER\",\n" +
+																		   "  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n" +
+																		   "  \"icon\": \"event_note\"\n" +
+																		   "}"
+														   )
+												   }
+										   )
+								   ) final CopyContentTypeForm copyContentTypeForm) {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
@@ -278,9 +392,120 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(
+			operationId = "postContentTypeCreate",
+			summary = "Creates one or more content types",
+			description = "Creates one or more content types specified in the JSON payload.\n\n " +
+						  "Returns a list entity containing the created content type objects.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content type(s) created successfully",
+							content = @Content(mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": [\n" +
+															"    {\n" +
+															"      \"baseType\": \"string\",\n" +
+															"      \"clazz\": \"string\",\n" +
+															"      \"defaultType\": true,\n" +
+															"      \"description\": \"string\",\n" +
+															"      \"fields\": [],\n" +
+															"      \"fixed\": true,\n" +
+															"      \"folder\": \"string\",\n" +
+															"      \"folderPath\": \"string\",\n" +
+															"      \"host\": \"string\",\n" +
+															"      \"iDate\": 0,\n" +
+															"      \"icon\": \"string\",\n" +
+															"      \"id\": \"string\",\n" +
+															"      \"layout\": [],\n" +
+															"      \"metadata\": {},\n" +
+															"      \"modDate\": 0,\n" +
+															"      \"multilingualable\": true,\n" +
+															"      \"name\": \"string\",\n" +
+															"      \"owner\": \"string\",\n" +
+															"      \"siteName\": \"string\",\n" +
+															"      \"sortOrder\": 0,\n" +
+															"      \"system\": true,\n" +
+															"      \"systemActionMappings\": {},\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"versionable\": true,\n" +
+															"      \"workflows\": []\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": null,\n" +
+															"  \"permissions\": []\n" +
+															"}"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "400", description = "Bad Request"),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
 	public final Response createType(@Context final HttpServletRequest req,
 									 @Context final HttpServletResponse res,
-									 final ContentTypeForm form)
+									 @RequestBody(
+											 description = "Payload may consist of a single content type JSON object, or a list " +
+														   "containing multiple content type objects.\n\n" +
+														   "Objects require `clazz` and `name` properties at minimum.\n\n" +
+														   "May optionally include the following special properties:\n\n" +
+														   "| Property | Value | Description |\n" +
+														   "|-|-|-|\n" +
+														   "| `systemActionMappings` | JSON Object | Maps " +
+														   "[Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) " +
+														   "to workflow action identifiers (as values) for this content type.|\n" +
+														   "| `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.",
+											 required = true,
+											 content = @Content(
+													 schema = @Schema(implementation = ContentTypeForm.class),
+													 examples = {
+															 @ExampleObject(
+																	 value = "[\n" +
+																			 "  {\n" +
+																			 "    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																			 "    \"defaultType\": false,\n" +
+																			 "    \"name\": \"The Content Type 1\",\n" +
+																			 "    \"description\": \"THE DESCRIPTION\",\n" +
+																			 "    \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n" +
+																			 "    \"owner\": \"dotcms.org.1\",\n" +
+																			 "    \"variable\": \"TheContentType1\",\n" +
+																			 "    \"fixed\": false,\n" +
+																			 "    \"system\": false,\n" +
+																			 "    \"folder\": \"SYSTEM_FOLDER\",\n" +
+																			 "    \"systemActionMappings\": {\n" +
+																			 "      \"NEW\": \"ceca71a0-deee-4999-bd47-b01baa1bcfc8\",\n" +
+																			 "      \"PUBLISH\": \"ceca71a0-deee-4999-bd47-b01baa1bcfc8\"\n" +
+																			 "    },\n" +
+																			 "    \"workflow\": [\n" +
+																			 "      \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n" +
+																			 "    ]\n" +
+																			 "  },\n" +
+																			 "  {\n" +
+																			 "    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																			 "    \"defaultType\": false,\n" +
+																			 "    \"name\": \"The Content Type 2\",\n" +
+																			 "    \"description\": \"THE DESCRIPTION\",\n" +
+																			 "    \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n" +
+																			 "    \"owner\": \"dotcms.org.1\",\n" +
+																			 "    \"variable\": \"TheContentType2\",\n" +
+																			 "    \"fixed\": false,\n" +
+																			 "    \"system\": false,\n" +
+																			 "    \"folder\": \"SYSTEM_FOLDER\",\n" +
+																			 "    \"workflow\": [\n" +
+																			 "      \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n" +
+																			 "    ]\n" +
+																			 "  }\n" +
+																			 "]"
+															 )
+													 }
+											 )
+									 ) final ContentTypeForm form)
 			throws DotDataException {
 		final InitDataObject initData =
 				new WebResource.InitBuilder(webResource)
@@ -365,8 +590,107 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public Response updateType(@PathParam("idOrVar") final String idOrVar, final ContentTypeForm form,
-							   @Context final HttpServletRequest req, @Context final HttpServletResponse res) {
+	@Operation(
+			operationId = "putContentTypeUpdate",
+			summary = "Updates a content type",
+			description = "Updates the content type based on the given ID or Velocity variable name.\n\n" +
+					"Returns a copy of the updated content type object.\n\n" +
+					"> **Caution:** When updating a content type, any editable fields omitted from the request body " +
+					"will be removed from the content type. To update selected properties without deleting others," +
+					"submit the full JSON entity with the desired items edited.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content type updated successfully",
+							content = @Content(mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": {\n" +
+															"    \"baseType\": \"string\",\n" +
+															"    \"clazz\": \"string\",\n" +
+															"    \"defaultType\": true,\n" +
+															"    \"fields\": [],\n" +
+															"    \"fixed\": true,\n" +
+															"    \"folder\": \"string\",\n" +
+															"    \"folderPath\": \"string\",\n" +
+															"    \"host\": \"string\",\n" +
+															"    \"iDate\": 0,\n" +
+															"    \"icon\": \"string\",\n" +
+															"    \"id\": \"string\",\n" +
+															"    \"layout\": [],\n" +
+															"    \"metadata\": {},\n" +
+															"    \"modDate\": 0,\n" +
+															"    \"multilingualable\": true,\n" +
+															"    \"name\": \"string\",\n" +
+															"    \"siteName\": \"string\",\n" +
+															"    \"sortOrder\": 0,\n" +
+															"    \"system\": true,\n" +
+															"    \"systemActionMappings\": {},\n" +
+															"    \"variable\": \"string\",\n" +
+															"    \"versionable\": true,\n" +
+															"    \"workflows\": []\n" +
+															"  },\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": null,\n" +
+															"  \"permissions\": []\n" +
+															"}"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "400", description = "Bad Request"),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "404", description = "Not Found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response updateType(@PathParam("idOrVar") @Parameter(
+										required = true,
+										description = "The ID or Velocity variable name of the content type to update.\n\n" +
+												"Example value: `htmlpageasset` (Default page content type)",
+										schema = @Schema(type = "string")
+								) final String idOrVar,
+								@RequestBody(
+										description = "The minimum required properties for a successful update are " +
+												"`clazz`, `id`, and `name`.\n\n" +
+												"May also optionally include the following special properties:\n\n" +
+												"| Property | Value | Description |\n" +
+												"|-|-|-|\n" +
+												"| `systemActionMappings` | JSON Object | Maps " +
+												"[Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-" +
+												"workflows#DefaultActions) (as keys) " +
+												"to workflow action identifiers (as values) for this content type.|\n" +
+												"| `workflow` | List of Strings | A list of identifiers of workflow " +
+												"schemes to be associated with the content type.",
+										required = true,
+										content = @Content(
+												schema = @Schema(implementation = ContentTypeForm.class),
+												examples = {
+														@ExampleObject(
+																value = "{\n" +
+																		"  \"clazz\": \"com.dotcms.contenttype.model.type" +
+																		".ImmutableSimpleContentType\",\n" +
+																		"  \"defaultType\": false,\n" +
+																		"  \"id\": \"39fecdb0-46cc-40a9-a056-f2e1a80ea78c\",\n" +
+																		"  \"name\": \"The Content Type 2\",\n" +
+																		"  \"description\": \"THE DESCRIPTION 2\",\n" +
+																		"  \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n" +
+																		"  \"owner\": \"dotcms.org.1\",\n" +
+																		"  \"variable\": \"TheContentType1\",\n" +
+																		"  \"fixed\": false,\n" +
+																		"  \"system\": false,\n" +
+																		"  \"folder\": \"SYSTEM_FOLDER\",\n" +
+																		"  \"workflow\": [\n" +
+																		"    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n" +
+																		"  ]\n" +
+																		"}"
+														)
+												}
+										)
+								) final ContentTypeForm form,
+								@Context final HttpServletRequest req, @Context final HttpServletResponse res) {
 		final InitDataObject initData =
 				new WebResource.InitBuilder(webResource)
 						.requestAndResponse(req, res)
@@ -428,7 +752,7 @@ public class ContentTypeResource implements Serializable {
 	 *
 	 * @param contentType          The {@link ContentType} to save.
 	 * @param user                 The {@link User} executing this action.
-	 * @param workflowsIds         The {@link Set} of Workflow IDs to associate to the Content
+	 * @param workflows            The {@link Set} of Workflow IDs to associate to the Content
 	 *                             Type.
 	 * @param systemActionMappings The {@link List} of {@link Tuple2} containing the
 	 *                             {@link WorkflowAPI.SystemAction} and the {@link String}
@@ -651,8 +975,40 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response deleteType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res)
-			throws JSONException {
+	@Operation(
+			operationId = "deleteContentType",
+			summary = "Deletes a content type",
+			description = "Deletes the content type based on the provided ID or Velocity variable name.\n\n" +
+					"Returns JSON string containing the identifier of the deleted content type.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content type deleted successfully",
+							content = @Content(mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": \"{\\\"deleted\\\":\\\"string\\\"}\",\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": null,\n" +
+															"  \"permissions\": []\n" +
+															"}"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "404", description = "Content type not found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response deleteType(@PathParam("idOrVar") @Parameter(
+										required = true,
+										description = "The ID or Velocity variable name of the content type to delete.",
+										schema = @Schema(type = "string")
+								) final String idOrVar,
+							   @Context final HttpServletRequest req, @Context final HttpServletResponse res) throws JSONException {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
@@ -686,12 +1042,82 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(
+			operationId = "getContentTypeIdVar",
+			summary = "Retrieves a single content type",
+			description = "Returns one content type based on the provided ID or Velocity variable name.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
+							content = @Content(mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": [\n" +
+															"    {\n" +
+															"      \"baseType\": \"string\",\n" +
+															"      \"clazz\": \"string\",\n" +
+															"      \"defaultType\": true,\n" +
+															"      \"description\": \"string\",\n" +
+															"      \"fields\": [],\n" +
+															"      \"fixed\": false,\n" +
+															"      \"folder\": \"string\",\n" +
+															"      \"folderPath\": \"string\",\n" +
+															"      \"host\": \"string\",\n" +
+															"      \"iDate\": 0,\n" +
+															"      \"icon\": \"string\",\n" +
+															"      \"id\": \"string\",\n" +
+															"      \"layout\": [],\n" +
+															"      \"metadata\": {},\n" +
+															"      \"modDate\": 0,\n" +
+															"      \"multilingualable\": true,\n" +
+															"      \"name\": \"string\",\n" +
+															"      \"siteName\": \"string\",\n" +
+															"      \"sortOrder\": 0,\n" +
+															"      \"system\": true,\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"systemActionMappings\": {},\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"versionable\": true,\n" +
+															"      \"workflows\": []\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": {\n" +
+															"    \"currentPage\": 0,\n" +
+															"    \"perPage\": 0,\n" +
+															"    \"totalEntries\": 0\n" +
+															"  },\n" +
+															"  \"permissions\": []\n" +
+															"}\n"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "404", description = "Not Found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
 	public Response getType(
-			@PathParam("idOrVar") final String idOrVar,
+			@PathParam("idOrVar") @Parameter(
+					required = true,
+					description = "The ID or Velocity variable name of the content type to retrieve.\n\n" +
+									"Example: `htmlpageasset` (Default page content type)",
+					schema = @Schema(type = "string")
+			) final String idOrVar,
 			@Context final HttpServletRequest req,
 			@Context final HttpServletResponse res,
-			@QueryParam("languageId") final Long languageId,
-			@QueryParam("live") final Boolean paramLive)
+			@QueryParam("languageId") @Parameter(
+					description = "The language ID for localization.",
+					schema = @Schema(type = "integer")
+			) final Long languageId,
+			@QueryParam("live") @Parameter(
+					description = "Determines whether live versions of language variables are used in the returned object.",
+					schema = @Schema(type = "boolean")
+			) final Boolean paramLive)
 			throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
@@ -780,9 +1206,95 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(
+			operationId = "postContentTypeFilter",
+			summary = "Filters content types",
+			description = "Returns the list of content type objects that match the specified filter, with optional pagination criteria.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content types filtered successfully",
+							content = @Content(mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": [\n" +
+															"    {\n" +
+															"      \"baseType\": \"string\",\n" +
+															"      \"clazz\": \"string\",\n" +
+															"      \"defaultType\": true,\n" +
+															"      \"description\": \"string\",\n" +
+															"      \"fixed\": false,\n" +
+															"      \"folder\": \"string\",\n" +
+															"      \"folderPath\": \"string\",\n" +
+															"      \"host\": \"string\",\n" +
+															"      \"iDate\": 0,\n" +
+															"      \"icon\": \"string\",\n" +
+															"      \"id\": \"string\",\n" +
+															"      \"layout\": [],\n" +
+															"      \"metadata\": {},\n" +
+															"      \"modDate\": 0,\n" +
+															"      \"multilingualable\": true,\n" +
+															"      \"nEntries\": 0,\n" +
+															"      \"name\": \"string\",\n" +
+															"      \"siteName\": \"string\",\n" +
+															"      \"sortOrder\": 0,\n" +
+															"      \"system\": true,\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"versionable\": true,\n" +
+															"      \"workflows\": []\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": {\n" +
+															"    \"currentPage\": 0,\n" +
+															"    \"perPage\": 0,\n" +
+															"    \"totalEntries\": 0\n" +
+															"  },\n" +
+															"  \"permissions\": []\n" +
+															"}\n"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "400", description = "Bad Request"),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
 	public final Response filteredContentTypes(@Context final HttpServletRequest req,
 											   @Context final HttpServletResponse res,
-											   final FilteredContentTypesForm form) {
+											   @RequestBody(
+													   description = "Requires POST body consisting of a JSON object with the following properties:\n\n" +
+															   "| Property |  Type  | Description |\n" +
+															   "|----------|--------|-------------|\n" +
+															   "| `filter`   | JSON Object | Contains two properties: <table><tr><td>`query`</td><td>A simple query returning " +
+															   								"full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list " +
+															   								"of specific content type variables.</td></tr></table> |\n" +
+															   "| `page` | Integer | Which page of results to show. Defaults to `1`. |\n" +
+															   "| `perPage`   | Integer | Number of results to display per page. Defaults to `10`. |\n" +
+															   "| `orderBy`   | String | Sorting parameter: `name` (default), `velocity_var_name`, `mod_date`, or `sort_order`. |\n" +
+															   "| `direction`   | String | `ASC` (default) or `DESC` for ascending or descending. |",
+													   required = true,
+													   content = @Content(
+															   schema = @Schema(implementation = FilteredContentTypesForm.class),
+															   examples = {
+																	   @ExampleObject(
+																			   value = "{\n" +
+																					   "  \"filter\": {\n" +
+																					   "    \"query\": \"\",\n" +
+																					   "    \"types\": \"Blog,Activity\"\n" +
+																					   "  },\n" +
+																					   "  \"page\": 1,\n" +
+																					   "  \"perPage\": 10,\n" +
+																					   "  \"orderBy\": \"name\",\n" +
+																					   "  \"direction\": \"ASC\"\n" +
+																					   "}"
+																	   )
+															   }
+													   )
+											   ) final FilteredContentTypesForm form) {
 		if (null == form) {
 			return ExceptionMapperUtil.createResponse(null, "Requests to '_filter' need a POST JSON body");
 		}
@@ -817,6 +1329,37 @@ public class ContentTypeResource implements Serializable {
 	@InitRequestRequired
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(
+			operationId = "getContentTypeBaseTypes",
+			summary = "Retrieves base content types",
+			description = "Returns a list of base content types.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Base content types retrieved successfully",
+							content = @Content(mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": [\n" +
+															"    {\n" +
+															"      \"label\": \"string\",\n" +
+															"      \"name\": \"string\",\n" +
+															"      \"types\": null\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": null,\n" +
+															"  \"permissions\": []\n" +
+															"}"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
 	public final Response getRecentBaseTypes(@Context final HttpServletRequest request) {
 		Response response;
 		try {
@@ -866,16 +1409,109 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(
+			operationId = "getContentType",
+			summary = "Retrieves a list of content types",
+			description = "Returns a list of content type objects based on the filtering criteria.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content types retrieved successfully",
+							content = @Content(
+									mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": [\n" +
+															"    {\n" +
+															"      \"baseType\": \"string\",\n" +
+															"      \"clazz\": \"string\",\n" +
+															"      \"defaultType\": true,\n" +
+															"      \"description\": \"string\",\n" +
+															"      \"fixed\": true,\n" +
+															"      \"folder\": \"string\",\n" +
+															"      \"folderPath\": \"string\",\n" +
+															"      \"host\": \"string\",\n" +
+															"      \"iDate\": 0,\n" +
+															"      \"icon\": \"string\",\n" +
+															"      \"id\": \"string\",\n" +
+															"      \"layout\": [],\n" +
+															"      \"metadata\": {},\n" +
+															"      \"modDate\": 0,\n" +
+															"      \"multilingualable\": true,\n" +
+															"      \"nEntries\": 0,\n" +
+															"      \"name\": \"string\",\n" +
+															"      \"siteName\": \"string\",\n" +
+															"      \"sortOrder\": 0,\n" +
+															"      \"system\": true,\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"versionable\": true,\n" +
+															"      \"workflows\": []\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": {\n" +
+															"    \"currentPage\": 0,\n" +
+															"    \"perPage\": 0,\n" +
+															"    \"totalEntries\": 0\n" +
+															"  },\n" +
+															"  \"permissions\": []\n" +
+															"}\n"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
 	public final Response getContentTypes(@Context final HttpServletRequest httpRequest,
 										  @Context final HttpServletResponse httpResponse,
-										  @QueryParam(PaginationUtil.FILTER) final String filter,
-										  @QueryParam(PaginationUtil.PAGE) final int page,
-										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderByParam,
-										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
-										  @QueryParam("type") String type,
-										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) final String siteId,
-										  @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) final String sites) throws DotDataException {
+										  @QueryParam(PaginationUtil.FILTER) @Parameter(schema = @Schema(type = "string"),
+												  description = "String to filter/search for specific content types; leave blank to return all."
+										  ) final String filter,
+										  @QueryParam(PaginationUtil.PAGE) @Parameter(schema = @Schema(type = "integer"),
+												  description = "Page number in response pagination.\n\nDefault: `1`"
+										  ) final int page,
+										  @QueryParam(PaginationUtil.PER_PAGE) @Parameter(schema = @Schema(type = "integer"),
+												  description = "Number of results per page for pagination.\n\nDefault: `10`"
+										  ) final int perPage,
+										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) @Parameter(
+												  schema = @Schema(type = "string"),
+												  description = "Column(s) to sort the results. Multiple columns can be " +
+														  "combined in a comma-separated list. Column names can also be set " +
+														  "within a SQL string function, such as `upper()`.\n\n" +
+														  "Some possible values:\n\n" +
+														  "`name`, `velocity_var_name`, `mod_date`, `sort_order`\n\n" +
+														  "`description`, `structuretype`, `category`, `inode`"
+										  ) String orderByParam,
+										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) @Parameter(
+												  schema = @Schema(
+														  type = "string",
+														  allowableValues = {"ASC", "DESC"},
+														  defaultValue = "ASC",
+														  required = true
+												  ),
+												  description = "Sort direction: choose between ascending or descending."
+										  ) String direction,
+										  @QueryParam("type") @Parameter(
+												  schema = @Schema(
+														  type = "string",
+														  allowableValues = {
+																  "ANY", "CONTENT", "WIDGET",
+																  "FORM", "FILEASSET", "HTMLPAGE", "PERSONA",
+																  "VANITY_URL", "KEY_VALUE", "DOTASSET"
+														  }
+												  ),
+												  description = "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types)."
+										  ) String type,
+										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
+												  description = "Filter by site identifier."
+										  ) final String siteId,
+										  @QueryParam(ContentTypesPaginator.SITES_PARAMETER_NAME) @Parameter(schema = @Schema(type = "string"),
+												  description = "Multi-site filter: Takes comma-separated list of site identifiers or keys."
+										  ) final String sites) throws DotDataException {
 
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(httpRequest, httpResponse)

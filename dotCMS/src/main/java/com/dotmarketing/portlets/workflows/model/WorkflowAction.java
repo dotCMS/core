@@ -70,6 +70,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean unpublishActionlet;
 	private boolean archiveActionlet;
 	private boolean pushPublishActionlet;
+	private boolean onlyBatchActionlet;
 	private boolean unarchiveActionlet;
 	private boolean deleteActionlet;
 	private boolean destroyActionlet;
@@ -226,6 +227,16 @@ public class WorkflowAction implements Permissionable, Serializable{
 		return this.pushPublishActionlet;
 	}
 
+
+	/**
+	 * Returns true if the action has at least one action only batch
+	 * @return Boolean true if the action is only batch
+	 */
+
+	public boolean hasOnlyBatchActionlet() {
+		return this.onlyBatchActionlet;
+	}
+
 	/**
 	 * Returns true if the action has a move actionlet
 	 * @return Boolean true if has move action
@@ -295,6 +306,10 @@ public class WorkflowAction implements Permissionable, Serializable{
 
 	public void setPushPublishActionlet(boolean pushPublishActionlet) {
 		this.pushPublishActionlet = pushPublishActionlet;
+	}
+
+	public void setOnlyBatchActionlet(boolean onlyBatchActionlet) {
+		this.onlyBatchActionlet = onlyBatchActionlet;
 	}
 
 	public void setMoveActionlet(boolean moveActionlet) {

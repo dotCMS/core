@@ -143,7 +143,10 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
             // Check if the form is updated
 
-            expect(setValueSpy).toHaveBeenCalledWith(['33333', '22222']);
+            expect(setValueSpy).toHaveBeenCalledWith([
+                '1f208488057007cedda0e0b5d52ee3b3',
+                'cb83dc32c0a198fd0ca427b3b587f4ce'
+            ]);
         }));
     });
 });

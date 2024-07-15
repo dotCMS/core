@@ -1,5 +1,4 @@
 import { CUSTOMER_ACTIONS, postMessageToEditor } from '../models/client.model';
-import { DotCMSPageEditorConfig } from '../models/editor.model';
 import { DotCMSPageEditorSubscription, NOTIFY_CUSTOMER } from '../models/listeners.model';
 import {
     findVTLData,
@@ -13,22 +12,6 @@ declare global {
     interface Window {
         lastScrollYPosition: number;
     }
-}
-
-/**
- * Default reload function that reloads the current window.
- */
-const defaultReloadFn = () => window.location.reload();
-
-/**
- * Configuration object for the DotCMSPageEditor.
- */
-let pageEditorConfig: DotCMSPageEditorConfig = {
-    onReload: defaultReloadFn
-};
-
-export function setPageEditorConfig(config: DotCMSPageEditorConfig) {
-    pageEditorConfig = config;
 }
 
 /**
@@ -56,14 +39,7 @@ function setBounds() {
 }
 
 /**
- * Reloads the page and triggers the onReload callback if it exists in the config object.
- */
-function reloadPage() {
-    pageEditorConfig?.onReload();
-}
-
-/**
- * Listens for editor messages and performs corresponding actions based on the received message.
+ * Listens for editor messages and performs corresding actions based on the received message.
  *
  * @private
  * @memberof DotCMSPageEditor
@@ -73,11 +49,6 @@ export function listenEditorMessages() {
         switch (event.data) {
             case NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS: {
                 setBounds();
-                break;
-            }
-
-            case NOTIFY_CUSTOMER.EMA_RELOAD_PAGE: {
-                reloadPage();
                 break;
             }
         }
@@ -235,11 +206,16 @@ export function preserveScrollOnIframe() {
 }
 
 /**
- * Sends a ping message to the editor.
- *
+ * Sends a message to the editor to get the page data.
+ * @param {string} pathname - The pathname of the page.
+ * @private
+ * @memberof DotCMSPageEditor
  */
-export function pingEditor() {
+export function fetchPageDataFromInsideUVE(pathname: string) {
     postMessageToEditor({
-        action: CUSTOMER_ACTIONS.PING_EDITOR
+        action: CUSTOMER_ACTIONS.GET_PAGE_DATA,
+        payload: {
+            pathname
+        }
     });
 }

@@ -1,5 +1,9 @@
 <form (ngSubmit)="generate.emit()" [formGroup]="form">
-    <p-accordion [activeIndex]="0" collapseIcon="pi pi-angle-up" expandIcon="pi pi-angle-down">
+    <p-accordion
+        [multiple]="false"
+        [activeIndex]="0"
+        collapseIcon="pi pi-angle-up"
+        expandIcon="pi pi-angle-down">
         <p-accordionTab
             [disabled]="isLoading"
             [header]="'block-editor.extension.ai-image.settings' | dm"
@@ -8,30 +12,30 @@
                 <label dotFieldRequired>{{ 'block-editor.extension.ai-image.input' | dm }}</label>
                 <div>
                     <p-radioButton formControlName="type" inputId="optionOne" value="input" />
-                    <label class="ml-2" for="optionOne">{{
-                        'block-editor.extension.ai-image.custom.prompt' | dm
-                    }}</label>
+                    <label class="ml-2" for="optionOne">
+                        {{ 'block-editor.extension.ai-image.custom.prompt' | dm }}
+                    </label>
                 </div>
                 <span>{{ 'block-editor.extension.ai-image.custom.prompt.desc' | dm }}</span>
                 @if (hasEditorContent) {
                     <div data-testid="ai-existing-content">
                         <p-radioButton formControlName="type" inputId="option2" value="auto" />
-                        <label class="ml-2" for="option2">{{
-                            'block-editor.extension.ai-image.existing.content' | dm
-                        }}</label>
+                        <label class="ml-2" for="option2">
+                            {{ 'block-editor.extension.ai-image.existing.content' | dm }}
+                        </label>
                     </div>
                     <span>{{ 'block-editor.extension.ai-image.existing.content.desc' | dm }}</span>
                 }
             </div>
             <div class="field ai-image-prompt__orientation">
-                <label dotFieldRequired for="orientation">{{
-                    'block-editor.extension.ai-image.orientation' | dm
-                }}</label>
+                <label dotFieldRequired for="orientation">
+                    {{ 'block-editor.extension.ai-image.orientation' | dm }}
+                </label>
                 <p-dropdown
                     [options]="orientationOptions"
                     formControlName="size"
                     inputId="orientation"
-                    styleClass="w-full"></p-dropdown>
+                    styleClass="w-full" />
             </div>
         </p-accordionTab>
         <p-accordionTab
@@ -58,13 +62,12 @@
                         cols="30"
                         formControlName="text"
                         pInputTextarea
-                        rows="11">
-                    </textarea>
+                        rows="11"></textarea>
                 </div>
                 @if (aiProcessedPrompt && !isLoading) {
                     <div class="field">
-                        <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten"
-                            >{{ 'block-editor.extension.ai-image.rewritten' | dm }}
+                        <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten">
+                            {{ 'block-editor.extension.ai-image.rewritten' | dm }}
                         </label>
                         <div class="ai-image-prompt__text-wrapper">
                             <textarea
@@ -74,8 +77,7 @@
                                 cols="30"
                                 pInputTextarea
                                 readonly
-                                rows="11">
-                            </textarea>
+                                rows="11"></textarea>
                             <dot-copy-button
                                 [copy]="aiProcessedPrompt"
                                 customClass="p-button-rounded" />

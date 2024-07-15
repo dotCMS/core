@@ -56,6 +56,7 @@ jobs:
     with:
       buildNativeImage: true
       branch: ${{ github.ref }}
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
   deployment:
     needs: [ initialize,build-cli,test ]
     if: always() && !failure() && !cancelled()

@@ -21,8 +21,7 @@
                     [iconSize]="'48px'"
                     [contentlet]="contentlet"
                     [playableVideo]="true"
-                    data-testId="contentlet-thumbnail">
-                </dot-contentlet-thumbnail>
+                    data-testId="contentlet-thumbnail"></dot-contentlet-thumbnail>
             }
         </div>
         <div class="preview-metadata__container">
@@ -45,14 +44,14 @@
     <div class="preview-resource-links__actions">
         <p-button
             (click)="visibility = !visibility"
-            styleClass="p-button-rounded p-button-sm p-button-secondary p-button-outlined"
+            styleClass="p-button-rounded p-button-sm p-button-outlined"
             data-testId="info-btn"
             icon="pi pi-info" />
 
         @if (contentlet) {
             <p-button
                 (click)="downloadAsset()"
-                styleClass="p-button-rounded p-button-sm p-button-secondary p-button-outlined"
+                styleClass="p-button-rounded p-button-sm p-button-outlined"
                 data-testId="download-btn"
                 icon="pi pi-download" />
         }
@@ -62,7 +61,7 @@
         <p-button
             (click)="removeFile.emit()"
             [label]="'dot.common.remove' | dm"
-            styleClass="p-button-link p-button-sm p-button-secondary"
+            styleClass="p-button-link p-button-sm"
             data-testId="remove-button"
             icon="pi pi-trash"></p-button>
         @if (isEditable) {
@@ -70,7 +69,7 @@
                 (click)="onEdit()"
                 [label]="'dot.common.edit' | dm"
                 severity="secondary"
-                styleClass="p-button-outlined p-button-sm p-button-secondary"
+                styleClass="p-button-outlined p-button-sm "
                 data-testId="edit-button"
                 icon="pi pi-pencil"></p-button>
         }
@@ -80,23 +79,23 @@
         @if (isEditable) {
             <p-button
                 (click)="onEdit()"
-                styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
+                styleClass="p-button-rounded p-button-text p-button-semi-transparent"
                 data-testId="edit-button-responsive"
                 icon="pi pi-pencil"></p-button>
         }
         <p-button
             (click)="visibility = !visibility"
-            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
             data-testId="infor-button-responsive"
             icon="pi pi-info"></p-button>
         <p-button
             (click)="downloadAsset()"
-            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
             data-testId="download-btn-responsive"
             icon="pi pi-download" />
         <p-button
             (click)="removeFile.emit()"
-            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
             data-testId="remove-button-responsive"
             icon="pi pi-trash"></p-button>
     </div>
@@ -132,9 +131,9 @@
                 <div [attr.data-testId]="'resource-link-' + sourceLink.key" class="file-info__item">
                     <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
                     <div class="file-info__link">
-                        <a [href]="sourceLink.value" target="_blank">{{
-                            sourceLink.value || ('dot.binary.field.no.link.found' | dm)
-                        }}</a>
+                        <a [href]="sourceLink.value" target="_blank">
+                            {{ sourceLink.value || ('dot.binary.field.no.link.found' | dm) }}
+                        </a>
                         <dot-copy-button [copy]="sourceLink.value" />
                     </div>
                 </div>
@@ -156,7 +155,7 @@
         <p-button
             (click)="visibility = false"
             [label]="'Cancel' | dm"
-            styleClass="p-button-secondary p-button-outlined"
+            styleClass="p-button-outlined"
             data-testId="dialog-cancel" />
     </ng-template>
 </p-dialog>
