@@ -153,7 +153,6 @@ describe('DotEditContentCategoryFieldComponent', () => {
             // Check if the form has the correct value
             const categoryValue = spectator.component.categoryFieldControl.value;
 
-
             expect(categoryValue).toEqual([
                 '1f208488057007cedda0e0b5d52ee3b3',
                 'cb83dc32c0a198fd0ca427b3b587f4ce'
