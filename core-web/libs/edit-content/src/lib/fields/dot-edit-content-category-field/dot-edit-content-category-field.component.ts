@@ -4,6 +4,7 @@ import {
     Component,
     ComponentRef,
     DestroyRef,
+    effect,
     inject,
     input,
     OnInit,
@@ -117,6 +118,13 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
         this.setSidebarListener();
     }
 
+    constructor() {
+        effect(() => {
+            const categoryValues = this.store.selectedCategoriesValues();
+            this.categoryFieldControl.setValue(categoryValues);
+        });
+    }
+
     ngOnInit(): void {
         this.store.load(this.field(), this.contentlet());
     }
@@ -125,15 +133,10 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
         this.#componentRef.instance.closedSidebar
             .pipe(takeUntilDestroyed(this.#destroyRef), delay(CLOSE_SIDEBAR_CSS_DELAY_MS))
             .subscribe(() => {
-                this.updateCategoryFieldControl();
                 // enable the show sidebar button
                 this.disableSelectCategoriesButton.set(false);
                 this.removeDotCategoryFieldSidebarComponent();
             });
-    }
-
-    private updateCategoryFieldControl(): void {
-        this.categoryFieldControl.setValue(this.store.selectedCategoriesValues());
     }
 
     private removeDotCategoryFieldSidebarComponent() {
