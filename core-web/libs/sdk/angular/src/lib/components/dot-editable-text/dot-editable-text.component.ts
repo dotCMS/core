@@ -10,9 +10,10 @@ import {
     OnChanges,
     OnInit,
     Renderer2,
+    SecurityContext,
     ViewChild
 } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
 
 import {
     CUSTOMER_ACTIONS,
@@ -53,14 +54,14 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
     @ViewChild(EditorComponent) editorComponent!: EditorComponent;
 
     /**
-     * Represents the mode of the editor which can be  'plain', 'minimal', or 'full'
+     * Represents the mode of the editor which can be `plain`, `minimal`, or `full`
      *
      * @type {TINYMCE_MODE}
      * @memberof DotEditableTextComponent
      */
     @Input() mode: TINYMCE_MODE = 'plain';
     /**
-     * Represents the format of the editor which can be 'text' or 'html'
+     * Represents the format of the editor which can be `text` or `html`
      *
      * @type {TINYMCE_FORMAT}
      * @memberof DotEditableTextComponent
@@ -87,14 +88,6 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotEditableTextComponent
      */
     protected content = '';
-    /**
-     * Represents the safe content of the `contentlet` that is rendered in preview mode
-     *
-     * @protected
-     * @type {SafeHtml}
-     * @memberof DotEditableTextComponent
-     */
-    protected safeContent!: SafeHtml;
     /**
      * Represents the configuration of the editor
      *
@@ -253,8 +246,10 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      */
     private innerHTMLToElement() {
         const element = this.#elementRef.nativeElement;
-        this.safeContent = this.#sanitizer.bypassSecurityTrustHtml(this.content);
-        this.#renderer.setProperty(element, 'innerHTML', this.safeContent);
+        const safeHtml = this.#sanitizer.bypassSecurityTrustHtml(this.content);
+        const content = this.#sanitizer.sanitize(SecurityContext.HTML, safeHtml) || '';
+
+        this.#renderer.setProperty(element, 'innerHTML', content);
     }
 
     /**

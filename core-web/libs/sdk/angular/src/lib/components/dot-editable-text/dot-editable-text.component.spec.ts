@@ -4,7 +4,7 @@ import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { Editor } from 'tinymce';
 
-import { DebugElement, ElementRef, Renderer2 } from '@angular/core';
+import { DebugElement, ElementRef, Renderer2, SecurityContext } from '@angular/core';
 import { By, DomSanitizer } from '@angular/platform-browser';
 
 import * as dotcmsClient from '@dotcms/client';
@@ -61,7 +61,8 @@ describe('DotEditableTextComponent', () => {
             {
                 provide: DomSanitizer,
                 useValue: {
-                    bypassSecurityTrustHtml: () => ''
+                    bypassSecurityTrustHtml: () => '',
+                    sanitize: () => ''
                 }
             },
             {
@@ -101,20 +102,22 @@ describe('DotEditableTextComponent', () => {
 
         describe('Template', () => {
             it('Should insert safe HTML content using innerHTML', () => {
-                const safeContent = dotcmsContentletMock.title + 'Safe';
+                const safeHtml = dotcmsContentletMock.title + 'Safe';
                 const spyRender2 = jest.spyOn(renderer2, 'setProperty');
-                const spySanitizer = jest
+                const spybypassSecurityTrustHtml = jest
                     .spyOn(sanitizer, 'bypassSecurityTrustHtml')
-                    .mockReturnValue(safeContent);
+                    .mockReturnValue(safeHtml);
+                const spySanitze = jest.spyOn(sanitizer, 'sanitize').mockReturnValue(safeHtml);
 
                 spectator.detectChanges();
 
                 const nativeElement = elementRef.nativeElement;
                 const componentHTML = spectator.debugElement.nativeElement.innerHTML;
 
-                expect(spySanitizer).toHaveBeenCalledWith(dotcmsContentletMock.title);
-                expect(componentHTML).toBe(safeContent);
-                expect(spyRender2).toHaveBeenCalledWith(nativeElement, 'innerHTML', safeContent);
+                expect(componentHTML).toBe(safeHtml);
+                expect(spybypassSecurityTrustHtml).toHaveBeenCalledWith(dotcmsContentletMock.title);
+                expect(spySanitze).toHaveBeenCalledWith(SecurityContext.HTML, safeHtml);
+                expect(spyRender2).toHaveBeenCalledWith(nativeElement, 'innerHTML', safeHtml);
             });
 
             it('Should not initialize the editor', () => {

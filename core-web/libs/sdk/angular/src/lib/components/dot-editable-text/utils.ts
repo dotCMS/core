@@ -20,13 +20,14 @@ export const TINYMCE_CONFIG: {
     [key in TINYMCE_MODE]: EditorComponent['init'];
 } = {
     minimal: {
+        ...DEFAULT_TINYMCE_CONFIG,
         plugins: 'link autolink',
         toolbar: 'bold italic underline | link',
-        valid_elements: 'strong,em,span[style],a[href]',
-        ...DEFAULT_TINYMCE_CONFIG
+        valid_elements: 'strong,em,span[style],a[href]'
     },
     full: {
-        plugins: 'link lists autolink hr charmap',
+        ...DEFAULT_TINYMCE_CONFIG,
+        plugins: 'link lists autolink charmap',
         style_formats: [
             { title: 'Paragraph', format: 'p' },
             { title: 'Header 1', format: 'h1' },
@@ -39,13 +40,12 @@ export const TINYMCE_CONFIG: {
             { title: 'Code', format: 'code' }
         ],
         toolbar: [
-            'styleselect | undo redo | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignfull | numlist bullist outdent indent | hr charmap removeformat | link'
-        ],
-        ...DEFAULT_TINYMCE_CONFIG
+            'styleselect undo redo | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignfull | numlist bullist outdent indent | hr charmap removeformat | link'
+        ]
     },
     plain: {
+        ...DEFAULT_TINYMCE_CONFIG,
         plugins: '',
-        toolbar: '',
-        ...DEFAULT_TINYMCE_CONFIG
+        toolbar: ''
     }
 };
