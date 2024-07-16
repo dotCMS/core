@@ -11,18 +11,18 @@ import java.io.Serializable;
  */
 public class ShortCategory implements Serializable {
 
-    private String categoryName;
+    private String name;
     private String inode;
     private String key;
 
     private ShortCategory(final Builder builder) {
-        this.categoryName = builder.categoryName;
+        this.name = builder.name;
         this.inode = builder.inode;
         this.key = builder.key;
     }
 
-    public String getCategoryName() {
-        return categoryName;
+    public String getName() {
+        return name;
     }
 
     public String getInode() {
@@ -34,12 +34,12 @@ public class ShortCategory implements Serializable {
     }
 
     public static class Builder {
-        private String categoryName;
+        private String name;
         private String inode;
         private String key;
 
-        public Builder setCategoryName(String categoryName) {
-            this.categoryName = categoryName;
+        public Builder setName(String name) {
+            this.name = name;
             return this;
         }
 

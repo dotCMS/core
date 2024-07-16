@@ -1317,8 +1317,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 						.map(Contentlet::getIdentifier)
 						.collect(Collectors.toList());
 
-		final String currentVariant = WebAPILocator.getVariantWebAPI().currentVariantId();
 
+		final String currentVariant = WebAPILocator.getVariantWebAPI().currentVariantId();
 		multiTreeAPI.updateMultiTrees(changes, pageIds, currentVariant);
 	}
 
@@ -1327,11 +1327,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 			throws DotDataException, DotSecurityException {
 		final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(templateId, user, false);
 
-		if (templateFromDB.getDrawedBody() != null) {
-			return  Optional.of(DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody()));
-		}
-
-		return Optional.empty();
+		return Optional.ofNullable(templateFromDB.getDrawedBody()).map(DotTemplateTool::getTemplateLayout);
 	}
 
 	/**
