@@ -28,14 +28,14 @@ public class Task03705AddingSystemEventTable extends AbstractJDBCStartupTask {
 	 */
 	@Override
 	public String getPostgresScript () {
-		return "CREATE TABLE system_event (\n" + 
+		return "CREATE TABLE IF NOT EXISTS system_event (\n" +
 				"identifier VARCHAR(36) NOT NULL,\n" +
 				"event_type VARCHAR(50) NOT NULL,\n" +
 				"payload TEXT NOT NULL,\n" +
 				"created BIGINT NOT NULL,\n" +
 				"PRIMARY KEY (identifier)\n" +
 			");\n" +
-			"CREATE INDEX idx_system_event ON system_event (created);";
+			"CREATE INDEX IF NOT EXISTS idx_system_event ON system_event (created);";
 	}
 
 	/**
