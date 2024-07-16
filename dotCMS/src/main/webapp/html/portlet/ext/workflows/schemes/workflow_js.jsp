@@ -1344,9 +1344,8 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
                             actionClassAdmin.refreshActionClasses();
 
 							if(isOnlyBatch) {
-								console.log("isOnlyBatch", isOnlyBatch);
 								actionClassAdmin.disableShowOnEditing();
-								showDotCMSSystemMessage("You have added an actionlet which can only be used for batch workflow actions only on listing/batch", false);
+								showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Only-Batch-Actions")%>", false);
 							}
                             //showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Added")%>", false);
                         }
@@ -1425,7 +1424,6 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
         // Delete action class with position
         if(actionClassPosition != -1) {
 
-			console.log("actionClassPosition", actionClassAdmin.actionClasses[actionClassPosition].isOnlyBatch);
             actionClassAdmin.actionClasses.splice(actionClassPosition, 1);
         }
 
