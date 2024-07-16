@@ -1,5 +1,5 @@
 $black: #14151a;
-$white: var(--color-white);
+$white: #ffffff;
 
 $color-palette-primary-100: var(--color-palette-primary-100);
 $color-palette-primary-200: var(--color-palette-primary-200);
@@ -201,8 +201,6 @@ $orange: #f3762a;
 $success: $color-accessible-text-green;
 
 @mixin root-colors {
-    --color-white: #ffffff;
-
     --color-primary-h: 225deg;
     --color-primary-s: 85%;
     --color-secondary-h: 256;
