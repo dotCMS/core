@@ -37,12 +37,14 @@ import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.se
 import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DotPage, NavigationBarItem } from '../shared/models';
+import { UVEStore } from '../store/dot-uve.store';
 
 @Component({
     selector: 'dot-ema-shell',
     standalone: true,
     providers: [
         EditEmaStore,
+        UVEStore,
         DotPageApiService,
         DotActionUrlService,
         DotLanguagesService,
@@ -82,7 +84,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     readonly $didTranslate = signal(false);
 
+    readonly uveStore = inject(UVEStore);
     readonly store = inject(EditEmaStore);
+
     EMA_INFO_PAGES: Record<'NOT_FOUND' | 'ACCESS_DENIED', InfoPage> = {
         NOT_FOUND: {
             icon: 'compass',
@@ -109,6 +113,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         map(({ currentUrl, page, host, languageId, siteId, templateDrawed, error }) => {
             const isLayoutDisabled = !page.canEdit || !templateDrawed;
 
+            // This should happen onLoad to avoid the user to navigate to the layout when the template disabled
             if (
                 isLayoutDisabled &&
                 this.#activatedRoute.firstChild.snapshot.url[0].path === 'layout'
@@ -219,6 +224,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                         return; // We need to return here, to avoid the editor to load with a non desirable clientHost
                     }
                 }
+
+                this.uveStore.load({
+                    ...(queryParams as DotPageApiParams),
+                    clientHost: queryParams.clientHost ?? data?.url
+                });
 
                 this.store.load({
                     ...(queryParams as DotPageApiParams),
