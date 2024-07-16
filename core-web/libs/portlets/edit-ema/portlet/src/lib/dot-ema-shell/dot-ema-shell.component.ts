@@ -96,7 +96,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #destroy$ = new Subject<boolean>();
     #currentComponent: unknown;
 
-    readonly translationEffect = effect(() => {
+    readonly translatePageEffect = effect(() => {
         const { languages, languageId, page } = this.uveStore.shellState().translateProps;
 
         const currentLanguage = languages.find((lang) => lang.id === languageId);
@@ -163,7 +163,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.#destroy$.next(true);
         this.#destroy$.complete();
-        this.translationEffect.destroy();
+        this.translatePageEffect.destroy();
     }
 
     /**
