@@ -1271,7 +1271,7 @@ public class ImportUtil {
                         if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName())){
                             if(preview){
                                 //To avoid creating temp files for preview, we just create a dummy file and assign it to the contentlet
-                                File dummyFile = File.createTempFile("dummy", ".txt");
+                                final File dummyFile = File.createTempFile("dummy", ".txt", new File(ConfigUtils.getAssetTempPath()));
                                 cont.setBinary(field.getVelocityVarName(), dummyFile);
                             } else {
                                 if (null != value && UtilMethods.isSet(value.toString())) {
