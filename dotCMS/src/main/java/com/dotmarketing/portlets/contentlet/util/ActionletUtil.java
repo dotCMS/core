@@ -114,6 +114,16 @@ public class ActionletUtil {
 
     /**
      * Returns true if the class is annotated as a batch only actionlet
+     * @param clazz String (expects a WorkflowActionlet) but it is not mandatory
+     * @return true if the class is batch only marked
+     */
+    public static boolean isOnlyBatch(final String clazz) {
+
+        return isOnlyBatch(ReflectionUtils.getClassFor(clazz));
+    }
+
+    /**
+     * Returns true if the class is annotated as a batch only actionlet
      * @param clazz Class (expects a WorkflowActionlet) but it is not mandatory
      * @return true if the class is batch only marked
      */
