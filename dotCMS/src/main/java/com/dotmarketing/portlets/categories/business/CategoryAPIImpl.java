@@ -976,15 +976,15 @@ public class CategoryAPIImpl implements CategoryAPI {
 	/**
 	 * Default implementation of {@link CategoryAPI}
 	 *
-	 * @param inodes List of inodes to search
+	 * @param keys List of keys to search
 	 * @return
 	 *
 	 * @throws DotDataException
 	 */
 	@CloseDBIfOpened
 	@Override
-	public List<HierarchyShortCategory> findHierarchy(final Collection<String> inodes) throws DotDataException {
-		Logger.debug(this, "Getting parentList for the follow Categories: " + inodes);
-		return categoryFactory.findHierarchy(inodes);
+	public List<HierarchyShortCategory> findHierarchy(final Collection<String> keys) throws DotDataException {
+		Logger.debug(this, "Getting parentList for the follow Categories: " + keys);
+		return categoryFactory.findHierarchy(keys);
 	}
 }
