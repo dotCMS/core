@@ -61,19 +61,75 @@ params:
         value: "1920x1080"
       - label: "256x256 (Small Square 1:1)"
         value: "256x256"
-  model:
-    value: "gpt-3.5-turbo-16k"
+  modelName:
+    value: ""
     hidden: false
     type: "STRING"
-    label: "Model"
+    label: "Model Name"
     hint: "Model used to generate ChatGPT API response."
     required: true
-  imageModel:
-    value: "dall-e-3"
+  modelTokensPerMinute:
+    value: ""
     hidden: false
     type: "STRING"
-    label: "Image Model"
-    hint: "Image Model used to generate AI Images"
+    label: "Tokens per Minute"
+    hint: "Tokens per minute used to generate ChatGPT API response."
+    required: true
+  modelApiPerMinute:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "API per Minute"
+    hint: "API per minute used to generate ChatGPT API response."
+    required: true
+  modelMaxTokens:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Max Tokens"
+    hint: "Maximum number of tokens used to generate ChatGPT API response."
+    required: true
+  modelCompletion:
+    value: ""
+    hidden: false
+    type: "BOOL"
+    label: "Completion model enabled"
+    hint: "Enable completion model used to generate ChatGPT API response."
+    required: true
+  imageModelName:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Image Model Name"
+    hint: "Model used to generate ChatGPT API response."
+    required: true
+  imageModelTokensPerMinute:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Image Tokens per Minute"
+    hint: "Tokens per minute used to generate ChatGPT API response."
+    required: true
+  imageModelApiPerMinute:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Image API per Minute"
+    hint: "API per minute used to generate ChatGPT API response."
+    required: true
+  imageModelMaxTokens:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Image Max Tokens"
+    hint: "Maximum number of tokens used to generate ChatGPT API response."
+    required: true
+  imageModelCompletion:
+    value: ""
+    hidden: false
+    type: "BOOL"
+    label: "Image Completion model enabled"
+    hint: "Enable completion model used to generate ChatGPT API response."
     required: true
   listenerIndexer:
     value: ""
