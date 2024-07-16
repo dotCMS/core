@@ -332,7 +332,7 @@ export class DotCmsClient {
     };
 
     static init(config: ClientConfig): DotCmsClient {
-        return (this.instance = new DotCmsClient(config));
+        return this.instance ?? (this.instance = new DotCmsClient(config));
     }
 
     static get dotcmsUrl(): string {

@@ -1,11 +1,28 @@
 /// <reference types="jest" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Content } from './content/content-api';
-import { DotCmsClient } from './sdk-js-client';
+import { ClientConfig, DotCmsClient } from './sdk-js-client';
 
 import * as dotcmsEditor from '../editor/sdk-editor';
 
 global.fetch = jest.fn();
+
+class TestDotCmsClient extends DotCmsClient {
+
+   /**
+     * Override the init method to test the static method
+     * Allows to test Singleton pattern with different configurations
+     *
+     * @param {*} config
+     * @return {*} 
+     * @memberof TestDotCmsClient
+     */
+   static override  init(config: ClientConfig) {
+        return this.instance = new TestDotCmsClient(config);
+    }
+
+}
+
 
 // Utility function to mock fetch responses
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,13 +38,13 @@ const mockFetchResponse = (body: any, ok = true, status = 200) => {
 
 describe('DotCmsClient', () => {
     describe('with full configuration', () => {
-        let client: DotCmsClient;
+        let client: TestDotCmsClient;
         let isInsideEditorSpy: jest.SpyInstance<boolean>;
 
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
 
-            client = DotCmsClient.init({
+            client = TestDotCmsClient.init({
                 dotcmsUrl: 'http://localhost',
                 siteId: '123456',
                 authToken: 'ABC'
@@ -44,7 +61,7 @@ describe('DotCmsClient', () => {
                     authToken: 'ABC'
                 };
 
-                const client = DotCmsClient.init(config);
+                const client = TestDotCmsClient.init(config);
                 expect(client).toBeDefined();
             });
 
@@ -56,7 +73,7 @@ describe('DotCmsClient', () => {
                 };
 
                 expect(() => {
-                    DotCmsClient.init(config);
+                    TestDotCmsClient.init(config);
                 }).toThrow("Invalid configuration - 'dotcmsUrl' is required");
             });
 
@@ -68,7 +85,7 @@ describe('DotCmsClient', () => {
                 };
 
                 expect(() => {
-                    DotCmsClient.init(config);
+                    TestDotCmsClient.init(config);
                 }).toThrow("Invalid configuration - 'dotcmsUrl' must be a valid URL");
             });
 
@@ -80,7 +97,7 @@ describe('DotCmsClient', () => {
                 };
 
                 expect(() => {
-                    DotCmsClient.init(config);
+                    TestDotCmsClient.init(config);
                 }).toThrow("Invalid configuration - 'authToken' is required");
             });
 
@@ -94,7 +111,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = DotCmsClient.init(config);
+                const client = TestDotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -116,7 +133,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = DotCmsClient.init(config);
+                const client = TestDotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -138,7 +155,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = DotCmsClient.init(config);
+                const client = TestDotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -160,7 +177,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = DotCmsClient.init(config);
+                const client = TestDotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -352,25 +369,13 @@ describe('DotCmsClient', () => {
         });
     });
 
-    describe('Properties', () => {
-        it('should return he current dotcmsUrl', () => {
-            DotCmsClient.init({
-                dotcmsUrl: 'http://localhost:8080',
-                siteId: '123456',
-                authToken: 'ABC'
-            });
-
-            expect(DotCmsClient.dotcmsUrl).toBe('http://localhost:8080');
-        });
-    });
-
     describe('with minimal configuration', () => {
         let client: DotCmsClient;
 
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
 
-            client = DotCmsClient.init({
+            client = TestDotCmsClient.init({
                 dotcmsUrl: 'http://localhost',
                 authToken: 'ABC'
             });
@@ -394,7 +399,7 @@ describe('DotCmsClient', () => {
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
 
-            client = DotCmsClient.init({
+            client = TestDotCmsClient.init({
                 dotcmsUrl: 'http://localhost',
                 siteId: '123456',
                 authToken: 'ABC',
@@ -441,4 +446,38 @@ describe('DotCmsClient', () => {
             expect(data).toEqual(mockResponse);
         });
     });
+
+    describe('Singleton pattern', () => {
+        it('should return the same instance when calling init multiple times', () => {
+            const config = {
+                dotcmsUrl: 'https://example.com',
+                siteId: '123456',
+                authToken: 'ABC'
+            };
+
+            const config2 = {
+                dotcmsUrl: 'https://example.com',
+                siteId: '123456',
+                authToken: 'DEF'
+            };
+
+            const client1 = DotCmsClient.init(config);
+            const client2 = DotCmsClient.init(config2);
+
+            expect(client1).toBe(client2);
+        });
+    });
+
+    describe('Properties', () => {
+        it('should return he current dotcmsUrl', () => {
+            TestDotCmsClient.init({
+                dotcmsUrl: 'http://localhost:8080',
+                siteId: '123456',
+                authToken: 'ABC'
+            });
+
+            expect(TestDotCmsClient.dotcmsUrl).toBe('http://localhost:8080');
+        });
+    });
+
 });
