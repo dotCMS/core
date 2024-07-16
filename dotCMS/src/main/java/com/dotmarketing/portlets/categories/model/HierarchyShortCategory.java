@@ -8,13 +8,15 @@ import java.util.List;
  */
 public class HierarchyShortCategory implements Serializable {
     private final String inode;
-    private final String categoryName;
+    private final String name;
+    private final String key;
     private final List<ShortCategory> parentList;
 
-    public HierarchyShortCategory(final String inode, final String categoryName, final List<ShortCategory> parentList) {
-        this.inode = inode;
-        this.parentList = parentList;
-        this.categoryName = categoryName;
+    public HierarchyShortCategory(final Builder builder) {
+        this.inode = builder.inode;
+        this.parentList = builder.parentList;
+        this.name = builder.name;
+        this.key = builder.key;
     }
 
     public String getInode() {
@@ -25,7 +27,43 @@ public class HierarchyShortCategory implements Serializable {
         return parentList;
     }
 
-    public String getCategoryName() {
-        return categoryName;
+    public String getName() {
+        return name;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public static class Builder {
+        private String inode;
+        private String name;
+
+        private String key;
+        private List<ShortCategory> parentList;
+
+        public Builder setInode(String inode) {
+            this.inode = inode;
+            return this;
+        }
+
+        public Builder setName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder setKey(String key) {
+            this.key = key;
+            return this;
+        }
+
+        public Builder setParentList(List<ShortCategory> parentList) {
+            this.parentList = parentList;
+            return this;
+        }
+
+        public HierarchyShortCategory build(){
+            return new HierarchyShortCategory(this);
+        }
     }
 }
