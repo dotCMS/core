@@ -1,7 +1,7 @@
-import { combineLatest, Observable, Subject } from 'rxjs';
+import { combineLatest, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -9,7 +9,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { map, skip, take, takeUntil } from 'rxjs/operators';
+import { skip, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -23,9 +23,9 @@ import {
     DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotInfoPageComponent, DotNotLicenseComponent, InfoPage, SafeUrlPipe } from '@dotcms/ui';
+import { DotInfoPageComponent, DotNotLicenseComponent, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { EditEmaStore } from './store/dot-ema.store';
@@ -36,7 +36,7 @@ import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.s
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DotPage, NavigationBarItem } from '../shared/models';
+import { DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 
 @Component({
@@ -87,99 +87,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly uveStore = inject(UVEStore);
     readonly store = inject(EditEmaStore);
 
-    EMA_INFO_PAGES: Record<'NOT_FOUND' | 'ACCESS_DENIED', InfoPage> = {
-        NOT_FOUND: {
-            icon: 'compass',
-            title: 'editema.infopage.notfound.title',
-            description: 'editema.infopage.notfound.description',
-            buttonPath: '/pages',
-            buttonText: 'editema.infopage.button.gotopages'
-        },
-        ACCESS_DENIED: {
-            icon: 'ban',
-            title: 'editema.infopage.accessdenied.title',
-            description: 'editema.infopage.accessdenied.description',
-            buttonPath: '/pages',
-            buttonText: 'editema.infopage.button.gotopages'
-        }
-    };
-    // We need to move the logic to a function, we still need to add enterprise logic
-    shellProperties$: Observable<{
-        items: NavigationBarItem[];
-        canRead: boolean;
-        seoProperties: DotPageToolUrlParams;
-        error?: number;
-    }> = this.store.shellProps$.pipe(
-        map(({ currentUrl, page, host, languageId, siteId, templateDrawed, error }) => {
-            const isLayoutDisabled = !page.canEdit || !templateDrawed;
-
-            // This should happen onLoad to avoid the user to navigate to the layout when the template disabled
-            if (
-                isLayoutDisabled &&
-                this.#activatedRoute.firstChild.snapshot.url[0].path === 'layout'
-            ) {
-                this.#router.navigate(['./content'], { relativeTo: this.#activatedRoute });
-            }
-
-            return {
-                items: [
-                    {
-                        icon: 'pi-file',
-                        label: 'editema.editor.navbar.content',
-                        href: 'content'
-                    },
-                    {
-                        icon: 'pi-table',
-                        label: 'editema.editor.navbar.layout',
-                        href: 'layout',
-                        isDisabled: isLayoutDisabled,
-                        tooltip: templateDrawed
-                            ? null
-                            : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
-                    },
-                    {
-                        icon: 'pi-sliders-h',
-                        label: 'editema.editor.navbar.rules',
-                        href: `rules/${page.identifier}`,
-                        isDisabled: !page.canEdit
-                    },
-                    {
-                        iconURL: 'experiments',
-                        label: 'editema.editor.navbar.experiments',
-                        href: `experiments/${page.identifier}`,
-                        isDisabled: !page.canEdit
-                    },
-                    {
-                        icon: 'pi-th-large',
-                        label: 'editema.editor.navbar.page-tools',
-                        action: () => {
-                            this.pageTools.toggleDialog();
-                        }
-                    },
-                    {
-                        icon: 'pi-ellipsis-v',
-                        label: 'editema.editor.navbar.properties',
-                        action: () => {
-                            this.dialog.editContentlet({
-                                inode: page.inode,
-                                title: page.title,
-                                identifier: page.identifier,
-                                contentType: page.contentType
-                            });
-                        }
-                    }
-                ],
-                canRead: page.canRead,
-                seoProperties: {
-                    currentUrl,
-                    languageId,
-                    siteId,
-                    requestHostName: host
-                },
-                error
-            };
-        })
-    );
     readonly #activatedRoute = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #siteService = inject(SiteService);
@@ -188,6 +95,16 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     readonly #destroy$ = new Subject<boolean>();
     #currentComponent: unknown;
+
+    readonly translationEffect = effect(() => {
+        const { languages, languageId, page } = this.uveStore.shellState().translateProps;
+
+        const currentLanguage = languages.find((lang) => lang.id === languageId);
+
+        if (!currentLanguage.translated) {
+            this.createNewTranslation(currentLanguage, page);
+        }
+    });
 
     // We can internally navigate, so the PageID can change
 
@@ -230,6 +147,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     clientHost: queryParams.clientHost ?? data?.url
                 });
 
+                // DELETE THIS WHEN THE STORE IS READY
                 this.store.load({
                     ...(queryParams as DotPageApiParams),
                     clientHost: queryParams.clientHost ?? data?.url
@@ -240,25 +158,16 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#siteService.switchSite$.pipe(skip(1)).subscribe(() => {
             this.#router.navigate(['/pages']);
         });
-
-        // We need to check if the language is translated
-        this.store.translateProps$
-            .pipe(takeUntil(this.#destroy$))
-            .subscribe(({ languages, page, pageLanguageId }) => {
-                const currentLanguage = languages.find((lang) => lang.id === pageLanguageId);
-
-                if (!currentLanguage.translated) {
-                    this.createNewTranslation(currentLanguage, page);
-                }
-            });
     }
 
     ngOnDestroy(): void {
         this.#destroy$.next(true);
         this.#destroy$.complete();
+        this.translationEffect.destroy();
     }
 
-    onActivateRoute(event) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onActivateRoute(event: any): void {
         this.#currentComponent = event;
     }
 
@@ -300,6 +209,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 }
 
                 this.#activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
+                    this.uveStore.load({
+                        ...this.queryParams,
+                        clientHost: this.queryParams.clientHost ?? data?.url
+                    });
+
+                    // DELETE THIS WHEN THE STORE IS READY
                     this.store.load({
                         ...this.queryParams,
                         clientHost: this.queryParams.clientHost ?? data?.url
@@ -311,9 +226,33 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Handle actions from nav bar
+     *
+     * @param {string} itemId
+     * @memberof DotEmaShellComponent
+     */
+    handleItemAction(itemId: string) {
+        if (itemId === 'page-tools') {
+            this.pageTools.toggleDialog();
+        } else if (itemId === 'properties') {
+            const page = this.uveStore.pageAPIResponse().page;
+
+            this.dialog.editContentlet({
+                inode: page.inode,
+                title: page.title,
+                identifier: page.identifier,
+                contentType: page.contentType
+            });
+        }
+    }
+
+    /**
      * Reloads the component from the dialog.
      */
     reloadFromDialog() {
+        this.uveStore.reload(this.queryParams);
+
+        // DELETE THIS WHEN THE STORE IS READY
         this.store.reload({ params: this.queryParams });
     }
 

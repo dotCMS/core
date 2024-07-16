@@ -85,7 +85,7 @@ export interface NavigationBarItem {
     iconURL?: string;
     label: string;
     href?: string;
-    action?: () => void;
+    id: string;
     isDisabled?: boolean;
 }
 

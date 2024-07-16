@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
@@ -17,4 +17,17 @@ import { NavigationBarItem } from '../../../shared/models';
 })
 export class EditEmaNavigationBarComponent {
     @Input() items: NavigationBarItem[];
+
+    // TODO: MISSING TEST
+    @Output() action: EventEmitter<string> = new EventEmitter();
+
+    /**
+     * Handle the click event on the item
+     *
+     * @param {NavigationBarItem} item
+     * @memberof EditEmaNavigationBarComponent
+     */
+    itemAction(item: NavigationBarItem): void {
+        this.action.emit(item.id);
+    }
 }

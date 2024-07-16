@@ -1,12 +1,31 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotExperiment, DotLanguage } from '@dotcms/dotcms-models';
+import { DotExperiment, DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import { InfoPage } from '@dotcms/ui';
 
-import { DotPageApiResponse } from '../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
+import { DotPage, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
     isEnterprise: boolean;
-    page?: DotPageApiResponse;
+    pageAPIResponse?: DotPageApiResponse;
     languages: DotLanguage[];
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
+    error?: number;
+    params?: DotPageApiParams;
+}
+
+export interface ShellState {
+    canRead: boolean;
+    error: number;
+    items: NavigationBarItem[];
+    translateProps: TranslateProps;
+    seoParams: DotPageToolUrlParams;
+    uvePageInfo: Record<'NOT_FOUND' | 'ACCESS_DENIED', InfoPage>;
+}
+
+export interface TranslateProps {
+    page: DotPage;
+    languageId: number;
+    languages: DotLanguage[];
 }
