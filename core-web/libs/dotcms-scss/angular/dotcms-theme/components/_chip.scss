@@ -2,9 +2,9 @@
 @import "mixins";
 
 p-chip .p-chip {
-    border-color: $color-palette-primary;
-    background-color: $color-palette-primary;
-    color: $white;
+    border-color: $color-primary-tint;
+    background-color: $color-primary-tint;
+    color: $color-primary-shade;
     border-radius: $border-radius-md;
     border-width: 1px;
     border-style: solid;
@@ -31,106 +31,106 @@ p-chip .p-chip {
         color: $color-primary-shade;
     }
 
-    &.p-chip-text {
-        border-color: $color-primary-tint;
-        background-color: $color-primary-tint;
-        color: $color-primary-shade;
+    &.p-chip-filled {
+        border-color: $color-palette-primary;
+        background-color: $color-palette-primary;
+        color: $white;
     }
 
     &.p-chip-secondary {
-        border-color: $color-palette-purple;
-        background-color: $color-palette-purple;
-        color: $white;
+        border-color: $color-palette-purple-tint;
+        background-color: $color-palette-purple-tint;
+        color: $color-palette-purple-shade;
         &.p-chip-outlined {
             border-color: $color-palette-purple-shade;
             background-color: $white;
             color: $color-palette-purple-shade;
         }
-        &.p-chip-text {
-            border-color: $color-palette-purple-tint;
-            background-color: $color-palette-purple-tint;
-            color: $color-palette-purple-shade;
+        &.p-chip-filled {
+            border-color: $color-palette-purple;
+            background-color: $color-palette-purple;
+            color: $white;
         }
     }
 
     &.p-chip-warning {
-        border-color: $color-palette-yellow;
-        background-color: $color-palette-yellow;
-        color: $color-palette-gray-900;
+        border-color: $color-palette-yellow-tint;
+        background-color: $color-palette-yellow-tint;
+        color: $color-palette-yellow-shade;
         &.p-chip-outlined {
             border-color: $color-palette-yellow-shade;
             background-color: $white;
             color: $color-palette-yellow-shade;
         }
-        &.p-chip-text {
-            border-color: $color-palette-yellow-tint;
-            background-color: $color-palette-yellow-tint;
-            color: $color-palette-yellow-shade;
+        &.p-chip-filled {
+            border-color: $color-palette-yellow;
+            background-color: $color-palette-yellow;
+            color: $color-palette-gray-900;
         }
     }
 
     &.p-chip-success {
-        border-color: $color-palette-green;
-        background-color: $color-palette-green;
-        color: $color-palette-gray-900;
+        border-color: $color-palette-green-tint;
+        background-color: $color-palette-green-tint;
+        color: $color-palette-green-shade;
         &.p-chip-outlined {
             border-color: $color-palette-green-shade;
             background-color: $white;
             color: $color-palette-green-shade;
         }
-        &.p-chip-text {
-            border-color: $color-palette-green-tint;
-            background-color: $color-palette-green-tint;
-            color: $color-palette-green-shade;
+        &.p-chip-filled {
+            border-color: $color-palette-green;
+            background-color: $color-palette-green;
+            color: $color-palette-gray-900;
         }
     }
 
     &.p-chip-error {
-        border-color: $color-palette-red;
-        background-color: $color-palette-red;
-        color: $white;
+        border-color: $color-palette-red-tint;
+        background-color: $color-palette-red-tint;
+        color: $color-palette-red-shade;
         &.p-chip-outlined {
             border-color: $color-palette-red-shade;
             background-color: $white;
             color: $color-palette-red-shade;
         }
-        &.p-chip-text {
-            border-color: $color-palette-red-tint;
-            background-color: $color-palette-red-tint;
-            color: $color-palette-red-shade;
+        &.p-chip-filled {
+            border-color: $color-palette-red;
+            background-color: $color-palette-red;
+            color: $white;
         }
     }
 
     &.p-chip-gray {
-        border-color: $color-palette-gray-300;
-        background-color: $color-palette-gray-300;
+        border-color: $color-palette-gray-tint;
+        background-color: $color-palette-gray-tint;
         color: $color-palette-gray-900;
         &.p-chip-outlined {
             border-color: $color-palette-gray-tint;
             background-color: $white;
             color: $color-palette-gray-900;
         }
-        &.p-chip-text {
-            border-color: $color-palette-gray-tint;
-            background-color: $color-palette-gray-tint;
+        &.p-chip-filled {
+            border-color: $color-palette-gray-300;
+            background-color: $color-palette-gray-300;
             color: $color-palette-gray-900;
         }
     }
 
     &.p-chip-fuchsia,
     &.p-chip-pink {
-        border-color: $color-palette-fuchsia;
-        background-color: $color-palette-fuchsia;
-        color: $white;
+        border-color: $color-palette-fuchsia-tint;
+        background-color: $color-palette-fuchsia-tint;
+        color: $color-palette-fuchsia-shade;
         &.p-chip-outlined {
             border-color: $color-palette-fuchsia-shade;
             background-color: $white;
             color: $color-palette-fuchsia-shade;
         }
-        &.p-chip-text {
-            border-color: $color-palette-fuchsia-tint;
-            background-color: $color-palette-fuchsia-tint;
-            color: $color-palette-fuchsia-shade;
+        &.p-chip-filled {
+            border-color: $color-palette-fuchsia;
+            background-color: $color-palette-fuchsia;
+            color: $white;
         }
     }
 
@@ -141,19 +141,19 @@ p-chip .p-chip {
     }
 
     &.p-chip-blue {
-        border-color: $color-palette-primary;
-        background-color: $color-palette-primary;
-        color: $white;
+        border-color: $color-primary-tint;
+        background-color: $color-primary-tint;
+        color: $color-primary-shade;
         &.p-chip-outlined {
             border-color: $color-primary-shade;
             background-color: $white;
             color: $color-primary-shade;
         }
 
-        &.p-chip-text {
-            border-color: $color-primary-tint;
-            background-color: $color-primary-tint;
-            color: $color-primary-shade;
+        &.p-chip-filled {
+            border-color: $color-palette-primary;
+            background-color: $color-palette-primary;
+            color: $white;
         }
     }
 
