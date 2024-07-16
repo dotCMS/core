@@ -445,7 +445,10 @@ describe('DotCmsClient', () => {
     });
 
     describe('Singleton pattern', () => {
-        it('should return the same instance when calling init multiple times', () => {
+        it('should return the same instance and log a warning when calling init multiple times', () => {
+            const consoleWarnSpy = jest.spyOn(console, 'warn');
+            const expectedWarnMessage =
+                'DotCmsClient has already been initialized. Please use the instance to interact with the DotCMS API.';
             const config = {
                 dotcmsUrl: 'https://example.com',
                 siteId: '123456',
@@ -462,6 +465,7 @@ describe('DotCmsClient', () => {
             const client2 = DotCmsClient.init(config2);
 
             expect(client1).toBe(client2);
+            expect(consoleWarnSpy).toHaveBeenCalledWith(expectedWarnMessage);
         });
     });
 

@@ -332,6 +332,12 @@ export class DotCmsClient {
     };
 
     static init(config: ClientConfig): DotCmsClient {
+        if (this.instance) {
+            console.warn(
+                'DotCmsClient has already been initialized. Please use the instance to interact with the DotCMS API.'
+            );
+        }
+
         return this.instance ?? (this.instance = new DotCmsClient(config));
     }
 
