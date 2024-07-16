@@ -166,6 +166,12 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.translationEffect.destroy();
     }
 
+    /**
+     * Handle the activate route event
+     *
+     * @param {*} event
+     * @memberof DotEmaShellComponent
+     */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onActivateRoute(event: any): void {
         this.#currentComponent = event;
