@@ -126,7 +126,10 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.store.load(this.field(), this.contentlet());
+        this.store.load({
+            field: this.field(),
+            contentlet: this.contentlet()
+        });
     }
 
     private setSidebarListener() {

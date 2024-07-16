@@ -1,3 +1,10 @@
+import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+
+export interface DotCategoryField {
+    field: DotCMSContentTypeField;
+    contentlet: DotCMSContentlet;
+}
+
 /**
  * Object representing a key-value pair.
  * @interface
@@ -10,6 +17,13 @@ export interface DotCategoryFieldKeyValueObj {
     clicked?: boolean;
     hasChildren?: boolean;
 }
+
+/**
+ * The HierarchyParent type represents a parent object in a hierarchical structure.
+ * It is defined as a subset of the DotCategory type, which includes the categoryName,
+ * inode, and parentList properties.
+ */
+export type HierarchyParent = Pick<DotCategory, 'categoryName' | 'inode' | 'parentList'>;
 
 /**
  * Represents an clicked item in a DotCategoryField.
