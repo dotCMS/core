@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    EventEmitter,
+    inject,
+    input,
+    Output,
+    signal
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -20,7 +29,10 @@ import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.mod
     standalone: true,
     imports: [ButtonModule, ChipModule, TooltipModule],
     templateUrl: './dot-category-field-chips.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'dot-category-field__categories'
+    }
 })
 export class DotCategoryFieldChipsComponent {
     /**
@@ -96,6 +108,12 @@ export class DotCategoryFieldChipsComponent {
 
         return null;
     });
+    /**
+     * Represents the output 'remove' which is of type 'EventEmitter<string>'.
+     *
+     * @memberof DotCategoryFieldChipsComponent
+     */
+    @Output() remove = new EventEmitter<string>();
     /**
      * Method to toogle the show all categories.
      *
