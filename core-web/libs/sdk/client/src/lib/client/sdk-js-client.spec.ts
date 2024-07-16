@@ -8,21 +8,18 @@ import * as dotcmsEditor from '../editor/sdk-editor';
 global.fetch = jest.fn();
 
 class TestDotCmsClient extends DotCmsClient {
-
-   /**
+    /**
      * Override the init method to test the static method
      * Allows to test Singleton pattern with different configurations
      *
      * @param {*} config
-     * @return {*} 
+     * @return {*}
      * @memberof TestDotCmsClient
      */
-   static override  init(config: ClientConfig) {
-        return this.instance = new TestDotCmsClient(config);
+    static override init(config: ClientConfig) {
+        return (this.instance = new TestDotCmsClient(config));
     }
-
 }
-
 
 // Utility function to mock fetch responses
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -479,5 +476,4 @@ describe('DotCmsClient', () => {
             expect(TestDotCmsClient.dotcmsUrl).toBe('http://localhost:8080');
         });
     });
-
 });
