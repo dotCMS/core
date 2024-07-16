@@ -10,6 +10,7 @@ import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
+import com.dotcms.content.elasticsearch.business.field.FieldHandlerStrategyFactory;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
@@ -7211,9 +7212,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void setContentletProperty(Contentlet contentlet, Field field, Object value)
             throws DotContentletStateException {
 
-        final String[] dateFormats = Config.getStringArrayProperty("dotcontentlet_dateformats",
-                DEFAULT_DATE_FORMATS);
-
         if (contentlet == null) {
             throw new DotContentletValidationException("The contentlet must not be null");
         }
@@ -7228,141 +7226,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return;
         }
 
-        if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) || field.getFieldType()
-                .equals(Field.FieldType.CATEGORIES_TAB.toString())) {
+        final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(
+                field);
 
-        } else if (fieldAPI.isElementConstant(field)) {
-            Logger.debug(this,
-                    "Cannot set contentlet field value on field type constant. Value is saved to the field not the contentlet");
-        } if (FieldType.KEY_VALUE.toString().equals(field.getFieldType())) {
-            if ((value instanceof String) && (JsonUtil.isValidJSON((String) value))) {
-                contentlet.setStringProperty(field.getVelocityVarName(), Try.of(
-                                () -> JsonUtil.JSON_MAPPER.readTree((String) value).toString())
-                        .getOrElse("{}"));
-            } else if (value instanceof Map) {
-                contentlet.setStringProperty(field.getVelocityVarName(),
-                        Try.of(() -> JsonUtil.getJsonAsString((Map<String, Object>) value))
-                                .getOrElse("{}"));
-            } else {
-                throw new DotContentletStateException(
-                        "Invalid JSON field provided. Key Value Field variable: " +
-                                field.getVelocityVarName());
-            }
-        } else if (field.getFieldContentlet().startsWith("text") &&
-                !FieldType.JSON_FIELD.toString().equals(field.getFieldType())) {
-            try {
-                contentlet.setStringProperty(field.getVelocityVarName(), (String) value);
-            } catch (Exception e) {
-                contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
-            }
-        } else if (field.getFieldContentlet().startsWith("long_text")) {
-            try {
-                contentlet.setStringProperty(field.getVelocityVarName(), (String) value);
-            } catch (Exception e) {
-                contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
-            }
-        } else if (field.getFieldContentlet().startsWith("date")) {
-            parseDate(contentlet, field, value, dateFormats);
-        } else if (field.getFieldContentlet().startsWith("bool")) {
-            if (value instanceof Boolean) {
-                contentlet.setBoolProperty(field.getVelocityVarName(), (Boolean) value);
-            } else if (value instanceof String) {
-                try {
-                    String auxValue = (String) value;
-                    Boolean auxBoolean =
-                            (auxValue.equalsIgnoreCase("1") || auxValue.equalsIgnoreCase("true")
-                                    || auxValue.equalsIgnoreCase("t")) ? Boolean.TRUE
-                                    : Boolean.FALSE;
-                    contentlet.setBoolProperty(field.getVelocityVarName(), auxBoolean);
-                } catch (Exception e) {
-                    throw new DotContentletStateException(
-                            "Unable to set string value as a Boolean");
-                }
-            } else {
-                throw new DotContentletStateException(
-                        "Boolean fields must either be of type String or Boolean");
-            }
-        } else if (field.getFieldContentlet().startsWith("float")) {
-            if (value instanceof Number) {
-                contentlet.setFloatProperty(field.getVelocityVarName(),
-                        ((Number) value).floatValue());
-            } else if (value instanceof String) {
-                try {
-                    contentlet.setFloatProperty(field.getVelocityVarName(),
-                            Float.valueOf((String)value));
-                } catch (Exception e) {
-                    if (value != null && value.toString().length() != 0) {
-                        contentlet.getMap().put(field.getVelocityVarName(), (String) value);
-                    }
-                    throw new DotContentletStateException("Unable to set string value as a Float");
-                }
-            }
-        } else if (field.getFieldContentlet().startsWith("integer")) {
-            if (value instanceof Number) {
-                contentlet.setLongProperty(field.getVelocityVarName(),
-                        ((Number) value).longValue());
-            } else if (value instanceof String) {
-                try {
-                    contentlet.setLongProperty(field.getVelocityVarName(),
-                            Long.valueOf((String)value));
-                } catch (Exception e) {
-                    //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
-                    throw new DotContentletStateException("Unable to set string value as a Long");
-                }
-            }
-            // setBinary
-        } else if (Field.FieldType.BINARY.toString().equals(field.getFieldType())) {
-            try {
-
-                // only if the value is a file or a tempFile
-                if (value.getClass() == File.class) {
-                    contentlet.setBinary(field.getVelocityVarName(), (java.io.File) value);
-                }
-                // if this value is a String and a temp resource, use it to populate the
-                // binary field
-                else if (value instanceof String && tempApi.isTempResource((String) value)) {
-                    final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-                    // we use the session to verify access to the temp resource
-                    final Optional<DotTempFile> tempFileOptional = tempApi
-                            .getTempFile(request, (String) value);
-
-                    if (tempFileOptional.isPresent()) {
-                        contentlet.setBinary(field.getVelocityVarName(),
-                                tempFileOptional.get().file);
-                    } else {
-                        throw new DotStateException("Invalid Temp File provided");
-                    }
-
-                }
-            } catch (IOException e) {
-                throw new DotContentletStateException(
-                        "Unable to set binary file Object: " + e.getMessage(), e);
-            }
-        } else if (field.getFieldContentlet().startsWith("system_field")) {
-            if (value.getClass() == java.lang.String.class) {
-                try {
-                    contentlet.setStringProperty(field.getVelocityVarName(), (String) value);
-                } catch (Exception e) {
-                    contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
-                }
-            }
-        } else if (FieldType.JSON_FIELD.toString().equals(field.getFieldType())) {
-            if ((value instanceof String) && (JsonUtil.isValidJSON((String) value))) {
-                contentlet.setStringProperty(field.getVelocityVarName(), Try.of(
-                                () -> JsonUtil.JSON_MAPPER.readTree((String) value).toString())
-                        .getOrElse("{}"));
-            } else if (value instanceof Map) {
-                contentlet.setStringProperty(field.getVelocityVarName(),
-                        Try.of(() -> JsonUtil.getJsonAsString((Map<String, Object>) value))
-                                .getOrElse("{}"));
-            } else {
-                throw new DotContentletStateException(
-                        "Invalid JSON field provided. Field variable: " +
-                                field.getVelocityVarName());
-            }
-        } else {
-            throw new DotContentletStateException("Unable to set value : Unknown field type");
-        }
+        FieldHandlerStrategyFactory.getInstance().get(newField).apply(contentlet, newField, value);
     }
 
     /**
@@ -7376,7 +7243,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param value
      * @param dateFormats
      */
-    private static void parseDate(final Contentlet contentlet,
+    public static void parseDate(final Contentlet contentlet,
                                   final Field field,
                                   final Object value,
                                   final String... dateFormats) {
