@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ButtonModule, ButtonDirective } from 'primeng/button';
 import { ChipModule, Chip } from 'primeng/chip';
@@ -85,15 +85,33 @@ describe('DotCategoryFieldChipsComponent', () => {
 
     describe('toogleShowAll', () => {
         it('should set showAll to true', () => {
-            spectator.component.$showAll.set(false);
-            spectator.component.toogleShowAll();
-            expect(spectator.component.$showAll()).toBe(true);
+            spectator.setInput('max', 2);
+            spectator.component.$showAll.set(true);
+            spectator.detectChanges();
+            const showBtn = spectator.query(byTestId('show-btn'));
+            spectator.click(showBtn);
+            expect(spectator.component.$showAll()).toBe(false);
         });
 
         it('should set showAll to false', () => {
+            spectator.setInput('max', 2);
+            spectator.component.$showAll.set(false);
+            spectator.detectChanges();
+            const showBtn = spectator.query(byTestId('show-btn'));
+            spectator.click(showBtn);
+            expect(spectator.component.$showAll()).toBe(true);
+        });
+    });
+
+    describe('onRemove', () => {
+        it('should call the output', () => {
+            const removeSpy = jest.spyOn(spectator.component.remove, 'emit');
+            spectator.setInput('max', 2);
             spectator.component.$showAll.set(true);
-            spectator.component.toogleShowAll();
-            expect(spectator.component.$showAll()).toBe(false);
+            spectator.detectChanges();
+            const chips = spectator.queryAll(Chip);
+            chips[0].onRemove.emit();
+            expect(removeSpy).toHaveBeenCalledWith(CATEGORIES_KEY_VALUE[0].key);
         });
     });
 });
