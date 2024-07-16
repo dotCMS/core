@@ -1,14 +1,5 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.ARCHIVE;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.DELETE;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.DESTROY;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.EDIT;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.NEW;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.PUBLISH;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNARCHIVE;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNPUBLISH;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -25,10 +16,20 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.ARCHIVE;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.DELETE;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.DESTROY;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.EDIT;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.NEW;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.PUBLISH;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNARCHIVE;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNPUBLISH;
 
 /**
  * This Factory provides the {@link SystemActionApiFireCommand} for a {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
@@ -204,9 +205,8 @@ public class SystemActionApiFireCommandFactory {
         public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
 
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
-                    + ", was fired by default action: " + dependencies.getWorkflowActionId() +
-                    ", however this action has not any publish content actionlet, so the publish api call is being triggered as part of the request");
+            Logger.info(this, String.format("Contentlet '%s' was fired by Default Action ID '%s'" +
+                    ". However, it doesn't have any 'Publish content' actionlet, so the Publish API call is being triggered as part of the request", contentlet.getTitle(), dependencies.getWorkflowActionId()));
 
             final String actionId       = UtilMethods.isSet(dependencies.getWorkflowActionId())?
                     dependencies.getWorkflowActionId():contentlet.getActionId();

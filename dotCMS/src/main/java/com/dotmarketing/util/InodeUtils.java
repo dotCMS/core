@@ -14,6 +14,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.portlets.categories.business.CategoryTransformer;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -198,6 +199,8 @@ public class InodeUtils {
 		}else if ( shortOpt.isPresent() && ShortType.FOLDER == shortOpt.get().subType ) {
 			//Folder no longer inherit from inode, returning an empty inode
 			inodeObj = new Inode();
+		} else if ( shortOpt.isPresent() && ShortType.CATEGORY == shortOpt.get().subType ) {
+			inodeObj = APILocator.getCategoryAPI().find(inode, APILocator.systemUser(), false);
 		} else {
             inodeObj = InodeFactory.getInode(inode, Inode.class);
         }

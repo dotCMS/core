@@ -22,6 +22,9 @@
 
 package com.liferay.portal.util;
 
+import com.dotmarketing.util.Config;
+import io.vavr.Lazy;
+
 /**
  * <a href="CookieKeys.java.html"><b><i>View Source</i></b></a>
  *
@@ -37,8 +40,9 @@ public class CookieKeys {
 
 	public static final String PASSWORD = "PASSWORD";
 
+	public static final Lazy<String> REMEMBER_ME_COOKIE = Lazy.of(()-> Config.getStringProperty("REMEMBER_ME_COOKIE_NAME", "rme"));   // remember me
 
-	public static final String JWT_ACCESS_TOKEN = "access_token";
+	public static final String JWT_ACCESS_TOKEN =REMEMBER_ME_COOKIE.get();
 
 	public static final String JSESSIONID = "JSESSIONID";
 

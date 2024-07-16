@@ -19,6 +19,7 @@ import {
 } from '../mocks/category-field.mocks';
 import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
 import { CategoriesService } from '../services/categories.service';
+import { transformCategories } from '../utils/category-field.utils';
 
 const EMPTY_ARRAY = [];
 
@@ -48,7 +49,7 @@ describe('CategoryFieldStore', () => {
     it('should initialize with default state', () => {
         expect(store.categories()).toEqual(EMPTY_ARRAY);
         expect(store.selectedCategoriesValues()).toEqual(EMPTY_ARRAY);
-        expect(store.parentPath()).toEqual(EMPTY_ARRAY);
+        expect(store.keyParentPath()).toEqual(EMPTY_ARRAY);
         expect(store.state()).toEqual(ComponentStatus.IDLE);
         // computed
         expect(store.selected()).toEqual(EMPTY_ARRAY);
@@ -59,11 +60,11 @@ describe('CategoryFieldStore', () => {
         it('should set the correct rootCategoryInode and categoriesValue', () => {
             const expectedCategoryValues: DotCategoryFieldKeyValueObj[] = [
                 {
-                    key: '33333',
+                    key: '1f208488057007cedda0e0b5d52ee3b3',
                     value: 'Electrical'
                 },
                 {
-                    key: '22222',
+                    key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
                     value: 'Doors & Windows'
                 }
             ];
@@ -94,7 +95,10 @@ describe('CategoryFieldStore', () => {
                     .spyOn(categoriesService, 'getChildren')
                     .mockReturnValue(of(CATEGORY_LEVEL_2));
 
-                store.getCategories({ index: 0, item: CATEGORY_LEVEL_1[0] });
+                const item = transformCategories(
+                    CATEGORY_LEVEL_1[0]
+                ) as DotCategoryFieldKeyValueObj;
+                store.getCategories({ index: 0, item });
 
                 expect(getChildrenSpy).toHaveBeenCalledWith(CATEGORY_LEVEL_1[0].inode);
             });
@@ -103,7 +107,12 @@ describe('CategoryFieldStore', () => {
                 categoriesService.getChildren.mockReturnValue(of(CATEGORY_LEVEL_1));
                 store.getCategories();
                 categoriesService.getChildren.mockReturnValue(of(CATEGORY_LEVEL_2));
-                store.getCategories({ index: 0, item: CATEGORY_LEVEL_1[0] });
+
+                const item = transformCategories(
+                    CATEGORY_LEVEL_1[0]
+                ) as DotCategoryFieldKeyValueObj;
+
+                store.getCategories({ index: 0, item });
 
                 expect(store.categories().length).toBe(2);
             });

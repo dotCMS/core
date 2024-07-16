@@ -26,6 +26,7 @@ const FAKE_FORM_GROUP = new FormGroup({
 
 describe('DotEditContentCategoryFieldComponent', () => {
     let spectator: Spectator<DotEditContentCategoryFieldComponent>;
+    let store: InstanceType<typeof CategoryFieldStore>;
 
     const createComponent = createComponentFactory({
         component: DotEditContentCategoryFieldComponent,
@@ -51,6 +52,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
                 field: CATEGORY_FIELD_MOCK
             }
         });
+        store = spectator.inject(CategoryFieldStore, true);
 
         spectator.detectChanges();
     });
@@ -79,6 +81,15 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
         it('should display the category list with chips when there are categories', () => {
             expect(spectator.query(byTestId('category-chip-list'))).not.toBeNull();
+        });
+
+        it('should categoryFieldControl has the values loaded on the store', () => {
+            const categoryValue = spectator.component.categoryFieldControl.value;
+
+            expect(categoryValue).toEqual([
+                '1f208488057007cedda0e0b5d52ee3b3',
+                'cb83dc32c0a198fd0ca427b3b587f4ce'
+            ]);
         });
     });
 
@@ -118,8 +129,6 @@ describe('DotEditContentCategoryFieldComponent', () => {
         });
 
         it('should remove DotEditContentCategoryFieldSidebarComponent when `closedSidebar` emit', fakeAsync(() => {
-            const formMock = spectator.inject(ControlContainer, true).control as FormGroup;
-            const setValueSpy = jest.spyOn(formMock.get(CATEGORY_FIELD_VARIABLE_NAME), 'setValue');
             const selectBtn = spectator.query(byTestId('show-sidebar-btn')) as HTMLButtonElement;
 
             expect(selectBtn).not.toBeNull();
@@ -141,9 +150,40 @@ describe('DotEditContentCategoryFieldComponent', () => {
             // Check if the button is enabled again
             expect(selectBtn.disabled).toBe(false);
 
-            // Check if the form is updated
+            // Check if the form has the correct value
+            const categoryValue = spectator.component.categoryFieldControl.value;
 
-            expect(setValueSpy).toHaveBeenCalledWith(['33333', '22222']);
+            expect(categoryValue).toEqual([
+                '1f208488057007cedda0e0b5d52ee3b3',
+                'cb83dc32c0a198fd0ca427b3b587f4ce'
+            ]);
         }));
+
+        it('should set categoryFieldControl value when adding a new category', () => {
+            store.addSelected({
+                key: '1234',
+                value: 'test'
+            });
+
+            spectator.flushEffects();
+
+            const categoryValue = spectator.component.categoryFieldControl.value;
+
+            expect(categoryValue).toEqual([
+                '1f208488057007cedda0e0b5d52ee3b3',
+                'cb83dc32c0a198fd0ca427b3b587f4ce',
+                '1234'
+            ]);
+        });
+
+        it('should set categoryFieldControl value when removing a category', () => {
+            store.removeSelected('1f208488057007cedda0e0b5d52ee3b3');
+
+            spectator.flushEffects();
+
+            const categoryValue = spectator.component.categoryFieldControl.value;
+
+            expect(categoryValue).toEqual(['cb83dc32c0a198fd0ca427b3b587f4ce']);
+        });
     });
 });

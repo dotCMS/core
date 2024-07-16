@@ -148,6 +148,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 Map.class)).getOrElse(new HashMap<String, Object>()));
         BeanUtils.copyProperties(action, row);
         action.setPushPublishActionlet(ActionletUtil.hasPushPublishActionlet(action));
+        action.setOnlyBatchActionlet(ActionletUtil.hasOnlyBatchActionlet(action));
         return action;
     }
 
