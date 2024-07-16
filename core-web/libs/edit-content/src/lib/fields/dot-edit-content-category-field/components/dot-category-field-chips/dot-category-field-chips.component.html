@@ -6,7 +6,11 @@
         [label]="category.value"
         tooltipPosition="top"
         styleClass="p-chip-sm"
-        (onRemove)="remove.emit(category.key)" />
+        (onRemove)="remove.emit(category.key)">
+        <ng-template pTemplate="removeicon">
+            <i class="pi pi-times"></i>
+        </ng-template>
+    </p-chip>
     } @if ($showAllBtn()) {
     <button
         (click)="toogleShowAll()"

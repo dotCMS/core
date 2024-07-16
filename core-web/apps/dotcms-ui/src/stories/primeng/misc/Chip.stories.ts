@@ -91,11 +91,11 @@ const meta: Meta<Args> = {
         severity: {
             options: [
                 DEFAULT,
-                'p-chip-warning',
-                'p-chip-error',
                 'p-chip-secondary',
-                'p-chip-fuchsia',
+                'p-chip-warning',
                 'p-chip-success',
+                'p-chip-error',
+                'p-chip-fuchsia',
                 'p-chip-gray',
                 'p-chip-white'
             ],

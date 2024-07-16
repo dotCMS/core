@@ -46,14 +46,14 @@
         background-color: $color-palette-yellow;
         color: $color-palette-gray-900;
         &.p-chip-outlined {
-            border-color: $color-yellow-shade;
+            border-color: $color-palette-yellow-shade;
             background-color: $white;
-            color: $color-yellow-shade;
+            color: $color-palette-yellow-shade;
         }
         &.p-chip-text {
-            border-color: $color-yellow-tint;
-            background-color: $color-yellow-tint;
-            color: $color-yellow-shade;
+            border-color: $color-palette-yellow-tint;
+            background-color: $color-palette-yellow-tint;
+            color: $color-palette-yellow-shade;
         }
     }
 
@@ -62,30 +62,30 @@
         background-color: $color-palette-red;
         color: $white;
         &.p-chip-outlined {
-            border-color: $color-red-shade;
+            border-color: $color-palette-red-shade;
             background-color: $white;
-            color: $color-red-shade;
+            color: $color-palette-red-shade;
         }
         &.p-chip-text {
-            border-color: $color-red-tint;
-            background-color: $color-red-tint;
-            color: $color-red-shade;
+            border-color: $color-palette-red-tint;
+            background-color: $color-palette-red-tint;
+            color: $color-palette-red-shade;
         }
     }
 
     &.p-chip-secondary {
-        border-color: $color-palette-secondary;
-        background-color: $color-palette-secondary;
+        border-color: $color-palette-purple;
+        background-color: $color-palette-purple;
         color: $white;
         &.p-chip-outlined {
-            border-color: $color-secondary-shade;
+            border-color: $color-palette-purple-shade;
             background-color: $white;
-            color: $color-secondary-shade;
+            color: $color-palette-purple-shade;
         }
         &.p-chip-text {
-            border-color: $color-secondary-tint;
-            background-color: $color-secondary-tint;
-            color: $color-secondary-shade;
+            border-color: $color-palette-purple-tint;
+            background-color: $color-palette-purple-tint;
+            color: $color-palette-purple-shade;
         }
     }
 
@@ -94,30 +94,30 @@
         background-color: $color-palette-fuchsia;
         color: $white;
         &.p-chip-outlined {
-            border-color: $color-fuchsia-shade;
+            border-color: $color-palette-fuchsia-shade;
             background-color: $white;
-            color: $color-fuchsia-shade;
+            color: $color-palette-fuchsia-shade;
         }
         &.p-chip-text {
-            border-color: $color-fuchsia-tint;
-            background-color: $color-fuchsia-tint;
-            color: $color-fuchsia-shade;
+            border-color: $color-palette-fuchsia-tint;
+            background-color: $color-palette-fuchsia-tint;
+            color: $color-palette-fuchsia-shade;
         }
     }
 
     &.p-chip-success {
-        border-color: $color-palette-success;
-        background-color: $color-palette-success;
+        border-color: $color-palette-green;
+        background-color: $color-palette-green;
         color: $color-palette-gray-900;
         &.p-chip-outlined {
-            border-color: $color-success-shade;
+            border-color: $color-palette-green-shade;
             background-color: $white;
-            color: $color-success-shade;
+            color: $color-palette-green-shade;
         }
         &.p-chip-text {
-            border-color: $color-success-tint;
-            background-color: $color-success-tint;
-            color: $color-success-shade;
+            border-color: $color-palette-green-tint;
+            background-color: $color-palette-green-tint;
+            color: $color-palette-green-shade;
         }
     }
 
@@ -126,13 +126,13 @@
         background-color: $color-palette-gray-300;
         color: $color-palette-gray-900;
         &.p-chip-outlined {
-            border-color: $color-gray-tint;
+            border-color: $color-palette-gray-tint;
             background-color: $white;
             color: $color-palette-gray-900;
         }
         &.p-chip-text {
-            border-color: $color-gray-tint;
-            background-color: $color-gray-tint;
+            border-color: $color-palette-gray-tint;
+            background-color: $color-palette-gray-tint;
             color: $color-palette-gray-900;
         }
     }

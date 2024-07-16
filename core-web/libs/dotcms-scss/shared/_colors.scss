@@ -69,6 +69,7 @@ $color-palette-white-op-70: var(--color-palette-white-op-70);
 $color-palette-white-op-80: var(--color-palette-white-op-80);
 $color-palette-white-op-90: var(--color-palette-white-op-90);
 
+// Gray sass variables
 $color-palette-gray-100: #fafafb;
 $color-palette-gray-200: #f3f3f4;
 $color-palette-gray-300: #ebecef;
@@ -78,8 +79,12 @@ $color-palette-gray-600: #8d92a5;
 $color-palette-gray-700: #6c7389;
 $color-palette-gray-800: #515667;
 $color-palette-gray-900: #3d404d;
-$color-palette-gray: $color-palette-gray-500;
 
+$color-palette-gray-shade: $color-palette-gray-300;
+$color-palette-gray: $color-palette-gray-500;
+$color-palette-gray-tint: rgba($color-palette-gray, 0.1);
+
+$color-palette-gray-op-08: rgba($color-palette-gray, 0.8);
 $color-palette-gray-op-10: rgba($color-palette-gray, 0.1);
 $color-palette-gray-op-15: rgba($color-palette-gray, 0.15);
 $color-palette-gray-op-20: rgba($color-palette-gray, 0.2);
@@ -91,144 +96,100 @@ $color-palette-gray-op-70: rgba($color-palette-gray, 0.7);
 $color-palette-gray-op-80: rgba($color-palette-gray, 0.8);
 $color-palette-gray-op-90: rgba($color-palette-gray, 0.9);
 
-$color-gray-shade: $color-palette-gray-300;
-$color-gray-tint: $color-palette-gray-op-15;
+$color-accessible-text-gray: $color-palette-gray-600;
+$color-accessible-text-gray-bg: $color-palette-gray-op-10;
+$color-alert-gray: $color-palette-gray;
+$color-alert-gray-light: $color-palette-gray-tint;
 
 // Yellow sass variables
+$color-palette-yellow-shade: #bd5001;
+$color-palette-yellow: #ffb444;
+$color-palette-yellow-tint: #fff8ec;
 
-$color-palette-yellow-100: #fff1db;
-$color-palette-yellow-200: #ffe0b3;
-$color-palette-yellow-300: #ffd28f;
-$color-palette-yellow-400: #ffc46b;
-$color-palette-yellow-500: #ffb444;
-$color-palette-yellow-600: #ff9b05;
-$color-palette-yellow-700: #c27400;
-$color-palette-yellow-800: #804d00;
-$color-palette-yellow-900: #422800;
-$color-palette-yellow: $color-palette-yellow-500;
+$color-palette-red-op-08: rgba($color-palette-yellow, 0.8);
+$color-palette-red-op-10: rgba($color-palette-yellow, 0.1);
+$color-palette-red-op-15: rgba($color-palette-yellow, 0.15);
+$color-palette-red-op-20: rgba($color-palette-yellow, 0.2);
 
-$color-palette-yellow-op-10: rgba($color-palette-yellow, 0.1);
-$color-palette-yellow-op-15: rgba($color-palette-yellow, 0.15);
-$color-palette-yellow-op-20: rgba($color-palette-yellow, 0.2);
-$color-palette-yellow-op-30: rgba($color-palette-yellow, 0.3);
-$color-palette-yellow-op-40: rgba($color-palette-yellow, 0.4);
-$color-palette-yellow-op-50: rgba($color-palette-yellow, 0.5);
-$color-palette-yellow-op-60: rgba($color-palette-yellow, 0.6);
-$color-palette-yellow-op-70: rgba($color-palette-yellow, 0.7);
-$color-palette-yellow-op-80: rgba($color-palette-yellow, 0.8);
-$color-palette-yellow-op-90: rgba($color-palette-yellow, 0.9);
-
-$color-yellow-shade: #bd5001;
-$color-yellow-tint: $color-palette-yellow-op-15;
+$color-accessible-text-yellow: $color-palette-yellow-shade;
+$color-accessible-text-yellow-bg: $color-palette-red-op-08;
+$color-alert-yellow: $color-palette-yellow;
+$color-alert-yellow-light: $color-palette-yellow-tint;
 
 // Red sass variables
-$color-palette-red-100: #fddbd8;
-$color-palette-red-200: #fbbcb6;
-$color-palette-red-300: #fa988f;
-$color-palette-red-400: #f8796d;
-$color-palette-red-500: #f65446;
-$color-palette-red-600: #f31f0c;
-$color-palette-red-700: #b41709;
-$color-palette-red-800: #7a1006;
-$color-palette-red-900: #3a0703;
-$color-palette-red: $color-palette-red-500;
+$color-palette-red-shade: #d82b2e;
+$color-palette-red: #f65446;
+$color-palette-red-tint: #fff6f6;
 
+$color-palette-red-op-08: rgba($color-palette-red, 0.8);
 $color-palette-red-op-10: rgba($color-palette-red, 0.1);
 $color-palette-red-op-15: rgba($color-palette-red, 0.15);
 $color-palette-red-op-20: rgba($color-palette-red, 0.2);
-$color-palette-red-op-30: rgba($color-palette-red, 0.3);
-$color-palette-red-op-40: rgba($color-palette-red, 0.4);
-$color-palette-red-op-50: rgba($color-palette-red, 0.5);
-$color-palette-red-op-60: rgba($color-palette-red, 0.6);
-$color-palette-red-op-70: rgba($color-palette-red, 0.7);
-$color-palette-red-op-80: rgba($color-palette-red, 0.8);
-$color-palette-red-op-90: rgba($color-palette-red, 0.9);
 
-$color-red-shade: #d82b2e;
-$color-red-tint: $color-palette-red-op-15;
+$color-accessible-text-red: $color-palette-red-shade;
+$color-accessible-text-red-bg: $color-palette-red-op-08;
+$color-alert-red: $color-palette-red;
+$color-alert-red-light: $color-palette-red-tint;
 
 // Fuchsia sass variables
-$color-palette-fuchsia-100: #f3d6fa;
-$color-palette-fuchsia-200: #e6aef4;
-$color-palette-fuchsia-300: #da85ef;
-$color-palette-fuchsia-400: #ce5cea;
-$color-palette-fuchsia-500: #c336e5;
-$color-palette-fuchsia-600: #a41ac7;
-$color-palette-fuchsia-700: #7b1395;
-$color-palette-fuchsia-800: #520d63;
-$color-palette-fuchsia-900: #290632;
-$color-palette-fuchsia: $color-palette-fuchsia-500;
+$color-palette-fuchsia-shade: #c336e5;
+$color-palette-fuchsia: #c336e5;
+$color-palette-fuchsia-tint: #f9ebfc;
 
+$color-palette-fuchsia-op-08: rgba($color-palette-fuchsia, 0.8);
 $color-palette-fuchsia-op-10: rgba($color-palette-fuchsia, 0.1);
 $color-palette-fuchsia-op-15: rgba($color-palette-fuchsia, 0.15);
 $color-palette-fuchsia-op-20: rgba($color-palette-fuchsia, 0.2);
-$color-palette-fuchsia-op-30: rgba($color-palette-fuchsia, 0.3);
-$color-palette-fuchsia-op-40: rgba($color-palette-fuchsia, 0.4);
-$color-palette-fuchsia-op-50: rgba($color-palette-fuchsia, 0.5);
-$color-palette-fuchsia-op-60: rgba($color-palette-fuchsia, 0.6);
-$color-palette-fuchsia-op-70: rgba($color-palette-fuchsia, 0.7);
-$color-palette-fuchsia-op-80: rgba($color-palette-fuchsia, 0.8);
-$color-palette-fuchsia-op-90: rgba($color-palette-fuchsia, 0.9);
 
-$color-fuchsia-shade: #b41cd9;
-$color-fuchsia-tint: $color-palette-fuchsia-op-15;
+$color-accessible-text-fuchsia: $color-palette-fuchsia-shade;
+$color-accessible-text-fuchsia-bg: $color-palette-fuchsia-op-08;
+$color-alert-fuchsia: $color-palette-fuchsia;
+$color-alert-fuchsia-light: $color-palette-fuchsia-tint;
 
-// Success sass variables
+// Green sass variables
+$color-palette-green-shade: #0b6948;
+$color-palette-green: #3ed97a;
+$color-palette-green-tint: #f5fdf8;
 
-$color-palette-success-100: #d9f7e4;
-$color-palette-success-200: #b2f0ca;
-$color-palette-success-300: #8ce8af;
-$color-palette-success-400: #66e195;
-$color-palette-success-500: #3ed97a;
-$color-palette-success-600: #25bb5f;
-$color-palette-success-700: #1c8d47;
-$color-palette-success-800: #125e2f;
-$color-palette-success-900: #092f18;
-$color-palette-success: $color-palette-success-500;
+$color-palette-green-op-08: rgba($color-palette-green, 0.8);
+$color-palette-green-op-10: rgba($color-palette-green, 0.1);
+$color-palette-green-op-15: rgba($color-palette-green, 0.15);
+$color-palette-green-op-20: rgba($color-palette-green, 0.2);
 
-$color-palette-success-op-10: rgba($color-palette-success, 0.1);
-$color-palette-success-op-15: rgba($color-palette-success, 0.15);
-$color-palette-success-op-20: rgba($color-palette-success, 0.2);
-$color-palette-success-op-30: rgba($color-palette-success, 0.3);
-$color-palette-success-op-40: rgba($color-palette-success, 0.4);
-$color-palette-success-op-50: rgba($color-palette-success, 0.5);
-$color-palette-success-op-60: rgba($color-palette-success, 0.6);
-$color-palette-success-op-70: rgba($color-palette-success, 0.7);
-$color-palette-success-op-80: rgba($color-palette-success, 0.8);
-$color-palette-success-op-90: rgba($color-palette-success, 0.9);
+$color-accessible-text-green: $color-palette-green-shade;
+$color-accessible-text-green-bg: $color-palette-green-op-08;
+$color-alert-green: $color-palette-green;
+$color-alert-green-light: $color-palette-green-tint;
 
-$color-success-shade: #0b6948;
-$color-success-tint: $color-palette-success-op-15;
+// Purple sass variables
+$color-palette-purple-shade: $color-palette-secondary-700;
+$color-palette-purple: $color-palette-secondary-500;
+$color-palette-purple-tint: $color-palette-secondary-100;
 
-$color-alert-yellow: #ffb444;
-$color-alert-yellow-light: #fff8ec;
-$color-accessible-text-yellow: $color-palette-yellow-600;
+$color-palette-purple-op-08: rgba($color-palette-purple, 0.8);
+$color-palette-purple-op-10: rgba($color-palette-purple, 0.1);
+$color-palette-purple-op-15: rgba($color-palette-purple, 0.15);
+$color-palette-purple-op-20: rgba($color-palette-purple, 0.2);
 
-$color-alert-green: #3ed97a;
-$color-alert-green-light: #f5fdf8;
-$color-alert-red: #f65446;
-$color-alert-red-light: #fff6f6;
-$color-alert-fuchsia: hsla(288, 77%, 55%, 0.08);
+$color-accessible-text-purple: $color-palette-purple-shade;
+$color-accessible-text-purple-bg: $color-palette-purple-op-08;
+$color-alert-purple: $color-palette-purple;
+$color-alert-purple-light: $color-palette-purple-tint;
 
-$color-accessible-text-red: #d82b2e;
-$color-accessible-text-red-bg: rgba($color-accessible-text-red, 0.8);
-$color-accessible-text-red-op-10: rgba($color-accessible-text-red, 0.1);
-$color-accessible-text-red-op-20: rgba($color-accessible-text-red, 0.2);
+// Blue sass variables
+$color-palette-blue-shade: $color-palette-primary-600;
+$color-palette-blue: $color-palette-primary-500;
+$color-palette-blue-tint: $color-palette-primary-200;
 
-$color-accessible-text-green: #0b6948;
-$color-accessible-text-green-bg: rgba($color-accessible-text-green, 0.8);
+$color-palette-blue-op-08: rgba($color-palette-blue, 0.8);
+$color-palette-blue-op-10: rgba($color-palette-blue, 0.1);
+$color-palette-blue-op-15: rgba($color-palette-blue, 0.15);
+$color-palette-blue-op-20: rgba($color-palette-blue, 0.2);
 
-$color-accessible-text-purple: $color-palette-secondary-600;
-$color-accessible-text-purple-bg: rgba($color-accessible-text-purple, 0.8);
-
-$color-accessible-text-blue: $color-palette-primary-600;
-$color-accessible-text-blue-bg: $color-palette-primary-op-10;
-
-$color-accessible-text-yellow: #bd5001;
-$color-accessible-text-yellow-bg: rgba($color-accessible-text-yellow, 0.15);
-
-$color-accessible-text-gray: $color-palette-gray-600;
-$color-accessible-text-gray-bg: $color-palette-gray-op-10;
+$color-accessible-text-blue: $color-palette-blue-shade;
+$color-accessible-text-blue-bg: $color-palette-blue-op-08;
+$color-alert-blue: $color-palette-blue;
+$color-alert-blue-light: $color-palette-blue-tint;
 
 // LEGACY COLORS
 $brand-background: var(--color-palette-primary-800);
