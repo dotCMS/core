@@ -60,7 +60,7 @@
     &.p-chip-error {
         border-color: $color-palette-red;
         background-color: $color-palette-red;
-        color: $color-palette-gray-900;
+        color: $white;
         &.p-chip-outlined {
             border-color: $color-red-shade;
             background-color: $white;
@@ -108,7 +108,7 @@
     &.p-chip-success {
         border-color: $color-palette-success;
         background-color: $color-palette-success;
-        color: $white;
+        color: $color-palette-gray-900;
         &.p-chip-outlined {
             border-color: $color-success-shade;
             background-color: $white;
@@ -122,25 +122,25 @@
     }
 
     &.p-chip-gray {
-        border-color: $color-palette-gray;
-        background-color: $color-palette-gray;
-        color: $white;
+        border-color: $color-palette-gray-300;
+        background-color: $color-palette-gray-300;
+        color: $color-palette-gray-900;
         &.p-chip-outlined {
-            border-color: $color-gray-shade;
+            border-color: $color-gray-tint;
             background-color: $white;
-            color: $color-gray-shade;
+            color: $color-palette-gray-900;
         }
         &.p-chip-text {
             border-color: $color-gray-tint;
             background-color: $color-gray-tint;
-            color: $color-gray-shade;
+            color: $color-palette-gray-900;
         }
     }
 
     &.p-chip-white {
         border-color: $white;
         background-color: $white;
-        color: $white;
+        color: $color-palette-gray-900;
     }
 
     &.p-chip-sm {

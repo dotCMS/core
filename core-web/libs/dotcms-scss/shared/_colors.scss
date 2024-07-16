@@ -81,6 +81,7 @@ $color-palette-gray-900: #3d404d;
 $color-palette-gray: $color-palette-gray-500;
 
 $color-palette-gray-op-10: rgba($color-palette-gray, 0.1);
+$color-palette-gray-op-15: rgba($color-palette-gray, 0.15);
 $color-palette-gray-op-20: rgba($color-palette-gray, 0.2);
 $color-palette-gray-op-30: rgba($color-palette-gray, 0.3);
 $color-palette-gray-op-40: rgba($color-palette-gray, 0.4);
@@ -89,6 +90,9 @@ $color-palette-gray-op-60: rgba($color-palette-gray, 0.6);
 $color-palette-gray-op-70: rgba($color-palette-gray, 0.7);
 $color-palette-gray-op-80: rgba($color-palette-gray, 0.8);
 $color-palette-gray-op-90: rgba($color-palette-gray, 0.9);
+
+$color-gray-shade: $color-palette-gray-300;
+$color-gray-tint: $color-palette-gray-op-15;
 
 // Yellow sass variables
 
@@ -103,123 +107,98 @@ $color-palette-yellow-800: #804d00;
 $color-palette-yellow-900: #422800;
 $color-palette-yellow: $color-palette-yellow-500;
 
-$color-palette-yellow-op-10: rgba($color-palette-yellow-500, 0.1);
-$color-palette-yellow-op-15: rgba($color-palette-yellow-500, 0.15);
-$color-palette-yellow-op-20: rgba($color-palette-yellow-500, 0.2);
-$color-palette-yellow-op-30: rgba($color-palette-yellow-500, 0.3);
-$color-palette-yellow-op-40: rgba($color-palette-yellow-500, 0.4);
-$color-palette-yellow-op-50: rgba($color-palette-yellow-500, 0.5);
-$color-palette-yellow-op-60: rgba($color-palette-yellow-500, 0.6);
-$color-palette-yellow-op-70: rgba($color-palette-yellow-500, 0.7);
-$color-palette-yellow-op-80: rgba($color-palette-yellow-500, 0.8);
-$color-palette-yellow-op-90: rgba($color-palette-yellow-500, 0.9);
+$color-palette-yellow-op-10: rgba($color-palette-yellow, 0.1);
+$color-palette-yellow-op-15: rgba($color-palette-yellow, 0.15);
+$color-palette-yellow-op-20: rgba($color-palette-yellow, 0.2);
+$color-palette-yellow-op-30: rgba($color-palette-yellow, 0.3);
+$color-palette-yellow-op-40: rgba($color-palette-yellow, 0.4);
+$color-palette-yellow-op-50: rgba($color-palette-yellow, 0.5);
+$color-palette-yellow-op-60: rgba($color-palette-yellow, 0.6);
+$color-palette-yellow-op-70: rgba($color-palette-yellow, 0.7);
+$color-palette-yellow-op-80: rgba($color-palette-yellow, 0.8);
+$color-palette-yellow-op-90: rgba($color-palette-yellow, 0.9);
 
 $color-yellow-shade: #bd5001;
 $color-yellow-tint: $color-palette-yellow-op-15;
 
 // Red sass variables
+$color-palette-red-100: #fddbd8;
+$color-palette-red-200: #fbbcb6;
+$color-palette-red-300: #fa988f;
+$color-palette-red-400: #f8796d;
+$color-palette-red-500: #f65446;
+$color-palette-red-600: #f31f0c;
+$color-palette-red-700: #b41709;
+$color-palette-red-800: #7a1006;
+$color-palette-red-900: #3a0703;
+$color-palette-red: $color-palette-red-500;
 
-$color-palette-red-100: var(--color-palette-red-100);
-$color-palette-red-200: var(--color-palette-red-200);
-$color-palette-red-300: var(--color-palette-red-300);
-$color-palette-red-400: var(--color-palette-red-400);
-$color-palette-red-500: var(--color-palette-red-500);
-$color-palette-red-600: var(--color-palette-red-600);
-$color-palette-red-700: var(--color-palette-red-700);
-$color-palette-red-800: var(--color-palette-red-800);
-$color-palette-red-900: var(--color-palette-red-900);
-$color-palette-red: var(--color-palette-red);
+$color-palette-red-op-10: rgba($color-palette-red, 0.1);
+$color-palette-red-op-15: rgba($color-palette-red, 0.15);
+$color-palette-red-op-20: rgba($color-palette-red, 0.2);
+$color-palette-red-op-30: rgba($color-palette-red, 0.3);
+$color-palette-red-op-40: rgba($color-palette-red, 0.4);
+$color-palette-red-op-50: rgba($color-palette-red, 0.5);
+$color-palette-red-op-60: rgba($color-palette-red, 0.6);
+$color-palette-red-op-70: rgba($color-palette-red, 0.7);
+$color-palette-red-op-80: rgba($color-palette-red, 0.8);
+$color-palette-red-op-90: rgba($color-palette-red, 0.9);
 
-$color-palette-red-op-10: var(--color-palette-red-op-10);
-$color-palette-red-op-20: var(--color-palette-red-op-20);
-$color-palette-red-op-30: var(--color-palette-red-op-30);
-$color-palette-red-op-40: var(--color-palette-red-op-40);
-$color-palette-red-op-50: var(--color-palette-red-op-50);
-$color-palette-red-op-60: var(--color-palette-red-op-60);
-$color-palette-red-op-70: var(--color-palette-red-op-70);
-$color-palette-red-op-80: var(--color-palette-red-op-80);
-$color-palette-red-op-90: var(--color-palette-red-op-90);
-
-$color-red-shade: var(--color-red-shade);
-$color-red-tint: var(--color-red-tint);
+$color-red-shade: #d82b2e;
+$color-red-tint: $color-palette-red-op-15;
 
 // Fuchsia sass variables
+$color-palette-fuchsia-100: #f3d6fa;
+$color-palette-fuchsia-200: #e6aef4;
+$color-palette-fuchsia-300: #da85ef;
+$color-palette-fuchsia-400: #ce5cea;
+$color-palette-fuchsia-500: #c336e5;
+$color-palette-fuchsia-600: #a41ac7;
+$color-palette-fuchsia-700: #7b1395;
+$color-palette-fuchsia-800: #520d63;
+$color-palette-fuchsia-900: #290632;
+$color-palette-fuchsia: $color-palette-fuchsia-500;
 
-$color-palette-fuchsia-100: var(--color-palette-fuchsia-100);
-$color-palette-fuchsia-200: var(--color-palette-fuchsia-200);
-$color-palette-fuchsia-300: var(--color-palette-fuchsia-300);
-$color-palette-fuchsia-400: var(--color-palette-fuchsia-400);
-$color-palette-fuchsia-500: var(--color-palette-fuchsia-500);
-$color-palette-fuchsia-600: var(--color-palette-fuchsia-600);
-$color-palette-fuchsia-700: var(--color-palette-fuchsia-700);
-$color-palette-fuchsia-800: var(--color-palette-fuchsia-800);
-$color-palette-fuchsia-900: var(--color-palette-fuchsia-900);
-$color-palette-fuchsia: var(--color-palette-fuchsia);
+$color-palette-fuchsia-op-10: rgba($color-palette-fuchsia, 0.1);
+$color-palette-fuchsia-op-15: rgba($color-palette-fuchsia, 0.15);
+$color-palette-fuchsia-op-20: rgba($color-palette-fuchsia, 0.2);
+$color-palette-fuchsia-op-30: rgba($color-palette-fuchsia, 0.3);
+$color-palette-fuchsia-op-40: rgba($color-palette-fuchsia, 0.4);
+$color-palette-fuchsia-op-50: rgba($color-palette-fuchsia, 0.5);
+$color-palette-fuchsia-op-60: rgba($color-palette-fuchsia, 0.6);
+$color-palette-fuchsia-op-70: rgba($color-palette-fuchsia, 0.7);
+$color-palette-fuchsia-op-80: rgba($color-palette-fuchsia, 0.8);
+$color-palette-fuchsia-op-90: rgba($color-palette-fuchsia, 0.9);
 
-$color-palette-fuchsia-op-10: var(--color-palette-fuchsia-op-10);
-$color-palette-fuchsia-op-20: var(--color-palette-fuchsia-op-20);
-$color-palette-fuchsia-op-30: var(--color-palette-fuchsia-op-30);
-$color-palette-fuchsia-op-40: var(--color-palette-fuchsia-op-40);
-$color-palette-fuchsia-op-50: var(--color-palette-fuchsia-op-50);
-$color-palette-fuchsia-op-60: var(--color-palette-fuchsia-op-60);
-$color-palette-fuchsia-op-70: var(--color-palette-fuchsia-op-70);
-$color-palette-fuchsia-op-80: var(--color-palette-fuchsia-op-80);
-$color-palette-fuchsia-op-90: var(--color-palette-fuchsia-op-90);
-
-$color-fuchsia-shade: var(--color-fuchsia-shade);
-$color-fuchsia-tint: var(--color-fuchsia-tint);
+$color-fuchsia-shade: #b41cd9;
+$color-fuchsia-tint: $color-palette-fuchsia-op-15;
 
 // Success sass variables
 
-$color-palette-success-100: var(--color-palette-success-100);
-$color-palette-success-200: var(--color-palette-success-200);
-$color-palette-success-300: var(--color-palette-success-300);
-$color-palette-success-400: var(--color-palette-success-400);
-$color-palette-success-500: var(--color-palette-success-500);
-$color-palette-success-600: var(--color-palette-success-600);
-$color-palette-success-700: var(--color-palette-success-700);
-$color-palette-success-800: var(--color-palette-success-800);
-$color-palette-success-900: var(--color-palette-success-900);
-$color-palette-success: var(--color-palette-success);
+$color-palette-success-100: #d9f7e4;
+$color-palette-success-200: #b2f0ca;
+$color-palette-success-300: #8ce8af;
+$color-palette-success-400: #66e195;
+$color-palette-success-500: #3ed97a;
+$color-palette-success-600: #25bb5f;
+$color-palette-success-700: #1c8d47;
+$color-palette-success-800: #125e2f;
+$color-palette-success-900: #092f18;
+$color-palette-success: $color-palette-success-500;
 
-$color-palette-success-op-10: var(--color-palette-success-op-10);
-$color-palette-success-op-20: var(--color-palette-success-op-20);
-$color-palette-success-op-30: var(--color-palette-success-op-30);
-$color-palette-success-op-40: var(--color-palette-success-op-40);
-$color-palette-success-op-50: var(--color-palette-success-op-50);
-$color-palette-success-op-60: var(--color-palette-success-op-60);
-$color-palette-success-op-70: var(--color-palette-success-op-70);
-$color-palette-success-op-80: var(--color-palette-success-op-80);
-$color-palette-success-op-90: var(--color-palette-success-op-90);
+$color-palette-success-op-10: rgba($color-palette-success, 0.1);
+$color-palette-success-op-15: rgba($color-palette-success, 0.15);
+$color-palette-success-op-20: rgba($color-palette-success, 0.2);
+$color-palette-success-op-30: rgba($color-palette-success, 0.3);
+$color-palette-success-op-40: rgba($color-palette-success, 0.4);
+$color-palette-success-op-50: rgba($color-palette-success, 0.5);
+$color-palette-success-op-60: rgba($color-palette-success, 0.6);
+$color-palette-success-op-70: rgba($color-palette-success, 0.7);
+$color-palette-success-op-80: rgba($color-palette-success, 0.8);
+$color-palette-success-op-90: rgba($color-palette-success, 0.9);
 
-$color-success-shade: var(--color-success-shade);
-$color-success-tint: var(--color-success-tint);
-
-// Gray sass variables
-
-$color-palette-gray-100: var(--color-palette-gray-100);
-$color-palette-gray-200: var(--color-palette-gray-200);
-$color-palette-gray-300: var(--color-palette-gray-300);
-$color-palette-gray-400: var(--color-palette-gray-400);
-$color-palette-gray-500: var(--color-palette-gray-500);
-$color-palette-gray-600: var(--color-palette-gray-600);
-$color-palette-gray-700: var(--color-palette-gray-700);
-$color-palette-gray-800: var(--color-palette-gray-800);
-$color-palette-gray-900: var(--color-palette-gray-900);
-$color-palette-gray: var(--color-palette-gray);
-
-$color-palette-gray-op-10: var(--color-palette-gray-op-10);
-$color-palette-gray-op-20: var(--color-palette-gray-op-20);
-$color-palette-gray-op-30: var(--color-palette-gray-op-30);
-$color-palette-gray-op-40: var(--color-palette-gray-op-40);
-$color-palette-gray-op-50: var(--color-palette-gray-op-50);
-$color-palette-gray-op-60: var(--color-palette-gray-op-60);
-$color-palette-gray-op-70: var(--color-palette-gray-op-70);
-$color-palette-gray-op-80: var(--color-palette-gray-op-80);
-$color-palette-gray-op-90: var(--color-palette-gray-op-90);
-
-$color-gray-shade: var(--color-gray-shade);
-$color-gray-tint: var(--color-gray-tint);
+$color-success-shade: #0b6948;
+$color-success-tint: $color-palette-success-op-15;
 
 $color-alert-yellow: #ffb444;
 $color-alert-yellow-light: #fff8ec;
@@ -482,148 +461,6 @@ $success: $color-accessible-text-green;
         var(--color-white-l),
         0.9
     );
-
-    --color-palette-gray-100: #fafafb;
-    --color-palette-gray-200: #f3f3f4;
-    --color-palette-gray-300: #ebecef;
-    --color-palette-gray-400: #d1d4db;
-    --color-palette-gray-500: #afb3c0;
-    --color-palette-gray-600: #8d92a5;
-    --color-palette-gray-700: #6c7389;
-    --color-palette-gray-800: #515667;
-    --color-palette-gray-900: #3d404d;
-    --color-palette-gray: var(--color-palette-gray-500);
-
-    // Yellow
-
-    --color-palette-yellow-100: $color-palette-yellow-100;
-    --color-palette-yellow-200: $color-palette-yellow-200;
-    --color-palette-yellow-300: $color-palette-yellow-300;
-    --color-palette-yellow-400: $color-palette-yellow-400;
-    --color-palette-yellow-500: $color-palette-yellow-500;
-    --color-palette-yellow-600: $color-palette-yellow-600;
-    --color-palette-yellow-700: $color-palette-yellow-700;
-    --color-palette-yellow-800: $color-palette-yellow-800;
-    --color-palette-yellow-900: $color-palette-yellow-900;
-    --color-palette-yellow: $color-palette-yellow;
-
-    --color-palette-yellow-op-10: $color-palette-yellow-op-10;
-    --color-palette-yellow-op-15: $color-palette-yellow-op-15;
-    --color-palette-yellow-op-20: $color-palette-yellow-op-20;
-    --color-palette-yellow-op-30: $color-palette-yellow-op-30;
-    --color-palette-yellow-op-40: $color-palette-yellow-op-40;
-    --color-palette-yellow-op-50: $color-palette-yellow-op-50;
-    --color-palette-yellow-op-60: $color-palette-yellow-op-60;
-    --color-palette-yellow-op-70: $color-palette-yellow-op-70;
-    --color-palette-yellow-op-80: $color-palette-yellow-op-80;
-    --color-palette-yellow-op-90: $color-palette-yellow-op-90;
-
-    --color-yellow-shade: $color-yellow-shade;
-    --color-yellow-tint: $color-yellow-tint;
-
-    // Red
-
-    --color-palette-red-100: #fddbd8;
-    --color-palette-red-200: #fbbcb6;
-    --color-palette-red-300: #fa988f;
-    --color-palette-red-400: #f8796d;
-    --color-palette-red-500: #f65446;
-    --color-palette-red-600: #f31f0c;
-    --color-palette-red-700: #b41709;
-    --color-palette-red-800: #7a1006;
-    --color-palette-red-900: #3a0703;
-    --color-palette-red: var(--color-palette-red-500);
-
-    --color-palette-red-op-10: rgba(var(--color-palette-red), 0.1);
-    --color-palette-red-op-20: rgba(var(--color-palette-red), 0.2);
-    --color-palette-red-op-30: rgba(var(--color-palette-red), 0.3);
-    --color-palette-red-op-40: rgba(var(--color-palette-red), 0.4);
-    --color-palette-red-op-50: rgba(var(--color-palette-red), 0.5);
-    --color-palette-red-op-60: rgba(var(--color-palette-red), 0.6);
-    --color-palette-red-op-70: rgba(var(--color-palette-red), 0.7);
-    --color-palette-red-op-80: rgba(var(--color-palette-red), 0.8);
-    --color-palette-red-op-90: rgba(var(--color-palette-red), 0.9);
-
-    --color-red-shade: var(--color-palette-red-600);
-    --color-red-tint: var(--color-palette-red-200);
-
-    // Fuchsia
-
-    --color-palette-fuchsia-100: #f3d6fa;
-    --color-palette-fuchsia-200: #e6aef4;
-    --color-palette-fuchsia-300: #da85ef;
-    --color-palette-fuchsia-400: #ce5cea;
-    --color-palette-fuchsia-500: #c336e5;
-    --color-palette-fuchsia-600: #a41ac7;
-    --color-palette-fuchsia-700: #7b1395;
-    --color-palette-fuchsia-800: #520d63;
-    --color-palette-fuchsia-900: #290632;
-    --color-palette-fuchsia: var(--color-palette-fuchsia-500);
-
-    --color-palette-fuchsia-op-10: rgba(var(--color-palette-fuchsia), 0.1);
-    --color-palette-fuchsia-op-20: rgba(var(--color-palette-fuchsia), 0.2);
-    --color-palette-fuchsia-op-30: rgba(var(--color-palette-fuchsia), 0.3);
-    --color-palette-fuchsia-op-40: rgba(var(--color-palette-fuchsia), 0.4);
-    --color-palette-fuchsia-op-50: rgba(var(--color-palette-fuchsia), 0.5);
-    --color-palette-fuchsia-op-60: rgba(var(--color-palette-fuchsia), 0.6);
-    --color-palette-fuchsia-op-70: rgba(var(--color-palette-fuchsia), 0.7);
-    --color-palette-fuchsia-op-80: rgba(var(--color-palette-fuchsia), 0.8);
-    --color-palette-fuchsia-op-90: rgba(var(--color-palette-fuchsia), 0.9);
-
-    --color-fuchsia-shade: var(--color-palette-fuchsia-600);
-    --color-fuchsia-tint: var(--color-palette-fuchsia-200);
-
-    // Sucess
-
-    --color-palett-success-100: #d9f7e4;
-    --color-palett-success-200: #b2f0ca;
-    --color-palett-success-300: #8ce8af;
-    --color-palett-success-400: #66e195;
-    --color-palett-success-500: #3ed97a;
-    --color-palett-success-600: #25bb5f;
-    --color-palett-success-700: #1c8d47;
-    --color-palett-success-800: #125e2f;
-    --color-palett-success-900: #092f18;
-    --color-palette-success: var(--color-palette-success-500);
-
-    --color-palette-success-op-10: rgba(var(--color-palette-success), 0.1);
-    --color-palette-success-op-20: rgba(var(--color-palette-success), 0.2);
-    --color-palette-success-op-30: rgba(var(--color-palette-success), 0.3);
-    --color-palette-success-op-40: rgba(var(--color-palette-success), 0.4);
-    --color-palette-success-op-50: rgba(var(--color-palette-success), 0.5);
-    --color-palette-success-op-60: rgba(var(--color-palette-success), 0.6);
-    --color-palette-success-op-70: rgba(var(--color-palette-success), 0.7);
-    --color-palette-success-op-80: rgba(var(--color-palette-success), 0.8);
-    --color-palette-success-op-90: rgba(var(--color-palette-success), 0.9);
-
-    --color-success-shade: var(--color-palette-success-600);
-    --color-success-tint: var(--color-palette-success-200);
-
-    // Gray
-
-    --color-palett-gray-100: #eeeff2;
-    --color-palett-gray-200: #e0e1e6;
-    --color-palett-gray-300: #ced1d9;
-    --color-palett-gray-400: #c0c3ce;
-    --color-palett-gray-500: #afb3c0;
-    --color-palett-gray-600: #878da1;
-    --color-palett-gray-700: #61677b;
-    --color-palett-gray-800: #414553;
-    --color-palett-gray-900: #1f2128;
-    --color-palette-gray: var(--color-palette-gray-500);
-
-    --color-palette-gray-op-10: rgba(var(--color-gray-success), 0.1);
-    --color-palette-gray-op-20: rgba(var(--color-gray-success), 0.2);
-    --color-palette-gray-op-30: rgba(var(--color-gray-success), 0.3);
-    --color-palette-gray-op-40: rgba(var(--color-gray-success), 0.4);
-    --color-palette-gray-op-50: rgba(var(--color-gray-success), 0.5);
-    --color-palette-gray-op-60: rgba(var(--color-gray-success), 0.6);
-    --color-palette-gray-op-70: rgba(var(--color-gray-success), 0.7);
-    --color-palette-gray-op-80: rgba(var(--color-gray-success), 0.8);
-    --color-palette-gray-op-90: rgba(var(--color-gray-success), 0.9);
-
-    --color-gray-shade: var(--color-palette-gray-600);
-    --color-gray-tint: var(--color-palette-gray-200);
 
     /**
   * @tokens-end
