@@ -149,9 +149,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         (state) => state.editorState ?? EDITOR_STATE.LOADING
     );
     private readonly currentExperiment$ = this.select((state) => state.currentExperiment);
+
     private readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
     private readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
     private readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
+
     private readonly page$ = this.select((state) => state.editor.page);
     private readonly siteId$ = this.select((state) => state.editor.site.identifier);
     private readonly languageId$ = this.select((state) => state.editor.viewAs.language.id);
@@ -227,8 +229,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         })
     );
     readonly editorMode$ = this.select((state) => state.editorData.mode);
+
+    // THIS IS FROM THE TOOLBAR
     readonly editorData$ = this.select((state) => state.editorData);
+
     readonly pageRendered$ = this.select((state) => state.editor.page.rendered);
+
+    // I need to get rid of this somehow
     readonly shouldReload$ = this.select((state) => state.shouldReload);
 
     readonly contentState$ = this.select(
@@ -301,25 +308,33 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 state: currentState,
                 dragItem,
                 showContentletTools:
-                    editorData.canEditVariant &&
                     !!contentletArea &&
-                    !editorData.device &&
-                    editor.page.canEdit &&
-                    (currentState === EDITOR_STATE.IDLE ||
-                        currentState === EDITOR_STATE.DRAGGING) &&
-                    !editorData.page.isLocked,
-                showDropzone:
+                    // Page can be edited
                     editorData.canEditVariant &&
+                    editor.page.canEdit &&
+                    !editorData.page.isLocked &&
+                    // editor Can edit
+                    !editorData.device &&
+                    (currentState === EDITOR_STATE.IDLE || currentState === EDITOR_STATE.DRAGGING),
+                showDropzone:
+                    // Page can be edited
+                    editorData.canEditVariant &&
+                    editor.page.canEdit &&
+                    !editorData.page.isLocked &&
+                    // Drag is Active
                     !editorData.device &&
                     (currentState === EDITOR_STATE.DRAGGING ||
                         currentState === EDITOR_STATE.SCROLL_DRAG),
                 showPalette:
-                    editorData.canEditVariant &&
                     isEnterpriseLicense &&
+                    // page can be edited
+                    editorData.canEditVariant &&
+                    editor.page.canEdit &&
+                    !editorData.page.isLocked &&
+                    // Editor is in edit state
                     (editorData.mode === EDITOR_MODE.EDIT ||
                         editorData.mode === EDITOR_MODE.EDIT_VARIANT ||
-                        editorData.mode === EDITOR_MODE.INLINE_EDITING) &&
-                    editor.page.canEdit
+                        editorData.mode === EDITOR_MODE.INLINE_EDITING)
             };
         }
     );
@@ -331,10 +346,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         (editorState, previewURL, pureURL) => ({
             ...editorState,
             showWorkflowActions:
+                // Editor can edit
                 editorState.editorData.mode === EDITOR_MODE.EDIT ||
                 editorState.editorData.mode === EDITOR_MODE.INLINE_EDITING,
             showInfoDisplay:
+                // Editor cannot edit
                 !editorState.editorData.canEditPage ||
+                // Editor is not in edit
                 (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
                     editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING),
             previewURL,
@@ -448,15 +466,34 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                         isLocked
                                     });
 
+                                    // In my approach the editor will consume from 2 store, Global and Toolbar, that will be merged in just one coming from the toolbar
+                                    // And the only thing it will do is to tell the global store to reload the page
+                                    // and update the bounds, contentletArea and editorState
+                                    // Anything else will be handled by the global and the toolbar
+
+                                    // Editor store should not fetch, nor manipulate the global or toolbar store
+                                    // It should only consume from them
+
                                     return this.setState({
-                                        currentExperiment: experiment,
-                                        clientHost: params.clientHost,
-                                        editor: pageData,
-                                        isEnterpriseLicense: licenseData,
-                                        editorState: EDITOR_STATE.IDLE,
-                                        bounds: [],
-                                        contentletArea: null,
+                                        // This should page instead of editor
+                                        editor: pageData, // Global
+                                        isEnterpriseLicense: licenseData, // Global
+                                        languages, // Global
+                                        // The params will live in the global
+                                        // so I can have a single source of truth
+                                        // params: {
+                                        //     //...
+                                        //     clientHost: 'host'
+                                        // },
+
+                                        clientHost: params.clientHost, // Editor Specific
+                                        editorState: EDITOR_STATE.IDLE, // Editor Specific, but depends in the global cycle for loading and idle states
+                                        bounds: [], // Editor Specific
+                                        contentletArea: null, // Editor Specific
+
+                                        currentExperiment: experiment, // Toolbar specific
                                         editorData: {
+                                            // Toolbar specific, we can consume this from the toolbar
                                             mode,
                                             canEditVariant,
                                             canEditPage: pageData.page.canEdit,
@@ -467,8 +504,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                                 lockedByUser: pageData.page.lockedByName
                                             }
                                         },
-                                        shouldReload: true,
-                                        languages
+
+                                        shouldReload: true // Probably will get rid of this
                                     });
                                 }
                             })
