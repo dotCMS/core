@@ -140,15 +140,31 @@ public interface EmbeddingsAPI {
     void initEmbeddingsTable();
 
     /**
-     * this method takes a snippet of content and will try to see if we have already generated embeddings for it.
-     * It checks the cache first, and returns if it finds it there.  Then it checks the db to see if we have already
-     * saved this chunk of content before.  If we have, we reuse those same embeddings rather than making a
-     * remote request $$$ to OpenAI for new Embeddings
+     * this method takes a snippet of content and will try to see if we have already generated
+     * embeddings for it. It checks the cache first, and returns if it finds it there.  Then it
+     * checks the db to see if we have already saved this chunk of content before.  If we have, we
+     * reuse those same embeddings rather than making a remote request $$$ to OpenAI for new
+     * Embeddings
      *
-     * @param content
+     * @param content The content that will be tokenized and sent to OpenAI.
+     *
      * @return Tuple(Count of Tokens Input, List of Embeddings Output)
      */
-    Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(String content);
+    Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(final String content);
+
+    /**
+     * this method takes a snippet of content and will try to see if we have already generated
+     * embeddings for it. It checks the cache first, and returns if it finds it there.  Then it
+     * checks the db to see if we have already saved this chunk of content before.  If we have, we
+     * reuse those same embeddings rather than making a remote request $$$ to OpenAI for new
+     * Embeddings
+     *
+     * @param contentId The ID of the Contentlet being sent to the OpenAI Endpoint.
+     * @param content   The actual indexable data that will be tokenized and sent to OpenAI service.
+     *
+     * @return Tuple(Count of Tokens Input, List of Embeddings Output)
+     */
+    Tuple2<Integer, List<Float>> pullOrGenerateEmbeddings(final String contentId, final String content);
 
     /**
      * Checks if the embeddings for the given inode, indexName, and extractedText already exist in the database.
