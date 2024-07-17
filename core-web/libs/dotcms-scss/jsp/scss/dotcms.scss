@@ -60,6 +60,29 @@ body {
     margin: 0;
     padding: 0;
 }
+span,
+label,
+div,
+dl,
+dt,
+dd,
+ul,
+ol,
+li,
+pre,
+code,
+form,
+fieldset,
+legend,
+input,
+button,
+textarea,
+p,
+blockquote,
+th,
+td {
+    font-size: $font-size-md;
+}
 
 .material-icons {
     font-family: "Material Icons", sans-serif;

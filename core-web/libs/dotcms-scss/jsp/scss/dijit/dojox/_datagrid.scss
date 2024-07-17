@@ -12,6 +12,11 @@
 
         .dojoxGridRowTable {
             border-bottom: 1px solid $color-palette-gray-400;
+
+            tr,
+            td {
+                font-size: 2.9375rem;
+            }
         }
 
         .dojoxGridArrowButtonChar {
@@ -50,7 +55,8 @@
     .dojoxGridHeader {
         .dojoxGridRowTable .dojoxGridCell {
             font-family: $font-default;
-            padding: 10px $spacing-1;
+            padding: 0.1875rem $spacing-1;
+            height: 2.5rem;
         }
     }
 

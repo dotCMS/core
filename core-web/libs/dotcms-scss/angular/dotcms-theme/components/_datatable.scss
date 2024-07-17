@@ -103,7 +103,7 @@
 .p-datatable .p-datatable-tbody > tr {
     background: $white;
     color: $black;
-    height: 4rem;
+    height: $field-height-md;
     transition: none;
     outline: 0 none;
     cursor: pointer;
@@ -114,7 +114,7 @@
     text-align: left;
     border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
-    padding: $spacing-1 $spacing-2;
+    padding: 0.1875rem $spacing-2;
 
     &:first-child {
         padding-left: $spacing-5;
@@ -135,10 +135,7 @@
     border: 0 none;
     background: transparent;
     border-radius: 50%;
-    transition:
-        background-color 0.2s,
-        color 0.2s,
-        box-shadow 0.2s;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
 .p-datatable .p-datatable-tbody > tr > td .p-row-toggler:enabled:hover,

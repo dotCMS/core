@@ -88,9 +88,7 @@
     z-index: -1;
 }
 .tailerBody {
-    font-family:
-        Andale Mono,
-        monospace;
+    font-family: Andale Mono, monospace;
     font-size: 9pt;
     white-space: nowrap;
 }
@@ -231,6 +229,7 @@ $table-border: 1px solid $color-palette-gray-200;
     tr {
         transition: background-color $field-animation-speed;
 
+        height: 2.4375rem !important;
         .selected {
             background-color: #e0e9f6;
         }
@@ -238,13 +237,14 @@ $table-border: 1px solid $color-palette-gray-200;
 
     th,
     td {
-        padding: 10px $spacing-1;
         border-bottom: $table-border;
         vertical-align: middle;
-
+        height: 2.5rem !important;
+        padding: 8px $spacing-1 !important;
         .listingThumbDiv {
-            height: 60px;
-            width: 80px;
+            height: 2.9375rem !important;
+
+            width: 4.5rem;
             position: relative;
             border-radius: $border-radius-sm;
             overflow: hidden;
@@ -267,13 +267,16 @@ $table-border: 1px solid $color-palette-gray-200;
 
 .listingTable {
     @extend #listing-table;
-
+    // tr{
+    //     height: 2.5rem !important;
+    // }
     // Some listing tables have inner tabled to inline some elements
     table,
     table tr,
     table tr:hover,
     table td {
         background: none !important;
+        // height: 2.5rem !important;
     }
 
     .listingTable__actions {

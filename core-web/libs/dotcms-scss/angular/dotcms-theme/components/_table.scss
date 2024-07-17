@@ -58,7 +58,7 @@ $dot-table-cell-height: 1.25rem;
             border: 1px solid $color-palette-gray-300;
             border-width: 0 0 1px 0;
             color: $black;
-            font-size: $font-size-xs;
+            font-size: $font-size-sm;
             font-weight: $font-weight-bold;
             padding: $spacing-1;
             text-align: left;
@@ -128,7 +128,7 @@ $dot-table-cell-height: 1.25rem;
         .p-datatable-tbody > tr {
             background: $white;
             color: $black;
-            height: auto;
+            height: $field-height-md;
             transition: none;
             outline: 0 none;
             cursor: pointer;
@@ -142,7 +142,7 @@ $dot-table-cell-height: 1.25rem;
                 text-align: left;
                 border-bottom: 1px solid $color-palette-gray-300;
                 padding: 0 $spacing-1;
-                font-size: $font-size-sm;
+                font-size: $font-size-md;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -187,10 +187,7 @@ $dot-table-cell-height: 1.25rem;
                     border: 0 none;
                     background: transparent;
                     border-radius: 50%;
-                    transition:
-                        background-color 0.2s,
-                        color 0.2s,
-                        box-shadow 0.2s;
+                    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
 
                     &:enabled:hover {
                         color: $text-color-hover;

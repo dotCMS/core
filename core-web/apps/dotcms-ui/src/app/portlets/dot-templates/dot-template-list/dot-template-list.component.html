@@ -74,7 +74,7 @@
         <td [ngStyle]="{ 'text-align': tableColumns[4].textAlign }">
             {{ rowData.modDate | dotRelativeDate }}
         </td>
-        <td style="width: 5%; height: 3.85rem">
+        <td style="width: 5%">
             <dot-action-menu-button
                 *ngIf="!rowData.disableInteraction"
                 [attr.data-testid]="rowData.identifier"
