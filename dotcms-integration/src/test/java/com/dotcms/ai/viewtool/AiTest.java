@@ -49,10 +49,10 @@ public interface AiTest {
                         .withValue(AppKeys.COMPLETION_TEXT_PROMPT.defaultValue.toCharArray())
                         .build(),
 
-                AppKeys.MODEL.key,
+                AppKeys.MODEL_NAME.key,
                 Secret.builder()
                         .withType(Type.STRING)
-                        .withValue(AppKeys.MODEL.defaultValue.toCharArray())
+                        .withValue(AppKeys.MODEL_NAME.defaultValue.toCharArray())
                         .build()
         );
         final Map<String, Secret> all = new HashMap<>(configMap);
@@ -77,10 +77,10 @@ public interface AiTest {
                 AppKeys.API_KEY.key,
                 Secret.builder().withType(Type.STRING).withValue(API_KEY.toCharArray()).build(),
 
-                AppKeys.MODEL.key,
+                AppKeys.MODEL_NAME.key,
                 Secret.builder().withType(Type.STRING).withValue(MODEL.toCharArray()).build(),
 
-                AppKeys.IMAGE_MODEL.key,
+                AppKeys.IMAGE_MODEL_NAME.key,
                 Secret.builder().withType(Type.STRING).withValue(IMAGE_MODEL.toCharArray()).build(),
 
                 AppKeys.IMAGE_SIZE.key,

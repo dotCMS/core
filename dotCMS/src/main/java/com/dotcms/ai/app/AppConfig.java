@@ -1,5 +1,6 @@
 package com.dotcms.ai.app;
 
+import com.dotcms.ai.model.AIModel;
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.util.Logger;
@@ -22,8 +23,8 @@ public class AppConfig implements Serializable {
 
     public static final Pattern SPLITTER= Pattern.compile("\\s?,\\s?");
 
-    public final String model;
-    public final String imageModel;
+    private final AIModel model;
+    private final AIModel imageModel;
     private final String apiUrl;
     private final String apiImageUrl;
     private final String apiKey;
@@ -39,13 +40,13 @@ public class AppConfig implements Serializable {
         apiUrl = resolveEnvSecret(secrets, AppKeys.API_URL);
         apiImageUrl = resolveEnvSecret(secrets, AppKeys.API_IMAGE_URL);
         apiKey = resolveEnvSecret(secrets, AppKeys.API_KEY);
-        rolePrompt = resolveSecretOrBlank(secrets, AppKeys.ROLE_PROMPT);
-        textPrompt = resolveSecretOrBlank(secrets, AppKeys.TEXT_PROMPT);
-        imagePrompt = resolveSecretOrBlank(secrets, AppKeys.IMAGE_PROMPT);
-        imageSize = resolveSecret(secrets, AppKeys.IMAGE_SIZE, AppKeys.IMAGE_SIZE.defaultValue);
-        model = resolveSecretOrBlank(secrets, AppKeys.MODEL);
-        imageModel = resolveSecret(secrets, AppKeys.IMAGE_MODEL, "dall-e-3");
-        listenerIndexer = resolveSecretOrBlank(secrets, AppKeys.LISTENER_INDEXER);
+        rolePrompt = resolveSecret(secrets, AppKeys.ROLE_PROMPT);
+        textPrompt = resolveSecret(secrets, AppKeys.TEXT_PROMPT);
+        imagePrompt = resolveSecret(secrets, AppKeys.IMAGE_PROMPT);
+        imageSize = resolveSecret(secrets, AppKeys.IMAGE_SIZE);
+        model = resolveModel(secrets, null);
+        imageModel = resolveModel(secrets, "image");
+        listenerIndexer = resolveSecret(secrets, AppKeys.LISTENER_INDEXER);
         Logger.debug(this.getClass().getName(), () -> "apiUrl: " + apiUrl);
         Logger.debug(this.getClass().getName(), () -> "apiImageUrl: " + apiImageUrl);
         Logger.debug(this.getClass().getName(), () -> "apiKey: " + apiKey);
@@ -62,12 +63,12 @@ public class AppConfig implements Serializable {
         return Try.of(() -> secrets.get(key.key).getString()).getOrElse(defaultValue);
     }
 
-    private String resolveSecretOrBlank(final Map<String, Secret> secrets, final AppKeys key) {
-        return resolveSecret(secrets, key, StringPool.BLANK);
+    private String resolveSecret(final Map<String, Secret> secrets, final AppKeys key) {
+        return resolveSecret(secrets, key, key.defaultValue);
     }
 
     private String resolveEnvSecret(final Map<String, Secret> secrets, final AppKeys key) {
-        final String secret = resolveSecretOrBlank(secrets, key);
+        final String secret = resolveSecret(secrets, key, StringPool.BLANK);
         if (UtilMethods.isSet(secret)) {
             return secret;
         }
@@ -75,6 +76,24 @@ public class AppConfig implements Serializable {
         return Optional
                 .ofNullable(AppsUtil.discoverEnvVarValue(AppKeys.APP_KEY, key.key, null))
                 .orElse(StringPool.BLANK);
+    }
+
+    private AppKeys prefixKey(final String key, final String prefix) {
+        return AppKeys.valueOf(UtilMethods.isSet(prefix) ? prefix.toUpperCase() + '_' + key : key);
+    }
+
+    private int parseInt(final String value) {
+        return Try.of(() -> Integer.parseInt(value)).getOrElse(0);
+    }
+
+    private AIModel resolveModel(final Map<String, Secret> secrets, final String prefix) {
+        return AIModel.builder()
+                .withName(resolveSecret(secrets, prefixKey(AppKeys.MODEL_NAME.name(), prefix)))
+                .withTokensPerMinute(parseInt(resolveSecret(secrets, prefixKey(AppKeys.MODEL_TOKENS_PER_MINUTE.name(), prefix))))
+                .withApiPerMinute(parseInt(resolveSecret(secrets, prefixKey(AppKeys.MODEL_API_PER_MINUTE.name(), prefix))))
+                .withMaxTokens(parseInt(resolveSecret(secrets, prefixKey(AppKeys.MODEL_MAX_TOKENS.name(), prefix))))
+                .withIsCompletion(Boolean.parseBoolean(resolveSecret(secrets, prefixKey(AppKeys.MODEL_COMPLETION.name(), prefix))))
+                .build();
     }
 
     /**
@@ -118,7 +137,9 @@ public class AppConfig implements Serializable {
      *
      * @return the Image Model
      */
-    public String getImageModel() {return imageModel;}
+    public AIModel getImageModel() {
+        return imageModel;
+    }
 
     /**
      * Retrieves the Text Prompt.
@@ -152,7 +173,7 @@ public class AppConfig implements Serializable {
      *
      * @return the Model
      */
-    public String getModel() {
+    public AIModel getModel() {
         return model;
     }
 

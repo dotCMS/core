@@ -45,7 +45,7 @@ public class OpenAIAutoTagActionlet extends WorkFlowActionlet {
                 limitTagsToHost,
 
                 new WorkflowActionletParameter(OpenAIParams.RUN_DELAY.key, "Update the content asynchronously, after X seconds. O means run in-process", "5", true),
-                new WorkflowActionletParameter(OpenAIParams.MODEL.key, "The AI model to use, defaults to " + ConfigService.INSTANCE.config().getConfig(AppKeys.MODEL), ConfigService.INSTANCE.config().getConfig(AppKeys.MODEL), false),
+                new WorkflowActionletParameter(OpenAIParams.MODEL.key, "The AI model to use, defaults to " + ConfigService.INSTANCE.config().getConfig(AppKeys.MODEL_NAME), ConfigService.INSTANCE.config().getConfig(AppKeys.MODEL_NAME), false),
                 new WorkflowActionletParameter(OpenAIParams.TEMPERATURE.key, "The AI temperature for the response.  Between .1 and 2.0.", ".1", false)
         );
     }

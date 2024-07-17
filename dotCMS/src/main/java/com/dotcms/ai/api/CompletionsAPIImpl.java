@@ -205,7 +205,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     private int countTokens(final String testString) {
         return EncodingUtil.registry
-                .getEncodingForModel(config.get().getConfig(AppKeys.MODEL))
+                .getEncodingForModel(config.get().getConfig(AppKeys.MODEL_NAME))
                 .map(enc -> enc.countTokens(testString))
                 .orElseThrow(() -> new DotRuntimeException("Encoder not found"));
     }
@@ -256,7 +256,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MESSAGES, messages);
-        json.putIfAbsent(AiKeys.MODEL, config.get().getConfig(AppKeys.MODEL));
+        json.putIfAbsent(AiKeys.MODEL, config.get().getConfig(AppKeys.MODEL_NAME));
 
         json.put(AiKeys.TEMPERATURE, form.temperature);
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
