@@ -4,6 +4,7 @@ package com.dotcms.ai.util;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
@@ -11,6 +12,7 @@ import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.MarkdownTool;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
 import com.dotcms.repackage.org.jsoup.Jsoup;
@@ -25,6 +27,7 @@ import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.felix.framework.OSGISystem;
+import org.apache.velocity.context.Context;
 
 import javax.validation.constraints.NotNull;
 import java.io.File;
@@ -246,14 +249,27 @@ public class ContentToStringUtil {
         return Optional.of(builder.toString().trim());
     }
 
-    private Optional<String> parseField(@NotNull Contentlet contentlet, @NotNull Field field) {
-
-        ContentType type = contentlet.getContentType();
+    /**
+     * Extracts the contents of a specific field from a Contentlet. Keep in mind that, depending on
+     * the format of such a content or how it was saved, the method will try to parse it based on
+     * specific strategies/ways to retrieve or interpret it.
+     *
+     * @param contentlet The {@link Contentlet} that the field's value will be extracted from.
+     * @param field      The {@link Field} whose content will be extracted.
+     *
+     * @return An {@link Optional} with the extracted content, if any.
+     */
+    private Optional<String> parseField(@NotNull final Contentlet contentlet, @NotNull final Field field) {
+        final ContentType type = contentlet.getContentType();
         if (field instanceof BinaryField) {
             Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is a BinaryField ");
             return parseFile(Try.of(() -> contentlet.getBinary(field.variable())).getOrNull());
         }
-
+        if (field instanceof CustomField) {
+            Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is a CustomField");
+            final Context ctx = VelocityContextFactory.getMockContextNoContentToString(contentlet, APILocator.systemUser());
+            return this.parseText(Try.of(() -> VelocityUtil.eval(field.values(), ctx)).getOrElse(BLANK));
+        }
         final String value = contentlet.getStringProperty(field.variable());
 
         if(UtilMethods.isEmpty(value)){
@@ -279,10 +295,7 @@ public class ContentToStringUtil {
         }
         Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is a text field");
         return parseText(value);
-
-
     }
-
 
     private Optional<String> handleFileField(Contentlet contentlet, String identifier) {
         Optional<Contentlet> con = APILocator.getContentletAPI().findContentletByIdentifierOrFallback(identifier,false,contentlet.getLanguageId(),APILocator.systemUser(),false);

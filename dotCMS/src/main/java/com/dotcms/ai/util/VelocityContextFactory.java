@@ -20,22 +20,65 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
 
+/**
+ * The VelocityContextFactory class is responsible for creating a Velocity context for a specific contentlet.
+ *
+ * @author Daniel Silva
+ * @since Mar 27th, 2024
+ */
 public class VelocityContextFactory {
 
     private VelocityContextFactory() {}
 
-    public static Context getMockContext(Contentlet contentlet) {
+    public static Context getMockContext(final Contentlet contentlet) {
         return getMockContext(contentlet, APILocator.systemUser());
     }
 
-    public static Context getMockContext(Contentlet contentlet, User user) {
-        Host host = Try.of(() -> APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(), true)).getOrElse(APILocator.systemHost());
-        String hostName = "SYSTEM_HOST".equalsIgnoreCase(host.getIdentifier())
+    /**
+     * Creates a mock Velocity Context that will be used to evaluate Velocity code present in
+     * Contentlet fields. The generated context will include a property named
+     * {@code "contentletToString"} which represents the contentlet's data as a String.
+     *
+     * @param contentlet The Contentlet to be used in the context.
+     * @param user       The User to be used in the context.
+     *
+     * @return The mock Velocity {@link Context} object.
+     */
+    public static Context getMockContext(final Contentlet contentlet, final User user) {
+        return getMockContext(contentlet, user, true);
+    }
+
+    /**
+     * Creates a mock Velocity Context that will be used to evaluate Velocity code present in
+     * Contentlet fields. The generated context <b>will NOT include</b> the
+     * {@code "contentletToString"} property, unlike the other methods in this class.
+     *
+     * @param contentlet             The Contentlet to be used in the context.
+     * @param user                   The User to be used in the context.
+     *
+     * @return The mock Velocity {@link Context} object.
+     */
+    public static Context getMockContextNoContentToString(final Contentlet contentlet, final User user) {
+        return getMockContext(contentlet, user, false);
+    }
+
+    /**
+     * Creates a mock Velocity Context that will be used to evaluate Velocity code present in
+     * Contentlet fields.
+     *
+     * @param contentlet             The Contentlet to be used in the context.
+     * @param user                   The User to be used in the context.
+     * @param includeContentToString If it's necessary to include a property with the contentlet's
+     *                               data as a String, set this to {@code true}.
+     *
+     * @return The mock Velocity {@link Context} object.
+     */
+    private static Context getMockContext(final Contentlet contentlet, final User user, final boolean includeContentToString) {
+        final Host site = Try.of(() -> APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(), true)).getOrElse(APILocator.systemHost());
+        final String hostName = Host.SYSTEM_HOST.equalsIgnoreCase(site.getIdentifier())
                 ? Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false).getHostname()).getOrElseThrow(DotRuntimeException::new)
-                : host.getHostname();
-
-
-        HttpServletRequest requestProxy =
+                : site.getHostname();
+        final HttpServletRequest requestProxy =
                 new MockSessionRequest(
                         new MockHeaderRequest(
                                 new FakeHttpRequest(hostName, null).request(), "referer", "https://" + hostName + "/fakeRefer"
@@ -44,32 +87,16 @@ public class VelocityContextFactory {
         requestProxy.setAttribute(WebKeys.CMS_USER, user);
         requestProxy.getSession().setAttribute(WebKeys.CMS_USER, user);
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-
-
-
-
-        Context ctx = VelocityUtil.getWebContext(requestProxy, new BaseResponse().response());
-        ContentMap contentMap = new ContentMap(contentlet, user, PageMode.EDIT_MODE, host, ctx);
+        final Context ctx = VelocityUtil.getInstance().getContext(requestProxy, new BaseResponse().response());
+        final ContentMap contentMap = new ContentMap(contentlet, user, PageMode.EDIT_MODE, site, ctx);
         ctx.put("contentMap", contentMap);
         ctx.put("dotContentMap", contentMap);
         ctx.put("contentlet", contentMap);
-        Optional<String> contentletToString = ContentToStringUtil.impl.get().turnContentletIntoString(contentlet);
-        if(contentletToString.isPresent()) {
-            ctx.put("contentletToString", contentletToString.get());
+        if (includeContentToString) {
+            final Optional<String> contentletToString = ContentToStringUtil.impl.get().turnContentletIntoString(contentlet);
+            contentletToString.ifPresent(content -> ctx.put("contentletToString", content));
         }
         return ctx;
     }
-
-    public static Context getMockContext() {
-
-        String hostName = Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false).getHostname()).getOrElse("localhost");
-        HttpServletRequest requestProxy =
-                new MockSessionRequest(new MockHeaderRequest(new FakeHttpRequest(hostName, null).request(), "referer", "https://" + hostName + "/fakeRefer").request());
-        HttpServletResponse responseProxy = new BaseResponse().response();
-        return VelocityUtil.getWebContext(requestProxy, responseProxy);
-    }
-
-
-
 
 }
