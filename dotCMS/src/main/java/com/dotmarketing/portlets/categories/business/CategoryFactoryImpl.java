@@ -638,6 +638,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 						final String parentsASJsonArray = "[" + row.get("path") + "]";
 						final List<ShortCategory> parentList = getShortCategories(parentsASJsonArray);
 						category.setParentList(parentList.subList(0, parentList.size() - 1));
+						category.setChildrenCount(Integer.parseInt(row.get("childrencount").toString()));
 					}
 
 					categories.add(category);
@@ -951,7 +952,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				"SELECT c.*, CONCAT(ch.path, ',', json_build_object('inode', c.inode, 'categoryName', c.category_name, 'key', c.category_key)::varchar) AS path " +
 				"FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode " +
 			") " +
-			"SELECT distinct *,path FROM CategoryHierarchy %s ORDER BY %s %s";
+			"SELECT distinct *,path, (SELECT COUNT(*) FROM tree WHERE parent = ch.inode) as childrenCount " +
+			"FROM CategoryHierarchy ch %s ORDER BY %s %s";
 
 		final String rootCategoryFilter = UtilMethods.isSet(searchCriteria.rootInode) ? "WHERE c.inode = ?" : StringPool.BLANK;
 
