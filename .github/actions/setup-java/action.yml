@@ -23,6 +23,8 @@ runs:
       id: get-requested-version
       shell: bash
       run: |
+        DEFAULT_GRAALVM="21.0.2-graalce"
+        
         if [ -z "${{ inputs.java-version }}" ] && [ -f .sdkmanrc ]; then
           REQUESTED_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
           echo "using default Java version from .sdkmanrc: REQUESTED_VERSION"
@@ -81,7 +83,6 @@ runs:
       id: sdkman-java
       shell: bash
       run: |
-        DEFAULT_GRAALVM="21.0.2-graalce"
         
         source "$HOME/.sdkman/bin/sdkman-init.sh"
 
