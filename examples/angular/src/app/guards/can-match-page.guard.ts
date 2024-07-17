@@ -1,17 +1,16 @@
-import { inject } from '@angular/core';
+import { inject, InjectionToken } from '@angular/core';
 import { CanMatchFn, Route, Router, UrlSegment } from '@angular/router';
 
-import { getPageRequestParams } from '@dotcms/client';
+import { DotCmsClient, getPageRequestParams } from '@dotcms/client';
 import { DotCMSPageAsset } from '@dotcms/angular';
-
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 
 export const canMatchPage: CanMatchFn = async (
   route: Route,
-  segments: UrlSegment[],
+  segments: UrlSegment[]
 ) => {
   const router = inject(Router);
-  const client = inject(DOTCMS_CLIENT_TOKEN);
+  const client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
 
   try {
     const { queryParams } = router.getCurrentNavigation()?.initialUrl || {};
