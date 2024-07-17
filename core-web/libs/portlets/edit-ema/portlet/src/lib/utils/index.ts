@@ -1,4 +1,4 @@
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, VanityUrl } from '@dotcms/dotcms-models';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../shared/consts';
@@ -221,4 +221,15 @@ export function createPageApiUrlWithQueryParams(
  */
 export function getIsDefaultVariant(variant?: string): boolean {
     return !variant || variant === DEFAULT_VARIANT_ID;
+}
+
+/**
+ * Check if the param is a forward or page
+ *
+ * @export
+ * @param {VanityUrl} vanityUrl
+ * @return {*}
+ */
+export function isForwardOrPage(vanityUrl?: VanityUrl): boolean {
+    return !vanityUrl || (!vanityUrl.permanentRedirect && !vanityUrl.temporaryRedirect);
 }
