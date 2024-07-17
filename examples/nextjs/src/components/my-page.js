@@ -17,6 +17,7 @@ import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
 
 import { usePageAsset } from "../hooks/usePageAsset";
+import { useMemo } from "react";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -49,13 +50,20 @@ export function MyPage({ pageAsset, nav }) {
      * If not using experiments:
      * - Replace the below line with `const DotLayoutComponent = DotcmsLayout;`
      * - Remove DotExperimentsProvider from the return statement.
+     * 
+     * We use a useMemo to prevent the component from being recreated on every render
+     * if it doesn't change.
      */
-    const DotLayoutComponent = experimentConfig.apiKey
-        ? withExperiments(DotcmsLayout, {
-              ...experimentConfig,
-              redirectFn: replace,
-          })
-        : DotcmsLayout;
+    const DotLayoutComponent = useMemo(
+        () =>
+            experimentConfig.apiKey
+                ? withExperiments(DotcmsLayout, {
+                      ...experimentConfig,
+                      redirectFn: replace,
+                  })
+                : DotcmsLayout,
+        [replace],
+    );
 
     pageAsset = usePageAsset(pageAsset);
     
