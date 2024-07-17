@@ -1,23 +1,13 @@
-import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, forkJoin, of, EMPTY } from 'rxjs';
+import { signalStore, withComputed, withState } from '@ngrx/signals';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { computed } from '@angular/core';
 
-import { switchMap, shareReplay, tap, catchError, take, map } from 'rxjs/operators';
-
-import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
-
-import { withUveStatus } from './features/uve-status/uve-status';
+import { withLoad } from './features/load/withLoad';
+import { withUveStatus } from './features/uve-status/withUveStatus';
 import { ShellState, UVEState } from './models';
 
-import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { UVE_STATUS } from '../shared/enums';
-import { isForwardOrPage, sanitizeURL } from '../utils';
+import { sanitizeURL } from '../utils';
 
 const initialState: UVEState = {
     isEnterprise: false,
@@ -124,155 +114,6 @@ export const UVEStore = signalStore(
             })
         };
     }),
-
-    withMethods((store) => {
-        // Maybe I can move this to a feature called withLoad
-
-        const dotPageApiService = inject(DotPageApiService);
-        const dotLanguagesService = inject(DotLanguagesService);
-        const dotLicenseService = inject(DotLicenseService);
-        const loginService = inject(LoginService);
-        const dotExperimentsService = inject(DotExperimentsService);
-        const router = inject(Router);
-        const activatedRoute = inject(ActivatedRoute);
-
-        return {
-            // This is the same method as the old store but I will manage the state differently
-            load: rxMethod<DotPageApiParams>(
-                pipe(
-                    tap(() => {
-                        patchState(store, { status: UVE_STATUS.LOADING });
-                    }),
-                    switchMap((params) => {
-                        return forkJoin({
-                            pageAPIResponse: dotPageApiService.get(params).pipe(
-                                switchMap((pageAPIResponse) => {
-                                    const { vanityUrl } = pageAPIResponse;
-
-                                    // If there is no vanity and is not a redirect we just return the pageAPI response
-                                    if (isForwardOrPage(vanityUrl)) {
-                                        return of(pageAPIResponse);
-                                    }
-
-                                    const queryParams = {
-                                        ...params,
-                                        url: vanityUrl.forwardTo.replace('/', '')
-                                    };
-
-                                    // We navigate to the new url and return undefined
-                                    router.navigate([], {
-                                        queryParams,
-                                        queryParamsHandling: 'merge'
-                                    });
-
-                                    return of(undefined);
-                                }),
-                                tap({
-                                    next: (pageAPIResponse) => {
-                                        if (!pageAPIResponse) {
-                                            return;
-                                        }
-
-                                        const { page, template } = pageAPIResponse;
-
-                                        const isLayoutDisabled = !page.canEdit || !template.drawed;
-                                        const pathIsLayout =
-                                            activatedRoute.firstChild.snapshot.url[0].path ===
-                                            'layout';
-
-                                        if (isLayoutDisabled && pathIsLayout) {
-                                            // If the user can't edit the page or the template is not drawed we navigate to the content page
-                                            router.navigate(['edit-page/content'], {
-                                                queryParamsHandling: 'merge'
-                                            });
-                                        }
-                                    }
-                                })
-                            ),
-                            isEnterprise: dotLicenseService
-                                .isEnterprise()
-                                .pipe(take(1), shareReplay()),
-                            currentUser: loginService.getCurrentUser()
-                        }).pipe(
-                            tap({
-                                error: ({ status: errorStatus }: HttpErrorResponse) => {
-                                    patchState(store, {
-                                        error: errorStatus,
-                                        status: UVE_STATUS.ERROR
-                                    });
-                                }
-                            }),
-                            switchMap(({ pageAPIResponse, isEnterprise, currentUser }) =>
-                                forkJoin({
-                                    experiment: dotExperimentsService
-                                        .getById(params.experimentId)
-                                        .pipe(
-                                            // If there is an error, we return undefined
-                                            // This is to avoid blocking the page if there is an error with the experiment
-                                            catchError(() => of(undefined))
-                                        ),
-                                    languages: dotLanguagesService.getLanguagesUsedPage(
-                                        pageAPIResponse.page.identifier
-                                    )
-                                }).pipe(
-                                    tap({
-                                        next: ({ experiment, languages }) => {
-                                            // This will be our global state. Here we have all the information we need to apply the logic in the components
-                                            patchState(store, {
-                                                pageAPIResponse,
-                                                isEnterprise,
-                                                currentUser,
-                                                experiment,
-                                                languages,
-                                                params,
-                                                status: UVE_STATUS.LOADED
-                                            });
-                                        }
-                                    })
-                                )
-                            )
-                        );
-                    })
-                )
-            ),
-            reload: rxMethod<DotPageApiParams>(
-                pipe(
-                    tap(() => {
-                        patchState(store, { status: UVE_STATUS.LOADING });
-                    }),
-                    switchMap((params) => {
-                        return dotPageApiService.get(params).pipe(
-                            switchMap((pageAPIResponse) =>
-                                dotLanguagesService
-                                    .getLanguagesUsedPage(pageAPIResponse.page.identifier)
-                                    .pipe(
-                                        map((languages) => ({
-                                            pageAPIResponse,
-                                            languages
-                                        }))
-                                    )
-                            ),
-                            tapResponse({
-                                next: ({ pageAPIResponse, languages }) => {
-                                    patchState(store, {
-                                        pageAPIResponse,
-                                        languages,
-                                        status: UVE_STATUS.LOADED
-                                    });
-                                },
-                                error: ({ status: errorStatus }: HttpErrorResponse) => {
-                                    patchState(store, {
-                                        error: errorStatus,
-                                        status: UVE_STATUS.ERROR
-                                    });
-                                }
-                            }),
-                            catchError(() => EMPTY)
-                        );
-                    })
-                )
-            )
-        };
-    }),
+    withLoad(),
     withUveStatus()
 );
