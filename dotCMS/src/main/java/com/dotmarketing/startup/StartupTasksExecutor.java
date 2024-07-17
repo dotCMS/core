@@ -1,5 +1,6 @@
 package com.dotmarketing.startup;
 
+import com.dotmarketing.exception.DotHibernateException;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.Connection;
 import java.util.Date;
@@ -171,7 +172,7 @@ public class StartupTasksExecutor {
         }
     }
 
-    public void executeStartUpTasks() throws DotDataException {
+    public void executeStartUpTasks() throws DotDataException, InterruptedException {
 
         Logger.debug(this.getClass(), "Running Startup Tasks");
 
@@ -199,12 +200,7 @@ public class StartupTasksExecutor {
             }
             Logger.info(this, "Finishing startup tasks.");
         } catch (Throwable e) {
-            HibernateUtil.rollbackTransaction();
-            Logger.error(this, "FATAL: Unable to execute the upgrade task : " + name, e);
-            if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-              e.printStackTrace();
-              System.exit(1);
-            }
+            taskFailure(e);
         } finally {
             // This will commit the changes and close the connection
             HibernateUtil.closeAndCommitTransaction();
@@ -229,7 +225,7 @@ public class StartupTasksExecutor {
     }
 
 
-    public void executeSchemaUpgrades() throws DotDataException {
+    public void executeSchemaUpgrades() throws DotDataException, InterruptedException {
 
         Logger.info(this, "---");
         Logger.info(this, "");
@@ -270,11 +266,7 @@ public class StartupTasksExecutor {
                     Config.DB_VERSION = taskId;
                 }
             } catch (Exception e) {
-                HibernateUtil.rollbackTransaction();
-                if (Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)) {
-                    Logger.error(this, "FATAL: " +e.getMessage(),e);
-                    System.exit(1);
-                }
+                taskFailure(e);
             } finally {
                 HibernateUtil.closeAndCommitTransaction();
             }
@@ -297,7 +289,7 @@ public class StartupTasksExecutor {
      *
      * @throws DotDataException
      */
-    public void executeDataUpgrades() throws DotDataException {
+    public void executeDataUpgrades() throws DotDataException, InterruptedException {
 
         Logger.info(this, "---");
         Logger.info(this, "");
@@ -338,11 +330,7 @@ public class StartupTasksExecutor {
                     Config.DATA_VERSION = taskId;
                 }
             } catch (Exception e) {
-                HibernateUtil.rollbackTransaction();
-                if (Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)) {
-                    Logger.error(this, "FATAL: " + e.getMessage(), e);
-                    System.exit(1);
-                }
+                taskFailure(e);
             } finally {
                 HibernateUtil.closeAndCommitTransaction();
             }
@@ -359,7 +347,7 @@ public class StartupTasksExecutor {
      *
      * @throws DotDataException
      */
-    public void executeBackportedTasks() throws DotDataException {
+    public void executeBackportedTasks() throws DotDataException, InterruptedException {
         Logger.debug(this.getClass(), "Running Backported Tasks");
         String name = null;
         try {
@@ -386,12 +374,7 @@ public class StartupTasksExecutor {
             }
             Logger.info(this, "Finishing Backported tasks.");
         } catch (Throwable e) {
-            HibernateUtil.rollbackTransaction();
-            Logger.error(this, "FATAL: Unable to execute the upgrade task : " + name, e);
-            if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-                e.printStackTrace();
-                System.exit(1);
-            }
+            taskFailure(e);
         } finally {
             // This will commit the changes and close the connection
             HibernateUtil.closeAndCommitTransaction();
@@ -400,6 +383,20 @@ public class StartupTasksExecutor {
 
     }
 
+    private void taskFailure(Throwable e) throws DotHibernateException, InterruptedException {
+        HibernateUtil.rollbackTransaction();
+        for(int i = 0; i < 3; i++){
+            System.err.println("FATAL ERROR RUNNING TASK: " + e.getMessage());
+            Logger.error(this, "FATAL ERROR RUNNING TASK: " + e.getMessage(), e);
+        }
+
+        Thread.sleep(10000);
+
+        if (Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
 
 
 }
