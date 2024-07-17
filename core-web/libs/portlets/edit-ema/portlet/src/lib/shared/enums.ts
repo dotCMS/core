@@ -22,6 +22,12 @@ export enum NG_CUSTOM_EVENTS {
     EDIT_CONTENTLET_UPDATED = 'edit-contentlet-data-updated'
 }
 
+export enum UVE_STATUS {
+    LOADING = 'loading',
+    LOADED = 'loaded',
+    ERROR = 'error'
+}
+
 // The current state of the editor
 export enum EDITOR_STATE {
     LOADING = 'loading',

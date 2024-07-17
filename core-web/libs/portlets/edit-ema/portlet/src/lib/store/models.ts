@@ -3,6 +3,7 @@ import { DotExperiment, DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms
 import { InfoPage } from '@dotcms/ui';
 
 import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
+import { UVE_STATUS } from '../shared/enums';
 import { DotPage, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
@@ -13,6 +14,7 @@ export interface UVEState {
     experiment?: DotExperiment;
     error?: number;
     params?: DotPageApiParams;
+    status: UVE_STATUS;
 }
 
 export interface ShellState {

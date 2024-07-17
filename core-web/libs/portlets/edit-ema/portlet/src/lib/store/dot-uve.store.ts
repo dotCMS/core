@@ -13,8 +13,10 @@ import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@
 import { LoginService } from '@dotcms/dotcms-js';
 
 import { ShellState, UVEState } from './models';
+import { isForwardOrPage } from './utils';
 
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
+import { UVE_STATUS } from '../shared/enums';
 import { sanitizeURL } from '../utils';
 
 const initialState: UVEState = {
@@ -24,7 +26,8 @@ const initialState: UVEState = {
     currentUser: undefined,
     experiment: undefined,
     error: undefined,
-    params: undefined
+    params: undefined,
+    status: UVE_STATUS.LOADING
 };
 
 export const UVEStore = signalStore(
@@ -137,6 +140,9 @@ export const UVEStore = signalStore(
             // This is the same method as the old store but I will manage the state differently
             load: rxMethod<DotPageApiParams>(
                 pipe(
+                    tap(() => {
+                        patchState(store, { status: UVE_STATUS.LOADING });
+                    }),
                     switchMap((params) => {
                         return forkJoin({
                             pageAPIResponse: dotPageApiService.get(params).pipe(
@@ -144,11 +150,7 @@ export const UVEStore = signalStore(
                                     const { vanityUrl } = pageAPIResponse;
 
                                     // If there is no vanity and is not a redirect we just return the pageAPI response
-                                    if (
-                                        !vanityUrl ||
-                                        (!vanityUrl.permanentRedirect &&
-                                            !vanityUrl.temporaryRedirect)
-                                    ) {
+                                    if (isForwardOrPage(vanityUrl)) {
                                         return of(pageAPIResponse);
                                     }
 
@@ -193,8 +195,11 @@ export const UVEStore = signalStore(
                             currentUser: loginService.getCurrentUser()
                         }).pipe(
                             tap({
-                                error: ({ status }: HttpErrorResponse) => {
-                                    patchState(store, { error: status });
+                                error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                    patchState(store, {
+                                        error: errorStatus,
+                                        status: UVE_STATUS.ERROR
+                                    });
                                 }
                             }),
                             switchMap(({ pageAPIResponse, isEnterprise, currentUser }) =>
@@ -219,7 +224,8 @@ export const UVEStore = signalStore(
                                                 currentUser,
                                                 experiment,
                                                 languages,
-                                                params
+                                                params,
+                                                status: UVE_STATUS.LOADED
                                             });
                                         }
                                     })
@@ -231,8 +237,9 @@ export const UVEStore = signalStore(
             ),
             reload: rxMethod<DotPageApiParams>(
                 pipe(
-                    // I will implement this when I get to the editor, because I will probably need to do some logic there
-                    // tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
+                    tap(() => {
+                        patchState(store, { status: UVE_STATUS.LOADING });
+                    }),
                     switchMap((params) => {
                         return dotPageApiService.get(params).pipe(
                             switchMap((pageAPIResponse) =>
@@ -249,11 +256,15 @@ export const UVEStore = signalStore(
                                 next: ({ pageAPIResponse, languages }) => {
                                     patchState(store, {
                                         pageAPIResponse,
-                                        languages
+                                        languages,
+                                        status: UVE_STATUS.LOADED
                                     });
                                 },
-                                error: ({ status }: HttpErrorResponse) => {
-                                    patchState(store, { error: status });
+                                error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                    patchState(store, {
+                                        error: errorStatus,
+                                        status: UVE_STATUS.ERROR
+                                    });
                                 }
                             }),
                             catchError(() => EMPTY)
