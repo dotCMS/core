@@ -74,6 +74,7 @@ jobs:
           generates-test-results: false
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
           version: ${{ inputs.version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 'Upload built distribution'
         id: upload-artifact
