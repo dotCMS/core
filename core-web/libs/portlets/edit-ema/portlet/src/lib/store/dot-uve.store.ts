@@ -12,12 +12,12 @@ import { switchMap, shareReplay, tap, catchError, take, map } from 'rxjs/operato
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 
+import { withUveStatus } from './features/uve-status/uve-status';
 import { ShellState, UVEState } from './models';
-import { isForwardOrPage } from './utils';
 
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { UVE_STATUS } from '../shared/enums';
-import { sanitizeURL } from '../utils';
+import { isForwardOrPage, sanitizeURL } from '../utils';
 
 const initialState: UVEState = {
     isEnterprise: false,
@@ -273,5 +273,6 @@ export const UVEStore = signalStore(
                 )
             )
         };
-    })
+    }),
+    withUveStatus()
 );
