@@ -14,6 +14,21 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Determine Architecture
+      id: determine-arch
+      shell: bash
+      run: echo "ARCHITECTURE=$(uname -m)" >> $GITHUB_ENV
+
+    - name: Get Requested Version
+      id: get-requested-version
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.java-version }}" ] && [ -f .sdkmanrc ]; then
+          REQUESTED_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
+        else
+          REQUESTED_VERSION="${{ inputs.java-version }}"
+        fi
+        echo "requested_version=$REQUESTED_VERSION" >> $GITHUB_OUTPUT
     - name: Restore Cache SDKMan install
       id: restore-cache-sdkman
       uses: actions/cache/restore@v4
@@ -36,21 +51,6 @@ runs:
       with:
         path: ~/.sdkman
         key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install-${{ steps.get-requested-version.outputs.requested_version }}
-    - name: Determine Architecture
-      id: determine-arch
-      shell: bash
-      run: echo "ARCHITECTURE=$(uname -m)" >> $GITHUB_ENV
-
-    - name: Get Requested Version
-      id: get-requested-version
-      shell: bash
-      run: |
-        if [ -z "${{ inputs.java-version }}" ] && [ -f .sdkmanrc ]; then
-          REQUESTED_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
-        else
-          REQUESTED_VERSION="${{ inputs.java-version }}"
-        fi
-        echo "requested_version=$REQUESTED_VERSION" >> $GITHUB_OUTPUT
 
     - name: Restore Cache Java SDK
       id: restore-cache-java
