@@ -10,7 +10,8 @@ import {
     OnInit,
     Output,
     ViewChild,
-    inject
+    inject,
+    signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -28,6 +29,12 @@ import { DotPersona } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
+
+interface PersonaSelector {
+    items: DotPersona[];
+    totalRecords: number;
+    itemsPerPage: number;
+}
 
 @Component({
     selector: 'dot-edit-ema-persona-selector',
@@ -53,17 +60,13 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, O
 
     private readonly pageApiService = inject(DotPageApiService);
 
-    MAX_PERSONAS_PER_PAGE = 10;
+    readonly MAX_PERSONAS_PER_PAGE = 10;
 
-    personas: {
-        items: DotPersona[];
-        totalRecords: number;
-        itemsPerPage: number;
-    } = {
+    $personas = signal<PersonaSelector>({
         items: [],
         totalRecords: 0,
         itemsPerPage: 0
-    };
+    });
 
     @Input() pageId: string;
     @Input() value: DotPersona;
@@ -153,13 +156,12 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, O
                     })
                 )
             )
-            .subscribe(
-                (res) =>
-                    (this.personas = {
-                        items: res.data,
-                        totalRecords: res.pagination.totalEntries,
-                        itemsPerPage: res.pagination.perPage
-                    })
+            .subscribe((res) =>
+                this.$personas.set({
+                    items: res.data,
+                    totalRecords: res.pagination.totalEntries,
+                    itemsPerPage: res.pagination.perPage
+                })
             );
     }
 

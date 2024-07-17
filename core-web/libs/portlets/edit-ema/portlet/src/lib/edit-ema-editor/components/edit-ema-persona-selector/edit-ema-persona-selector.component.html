@@ -21,7 +21,7 @@
 <p-overlayPanel #op styleClass="edit-ema-selector" data-testId="persona-op">
     <p-listbox
         (onChange)="onSelect($event); op.toggle($event)"
-        [options]="personas.items"
+        [options]="$personas().items"
         #listbox
         optionLabel="label"
         data-testId="persona-listbox"
@@ -52,11 +52,11 @@
             </div>
         </ng-template>
     </p-listbox>
-    @if(personas?.totalRecords > MAX_PERSONAS_PER_PAGE){
+    @if($personas()?.totalRecords > MAX_PERSONAS_PER_PAGE){
     <p-paginator
         class="p-paginator-sm"
-        [rows]="personas.itemsPerPage"
-        [totalRecords]="personas.totalRecords"
+        [rows]="$personas().itemsPerPage"
+        [totalRecords]="$personas().totalRecords"
         (onPageChange)="onPaginate($event)"
         [showFirstLastIcon]="false"
         [pageLinkSize]="0"

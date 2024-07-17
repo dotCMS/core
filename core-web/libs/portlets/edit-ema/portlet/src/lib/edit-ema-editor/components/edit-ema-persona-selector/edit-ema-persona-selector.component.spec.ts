@@ -128,11 +128,11 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         it('should show a paginator when there are more than 10 personas', () => {
-            component.personas = {
+            component.$personas.set({
                 items: Array(11).fill(CUSTOM_PERSONA),
                 totalRecords: 11,
                 itemsPerPage: 10
-            };
+            });
 
             spectator.click(button);
 
@@ -140,11 +140,11 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         it('should not show a paginator when there are less than 10 personas', () => {
-            component.personas = {
+            component.$personas.set({
                 items: Array(9).fill(CUSTOM_PERSONA),
                 totalRecords: 9,
                 itemsPerPage: 10
-            };
+            });
 
             spectator.click(button);
 
@@ -218,11 +218,11 @@ describe('EditEmaPersonaSelectorComponent', () => {
         it('should call fetchPersonas with incremented page when clicked in paginator', () => {
             const fetchPersonasSpy = jest.spyOn(component, 'fetchPersonas');
 
-            component.personas = {
+            component.$personas.set({
                 items: Array(11).fill(CUSTOM_PERSONA),
                 totalRecords: 11,
                 itemsPerPage: 10
-            };
+            });
 
             spectator.click(button);
             // PrimeNG paginator starts at 0, so the second page is 1
