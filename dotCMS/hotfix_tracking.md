@@ -28,3 +28,4 @@ This maintenance release includes the following code fixes:
 22. https://github.com/dotCMS/core/issues/26316 : Edit embedded content-let's through Block Editor field #26316
 23. https://github.com/dotCMS/core/issues/28863 : Redis implementation should support ACL (username + password) authentication #28863
 24. https://github.com/dotCMS/core/issues/29240 : UT keep running even though one failed #29240
+25. https://github.com/dotCMS/core/issues/29250 : Add Annotations to WorkflowTask Bean #29250
