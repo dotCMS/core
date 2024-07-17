@@ -29,8 +29,6 @@ export function withLoad() {
             state: type<UVEState>()
         },
         withMethods((store) => {
-            // Maybe I can move this to a feature called withLoad
-
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
             const dotLicenseService = inject(DotLicenseService);
@@ -40,7 +38,6 @@ export function withLoad() {
             const activatedRoute = inject(ActivatedRoute);
 
             return {
-                // This is the same method as the old store but I will manage the state differently
                 load: rxMethod<DotPageApiParams>(
                     pipe(
                         tap(() => {
@@ -121,7 +118,6 @@ export function withLoad() {
                                     }).pipe(
                                         tap({
                                             next: ({ experiment, languages }) => {
-                                                // This will be our global state. Here we have all the information we need to apply the logic in the components
                                                 patchState(store, {
                                                     pageAPIResponse,
                                                     isEnterprise,
