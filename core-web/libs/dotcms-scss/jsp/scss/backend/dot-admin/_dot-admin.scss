@@ -267,16 +267,12 @@ $table-border: 1px solid $color-palette-gray-200;
 
 .listingTable {
     @extend #listing-table;
-    // tr{
-    //     height: 2.5rem !important;
-    // }
     // Some listing tables have inner tabled to inline some elements
     table,
     table tr,
     table tr:hover,
     table td {
         background: none !important;
-        // height: 2.5rem !important;
     }
 
     .listingTable__actions {
