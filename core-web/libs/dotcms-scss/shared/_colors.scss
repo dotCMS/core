@@ -21,9 +21,9 @@ $color-palette-primary-op-70: var(--color-palette-primary-op-70);
 $color-palette-primary-op-80: var(--color-palette-primary-op-80);
 $color-palette-primary-op-90: var(--color-palette-primary-op-90);
 
-$color-palette-primary-shade: var(--color-primary-shade);
+$color-palette-primary-shade: var(--color-palette-primary-shade);
 $color-palette-primary: var(--color-palette-primary);
-$color-palette-primary-tint: var(--color-primary-tint);
+$color-palette-primary-tint: var(--color-palette-primary-tint);
 
 $color-palette-secondary-100: var(--color-palette-secondary-100);
 $color-palette-secondary-200: var(--color-palette-secondary-200);
@@ -45,9 +45,9 @@ $color-palette-secondary-op-70: var(--color-palette-secondary-op-70);
 $color-palette-secondary-op-80: var(--color-palette-secondary-op-80);
 $color-palette-secondary-op-90: var(--color-palette-secondary-op-90);
 
-$color-palette-secondary-shade: var(--color-secondary-shade);
+$color-palette-secondary-shade: var(--color-palette-secondary-shade);
 $color-palette-secondary: var(--color-palette-secondary);
-$color-palette-secondary-tint: var(--color-secondary-tint);
+$color-palette-secondary-tint: var(--color-palette-secondary-tint);
 
 $color-palette-black-op-10: var(--color-palette-black-op-10);
 $color-palette-black-op-20: var(--color-palette-black-op-20);
@@ -225,7 +225,6 @@ $success: $color-accessible-text-green;
     --color-palette-primary-700: hsl(var(--color-primary-h) var(--color-primary-s) 36%);
     --color-palette-primary-800: hsl(var(--color-primary-h) var(--color-primary-s) 27%);
     --color-palette-primary-900: hsl(var(--color-primary-h) var(--color-primary-s) 21%);
-    --color-palette-primary: var(--color-palette-primary-500);
 
     --color-palette-primary-op-10: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.1);
     --color-palette-primary-op-20: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.2);
@@ -237,8 +236,9 @@ $success: $color-accessible-text-green;
     --color-palette-primary-op-80: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.8);
     --color-palette-primary-op-90: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.9);
 
-    --color-primary-shade: var(--color-palette-primary-600);
-    --color-primary-tint: var(--color-palette-primary-200);
+    --color-palette-primary-shade: var(--color-palette-primary-600);
+    --color-palette-primary: var(--color-palette-primary-500);
+    --color-palette-primary-tint: var(--color-palette-primary-200);
 
     --color-palette-secondary-100: hsl(var(--color-secondary-h) var(--color-secondary-s) 98%);
     --color-palette-secondary-200: hsl(var(--color-secondary-h) var(--color-secondary-s) 94%);
@@ -249,7 +249,6 @@ $success: $color-accessible-text-green;
     --color-palette-secondary-700: hsl(var(--color-secondary-h) var(--color-secondary-s) 42%);
     --color-palette-secondary-800: hsl(var(--color-secondary-h) var(--color-secondary-s) 30%);
     --color-palette-secondary-900: hsl(var(--color-secondary-h) var(--color-secondary-s) 22%);
-    --color-palette-secondary: var(--color-palette-secondary-500);
 
     --color-palette-secondary-op-10: hsla(
         var(--color-secondary-h),
@@ -306,8 +305,9 @@ $success: $color-accessible-text-green;
         0.9
     );
 
-    --color-secondary-shade: var(--color-palette-secondary-600);
-    --color-secondary-tint: var(--color-palette-secondary-200);
+    --color-palette-secondary-shade: var(--color-palette-secondary-600);
+    --color-palette-secondary: var(--color-palette-secondary-500);
+    --color-palette-secondary-tint: var(--color-palette-secondary-200);
 
     /* COLOR BLACK OPACITY */
     --color-palette-black-op-10: hsla(
