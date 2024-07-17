@@ -14,6 +14,19 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Restore Cache Java SDK
+      id: restore-cache-java
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.sdkman/candidates/java/${{ inputs.java-version }}
+        key: ${{ runner.os }}-sdkman-java-${{ inputs.java-version }}
+    - name: Restore Cache GraalVM SDK
+      id: restore-cache-graalvm
+      if: ${{ inputs.require-graalvm == 'true' }}
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.sdkman/candidates/java/${{ inputs.graalvm-version }}
+        key: ${{ runner.os }}-sdkman-java-${{ inputs.graalvm-version }}
     - name: 'Setup SDKMan'
       id: sdkman-java
       shell: bash
@@ -110,3 +123,14 @@ runs:
         echo "Path to java command: $(which java)"
         echo "Java version:"
         java -version
+
+    - name: Restore Cache Java SDK
+      uses: actions/cache/save@v4
+      if: ${{ steps.restore-cache-java.outputs.cache-hit != 'true' }}
+      with:
+        key: ${{ steps.restore-cache-java.outputs.cache-primary-key }}
+    - name: Restore Cache GraalVM SDK
+      if: ${{ inputs.require-graalvm == 'true' && steps.restore-cache-graalvm.outputs.cache-primary-key }}
+      uses: actions/cache/restore@v3
+      with:
+        key: ${{ steps.restore-cache-graalvm.outputs.cache-primary-key }}
