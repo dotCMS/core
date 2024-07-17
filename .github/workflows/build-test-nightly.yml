@@ -50,7 +50,7 @@ jobs:
       packages: write
   build-cli:
     name: Nightly CLI Build
-    needs: [ test ]
+    needs: [ initialize, test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cli-build-artifacts.yml
     with:
