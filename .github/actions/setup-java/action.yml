@@ -34,7 +34,7 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: ~/.sdkman
-        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install-${{ steps.get-requested-version.outputs.requested_version }}
+        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install
     - name: Install SDKMan
       id: install-sdkman
       if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' }}
@@ -50,7 +50,7 @@ runs:
       uses: actions/cache/save@v4
       with:
         path: ~/.sdkman
-        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install-${{ steps.get-requested-version.outputs.requested_version }}
+        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install
 
     - name: Restore Cache Java SDK
       id: restore-cache-java
