@@ -106,13 +106,13 @@ $color-palette-yellow-shade: #bd5001;
 $color-palette-yellow: #ffb444;
 $color-palette-yellow-tint: #fff8ec;
 
-$color-palette-red-op-08: rgba($color-palette-yellow, 0.8);
-$color-palette-red-op-10: rgba($color-palette-yellow, 0.1);
-$color-palette-red-op-15: rgba($color-palette-yellow, 0.15);
-$color-palette-red-op-20: rgba($color-palette-yellow, 0.2);
+$color-palette-yellow-op-08: rgba($color-palette-yellow, 0.8);
+$color-palette-yellow-op-10: rgba($color-palette-yellow, 0.1);
+$color-palette-yellow-op-15: rgba($color-palette-yellow, 0.15);
+$color-palette-yellow-op-20: rgba($color-palette-yellow, 0.2);
 
 $color-accessible-text-yellow: $color-palette-yellow-shade;
-$color-accessible-text-yellow-bg: $color-palette-red-op-08;
+$color-accessible-text-yellow-bg: $color-palette-yellow-op-08;
 $color-alert-yellow: $color-palette-yellow;
 $color-alert-yellow-light: $color-palette-yellow-tint;
 
