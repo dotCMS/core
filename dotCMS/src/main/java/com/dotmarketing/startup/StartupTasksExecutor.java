@@ -390,10 +390,10 @@ public class StartupTasksExecutor {
             Logger.error(this, "FATAL ERROR RUNNING TASK: " + e.getMessage(), e);
         }
 
-        Thread.sleep(10000);
+        e.printStackTrace();
 
         if (Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)) {
-            e.printStackTrace();
+            Thread.sleep(10000);
             System.exit(1);
         }
     }
