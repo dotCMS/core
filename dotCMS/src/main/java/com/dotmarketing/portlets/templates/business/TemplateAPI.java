@@ -438,7 +438,7 @@ public interface TemplateAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-    Template saveAndUpdateLayout(Template template, TemplateLayout newLayout, Host site, User user,
+    Template saveAndUpdateLayout(final TemplateSaveParameters templateSaveParameters, User user,
 								 boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**

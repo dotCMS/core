@@ -31,15 +31,14 @@ inputs:
   github-token:
     description: 'GitHub Token'
     required: true
+  artifact-run-id:
+    default: ${{ github.run_id }}
+    description: 'The run id of the core artifacts'
 
 runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v4
-
-    - name: Setup Java # Uses .sdkmanrc file
-      id: sdkman-java
-      uses: sdkman/sdkman-action@b1f9b696c79148b66d3d3a06f7ea801820318d0f
 
     - name: Install xmllint
       run: |
@@ -48,9 +47,10 @@ runs:
 
     - uses: ./.github/actions/maven-job
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         stage-name: "Deploy Artifacts Validate"
         maven-args: "validate" # We don't need to build just get the repo and use validate to check everything exists
-
+        artifacts-from: ${{ inputs.artifact-run-id }}
 
     - uses: jfrog/setup-jfrog-cli@v4
 

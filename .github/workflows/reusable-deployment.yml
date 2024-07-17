@@ -101,6 +101,7 @@ jobs:
           artifactory-password: ${{ secrets.EE_REPO_PASSWORD }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+
       - name: CLI Publish
         id: cli_publish
         if: inputs.publish-npm-package
@@ -108,7 +109,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
-          reuse-previous-build: ${{ inputs.reuse-previous-build }}
+          cli-artifact-run-id: ${{ github.run_id }} # currently cli artifacts are never from build queue
 
 
       # A Slack notification is sent using the 'slackapi/slack-github-action' action if the repository is 'dotcms/core'.
