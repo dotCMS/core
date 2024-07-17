@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
@@ -338,7 +339,14 @@ public class TemplateResource {
             final TemplateLayout templateLayout = this.templateHelper.toTemplateLayout(templateForm.getLayout());
             template.setDrawedBody(templateLayout);
             template.setDrawed(true);
-            this.templateAPI.saveAndUpdateLayout(template, templateLayout, host, user, pageMode.respectAnonPerms);
+
+            final TemplateSaveParameters parameters = new TemplateSaveParameters.Builder()
+                    .setNewTemplate(template)
+                    .setNewLayout(templateLayout)
+                    .setSite(host)
+                    .build();
+
+            this.templateAPI.saveAndUpdateLayout(parameters, user, pageMode.respectAnonPerms);
         } else {
             template.setDrawedBody(templateForm.getDrawedBody());
             this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);

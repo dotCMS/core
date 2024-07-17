@@ -60,7 +60,7 @@ jobs:
     #
   build-cli:
     name: CLI Build
-    needs: [ test ]
+    needs: [ initialize,test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cli-build-artifacts.yml
     with:
