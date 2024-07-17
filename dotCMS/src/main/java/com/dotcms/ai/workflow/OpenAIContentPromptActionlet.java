@@ -7,6 +7,7 @@ import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.google.common.collect.ImmutableList;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Actionlet(onlyBatch = true)
 public class OpenAIContentPromptActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID = 1L;

@@ -32,7 +32,11 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.*;
+import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.factories.TreeFactory;
+import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -43,7 +47,12 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
-import com.dotmarketing.portlets.templates.design.bean.*;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.LayoutChanges;
+import com.dotmarketing.portlets.templates.design.bean.Sidebar;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -62,7 +71,16 @@ import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -84,6 +102,10 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, DotInitializer {
 
 	private static final String LAYOUT_FILE_NAME     = "com/dotmarketing/portlets/templates/business/layout.json";
+	private static final String SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG = "System template cannot be copied";
+	private static final String SYSTEM_TEMPLATE_CANNOT_BE_ARCHIVED_MSG = "System template can not be archived";
+	private static final String SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG = "System template can not be deleted";
+	private static final String SYSTEM_TEMPLATE_CANNOT_BE_MODIFIED_MSG = "System template can not be modified";
 
 	private final  PermissionAPI    permissionAPI          = APILocator.getPermissionAPI();
 	private final  IdentifierAPI    identifierAPI          = APILocator.getIdentifierAPI();
@@ -212,8 +234,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(sourceTemplate.getIdentifier())) {
 
-			Logger.error(this, "System template can not be copied");
-			throw new IllegalArgumentException("System template can not be copied");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
 		}
 
 		final Identifier identifier = APILocator.getIdentifierAPI().find(sourceTemplate.getIdentifier());
@@ -233,8 +255,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(sourceTemplate.getIdentifier())) {
 
-			Logger.error(this, "System template can not be copied");
-			throw new IllegalArgumentException("System template can not be copied");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
 		}
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
@@ -305,8 +327,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(sourceTemplate.getIdentifier())) {
 
-			Logger.error(this, "System template can not be copied");
-			throw new IllegalArgumentException("System template can not be copied");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_COPIED_MSG);
 		}
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user,
@@ -353,7 +375,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			Logger.info(this, "System template can not be published");
+			Logger.debug(this, "System template can not be published");
 			return;
 		}
 
@@ -430,7 +452,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			Logger.error(this, "System template can not be unpublished");
+			Logger.debug(this, "System template can not be unpublished");
 			throw new IllegalArgumentException("System template can not be unpublished");
 		}
 
@@ -485,8 +507,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			Logger.error(this, "System template can not be archived");
-			throw new IllegalArgumentException("System template can not be archived");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_ARCHIVED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_ARCHIVED_MSG);
 		}
 
 		//Check Edit Permissions over Template
@@ -537,7 +559,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			Logger.error(this, "System template can not be unarchived");
+			Logger.debug(this, "System template can not be unarchived");
 			throw new IllegalArgumentException("System template can not be unarchived");
 		}
 
@@ -563,7 +585,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	public boolean isArchived(final Template template) throws DotDataException, DotStateException,DotSecurityException {
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
-			Logger.info(this, "System template can not be archived");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_ARCHIVED_MSG);
 			// System template is never archived
 			return false;
 		}
@@ -580,7 +602,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			throw new IllegalArgumentException("System template can not be deleted");
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG);
 		}
 
 		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
@@ -656,8 +678,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(inode)) {
 
-			Logger.error(this, "System template can not be deleted");
-			throw new IllegalArgumentException("System template can not be deleted");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG);
 		}
 
 		Try.run(()->FactoryLocator.getTemplateFactory().deleteTemplateByInode(inode)).onFailure(e -> new RuntimeException(e));
@@ -675,7 +697,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			throw new IllegalArgumentException("System template can not be modified");
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_MODIFIED_MSG);
 		}
 
 		if (UtilMethods.isSet(template.getInode()) && UtilMethods.isSet(template.getIdentifier())) {
@@ -743,8 +765,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			Logger.error(this, "System template can not be modified");
-			throw new IllegalArgumentException("System template can not be modified");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_MODIFIED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_MODIFIED_MSG);
 		}
 
 		boolean existingId=false;
@@ -945,8 +967,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		Logger.debug(this, ()-> "Calling delete: " + template.getIdentifier());
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			Logger.error(this, "System template can not be deleted");
-			throw new IllegalArgumentException("System template can not be deleted");
+			Logger.debug(this, SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG);
+			throw new IllegalArgumentException(SYSTEM_TEMPLATE_CANNOT_BE_DELETED_MSG);
 		}
 
 		if(permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
@@ -1214,7 +1236,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			Logger.error(this, "System template can not be set to live");
+			Logger.debug(this, "System template can not be set to live");
 			throw new IllegalArgumentException("System template can not be set to live");
 		}
 
@@ -1251,11 +1273,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	}
 
 	/**
-	 * Default implementation for {@link TemplateAPI#saveAndUpdateLayout(Template, TemplateLayout, Host, User, boolean)}
+	 * Default implementation for {@link TemplateAPI#saveAndUpdateLayout(TemplateSaveParameters, User, boolean)}
 	 *
-	 * @param template
-	 * @param layout
-	 * @param site
+	 * @param templateSaveParameters
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return
@@ -1263,31 +1283,49 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	 * @throws DotSecurityException
 	 */
 	@Override
-	public Template saveAndUpdateLayout(final Template template, final TemplateLayout layout, final Host site,
-										final User user, final boolean respectFrontendRoles)
-			throws DotDataException, DotSecurityException {
+	public Template saveAndUpdateLayout(final TemplateSaveParameters templateSaveParameters, final User user,
+										final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		final Template templateFromDB = UtilMethods.isSet(template.getIdentifier()) ?
-				APILocator.getTemplateAPI().findWorkingTemplate(template.getIdentifier(), user, false)
-				: null;
+		Optional<TemplateLayout> oldTemplateLayout;
 
-		if (templateFromDB != null) {
-			final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+		if (!UtilMethods.isSet(templateSaveParameters.getOldTemplateLayout()) &&
+				UtilMethods.isSet(templateSaveParameters.getNewTemplate().getIdentifier())) {
 
-			LayoutChanges changes = getChange(templateLayoutFromDB, layout);
-
-			final List<String> pageIds = APILocator.getHTMLPageAssetAPI().findPagesByTemplate(template, user, respectFrontendRoles)
-					.stream()
-					.map(Contentlet::getIdentifier)
-					.collect(Collectors.toList());
-
-			multiTreeAPI.updateMultiTrees(changes, pageIds);
+			oldTemplateLayout = getTemplateLayoutFromDatabase(templateSaveParameters.getNewTemplate().getIdentifier(), user);
+		} else {
+			oldTemplateLayout = Optional.ofNullable(templateSaveParameters.getOldTemplateLayout());
 		}
 
-		template.setDrawedBody(reOrder(layout));
-		template.setDrawed(true);
+		if (oldTemplateLayout.isPresent()) {
+			updateMultiTrees(templateSaveParameters, oldTemplateLayout.get(), user, respectFrontendRoles);
+		}
 
-		return saveTemplate(template, site, user, respectFrontendRoles);
+		templateSaveParameters.getNewTemplate().setDrawedBody(reOrder(templateSaveParameters.getNewLayout()));
+		templateSaveParameters.getNewTemplate().setDrawed(true);
+
+		return saveTemplate(templateSaveParameters.getNewTemplate(), templateSaveParameters.getSite(), user, respectFrontendRoles);
+	}
+
+	private void updateMultiTrees(final TemplateSaveParameters templateSaveParameters, TemplateLayout oldTemplateLayout,
+								  User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		LayoutChanges changes = getChange(oldTemplateLayout, templateSaveParameters.getNewLayout());
+
+		final List<String> pageIds = UtilMethods.isSet(templateSaveParameters.getPageIds()) ?
+				templateSaveParameters.getPageIds() :
+				APILocator.getHTMLPageAssetAPI().findPagesByTemplate(templateSaveParameters.getNewTemplate(), user, respectFrontendRoles)
+						.stream()
+						.map(Contentlet::getIdentifier)
+						.collect(Collectors.toList());
+
+		multiTreeAPI.updateMultiTrees(changes, pageIds);
+	}
+
+
+	private static Optional<TemplateLayout> getTemplateLayoutFromDatabase(final String templateId, final User user)
+			throws DotDataException, DotSecurityException {
+		final Template templateFromDB = APILocator.getTemplateAPI().findWorkingTemplate(templateId, user, false);
+
+		return Optional.ofNullable(templateFromDB.getDrawedBody()).map(DotTemplateTool::getTemplateLayout);
 	}
 
 	/**
