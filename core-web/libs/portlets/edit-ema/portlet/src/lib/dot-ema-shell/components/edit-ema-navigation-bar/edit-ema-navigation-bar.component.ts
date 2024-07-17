@@ -18,7 +18,6 @@ import { NavigationBarItem } from '../../../shared/models';
 export class EditEmaNavigationBarComponent {
     @Input() items: NavigationBarItem[];
 
-    // TODO: MISSING TEST
     @Output() action: EventEmitter<string> = new EventEmitter();
 
     /**
