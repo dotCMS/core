@@ -1,9 +1,6 @@
 package com.dotmarketing.portlets.categories.business;
 
-import com.dotcms.util.CloseUtils;
-import com.dotcms.util.DotPreconditions;
-import com.dotcms.util.JsonUtil;
-import com.dotcms.util.ReflectionUtils;
+import com.dotcms.util.*;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -638,7 +635,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 						final String parentsASJsonArray = "[" + row.get("path") + "]";
 						final List<ShortCategory> parentList = getShortCategories(parentsASJsonArray);
 						category.setParentList(parentList.subList(0, parentList.size() - 1));
-						category.setChildrenCount(Integer.parseInt(row.get("childrencount").toString()));
+						category.setChildrenCount(ConversionUtils.toInt(row.get("childrencount"), 0));
 					}
 
 					categories.add(category);
