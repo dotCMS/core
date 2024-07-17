@@ -47,6 +47,7 @@ runs:
 
     - uses: ./.github/actions/maven-job
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         stage-name: "Deploy Artifacts Validate"
         maven-args: "validate" # We don't need to build just get the repo and use validate to check everything exists
         artifacts-from: ${{ inputs.artifact-run-id }}
