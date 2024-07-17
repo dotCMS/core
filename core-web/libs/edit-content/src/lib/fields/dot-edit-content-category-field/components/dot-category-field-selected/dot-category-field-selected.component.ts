@@ -11,6 +11,12 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.models';
 import { DotCategoryFieldSearchListComponent } from '../dot-category-field-search-list/dot-category-field-search-list.component';
 
+/**
+ * Represents the Dot Category Field Selected Component.
+ * @class
+ * @classdesc The Dot Category Field Selected Component is responsible for rendering the selected categories
+ * in the Dot Category Field Component.
+ */
 @Component({
     selector: 'dot-category-field-selected',
     standalone: true,
@@ -45,14 +51,10 @@ export class DotCategoryFieldSelectedComponent {
         alias: 'categories'
     });
 
+    /**
+     * Represents an EventEmitter used for removing items. Emit the key
+     * of the category
+     */
     @Output()
     removeItem = new EventEmitter<string>();
-
-    private convertPathToArray(path: string): string[] {
-        if (!path) {
-            return [];
-        }
-
-        return path.split(' / ');
-    }
 }

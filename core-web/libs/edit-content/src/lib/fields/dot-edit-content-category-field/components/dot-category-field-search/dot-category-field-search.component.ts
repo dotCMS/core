@@ -43,6 +43,7 @@ export class DotCategoryFieldSearchComponent {
     $isLoading = input<boolean>(false, { alias: 'isLoading' });
 
     constructor() {
+        // Emit the term to search, if the input is empty hide the result.
         this.searchControl.valueChanges
             .pipe(
                 takeUntilDestroyed(),
