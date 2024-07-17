@@ -165,7 +165,7 @@ runs:
         echo "::group::NPM Package setup"
         echo "Adding bin folder with all the binaries"
         mkdir -p bin
-        find ${{ github.workspace }}/artifacts/cli/target/distributions/ -name "*.zip" -exec unzip -d bin {} \;
+        find ${{ github.workspace }}/artifacts/ -name "*.zip" -exec unzip -d bin {} \;
 
         echo "Adding wrapper script"
         mv src/postinstall.js.seed src/postinstall.js
