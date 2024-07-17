@@ -1706,99 +1706,105 @@ public class TemplateAPITest extends IntegrationTestBase {
         HttpServletRequest mockReqquest = mock(HttpServletRequest.class);
         when(mockReqquest.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
 
-        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockReqquest);
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
-        HTMLPageDataGen.createNewVersion(page, variant, null);
+        try {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(mockReqquest);
 
-        new MultiTreeDataGen()
-                .setPage(page)
-                .setContainer(container)
-                .setInstanceID("1")
-                .setContentlet(contentlet_1)
-                .nextPersisted();
+            HTMLPageDataGen.createNewVersion(page, variant, null);
 
-        new MultiTreeDataGen()
-                .setPage(page)
-                .setContainer(container)
-                .setInstanceID("2")
-                .setContentlet(contentlet_2)
-                .nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page)
+                    .setContainer(container)
+                    .setInstanceID("1")
+                    .setContentlet(contentlet_1)
+                    .nextPersisted();
 
-        new MultiTreeDataGen()
-                .setPage(page)
-                .setContainer(container)
-                .setInstanceID("1")
-                .setContentlet(contentlet_1)
-                .setVariant(variant)
-                .nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page)
+                    .setContainer(container)
+                    .setInstanceID("2")
+                    .setContentlet(contentlet_2)
+                    .nextPersisted();
 
-        new MultiTreeDataGen()
-                .setPage(page)
-                .setContainer(container)
-                .setInstanceID("2")
-                .setContentlet(contentlet_2)
-                .setVariant(variant)
-                .nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page)
+                    .setContainer(container)
+                    .setInstanceID("1")
+                    .setContentlet(contentlet_1)
+                    .setVariant(variant)
+                    .nextPersisted();
 
-
-        final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
-                .addRow()
-                .addColumn(100)
-                .withContainer(container, "2")
-                .addRow()
-                .addColumn(100)
-                .withContainer(container, "1")
-                .next();
-
-        final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
-                .setNewTemplate(template)
-                .setNewLayout(newTemplateLayout)
-                .setSite(host)
-                .build(), APILocator.systemUser(), false);
+            new MultiTreeDataGen()
+                    .setPage(page)
+                    .setContainer(container)
+                    .setInstanceID("2")
+                    .setContentlet(contentlet_2)
+                    .setVariant(variant)
+                    .nextPersisted();
 
 
-        final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
-                false);
+            final TemplateLayout newTemplateLayout = new TemplateLayoutDataGen()
+                    .addRow()
+                    .addColumn(100)
+                    .withContainer(container, "2")
+                    .addRow()
+                    .addColumn(100)
+                    .withContainer(container, "1")
+                    .next();
 
-        final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
+            final Template templateSaved = APILocator.getTemplateAPI().saveAndUpdateLayout(new TemplateSaveParameters.Builder()
+                    .setNewTemplate(template)
+                    .setNewLayout(newTemplateLayout)
+                    .setSite(host)
+                    .build(), APILocator.systemUser(), false);
 
-        final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
-                .addRow()
-                .addColumn(100)
-                .withContainer(container, "1")
-                .addRow()
-                .addColumn(100)
-                .withContainer(container, "2")
-                .next();
 
-        assertEquals(expectedTemplateLayout, templateLayoutFromDB);
+            final Template templateFromDB = APILocator.getTemplateAPI().find(templateSaved.getInode(), APILocator.systemUser(),
+                    false);
 
-        final List<MultiTree> multiTreesFromDBDefaultVariant = APILocator.getMultiTreeAPI().getMultiTreesByVariant(page.getIdentifier(),
-                VariantAPI.DEFAULT_VARIANT.name());
-        assertEquals(2, multiTreesFromDBDefaultVariant.size());
+            final TemplateLayout templateLayoutFromDB = DotTemplateTool.getTemplateLayout(templateFromDB.getDrawedBody());
 
-        for (final MultiTree multiTree : multiTreesFromDBDefaultVariant) {
-            if (multiTree.getVariantId().equals(VariantAPI.DEFAULT_VARIANT.name()) && multiTree.getRelationType().equals("1")) {
-                assertEquals(contentlet_1.getIdentifier(), multiTree.getContentlet());
-            } else if (multiTree.getVariantId().equals(VariantAPI.DEFAULT_VARIANT.name()) && multiTree.getRelationType().equals("2")) {
-                assertEquals(contentlet_2.getIdentifier(), multiTree.getContentlet());
-            } else {
-                throw new AssertionError();
+            final TemplateLayout expectedTemplateLayout = new TemplateLayoutDataGen()
+                    .addRow()
+                    .addColumn(100)
+                    .withContainer(container, "1")
+                    .addRow()
+                    .addColumn(100)
+                    .withContainer(container, "2")
+                    .next();
+
+            assertEquals(expectedTemplateLayout, templateLayoutFromDB);
+
+            final List<MultiTree> multiTreesFromDBDefaultVariant = APILocator.getMultiTreeAPI().getMultiTreesByVariant(page.getIdentifier(),
+                    VariantAPI.DEFAULT_VARIANT.name());
+            assertEquals(2, multiTreesFromDBDefaultVariant.size());
+
+            for (final MultiTree multiTree : multiTreesFromDBDefaultVariant) {
+                if (multiTree.getVariantId().equals(VariantAPI.DEFAULT_VARIANT.name()) && multiTree.getRelationType().equals("1")) {
+                    assertEquals(contentlet_1.getIdentifier(), multiTree.getContentlet());
+                } else if (multiTree.getVariantId().equals(VariantAPI.DEFAULT_VARIANT.name()) && multiTree.getRelationType().equals("2")) {
+                    assertEquals(contentlet_2.getIdentifier(), multiTree.getContentlet());
+                } else {
+                    throw new AssertionError();
+                }
             }
-        }
 
-        final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTreesByVariant(page.getIdentifier(),
-                variant.name());
-        assertEquals(2, multiTreesFromDB.size());
+            final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTreesByVariant(page.getIdentifier(),
+                    variant.name());
+            assertEquals(2, multiTreesFromDB.size());
 
-        for (final MultiTree multiTree : multiTreesFromDB) {
-            if (multiTree.getVariantId().equals(variant.name()) && multiTree.getRelationType().equals("1")) {
-                assertEquals(contentlet_2.getIdentifier(), multiTree.getContentlet());
-            } else if (multiTree.getVariantId().equals(variant.name()) && multiTree.getRelationType().equals("2")) {
-                assertEquals(contentlet_1.getIdentifier(), multiTree.getContentlet());
-            } else {
-                throw new AssertionError();
+            for (final MultiTree multiTree : multiTreesFromDB) {
+                if (multiTree.getVariantId().equals(variant.name()) && multiTree.getRelationType().equals("1")) {
+                    assertEquals(contentlet_2.getIdentifier(), multiTree.getContentlet());
+                } else if (multiTree.getVariantId().equals(variant.name()) && multiTree.getRelationType().equals("2")) {
+                    assertEquals(contentlet_1.getIdentifier(), multiTree.getContentlet());
+                } else {
+                    throw new AssertionError();
+                }
             }
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
         }
     }
 
