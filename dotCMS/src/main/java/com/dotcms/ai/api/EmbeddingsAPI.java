@@ -160,7 +160,7 @@ public interface EmbeddingsAPI {
      * Embeddings
      *
      * @param contentId The ID of the Contentlet being sent to the OpenAI Endpoint.
-     * @param content   The content that will be tokenized and sent to OpenAI.
+     * @param content   The actual indexable data that will be tokenized and sent to OpenAI service.
      *
      * @return Tuple(Count of Tokens Input, List of Embeddings Output)
      */
