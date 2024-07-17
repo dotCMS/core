@@ -5,9 +5,9 @@ import {
     categoryDeepCopy,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
+    getSelectedFromContentlet,
     removeItemByKey,
     transformCategories,
-    transformSelectedCategories,
     updateChecked
 } from './category-field.utils';
 
@@ -22,7 +22,7 @@ import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models
 describe('CategoryFieldUtils', () => {
     describe('getSelectedCategories', () => {
         it('should return an empty array if contentlet is null', () => {
-            const result = transformSelectedCategories(CATEGORY_FIELD_MOCK, null);
+            const result = getSelectedFromContentlet(CATEGORY_FIELD_MOCK, null);
             expect(result).toEqual([]);
         });
 
@@ -31,7 +31,7 @@ describe('CategoryFieldUtils', () => {
                 { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Electrical' },
                 { key: 'cb83dc32c0a198fd0ca427b3b587f4ce', value: 'Doors & Windows' }
             ];
-            const result = transformSelectedCategories(
+            const result = getSelectedFromContentlet(
                 CATEGORY_FIELD_MOCK,
                 CATEGORY_FIELD_CONTENTLET_MOCK
             );
@@ -543,16 +543,13 @@ describe('CategoryFieldUtils', () => {
     });
     describe('transformSelectedCategories', () => {
         it('should return an empty array if contentlet is not provided', () => {
-            const result = transformSelectedCategories(CATEGORY_FIELD_MOCK, null as never);
+            const result = getSelectedFromContentlet(CATEGORY_FIELD_MOCK, null as never);
             expect(result).toEqual([]);
         });
 
         it('should return an empty array if variable is not provided', () => {
             const variableField: DotCMSContentTypeField = { ...CATEGORY_FIELD_MOCK, variable: '' };
-            const result = transformSelectedCategories(
-                variableField,
-                CATEGORY_FIELD_CONTENTLET_MOCK
-            );
+            const result = getSelectedFromContentlet(variableField, CATEGORY_FIELD_CONTENTLET_MOCK);
             expect(result).toEqual([]);
         });
 
@@ -561,15 +558,12 @@ describe('CategoryFieldUtils', () => {
                 ...CATEGORY_FIELD_MOCK,
                 variable: 'nonexistentField'
             };
-            const result = transformSelectedCategories(
-                variableField,
-                CATEGORY_FIELD_CONTENTLET_MOCK
-            );
+            const result = getSelectedFromContentlet(variableField, CATEGORY_FIELD_CONTENTLET_MOCK);
             expect(result).toEqual([]);
         });
 
         it('should transform selected categories correctly', () => {
-            const result = transformSelectedCategories(
+            const result = getSelectedFromContentlet(
                 CATEGORY_FIELD_MOCK,
                 CATEGORY_FIELD_CONTENTLET_MOCK
             );
@@ -584,7 +578,7 @@ describe('CategoryFieldUtils', () => {
                 ...CATEGORY_FIELD_CONTENTLET_MOCK,
                 [CATEGORY_FIELD_VARIABLE_NAME]: []
             };
-            const result = transformSelectedCategories(
+            const result = getSelectedFromContentlet(
                 CATEGORY_FIELD_MOCK,
                 contentletWithEmptyCategories
             );

@@ -50,10 +50,16 @@
 
         <div class="category-field__right-pane flex flex-column">
             <div class="category-field__selected-categories-list flex-1">
-                Selected Categories Component
+                <dot-category-field-selected
+                    (removeItem)="store.removeSelected($event)"
+                    [categories]="store.selected()" />
             </div>
             <div class="category-field__actions flex justify-content-end">
-                <button class="p-button p-button-link" data-testId="clear_all-btn" pButton>
+                <button
+                    (click)="store.removeSelected($allCategoryKeys())"
+                    class="p-button p-button-link"
+                    data-testId="clear_all-btn"
+                    pButton>
                     {{ 'edit.content.category-field.sidebar.button.clear-all' | dm }}
                 </button>
             </div>

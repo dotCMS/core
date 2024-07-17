@@ -23,9 +23,10 @@ import {
     checkIfClickedIsLastItem,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
+    getSelectedFromContentlet,
     removeItemByKey,
     transformCategories,
-    transformSelectedCategories,
+    transformToSelectedObject,
     updateChecked
 } from '../utils/category-field.utils';
 
@@ -118,14 +119,16 @@ export const CategoryFieldStore = signalStore(
                     tap(() => patchState(store, { state: ComponentStatus.LOADING })),
                     switchMap((categoryField) => {
                         const { field, contentlet } = categoryField;
-                        const selected = transformSelectedCategories(field, contentlet);
+                        const selectedKeys = getSelectedFromContentlet(field, contentlet).map(
+                            (item) => item.key
+                        );
 
-                        const selectedKeys = selected.map((item) => item.key);
-
-                        // TODO: Wait for the final working endpoint
                         return categoryService.getSelectedHierarchy(selectedKeys).pipe(
                             tapResponse({
-                                next: () => {
+                                next: (categoryWithParentPath) => {
+                                    const selected =
+                                        transformToSelectedObject(categoryWithParentPath);
+
                                     patchState(store, {
                                         field,
                                         selected,
@@ -135,7 +138,6 @@ export const CategoryFieldStore = signalStore(
                                 error: (error: HttpErrorResponse) => {
                                     patchState(store, {
                                         field,
-                                        selected,
                                         state: ComponentStatus.IDLE
                                     });
 
@@ -156,12 +158,17 @@ export const CategoryFieldStore = signalStore(
             },
 
             /**
-             * Updates the selected items based on the provided item.
+             * Updates the selected items based on the items keyed by the provided selected keys.
+             * This method receives the selected keys from the list of categories, searches in the category array
+             * for the item with all the necessary data and stores it in the state as a selected item.
+             *
+             * @param {string[]} categoryListChecked - An array of selected keys from the category list
+             * @param {DotCategoryFieldKeyValueObj} item - The item containing the data to be stored as a selected item
              */
-            updateSelected(selected: string[], item: DotCategoryFieldKeyValueObj): void {
+            updateSelected(categoryListChecked: string[], item: DotCategoryFieldKeyValueObj): void {
                 const currentChecked: DotCategoryFieldKeyValueObj[] = updateChecked(
                     store.selected(),
-                    selected,
+                    categoryListChecked,
                     item
                 );
 
@@ -171,16 +178,15 @@ export const CategoryFieldStore = signalStore(
             },
 
             /**
-             * Adds the selected item(s) to the store's selected state.
+             * Adds the items directly to the 'selected' in the store. These items are already transformed and formatted in the manner 'selected' requires.
              *
-             * @param {DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]} selectedItem - The item(s) to be added.
+             * @param {DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]} selectedItem - The fully formed item or items to be added. These item(s) have been transformed from the search results to match the requirements of 'selected'.
              * @returns {void}
              */
             addSelected(
                 selectedItem: DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]
             ): void {
                 const updatedSelected = addSelected(store.selected(), selectedItem);
-                // TODO: MAKE A REQUEST TO GET THE parentPath
                 patchState(store, {
                     selected: updatedSelected
                 });

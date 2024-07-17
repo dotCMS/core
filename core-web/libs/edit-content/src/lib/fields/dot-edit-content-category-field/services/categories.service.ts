@@ -66,7 +66,7 @@ export class CategoriesService {
      */
     getSelectedHierarchy(keys: string[]): Observable<HierarchyParent[]> {
         return this.#http
-            .post<DotCMSResponse<DotCategory[]>>(`${API_URL}/hierarchy`, { keys })
+            .post<DotCMSResponse<HierarchyParent[]>>(`${API_URL}/hierarchy`, { keys })
             .pipe(pluck('entity'));
     }
 

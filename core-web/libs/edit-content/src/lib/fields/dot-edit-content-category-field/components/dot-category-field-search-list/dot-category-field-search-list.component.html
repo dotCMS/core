@@ -34,7 +34,7 @@
                 <td>{{ category.value }}</td>
                 <td>
                     <span [pTooltip]="category.path" tooltipPosition="top">
-                        {{ category.path }}
+                        {{ category.path || 'edit.content.category-field.category.root-name' | dm }}
                     </span>
                 </td>
             </tr>

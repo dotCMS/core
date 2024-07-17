@@ -8,7 +8,7 @@
                     [pTooltip]="category.path"
                     tooltipPosition="top"
                     class="category-list__path-content">
-                    {{ category.path }}
+                    {{ category.path || 'edit.content.category-field.category.root-name' | dm }}
                 </span>
             </div>
         </div>
