@@ -70,13 +70,29 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     noFavicon = false;
 
     ngOnInit(): void {
+        const truncateText = (text: string, limit: number) => {
+            if (!text) {
+                return '';
+            }
+
+            if (text.length <= limit) {
+                return text;
+            }
+
+            const truncated = text.slice(0, limit);
+
+            return truncated.slice(0, truncated.lastIndexOf(' ')) + '...';
+        };
+
         const title =
-            this.seoOGTags?.['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
-            this.seoOGTags?.title?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
+            truncateText(this.seoOGTags?.['og:title'], SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
+            truncateText(this.seoOGTags?.title, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
 
         const description =
-            this.seoOGTags?.['og:description']?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) ||
-            this.seoOGTags?.description?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
+            truncateText(
+                this.seoOGTags?.['og:description'],
+                SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
+            ) || truncateText(this.seoOGTags?.description, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
 
         const twitterDescriptionProperties = [
             'twitter:description',
@@ -87,15 +103,15 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
 
         const twitterDescription = twitterDescriptionProperties
             .map((property) =>
-                this.seoOGTags?.[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
+                truncateText(this.seoOGTags?.[property], SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
             )
-            .find((value) => value !== undefined);
+            .find((value) => value !== undefined && value.length > 0);
 
         const twitterTitle = twitterTitleProperties
             .map((property) =>
-                this.seoOGTags?.[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
+                truncateText(this.seoOGTags?.[property], SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
             )
-            .find((value) => value !== undefined);
+            .find((value) => value !== undefined && value.length > 0);
 
         this.allPreview = [
             {
