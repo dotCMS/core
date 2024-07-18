@@ -23,7 +23,7 @@ export interface DotCategoryFieldKeyValueObj {
  * It is defined as a subset of the DotCategory type, which includes the categoryName,
  * inode, and parentList properties.
  */
-export type HierarchyParent = Pick<DotCategory, 'categoryName' | 'inode' | 'parentList' | 'key'> & {
+export type HierarchyParent = Pick<DotCategory, 'inode' | 'parentList' | 'key'> & {
     name: string;
 };
 

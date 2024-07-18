@@ -1,7 +1,7 @@
 import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj, HierarchyParent } from '../models/dot-category-field.models';
 import { transformCategories } from '../utils/category-field.utils';
 
 export const CATEGORY_FIELD_VARIABLE_NAME = 'categorias';
@@ -263,3 +263,42 @@ const MESSAGES_MOCK = {
 };
 
 export const CATEGORY_MESSAGE_MOCK = new MockDotMessageService(MESSAGES_MOCK);
+
+export const CATEGORY_HIERARCHY_MOCK: HierarchyParent[] = [
+    {
+        inode: CATEGORY_LEVEL_1[0].inode,
+        key: CATEGORY_LEVEL_1[0].key,
+        name: CATEGORY_LEVEL_1[0].categoryName,
+
+        parentList: [
+            {
+                inode: CATEGORY_FIELD_MOCK.categories.inode,
+                key: CATEGORY_FIELD_MOCK.categories.key,
+                name: CATEGORY_FIELD_MOCK.categories.categoryName
+            },
+            {
+                inode: CATEGORY_LEVEL_1[0].inode,
+                key: CATEGORY_LEVEL_1[0].key,
+                name: CATEGORY_LEVEL_1[0].categoryName
+            }
+        ]
+    },
+    {
+        inode: CATEGORY_LEVEL_1[1].inode,
+        key: CATEGORY_LEVEL_1[1].key,
+        name: CATEGORY_LEVEL_1[1].categoryName,
+
+        parentList: [
+            {
+                inode: CATEGORY_FIELD_MOCK.categories.inode,
+                key: CATEGORY_FIELD_MOCK.categories.key,
+                name: CATEGORY_FIELD_MOCK.categories.categoryName
+            },
+            {
+                inode: CATEGORY_LEVEL_1[0].inode,
+                key: CATEGORY_LEVEL_1[0].key,
+                name: CATEGORY_LEVEL_1[0].categoryName
+            }
+        ]
+    }
+];

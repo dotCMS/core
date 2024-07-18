@@ -408,10 +408,10 @@ describe('CategoryFieldUtils', () => {
                 sortOrder: 0,
                 type: '',
                 parentList: [
-                    { key: 'root', categoryName: 'Root Parent', inode: 'rootInode' },
+                    { key: 'root', name: 'Root Parent', inode: 'rootInode' },
                     {
                         key: 'parent1',
-                        categoryName: 'Parent 1',
+                        name: 'Parent 1',
                         inode: 'parentInode1'
                     }
                 ]
@@ -447,10 +447,10 @@ describe('CategoryFieldUtils', () => {
                     sortOrder: 0,
                     type: '',
                     parentList: [
-                        { key: 'root', categoryName: 'Root Parent', inode: 'rootInode' },
+                        { key: 'root', name: 'Root Parent', inode: 'rootInode' },
                         {
                             key: 'parent1',
-                            categoryName: 'Parent 1',
+                            name: 'Parent 1',
                             inode: 'parentInode1'
                         }
                     ]
@@ -471,10 +471,10 @@ describe('CategoryFieldUtils', () => {
                     sortOrder: 0,
                     type: '',
                     parentList: [
-                        { key: 'root', categoryName: 'Root Parent', inode: 'rootInode' },
+                        { key: 'root', name: 'Root Parent', inode: 'rootInode' },
                         {
                             key: 'parent1',
-                            categoryName: 'Parent 1',
+                            name: 'Parent 1',
                             inode: 'parentInode1'
                         }
                     ]
