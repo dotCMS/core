@@ -8,15 +8,14 @@ import {
     Injector,
     input,
     OnInit,
-    signal,
-    ViewChild
+    signal
 } from '@angular/core';
 import { ControlContainer, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoryFieldChipsComponent } from './components/dot-category-field-chips/dot-category-field-chips.component';
 import { DotCategoryFieldSidebarComponent } from './components/dot-category-field-sidebar/dot-category-field-sidebar.component';
@@ -39,7 +38,6 @@ import { CategoryFieldStore } from './store/content-category-field.store';
         ButtonModule,
         NgClass,
         DotMessagePipe,
-        DotDynamicDirective,
         DotCategoryFieldChipsComponent,
         DotCategoryFieldSidebarComponent
     ],
@@ -59,37 +57,23 @@ import { CategoryFieldStore } from './store/content-category-field.store';
     providers: [CategoriesService, CategoryFieldStore]
 })
 export class DotEditContentCategoryFieldComponent implements OnInit {
+    readonly store = inject(CategoryFieldStore);
+    readonly #form = inject(ControlContainer).control as FormGroup;
+    readonly #injector = inject(Injector);
     /**
      * Disable the button to open the sidebar
      */
     $showCategoriesSidebar = signal(false);
     /**
-     * The `DotDynamicDirective` directive is used to create a dynamic component.
-     *
-     * @type {DotDynamicDirective}
-     * @memberof DotEditContentCategoryFieldComponent
-     */
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
-    /**
      * The `field` variable is of type `DotCMSContentTypeField` and is a required input.
      * @description The variable represents a field of a DotCMS content type and is a required input.
      */
     field = input.required<DotCMSContentTypeField>();
-
     /**
      * Represents a DotCMS contentlet and is a required input
      * @description DotCMSContentlet input representing a DotCMS contentlet.
      */
     contentlet = input.required<DotCMSContentlet>();
-
-    readonly store = inject(CategoryFieldStore);
-    readonly #form = inject(ControlContainer).control as FormGroup;
-    /**
-     * The `Injector` is used to get the injected instance.
-     *
-     * @memberof DotEditContentCategoryFieldComponent
-     */
-    readonly #injector = inject(Injector);
     /**
      * The `$hasSelectedCategories` variable is a computed property that returns a boolean value.
      *
@@ -97,14 +81,18 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      */
     $hasSelectedCategories = computed(() => !!this.store.hasSelectedCategories());
     /**
-     * Retrieve the category field control.
+     * Getter to retrieve the category field control.
      *
      * @return {FormControl} The category field control.
      */
     get categoryFieldControl(): FormControl {
         return this.#form.get(this.store.fieldVariableName()) as FormControl;
     }
-
+    /**
+     * Initialize the component.
+     *
+     * @memberof DotEditContentCategoryFieldComponent
+     */
     ngOnInit(): void {
         this.store.load(this.field(), this.contentlet());
         effect(
