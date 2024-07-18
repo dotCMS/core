@@ -1,5 +1,3 @@
-import { EMPTY, of } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, switchMap } from 'rxjs/operators';
+import { debounceTime, filter, tap } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -48,22 +46,15 @@ export class DotCategoryFieldSearchComponent {
             .pipe(
                 takeUntilDestroyed(),
                 debounceTime(DEBOUNCE_TIME),
-                switchMap((value: string) => {
-                    if (value.length >= MINIMUM_CHARACTERS) {
-                        return of(value);
-                    } else if (value.length === 0) {
+                tap((value: string) => {
+                    if (value.length === 0) {
                         this.clearInput();
-
-                        return of('');
                     }
-
-                    return EMPTY;
-                })
+                }),
+                filter((value: string) => value.length >= MINIMUM_CHARACTERS)
             )
             .subscribe((value: string) => {
-                if (value.length >= MINIMUM_CHARACTERS) {
-                    this.term.emit(value);
-                }
+                this.term.emit(value);
             });
     }
 
