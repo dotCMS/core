@@ -3041,7 +3041,7 @@ describe('EditEmaEditorComponent', () => {
                                         mode: 'full',
                                         language: '1'
                                     },
-                                    innerHTML: 'Hello World',
+                                    content: 'Hello World',
                                     element: {},
                                     eventType: '',
                                     isNotDirty: false
