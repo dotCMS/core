@@ -277,11 +277,11 @@
     color: $color-accessible-text-red;
 
     &:hover {
-        background-color: $color-accessible-text-red-op-10;
+        background-color: $color-palette-red-op-10;
     }
 
     &:active {
-        background-color: $color-accessible-text-red-op-20;
+        background-color: $color-palette-red-op-20;
     }
 
     &:focus {

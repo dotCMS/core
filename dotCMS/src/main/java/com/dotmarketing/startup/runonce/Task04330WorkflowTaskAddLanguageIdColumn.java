@@ -23,6 +23,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 import org.apache.commons.lang.time.StopWatch;
@@ -602,13 +604,14 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
         private final String  webasset;
         private final long    languageId;
 
-        public WorkflowTask(final boolean update,
-                            final String  id,
-                            final String  assignedTo,
-                            final String  title,
-                            final String  status,
-                            final String  webasset,
-                            final long    languageId) {
+        @JsonCreator
+        public WorkflowTask(@JsonProperty("update") final boolean update,
+                            @JsonProperty("id") final String  id,
+                            @JsonProperty("assignedTo") final String  assignedTo,
+                            @JsonProperty("title") final String  title,
+                            @JsonProperty("status") final String  status,
+                            @JsonProperty("webasset") final String  webasset,
+                            @JsonProperty("languageId") final long    languageId) {
 
             this.update     = update;
             this.id         = id;
