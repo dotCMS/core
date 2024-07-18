@@ -44,6 +44,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.time.DateUtils;
 
@@ -756,6 +758,7 @@ public class FieldFactoryImpl implements FieldFactory {
     }
   }
 
+   static final Pattern leadingUnderscore = Pattern.compile("^_+");
 
   @Override
 public String suggestVelocityVar( String tryVar, Field field, List<String> takenFieldsVariables) throws DotDataException {
@@ -766,34 +769,46 @@ public String suggestVelocityVar( String tryVar, Field field, List<String> taken
       forbiddenFieldVariables.add(tryVar);
     }
 
-    String var = StringUtils.camelCaseLower(tryVar);
+    //We're going to remove leading underscores from the variable name if any
+    // And we're going to save them to add them back later
+      final Matcher matcher = leadingUnderscore.matcher(tryVar);
+      String leadingUnderscores = "";
+      if (matcher.find()) {
+          leadingUnderscores = matcher.group();
+      }
+
+    //camel lower case does not allow underscores, so if there were any this will remove them
+    String varName = StringUtils.camelCaseLower(tryVar);
     // if we don't get a var back, we are looking at UTF-8 or worse
     // lets just make a field up
-    if (!UtilMethods.isSet(var)) {
+    if (!UtilMethods.isSet(varName)) {
         tryVar= "field";
     }
     for (String fieldVar : forbiddenFieldVariables) {
-        if (var.equalsIgnoreCase(fieldVar)) {
-            var= null;
+        if (varName.equalsIgnoreCase(fieldVar)) {
+            varName= null;
             break;
         }
     }
 
-    if (UtilMethods.isSet(var)) {
-        return var;
+    if (UtilMethods.isSet(varName)) {
+        // if there were any leading underscores, we add them back
+        //otherwise we just return the varName as is
+        return leadingUnderscores + varName;
     }
 
+    // if we are here, we need to generate a new variable name
     for (int i = 1; i < 100000; i++) {
-        var = StringUtils.camelCaseLower(tryVar) + i;
+        varName = StringUtils.camelCaseLower(tryVar) + i;
         for (String fieldVar : forbiddenFieldVariables) {
-            if (var.equalsIgnoreCase(fieldVar)) {
-                var = null;
+            if (varName.equalsIgnoreCase(fieldVar)) {
+                varName = null;
                 break;
             }
         }
 
-        if (UtilMethods.isSet(var)) {
-            return var;
+        if (UtilMethods.isSet(varName)) {
+            return leadingUnderscores + varName;
         }
     }
     throw new DotDataValidationException("Unable to suggest a variable name for " + tryVar,
