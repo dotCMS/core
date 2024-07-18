@@ -5186,7 +5186,8 @@
 .dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable {
   border-bottom: 1px solid #d1d4db;
 }
-.dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable tr, .dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable td {
+.dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable tr,
+.dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable td {
   font-size: 2.9375rem;
 }
 .dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridArrowButtonChar {
@@ -11206,7 +11207,27 @@ body {
   padding: 0;
 }
 
-span, label, div, dl, dt, dd, ul, ol, li, pre, code, form, fieldset, legend, input, button, textarea, p, blockquote, th, td {
+span,
+label,
+div,
+dl,
+dt,
+dd,
+ul,
+ol,
+li,
+pre,
+code,
+form,
+fieldset,
+legend,
+input,
+button,
+textarea,
+p,
+blockquote,
+th,
+td {
   font-size: 0.875rem;
 }
 
