@@ -1,6 +1,8 @@
 package com.dotcms.ai.util;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.app.AIModel;
+import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -30,9 +32,80 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class OpenAIRequest {
 
-    private static final ConcurrentHashMap<OpenAIModel, Long> lastRestCall = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<AIModel, Long> lastRestCall = new ConcurrentHashMap<>();
 
     private OpenAIRequest() {}
+
+    /**
+     * Sends a request to the specified URL with the specified method, OpenAI API key, and JSON payload.
+     * The response from the request is written to the provided OutputStream.
+     * This method also manages rate limiting for the OpenAI API by keeping track of the last time a request was made.
+     *
+     * @param urlIn the URL to send the request to
+     * @param method the HTTP method to use for the request
+     * @param openAiAPIKey the OpenAI API key to use for the request
+     * @param json the JSON payload to send with the request
+     * @param out the OutputStream to write the response to
+     */
+    public static void doRequest(final String urlIn,
+                                 final String method,
+                                 final String openAiAPIKey,
+                                 final JSONObject json,
+                                 final OutputStream out) {
+
+        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+            Logger.debug(OpenAIRequest.class, "posting:" + json);
+        }
+
+        final AIModel model = AIModels.get().getModel(json.optString(AiKeys.MODEL));
+        final long sleep = lastRestCall.computeIfAbsent(model, m -> 0L)
+                + model.minIntervalBetweenCalls()
+                - System.currentTimeMillis();
+        if (sleep > 0) {
+            Logger.info(
+                    OpenAIRequest.class,
+                    "Rate limit:"
+                            + model.getApiPerMinute()
+                            + "/minute, or 1 every "
+                            + model.minIntervalBetweenCalls()
+                            + "ms. Sleeping:"
+                            + sleep);
+            Try.run(() -> Thread.sleep(sleep));
+        }
+
+        lastRestCall.put(model, System.currentTimeMillis());
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            final StringEntity jsonEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
+            final HttpUriRequest httpRequest = resolveMethod(method, urlIn);
+            httpRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+            httpRequest.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + openAiAPIKey);
+
+            if (!json.getAsMap().isEmpty()) {
+                Try.run(() -> ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(jsonEntity));
+            }
+
+            try (CloseableHttpResponse response = httpClient.execute(httpRequest)) {
+                final BufferedInputStream in = new BufferedInputStream(response.getEntity().getContent());
+                final byte[] buffer = new byte[1024];
+                int len;
+                while ((len = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, len);
+                    out.flush();
+                }
+            }
+        } catch (Exception e) {
+            if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)){
+                Logger.warn(OpenAIRequest.class, "INVALID REQUEST: " + e.getMessage(), e);
+            } else {
+                Logger.warn(OpenAIRequest.class, "INVALID REQUEST: " + e.getMessage());
+            }
+
+            Logger.warn(OpenAIRequest.class, " -  " + method + " : " +json);
+
+            throw new DotRuntimeException(e);
+        }
+    }
 
     /**
      * Sends a request to the specified URL with the specified method, OpenAI API key, and JSON payload.
@@ -84,77 +157,6 @@ public class OpenAIRequest {
                              final JSONObject json,
                              final OutputStream out) {
         doRequest(urlIn, HttpMethod.GET, openAiAPIKey,json,out);
-    }
-
-    /**
-     * Sends a request to the specified URL with the specified method, OpenAI API key, and JSON payload.
-     * The response from the request is written to the provided OutputStream.
-     * This method also manages rate limiting for the OpenAI API by keeping track of the last time a request was made.
-     *
-     * @param urlIn the URL to send the request to
-     * @param method the HTTP method to use for the request
-     * @param openAiAPIKey the OpenAI API key to use for the request
-     * @param json the JSON payload to send with the request
-     * @param out the OutputStream to write the response to
-     */
-    public static void doRequest(final String urlIn,
-                                 final String method,
-                                 final String openAiAPIKey,
-                                 final JSONObject json,
-                                 final OutputStream out) {
-
-        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-            Logger.debug(OpenAIRequest.class, "posting:" + json);
-        }
-
-        final OpenAIModel model = OpenAIModel.resolveModel(json.optString(AiKeys.MODEL));
-        final long sleep = lastRestCall.computeIfAbsent(model, m -> 0L)
-                + model.minIntervalBetweenCalls()
-                - System.currentTimeMillis();
-        if (sleep > 0) {
-            Logger.info(
-                    OpenAIRequest.class,
-                    "Rate limit:"
-                            + model.apiPerMinute
-                            + "/minute, or 1 every "
-                            + (60000 / model.apiPerMinute)
-                            + "ms. Sleeping:"
-                            + sleep);
-            Try.run(() -> Thread.sleep(sleep));
-        }
-
-        lastRestCall.put(model, System.currentTimeMillis());
-
-        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            final StringEntity jsonEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-            final HttpUriRequest httpRequest = resolveMethod(method, urlIn);
-            httpRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-            httpRequest.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + openAiAPIKey);
-
-            if (!json.getAsMap().isEmpty()) {
-                Try.run(() -> ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(jsonEntity));
-            }
-
-            try (CloseableHttpResponse response = httpClient.execute(httpRequest)) {
-                final BufferedInputStream in = new BufferedInputStream(response.getEntity().getContent());
-                final byte[] buffer = new byte[1024];
-                int len;
-                while ((len = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, len);
-                    out.flush();
-                }
-            }
-        } catch (Exception e) {
-            if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)){
-                Logger.warn(OpenAIRequest.class, "INVALID REQUEST: " + e.getMessage(), e);
-            } else {
-                Logger.warn(OpenAIRequest.class, "INVALID REQUEST: " + e.getMessage());
-            }
-
-            Logger.warn(OpenAIRequest.class, " -  " + method + " : " +json);
-
-            throw new DotRuntimeException(e);
-        }
     }
 
     private static HttpUriRequest resolveMethod(final String method, final String urlIn) {

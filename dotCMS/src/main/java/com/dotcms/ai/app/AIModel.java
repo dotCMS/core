@@ -1,4 +1,6 @@
-package com.dotcms.ai.model;
+package com.dotcms.ai.app;
+
+import java.util.Objects;
 
 public class AIModel {
 
@@ -38,6 +40,36 @@ public class AIModel {
 
     public boolean isCompletion() {
         return isCompletion;
+    }
+
+    public long minIntervalBetweenCalls() {
+        return 60000 / apiPerMinute;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final AIModel aiModel = (AIModel) o;
+        return Objects.equals(name, aiModel.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(name);
+    }
+
+    @Override
+    public String toString() {
+        return "AIModel{" +
+                "name='" + name + '\'' +
+                ", tokensPerMinute=" + tokensPerMinute +
+                ", apiPerMinute=" + apiPerMinute +
+                ", maxTokens=" + maxTokens +
+                ", isCompletion=" + isCompletion +
+                '}';
     }
 
     public static Builder builder() {

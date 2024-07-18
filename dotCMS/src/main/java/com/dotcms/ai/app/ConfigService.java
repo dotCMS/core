@@ -17,21 +17,25 @@ public class ConfigService {
 
     public static final ConfigService INSTANCE = new ConfigService();
 
-    public AppConfig config() {
-        return config(null);
-    }
-
     /**
      * Gets the secrets from the App - this will check the current host then the SYSTEM_HOST for a valid configuration. This lookup is low overhead and cached
      * by dotCMS.
      */
     public AppConfig config(final Host host) {
         final Optional<AppSecrets> appSecrets = Try.of(() -> APILocator
-                .getAppsAPI()
-                .getSecrets(AppKeys.APP_KEY, true, resolveHost(host), APILocator.systemUser()))
+                        .getAppsAPI()
+                        .getSecrets(AppKeys.APP_KEY, true, resolveHost(host), APILocator.systemUser()))
                 .getOrElse(Optional.empty());
 
         return new AppConfig(appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
+    }
+
+    /**
+     * Gets the secrets from the App - this will check the current host then the SYSTEM_HOST for a valid configuration. This lookup is low overhead and cached
+     * by dotCMS.
+     */
+    public AppConfig config() {
+        return config(null);
     }
 
     /**

@@ -1,6 +1,5 @@
 package com.dotcms.ai.app;
 
-import com.dotcms.ai.model.AIModel;
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.util.Logger;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
  */
 public class AppConfig implements Serializable {
 
-    public static final Pattern SPLITTER= Pattern.compile("\\s?,\\s?");
+    public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
     private final AIModel model;
     private final AIModel imageModel;
@@ -36,7 +35,10 @@ public class AppConfig implements Serializable {
     private final Map<String, Secret> configValues;
 
     public AppConfig(final Map<String, Secret> secrets) {
-        this.configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        model = AIModels.get().getModel(resolveSecret(secrets, AppKeys.MODEL_NAME));
+        imageModel = AIModels.get().getModel(resolveSecret(secrets, AppKeys.IMAGE_MODEL_NAME));
         apiUrl = resolveEnvSecret(secrets, AppKeys.API_URL);
         apiImageUrl = resolveEnvSecret(secrets, AppKeys.API_IMAGE_URL);
         apiKey = resolveEnvSecret(secrets, AppKeys.API_KEY);
@@ -44,19 +46,18 @@ public class AppConfig implements Serializable {
         textPrompt = resolveSecret(secrets, AppKeys.TEXT_PROMPT);
         imagePrompt = resolveSecret(secrets, AppKeys.IMAGE_PROMPT);
         imageSize = resolveSecret(secrets, AppKeys.IMAGE_SIZE);
-        model = resolveModel(secrets, null);
-        imageModel = resolveModel(secrets, "image");
         listenerIndexer = resolveSecret(secrets, AppKeys.LISTENER_INDEXER);
-        Logger.debug(this.getClass().getName(), () -> "apiUrl: " + apiUrl);
-        Logger.debug(this.getClass().getName(), () -> "apiImageUrl: " + apiImageUrl);
-        Logger.debug(this.getClass().getName(), () -> "apiKey: " + apiKey);
-        Logger.debug(this.getClass().getName(), () -> "rolePrompt: " + rolePrompt);
-        Logger.debug(this.getClass().getName(), () -> "textPrompt: " + textPrompt);
-        Logger.debug(this.getClass().getName(), () -> "imagePrompt: " + imagePrompt);
-        Logger.debug(this.getClass().getName(), () -> "imageModel: " + imageModel);
-        Logger.debug(this.getClass().getName(), () -> "imageSize: " + imageSize);
-        Logger.debug(this.getClass().getName(), () -> "model: " + model);
-        Logger.debug(this.getClass().getName(), () -> "listerIndexer: " + listenerIndexer);
+
+        Logger.debug(getClass(), () -> "apiUrl: " + apiUrl);
+        Logger.debug(getClass(), () -> "apiImageUrl: " + apiImageUrl);
+        Logger.debug(getClass(), () -> "apiKey: " + apiKey);
+        Logger.debug(getClass(), () -> "rolePrompt: " + rolePrompt);
+        Logger.debug(getClass(), () -> "textPrompt: " + textPrompt);
+        Logger.debug(getClass(), () -> "model: " + model);
+        Logger.debug(getClass(), () -> "imageModel: " + imageModel);
+        Logger.debug(getClass(), () -> "imagePrompt: " + imagePrompt);
+        Logger.debug(getClass(), () -> "imageSize: " + imageSize);
+        Logger.debug(getClass(), () -> "listerIndexer: " + listenerIndexer);
     }
 
     private String resolveSecret(final Map<String, Secret> secrets, final AppKeys key, final String defaultValue) {
