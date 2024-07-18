@@ -50,23 +50,16 @@ export function MyPage({ pageAsset, nav }) {
      * If not using experiments:
      * - Replace the below line with `const DotLayoutComponent = DotcmsLayout;`
      * - Remove DotExperimentsProvider from the return statement.
-     * 
-     * We use a useMemo to prevent the component from being recreated on every render
-     * if it doesn't change.
      */
-    const DotLayoutComponent = useMemo(
-        () =>
-            experimentConfig.apiKey
-                ? withExperiments(DotcmsLayout, {
-                      ...experimentConfig,
-                      redirectFn: replace,
-                  })
-                : DotcmsLayout,
-        [replace],
-    );
+    const DotLayoutComponent = experimentConfig.apiKey
+        ? withExperiments(DotcmsLayout, {
+              ...experimentConfig,
+              redirectFn: replace,
+          })
+        : DotcmsLayout;
 
     pageAsset = usePageAsset(pageAsset);
-    
+
     return (
         <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
             {pageAsset.layout.header && (
