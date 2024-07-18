@@ -3,7 +3,8 @@ export enum NOTIFY_CUSTOMER {
     EMA_REQUEST_BOUNDS = 'ema-request-bounds',
     EMA_EDITOR_PONG = 'ema-editor-pong',
     EMA_SCROLL_INSIDE_IFRAME = 'scroll-inside-iframe',
-    SET_PAGE_DATA = 'SET_PAGE_DATA'
+    SET_PAGE_DATA = 'SET_PAGE_DATA',
+    COPY_CONTENTLET_INLINE_EDITING_SUCCESS = 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS'
 }
 
 // All the custom events that come from the JSP Iframe
