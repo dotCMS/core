@@ -201,27 +201,27 @@ export const CATEGORY_LIST_MOCK: DotCategory[][] = [[...CATEGORY_LEVEL_1], [...C
  */
 export const SELECTED_LIST_MOCK = [CATEGORY_LEVEL_1[0].key, CATEGORY_LEVEL_1[1].key];
 
-export const CATEGORY_LIST_MOCK_TRANSFORMED: DotCategoryFieldKeyValueObj[][] =
+export const CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX: DotCategoryFieldKeyValueObj[][] =
     CATEGORY_LIST_MOCK.map(
         (categoryLevel) => transformCategories(categoryLevel) as DotCategoryFieldKeyValueObj[],
         SELECTED_LIST_MOCK
     );
 
-export const CATEGORY_MOCK_TRANSFORMED: DotCategoryFieldKeyValueObj[][] = [
-    [
-        {
-            key: CATEGORY_LEVEL_1[0].key,
-            value: CATEGORY_LEVEL_1[0].categoryName,
-            hasChildren: true,
-            clicked: true
-        },
-        {
-            key: CATEGORY_LEVEL_1[1].key,
-            value: CATEGORY_LEVEL_1[1].categoryName,
-            hasChildren: true,
-            clicked: false
-        }
-    ]
+export const CATEGORY_MOCK_TRANSFORMED: DotCategoryFieldKeyValueObj[] = [
+    {
+        key: CATEGORY_LEVEL_1[0].key,
+        value: CATEGORY_LEVEL_1[0].categoryName,
+        hasChildren: true,
+        clicked: true,
+        path: 'path'
+    },
+    {
+        key: CATEGORY_LEVEL_1[1].key,
+        value: CATEGORY_LEVEL_1[1].categoryName,
+        hasChildren: true,
+        clicked: false,
+        path: 'path'
+    }
 ];
 
 export const CATEGORIES_KEY_VALUE: DotCategoryFieldKeyValueObj[] = [
