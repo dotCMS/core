@@ -8,7 +8,7 @@
 
 .category-list__item {
     display: grid;
-    grid-template-columns: 1fr 32px;
+    grid-template-columns: 1fr $spacing-5;
     align-items: center;
     padding: $spacing-1 0;
     gap: $spacing-1;
