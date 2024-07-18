@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "55470821-6dfa-44e9-b4da-39107ba258c1",
+		"_postman_id": "944aa93e-7b0e-4eac-a7d5-8324663ca417",
 		"name": "Category",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "30436704"
@@ -2784,7 +2784,7 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Grandchild 2);",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Grandchild 2\");",
 									"});",
 									"",
 									"",
