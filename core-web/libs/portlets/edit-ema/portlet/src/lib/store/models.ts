@@ -1,5 +1,5 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotExperiment, DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import { DotDevice, DotExperiment, DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
 import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
@@ -30,4 +30,9 @@ export interface TranslateProps {
     page: DotPage;
     languageId: number;
     languages: DotLanguage[];
+}
+
+export interface EditorToolbarState {
+    device?: DotDevice;
+    socialMedia?: string;
 }

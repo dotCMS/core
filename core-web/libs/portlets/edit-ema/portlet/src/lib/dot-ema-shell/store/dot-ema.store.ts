@@ -742,7 +742,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     },
                                     mode: EDITOR_MODE.EDIT
                                 },
-                                shouldReload: true
+                                shouldReload: true // This don't need to be here, I will get rid of this action to maintain a natural reload cycle
                             }));
                         },
                         error: () => {

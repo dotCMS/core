@@ -2,6 +2,7 @@ import { signalStore, withComputed, withState } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
+import { withEditorToolbar } from './features/editor/toolbar/withEditorToolbar';
 import { withLoad } from './features/load/withLoad';
 import { withUveStatus } from './features/uve-status/withUveStatus';
 import { ShellState, UVEState } from './models';
@@ -115,5 +116,6 @@ export const UVEStore = signalStore(
         };
     }),
     withLoad(),
-    withUveStatus()
+    withUveStatus(),
+    withEditorToolbar() // I will inject this on the withEditor instead of the store
 );

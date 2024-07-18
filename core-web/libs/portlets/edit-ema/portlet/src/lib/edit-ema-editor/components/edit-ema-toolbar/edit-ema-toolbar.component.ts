@@ -1,3 +1,5 @@
+import { tapResponse } from '@ngrx/operators';
+
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
@@ -15,7 +17,11 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotDevice,
@@ -29,6 +35,7 @@ import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { EDITOR_MODE, EDITOR_STATE } from '../../../shared/enums';
+import { UVEStore } from '../../../store/dot-uve.store';
 import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
@@ -66,9 +73,11 @@ export class EditEmaToolbarComponent {
     personaSelector!: EditEmaPersonaSelectorComponent;
 
     private readonly store = inject(EditEmaStore);
+
     private readonly messageService = inject(MessageService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly router = inject(Router);
+    private readonly dotContentletLockerService = inject(DotContentletLockerService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly personalizeService = inject(DotPersonalizeService);
     private readonly activatedRouter = inject(ActivatedRoute);
@@ -77,6 +86,7 @@ export class EditEmaToolbarComponent {
     readonly editorState = EDITOR_STATE;
     readonly editorMode = EDITOR_MODE;
     readonly experimentStatus = DotExperimentStatus;
+    readonly uveStore = inject(UVEStore);
 
     get queryParams(): DotPageApiParams {
         return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
@@ -89,7 +99,10 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     updateCurrentDevice(device: DotDevice & { icon?: string }) {
+        // DELETE WHEN THE UVE STORE IS DONE
         this.store.setDevice(device);
+
+        this.uveStore.setDevice(device);
     }
 
     /**
@@ -99,7 +112,10 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     onSeoMediaChange(seoMedia: string) {
+        // DELETE WHEN THE UVE STORE IS DONE
         this.store.setSocialMedia(seoMedia);
+
+        this.uveStore.setSocialMedia(seoMedia);
     }
 
     /**
@@ -223,11 +239,43 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     unlockPage(inode: string) {
-        this.store.unlockPage(inode);
+        // DELETE WHEN THE UVE STORE IS DONE
+        this.store.unlockPage(inode); // This action does unnatural things, like modifying the page and then reloading the page afterwards
+
+        this.messageService.add({
+            severity: 'info',
+            summary: 'Page Unlock',
+            detail: 'Page is being unlocked'
+        });
+
+        this.dotContentletLockerService.unlock(inode).pipe(
+            tapResponse({
+                next: () => {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Page Unlock',
+                        detail: 'Page is unlocked'
+                    });
+
+                    const params = this.uveStore.params();
+
+                    this.uveStore.reload(params);
+                },
+                error: () => {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Page Unlock',
+                        detail: 'Page could not be unlocked'
+                    });
+                }
+            })
+        );
     }
 
     private updateQueryParams(params: Params) {
-        this.store.updateEditorState(EDITOR_STATE.LOADING);
+        // DELETE WHEN THE UVE STORE IS DONE
+        this.store.updateEditorState(EDITOR_STATE.LOADING); // This is unnatural, the navigate already triggers a loading state with the reload of the state
+
         this.router.navigate([], {
             queryParams: params,
             queryParamsHandling: 'merge'
