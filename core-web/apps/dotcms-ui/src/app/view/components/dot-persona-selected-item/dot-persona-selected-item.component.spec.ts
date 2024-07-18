@@ -22,7 +22,9 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 @Component({
-    template: ` <dot-persona-selected-item [persona]="persona"></dot-persona-selected-item>`
+    template: `
+        <dot-persona-selected-item [persona]="persona"></dot-persona-selected-item>
+    `
 })
 class TestHostComponent {
     persona = mockDotPersona;

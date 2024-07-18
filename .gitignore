@@ -107,6 +107,12 @@ node_modules/
 /core-web/installs
 /core-web/target
 /core-web/~/dotcms/*
+/core-web/.yarn/*
+!/core-web/.yarn/cache
+!/core-web/.yarn/releases
+!/core-web/.yarn/plugins
+!/core-web/.yarn/sdks
+!/core-web/.yarn/versions
 
 # misc
 /core-web/.nx

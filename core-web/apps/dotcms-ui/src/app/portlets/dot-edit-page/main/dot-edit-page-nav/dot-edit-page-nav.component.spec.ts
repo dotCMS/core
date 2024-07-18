@@ -66,7 +66,9 @@ export class MockDotPropertiesService {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav> `
+    template: `
+        <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav>
+    `
 })
 class TestHostComponent {
     @Input()

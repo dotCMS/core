@@ -6,20 +6,26 @@ import { By } from '@angular/platform-browser';
 import { DotPortletBoxComponent } from './components/dot-portlet-box/dot-portlet-box.component';
 import { DotPortletBaseComponent } from './dot-portlet-base.component';
 @Component({
-    template: `<dot-portlet-base><div>Hello World</div></dot-portlet-base>`
+    template: `
+        <dot-portlet-base><div>Hello World</div></dot-portlet-base>
+    `
 })
 class DefaultTestHostComponent {}
 
 @Component({
-    template: `<dot-portlet-base [boxed]="false"><div>Hello World</div></dot-portlet-base>`
+    template: `
+        <dot-portlet-base [boxed]="false"><div>Hello World</div></dot-portlet-base>
+    `
 })
 class DefaultTestHostUnboxedComponent {}
 
 @Component({
-    template: `<dot-portlet-base>
-        <dot-portlet-toolbar></dot-portlet-toolbar>
-        <div>Hello World</div>
-    </dot-portlet-base>`
+    template: `
+        <dot-portlet-base>
+            <dot-portlet-toolbar></dot-portlet-toolbar>
+            <div>Hello World</div>
+        </dot-portlet-base>
+    `
 })
 class DefaultTestHostWithToolbarComponent {}
 

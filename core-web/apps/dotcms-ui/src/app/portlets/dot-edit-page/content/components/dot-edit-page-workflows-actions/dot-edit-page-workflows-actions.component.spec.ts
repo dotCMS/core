@@ -57,7 +57,9 @@ import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-edit-page-workflows-actions [page]="page"></dot-edit-page-workflows-actions> `
+    template: `
+        <dot-edit-page-workflows-actions [page]="page"></dot-edit-page-workflows-actions>
+    `
 })
 class TestHostComponent {
     @Input() page: DotPage;

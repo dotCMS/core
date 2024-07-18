@@ -31,19 +31,19 @@
             </div>
             <div class="flex-grow-1 category-field__categories">
                 @if (store.mode() === 'list') {
-                <dot-category-field-category-list
-                    (itemChecked)="store.updateSelected($event.selected, $event.item)"
-                    (rowClicked)="store.getCategories($event)"
-                    [categories]="store.categoryList()"
-                    [selected]="store.selectedCategoriesValues()" />
+                    <dot-category-field-category-list
+                        (itemChecked)="store.updateSelected($event.selected, $event.item)"
+                        (rowClicked)="store.getCategories($event)"
+                        [categories]="store.categoryList()"
+                        [selected]="store.selectedCategoriesValues()" />
                 } @else {
-                <dot-category-field-search-list
-                    @fadeAnimation
-                    (itemChecked)="store.addSelected($event)"
-                    (removeItem)="store.removeSelected($event)"
-                    [isLoading]="store.isSearchLoading()"
-                    [categories]="store.searchCategoryList()"
-                    [selected]="store.selected()" />
+                    <dot-category-field-search-list
+                        @fadeAnimation
+                        (itemChecked)="store.addSelected($event)"
+                        (removeItem)="store.removeSelected($event)"
+                        [isLoading]="store.isSearchLoading()"
+                        [categories]="store.searchCategoryList()"
+                        [selected]="store.selected()" />
                 }
             </div>
         </div>
