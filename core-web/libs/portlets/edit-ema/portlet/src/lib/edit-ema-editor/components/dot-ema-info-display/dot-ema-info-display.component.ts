@@ -17,6 +17,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
 import { EDITOR_MODE } from '../../../shared/enums';
 import { EditorData } from '../../../shared/models';
+import { UVEStore } from '../../../store/dot-uve.store';
 import { getIsDefaultVariant } from '../../../utils';
 
 interface InfoOptions {
@@ -38,17 +39,19 @@ interface InfoOptions {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEmaInfoDisplayComponent implements OnChanges {
-    @Input() editorData: EditorData;
-    @Input() currentExperiment: DotExperiment;
+    @Input() editorData: EditorData; // I think I will not need this
+    @Input() currentExperiment: DotExperiment; // I think I will not need this
 
     protected options = signal<InfoOptions>(undefined);
 
     protected readonly store = inject(EditEmaStore);
+    protected readonly uveStore = inject(UVEStore);
     protected readonly router = inject(Router);
 
     protected readonly editorMode = EDITOR_MODE;
 
     ngOnChanges() {
+        // MOVE ALL OF THIS TO THE STORE
         if (this.editorData.page.isLocked) {
             let message = 'editpage.locked-by';
 
@@ -82,7 +85,8 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                     args: []
                 },
                 action: () => {
-                    this.goToEdit();
+                    this.goToEdit(); // DELETE THIS LINE
+                    this.uveStore.clearDeviceAndSocialMedia();
                 },
                 actionIcon: 'pi pi-times'
             });
@@ -94,7 +98,8 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                     args: []
                 },
                 action: () => {
-                    this.goToEdit();
+                    this.goToEdit(); // DELETE THIS LINE
+                    this.uveStore.clearDeviceAndSocialMedia();
                 },
                 actionIcon: 'pi pi-times'
             });
