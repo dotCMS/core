@@ -12,7 +12,6 @@ import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.MarkdownTool;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
 import com.dotcms.repackage.org.jsoup.Jsoup;
@@ -27,7 +26,6 @@ import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.felix.framework.OSGISystem;
-import org.apache.velocity.context.Context;
 
 import javax.validation.constraints.NotNull;
 import java.io.File;
@@ -44,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.ai.app.AppConfig.debugLogger;
 import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.SPACE;
 
 
 /**
@@ -222,6 +221,21 @@ public class ContentToStringUtil {
 
     }
 
+    /**
+     * Takes the actual content (data) from the specified list of Fields in a Contentlet, and
+     * appends it to a single String. This will make up the information that will be sent to the
+     * Embeddings API.
+     * <p>Keep in mind that the length of such data must be greater or equal than the value
+     * specified via the {@link AppKeys#EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX} configuration
+     * property. Otherwise, an empty Optional will be returned.</p>
+     *
+     * @param contentlet The {@link Contentlet} containing the data that will be sent to the
+     *                   Embeddings API.
+     * @param fields     The list of {@link Field} objects specifying what data will be taken from
+     *                   the Contentlet.
+     *
+     * @return An {@link Optional} with the appended Strings from each field value.
+     */
     public Optional<String> parseFields(@NotNull final Contentlet contentlet, @NotNull final List<Field> fields) {
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
             return Optional.empty();
@@ -237,12 +251,14 @@ public class ContentToStringUtil {
         final StringBuilder builder = new StringBuilder();
         for (Field field : fields) {
             parseField(contentlet, field)
-                    .ifPresent(s -> builder.append(s).append(" "));
+                    .ifPresent(s -> builder.append(s).append(SPACE));
         }
-
-        if (builder.length() < ConfigService.INSTANCE.config().getConfigInteger(AppKeys.EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX)) {
+        final int embeddingsMinimumLength =
+                ConfigService.INSTANCE.config().getConfigInteger(AppKeys.EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX);
+        if (builder.length() < embeddingsMinimumLength) {
             debugLogger(this.getClass(), () -> String.format("Parseable fields for Contentlet ID " +
-                    "'%s' don't meet the minimum length requirement. Skipping indexing.", contentlet.getIdentifier()));
+                    "'%s' don't meet the minimum length requirement of %d characters. Skipping indexing.",
+                    contentlet.getIdentifier(), embeddingsMinimumLength));
             return Optional.empty();
         }
 
@@ -264,11 +280,6 @@ public class ContentToStringUtil {
         if (field instanceof BinaryField) {
             Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is a BinaryField ");
             return parseFile(Try.of(() -> contentlet.getBinary(field.variable())).getOrNull());
-        }
-        if (field instanceof CustomField) {
-            Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is a CustomField");
-            final Context ctx = VelocityContextFactory.getMockContextNoContentToString(contentlet, APILocator.systemUser());
-            return this.parseText(Try.of(() -> VelocityUtil.eval(field.values(), ctx)).getOrElse(BLANK));
         }
         final String value = contentlet.getStringProperty(field.variable());
 
@@ -293,7 +304,8 @@ public class ContentToStringUtil {
             Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is an HTML field");
             return parseHTML(value);
         }
-        Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is a text field");
+        Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is a " +
+                (field instanceof CustomField ? "Custom Field" : " text field"));
         return parseText(value);
     }
 
