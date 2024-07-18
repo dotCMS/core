@@ -1315,22 +1315,26 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * option is enabled or not.
      *
      * @param layoutChanges
-     * @param identifiers
+     * @param pageIds
+     * @param variant
+     *
      * @throws DotDataException
      */
     @Override
     @WrapInTransaction
-    public void updateMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds) throws DotDataException {
+    public void updateMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds,
+                                 final String variantName )
+            throws DotDataException {
         final List<Params> parametersToMark = new ArrayList<>();
 
         final boolean deleteOrphanedContents = deleteOrphanedContentsFromContainer.get();
 
-        markMultiTreeToUpdate(layoutChanges, pageIds, parametersToMark);
+        markMultiTreeToUpdate(layoutChanges, pageIds, parametersToMark, variantName);
 
-        updateMarkedMultiTrees(layoutChanges, pageIds);
+        updateMarkedMultiTrees(layoutChanges, pageIds, variantName);
 
         if (deleteOrphanedContents) {
-            removeMultiTrees(layoutChanges, pageIds);
+            removeMultiTrees(layoutChanges, pageIds, variantName);
         }
 
         pageIds.stream().forEach(pageId -> {
@@ -1352,7 +1356,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @param pageIds
      * @throws DotDataException
      */
-    private static void removeMultiTrees(LayoutChanges layoutChanges, final Collection<String> pageIds) throws DotDataException {
+    private static void removeMultiTrees(LayoutChanges layoutChanges, final Collection<String> pageIds,
+                                         final String variantName) throws DotDataException {
+
         final List<Params> parametersToRemoved = new ArrayList<>();
 
         for (String identifier : pageIds) {
@@ -1360,7 +1366,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     layoutChanges.getAll().stream()
                             .filter(LayoutChanges.ContainerChanged::isRemove)
                             .map(changed -> new Params.Builder()
-                                    .add(identifier, changed.getContainerId(), getMakValue(changed))
+                                    .add(identifier, changed.getContainerId(), getMakValue(changed), variantName)
                                     .build()
                             )
                             .collect(Collectors.toList())
@@ -1369,7 +1375,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         if (!parametersToRemoved.isEmpty()) {
             new DotConnect().executeBatch("DELETE FROM multi_tree " +
-                    "WHERE parent1 = ? AND parent2 = ? and relation_type = ?", parametersToRemoved);
+                    "WHERE parent1 = ? AND parent2 = ? and relation_type = ? AND variant_id = ?", parametersToRemoved);
         }
     }
 
@@ -1390,8 +1396,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @param pageIds
      * @throws DotDataException
      */
-    private static void updateMarkedMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds)
-            throws DotDataException {
+    private static void updateMarkedMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds,
+                                               final String variantName) throws DotDataException {
         final boolean deleteOrphanedContents = deleteOrphanedContentsFromContainer.get();
         final List<Params> parametersToUpdate = new ArrayList<>();
 
@@ -1401,14 +1407,14 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                             .filter(changed -> !deleteOrphanedContents || changed.isMoved())
                             .map(changed -> new Params.Builder()
                                     .add(String.valueOf(changed.getNewInstanceId()),
-                                            identifier, changed.getContainerId(), getMakValue(changed))
+                                            identifier, changed.getContainerId(), getMakValue(changed), variantName)
                                     .build()
                             ).collect(Collectors.toList())
             );
         }
 
         new DotConnect().executeBatch("UPDATE multi_tree SET relation_type = ? " +
-                "WHERE parent1 = ? AND parent2 = ? and relation_type = ?", parametersToUpdate);
+                "WHERE parent1 = ? AND parent2 = ? and relation_type = ? AND variant_id = ?", parametersToUpdate);
     }
 
     @NotNull
@@ -1435,21 +1441,22 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @see MultiTreeAPIImpl#updateMultiTrees(LayoutChanges, Collection)
      */
     private static void markMultiTreeToUpdate(final LayoutChanges layoutChanges, final Collection<String> pageIds,
-                                              final List<Params> parametersToMark) throws DotDataException {
+                                              final List<Params> parametersToMark, final String variantName)
+            throws DotDataException {
 
         for (String identifier : pageIds) {
             parametersToMark.addAll(
                     layoutChanges.getAll().stream()
                             .filter(changed -> !changed.isNew())
                             .map(changed -> new Params.Builder()
-                                    .add(identifier, changed.getContainerId(), changed.getOldInstanceId())
+                                    .add(identifier, changed.getContainerId(), changed.getOldInstanceId(), variantName)
                                     .build()
                             ).collect(Collectors.toList())
             );
         }
 
         new DotConnect().executeBatch("UPDATE multi_tree SET relation_type = (CAST (relation_type AS numeric) * -1 )-1\n" +
-                "WHERE parent1 = ? AND parent2 = ? AND relation_type = ? AND relation_type <> '-1'", parametersToMark);
+                "WHERE parent1 = ? AND parent2 = ? AND relation_type = ? AND relation_type <> '-1' AND variant_id = ?", parametersToMark);
     }
 
     @CloseDBIfOpened
