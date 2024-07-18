@@ -12,7 +12,7 @@ perform_fixes() {
     local add_to_index=$2       # Should be 'true' or 'false'
     local file                  # Declare file variable for use in loop
 
-    if ! npx nx format:write; then
+    if ! npx yarn format:write; then
         error_occurred=true
     fi
 
