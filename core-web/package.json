@@ -35,7 +35,7 @@
         "affected:dep-graph": "nx affected:dep-graph",
         "affected": "nx affected",
         "format": "prettier --write ./ ",
-        "format:write": "prettier --log-level silent --write ./",
+        "format:write": "prettier --write ./",
         "format:check": "prettier --check ./",
         "dep-graph": "nx dep-graph",
         "prepare": "cd .. && node core-web/prepare.js",
