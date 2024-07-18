@@ -5,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, filter, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -46,6 +46,7 @@ export class DotCategoryFieldSearchComponent {
             .pipe(
                 takeUntilDestroyed(),
                 debounceTime(DEBOUNCE_TIME),
+                distinctUntilChanged(),
                 tap((value: string) => {
                     if (value.length === 0) {
                         this.clearInput();
