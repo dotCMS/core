@@ -44,7 +44,7 @@ public enum PageAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
                 .argument(GraphQLArgument.newArgument()
                         .name("fireRules")
                         .type(GraphQLBoolean)
-                        .defaultValue(false)
+                        .defaultValueProgrammatic(false)
                         .build())
                 .argument(GraphQLArgument.newArgument()
                         .name("site")
