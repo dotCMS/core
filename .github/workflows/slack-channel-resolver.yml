@@ -132,5 +132,5 @@ jobs:
             channel_ids=$(printf '%s\n' "${deduped_channel_ids[@]}" | jq -R . | jq -s . | tr -d '\n' | tr -d ' ')
           fi
           
-          echo "channel_ids: ${channel_ids}"
+          echo "channel_ids: [${channel_ids}]"
           echo "channel_ids=${channel_ids}" >> $GITHUB_OUTPUT

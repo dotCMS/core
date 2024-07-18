@@ -84,11 +84,12 @@ public final class ContentFields {
                 new UserDataFetcher()));
         contentFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(USER.getTypeName()),
                 new UserDataFetcher()));
+
         contentFields.put("_map", new TypeFetcher(ExtendedScalars.Json, new ContentMapDataFetcher(),
                 GraphQLArgument.newArgument().name("key").type(GraphQLString).build(),
-                GraphQLArgument.newArgument().name("depth").defaultValue(0).type(GraphQLInt).build(),
-                GraphQLArgument.newArgument().name("render").defaultValue(false)
-                        .type(GraphQLBoolean).build()));
+                GraphQLArgument.newArgument().name("depth").type(GraphQLInt).defaultValueProgrammatic(0).build(),
+                GraphQLArgument.newArgument().name("render").type(GraphQLBoolean).defaultValueProgrammatic(null).build()));
+
         contentFields.put(PUBLISH_DATE_KEY, new TypeFetcher(GraphQLString, PropertyDataFetcher
                 .fetching((Function<Contentlet, String>) contentlet ->
                         UtilMethods.isSet(contentlet.getStringProperty("publishDate"))
