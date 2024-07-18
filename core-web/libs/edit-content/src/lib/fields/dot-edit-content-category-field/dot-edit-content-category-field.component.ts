@@ -2,28 +2,24 @@ import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    ComponentRef,
-    DestroyRef,
+    computed,
     effect,
     inject,
+    Injector,
     input,
     OnInit,
     signal,
     ViewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlContainer, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-
-import { delay } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoryFieldChipsComponent } from './components/dot-category-field-chips/dot-category-field-chips.component';
 import { DotCategoryFieldSidebarComponent } from './components/dot-category-field-sidebar/dot-category-field-sidebar.component';
-import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.const';
 import { CategoriesService } from './services/categories.service';
 import { CategoryFieldStore } from './store/content-category-field.store';
 
@@ -44,14 +40,15 @@ import { CategoryFieldStore } from './store/content-category-field.store';
         NgClass,
         DotMessagePipe,
         DotDynamicDirective,
-        DotCategoryFieldChipsComponent
+        DotCategoryFieldChipsComponent,
+        DotCategoryFieldSidebarComponent
     ],
     templateUrl: './dot-edit-content-category-field.component.html',
     styleUrl: './dot-edit-content-category-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        '[class.dot-category-field__container--has-categories]': 'hasSelectedCategories()',
-        '[class.dot-category-field__container]': '!hasSelectedCategories()'
+        '[class.dot-category-field__container--has-categories]': '$hasSelectedCategories()',
+        '[class.dot-category-field__container]': '!$hasSelectedCategories()'
     },
     viewProviders: [
         {
@@ -65,10 +62,14 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     /**
      * Disable the button to open the sidebar
      */
-    disableSelectCategoriesButton = signal(false);
-
+    $showCategoriesSidebar = signal(false);
+    /**
+     * The `DotDynamicDirective` directive is used to create a dynamic component.
+     *
+     * @type {DotDynamicDirective}
+     * @memberof DotEditContentCategoryFieldComponent
+     */
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
-
     /**
      * The `field` variable is of type `DotCMSContentTypeField` and is a required input.
      * @description The variable represents a field of a DotCMS content type and is a required input.
@@ -81,11 +82,20 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      */
     contentlet = input.required<DotCMSContentlet>();
 
-    readonly store: InstanceType<typeof CategoryFieldStore> = inject(CategoryFieldStore);
+    readonly store = inject(CategoryFieldStore);
     readonly #form = inject(ControlContainer).control as FormGroup;
-    readonly #destroyRef = inject(DestroyRef);
-    #componentRef: ComponentRef<DotCategoryFieldSidebarComponent>;
-
+    /**
+     * The `Injector` is used to get the injected instance.
+     *
+     * @memberof DotEditContentCategoryFieldComponent
+     */
+    readonly #injector = inject(Injector);
+    /**
+     * The `$hasSelectedCategories` variable is a computed property that returns a boolean value.
+     *
+     * @returns {Boolean} - True if there are selected categories, false otherwise.
+     */
+    $hasSelectedCategories = computed(() => !!this.store.hasSelectedCategories());
     /**
      * Retrieve the category field control.
      *
@@ -96,50 +106,40 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     }
 
     /**
-     * Determines if there are any selected categories.
-     *
-     * @returns {Boolean} - True if there are selected categories, false otherwise.
-     */
-    hasSelectedCategories(): boolean {
-        return !!this.store.hasSelectedCategories();
-    }
-
-    /**
      * Open the "DotEditContentCategoryFieldDialogComponent" dialog to show the list of categories.
      *
      * @returns {void}
      */
-    showCategoriesSidebar(): void {
-        this.disableSelectCategoriesButton.set(true);
-        this.#componentRef = this.sidebarHost.viewContainerRef.createComponent(
-            DotCategoryFieldSidebarComponent
-        );
-
-        this.setSidebarListener();
-    }
-
-    constructor() {
-        effect(() => {
-            const categoryValues = this.store.selectedCategoriesValues();
-            this.categoryFieldControl.setValue(categoryValues);
-        });
+    toogleCategoriesSidebar(): void {
+        this.$showCategoriesSidebar.update((state) => !state);
     }
 
     ngOnInit(): void {
         this.store.load(this.field(), this.contentlet());
+        effect(
+            () => {
+                const categoryValues = this.store.selectedCategoriesValues();
+                this.categoryFieldControl.setValue(categoryValues);
+            },
+            {
+                injector: this.#injector
+            }
+        );
     }
-
-    private setSidebarListener() {
-        this.#componentRef.instance.closedSidebar
-            .pipe(takeUntilDestroyed(this.#destroyRef), delay(CLOSE_SIDEBAR_CSS_DELAY_MS))
-            .subscribe(() => {
-                // enable the show sidebar button
-                this.disableSelectCategoriesButton.set(false);
-                this.removeDotCategoryFieldSidebarComponent();
-            });
+    /**
+     * Open the categories sidebar.
+     *
+     * @memberof DotEditContentCategoryFieldComponent
+     */
+    openCategoriesSidebar(): void {
+        this.$showCategoriesSidebar.set(true);
     }
-
-    private removeDotCategoryFieldSidebarComponent() {
-        this.sidebarHost.viewContainerRef.clear();
+    /**
+     * Close the categories sidebar.
+     *
+     * @memberof DotEditContentCategoryFieldComponent
+     */
+    closeCategoriesSidebar() {
+        this.$showCategoriesSidebar.set(false);
     }
 }

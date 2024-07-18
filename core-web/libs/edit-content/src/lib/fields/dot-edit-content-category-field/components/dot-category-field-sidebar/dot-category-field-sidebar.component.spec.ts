@@ -23,6 +23,9 @@ describe('DotEditContentCategoryFieldSidebarComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
+            props: {
+                visible: true
+            },
             providers: [
                 mockProvider(CategoriesService, {
                     getChildren: jest.fn().mockReturnValue(of(CATEGORY_LIST_MOCK))

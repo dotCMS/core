@@ -115,7 +115,7 @@ export const CategoryFieldStore = signalStore(
             });
         },
 
-        setMode(mode: 'list' | 'search'): void {
+        setMode(mode: CategoryFieldViewMode): void {
             patchState(store, {
                 mode,
                 searchCategories: [],

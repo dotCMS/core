@@ -3,9 +3,10 @@ import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    DestroyRef,
     EventEmitter,
     inject,
+    Input,
+    OnDestroy,
     OnInit,
     Output
 } from '@angular/core';
@@ -59,26 +60,25 @@ import { DotCategoryFieldSearchListComponent } from '../dot-category-field-searc
         ])
     ]
 })
-export class DotCategoryFieldSidebarComponent implements OnInit {
+export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
     /**
-     * Indicates whether the sidebar is visible or not.
+     * Indicates the visibility of the sidebar.
+     *
+     * @memberof DotCategoryFieldSidebarComponent
      */
-    visible = true;
-
+    @Input() visible = false;
     /**
      * Output that emit if the sidebar is closed
      */
     @Output() closedSidebar = new EventEmitter<void>();
 
-    readonly store: InstanceType<typeof CategoryFieldStore> = inject(CategoryFieldStore);
-
-    readonly #destroyRef = inject(DestroyRef);
+    readonly store = inject(CategoryFieldStore);
 
     ngOnInit(): void {
         this.store.getCategories();
+    }
 
-        this.#destroyRef.onDestroy(() => {
-            this.store.clean();
-        });
+    ngOnDestroy(): void {
+        this.store.clean();
     }
 }

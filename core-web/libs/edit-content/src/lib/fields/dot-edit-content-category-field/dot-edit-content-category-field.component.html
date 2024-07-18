@@ -3,16 +3,22 @@
     data-testId="category-chip-list"
     [categories]="store.selected()"
     (remove)="store.removeSelected($event)" />
-
 }
 
 <div class="dot-category-field__select">
     <button
-        (click)="showCategoriesSidebar()"
-        [disabled]="disableSelectCategoriesButton()"
+        type="button"
+        (click)="openCategoriesSidebar()"
+        [disabled]="$showCategoriesSidebar()"
         [label]="'edit.content.category-field.show-categories-dialog' | dm"
         class="p-button-sm p-button-text p-button-secondary"
         data-testId="show-sidebar-btn"
         pButton></button>
 </div>
-<ng-container data-testId="sidebar-placeholder" dotDynamic></ng-container>
+
+@if ($showCategoriesSidebar()) { @defer (when $showCategoriesSidebar()) {
+<dot-category-field-sidebar
+    [visible]="$showCategoriesSidebar()"
+    (closedSidebar)="closeCategoriesSidebar()"
+    data-testId="sidebar-placeholder" />
+} }
