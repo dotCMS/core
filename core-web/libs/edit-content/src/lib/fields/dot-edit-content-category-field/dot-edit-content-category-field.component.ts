@@ -105,15 +105,6 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
         return this.#form.get(this.store.fieldVariableName()) as FormControl;
     }
 
-    /**
-     * Open the "DotEditContentCategoryFieldDialogComponent" dialog to show the list of categories.
-     *
-     * @returns {void}
-     */
-    toogleCategoriesSidebar(): void {
-        this.$showCategoriesSidebar.update((state) => !state);
-    }
-
     ngOnInit(): void {
         this.store.load(this.field(), this.contentlet());
         effect(
