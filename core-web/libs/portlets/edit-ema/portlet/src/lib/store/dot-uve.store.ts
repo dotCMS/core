@@ -18,7 +18,9 @@ const initialState: UVEState = {
     experiment: undefined,
     error: undefined,
     params: undefined,
-    status: UVE_STATUS.LOADING
+    status: UVE_STATUS.LOADING,
+    isLegacyPage: true,
+    canEditPage: false
 };
 
 export const UVEStore = signalStore(

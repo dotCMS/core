@@ -14,7 +14,7 @@ import { LoginService } from '@dotcms/dotcms-js';
 
 import { DotPageApiService, DotPageApiParams } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
-import { isForwardOrPage } from '../../../utils';
+import { computeCanEditPage, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
 
 /**
@@ -118,6 +118,12 @@ export function withLoad() {
                                     }).pipe(
                                         tap({
                                             next: ({ experiment, languages }) => {
+                                                const canEditPage = computeCanEditPage(
+                                                    pageAPIResponse,
+                                                    currentUser,
+                                                    experiment
+                                                );
+
                                                 patchState(store, {
                                                     pageAPIResponse,
                                                     isEnterprise,
@@ -125,7 +131,9 @@ export function withLoad() {
                                                     experiment,
                                                     languages,
                                                     params,
-                                                    status: UVE_STATUS.LOADED
+                                                    canEditPage,
+                                                    status: UVE_STATUS.LOADED,
+                                                    isLegacyPage: !!params.clientHost // If we don't send the clientHost we are using as VTL page
                                                 });
                                             }
                                         })
@@ -154,10 +162,18 @@ export function withLoad() {
                                 ),
                                 tapResponse({
                                     next: ({ pageAPIResponse, languages }) => {
+                                        const canEditPage = computeCanEditPage(
+                                            pageAPIResponse,
+                                            store.currentUser(),
+                                            store.experiment()
+                                        );
+
                                         patchState(store, {
                                             pageAPIResponse,
                                             languages,
-                                            status: UVE_STATUS.LOADED
+                                            canEditPage,
+                                            status: UVE_STATUS.LOADED,
+                                            isLegacyPage: !!params.clientHost // If we don't send the clientHost we are using as VTL page
                                         });
                                     },
                                     error: ({ status: errorStatus }: HttpErrorResponse) => {

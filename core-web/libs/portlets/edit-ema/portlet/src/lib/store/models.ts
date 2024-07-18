@@ -15,6 +15,8 @@ export interface UVEState {
     error?: number;
     params?: DotPageApiParams;
     status: UVE_STATUS;
+    isLegacyPage: boolean;
+    canEditPage: boolean;
 }
 
 export interface ShellState {

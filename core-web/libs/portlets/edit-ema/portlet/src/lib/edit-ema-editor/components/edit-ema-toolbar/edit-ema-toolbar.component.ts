@@ -82,7 +82,6 @@ export class EditEmaToolbarComponent {
     private readonly personalizeService = inject(DotPersonalizeService);
     private readonly activatedRouter = inject(ActivatedRoute);
 
-    readonly editorToolbarData$ = this.store.editorToolbarData$;
     readonly editorState = EDITOR_STATE;
     readonly editorMode = EDITOR_MODE;
     readonly experimentStatus = DotExperimentStatus;
@@ -273,9 +272,6 @@ export class EditEmaToolbarComponent {
     }
 
     private updateQueryParams(params: Params) {
-        // DELETE WHEN THE UVE STORE IS DONE
-        this.store.updateEditorState(EDITOR_STATE.LOADING); // This is unnatural, the navigate already triggers a loading state with the reload of the state
-
         this.router.navigate([], {
             queryParams: params,
             queryParamsHandling: 'merge'

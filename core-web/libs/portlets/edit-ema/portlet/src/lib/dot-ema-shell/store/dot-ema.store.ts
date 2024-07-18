@@ -51,7 +51,8 @@ import {
     sanitizeURL,
     getPersonalization,
     createPageApiUrlWithQueryParams,
-    getIsDefaultVariant
+    getIsDefaultVariant,
+    createFavoritePagesURL
 } from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
@@ -108,7 +109,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private readonly code$ = this.select((state) => state.editor.page.rendered);
     private readonly pageURL$ = this.select((state) => this.createPageURL(state));
     private readonly favoritePageURL$ = this.select((state) =>
-        this.createFavoritePagesURL({
+        createFavoritePagesURL({
             languageId: state.editor.viewAs.language.id,
             pageURI: state.editor.page.pageURI,
             siteId: state.editor.site.identifier
@@ -917,33 +918,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         ...state,
         shouldReload
     }));
-
-    /**
-     * Create the url to add a page to favorites
-     *
-     * @private
-     * @param {{
-     *         languageId: number;
-     *         pageURI: string;
-     *         deviceInode?: string;
-     *         siteId?: string;
-     *     }} params
-     * @return {*}  {string}
-     * @memberof EditEmaStore
-     */
-    private createFavoritePagesURL(params: {
-        languageId: number;
-        pageURI: string;
-        siteId: string;
-    }): string {
-        const { languageId, pageURI, siteId } = params;
-
-        return (
-            `/${pageURI}?` +
-            (siteId ? `host_id=${siteId}` : '') +
-            `&language_id=${languageId}`
-        ).replace(/\/\//g, '/');
-    }
 
     /**
      * Map the containers to a DotContainerMap

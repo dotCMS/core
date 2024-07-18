@@ -1,6 +1,12 @@
-import { DEFAULT_VARIANT_ID, VanityUrl } from '@dotcms/dotcms-models';
+import { CurrentUser } from '@dotcms/dotcms-js';
+import {
+    DEFAULT_VARIANT_ID,
+    DotExperiment,
+    DotExperimentStatus,
+    VanityUrl
+} from '@dotcms/dotcms-models';
 
-import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../shared/consts';
 import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
 
@@ -232,4 +238,60 @@ export function getIsDefaultVariant(variant?: string): boolean {
  */
 export function isForwardOrPage(vanityUrl?: VanityUrl): boolean {
     return !vanityUrl || (!vanityUrl.permanentRedirect && !vanityUrl.temporaryRedirect);
+}
+
+/**
+ * Create the url to add a page to favorites
+ *
+ * @private
+ * @param {{
+ *         languageId: number;
+ *         pageURI: string;
+ *         deviceInode?: string;
+ *         siteId?: string;
+ *     }} params
+ * @return {*}  {string}
+ * @memberof EditEmaStore
+ */
+export function createFavoritePagesURL(params: {
+    languageId: number;
+    pageURI: string;
+    siteId: string;
+}): string {
+    const { languageId, pageURI, siteId } = params;
+
+    return (
+        `/${pageURI}?` +
+        (siteId ? `host_id=${siteId}` : '') +
+        `&language_id=${languageId}`
+    ).replace(/\/\//g, '/');
+}
+
+export function createPureURL(params: DotPageApiParams): string {
+    const clientHost = params.clientHost ?? window.location.origin;
+
+    // Clean the params that are not needed for the page
+    delete params.clientHost;
+    delete params.url;
+    delete params.mode;
+
+    const searchParams = new URLSearchParams(params as unknown as Record<string, string>);
+
+    return `${clientHost}/${params.url}?${searchParams.toString()}`;
+}
+
+export function computeCanEditPage(
+    pageAPIResponse: DotPageApiResponse,
+    currentUser: CurrentUser,
+    experiment?: DotExperiment
+): boolean {
+    const pageCanBeEdited = pageAPIResponse.page.canEdit;
+    const isLocked =
+        pageAPIResponse.page.locked && pageAPIResponse.page.lockedBy !== currentUser?.userId;
+    const editingBlockedByExperiment = [
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.SCHEDULED
+    ].includes(experiment?.status);
+
+    return pageCanBeEdited && !isLocked && !editingBlockedByExperiment;
 }
