@@ -79,10 +79,12 @@
                         display: block;
                         overflow: hidden;
                         text-overflow: ellipsis;
+                        white-space: nowrap;
                     }
 
                     span:last-child {
                         margin-right: $spacing-1;
+                        flex-shrink: 0;
                     }
                 }
             }
