@@ -94,3 +94,24 @@ export function getImageAssetUrl(contentlet: DotCMSContentlet): string {
             return contentlet?.asset || '';
     }
 }
+
+/**
+ * This method is used to truncate a text with ellipsis.
+ * It ensures that the text is truncated at the nearest word boundary.
+ * @param text - The text to be truncated.
+ * @param limit - The maximum length of the truncated text.
+ * @returns The truncated text with ellipsis if it exceeds the limit, otherwise the original text.
+ */
+export function ellipsizeText(text: string, limit: number): string {
+    if (!text) {
+        return '';
+    }
+
+    if (text.length <= limit) {
+        return text;
+    }
+
+    const truncated = text.slice(0, limit);
+
+    return truncated.slice(0, truncated.lastIndexOf(' ')) + '...';
+}

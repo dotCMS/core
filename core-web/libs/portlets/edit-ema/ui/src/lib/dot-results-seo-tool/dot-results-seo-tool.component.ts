@@ -26,10 +26,10 @@ import {
     SEO_LIMITS
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { ellipsizeText } from '@dotcms/utils';
 
 import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo-tool.component';
 import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-image-preview.component';
-
 @Component({
     selector: 'dot-results-seo-tool',
     standalone: true,
@@ -70,29 +70,15 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     noFavicon = false;
 
     ngOnInit(): void {
-        const truncateText = (text: string, limit: number) => {
-            if (!text) {
-                return '';
-            }
-
-            if (text.length <= limit) {
-                return text;
-            }
-
-            const truncated = text.slice(0, limit);
-
-            return truncated.slice(0, truncated.lastIndexOf(' ')) + '...';
-        };
-
         const title =
-            truncateText(this.seoOGTags?.['og:title'], SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
-            truncateText(this.seoOGTags?.title, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
+            ellipsizeText(this.seoOGTags?.['og:title'], SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
+            ellipsizeText(this.seoOGTags?.title, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
 
         const description =
-            truncateText(
+            ellipsizeText(
                 this.seoOGTags?.['og:description'],
                 SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
-            ) || truncateText(this.seoOGTags?.description, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
+            ) || ellipsizeText(this.seoOGTags?.description, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
 
         const twitterDescriptionProperties = [
             'twitter:description',
@@ -103,13 +89,13 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
 
         const twitterDescription = twitterDescriptionProperties
             .map((property) =>
-                truncateText(this.seoOGTags?.[property], SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
+                ellipsizeText(this.seoOGTags?.[property], SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
             )
             .find((value) => value !== undefined && value.length > 0);
 
         const twitterTitle = twitterTitleProperties
             .map((property) =>
-                truncateText(this.seoOGTags?.[property], SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
+                ellipsizeText(this.seoOGTags?.[property], SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
             )
             .find((value) => value !== undefined && value.length > 0);
 
