@@ -31,6 +31,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -40,6 +41,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.File;
@@ -138,7 +144,6 @@ public class CategoriesResource {
      * <li>per_page: limit of items to return</li>
      * <li>ordeby: field to order by</li>
      * <li>direction: asc for upward order and desc for downward order</li>
-     * <li>showChildrenCount: true for including children categories count and false to exclude it</li>
      * </ul>
      * <p>
      * Url example: /api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true
@@ -196,22 +201,30 @@ public class CategoriesResource {
 
     /**
      * Return a list of {@link com.dotmarketing.portlets.categories.model.Category}, entity response
-     * syntax:.
+     * Syntax:.
      *
-     * <code> { contentTypes: array of Category total: total number of Categories } <code/>
+     * <code>
+     * {
+     *   contentTypes: array of Category,
+     *   total: total number of Categories
+     * }
+     * <code/>
+     *
      * <p>
      * Url syntax:
      * api/v1/categories/children?filter=filter-string&page=page-number&per_page=per-page&orderby=order-field-name&direction=order-direction&inode=parentId
      * <p>
-     * where:
      *
-     * <ul>
-     * <li>filter-string: just return Category whose content this pattern into its name</li>
-     * <li>page: page to return</li>
-     * <li>per_page: limit of items to return</li>
-     * <li>ordeby: field to order by</li>
-     * <li>direction: asc for upward order and desc for downward order</li>
-     * </ul>
+     * Parameeters:
+     *
+     * - filter-string: Return categories whose names contain this pattern.
+     * - page: The page number to return.
+     * - per_page: The limit of items to return.
+     * - orderby: The field to order by.
+     * - direction: Sorting direction, asc for ascending and desc for descending.
+     * - showChildrenCount: true to include the count of child categories, false to exclude it.
+     * - allLevels: A Boolean value. If TRUE, the search will include categories at any level, ignoring the childrenCategories parameter. If showChildrenCount is TRUE, this parameter is ignored.
+     *
      * <p>
      * Url example: v1/categories/children?filter=test&page=0&per_page=5&orderby=category_name
      *
@@ -274,6 +287,86 @@ public class CategoriesResource {
         }
 
         return response;
+    }
+
+    /**
+     * Response with the list of parents for a specific set of {@link Category}.
+     *
+     * This ned point receive a list the {@link Category}'s endpoint as follow:
+     *
+     * <code>
+     *     {
+     *         "keys": ["key_1", "key_2"]
+     *     }
+     * </code>
+     *
+     * The output is going to be something like:
+     *
+     * <code>
+     *     {
+     *         entity: [
+     *              {
+     *                  "inode": "1",
+     *                  "key": "key_1",
+     *                  "name": "Name_1",
+     *                  "parentList": [
+     *                       {
+     *                          'name': 'Grand Parent Name',
+     *                          'key': 'Grand Parent  Key',
+     *                          'inode': 'Grand Parent  inode'
+     *                      },
+     *                       {
+     *                          'name': 'Parent Name',
+     *                          'key': 'Parent  Key',
+     *                          'inode': 'Parent  inode'
+     *                      }
+     *                  ]
+     *              },
+     *              {
+     *                  "inode": "2",
+     *                  "key": "key_2",
+     *                  "name": "Name_2",
+     *                  "parentList": [
+     *                       {
+     *                          'name': 'Category name value',
+     *                          'key': 'Key value',
+     *                          'inode': 'inode value'
+     *                      }
+     *                  ]
+     *              }
+     *         ]
+     *     }
+     * </code>
+     *
+     *  parentList is the list of parents where the 0 is the more top level parent and the last one is the direct
+     *  parent.
+     *
+     * @param httpRequest
+     * @param httpResponse
+     * @param form
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @Path(("/hierarchy"))
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "getSchemes", summary = "Get the List of Parents from  set of categories",
+            description = "Response with the list of parents for a specific set of categories. If any of the categories" +
+                    "does not exists then it is just ignored"
+    )
+    public final HierarchyShortCategoriesResponseView getHierarchy(@Context final HttpServletRequest httpRequest,
+                                       @Context final HttpServletResponse httpResponse,
+                                       final CategoryKeysForm form) throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> "Getting the List of Parents for the follow categories: " +
+                String.join(",", form.getKeys()));
+
+        webResource.init(null, httpRequest, httpResponse, true, null);
+
+        return new HierarchyShortCategoriesResponseView(categoryAPI.findHierarchy(form.getKeys()));
     }
 
     /**

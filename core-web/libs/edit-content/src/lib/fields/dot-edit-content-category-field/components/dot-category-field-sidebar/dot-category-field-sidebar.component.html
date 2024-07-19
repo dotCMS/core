@@ -22,20 +22,46 @@
 
     <div class="category-field__content h-full w-full">
         <div class="category-field__left-pane flex flex-column">
-            <div class="category-field__search">Input Search</div>
+            <div class="category-field__search">
+                <dot-category-field-search
+                    (changeMode)="store.setMode($event)"
+                    (term)="store.search($event)"
+                    @fadeAnimation
+                    [isLoading]="store.isSearchLoading()" />
+            </div>
             <div class="flex-grow-1 category-field__categories">
+                @if (store.mode() === 'list') {
                 <dot-category-field-category-list
+                    @fadeAnimation
                     (itemChecked)="store.updateSelected($event.selected, $event.item)"
-                    (itemClicked)="store.getCategories($event)"
+                    (rowClicked)="store.getCategories($event)"
                     [categories]="store.categoryList()"
+                    [isLoading]="store.isListLoading()"
                     [selected]="store.selectedCategoriesValues()" />
+                } @else {
+                <dot-category-field-search-list
+                    @fadeAnimation
+                    (itemChecked)="store.addSelected($event)"
+                    (removeItem)="store.removeSelected($event)"
+                    [isLoading]="store.isSearchLoading()"
+                    [categories]="store.searchCategoryList()"
+                    [selected]="store.selected()" />
+                }
             </div>
         </div>
 
         <div class="category-field__right-pane flex flex-column">
-            <div class="category-field__selected-categories-list flex-1">Selected Categories</div>
+            <div class="category-field__selected-categories-list flex-1">
+                <dot-category-field-selected
+                    (removeItem)="store.removeSelected($event)"
+                    [categories]="store.selected()" />
+            </div>
             <div class="category-field__actions flex justify-content-end">
-                <button class="p-button p-button-link" data-testId="clear_all-btn" pButton>
+                <button
+                    (click)="store.removeSelected($allCategoryKeys())"
+                    class="p-button p-button-link"
+                    data-testId="clear_all-btn"
+                    pButton>
                     {{ 'edit.content.category-field.sidebar.button.clear-all' | dm }}
                 </button>
             </div>

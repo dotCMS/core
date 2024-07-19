@@ -47,15 +47,7 @@ distributions:
     active: ALWAYS
     stereotype: CLI
     artifacts:
-      - path: '{{artifactsDir}}/osx-aarch_64/dotcms-cli-{{projectVersion}}-runner.jar'
-        platform: 'osx-aarch_64'
-        extraProperties:
-          optional: 'true'
-      - path: '{{artifactsDir}}/osx-x86_64/dotcms-cli-{{projectVersion}}-runner.jar'
-        platform: 'osx-x86_64'
-        extraProperties:
-          optional: 'true'
-      - path: '{{artifactsDir}}/linux-x86_64/dotcms-cli-{{projectVersion}}-runner.jar'
+      - path: '{{m2Dir}}/com/dotcms/dotcms-cli/{{projectVersion}}/dotcms-cli-{{projectVersion}}-runner.jar'
         platform: 'linux-x86_64'
         extraProperties:
           optional: 'true'
@@ -63,15 +55,15 @@ distributions:
   dotcms-cli-native:
     type: BINARY
     artifacts:
-      - path: '{{artifactsDir}}/osx-aarch_64/distributions/dotcms-cli-{{projectVersion}}-osx-aarch_64.zip'
+      - path: '{{artifactsDir}}/artifacts-osx-aarch_64/distributions/dotcms-cli-{{projectVersion}}-osx-aarch_64.zip'
         platform: 'osx-aarch_64'
         extraProperties:
           optional: 'true'
-      - path: '{{artifactsDir}}/osx-x86_64/distributions/dotcms-cli-{{projectVersion}}-osx-x86_64.zip'
+      - path: '{{artifactsDir}}/artifacts-osx-x86_64/distributions/dotcms-cli-{{projectVersion}}-osx-x86_64.zip'
         platform: 'osx-x86_64'
         extraProperties:
           optional: 'true'
-      - path: '{{artifactsDir}}/linux-x86_64/distributions/dotcms-cli-{{projectVersion}}-linux-x86_64.zip'
+      - path: '{{artifactsDir}}/artifacts-linux-x86_64/distributions/dotcms-cli-{{projectVersion}}-linux-x86_64.zip'
         platform: 'linux-x86_64'
         extraProperties:
           optional: 'true'

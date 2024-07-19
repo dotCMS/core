@@ -5,6 +5,6 @@ export const environment = {
    * for security purposes, make sure is read-only.
    * More info: https://www.dotcms.com/docs/latest/permissions
    */
-  authToken: 'YOUR_API_TOKEN',
+  authToken: 'YOUR_AUTH_TOKEN',
   siteId: 'true',
 };

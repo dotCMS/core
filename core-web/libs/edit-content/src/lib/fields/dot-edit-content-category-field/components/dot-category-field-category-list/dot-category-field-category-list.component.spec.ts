@@ -8,7 +8,13 @@ import {
     MINIMUM_CATEGORY_COLUMNS
 } from './dot-category-field-category-list.component';
 
-import { CATEGORY_LIST_MOCK, SELECTED_LIST_MOCK } from '../../mocks/category-field.mocks';
+import {
+    CATEGORY_LIST_MOCK,
+    CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX,
+    CATEGORY_MOCK_TRANSFORMED,
+    SELECTED_LIST_MOCK
+} from '../../mocks/category-field.mocks';
+import { DotCategoryFieldListSkeletonComponent } from '../dot-category-field-list-skeleton/dot-category-field-list-skeleton.component';
 
 describe('DotCategoryFieldCategoryListComponent', () => {
     let spectator: Spectator<DotCategoryFieldCategoryListComponent>;
@@ -19,12 +25,10 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                categories: CATEGORY_LIST_MOCK,
-                selected: SELECTED_LIST_MOCK
-            }
-        });
+        spectator = createComponent();
+        spectator.setInput('categories', CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX);
+        spectator.setInput('selected', SELECTED_LIST_MOCK);
+        spectator.setInput('isLoading', false);
 
         spectator.detectChanges();
     });
@@ -62,35 +66,53 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     });
 
     it('should emit the correct item when clicked', () => {
-        const emitSpy = jest.spyOn(spectator.component.itemClicked, 'emit');
+        const emitSpy = jest.spyOn(spectator.component.rowClicked, 'emit');
         const items = spectator.queryAll(byTestId('category-item'));
         spectator.click(items[0]);
 
         expect(emitSpy).toHaveBeenCalledWith({
             index: 0,
-            item: CATEGORY_LIST_MOCK[0][0]
+            item: CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX[0][0]
         });
     });
 
     it('should apply selected class to the correct item', () => {
+        // spectator = createComponent();
+
+        spectator.setInput('categories', [CATEGORY_MOCK_TRANSFORMED]);
+        spectator.setInput('selected', SELECTED_LIST_MOCK);
+        spectator.setInput('isLoading', false);
+
+        spectator.detectChanges();
+
         const items = spectator.queryAll(byTestId('category-item'));
-        expect(items[1].className).toContain('category-list__item--selected');
-        expect(items[2].className).toContain('category-list__item--selected');
+
+        expect(items[0].className).toContain('category-list__item--selected');
+        expect(items[1].className).not.toContain('category-list__item--selected');
     });
 
     it('should not render any empty columns when there are enough categories', () => {
         const minColumns = 4;
-        const testCategories = Array(minColumns).fill(CATEGORY_LIST_MOCK[0]);
+        const testCategories = Array(minColumns).fill(CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX[0]);
 
-        spectator = createComponent({
-            props: {
-                categories: testCategories,
-                selected: SELECTED_LIST_MOCK
-            }
-        });
+        // spectator = createComponent();
+
+        spectator.setInput('categories', testCategories);
+        spectator.setInput('selected', SELECTED_LIST_MOCK);
+        spectator.setInput('isLoading', false);
 
         spectator.detectChanges();
 
         expect(spectator.queryAll(byTestId('category-column-empty')).length).toBe(0);
+    });
+
+    it('should render the skeleton component if is loading', () => {
+        spectator.setInput('categories', [CATEGORY_MOCK_TRANSFORMED]);
+        spectator.setInput('selected', SELECTED_LIST_MOCK);
+        spectator.setInput('isLoading', true);
+
+        spectator.detectChanges();
+
+        expect(spectator.query(DotCategoryFieldListSkeletonComponent)).not.toBeNull();
     });
 });

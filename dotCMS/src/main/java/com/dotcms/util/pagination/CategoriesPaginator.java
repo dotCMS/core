@@ -80,7 +80,6 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
                     .rootInode(inode)
                     .build();
 
-
             final PaginatedCategories categories = searchInAllLevels ? searchAllLevels(user, searchingCriteria) :
                     searchInOneLevel(user, searchingCriteria, childrenCategories);
 

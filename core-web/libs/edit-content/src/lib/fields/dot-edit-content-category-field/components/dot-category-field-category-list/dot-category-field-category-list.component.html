@@ -1,43 +1,45 @@
 <div class="w-full category-list__header">Root</div>
 <div
-    [ngClass]="{ 'no-overflow-x-yet': emptyColumns().length }"
+    [ngClass]="{ 'no-overflow-x-yet': $emptyColumns().length }"
     class="flex-1 category-list__category-list">
-    @for (column of categories(); let index = $index; track index) {
-        <!--dynamic columns-->
-        <div #categoryColumn class="category-list__category-column" data-testId="category-column">
-            @for (item of column; track item.inode) {
-                <div
-                    data-testId="category-item"
-                    class="flex align-content-center align-items-center category-list__item"
-                    [ngClass]="{ 'category-list__item--selected': item.checked }"
-                    (click)="itemClicked.emit({ index, item })">
-                    <p-checkbox
-                        [(ngModel)]="itemsSelected"
-                        [value]="item.key"
-                        (onChange)="itemChecked.emit({ selected: $event.checked, item })" />
+    @for (column of $categories(); let index = $index; track index) {
+    <!--dynamic columns-->
+    <div #categoryColumn class="category-list__category-column" data-testId="category-column">
+        @for (item of column; track item.key) {
+        <div
+            data-testId="category-item"
+            class="flex align-content-center align-items-center category-list__item"
+            [ngClass]="{ 'category-list__item--selected': item.clicked }"
+            (click)="rowClicked.emit({ index, item })">
+            <p-checkbox
+                [(ngModel)]="itemsSelected"
+                [value]="item.key"
+                (onChange)="itemChecked.emit({ selected: $event.checked, item })" />
 
-                    <label
-                        data-testId="category-item-label"
-                        class="flex flex-grow-1 category-list__item-label"
-                        [ngClass]="{ 'cursor-pointer': item.childrenCount > 0 }"
-                        [for]="item.key"
-                        >{{ item.categoryName }}</label
-                    >
+            <label
+                data-testId="category-item-label"
+                class="flex flex-grow-1 category-list__item-label"
+                [class.cursor-pointer]="item.hasChildren"
+                [for]="item.key">
+                {{ item.value }}
+            </label>
 
-                    @if (item.childrenCount > 0) {
-                        <i
-                            data-testId="category-item-with-child"
-                            class="pi pi-chevron-right category-list__item-icon"></i>
-                    }
-                </div>
+            @if (item.hasChildren) {
+            <i
+                data-testId="category-item-with-child"
+                class="pi pi-chevron-right category-list__item-icon"></i>
             }
         </div>
-    }
+        }
+    </div>
+    } @empty { @if (!$isLoading()) { No categories } }
 
     <!--Fake empty columns-->
-    @for (_ of emptyColumns(); track _) {
-        <div
-            class="flex-grow-1 category-list__category-column"
-            data-testId="category-column-empty"></div>
+    @for (_ of $emptyColumns(); track $index) {
+    <div class="flex-grow-1 category-list__category-column" data-testId="category-column-empty">
+        @if ($isLoading() && 0 === $index) {
+        <dot-category-field-list-skeleton />
+        }
+    </div>
     }
 </div>
