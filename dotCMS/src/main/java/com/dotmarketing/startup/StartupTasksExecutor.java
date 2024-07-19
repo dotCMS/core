@@ -172,7 +172,7 @@ public class StartupTasksExecutor {
         }
     }
 
-    public void executeStartUpTasks() throws DotDataException, InterruptedException {
+    public void executeStartUpTasks() throws DotDataException {
 
         Logger.debug(this.getClass(), "Running Startup Tasks");
 
@@ -225,7 +225,7 @@ public class StartupTasksExecutor {
     }
 
 
-    public void executeSchemaUpgrades() throws DotDataException, InterruptedException {
+    public void executeSchemaUpgrades() throws DotDataException {
 
         Logger.info(this, "---");
         Logger.info(this, "");
@@ -289,7 +289,7 @@ public class StartupTasksExecutor {
      *
      * @throws DotDataException
      */
-    public void executeDataUpgrades() throws DotDataException, InterruptedException {
+    public void executeDataUpgrades() throws DotDataException {
 
         Logger.info(this, "---");
         Logger.info(this, "");
@@ -347,7 +347,7 @@ public class StartupTasksExecutor {
      *
      * @throws DotDataException
      */
-    public void executeBackportedTasks() throws DotDataException, InterruptedException {
+    public void executeBackportedTasks() throws DotDataException {
         Logger.debug(this.getClass(), "Running Backported Tasks");
         String name = null;
         try {
@@ -383,7 +383,7 @@ public class StartupTasksExecutor {
 
     }
 
-    private void taskFailure(Throwable e) throws DotHibernateException, InterruptedException {
+    private void taskFailure(Throwable e) throws DotHibernateException {
         HibernateUtil.rollbackTransaction();
         for(int i = 0; i < 3; i++){
             System.err.println("FATAL ERROR RUNNING TASK: " + e.getMessage());
@@ -393,7 +393,12 @@ public class StartupTasksExecutor {
         e.printStackTrace();
 
         if (Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)) {
-            Thread.sleep(10000);
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                Logger.debug(this,"Thread was interrupted", ex);
+            }
             System.exit(1);
         }
     }
