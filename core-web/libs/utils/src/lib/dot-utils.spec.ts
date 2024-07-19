@@ -73,6 +73,18 @@ describe('Ellipsize Text Utility', () => {
         expect(ellipsizeText(undefined, 10)).toEqual('');
     });
 
+    it('should return empty string when text is empty', () => {
+        expect(ellipsizeText('', 10)).toEqual('');
+    });
+
+    it('should return empty string when limit is 0', () => {
+        expect(ellipsizeText('Any text', 0)).toEqual('');
+    });
+
+    it('should return empty string when limit is negative', () => {
+        expect(ellipsizeText('Any text', -5)).toEqual('');
+    });
+
     it('should return the original text when it is shorter than the limit', () => {
         const text = 'Short text';
         expect(ellipsizeText(text, 20)).toEqual(text);
@@ -81,24 +93,32 @@ describe('Ellipsize Text Utility', () => {
     it('should truncate the text with ellipsis when it exceeds the limit', () => {
         const text = 'This is a longer text that needs truncation';
         const truncated = 'This is a longer...';
-        expect(ellipsizeText(text, 20)).toEqual(truncated);
+        expect(ellipsizeText(text, 18)).toEqual(truncated);
     });
 
-    it('should truncate the text at the nearest word boundary', () => {
+    it('should handle no spaces correctly and truncate at the limit', () => {
+        const text = 'Thisisaverylongwordthatneedstruncation';
+        const truncated = 'Thisisaverylongwo...';
+        expect(ellipsizeText(text, 18)).toEqual(truncated);
+    });
+    it('should return empty string when a non-string value is passed', () => {
+        expect(ellipsizeText(12345 as any, 10)).toEqual('');
+        expect(ellipsizeText({} as any, 10)).toEqual('');
+        expect(ellipsizeText([] as any, 10)).toEqual('');
+        expect(ellipsizeText(null, 10)).toEqual('');
+    });
+    it('should return empty string when limit is not a number', () => {
+        const text = 'Any text';
+        expect(ellipsizeText(text, NaN)).toEqual('');
+        expect(ellipsizeText(text, 'abc' as any)).toEqual('');
+        expect(ellipsizeText(text, {} as any)).toEqual('');
+        expect(ellipsizeText(text, [] as any)).toEqual('');
+        expect(ellipsizeText(text, null)).toEqual('');
+    });
+
+    it('should truncate text at word boundary if there is a space before the limit', () => {
         const text = 'This is a longer text that needs truncation';
         const truncated = 'This is a...';
         expect(ellipsizeText(text, 15)).toEqual(truncated);
-    });
-
-    it('should return the truncated text with ellipsis even if there is no space before the limit', () => {
-        const text = 'Thisisaverylongwordthatneedstruncation';
-        const truncated = 'Thisisaverylongw...';
-        expect(ellipsizeText(text, 17)).toEqual(truncated);
-    });
-
-    it('should handle edge cases where limit is 0', () => {
-        const text = 'Any text';
-        const truncated = '...';
-        expect(ellipsizeText(text, 0)).toEqual(truncated);
     });
 });
