@@ -23,6 +23,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TreeModule } from 'primeng/tree';
 
 import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.models';
+import { DotCategoryFieldListSkeletonComponent } from '../dot-category-field-list-skeleton/dot-category-field-list-skeleton.component';
 
 export const MINIMUM_CATEGORY_COLUMNS = 4;
 
@@ -36,7 +37,14 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 @Component({
     selector: 'dot-category-field-category-list',
     standalone: true,
-    imports: [CommonModule, TreeModule, CheckboxModule, ButtonModule, FormsModule],
+    imports: [
+        CommonModule,
+        TreeModule,
+        CheckboxModule,
+        ButtonModule,
+        FormsModule,
+        DotCategoryFieldListSkeletonComponent
+    ],
     templateUrl: './dot-category-field-category-list.component.html',
     styleUrl: './dot-category-field-category-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,24 +61,29 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
     /**
      * Represents the variable 'categories' which is of type 'DotCategoryFieldCategory[][]'.
      */
-    categories = input.required<DotCategoryFieldKeyValueObj[][]>();
+    $categories = input<DotCategoryFieldKeyValueObj[][]>([], { alias: 'categories' });
 
     /**
      * Represent the selected item saved in the contentlet
      */
-    selected = input.required<string[]>();
+    $selected = input<string[]>([], { alias: 'selected' });
 
     /**
      * Generate the empty columns
      */
-    emptyColumns = computed(() => {
+    $emptyColumns = computed(() => {
         const numberOfEmptyColumnsNeeded = Math.max(
-            MINIMUM_CATEGORY_COLUMNS - this.categories().length,
+            MINIMUM_CATEGORY_COLUMNS - this.$categories().length,
             0
         );
 
         return Array(numberOfEmptyColumnsNeeded).fill(null);
     });
+
+    /**
+     * Represents a variable indicating if the component is in loading state.
+     */
+    $isLoading = input<boolean>(true, { alias: 'isLoading' });
 
     /**
      * Emit the item clicked to the parent component
@@ -91,13 +104,11 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
     itemsSelected: string[];
 
     #cdr = inject(ChangeDetectorRef);
-
     readonly #destroyRef = inject(DestroyRef);
-
     readonly #effectRef = effect(() => {
         // Todo: change itemsSelected to use model when update Angular to >17.3
         // Initial selected items from the contentlet
-        this.itemsSelected = this.selected();
+        this.itemsSelected = this.$selected();
         this.#cdr.markForCheck(); // force refresh
     });
 
