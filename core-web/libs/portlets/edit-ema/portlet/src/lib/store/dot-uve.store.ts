@@ -32,26 +32,27 @@ export const UVEStore = signalStore(
                 const pageAPIResponse = store.pageAPIResponse();
 
                 return (
-                    pageAPIResponse.page.locked &&
+                    pageAPIResponse?.page.locked &&
                     pageAPIResponse.page.lockedBy !== store.currentUser()?.userId
                 );
             }),
             shellState: computed<ShellState>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
-                const currentUrl = '/' + sanitizeURL(pageAPIResponse.page.pageURI);
 
-                const requestHostName = store.params().clientHost ?? window.location.origin;
+                const currentUrl = '/' + sanitizeURL(pageAPIResponse?.page.pageURI);
 
-                const page = pageAPIResponse.page;
-                const templateDrawed = pageAPIResponse.template.drawed;
+                const requestHostName = store.params()?.clientHost ?? window.location.origin;
 
-                const isLayoutDisabled = !page.canEdit || !templateDrawed;
+                const page = pageAPIResponse?.page;
+                const templateDrawed = pageAPIResponse?.template.drawed;
 
-                const languageId = pageAPIResponse.viewAs.language.id;
+                const isLayoutDisabled = !page?.canEdit || !templateDrawed;
+
+                const languageId = pageAPIResponse?.viewAs.language.id;
                 const languages = store.languages();
 
                 return {
-                    canRead: page.canRead,
+                    canRead: page?.canRead,
                     error: store.error(),
                     translateProps: {
                         page,
@@ -59,8 +60,8 @@ export const UVEStore = signalStore(
                         languages
                     },
                     seoParams: {
-                        siteId: pageAPIResponse.site.identifier,
-                        languageId: pageAPIResponse.viewAs.language.id,
+                        siteId: pageAPIResponse?.site.identifier,
+                        languageId: pageAPIResponse?.viewAs.language.id,
                         currentUrl,
                         requestHostName
                     },
@@ -101,15 +102,15 @@ export const UVEStore = signalStore(
                             icon: 'pi-sliders-h',
                             label: 'editema.editor.navbar.rules',
                             id: 'rules',
-                            href: `rules/${page.identifier}`,
-                            isDisabled: !page.canEdit
+                            href: `rules/${page?.identifier}`,
+                            isDisabled: !page?.canEdit
                         },
                         {
                             iconURL: 'experiments',
                             label: 'editema.editor.navbar.experiments',
-                            href: `experiments/${page.identifier}`,
+                            href: `experiments/${page?.identifier}`,
                             id: 'experiments',
-                            isDisabled: !page.canEdit
+                            isDisabled: !page?.canEdit
                         },
                         {
                             icon: 'pi-th-large',

@@ -99,14 +99,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly translatePageEffect = effect(() => {
         const { languages, languageId, page } = this.uveStore.shellState().translateProps;
 
-        const currentLanguage = languages.find((lang) => lang.id === languageId);
+        if (languages.length) {
+            const currentLanguage = languages.find((lang) => lang.id === languageId);
 
-        if (!currentLanguage.translated) {
-            this.createNewTranslation(currentLanguage, page);
+            if (!currentLanguage.translated) {
+                this.createNewTranslation(currentLanguage, page);
+            }
         }
     });
-
-    // We can internally navigate, so the PageID can change
 
     get queryParams(): DotPageApiParams {
         const queryParams = this.#activatedRoute.snapshot.queryParams;
