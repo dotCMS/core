@@ -89,7 +89,8 @@ export function withEditorToolbar() {
                     unlockButton: pageIsLocked &&
                         pageAPIResponse.page.canLock && {
                             inode: pageAPIResponse.page.inode
-                        }
+                        },
+                    showInfoDisplay: !store.canEditPage() || store.device() || store.socialMedia()
                 };
             })
         })),

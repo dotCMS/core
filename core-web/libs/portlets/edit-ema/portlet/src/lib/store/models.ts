@@ -1,10 +1,10 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotDevice, DotExperiment, DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import { DotExperiment, DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
 import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_STATUS } from '../shared/enums';
-import { DotPage, NavigationBarItem } from '../shared/models';
+import { DotDeviceWithIcon, DotPage, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
     isEnterprise: boolean;
@@ -35,6 +35,6 @@ export interface TranslateProps {
 }
 
 export interface EditorToolbarState {
-    device?: DotDevice;
+    device?: DotDeviceWithIcon;
     socialMedia?: string;
 }

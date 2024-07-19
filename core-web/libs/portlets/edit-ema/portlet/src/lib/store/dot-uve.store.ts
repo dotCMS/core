@@ -2,7 +2,7 @@ import { signalStore, withComputed, withState } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
-import { withEditorToolbar } from './features/editor/toolbar/withEditorToolbar';
+import { withEditor } from './features/editor/withEditor';
 import { withLoad } from './features/load/withLoad';
 import { withUveStatus } from './features/uve-status/withUveStatus';
 import { ShellState, UVEState } from './models';
@@ -27,6 +27,14 @@ export const UVEStore = signalStore(
     withState<UVEState>(initialState),
     withComputed((store) => {
         return {
+            pageIsLocked: computed(() => {
+                const pageAPIResponse = store.pageAPIResponse();
+
+                return (
+                    pageAPIResponse.page.locked &&
+                    pageAPIResponse.page.lockedBy !== store.currentUser()?.userId
+                );
+            }),
             shellState: computed<ShellState>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
                 const currentUrl = '/' + sanitizeURL(pageAPIResponse.page.pageURI);
@@ -119,5 +127,5 @@ export const UVEStore = signalStore(
     }),
     withLoad(),
     withUveStatus(),
-    withEditorToolbar() // I will inject this on the withEditor instead of the store
+    withEditor()
 );

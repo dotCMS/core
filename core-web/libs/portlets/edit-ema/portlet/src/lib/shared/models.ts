@@ -217,3 +217,7 @@ export interface DotPage {
     liveInode?: string;
     stInode?: string;
 }
+
+export interface DotDeviceWithIcon extends DotDevice {
+    icon?: string;
+}

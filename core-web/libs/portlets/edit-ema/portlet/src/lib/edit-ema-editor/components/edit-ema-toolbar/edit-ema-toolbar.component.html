@@ -86,10 +86,7 @@
     </div>
 </p-toolbar>
 
-<!-- This needs a big refactor. -->
-<!-- <dot-ema-info-display
-        *ngIf="es.showInfoDisplay"
-        [editorData]="es.editorData"
-        [currentExperiment]="es.currentExperiment"
-        data-testId="info-display" /> -->
-}
+@if(toolbarState.showInfoDisplay) {
+
+<dot-ema-info-display data-testId="info-display" />
+} }
