@@ -103,7 +103,7 @@ export function getImageAssetUrl(contentlet: DotCMSContentlet): string {
  * @returns The truncated text with ellipsis if it exceeds the limit, otherwise the original text.
  */
 export function ellipsizeText(text: string, limit: number): string {
-    if (!text) {
+    if (!text || typeof text !== 'string' || limit <= 0 || isNaN(limit)) {
         return '';
     }
 
