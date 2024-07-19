@@ -1,13 +1,11 @@
 import { NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnChanges, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
-import { EDITOR_MODE } from '../../../shared/enums';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { getIsDefaultVariant } from '../../../utils';
 
@@ -29,21 +27,14 @@ interface InfoOptions {
     styleUrls: ['./dot-ema-info-display.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEmaInfoDisplayComponent implements OnChanges {
-    protected options = signal<InfoOptions>(undefined);
-
-    protected readonly store = inject(EditEmaStore);
-
+export class DotEmaInfoDisplayComponent {
     protected readonly uveStore = inject(UVEStore);
     protected readonly router = inject(Router);
 
-    protected readonly editorMode = EDITOR_MODE;
-
-    ngOnChanges() {
+    protected options = computed<InfoOptions>(() => {
         const pageAPIResponse = this.uveStore.pageAPIResponse();
         const canEditPage = this.uveStore.canEditPage();
 
-        // MOVE ALL OF THIS TO THE STORE
         if (this.uveStore.pageIsLocked()) {
             let message = 'editpage.locked-by';
 
@@ -51,27 +42,19 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                 message = 'editpage.locked-contact-with';
             }
 
-            this.options.set({
+            return {
                 icon: 'pi pi-lock',
                 info: {
                     message,
                     args: [pageAPIResponse.page.lockedByName]
                 }
-            });
-
-            return;
-        }
-
-        if (!canEditPage) {
-            this.options.set({
-                icon: 'pi pi-exclamation-circle warning',
-                info: { message: 'editema.dont.have.edit.permission', args: [] }
-            });
+            };
         }
 
         if (this.uveStore.isDevicePreviewState()) {
             const device = this.uveStore.device();
-            this.options.set({
+
+            return {
                 icon: device.icon,
                 info: {
                     message: `${device.name} ${device.cssWidth} x ${device.cssHeight}`,
@@ -81,11 +64,11 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                     this.uveStore.clearDeviceAndSocialMedia();
                 },
                 actionIcon: 'pi pi-times'
-            });
+            };
         } else if (this.uveStore.isSocialMediaPreviewState()) {
             const socialMedia = this.uveStore.socialMedia();
 
-            this.options.set({
+            return {
                 icon: `pi pi-${socialMedia.toLowerCase()}`,
                 info: {
                     message: `Viewing <b>${socialMedia}</b> social media preview`,
@@ -95,7 +78,7 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                     this.uveStore.clearDeviceAndSocialMedia();
                 },
                 actionIcon: 'pi pi-times'
-            });
+            };
         } else if (canEditPage && !getIsDefaultVariant(pageAPIResponse.viewAs.variantId)) {
             const variantId = pageAPIResponse.viewAs.variantId;
 
@@ -106,7 +89,7 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                     (variant) => variant.id === variantId
                 )?.name ?? 'Unknown Variant';
 
-            this.options.set({
+            return {
                 info: {
                     message: canEditPage ? 'editpage.editing.variant' : 'editpage.viewing.variant',
                     args: [name]
@@ -131,7 +114,16 @@ export class DotEmaInfoDisplayComponent implements OnChanges {
                     );
                 },
                 actionIcon: 'pi pi-arrow-left'
-            });
+            };
         }
-    }
+
+        if (!canEditPage) {
+            return {
+                icon: 'pi pi-exclamation-circle warning',
+                info: { message: 'editema.dont.have.edit.permission', args: [] }
+            };
+        }
+
+        return undefined;
+    });
 }

@@ -38,9 +38,9 @@ export function withEditorToolbar() {
         },
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
-            isDevicePreviewState: computed(() => !!store.device),
-            isSocialMediaPreviewState: computed(() => !!store.socialMedia),
-            isEditState: computed(() => !store.device && !store.socialMedia),
+            isDevicePreviewState: computed(() => !!store.device()),
+            isSocialMediaPreviewState: computed(() => !!store.socialMedia()),
+            isEditState: computed(() => !store.device() && !store.socialMedia()),
             toolbarState: computed(() => {
                 const params = store.params();
                 const url = sanitizeURL(params.url);
