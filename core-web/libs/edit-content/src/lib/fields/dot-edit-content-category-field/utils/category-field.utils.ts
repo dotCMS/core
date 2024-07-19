@@ -1,15 +1,20 @@
-import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCategory,
+    DotCategoryParent,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 
-import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj, HierarchyParent } from '../models/dot-category-field.models';
 
 /**
- * Retrieves selected categories from a contentlet.
+ * Retrieves and convert selected categories from a contentlet.
  *
  * @param {string} variableName - The name of the variable containing the selected categories.
  * @param {DotCMSContentlet} contentlet - The contentlet from which to retrieve the selected categories.
  * @returns {DotCategoryFieldKeyValueObj[]} - An array of objects representing the selected categories.
  */
-export const transformSelectedCategories = (
+export const getSelectedFromContentlet = (
     { variable }: DotCMSContentTypeField,
     contentlet: DotCMSContentlet
 ): DotCategoryFieldKeyValueObj[] => {
@@ -23,6 +28,25 @@ export const transformSelectedCategories = (
         const key = Object.keys(obj)[0];
 
         return { key, value: obj[key] };
+    });
+};
+
+/**
+ * Transforms an array of selected HierarchyParent objects into an array of DotCategoryFieldKeyValueObj objects.
+ *
+ * @param {HierarchyParent[]} selected - The array of selected HierarchyParent objects.
+ * @returns {DotCategoryFieldKeyValueObj[]} - The transformed array of DotCategoryFieldKeyValueObj objects.
+ */
+export const transformToSelectedObject = (
+    selected: HierarchyParent[]
+): DotCategoryFieldKeyValueObj[] => {
+    return selected.map((obj: HierarchyParent) => {
+        return {
+            key: obj.key,
+            value: obj.name,
+            inode: obj.inode,
+            path: getParentPath(obj.parentList)
+        };
     });
 };
 
@@ -41,12 +65,12 @@ export const transformCategories = (
         const { key, inode, categoryName, childrenCount } = category;
         const hasChildren = childrenCount > 0;
 
-        const path = category.parentList ? getParentPath(category) : '';
+        const path = category.parentList ? getParentPath(category.parentList) : '';
 
         return {
             key,
             inode,
-            value: categoryName,
+            value: categoryName || category?.name,
             hasChildren,
             clicked: hasChildren && keyParentPath.includes(key),
             path
@@ -118,6 +142,7 @@ export const updateChecked = (
 ): DotCategoryFieldKeyValueObj[] => {
     let currentChecked = [...storedSelected];
 
+    // If the item is included in the array of selected
     if (selected.includes(item.key)) {
         if (!currentChecked.some((entry) => entry.key === item.key)) {
             currentChecked = [
@@ -126,6 +151,7 @@ export const updateChecked = (
             ];
         }
     } else {
+        // get only the
         currentChecked = currentChecked.filter((entry) => entry.key !== item.key);
     }
 
@@ -135,14 +161,14 @@ export const updateChecked = (
 /**
  * Retrieves the parent path of a given category item.
  *
- * @param {DotCategory} item - The category item.
  * @returns {string} - The parent path of the category item.
+ * @param parentList
  */
-export const getParentPath = (item: DotCategory): string => {
-    if (item.parentList) {
-        return item.parentList
+export const getParentPath = (parentList: DotCategoryParent[]): string => {
+    if (parentList) {
+        return parentList
             .slice(1)
-            .map((parent) => parent.categoryName)
+            .map((parent) => parent.name)
             .join(' / ');
     }
 

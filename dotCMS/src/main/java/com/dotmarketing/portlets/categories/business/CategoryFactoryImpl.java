@@ -1,9 +1,6 @@
 package com.dotmarketing.portlets.categories.business;
 
-import com.dotcms.util.CloseUtils;
-import com.dotcms.util.DotPreconditions;
-import com.dotcms.util.JsonUtil;
-import com.dotcms.util.ReflectionUtils;
+import com.dotcms.util.*;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -638,6 +635,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 						final String parentsASJsonArray = "[" + row.get("path") + "]";
 						final List<ShortCategory> parentList = getShortCategories(parentsASJsonArray);
 						category.setParentList(parentList.subList(0, parentList.size() - 1));
+						category.setChildrenCount(ConversionUtils.toInt(row.get("childrencount"), 0));
 					}
 
 					categories.add(category);
@@ -951,7 +949,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				"SELECT c.*, CONCAT(ch.path, ',', json_build_object('inode', c.inode, 'categoryName', c.category_name, 'key', c.category_key)::varchar) AS path " +
 				"FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode " +
 			") " +
-			"SELECT distinct *,path FROM CategoryHierarchy %s ORDER BY %s %s";
+			"SELECT distinct *,path, (SELECT COUNT(*) FROM tree WHERE parent = ch.inode) as childrenCount " +
+			"FROM CategoryHierarchy ch %s ORDER BY %s %s";
 
 		final String rootCategoryFilter = UtilMethods.isSet(searchCriteria.rootInode) ? "WHERE c.inode = ?" : StringPool.BLANK;
 
