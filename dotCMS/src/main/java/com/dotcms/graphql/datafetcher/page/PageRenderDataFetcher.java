@@ -30,6 +30,7 @@ public class PageRenderDataFetcher implements DataFetcher<String> {
 
             final String pageModeAsString = (String) context.getParam("pageMode");
             final String url = (String) context.getParam("url");
+            Logger.debug(this, ()-> "Fetching page render: " + url);
 
             final PageMode mode = PageMode.get(pageModeAsString);
 

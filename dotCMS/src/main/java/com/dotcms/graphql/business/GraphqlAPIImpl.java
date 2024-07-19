@@ -165,8 +165,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     @LogTime(loggingLevel = "INFO")
     @VisibleForTesting
     protected GraphQLSchema generateSchema(final User user) {
+
+        Logger.debug(this, ()-> "Generating GraphQL Schema for the user: " + user.getUserId());
         final Set<GraphQLType> graphQLTypes = new HashSet<>();
 
+        Logger.debug(this, ()-> "Generating types by providers");
         for (GraphQLTypesProvider typesProvider : typesProviders) {
             try {
                 graphQLTypes.addAll(typesProvider.getTypes());
@@ -194,8 +197,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         final List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
 
+        Logger.debug(this, ()-> "Generating fields by providers");
         for (GraphQLFieldsProvider fieldsProvider : fieldsProviders) {
             try {
+
+                Logger.debug(this, ()-> "Getting fields for provider: " + fieldsProvider.getClass());
                 fieldDefinitions.addAll(fieldsProvider.getFields());
             } catch (DotDataException e) {
                 Logger.error("Unable to get types for type provider:" + fieldsProvider.getClass(), e);
@@ -208,9 +214,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final GraphQLCodeRegistry.Builder codeRegistryBuilder = GraphQLCodeRegistry.newCodeRegistry();
 
         if(user.isAnonymousUser()) {
+            Logger.debug(this, ()-> "Setting NoIntrospectionGraphqlFieldVisibility, the user is anonymous");
             codeRegistryBuilder.fieldVisibility(
                     NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY).build();
         } else {
+            Logger.debug(this, ()-> "Setting NoIntrospectionGraphqlFieldVisibility, the user is not anonymous");
             codeRegistryBuilder.fieldVisibility(
                     DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY).build();
         }

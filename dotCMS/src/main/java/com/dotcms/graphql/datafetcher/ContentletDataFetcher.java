@@ -47,6 +47,8 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
                 }
             }
 
+            Logger.debug(this, "Fetching contentlets for query: " + query);
+
             final List<Contentlet> unfilteredContentletList = APILocator.getContentletAPI().search(query, limit, offset, sortBy,
                 user, true);
 
