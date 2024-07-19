@@ -9,7 +9,9 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotLinkComponent } from '././dot-link.component';
 
 @Component({
-    template: ` <dot-link [href]="href" [icon]="icon" [label]="label"></dot-link>`
+    template: `
+        <dot-link [href]="href" [icon]="icon" [label]="label"></dot-link>
+    `
 })
 class TestHostComponent {
     href = 'api/v1/123';

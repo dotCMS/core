@@ -8,9 +8,9 @@
                         [size]="16"
                         data-testId="goal-title-step-done"
                         name="check_circle"></dot-icon>
-                    <span class="p-label-input-required" data-testId="goals-card-name">{{
-                        'experiments.configure.goals.name' | dm
-                    }}</span>
+                    <span class="p-label-input-required" data-testId="goals-card-name">
+                        {{ 'experiments.configure.goals.name' | dm }}
+                    </span>
                 </h2>
             </div>
 
@@ -46,10 +46,10 @@
                         </ng-template>
                         <ng-template #rows let-row>
                             <div class="flex col flex-wrap align-items-center capitalize">
-                                <ng-container *ngIf="row.isDefault"
-                                    ><span data-testId="goal-default-parameter">{{
-                                        'experiments.goal.conditions.default' | dm
-                                    }}</span>
+                                <ng-container *ngIf="row.isDefault">
+                                    <span data-testId="goal-default-parameter">
+                                        {{ 'experiments.goal.conditions.default' | dm }}
+                                    </span>
                                     -
                                 </ng-container>
                                 {{
@@ -94,8 +94,8 @@
     <ng-template #titleTpl>
         <div class="flex align-items-center flex-1">
             <h3 class="flex-grow-1 flex gap-1 detail__title">
-                <span data-testId="goal-label-type-goal"
-                    >{{ GOALS_METADATA_MAP[vm.goals.primary.type].label | dm }}
+                <span data-testId="goal-label-type-goal">
+                    {{ GOALS_METADATA_MAP[vm.goals.primary.type].label | dm }}
                 </span>
                 -
                 <span data-testId="goal-label-name-goal">{{ vm.goals.primary.name | dm }}</span>

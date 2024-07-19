@@ -9,7 +9,9 @@ import { DotCMSContentlet } from '../../models';
 @Component({
     selector: 'dotcms-no-component',
     standalone: true,
-    template: `No Component for {{ contentlet.contentType }}`,
+    template: `
+        No Component for {{ contentlet.contentType }}
+    `,
     styleUrl: './no-component.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

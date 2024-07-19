@@ -29,8 +29,7 @@
                         class="ai-content__generated-text"
                         #generatedText
                         formControlName="generatedText"
-                        pInputTextarea>
-                    </textarea>
+                        pInputTextarea></textarea>
 
                     <dot-copy-button
                         *ngIf="generatedText.value"
@@ -125,7 +124,6 @@
             acceptIcon="null"
             key="ai-image-prompt"
             rejectButtonStyleClass="p-button-outlined"
-            rejectIcon="null">
-        </p-confirmDialog>
+            rejectIcon="null"></p-confirmDialog>
     </p-dialog>
 }

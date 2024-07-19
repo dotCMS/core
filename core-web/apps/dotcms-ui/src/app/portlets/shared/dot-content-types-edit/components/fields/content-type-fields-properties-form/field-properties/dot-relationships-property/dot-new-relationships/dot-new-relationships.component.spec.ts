@@ -55,11 +55,12 @@ const contentTypeMock: DotCMSContentType = {
 
 @Component({
     selector: 'dot-host-component',
-    template: ` <dot-new-relationships
-        [cardinality]="cardinalityIndex"
-        [velocityVar]="velocityVar"
-        [editing]="editing">
-    </dot-new-relationships>`
+    template: `
+        <dot-new-relationships
+            [cardinality]="cardinalityIndex"
+            [velocityVar]="velocityVar"
+            [editing]="editing"></dot-new-relationships>
+    `
 })
 class HostTestComponent {
     cardinalityIndex: number;

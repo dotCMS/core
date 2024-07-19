@@ -6,19 +6,16 @@
                     [formControlName]="control.key"
                     [binary]="true"
                     [id]="control.key"></p-checkbox>
-                <label
-                    [checkIsRequiredControl]="control.key"
-                    [for]="control.key"
-                    dotFieldRequired
-                    >{{ control.label | titlecase }}</label
-                >
+                <label [checkIsRequiredControl]="control.key" [for]="control.key" dotFieldRequired>
+                    {{ control.label | titlecase }}
+                </label>
             </ng-container>
             <ng-container *ngSwitchDefault>
                 <label
                     [ngClass]="{ 'p-label-input-required': control.required }"
-                    [for]="control.key"
-                    >{{ control.label | titlecase }}</label
-                >
+                    [for]="control.key">
+                    {{ control.label | titlecase }}
+                </label>
                 <input
                     *ngSwitchDefault
                     [formControlName]="control.key"
@@ -33,9 +30,9 @@
         </ng-container>
         <span
             *ngIf="form.controls[control.key].invalid && form.controls[control.key].dirty"
-            class="error-message"
-            >This field is required</span
-        >
+            class="error-message">
+            This field is required
+        </span>
     </div>
 
     <div class="form-action">

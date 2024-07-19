@@ -29,9 +29,11 @@ import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 
 @Component({
     selector: 'dot-site-selector',
-    template: `<select>
-        <option>Fake site selector</option>
-    </select>`
+    template: `
+        <select>
+            <option>Fake site selector</option>
+        </select>
+    `
 })
 class MockDotSiteSelectorComponent {
     @Input() system;

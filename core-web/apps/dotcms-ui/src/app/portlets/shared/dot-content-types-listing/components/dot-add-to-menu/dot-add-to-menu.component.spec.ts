@@ -51,7 +51,9 @@ const contentTypeVar = {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-add-to-menu [contentType]="contentType"></dot-add-to-menu> `
+    template: `
+        <dot-add-to-menu [contentType]="contentType"></dot-add-to-menu>
+    `
 })
 class TestHostComponent {
     contentType = contentTypeVar;
