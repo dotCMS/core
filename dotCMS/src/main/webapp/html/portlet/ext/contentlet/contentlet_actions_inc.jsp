@@ -83,8 +83,7 @@ if(myHost.getIdentifier() != null){
 function setLinkToContentType(){
 
    const contentTypeLink = document.getElementById('contentTypeLink');
-   const isExistingContent = !!'<%=contentlet.getInode() %>'; //
-    console.log('isExistingContent', isExistingContent);
+   const isExistingContent = !!'<%=contentlet.getInode() %>';
 
   // This is to avoid be a link when creating the content just when is editing.
    if (isExistingContent && contentTypeLink) {
@@ -266,7 +265,6 @@ function jumpToContentType(){
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Content-Type") %>:</th>
             <td>
                 <%if(canEditContentType){%><a id="contentTypeLink" ><%}%>
-                Costa Rica
                 <%=contentlet!=null && contentlet.getContentType()!=null ? contentlet.getContentType().name() : LanguageUtil.get(pageContext, "not-available") %>
                 <%if(canEditContentType){%></a><%}%>
             </td>
