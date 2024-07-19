@@ -5,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, filter } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -41,10 +41,17 @@ export class DotCategoryFieldSearchComponent {
     $isLoading = input<boolean>(false, { alias: 'isLoading' });
 
     constructor() {
+        // Emit the term to search, if the input is empty hide the result.
         this.searchControl.valueChanges
             .pipe(
                 takeUntilDestroyed(),
                 debounceTime(DEBOUNCE_TIME),
+                distinctUntilChanged(),
+                tap((value: string) => {
+                    if (value.length === 0) {
+                        this.clearInput();
+                    }
+                }),
                 filter((value: string) => value.length >= MINIMUM_CHARACTERS)
             )
             .subscribe((value: string) => {
