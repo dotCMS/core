@@ -9,7 +9,6 @@ import { MessageService } from 'primeng/api';
 import { catchError, map, shareReplay, switchMap, take, tap, filter } from 'rxjs/operators';
 
 import {
-    DotContentletLockerService,
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
@@ -18,11 +17,8 @@ import {
 import { LoginService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
-    DotContainerMap,
-    DotDevice,
     DotExperiment,
     DotExperimentStatus,
-    DotLayout,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
 
@@ -91,7 +87,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         private readonly messageService: MessageService,
         private readonly dotMessageService: DotMessageService,
         private readonly dotExperimentsService: DotExperimentsService,
-        private readonly dotContentletLockerService: DotContentletLockerService,
         private readonly loginService: LoginService,
         private readonly dotLanguagesService: DotLanguagesService
     ) {
@@ -151,22 +146,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     );
     private readonly currentExperiment$ = this.select((state) => state.currentExperiment);
 
-    private readonly templateThemeId$ = this.select((state) => state.editor.template.themeId);
-    private readonly templateIdentifier$ = this.select((state) => state.editor.template.identifier);
-    private readonly templateDrawed$ = this.select((state) => state.editor.template.drawed);
-
     private readonly page$ = this.select((state) => state.editor.page);
-    private readonly siteId$ = this.select((state) => state.editor.site.identifier);
+
     private readonly languageId$ = this.select((state) => state.editor.viewAs.language.id);
-    private readonly currentUrl$ = this.select(
-        (state) => '/' + sanitizeURL(state.editor.page.pageURI)
-    );
-    private readonly error$ = this.select((state) => state.error);
-    private readonly pureURL$ = this.select(
-        this.clientHost$,
-        this.currentUrl$,
-        (clientHost, pageURI) => `${clientHost || window.location.origin}${pageURI}`
-    );
 
     private readonly languages$ = this.select((state) => state.languages);
 
@@ -184,24 +166,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
-    /**
-     * Before this was layoutProperties, but are separate to "temp" selector.
-     * And then is merged with templateIdentifier in layoutProperties$.
-     * This is to try avoid extra-calls on the select, and avoid memory leaks
-     */
-    private readonly layout$ = this.select((state) => state.editor.layout);
-    private readonly themeId$ = this.select((state) => state.editor.template.theme);
     private readonly pageId$ = this.select((state) => state.editor.page.identifier);
-    private readonly containersMap$ = this.select((state) =>
-        this.mapContainers(state.editor.containers)
-    );
-    private readonly layoutProps$ = this.select(
-        this.layout$,
-        this.themeId$,
-        this.pageId$,
-        this.containersMap$,
-        (layout, themeId, pageId, containersMap) => ({ layout, themeId, pageId, containersMap })
-    );
 
     private readonly containers$ = this.select((state) =>
         this.getPageContainers(state.editor.containers)
@@ -211,24 +176,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         getPersonalization(state.editor.viewAs.persona)
     );
 
-    readonly shellProps$ = this.select(
-        this.page$,
-        this.siteId$,
-        this.languageId$,
-        this.currentUrl$,
-        this.clientHost$,
-        this.error$,
-        this.templateDrawed$,
-        (page, siteId, languageId, currentUrl, host, error, templateDrawed) => ({
-            page,
-            siteId,
-            languageId,
-            currentUrl,
-            host,
-            error,
-            templateDrawed
-        })
-    );
     readonly editorMode$ = this.select((state) => state.editorData.mode);
 
     // THIS IS FROM THE TOOLBAR
@@ -338,37 +285,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                         editorData.mode === EDITOR_MODE.INLINE_EDITING)
             };
         }
-    );
-
-    readonly editorToolbarData$ = this.select(
-        this.editorState$,
-        this.previewURL$,
-        this.pureURL$,
-        (editorState, previewURL, pureURL) => ({
-            ...editorState,
-            showWorkflowActions:
-                // Editor can edit
-                editorState.editorData.mode === EDITOR_MODE.EDIT ||
-                editorState.editorData.mode === EDITOR_MODE.INLINE_EDITING,
-            showInfoDisplay:
-                // Editor cannot edit
-                !editorState.editorData.canEditPage ||
-                // Editor is not in edit
-                (editorState.editorData.mode !== EDITOR_MODE.EDIT &&
-                    editorState.editorData.mode !== EDITOR_MODE.INLINE_EDITING),
-            previewURL,
-            pureURL
-        })
-    );
-
-    readonly layoutProperties$ = this.select(
-        this.layoutProps$,
-        this.templateIdentifier$,
-        this.templateThemeId$,
-        (props, templateIdentifier, themeId) => ({
-            ...props,
-            template: { identifier: templateIdentifier, themeId }
-        })
     );
 
     // This data is needed to save the page on CRUD operation
@@ -725,36 +641,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
-    readonly unlockPage = this.effect((inode$: Observable<string>) => {
-        return inode$.pipe(
-            tap(() => this.updateEditorState(EDITOR_STATE.LOADING)),
-            switchMap((inode) =>
-                this.dotContentletLockerService.unlock(inode).pipe(
-                    tapResponse({
-                        next: () => {
-                            this.patchState((state) => ({
-                                ...state,
-                                editorState: EDITOR_STATE.IDLE,
-                                editorData: {
-                                    ...state.editorData,
-                                    page: {
-                                        ...state.editorData.page,
-                                        isLocked: false
-                                    },
-                                    mode: EDITOR_MODE.EDIT
-                                },
-                                shouldReload: true // This don't need to be here, I will get rid of this action to maintain a natural reload cycle
-                            }));
-                        },
-                        error: () => {
-                            this.updateEditorState(EDITOR_STATE.ERROR);
-                        }
-                    })
-                )
-            )
-        );
-    });
-
     readonly setDragItem = this.updater((state, dragItem: EmaDragItem) => {
         return {
             ...state,
@@ -792,18 +678,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     /*******************
      * Updaters
      *******************/
-    /**
-     * Update the page layout
-     *
-     * @memberof EditEmaStore
-     */
-    readonly updatePageLayout = this.updater((state, layout: DotLayout) => ({
-        ...state,
-        editor: {
-            ...state.editor,
-            layout
-        }
-    }));
 
     /**
      * Update the editor state
@@ -874,28 +748,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         };
     });
 
-    readonly setDevice = this.updater((state, device: DotDevice) => {
-        return {
-            ...state,
-            editorData: {
-                ...state.editorData,
-                mode: EDITOR_MODE.DEVICE,
-                device
-            }
-        };
-    });
-
-    readonly setSocialMedia = this.updater((state, socialMedia: string) => {
-        return {
-            ...state,
-            editorData: {
-                ...state.editorData,
-                mode: EDITOR_MODE.SOCIAL_MEDIA,
-                socialMedia
-            }
-        };
-    });
-
     readonly setBounds = this.updater((state, bounds: Container[]) => ({
         ...state,
         bounds: bounds
@@ -918,22 +770,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         ...state,
         shouldReload
     }));
-
-    /**
-     * Map the containers to a DotContainerMap
-     *
-     * @private
-     * @param {DotPageContainerStructure} containers
-     * @return {*}  {DotContainerMap}
-     * @memberof EditEmaStore
-     */
-    private mapContainers(containers: DotPageContainerStructure): DotContainerMap {
-        return Object.keys(containers).reduce((acc, id) => {
-            acc[id] = containers[id].container;
-
-            return acc;
-        }, {});
-    }
 
     /**
      *
