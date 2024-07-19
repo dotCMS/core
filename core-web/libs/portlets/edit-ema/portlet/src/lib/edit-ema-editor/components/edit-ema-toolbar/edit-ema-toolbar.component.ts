@@ -10,7 +10,7 @@ import {
     ViewChild,
     inject
 } from '@angular/core';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { Params, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -22,19 +22,11 @@ import {
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import {
-    DotCMSContentlet,
-    DotDevice,
-    DotExperimentStatus,
-    DotPersona
-} from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_MODE, EDITOR_STATE } from '../../../shared/enums';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -72,24 +64,14 @@ export class EditEmaToolbarComponent {
     @ViewChild('personaSelector')
     personaSelector!: EditEmaPersonaSelectorComponent;
 
-    private readonly store = inject(EditEmaStore);
-
     private readonly messageService = inject(MessageService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly router = inject(Router);
     private readonly dotContentletLockerService = inject(DotContentletLockerService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly personalizeService = inject(DotPersonalizeService);
-    private readonly activatedRouter = inject(ActivatedRoute);
 
-    readonly editorState = EDITOR_STATE;
-    readonly editorMode = EDITOR_MODE;
-    readonly experimentStatus = DotExperimentStatus;
     readonly uveStore = inject(UVEStore);
-
-    get queryParams(): DotPageApiParams {
-        return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
-    }
 
     /**
      * Update the current device
@@ -98,9 +80,6 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     updateCurrentDevice(device: DotDevice & { icon?: string }) {
-        // DELETE WHEN THE UVE STORE IS DONE
-        this.store.setDevice(device);
-
         this.uveStore.setDevice(device);
     }
 
@@ -111,9 +90,6 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     onSeoMediaChange(seoMedia: string) {
-        // DELETE WHEN THE UVE STORE IS DONE
-        this.store.setSocialMedia(seoMedia);
-
         this.uveStore.setSocialMedia(seoMedia);
     }
 
@@ -238,9 +214,6 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     unlockPage(inode: string) {
-        // DELETE WHEN THE UVE STORE IS DONE
-        this.store.unlockPage(inode); // This action does unnatural things, like modifying the page and then reloading the page afterwards
-
         this.messageService.add({
             severity: 'info',
             summary: 'Page Unlock',
@@ -280,7 +253,7 @@ export class EditEmaToolbarComponent {
 
     private shouldReload(params: Params): boolean {
         const { url: newUrl, language_id: newLanguageId } = params;
-        const { url, language_id } = this.queryParams;
+        const { url, language_id } = this.uveStore.params();
 
         return newUrl != url || newLanguageId != language_id;
     }
