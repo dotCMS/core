@@ -86,6 +86,16 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
     #componentRef: ComponentRef<DotCategoryFieldSidebarComponent>;
 
+    constructor() {
+        effect(() => {
+            const categoryValues = this.store.selectedCategoriesValues();
+
+            if (this.categoryFieldControl) {
+                this.categoryFieldControl.setValue(categoryValues);
+            }
+        });
+    }
+
     /**
      * Retrieve the category field control.
      *
@@ -118,15 +128,11 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
         this.setSidebarListener();
     }
 
-    constructor() {
-        effect(() => {
-            const categoryValues = this.store.selectedCategoriesValues();
-            this.categoryFieldControl.setValue(categoryValues);
-        });
-    }
-
     ngOnInit(): void {
-        this.store.load(this.field(), this.contentlet());
+        this.store.load({
+            field: this.field(),
+            contentlet: this.contentlet()
+        });
     }
 
     private setSidebarListener() {

@@ -1317,7 +1317,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 						.map(Contentlet::getIdentifier)
 						.collect(Collectors.toList());
 
-		multiTreeAPI.updateMultiTrees(changes, pageIds);
+
+		final String currentVariant = WebAPILocator.getVariantWebAPI().currentVariantId();
+		multiTreeAPI.updateMultiTrees(changes, pageIds, currentVariant);
 	}
 
 

@@ -38,8 +38,9 @@
 }
 
 .category-field__right-pane {
-    flex: 0 0 25%; // Ajusta según sea necesario
+    flex: 0 0 25%;
     gap: $spacing-1;
+    padding: $spacing-3;
 }
 
 .category-field__categories,
@@ -48,6 +49,10 @@
     border-radius: $border-radius-md;
     background-color: $white;
     overflow: hidden;
+}
+
+.category-field__selected-categories-list {
+    overflow-y: auto;
 }
 
 :host ::ng-deep .p-sidebar-content {
