@@ -32,8 +32,8 @@ export interface DotCategory {
     parentList?: DotCategoryParent[];
 }
 
-type DotCategoryParent = {
-    categoryName: string;
+export type DotCategoryParent = {
+    name: string;
     key: string;
     inode: string;
 };

@@ -1,8 +1,8 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     EventEmitter,
     inject,
     Input,
@@ -22,6 +22,7 @@ import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
 import { DotCategoryFieldSearchComponent } from '../dot-category-field-search/dot-category-field-search.component';
 import { DotCategoryFieldSearchListComponent } from '../dot-category-field-search-list/dot-category-field-search-list.component';
+import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selected/dot-category-field-selected.component';
 
 /**
  * The DotCategoryFieldSidebarComponent is a sidebar panel that allows editing of content category field.
@@ -43,7 +44,7 @@ import { DotCategoryFieldSearchListComponent } from '../dot-category-field-searc
         InputTextModule,
         DotCategoryFieldSearchComponent,
         DotCategoryFieldSearchListComponent,
-        JsonPipe
+        DotCategoryFieldSelectedComponent
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',
@@ -77,6 +78,10 @@ export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
      * @memberof DotCategoryFieldSidebarComponent
      */
     readonly store = inject(CategoryFieldStore);
+    /**
+     * Computed property for retrieving all category keys.
+     */
+    $allCategoryKeys = computed(() => this.store.selected().map((category) => category.key));
 
     ngOnInit(): void {
         this.store.getCategories();

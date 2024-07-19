@@ -28,4 +28,14 @@ describe('CategoriesService', () => {
             HttpMethod.GET
         );
     });
+
+    it('can getSelectedHierarchy of selected categories', () => {
+        const keys = ['key1', 'key2', 'key3'];
+        spectator.service.getSelectedHierarchy(keys).subscribe();
+        spectator.expectOne(
+            `${API_URL}/hierarchy`,
+
+            HttpMethod.POST
+        );
+    });
 });
