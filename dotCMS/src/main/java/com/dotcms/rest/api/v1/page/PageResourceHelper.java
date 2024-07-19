@@ -65,7 +65,6 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -500,7 +499,6 @@ public class PageResourceHelper implements Serializable {
         return copiedContentlet;
     }
 
-    @Nullable
     private static MultiTree getMultiTree(String htmlPage, String container, String contentId, String instanceId, String personalization, String variant) throws DotDataException {
         MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
                 null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant ? VariantAPI.DEFAULT_VARIANT.name(): variant);
