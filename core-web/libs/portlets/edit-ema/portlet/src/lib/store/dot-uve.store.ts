@@ -21,21 +21,14 @@ const initialState: UVEState = {
     params: undefined,
     status: UVE_STATUS.LOADING,
     isLegacyPage: true,
-    canEditPage: false
+    canEditPage: false,
+    pageIsLocked: true
 };
 
 export const UVEStore = signalStore(
     withState<UVEState>(initialState),
     withComputed((store) => {
         return {
-            pageIsLocked: computed(() => {
-                const pageAPIResponse = store.pageAPIResponse();
-
-                return (
-                    pageAPIResponse?.page.locked &&
-                    pageAPIResponse.page.lockedBy !== store.currentUser()?.userId
-                );
-            }),
             shellState: computed<ShellState>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
 

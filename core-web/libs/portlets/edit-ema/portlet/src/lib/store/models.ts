@@ -17,6 +17,7 @@ export interface UVEState {
     status: UVE_STATUS;
     isLegacyPage: boolean;
     canEditPage: boolean;
+    pageIsLocked: boolean;
 }
 
 export interface ShellState {
@@ -37,4 +38,5 @@ export interface TranslateProps {
 export interface EditorToolbarState {
     device?: DotDeviceWithIcon;
     socialMedia?: string;
+    isEditState: boolean;
 }

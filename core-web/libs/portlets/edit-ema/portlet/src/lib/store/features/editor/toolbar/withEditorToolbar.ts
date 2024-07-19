@@ -22,7 +22,8 @@ import { EditorToolbarState, UVEState } from '../../../models';
 
 const initialState: EditorToolbarState = {
     device: undefined,
-    socialMedia: undefined
+    socialMedia: undefined,
+    isEditState: true
 };
 
 /**
@@ -38,9 +39,6 @@ export function withEditorToolbar() {
         },
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
-            isDevicePreviewState: computed(() => !!store.device()),
-            isSocialMediaPreviewState: computed(() => !!store.socialMedia()),
-            isEditState: computed(() => !store.device() && !store.socialMedia()),
             toolbarState: computed(() => {
                 const params = store.params();
                 const url = sanitizeURL(params.url);
@@ -48,10 +46,6 @@ export function withEditorToolbar() {
                 const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
                 const pageAPIResponse = store.pageAPIResponse();
                 const experiment = store.experiment?.();
-
-                const pageIsLocked =
-                    pageAPIResponse.page.locked &&
-                    pageAPIResponse.page.lockedBy !== store.currentUser()?.userId;
 
                 const pageAPI = `/api/v1/page/${
                     store.isLegacyPage() ? 'render' : 'json'
@@ -62,7 +56,7 @@ export function withEditorToolbar() {
                         apiLink: `${params.clientHost ?? window.location.origin}${pageAPI}`,
                         hideSocialMedia: store.isLegacyPage()
                     },
-                    urlContentMap: pageAPIResponse.urlContentMap,
+                    urlContentMap: store.isEditState() && pageAPIResponse.urlContentMap,
                     bookmarks: {
                         url: createFavoritePagesURL({
                             languageId: Number(params.language_id),
@@ -76,10 +70,9 @@ export function withEditorToolbar() {
                     apiLinkButton: {
                         apiURL: `${params.clientHost ?? window.location.origin}${pageAPI}`
                     },
-                    experimentBadge:
-                        experiment?.status === DotExperimentStatus.RUNNING
-                            ? { runningExperiment: experiment }
-                            : undefined,
+                    experimentBadge: experiment?.status === DotExperimentStatus.RUNNING && {
+                        runningExperiment: experiment
+                    },
                     languageSelector: {
                         currentLanguage: pageAPIResponse.viewAs.language
                     },
@@ -90,7 +83,7 @@ export function withEditorToolbar() {
                     workflowActions: store.canEditPage() && {
                         inode: pageAPIResponse.page.inode
                     },
-                    unlockButton: pageIsLocked &&
+                    unlockButton: store.pageIsLocked() &&
                         pageAPIResponse.page.canLock && {
                             inode: pageAPIResponse.page.inode
                         },
@@ -101,10 +94,10 @@ export function withEditorToolbar() {
         withMethods((store) => {
             return {
                 setDevice: (device: DotDevice) => {
-                    patchState(store, { device, socialMedia: undefined });
+                    patchState(store, { device, socialMedia: undefined, isEditState: false });
                 },
                 setSocialMedia: (socialMedia: string) => {
-                    patchState(store, { socialMedia, device: undefined });
+                    patchState(store, { socialMedia, device: undefined, isEditState: false });
                 },
                 clearDeviceAndSocialMedia: () => {
                     patchState(store, initialState);

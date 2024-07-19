@@ -34,6 +34,8 @@ export class DotEmaInfoDisplayComponent {
     protected options = computed<InfoOptions>(() => {
         const pageAPIResponse = this.uveStore.pageAPIResponse();
         const canEditPage = this.uveStore.canEditPage();
+        const device = this.uveStore.device();
+        const socialMedia = this.uveStore.socialMedia();
 
         if (this.uveStore.pageIsLocked()) {
             let message = 'editpage.locked-by';
@@ -51,9 +53,7 @@ export class DotEmaInfoDisplayComponent {
             };
         }
 
-        if (this.uveStore.isDevicePreviewState()) {
-            const device = this.uveStore.device();
-
+        if (device) {
             return {
                 icon: device.icon,
                 info: {
@@ -65,9 +65,7 @@ export class DotEmaInfoDisplayComponent {
                 },
                 actionIcon: 'pi pi-times'
             };
-        } else if (this.uveStore.isSocialMediaPreviewState()) {
-            const socialMedia = this.uveStore.socialMedia();
-
+        } else if (socialMedia) {
             return {
                 icon: `pi pi-${socialMedia.toLowerCase()}`,
                 info: {

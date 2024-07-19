@@ -124,6 +124,11 @@ export function withLoad() {
                                                     experiment
                                                 );
 
+                                                const pageIsLocked =
+                                                    pageAPIResponse?.page.locked &&
+                                                    pageAPIResponse.page.lockedBy !==
+                                                        store.currentUser()?.userId;
+
                                                 patchState(store, {
                                                     pageAPIResponse,
                                                     isEnterprise,
@@ -132,6 +137,7 @@ export function withLoad() {
                                                     languages,
                                                     params,
                                                     canEditPage,
+                                                    pageIsLocked,
                                                     status: UVE_STATUS.LOADED,
                                                     isLegacyPage: !params.clientHost // If we don't send the clientHost we are using as VTL page
                                                 });
@@ -168,10 +174,16 @@ export function withLoad() {
                                             store.experiment()
                                         );
 
+                                        const pageIsLocked =
+                                            pageAPIResponse?.page.locked &&
+                                            pageAPIResponse.page.lockedBy !==
+                                                store.currentUser()?.userId;
+
                                         patchState(store, {
                                             pageAPIResponse,
                                             languages,
                                             canEditPage,
+                                            pageIsLocked,
                                             status: UVE_STATUS.LOADED,
                                             isLegacyPage: !!params.clientHost // If we don't send the clientHost we are using as VTL page
                                         });

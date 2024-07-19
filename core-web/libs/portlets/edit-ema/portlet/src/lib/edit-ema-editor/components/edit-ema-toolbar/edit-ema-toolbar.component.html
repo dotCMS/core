@@ -17,14 +17,10 @@
             styleClass="p-button-text p-button-sm"
             data-testId="ema-preview" />
 
-        @if ( uveStore.isEditState() ) {
+        @if ( toolbarState.urlContentMap; as urlContentMap ){
         <p-button
-            *ngIf="toolbarState.urlContentMap"
-            (onClick)="editUrlContentMap.emit(toolbarState.urlContentMap)"
-            [label]="
-                'editpage.toolbar.edit.url.map.content'
-                    | dm : [toolbarState.urlContentMap.contentType]
-            "
+            (onClick)="editUrlContentMap.emit(urlContentMap)"
+            [label]="'editpage.toolbar.edit.url.map.content' | dm : [urlContentMap.contentType]"
             icon="pi pi-pencil"
             styleClass="p-button-text p-button-sm"
             data-testId="edit-url-content-map" />
