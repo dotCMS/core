@@ -1,7 +1,7 @@
 import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj, HierarchyParent } from '../models/dot-category-field.models';
 import { transformCategories } from '../utils/category-field.utils';
 
 export const CATEGORY_FIELD_VARIABLE_NAME = 'categorias';
@@ -201,27 +201,27 @@ export const CATEGORY_LIST_MOCK: DotCategory[][] = [[...CATEGORY_LEVEL_1], [...C
  */
 export const SELECTED_LIST_MOCK = [CATEGORY_LEVEL_1[0].key, CATEGORY_LEVEL_1[1].key];
 
-export const CATEGORY_LIST_MOCK_TRANSFORMED: DotCategoryFieldKeyValueObj[][] =
+export const CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX: DotCategoryFieldKeyValueObj[][] =
     CATEGORY_LIST_MOCK.map(
         (categoryLevel) => transformCategories(categoryLevel) as DotCategoryFieldKeyValueObj[],
         SELECTED_LIST_MOCK
     );
 
-export const CATEGORY_MOCK_TRANSFORMED: DotCategoryFieldKeyValueObj[][] = [
-    [
-        {
-            key: CATEGORY_LEVEL_1[0].key,
-            value: CATEGORY_LEVEL_1[0].categoryName,
-            hasChildren: true,
-            clicked: true
-        },
-        {
-            key: CATEGORY_LEVEL_1[1].key,
-            value: CATEGORY_LEVEL_1[1].categoryName,
-            hasChildren: true,
-            clicked: false
-        }
-    ]
+export const CATEGORY_MOCK_TRANSFORMED: DotCategoryFieldKeyValueObj[] = [
+    {
+        key: CATEGORY_LEVEL_1[0].key,
+        value: CATEGORY_LEVEL_1[0].categoryName,
+        hasChildren: true,
+        clicked: true,
+        path: 'path'
+    },
+    {
+        key: CATEGORY_LEVEL_1[1].key,
+        value: CATEGORY_LEVEL_1[1].categoryName,
+        hasChildren: true,
+        clicked: false,
+        path: 'path'
+    }
 ];
 
 export const CATEGORIES_KEY_VALUE: DotCategoryFieldKeyValueObj[] = [
@@ -263,3 +263,42 @@ const MESSAGES_MOCK = {
 };
 
 export const CATEGORY_MESSAGE_MOCK = new MockDotMessageService(MESSAGES_MOCK);
+
+export const CATEGORY_HIERARCHY_MOCK: HierarchyParent[] = [
+    {
+        inode: CATEGORY_LEVEL_1[0].inode,
+        key: CATEGORY_LEVEL_1[0].key,
+        name: CATEGORY_LEVEL_1[0].categoryName,
+
+        parentList: [
+            {
+                inode: CATEGORY_FIELD_MOCK.categories.inode,
+                key: CATEGORY_FIELD_MOCK.categories.key,
+                name: CATEGORY_FIELD_MOCK.categories.categoryName
+            },
+            {
+                inode: CATEGORY_LEVEL_1[0].inode,
+                key: CATEGORY_LEVEL_1[0].key,
+                name: CATEGORY_LEVEL_1[0].categoryName
+            }
+        ]
+    },
+    {
+        inode: CATEGORY_LEVEL_1[1].inode,
+        key: CATEGORY_LEVEL_1[1].key,
+        name: CATEGORY_LEVEL_1[1].categoryName,
+
+        parentList: [
+            {
+                inode: CATEGORY_FIELD_MOCK.categories.inode,
+                key: CATEGORY_FIELD_MOCK.categories.key,
+                name: CATEGORY_FIELD_MOCK.categories.categoryName
+            },
+            {
+                inode: CATEGORY_LEVEL_1[0].inode,
+                key: CATEGORY_LEVEL_1[0].key,
+                name: CATEGORY_LEVEL_1[0].categoryName
+            }
+        ]
+    }
+];

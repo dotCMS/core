@@ -10,6 +10,7 @@ import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -220,6 +221,19 @@ public class AppConfig implements Serializable {
             return Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
         }
         return appKey.defaultValue;
+    }
+
+    /**
+     * Prints a specific error message to the log, based on the {@link AppKeys#DEBUG_LOGGING}
+     * property instead of the usual Log4j configuration.
+     *
+     * @param clazz   The {@link Class} to log the message for.
+     * @param message The {@link Supplier} with the message to log.
+     */
+    public static void debugLogger(final Class<?> clazz, final Supplier<String> message) {
+        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+            Logger.info(clazz, message.get());
+        }
     }
 
 }

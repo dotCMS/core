@@ -6,7 +6,7 @@
         data-testId="search-input"
         pInputText
         type="text" />
-    @if (searchControl.value && !$isLoading()) {
+    @if (!searchControl.pristine && !$isLoading()) {
     <span
         data-testId="search-icon-clear"
         (click)="clearInput()"
