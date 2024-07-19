@@ -47,8 +47,7 @@ import {
     sanitizeURL,
     getPersonalization,
     createPageApiUrlWithQueryParams,
-    getIsDefaultVariant,
-    createFavoritePagesURL
+    getIsDefaultVariant
 } from '../../utils';
 
 interface GetFormIdPayload extends SavePagePayload {
@@ -103,13 +102,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private readonly stateLoad$ = this.select((state) => state.editorState);
     private readonly code$ = this.select((state) => state.editor.page.rendered);
     private readonly pageURL$ = this.select((state) => this.createPageURL(state));
-    private readonly favoritePageURL$ = this.select((state) =>
-        createFavoritePagesURL({
-            languageId: state.editor.viewAs.language.id,
-            pageURI: state.editor.page.pageURI,
-            siteId: state.editor.site.identifier
-        })
-    );
+
     private readonly iframeURL$ = this.select(
         this.clientHost$,
         this.pageURL$,
@@ -141,25 +134,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     );
     private readonly currentExperiment$ = this.select((state) => state.currentExperiment);
 
-    private readonly page$ = this.select((state) => state.editor.page);
-
     private readonly languageId$ = this.select((state) => state.editor.viewAs.language.id);
-
-    private readonly languages$ = this.select((state) => state.languages);
-
-    readonly translateProps$ = this.select(
-        this.languages$,
-        this.page$,
-        this.languageId$,
-        (languages, page, pageLanguageId) => ({
-            languages,
-            page,
-            pageLanguageId
-        }),
-        {
-            debounce: true
-        }
-    );
 
     private readonly pageId$ = this.select((state) => state.editor.page.identifier);
 
@@ -212,10 +187,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         this.currentState$,
         this.editor$,
         this.editorData$,
-        this.favoritePageURL$,
         this.iframeURL$,
         this.isEnterpriseLicense$,
-        this.pageURL$,
         this.dragItem$,
         (
             bounds,
@@ -225,14 +198,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             currentState,
             editor,
             editorData,
-            favoritePageURL,
             iframeURL,
             isEnterpriseLicense,
-            pageURL,
             dragItem
         ) => {
             return {
-                apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
                 bounds: bounds,
                 clientHost: clientHost,
                 contentletArea: contentletArea,
@@ -245,7 +215,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                         persona: editor.viewAs.persona ?? DEFAULT_PERSONA
                     }
                 },
-                favoritePageURL,
                 iframeURL,
                 isEnterpriseLicense,
                 state: currentState,
