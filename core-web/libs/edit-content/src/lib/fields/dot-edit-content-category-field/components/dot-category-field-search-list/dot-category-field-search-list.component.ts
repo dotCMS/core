@@ -18,6 +18,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime } from 'rxjs/operators';
 
@@ -33,7 +34,14 @@ import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skele
 @Component({
     selector: 'dot-category-field-search-list',
     standalone: true,
-    imports: [CommonModule, TableModule, SkeletonModule, DotTableSkeletonComponent, DotMessagePipe],
+    imports: [
+        CommonModule,
+        TableModule,
+        SkeletonModule,
+        DotTableSkeletonComponent,
+        DotMessagePipe,
+        TooltipModule
+    ],
     templateUrl: './dot-category-field-search-list.component.html',
     styleUrl: './dot-category-field-search-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

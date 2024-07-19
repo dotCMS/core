@@ -418,7 +418,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
      * resulting embeddings. Such tokens are the encoded data of a given Contentlet.
      *
      * @param contentId The ID of the Contentlet that will be sent to the OpenAI Endpoint.
-     * @param tokens    The encoded data of a Contentlet.
+     * @param tokens    The encoded tokens representing the indexable data of a Contentlet.
      *
      * @return A {@link List} of {@link Float} values representing the embeddings.
      */

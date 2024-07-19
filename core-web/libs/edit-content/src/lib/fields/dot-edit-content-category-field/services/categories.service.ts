@@ -8,6 +8,8 @@ import { pluck } from 'rxjs/operators';
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotCategory } from '@dotcms/dotcms-models';
 
+import { HierarchyParent } from '../models/dot-category-field.models';
+
 export const API_URL = '/api/v1/categories';
 
 export const ITEMS_PER_PAGE = 7000;
@@ -52,6 +54,19 @@ export class CategoriesService {
             .get<DotCMSResponse<DotCategory[]>>(`${API_URL}/children`, {
                 params: httpParams
             })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Retrieves the complete hierarchy for the given selected keys.
+     *
+     *
+     * @return {Observable<DotCategory[]>} - An Observable that emits the complete hierarchy as an array of DotCategory objects.
+     * @param keys
+     */
+    getSelectedHierarchy(keys: string[]): Observable<HierarchyParent[]> {
+        return this.#http
+            .post<DotCMSResponse<HierarchyParent[]>>(`${API_URL}/hierarchy`, { keys })
             .pipe(pluck('entity'));
     }
 
