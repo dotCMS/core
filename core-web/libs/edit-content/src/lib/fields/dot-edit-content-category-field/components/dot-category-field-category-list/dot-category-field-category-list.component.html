@@ -1,8 +1,8 @@
 <div class="w-full category-list__header">Root</div>
 <div
-    [ngClass]="{ 'no-overflow-x-yet': emptyColumns().length }"
+    [ngClass]="{ 'no-overflow-x-yet': $emptyColumns().length }"
     class="flex-1 category-list__category-list">
-    @for (column of categories(); let index = $index; track index) {
+    @for (column of $categories(); let index = $index; track index) {
     <!--dynamic columns-->
     <div #categoryColumn class="category-list__category-column" data-testId="category-column">
         @for (item of column; track item.key) {
@@ -32,12 +32,14 @@
         </div>
         }
     </div>
-    }
+    } @empty { @if (!$isLoading()) { No categories } }
 
     <!--Fake empty columns-->
-    @for (_ of emptyColumns(); track _) {
-    <div
-        class="flex-grow-1 category-list__category-column"
-        data-testId="category-column-empty"></div>
+    @for (_ of $emptyColumns(); track $index) {
+    <div class="flex-grow-1 category-list__category-column" data-testId="category-column-empty">
+        @if ($isLoading() && 0 === $index) {
+        <dot-category-field-list-skeleton />
+        }
+    </div>
     }
 </div>
