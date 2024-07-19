@@ -125,3 +125,4 @@ This maintenance release includes the following code fixes:
 118. https://github.com/dotCMS/core/issues/26421 : Block Editor: Add align-justify option to menu #26421
 119. https://github.com/dotCMS/core/issues/27537 : Download database not working in latest version #27537
 120. https://github.com/dotCMS/core/issues/27871 : refactor pg_dump inclusion in our docker image #27871
+121. SI-72
