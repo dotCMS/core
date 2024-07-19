@@ -46,7 +46,7 @@ export const HostFolderFiledStore = signalStore(
 
             if (node?.data) {
                 const { data } = node;
-                const newHostname = data.hostname.replace(/[//]/g, '');
+                const newHostname = data.hostname.replace('//', '');
 
                 return `${newHostname}:${data.path ? data.path : '/'}`;
             }
