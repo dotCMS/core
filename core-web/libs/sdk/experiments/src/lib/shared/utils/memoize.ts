@@ -23,11 +23,8 @@ function shallowEqual<T>(objA: T, objB: T): boolean {
         return false;
     }
 
-    for (let i = 0; i < keysA.length; i++) {
-        if (
-            !Object.prototype.hasOwnProperty.call(objB, keysA[i]) ||
-            !Object.is(objA[keysA[i]], objB[keysA[i]])
-        ) {
+    for (const key of keysA) {
+        if (!Object.prototype.hasOwnProperty.call(objB, key) || !Object.is(objA[key], objB[key])) {
             return false;
         }
     }
