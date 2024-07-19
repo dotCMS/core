@@ -123,7 +123,11 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
  * @since Oct 6, 2017
  */
 @Path("/v1/page")
-@Tag(name = "Page")
+@Tag(name = "Page",
+description = "Endpoints performing operations for page resrouces.",
+externalDocs = @ExternalDocumentation(description = "Additional information for Page API",
+                url = "https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas")
+)
 public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;
@@ -413,7 +417,7 @@ public class PageResource {
     @Path("/{pageId}/layout")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "postPageLayout",
+    @Operation(operationId = "postPageLayoutHTMLLink",
         summary = "Links template and HTML",
         description = "Takes a saved template and links it to an HTML page.\n\n" +
                     "Any pages with a template already linked will update with the new link.\n\n" +
@@ -429,7 +433,7 @@ public class PageResource {
                 @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
                 @ApiResponse(responseCode = "404", description = "Page not found")
                 })
-    public Response saveLayout(
+    public ResponseEntityView saveLayout(
                 @Context final HttpServletRequest request,
                 @Context final HttpServletResponse response,
                 @PathParam("pageId") @Parameter(description = "ID for the page will link to") final String pageId,
@@ -496,6 +500,20 @@ public class PageResource {
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/layout")
+    @Operation(operationId = "postPageLayout",
+                summary = "Saves a page template",
+                description = "Handles saving of a page template using provided data. " +
+                                "Method processes the request and returns HTTP response indicating a complete save operation.",
+                tags = {"Page"},
+                responses = {
+                        @APIResponse(responseCode = "200", description = "Page template saved successfully",
+                                content = @Content(mediaType = "application/json", 
+                                        schema = @Schema(implementation = ResponseEntityPageView.class)
+                                        )
+                                ),
+                        @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
+                        @ApiResponse(responseCode = "404", description = "Page not found")
+                })
     public Response saveLayout(@Context final HttpServletRequest request, @Context final HttpServletResponse response, final PageForm form) throws DotDataException {
 
         final InitDataObject auth = webResource.init(request, response, true);
