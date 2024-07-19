@@ -1,6 +1,5 @@
 import { NgClass } from '@angular/common';
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     Injector,
@@ -40,7 +39,7 @@ import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
     ],
     providers: [HostFolderFiledStore]
 })
-export class DotEditContentHostFolderFieldComponent implements OnInit, AfterViewInit {
+export class DotEditContentHostFolderFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
     @ViewChild(TreeSelect) treeSelect!: TreeSelect;
     readonly #controlContainer = inject(ControlContainer);
@@ -50,6 +49,13 @@ export class DotEditContentHostFolderFieldComponent implements OnInit, AfterView
     pathControl = new FormControl();
 
     constructor() {
+        effect(() => {
+            this.store.nodeExpaned();
+            if (this.treeSelect.treeViewChild) {
+                this.treeSelect.treeViewChild.updateSerializedValue();
+                this.treeSelect.cd.detectChanges();
+            }
+        });
         effect(() => {
             const nodeSelected = this.store.nodeSelected();
             this.pathControl.setValue(nodeSelected);
@@ -68,21 +74,6 @@ export class DotEditContentHostFolderFieldComponent implements OnInit, AfterView
             path: currentPath,
             isRequired
         });
-    }
-
-    ngAfterViewInit() {
-        effect(
-            () => {
-                this.store.nodeExpaned();
-                if (this.treeSelect.treeViewChild) {
-                    this.treeSelect.treeViewChild.updateSerializedValue();
-                    this.treeSelect.cd.detectChanges();
-                }
-            },
-            {
-                injector: this.#injector
-            }
-        );
     }
 
     get formControl(): FormControl {
