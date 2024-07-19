@@ -1,29 +1,45 @@
 package com.dotcms.ai.app;
 
-import java.util.Objects;
+import org.apache.commons.collections4.CollectionUtils;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AIModel {
 
-    private final String name;
+    private final String id;
+    private final List<String> names;
     private final int tokensPerMinute;
     private final int apiPerMinute;
     private final int maxTokens;
     private final boolean isCompletion;
+    private final AtomicInteger current;
 
-    public AIModel(final String name,
-                   final int tokensPerMinute,
-                   final int apiPerMinute,
-                   final int maxTokens,
-                   final boolean isCompletion) {
-        this.name = name;
+    private AIModel(final String id,
+                    final List<String> names,
+                    final int tokensPerMinute,
+                    final int apiPerMinute,
+                    final int maxTokens,
+                    final boolean isCompletion) {
+        if (CollectionUtils.isEmpty(names)) {
+            throw new IllegalArgumentException("Names cannot be empty");
+        }
+
+        this.id = id;
+        this.names = names;
         this.tokensPerMinute = tokensPerMinute;
         this.apiPerMinute = apiPerMinute;
         this.maxTokens = maxTokens;
         this.isCompletion = isCompletion;
+        current = new AtomicInteger(0);
     }
 
-    public String getName() {
-        return name;
+    public String getId() {
+        return id;
+    }
+
+    public List<String> getNames() {
+        return names;
     }
 
     public int getTokensPerMinute() {
@@ -42,29 +58,22 @@ public class AIModel {
         return isCompletion;
     }
 
+    public int getCurrent() {
+        return current.get();
+    }
+
+    public void setCurrent(final int current) {
+        this.current.set(current);
+    }
+
     public long minIntervalBetweenCalls() {
         return 60000 / apiPerMinute;
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        final AIModel aiModel = (AIModel) o;
-        return Objects.equals(name, aiModel.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(name);
-    }
-
-    @Override
     public String toString() {
         return "AIModel{" +
-                "name='" + name + '\'' +
+                "name='" + names + '\'' +
                 ", tokensPerMinute=" + tokensPerMinute +
                 ", apiPerMinute=" + apiPerMinute +
                 ", maxTokens=" + maxTokens +
@@ -78,7 +87,8 @@ public class AIModel {
 
     public static class Builder {
 
-        private String name;
+        private String id;
+        private List<String> names;
         private int tokensPerMinute;
         private int apiPerMinute;
         private int maxTokens;
@@ -87,8 +97,13 @@ public class AIModel {
         private Builder() {
         }
 
-        public Builder withName(final String name) {
-            this.name = name;
+        public Builder withId(final String id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder withNames(final List<String> names) {
+            this.names = names;
             return this;
         }
 
@@ -113,7 +128,7 @@ public class AIModel {
         }
 
         public AIModel build() {
-            return new AIModel(name, tokensPerMinute, apiPerMinute, maxTokens, isCompletion);
+            return new AIModel(id, names, tokensPerMinute, apiPerMinute, maxTokens, isCompletion);
         }
 
     }

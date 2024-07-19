@@ -1,18 +1,24 @@
 package com.dotcms.ai.app;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import io.vavr.Lazy;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AIModels {
 
-    private final ConcurrentMap<String, AIModel> aiModels = new ConcurrentHashMap<>();
-
     private static final Lazy<AIModels> INSTANCE = Lazy.of(AIModels::new);
 
-    private static final AIModel NOOP_MODEL = new AIModel("noop", 0, 0, 0, false);
+    private final ConcurrentMap<String, AIModel> aiModels = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> models = new ConcurrentHashMap<>();
+    private final AtomicBoolean loaded = new AtomicBoolean(false);
+    private final List<String> supportedModels = Collections.synchronizedList(new ArrayList<>());
 
     private AIModels() {
         // Private constructor to prevent instantiation
@@ -22,18 +28,35 @@ public class AIModels {
         return INSTANCE.get();
     }
 
-    public void loadModels(final List<AIModel> models) {
-        aiModels.clear();
-
-        models.forEach(model -> aiModels.put(model.getName(), model));
+    void loadModels(final List<AIModel> models, final boolean force) {
+        if (hasLoaded() || force) {
+            models.forEach(model -> {
+                aiModels.put(model.getId(), model);
+                model.getNames().forEach(name -> this.models.put(name, model.getId()));
+            });
+            loaded.compareAndSet(false, true);
+        }
     }
 
-    public AIModel getModel(final String modelName) {
-        return aiModels.getOrDefault(modelName, NOOP_MODEL);
+    void loadModels(final List<AIModel> models) {
+        loadModels(models, false);
     }
 
-    public boolean isValid(final AIModel aiModel) {
-        return aiModel != NOOP_MODEL;
+    public Optional<AIModel> getModelById(final String id) {
+        return Optional.ofNullable(aiModels.get(id));
+    }
+
+    public AIModel getModelByName(final String modelName) {
+        final String normalized = AIAppUtil.get().normalizeModel(modelName);
+        return Optional
+                .ofNullable(models.get(normalized))
+                .flatMap(this::getModelById)
+                .orElseThrow(() -> new DotRuntimeException(
+                "Unable to parse model:'" + modelName + "'.  Only " + supportedModels() + " are supported "));
+    }
+
+    public boolean hasLoaded() {
+        return loaded.get();
     }
 
 }

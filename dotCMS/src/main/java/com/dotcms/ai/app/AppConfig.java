@@ -1,15 +1,12 @@
 package com.dotcms.ai.app;
 
-import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import java.io.Serializable;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -37,16 +34,20 @@ public class AppConfig implements Serializable {
     public AppConfig(final Map<String, Secret> secrets) {
         configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        model = AIModels.get().getModel(resolveSecret(secrets, AppKeys.MODEL_NAME));
-        imageModel = AIModels.get().getModel(resolveSecret(secrets, AppKeys.IMAGE_MODEL_NAME));
-        apiUrl = resolveEnvSecret(secrets, AppKeys.API_URL);
-        apiImageUrl = resolveEnvSecret(secrets, AppKeys.API_IMAGE_URL);
-        apiKey = resolveEnvSecret(secrets, AppKeys.API_KEY);
-        rolePrompt = resolveSecret(secrets, AppKeys.ROLE_PROMPT);
-        textPrompt = resolveSecret(secrets, AppKeys.TEXT_PROMPT);
-        imagePrompt = resolveSecret(secrets, AppKeys.IMAGE_PROMPT);
-        imageSize = resolveSecret(secrets, AppKeys.IMAGE_SIZE);
-        listenerIndexer = resolveSecret(secrets, AppKeys.LISTENER_INDEXER);
+        final AIAppUtil aiAppUtil = AIAppUtil.get();
+        aiAppUtil.loadModels(secrets);
+
+        model = AIModels.get().getModel(aiAppUtil.resolveSecret(secrets, AppKeys.MODEL_NAME));
+        imageModel = AIModels.get().getModel(aiAppUtil.resolveSecret(secrets, AppKeys.IMAGE_MODEL_NAME));
+
+        apiUrl = aiAppUtil.resolveEnvSecret(secrets, AppKeys.API_URL);
+        apiImageUrl = aiAppUtil.resolveEnvSecret(secrets, AppKeys.API_IMAGE_URL);
+        apiKey = aiAppUtil.resolveEnvSecret(secrets, AppKeys.API_KEY);
+        rolePrompt = aiAppUtil.resolveSecret(secrets, AppKeys.ROLE_PROMPT);
+        textPrompt = aiAppUtil.resolveSecret(secrets, AppKeys.TEXT_PROMPT);
+        imagePrompt = aiAppUtil.resolveSecret(secrets, AppKeys.IMAGE_PROMPT);
+        imageSize = aiAppUtil.resolveSecret(secrets, AppKeys.IMAGE_SIZE);
+        listenerIndexer = aiAppUtil.resolveSecret(secrets, AppKeys.LISTENER_INDEXER);
 
         Logger.debug(getClass(), () -> "apiUrl: " + apiUrl);
         Logger.debug(getClass(), () -> "apiImageUrl: " + apiImageUrl);
@@ -60,50 +61,13 @@ public class AppConfig implements Serializable {
         Logger.debug(getClass(), () -> "listerIndexer: " + listenerIndexer);
     }
 
-    private String resolveSecret(final Map<String, Secret> secrets, final AppKeys key, final String defaultValue) {
-        return Try.of(() -> secrets.get(key.key).getString()).getOrElse(defaultValue);
-    }
-
-    private String resolveSecret(final Map<String, Secret> secrets, final AppKeys key) {
-        return resolveSecret(secrets, key, key.defaultValue);
-    }
-
-    private String resolveEnvSecret(final Map<String, Secret> secrets, final AppKeys key) {
-        final String secret = resolveSecret(secrets, key, StringPool.BLANK);
-        if (UtilMethods.isSet(secret)) {
-            return secret;
-        }
-
-        return Optional
-                .ofNullable(AppsUtil.discoverEnvVarValue(AppKeys.APP_KEY, key.key, null))
-                .orElse(StringPool.BLANK);
-    }
-
-    private AppKeys prefixKey(final String key, final String prefix) {
-        return AppKeys.valueOf(UtilMethods.isSet(prefix) ? prefix.toUpperCase() + '_' + key : key);
-    }
-
-    private int parseInt(final String value) {
-        return Try.of(() -> Integer.parseInt(value)).getOrElse(0);
-    }
-
-    private AIModel resolveModel(final Map<String, Secret> secrets, final String prefix) {
-        return AIModel.builder()
-                .withName(resolveSecret(secrets, prefixKey(AppKeys.MODEL_NAME.name(), prefix)))
-                .withTokensPerMinute(parseInt(resolveSecret(secrets, prefixKey(AppKeys.MODEL_TOKENS_PER_MINUTE.name(), prefix))))
-                .withApiPerMinute(parseInt(resolveSecret(secrets, prefixKey(AppKeys.MODEL_API_PER_MINUTE.name(), prefix))))
-                .withMaxTokens(parseInt(resolveSecret(secrets, prefixKey(AppKeys.MODEL_MAX_TOKENS.name(), prefix))))
-                .withIsCompletion(Boolean.parseBoolean(resolveSecret(secrets, prefixKey(AppKeys.MODEL_COMPLETION.name(), prefix))))
-                .build();
-    }
-
     /**
      * Retrieves the API URL.
      *
      * @return the API URL
      */
     public String getApiUrl() {
-        return UtilMethods.isEmpty(apiUrl) ? "https://api.openai.com/v1/chat/completions" : apiUrl;
+        return UtilMethods.isEmpty(apiUrl) ? AppKeys.API_URL.defaultValue : apiUrl;
     }
 
     /**
@@ -112,7 +76,7 @@ public class AppConfig implements Serializable {
      * @return the API Image URL
      */
     public String getApiImageUrl() {
-        return UtilMethods.isEmpty(apiImageUrl)? "https://api.openai.com/v1/images/generations" : apiImageUrl;
+        return UtilMethods.isEmpty(apiImageUrl)? AppKeys.API_IMAGE_URL.defaultValue : apiImageUrl;
     }
 
     /**

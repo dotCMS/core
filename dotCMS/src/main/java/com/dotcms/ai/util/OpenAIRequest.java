@@ -21,6 +21,7 @@ import javax.ws.rs.core.MediaType;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -57,7 +58,8 @@ public class OpenAIRequest {
             Logger.debug(OpenAIRequest.class, "posting:" + json);
         }
 
-        final AIModel model = AIModels.get().getModel(json.optString(AiKeys.MODEL));
+        final Optional<AIModel> model = AIModels.get()
+                .getModelByName(json.optString(AiKeys.MODEL));
         final long sleep = lastRestCall.computeIfAbsent(model, m -> 0L)
                 + model.minIntervalBetweenCalls()
                 - System.currentTimeMillis();
