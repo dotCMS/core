@@ -70,15 +70,14 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     noFavicon = false;
 
     ngOnInit(): void {
-        const title =
-            ellipsizeText(this.seoOGTags?.['og:title'], SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
-            ellipsizeText(this.seoOGTags?.title, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
+        const title = this.seoOGTags?.['og:title'] || this.seoOGTags?.title;
+        const ellipsizedTitle = ellipsizeText(title, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
 
-        const description =
-            ellipsizeText(
-                this.seoOGTags?.['og:description'],
-                SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
-            ) || ellipsizeText(this.seoOGTags?.description, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
+        const description = this.seoOGTags?.['og:description'] || this.seoOGTags?.description;
+        const ellipsizedDescription = ellipsizeText(
+            description,
+            SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
+        );
 
         const twitterDescriptionProperties = [
             'twitter:description',
@@ -102,8 +101,8 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
         this.allPreview = [
             {
                 hostName: this.hostName,
-                title,
-                description,
+                title: ellipsizedTitle,
+                description: ellipsizedDescription,
                 type: 'Desktop',
                 isMobile: false,
                 image: this.seoOGTags?.['og:image'],
@@ -114,8 +113,8 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
             },
             {
                 hostName: this.hostName,
-                title,
-                description,
+                title: ellipsizedTitle,
+                description: ellipsizedDescription,
                 type: 'Mobile',
                 isMobile: true
             }
