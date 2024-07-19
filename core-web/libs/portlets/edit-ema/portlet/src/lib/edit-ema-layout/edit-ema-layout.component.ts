@@ -12,15 +12,14 @@ import {
     finalize,
     switchMap,
     take,
-    takeUntil,
-    tap
+    takeUntil
 } from 'rxjs/operators';
 
 import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
 import { DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { TemplateBuilderModule } from '@dotcms/template-builder';
 
-import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
+import { UVEStore } from '../store/dot-uve.store';
 
 export const DEBOUNCE_TIME = 5000;
 
@@ -33,19 +32,13 @@ export const DEBOUNCE_TIME = 5000;
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditEmaLayoutComponent implements OnInit, OnDestroy {
-    private readonly store = inject(EditEmaStore);
     private readonly dotRouterService = inject(DotRouterService);
     private readonly dotPageLayoutService = inject(DotPageLayoutService);
     private readonly messageService = inject(MessageService);
     private readonly dotMessageService = inject(DotMessageService);
 
-    readonly layoutProperties$ = this.store.layoutProperties$.pipe(
-        tap((properties) => {
-            this.pageId = properties.pageId;
-        })
-    );
+    protected readonly uveStore = inject(UVEStore);
 
-    private pageId: string;
     private lastTemplate: DotTemplateDesigner;
 
     updateTemplate$ = new Subject<DotTemplateDesigner>();
@@ -89,7 +82,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
         this.dotPageLayoutService
             // To save a layout and no a template the title should be null
-            .save(this.pageId, { ...template, title: null })
+            .save(this.uveStore.layoutProps().pageId, { ...template, title: null })
             .pipe(take(1))
             .subscribe(
                 (updatedPage: DotPageRender) => this.handleSuccessSaveTemplate(updatedPage),
@@ -126,7 +119,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                     });
 
                     return this.dotPageLayoutService
-                        .save(this.pageId, {
+                        .save(this.uveStore.layoutProps().pageId, {
                             ...layout,
                             title: null
                         })
@@ -153,7 +146,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             detail: this.dotMessageService.get('dot.common.message.saved')
         });
 
-        this.store.updatePageLayout(page.layout);
+        this.uveStore.updateLayout(page.layout);
     }
 
     /**

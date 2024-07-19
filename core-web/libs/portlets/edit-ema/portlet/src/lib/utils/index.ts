@@ -1,8 +1,10 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
+    DotContainerMap,
     DotExperiment,
     DotExperimentStatus,
+    DotPageContainerStructure,
     VanityUrl
 } from '@dotcms/dotcms-models';
 
@@ -294,4 +296,19 @@ export function computeCanEditPage(
     ].includes(experiment?.status);
 
     return pageCanBeEdited && !isLocked && !editingBlockedByExperiment;
+}
+
+/**
+ * Map the containers to a DotContainerMap
+ *
+ * @private
+ * @param {DotPageContainerStructure} containers
+ * @return {*}  {DotContainerMap}
+ */
+export function mapContainers(containers: DotPageContainerStructure): DotContainerMap {
+    return Object.keys(containers).reduce((acc, id) => {
+        acc[id] = containers[id].container;
+
+        return acc;
+    }, {});
 }
