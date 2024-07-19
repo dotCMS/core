@@ -36,9 +36,11 @@ export class DotContentletThumbnail {
     fieldVariable = '';
 
     @State() renderImage: boolean;
+    @State() isSVG: boolean;
 
     componentWillLoad() {
         const { hasTitleImage, mimeType } = this.contentlet;
+        this.isSVG = mimeType === 'image/svg+xml';
         // Some endpoints return this property as a boolean
         if (typeof hasTitleImage === 'boolean' && hasTitleImage) {
             this.renderImage = hasTitleImage;
@@ -54,6 +56,7 @@ export class DotContentletThumbnail {
         const backgroundImageURL =
             this.contentlet && this.backgroundImage ? `url(${this.getImageURL()})` : '';
         const imgClass = this.backgroundImage ? 'background-image' : '';
+        const svgClass = this.isSVG ? ' svg-thumbnail' : '';
 
         return (
             <Host>
@@ -66,8 +69,10 @@ export class DotContentletThumbnail {
                     />
                 ) : this.renderImage ? (
                     <div
-                        class={`thumbnail ${imgClass}`}
-                        style={{ 'background-image': backgroundImageURL }}>
+                        class={`thumbnail ${imgClass}${svgClass}`}
+                        style={{
+                            'background-image': backgroundImageURL
+                        }}>
                         <img
                             src={this.getImageURL()}
                             alt={this.alt}
@@ -87,13 +92,16 @@ export class DotContentletThumbnail {
     }
 
     private getImageURL(): string {
-        return this.contentlet.mimeType === 'application/pdf'
-            ? `/contentAsset/image/${this.contentlet.inode}/${
-                  this.fieldVariable || this.contentlet.titleImage
-              }/pdf_page/1/resize_w/250/quality_q/45`
-            : `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
-                  this.contentlet.modDateMilis || this.contentlet.modDate
-              }`;
+        if (this.contentlet.mimeType === 'application/pdf')
+            return `/contentAsset/image/${this.contentlet.inode}/${
+                this.fieldVariable || this.contentlet.titleImage
+            }/pdf_page/1/resize_w/250/quality_q/45`;
+
+        if (this.isSVG) return `/contentAsset/image/${this.contentlet.inode}/asset`;
+
+        return `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
+            this.contentlet.modDateMilis || this.contentlet.modDate
+        }`;
     }
 
     private fieldVariablePath(): string {
