@@ -45,7 +45,7 @@ export function withEditorToolbar() {
                 const params = store.params();
                 const url = sanitizeURL(params.url);
 
-                const pageAPIURL = createPageApiUrlWithQueryParams(url, params);
+                const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
                 const pageAPIResponse = store.pageAPIResponse();
                 const experiment = store.experiment?.();
 
@@ -53,9 +53,13 @@ export function withEditorToolbar() {
                     pageAPIResponse.page.locked &&
                     pageAPIResponse.page.lockedBy !== store.currentUser()?.userId;
 
+                const pageAPI = `/api/v1/page/${
+                    store.isLegacyPage() ? 'render' : 'json'
+                }/${pageAPIQueryParams}`;
+
                 return {
                     deviceSelector: {
-                        apiLink: `${params.clientHost ?? window.location.origin}/${pageAPIURL}`,
+                        apiLink: `${params.clientHost ?? window.location.origin}${pageAPI}`,
                         hideSocialMedia: store.isLegacyPage()
                     },
                     urlContentMap: pageAPIResponse.urlContentMap,
@@ -70,7 +74,7 @@ export function withEditorToolbar() {
                         pureURL: createPureURL(params)
                     },
                     apiLinkButton: {
-                        apiURL: pageAPIURL
+                        apiURL: `${params.clientHost ?? window.location.origin}${pageAPI}`
                     },
                     experimentBadge:
                         experiment?.status === DotExperimentStatus.RUNNING

@@ -116,11 +116,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         (clientHost, pageURL) => (clientHost ? `${clientHost}/${pageURL}` : '')
     );
 
-    private readonly previewURL$ = this.select(
-        this.clientHost$,
-        this.pageURL$,
-        (clientHost, pageURL) => (clientHost ? `${clientHost}/${pageURL}` : pageURL)
-    );
     private readonly bounds$ = this.select((state) => state.bounds);
     private readonly contentletArea$: Observable<ContentletArea> = this.select(
         (state) => state.contentletArea,

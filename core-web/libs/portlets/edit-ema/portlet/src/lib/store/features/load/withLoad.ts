@@ -133,7 +133,7 @@ export function withLoad() {
                                                     params,
                                                     canEditPage,
                                                     status: UVE_STATUS.LOADED,
-                                                    isLegacyPage: !!params.clientHost // If we don't send the clientHost we are using as VTL page
+                                                    isLegacyPage: !params.clientHost // If we don't send the clientHost we are using as VTL page
                                                 });
                                             }
                                         })

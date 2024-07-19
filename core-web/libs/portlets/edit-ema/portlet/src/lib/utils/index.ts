@@ -271,6 +271,7 @@ export function createFavoritePagesURL(params: {
 
 export function createPureURL(params: DotPageApiParams): string {
     const clientHost = params.clientHost ?? window.location.origin;
+    const url = params.url;
 
     // Clean the params that are not needed for the page
     delete params.clientHost;
@@ -279,7 +280,7 @@ export function createPureURL(params: DotPageApiParams): string {
 
     const searchParams = new URLSearchParams(params as unknown as Record<string, string>);
 
-    return `${clientHost}/${params.url}?${searchParams.toString()}`;
+    return `${clientHost}/${url}?${searchParams.toString()}`;
 }
 
 export function computeCanEditPage(
