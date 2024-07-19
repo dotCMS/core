@@ -2,7 +2,6 @@ import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    Injector,
     Input,
     OnInit,
     ViewChild,
@@ -43,7 +42,6 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
     @ViewChild(TreeSelect) treeSelect!: TreeSelect;
     readonly #controlContainer = inject(ControlContainer);
-    readonly #injector = inject(Injector);
     readonly store = inject(HostFolderFiledStore);
 
     pathControl = new FormControl();
