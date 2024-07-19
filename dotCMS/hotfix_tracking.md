@@ -127,3 +127,4 @@ This maintenance release includes the following code fixes:
 120. https://github.com/dotCMS/core/issues/27871 : refactor pg_dump inclusion in our docker image #27871
 121. SI-72
 122. https://github.com/dotCMS/core/issues/29240 : UT keep running even though one failed #29240
+123. https://github.com/dotCMS/core/issues/29304 : Revert telemetry plugin to 24.05.29 #29304
