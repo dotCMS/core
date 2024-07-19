@@ -14,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public class ActionletUtil {
@@ -109,5 +110,27 @@ public class ActionletUtil {
                     action.getName()), e);
         }
         return false;
+    }
+
+    /**
+     * Returns true if the class is annotated as a batch only actionlet
+     * @param clazz String (expects a WorkflowActionlet) but it is not mandatory
+     * @return true if the class is batch only marked
+     */
+    public static boolean isOnlyBatch(final String clazz) {
+
+        return isOnlyBatch(ReflectionUtils.getClassFor(clazz));
+    }
+
+    /**
+     * Returns true if the class is annotated as a batch only actionlet
+     * @param clazz Class (expects a WorkflowActionlet) but it is not mandatory
+     * @return true if the class is batch only marked
+     */
+    public static boolean isOnlyBatch(final Class clazz) {
+
+        final Actionlet actionlet = AnnotationUtils.
+                getBeanAnnotation(clazz, Actionlet.class);
+        return Objects.nonNull(actionlet)?actionlet.onlyBatch():false;
     }
 }

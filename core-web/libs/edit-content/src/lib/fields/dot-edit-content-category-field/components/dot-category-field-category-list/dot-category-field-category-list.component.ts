@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     computed,
     DestroyRef,
@@ -89,12 +90,15 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
      */
     itemsSelected: string[];
 
+    #cdr = inject(ChangeDetectorRef);
+
     readonly #destroyRef = inject(DestroyRef);
 
     readonly #effectRef = effect(() => {
-        // Todo: find a better way to update this
+        // Todo: change itemsSelected to use model when update Angular to >17.3
         // Initial selected items from the contentlet
         this.itemsSelected = this.selected();
+        this.#cdr.markForCheck(); // force refresh
     });
 
     ngAfterViewInit() {
