@@ -347,34 +347,16 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                         isLocked
                                     });
 
-                                    // In my approach the editor will consume from 2 store, Global and Toolbar, that will be merged in just one coming from the toolbar
-                                    // And the only thing it will do is to tell the global store to reload the page
-                                    // and update the bounds, contentletArea and editorState
-                                    // Anything else will be handled by the global and the toolbar
-
-                                    // Editor store should not fetch, nor manipulate the global or toolbar store
-                                    // It should only consume from them
-
                                     return this.setState({
-                                        // This should page instead of editor
-                                        editor: pageData, // Global
-                                        isEnterpriseLicense: licenseData, // Global
-                                        languages, // Global
-                                        // The params will live in the global
-                                        // so I can have a single source of truth
-                                        // params: {
-                                        //     //...
-                                        //     clientHost: 'host'
-                                        // },
-
-                                        clientHost: params.clientHost, // Editor Specific
-                                        editorState: EDITOR_STATE.IDLE, // Editor Specific, but depends in the global cycle for loading and idle states
-                                        bounds: [], // Editor Specific
-                                        contentletArea: null, // Editor Specific
-
-                                        currentExperiment: experiment, // Toolbar specific
+                                        editor: pageData,
+                                        isEnterpriseLicense: licenseData,
+                                        languages,
+                                        clientHost: params.clientHost,
+                                        editorState: EDITOR_STATE.IDLE,
+                                        bounds: [],
+                                        contentletArea: null,
+                                        currentExperiment: experiment,
                                         editorData: {
-                                            // Toolbar specific, we can consume this from the toolbar
                                             mode,
                                             canEditVariant,
                                             canEditPage: pageData.page.canEdit,
