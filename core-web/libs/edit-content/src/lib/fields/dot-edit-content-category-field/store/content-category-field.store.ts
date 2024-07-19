@@ -88,7 +88,16 @@ export const CategoryFieldStore = signalStore(
          */
         fieldVariableName: computed(() => store.field().variable),
 
-        // Search
+        /**
+         * Determines if the list mode is currently loading.
+         */
+        isListLoading: computed(
+            () => store.mode() === 'list' && store.state() === ComponentStatus.LOADING
+        ),
+
+        /**
+         * Determines if the search mode is currently loading.
+         */
         isSearchLoading: computed(
             () => store.mode() === 'search' && store.state() === ComponentStatus.LOADING
         ),
