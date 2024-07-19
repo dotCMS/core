@@ -31,3 +31,4 @@ This maintenance release includes the following code fixes:
 25. https://github.com/dotCMS/core/issues/29250 : Add Annotations to WorkflowTask Bean #29250
 26. https://github.com/dotCMS/core/issues/28678 : Add a command to init dotCMS with a custom database #28678
 27. https://github.com/dotCMS/core/issues/29304 : Revert telemetry plugin to 24.05.29 #29304
+28. SI-72
