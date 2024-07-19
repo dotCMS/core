@@ -23,6 +23,8 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
         pipe(
             tap(() => patchState(store, { status: 'LOADING' })),
             switchMap(({ path, isRequired }) => {
+                const newPath = path.replace('//', '');
+
                 return dotEditContentService
                     .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
                     .pipe(
@@ -39,7 +41,7 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
                             finalize: () => patchState(store, { status: 'LOADED' })
                         }),
                         map((sites) => ({
-                            path,
+                            path: newPath,
                             sites,
                             isRequired
                         }))
