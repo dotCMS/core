@@ -91,6 +91,7 @@ import {
     PostMessagePayload,
     ReorderPayload
 } from '../shared/models';
+import { UVEStore } from '../store/dot-uve.store';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     areContainersEquals,
@@ -131,6 +132,8 @@ import {
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
+
+    protected readonly uveStore = inject(UVEStore);
 
     private readonly router = inject(Router);
     private readonly activatedRouter = inject(ActivatedRoute);
@@ -578,10 +581,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {string} clientHost
      * @memberof EditEmaEditorComponent
      */
-    onIframePageLoad(editorMode: EDITOR_MODE) {
+    onIframePageLoad(editorMode: EDITOR_MODE = EDITOR_MODE.EDIT) {
+        // DELETE
         this.store.updateEditorState(EDITOR_STATE.IDLE);
 
         //The iframe is loaded after copy contentlet to inline editing.
+        // FIND ANOTHER WAY
         if (editorMode === EDITOR_MODE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
@@ -1062,6 +1067,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         }
 
                         this.inlineEditingService.setTargetInlineMCEDataset(data);
+
+                        // This is not needed, I will workaround this
                         this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
 
                         if (!res) {
@@ -1130,6 +1137,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private updateQueryParams(params: Params) {
+        // NOT NEEDED DELETE
         this.store.updateEditorState(EDITOR_STATE.LOADING);
         this.router.navigate([], {
             queryParams: params,
@@ -1145,7 +1153,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             life: 2000
         });
 
+        // CHECK WHY WE DO THIS
+        // I THINK WE DONT NEED THIS ANYMORE
         this.store.updateEditorState(EDITOR_STATE.IDLE);
+
         this.dialog.resetDialog();
     }
 
@@ -1158,6 +1169,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
+        // CHECK IF WE CAN MOVE THIS TO THE STORE
         this.clientData.set(positionPayload);
 
         return this.actionPayload();
@@ -1286,6 +1298,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private reloadURLContentMapPage(inodeOrIdentifier: string): void {
         // Set loading state to prevent the user to interact with the iframe
+        // WE CAN SET IT TO LOADING, BUT NATURALLY AFTER THE RELOAD THE EDITOR WILL BE LOADED
         this.store.updateEditorState(EDITOR_STATE.LOADING);
 
         this.dotContentletService
@@ -1403,6 +1416,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 detail: this.dotMessageService.get('editpage.file.upload.not.image'),
                 life: 3000
             });
+
+            // WE NEED TO MODIFY THE UVE STATUS NOT THE EDITOR STATE
 
             this.store.updateEditorState(EDITOR_STATE.IDLE);
 

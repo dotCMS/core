@@ -54,7 +54,7 @@ export function withEditorToolbar() {
                 return {
                     deviceSelector: {
                         apiLink: `${params.clientHost ?? window.location.origin}${pageAPI}`,
-                        hideSocialMedia: store.isLegacyPage()
+                        hideSocialMedia: !store.isLegacyPage()
                     },
                     urlContentMap: store.isEditState() && pageAPIResponse.urlContentMap,
                     bookmarks: {
