@@ -7,6 +7,7 @@ import com.dotcms.mock.request.CachedParameterDecorator;
 import com.dotcms.mock.request.HttpServletRequestParameterDecoratorWrapper;
 import com.dotcms.mock.request.LanguageIdParameterDecorator;
 import com.dotcms.mock.request.ParameterDecorator;
+import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
@@ -48,6 +49,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
@@ -63,6 +65,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -472,8 +475,7 @@ public class PageResourceHelper implements Serializable {
         }
 
         Logger.debug(this, ()-> "Deleting current contentlet multi tree: " + copyContentletForm);
-        final MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
-                null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
+        final MultiTree currentMultitree = getMultiTree(htmlPage, container, contentId, instanceId, personalization, variant);
 
         if (null == currentMultitree) {
 
@@ -496,6 +498,20 @@ public class PageResourceHelper implements Serializable {
 
 
         return copiedContentlet;
+    }
+
+    @Nullable
+    private static MultiTree getMultiTree(String htmlPage, String container, String contentId, String instanceId, String personalization, String variant) throws DotDataException {
+        MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
+                null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant ? VariantAPI.DEFAULT_VARIANT.name(): variant);
+
+        if (null == currentMultitree &&
+                (ContainerUUID.UUID_START_VALUE.equals(instanceId) ||
+                        (ParseContainer.PARSE_CONTAINER_UUID_PREFIX + ContainerUUID.UUID_START_VALUE).equals(instanceId))) {
+            currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, ContainerUUID.UUID_LEGACY_VALUE,
+                    null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant ? VariantAPI.DEFAULT_VARIANT.name(): variant);
+        }
+        return currentMultitree;
     }
 
     /**
