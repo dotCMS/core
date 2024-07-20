@@ -223,17 +223,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 requestAnimationFrame(() => {
                     const win = this.contentWindow;
 
-                    fromEvent(win, 'click').subscribe((e: MouseEvent) => {
-                        this.handleInternalNav(e);
-                    });
                     if (isEnterprise && isEditState) {
                         this.inlineEditingService.injectInlineEdit(this.iframe);
-                        fromEvent(win, 'click').subscribe((e: MouseEvent) => {
-                            this.handleInlineEditing(e);
-                        });
                     } else {
                         this.inlineEditingService.removeInlineEdit(this.iframe);
                     }
+
+                    fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+                        this.handleInternalNav(e);
+
+                        // We can surely skip this validation
+                        if (isEnterprise && isEditState) {
+                            this.handleInlineEditing(e);
+                        }
+                    });
                 });
             } else {
                 this.reloadIframeContent();
