@@ -6,7 +6,6 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
-    DestroyRef,
     ElementRef,
     HostListener,
     OnDestroy,
@@ -15,11 +14,12 @@ import {
     ViewChild,
     WritableSignal,
     computed,
+    effect,
     inject,
     signal,
     untracked
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
@@ -41,10 +41,8 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
-    DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotCMSTempFile,
-    DotExperimentStatus,
     DotTreeNode,
     SeoMetaTags,
     SeoMetaTagsResult
@@ -152,13 +150,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
-    private readonly destroyRef = inject(DestroyRef);
 
-    readonly editorState$ = this.store.editorState$;
-    readonly dragState$ = this.store.dragState$;
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
+    // CHANGE TO COMPUTED SIGNAL FROM NEW STORE
     readonly pageData = toSignal(this.store.pageData$);
 
     readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -208,9 +204,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     });
 
     readonly host = '*';
-    readonly editorState = EDITOR_STATE;
-    readonly editorMode = EDITOR_MODE;
-    readonly experimentStatus = DotExperimentStatus;
 
     get queryParams(): DotPageApiParams {
         return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
@@ -220,51 +213,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         return this.iframe.nativeElement.contentWindow;
     }
 
-    isVTLPage = toSignal(this.store.clientHost$.pipe(map((clientHost) => !clientHost)));
-    $isInlineEditing = toSignal(
-        this.store.editorMode$.pipe(map((mode) => mode === EDITOR_MODE.INLINE_EDITING))
-    );
+    readonly handleReloadContentEffect = effect(
+        () => {
+            const { code, isLegacyPage, isEditState, isEnterprise } =
+                this.uveStore.reloadEditorContent();
+            this.resetDragProperties();
 
-    ngOnInit(): void {
-        this.handleReloadContent();
-        this.handleDragEvents();
+            if (isLegacyPage) {
+                this.setIframeContent(code);
 
-        fromEvent(this.window, 'message')
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((event: MessageEvent) => {
-                this.handlePostMessage(event)?.();
-            });
-
-        // In VTL Page if user click in a link in the page, we need to update the URL in the editor
-        this.store.pageRendered$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter(() => this.isVTLPage())
-            )
-            .subscribe(() => {
                 requestAnimationFrame(() => {
                     const win = this.contentWindow;
 
                     fromEvent(win, 'click').subscribe((e: MouseEvent) => {
                         this.handleInternalNav(e);
                     });
-                });
-            });
-
-        this.store.vtlIframePage$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter(({ isEnterprise }) => this.isVTLPage() && isEnterprise)
-            )
-            .subscribe(({ mode }) => {
-                requestAnimationFrame(() => {
-                    const win = this.contentWindow;
-
-                    if (
-                        mode === EDITOR_MODE.EDIT ||
-                        mode === EDITOR_MODE.EDIT_VARIANT ||
-                        mode === EDITOR_MODE.INLINE_EDITING
-                    ) {
+                    if (isEnterprise && isEditState) {
                         this.inlineEditingService.injectInlineEdit(this.iframe);
                         fromEvent(win, 'click').subscribe((e: MouseEvent) => {
                             this.handleInlineEditing(e);
@@ -273,6 +237,30 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.inlineEditingService.removeInlineEdit(this.iframe);
                     }
                 });
+            } else {
+                this.reloadIframeContent();
+            }
+        },
+        {
+            allowSignalWrites: true
+        }
+    );
+
+    readonly handleIsDragging = effect(() => {
+        const isDragging = this.uveStore.editorIsInDraggingState();
+
+        if (isDragging) {
+            this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
+        }
+    });
+
+    ngOnInit(): void {
+        this.handleDragEvents();
+
+        fromEvent(this.window, 'message')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((event: MessageEvent) => {
+                this.handlePostMessage(event)?.();
             });
     }
 
@@ -323,10 +311,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     handleDragEvents() {
-        this.store.isUserDragging$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-            this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
-        });
-
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
@@ -337,7 +321,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const { contentType, contentlet, container, move } = parsedItem;
 
                 if (dataset.type === 'content-type') {
-                    this.store.setDragItem({
+                    this.uveStore.setEditorDragItem({
                         baseType: contentType.baseType,
                         contentType: contentType.variable,
                         draggedPayload: {
@@ -350,7 +334,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         } as ContentTypeDragPayload
                     });
                 } else {
-                    this.store.setDragItem({
+                    this.uveStore.setEditorDragItem({
                         baseType: contentlet.baseType,
                         contentType: contentlet.contentType,
                         draggedPayload: {
@@ -369,51 +353,35 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .pipe(
                 takeUntil(this.destroy$),
                 // For some reason the fromElement is not in the DragEvent type
-                filter((event: DragEvent & { fromElement: HTMLElement }) => !event.fromElement), // I just want to trigger this when we are dragging from the outside
-                switchMap((event) =>
-                    this.dragState$.pipe(
-                        take(1),
-                        map(({ dragItem, editorState }) => ({
-                            event,
-                            dragItem,
-                            editorState
-                        }))
-                    )
-                )
+                filter((event: DragEvent & { fromElement: HTMLElement }) => !event.fromElement) // I just want to trigger this when we are dragging from the outside
             )
-            .subscribe(
-                ({
-                    dragItem,
-                    event,
-                    editorState
-                }: {
-                    dragItem: EmaDragItem;
-                    event: DragEvent;
-                    editorState: EDITOR_STATE;
-                }) => {
-                    event.preventDefault();
-                    // Set the temp item to be dragged, which is the outsider file if there is not a drag item
-                    if (!dragItem) {
-                        this.store.setDragItem({
-                            baseType: 'dotAsset',
-                            contentType: 'dotAsset',
-                            draggedPayload: {
-                                type: 'temp'
-                            }
-                        });
-                    } else if (editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
-                        this.store.updateEditorState(EDITOR_STATE.DRAGGING);
-                    }
+            .subscribe((event: DragEvent) => {
+                event.preventDefault();
 
-                    this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
+                const dragItem = this.uveStore.dragItem();
+                const editorState = this.uveStore.state();
+
+                // Set the temp item to be dragged, which is the outsider file if there is not a drag item
+                if (!dragItem) {
+                    this.uveStore.setEditorDragItem({
+                        baseType: 'dotAsset',
+                        contentType: 'dotAsset',
+                        draggedPayload: {
+                            type: 'temp'
+                        }
+                    });
+                } else if (editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
+                    this.uveStore.updateEditorState(EDITOR_STATE.DRAGGING);
                 }
-            );
+
+                this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
+            });
 
         fromEvent(this.window, 'dragend')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: DragEvent) => {
                 if (event.dataTransfer.dropEffect === 'none') {
-                    this.store.updateEditorState(EDITOR_STATE.IDLE);
+                    this.uveStore.resetEditorDragProperties();
                 }
             });
 
@@ -427,7 +395,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     event.clientX > iframeRect.left && event.clientX < iframeRect.right;
 
                 if (!isInsideIframe) {
-                    this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+                    this.uveStore.updateEditorState(EDITOR_STATE.DRAGGING);
 
                     return;
                 }
@@ -449,12 +417,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 if (!direction) {
-                    this.store.updateEditorState(EDITOR_STATE.DRAGGING);
+                    this.uveStore.updateEditorState(EDITOR_STATE.DRAGGING);
 
                     return;
                 }
 
-                this.store.setScrollingState();
+                this.uveStore.setEditorScrollingState();
 
                 this.contentWindow?.postMessage(
                     { name: NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME, direction },
@@ -463,19 +431,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             });
 
         fromEvent(this.window, 'drop')
-            .pipe(
-                takeUntil(this.destroy$),
-                switchMap((event) =>
-                    this.dragState$.pipe(
-                        take(1),
-                        map(({ dragItem }) => ({
-                            event,
-                            dragItem
-                        }))
-                    )
-                )
-            )
-            .subscribe(({ event, dragItem }: { event: DragEvent; dragItem: EmaDragItem }) => {
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((event: DragEvent) => {
                 event.preventDefault();
                 const target = event.target as HTMLDivElement;
 
@@ -483,7 +440,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 // If we drop in a container that is not a dropzone, we just reset the editor state
                 if (dropzone !== 'true') {
-                    this.store.updateEditorState(EDITOR_STATE.IDLE);
+                    this.uveStore.resetEditorDragProperties();
 
                     return;
                 }
@@ -491,6 +448,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const data: ClientData = JSON.parse(payload);
 
                 const file = event.dataTransfer?.files[0]; // We are sure that is comes but in the tests we don't have DragEvent class
+
+                const dragItem = this.uveStore.dragItem();
 
                 if (file) {
                     // I need to publish the temp file to use it.
@@ -517,7 +476,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 // I need to do this to hide the dropzone but maintain the current dragItem
-                this.store.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // The user is dragging outside the window, we set this to know that user can potentially drop a file outside the window
+                this.uveStore.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // The user is dragging outside the window, we set this to know that user can potentially drop a file outside the window
             });
     }
 
@@ -531,48 +490,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     resetEditorWhenOutOfBounds(event: MouseEvent) {
         event.preventDefault();
 
-        this.dragState$
-            .pipe(
-                take(1),
-                filter(
-                    ({ dragItem, editorState }) =>
-                        !!dragItem && editorState === EDITOR_STATE.OUT_OF_BOUNDS // If the user dropped outside of the window and we still have a dragItem we need to clean the editor
-                )
-            )
-            .subscribe(() => {
-                this.store.updateEditorState(EDITOR_STATE.IDLE);
-            });
-    }
+        const dragItem = this.uveStore.dragItem();
+        const editorState = this.uveStore.state();
 
-    /**
-     * Handles the reload of content in the editor.
-     * If the editor state is LOADED and the content is not VTL, it reloads the iframe.
-     * If the content is VTL, it loads the VTL iframe content.
-     * @memberof EditEmaEditorComponent
-     */
-    handleReloadContent() {
-        this.store.contentState$
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(({ shouldReload, code, isVTL }) => {
-                // If we are idle then we are not dragging
-
-                this.resetDragProperties();
-
-                if (!shouldReload) {
-                    /** We have some EDITOR_STATE values that we don't want to reload the content
-                     *  Only when we should realod the content we do it
-                     */
-                    return;
-                }
-
-                if (isVTL) {
-                    this.setIframeContent(code);
-                } else {
-                    this.reloadIframeContent();
-                }
-
-                this.store.setShouldReload(false);
-            });
+        if (!!dragItem && editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
+            this.uveStore.updateEditorState(EDITOR_STATE.IDLE);
+        }
     }
 
     /**
@@ -583,7 +506,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onIframePageLoad(editorMode: EDITOR_MODE = EDITOR_MODE.EDIT) {
         // DELETE
-        this.store.updateEditorState(EDITOR_STATE.IDLE);
+        // this.uveStore.updateEditorState(EDITOR_STATE.IDLE);
 
         //The iframe is loaded after copy contentlet to inline editing.
         // FIND ANOTHER WAY
@@ -676,6 +599,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+        this.handleReloadContentEffect.destroy();
     }
 
     /**
@@ -759,7 +683,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
-            this.store.updateEditorState(EDITOR_STATE.IDLE); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
+            this.uveStore.updateEditorState(EDITOR_STATE.IDLE); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
 
             this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
         } else if (dragItem.draggedPayload.type === 'temp') {
@@ -876,9 +800,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 if (!payload) {
-                    this.store.reload({
-                        params: this.queryParams
-                    });
+                    this.uveStore.reload(this.queryParams);
 
                     return;
                 }
@@ -933,9 +855,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     life: 2000
                 });
 
-                this.store.reload({
-                    params: this.queryParams
-                });
+                this.uveStore.reload(this.queryParams);
                 this.dialog.resetDialog();
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
@@ -985,9 +905,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const isSameUrl = this.queryParams.url === payload.url;
 
                 if (isSameUrl) {
-                    // TODO: HOW DO WE DO THIS NOW?
+                    // MOVE THIS TO THE TOOLBAR
                     // this.personaSelector.fetchPersonas(); // We need to fetch the personas again because the page is loaded
-                    this.store.updateEditorState(EDITOR_STATE.IDLE);
+                    this.uveStore.updateEditorState(EDITOR_STATE.IDLE);
                 } else {
                     this.updateQueryParams({
                         url: payload.url,
@@ -996,23 +916,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
-                this.store.setBounds(<Container[]>data.payload);
+                this.uveStore.setEditorBounds(<Container[]>data.payload);
             },
             [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
                 const contentletArea = <ClientContentletArea>data.payload;
 
                 const payload = this.getPageSavePayload(contentletArea.payload);
 
-                this.store.setContentletArea({
+                this.uveStore.setEditorContentletArea({
                     ...contentletArea,
                     payload
                 });
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
-                this.store.updateEditorScrollState();
+                this.uveStore.updateEditorScrollState();
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL_END]: () => {
-                this.store.updateEditorDragState();
+                this.uveStore.updateEditorDragState();
             },
             [CUSTOMER_ACTIONS.INIT_INLINE_EDITING]: () => {
                 // The iframe says that the editor is ready to start inline editing
@@ -1023,10 +943,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // The iframe say the contentlet that try to be inline edited is in multiple pages
                 // So the editor open the dialog to question if the edit is in ALL contentlets or only in this page.
 
-                if (this.$isInlineEditing()) {
-                    // If is already in inline editing, dont open the dialog.
-                    return;
-                }
+                // WONT USE THIS FIND A WAY TO DO THIS
+                // if (this.$isInlineEditing()) {
+                //     // If is already in inline editing, dont open the dialog.
+                //     return;
+                // }
 
                 const payload = <{ dataset: InlineEditingContentletDataset }>data.payload;
 
@@ -1042,7 +963,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         }),
                         tap((res) => {
                             if (res) {
-                                this.store.reload({ params: this.queryParams });
+                                this.uveStore.reload(this.queryParams);
                             }
                         })
                     )
@@ -1055,7 +976,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             language: payload.dataset.language
                         };
 
-                        if (!this.isVTLPage()) {
+                        if (!this.uveStore.isLegacyPage()) {
                             const message = {
                                 name: NOTIFY_CUSTOMER.COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: data
@@ -1078,18 +999,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
                 const payload = <UpdatedContentlet>data.payload;
-
-                if (!payload) {
-                    const mode =
-                        this.queryParams.variantName &&
-                        this.queryParams.variantName !== DEFAULT_VARIANT_ID
-                            ? EDITOR_MODE.EDIT_VARIANT
-                            : EDITOR_MODE.EDIT;
-
-                    this.store.setEditorMode(mode);
-
-                    return;
-                }
 
                 this.store.saveFromInlineEditedContentlet({
                     contentlet: {
@@ -1124,7 +1033,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     reloadIframeContent() {
         this.iframe?.nativeElement?.contentWindow?.postMessage(
-            { name: NOTIFY_CUSTOMER.SET_PAGE_DATA, payload: this.store.state().editor },
+            { name: NOTIFY_CUSTOMER.SET_PAGE_DATA, payload: this.uveStore.pageAPIResponse() },
             this.host
         );
     }
@@ -1137,8 +1046,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private updateQueryParams(params: Params) {
-        // NOT NEEDED DELETE
-        this.store.updateEditorState(EDITOR_STATE.LOADING);
         this.router.navigate([], {
             queryParams: params,
             queryParamsHandling: 'merge'
@@ -1155,7 +1062,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         // CHECK WHY WE DO THIS
         // I THINK WE DONT NEED THIS ANYMORE
-        this.store.updateEditorState(EDITOR_STATE.IDLE);
+        this.uveStore.updateEditorState(EDITOR_STATE.IDLE);
 
         this.dialog.resetDialog();
     }
@@ -1258,7 +1165,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     protected resetDragProperties() {
-        this.store.resetDragProperties();
+        this.uveStore.resetEditorDragProperties();
     }
 
     /**
@@ -1299,7 +1206,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private reloadURLContentMapPage(inodeOrIdentifier: string): void {
         // Set loading state to prevent the user to interact with the iframe
         // WE CAN SET IT TO LOADING, BUT NATURALLY AFTER THE RELOAD THE EDITOR WILL BE LOADED
-        this.store.updateEditorState(EDITOR_STATE.LOADING);
+        this.uveStore.updateEditorState(EDITOR_STATE.LOADING);
 
         this.dotContentletService
             .getContentletByInode(inodeOrIdentifier)
@@ -1309,7 +1216,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
                 if (URL_MAP_FOR_CONTENT != this.queryParams.url) {
-                    this.store.updateEditorState(EDITOR_STATE.IDLE);
                     // If the URL is different, we need to navigate to the new URL
                     this.updateQueryParams({ url: URL_MAP_FOR_CONTENT });
 
@@ -1317,9 +1223,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 // If the URL is the same, we need to fetch the new page data
-                this.store.reload({
-                    params: this.queryParams
-                });
+                this.uveStore.reload(this.queryParams);
             });
     }
 
@@ -1368,7 +1272,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private handlerError(error: HttpErrorResponse) {
-        this.store.updateEditorState(EDITOR_STATE.ERROR);
+        // CHECK IF HAVE TO SET THE UVE TO ERROR
+        this.uveStore.updateEditorState(EDITOR_STATE.ERROR);
 
         return this.dotHttpErrorManagerService.handle(error).pipe(map(() => null));
     }
@@ -1377,7 +1282,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * Reloads the component from the dialog.
      */
     reloadFromDialog() {
-        this.store.reload({ params: this.queryParams });
+        this.uveStore.reload(this.queryParams);
     }
 
     /**
@@ -1409,6 +1314,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         file: File;
         dragItem: EmaDragItem;
     }): void {
+        this.uveStore.updateEditorState(EDITOR_STATE.IDLE);
+
         if (!/image.*/.exec(file.type)) {
             this.messageService.add({
                 severity: 'error',
@@ -1416,10 +1323,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 detail: this.dotMessageService.get('editpage.file.upload.not.image'),
                 life: 3000
             });
-
-            // WE NEED TO MODIFY THE UVE STATUS NOT THE EDITOR STATE
-
-            this.store.updateEditorState(EDITOR_STATE.IDLE);
 
             return;
         }
@@ -1467,13 +1370,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 })
             )
             .subscribe((contentlet) => {
-                // If there is no contentlet then the file was not uploaded
-                if (!contentlet) {
-                    this.store.updateEditorState(EDITOR_STATE.IDLE);
-
-                    return;
-                }
-
                 const payload = {
                     ...data,
                     position,

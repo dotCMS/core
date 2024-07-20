@@ -1,9 +1,21 @@
-import { signalStoreFeature, type, withComputed, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withComputed,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
 import { withEditorToolbar } from './toolbar/withEditorToolbar';
 
+import {
+    Container,
+    ContentletArea,
+    EmaDragItem
+} from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import { sanitizeURL, createPageApiUrlWithQueryParams } from '../../../utils';
 import { EditorState, UVEState } from '../../models';
@@ -34,6 +46,15 @@ export function withEditor() {
         withEditorToolbar(),
         withComputed((store) => {
             return {
+                reloadEditorContent: computed(() => {
+                    return {
+                        code: store.pageAPIResponse()?.page.rendered,
+                        isLegacyPage: store.isLegacyPage(),
+                        isEditState: store.isEditState(),
+                        isEnterprise: store.isEnterprise()
+                    };
+                }),
+                editorIsInDraggingState: computed(() => store.state() === EDITOR_STATE.DRAGGING),
                 editorState: computed(() => {
                     const pageAPIResponse = store.pageAPIResponse();
                     const socialMedia = store.socialMedia();
@@ -51,12 +72,15 @@ export function withEditor() {
                     const isDragging = state === EDITOR_STATE.DRAGGING;
                     const dragIsActive = isDragging || state === EDITOR_STATE.SCROLL_DRAG;
                     const isLoading = store.status() === UVE_STATUS.LOADING;
+                    const isScrolling =
+                        state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING;
 
                     const url = sanitizeURL(params.url);
 
                     const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
 
-                    const showContentletTools = !!contentletArea && canEditPage && isEditState;
+                    const showContentletTools =
+                        !!contentletArea && canEditPage && isEditState && !isScrolling;
                     const showDropzone = canEditPage && dragIsActive;
                     const showPalette = isEnterprise && canEditPage && isEditState;
                     const showDialogs = canEditPage && isEditState;
@@ -83,7 +107,7 @@ export function withEditor() {
                         progressBar: isLoading,
                         contentletTools: showContentletTools && {
                             contentletArea,
-                            hide: isDragging,
+                            hide: dragIsActive,
                             isEnterprise
                         },
                         dropzone: showDropzone && {
@@ -98,6 +122,43 @@ export function withEditor() {
                         dialogs: showDialogs
                     };
                 })
+            };
+        }),
+        withMethods((store) => {
+            return {
+                setEditorBounds(bounds: Container[]) {
+                    patchState(store, { bounds });
+                },
+                updateEditorScrollState() {
+                    patchState(store, {
+                        state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
+                    });
+                },
+                updateEditorDragState() {
+                    patchState(store, {
+                        state: store.dragItem() ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
+                    });
+                },
+                updateEditorState(state: EDITOR_STATE) {
+                    patchState(store, { state });
+                },
+                setEditorScrollingState() {
+                    patchState(store, { state: EDITOR_STATE.SCROLL_DRAG, bounds: [] });
+                },
+                setEditorDragItem(dragItem: EmaDragItem) {
+                    patchState(store, { dragItem });
+                },
+                setEditorContentletArea(contentletArea: ContentletArea) {
+                    patchState(store, { contentletArea, state: EDITOR_STATE.IDLE });
+                },
+                resetEditorDragProperties() {
+                    patchState(store, {
+                        dragItem: undefined,
+                        contentletArea: undefined,
+                        bounds: [],
+                        state: EDITOR_STATE.IDLE
+                    });
+                }
             };
         })
     );

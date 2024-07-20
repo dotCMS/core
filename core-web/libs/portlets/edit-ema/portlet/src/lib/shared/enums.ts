@@ -40,7 +40,8 @@ export enum EDITOR_STATE {
     DRAGGING = 'dragging',
     ERROR = 'error', // Delete this one and use the UVE_STATUS
     OUT_OF_BOUNDS = 'out-of-bounds',
-    SCROLL_DRAG = 'scroll-drag'
+    SCROLL_DRAG = 'scroll-drag',
+    SCROLLING = 'scrolling'
 }
 
 export enum EDITOR_MODE {
