@@ -43,7 +43,7 @@ import { UVEStore } from '../store/dot-uve.store';
     selector: 'dot-ema-shell',
     standalone: true,
     providers: [
-        EditEmaStore,
+        EditEmaStore, // DELETE THIS WHEN IS READY
         UVEStore,
         DotPageApiService,
         DotActionUrlService,
@@ -85,7 +85,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly $didTranslate = signal(false);
 
     readonly uveStore = inject(UVEStore);
-    readonly store = inject(EditEmaStore);
 
     readonly #activatedRoute = inject(ActivatedRoute);
     readonly #router = inject(Router);
@@ -143,12 +142,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 }
 
                 this.uveStore.load({
-                    ...(queryParams as DotPageApiParams),
-                    clientHost: queryParams.clientHost ?? data?.url
-                });
-
-                // DELETE THIS WHEN THE STORE IS READY
-                this.store.load({
                     ...(queryParams as DotPageApiParams),
                     clientHost: queryParams.clientHost ?? data?.url
                 });
@@ -219,12 +212,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                         ...this.queryParams,
                         clientHost: this.queryParams.clientHost ?? data?.url
                     });
-
-                    // DELETE THIS WHEN THE STORE IS READY
-                    this.store.load({
-                        ...this.queryParams,
-                        clientHost: this.queryParams.clientHost ?? data?.url
-                    });
                 });
                 break;
             }
@@ -257,9 +244,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     reloadFromDialog() {
         this.uveStore.reload(this.queryParams);
-
-        // DELETE THIS WHEN THE STORE IS READY
-        this.store.reload({ params: this.queryParams });
     }
 
     private navigate(queryParams) {
