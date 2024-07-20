@@ -19,7 +19,6 @@ import {
     signal,
     untracked
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
@@ -73,7 +72,7 @@ import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiParams } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, WINDOW } from '../shared/consts';
-import { EDITOR_MODE, EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import {
     ActionPayload,
     PositionPayload,
@@ -154,16 +153,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
-    // CHANGE TO COMPUTED SIGNAL FROM NEW STORE
-    readonly pageData = toSignal(this.store.pageData$);
-
     readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
 
     readonly clientData: WritableSignal<ClientData> = signal(undefined);
 
+    // WE CAN PROBABLY MOVE THIS TO THE STORE
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
         const clientData = this.clientData();
-        const { containers, languageId, id, personaTag } = this.pageData();
+        const { containers, languageId, id, personaTag } = this.uveStore.pageData();
         const { contentletsId } = containers.find((container) =>
             areContainersEquals(container, clientData.container)
         ) ?? { contentletsId: [] };
@@ -185,11 +182,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         } as ActionPayload;
     });
 
+    // WE CAN PROBABLY MOVE THIS TO THE STORE
     readonly currentTreeNode: Signal<DotTreeNode> = computed(() => {
         const { contentlet, container } = this.actionPayload();
         const { identifier: contentId } = contentlet;
         const { variantId, uuid: relationType, contentletsId, identifier: containerId } = container;
-        const { personalization, id: pageId } = untracked(() => this.pageData());
+        const { personalization, id: pageId } = untracked(() => this.uveStore.pageData());
         const treeOrder = contentletsId.findIndex((id) => id === contentId).toString();
 
         return {
@@ -246,7 +244,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
     );
 
-    readonly handleIsDragging = effect(() => {
+    readonly handleIsDraggingEffect = effect(() => {
         const isDragging = this.uveStore.editorIsInDraggingState();
 
         if (isDragging) {
@@ -371,7 +369,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         }
                     });
                 } else if (editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
-                    this.uveStore.updateEditorState(EDITOR_STATE.DRAGGING);
+                    this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
                 }
 
                 this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
@@ -395,7 +393,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     event.clientX > iframeRect.left && event.clientX < iframeRect.right;
 
                 if (!isInsideIframe) {
-                    this.uveStore.updateEditorState(EDITOR_STATE.DRAGGING);
+                    this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
 
                     return;
                 }
@@ -417,12 +415,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 if (!direction) {
-                    this.uveStore.updateEditorState(EDITOR_STATE.DRAGGING);
+                    this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
 
                     return;
                 }
 
-                this.uveStore.setEditorScrollingState();
+                this.uveStore.updateEditorScrollDragState();
 
                 this.contentWindow?.postMessage(
                     { name: NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME, direction },
@@ -476,7 +474,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 // I need to do this to hide the dropzone but maintain the current dragItem
-                this.uveStore.updateEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // The user is dragging outside the window, we set this to know that user can potentially drop a file outside the window
+                this.uveStore.setEditorState(EDITOR_STATE.OUT_OF_BOUNDS); // The user is dragging outside the window, we set this to know that user can potentially drop a file outside the window
             });
     }
 
@@ -494,7 +492,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const editorState = this.uveStore.state();
 
         if (!!dragItem && editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
-            this.uveStore.updateEditorState(EDITOR_STATE.IDLE);
+            this.uveStore.setEditorState(EDITOR_STATE.IDLE);
         }
     }
 
@@ -504,13 +502,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {string} clientHost
      * @memberof EditEmaEditorComponent
      */
-    onIframePageLoad(editorMode: EDITOR_MODE = EDITOR_MODE.EDIT) {
-        // DELETE
-        // this.uveStore.updateEditorState(EDITOR_STATE.IDLE);
-
-        //The iframe is loaded after copy contentlet to inline editing.
-        // FIND ANOTHER WAY
-        if (editorMode === EDITOR_MODE.INLINE_EDITING) {
+    onIframePageLoad(editorState: EDITOR_STATE) {
+        if (editorState === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
     }
@@ -600,6 +593,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.destroy$.next(true);
         this.destroy$.complete();
         this.handleReloadContentEffect.destroy();
+        this.handleIsDraggingEffect.destroy();
     }
 
     /**
@@ -683,7 +677,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
-            this.uveStore.updateEditorState(EDITOR_STATE.IDLE); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
+            this.uveStore.setEditorState(EDITOR_STATE.IDLE); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
 
             this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
         } else if (dragItem.draggedPayload.type === 'temp') {
@@ -907,7 +901,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 if (isSameUrl) {
                     // MOVE THIS TO THE TOOLBAR
                     // this.personaSelector.fetchPersonas(); // We need to fetch the personas again because the page is loaded
-                    this.uveStore.updateEditorState(EDITOR_STATE.IDLE);
+                    this.uveStore.setEditorState(EDITOR_STATE.IDLE);
                 } else {
                     this.updateQueryParams({
                         url: payload.url,
@@ -938,6 +932,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // The iframe says that the editor is ready to start inline editing
                 // The dataset of the inline-editing contentlet is ready inside the service.
                 this.inlineEditingService.initEditor();
+                this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
             },
             [CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: () => {
                 // The iframe say the contentlet that try to be inline edited is in multiple pages
@@ -989,8 +984,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                         this.inlineEditingService.setTargetInlineMCEDataset(data);
 
-                        // This is not needed, I will workaround this
-                        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
+                        this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
 
                         if (!res) {
                             this.inlineEditingService.initEditor();
@@ -999,6 +993,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
                 const payload = <UpdatedContentlet>data.payload;
+
+                this.uveStore.setEditorState(EDITOR_STATE.IDLE);
 
                 this.store.saveFromInlineEditedContentlet({
                     contentlet: {
@@ -1062,7 +1058,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         // CHECK WHY WE DO THIS
         // I THINK WE DONT NEED THIS ANYMORE
-        this.uveStore.updateEditorState(EDITOR_STATE.IDLE);
+        this.uveStore.setEditorState(EDITOR_STATE.IDLE);
 
         this.dialog.resetDialog();
     }
@@ -1206,7 +1202,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private reloadURLContentMapPage(inodeOrIdentifier: string): void {
         // Set loading state to prevent the user to interact with the iframe
         // WE CAN SET IT TO LOADING, BUT NATURALLY AFTER THE RELOAD THE EDITOR WILL BE LOADED
-        this.uveStore.updateEditorState(EDITOR_STATE.LOADING);
+        this.uveStore.setEditorState(EDITOR_STATE.LOADING);
 
         this.dotContentletService
             .getContentletByInode(inodeOrIdentifier)
@@ -1273,7 +1269,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private handlerError(error: HttpErrorResponse) {
         // CHECK IF HAVE TO SET THE UVE TO ERROR
-        this.uveStore.updateEditorState(EDITOR_STATE.ERROR);
+        this.uveStore.setEditorState(EDITOR_STATE.ERROR);
 
         return this.dotHttpErrorManagerService.handle(error).pipe(map(() => null));
     }
@@ -1314,7 +1310,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         file: File;
         dragItem: EmaDragItem;
     }): void {
-        this.uveStore.updateEditorState(EDITOR_STATE.IDLE);
+        this.uveStore.setEditorState(EDITOR_STATE.IDLE);
 
         if (!/image.*/.exec(file.type)) {
             this.messageService.add({

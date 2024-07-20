@@ -27,7 +27,7 @@
         }"
         class="iframe-wrapper">
         <iframe
-            (load)="onIframePageLoad()"
+            (load)="onIframePageLoad(es.iframe.state)"
             [src]="es.iframe.src | safeUrl"
             [title]="host"
             [ngStyle]="{

@@ -30,34 +30,25 @@ export enum UVE_STATUS {
     ERROR = 'error'
 }
 
-// We had a problem with the reloads because we had all these states in one level, but loading and error are global states and not part of the editor state
-// idle, dragging, out-of-bounds, scroll-drag are status of the editor and are isolated from loading/loaded/error but they should respond to the UVE_STATUS
-// The editor should wait for the UVE to be loaded before altering its status
-// The current state of the editor
 export enum EDITOR_STATE {
     LOADING = 'loading', // Delete this one and use the UVE_STATUS
+    ERROR = 'error',
     IDLE = 'idle',
     DRAGGING = 'dragging',
-    ERROR = 'error', // Delete this one and use the UVE_STATUS
     OUT_OF_BOUNDS = 'out-of-bounds',
     SCROLL_DRAG = 'scroll-drag',
-    SCROLLING = 'scrolling'
+    SCROLLING = 'scrolling',
+    INLINE_EDITING = 'inline-editing'
 }
 
+// WHO?
 export enum EDITOR_MODE {
-    // I will merge this in just one
     EDIT = 'edit',
     EDIT_VARIANT = 'edit-variant',
-
-    // This could be part of edit
     INLINE_EDITING = 'inline-editing',
-
-    // This can be merge in just one too
     PREVIEW_VARIANT = 'preview-variant',
     DEVICE = 'device',
     SOCIAL_MEDIA = 'social-media',
-
-    // This and readonly could be just one
     LOCKED = 'locked'
 }
 

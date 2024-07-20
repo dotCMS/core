@@ -313,3 +313,40 @@ export function mapContainers(containers: DotPageContainerStructure): DotContain
         return acc;
     }, {});
 }
+
+/**
+ * Get the containers data
+ *
+ * @private
+ * @param {ContainerData} containers
+ * @memberof EditEmaStore
+ */
+export const getPageContainers = (containers: DotPageContainerStructure) => {
+    return Object.keys(containers).reduce(
+        (
+            acc: {
+                identifier: string;
+                uuid: string;
+                contentletsId: string[];
+            }[],
+            container
+        ) => {
+            const contentlets = containers[container].contentlets;
+
+            const contentletsKeys = Object.keys(contentlets);
+
+            contentletsKeys.forEach((key) => {
+                acc.push({
+                    identifier:
+                        containers[container].container.path ??
+                        containers[container].container.identifier,
+                    uuid: key.replace('uuid-', ''),
+                    contentletsId: contentlets[key].map((contentlet) => contentlet.identifier)
+                });
+            });
+
+            return acc;
+        },
+        []
+    );
+};

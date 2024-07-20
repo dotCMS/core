@@ -17,7 +17,12 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
-import { sanitizeURL, createPageApiUrlWithQueryParams } from '../../../utils';
+import {
+    sanitizeURL,
+    createPageApiUrlWithQueryParams,
+    getPageContainers,
+    getPersonalization
+} from '../../../utils';
 import { EditorState, UVEState } from '../../models';
 
 const initialState: EditorState = {
@@ -46,6 +51,20 @@ export function withEditor() {
         withEditorToolbar(),
         withComputed((store) => {
             return {
+                pageData: computed(() => {
+                    const pageAPIResponse = store.pageAPIResponse();
+
+                    const containers = getPageContainers(pageAPIResponse.containers);
+                    const personalization = getPersonalization(pageAPIResponse.viewAs?.persona);
+
+                    return {
+                        containers,
+                        personalization,
+                        id: pageAPIResponse.page.identifier,
+                        languageId: pageAPIResponse.viewAs.language.id,
+                        personaTag: pageAPIResponse.viewAs.persona?.keyTag
+                    };
+                }),
                 reloadEditorContent: computed(() => {
                     return {
                         code: store.pageAPIResponse()?.page.rendered,
@@ -100,6 +119,7 @@ export function withEditor() {
                             height: device ? `${device.cssHeight}${BASE_MEASURE}` : BASE_HEIGHT
                         },
                         iframe: {
+                            state,
                             src: !isLegacyPage ? `${params.clientHost}/${pageAPIQueryParams}` : '',
                             pointerEvents: dragIsActive ? 'none' : 'auto',
                             opacity: isLoading ? '0.5' : '1'
@@ -126,9 +146,6 @@ export function withEditor() {
         }),
         withMethods((store) => {
             return {
-                setEditorBounds(bounds: Container[]) {
-                    patchState(store, { bounds });
-                },
                 updateEditorScrollState() {
                     patchState(store, {
                         state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
@@ -139,17 +156,20 @@ export function withEditor() {
                         state: store.dragItem() ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
                     });
                 },
-                updateEditorState(state: EDITOR_STATE) {
-                    patchState(store, { state });
-                },
-                setEditorScrollingState() {
+                updateEditorScrollDragState() {
                     patchState(store, { state: EDITOR_STATE.SCROLL_DRAG, bounds: [] });
+                },
+                setEditorState(state: EDITOR_STATE) {
+                    patchState(store, { state });
                 },
                 setEditorDragItem(dragItem: EmaDragItem) {
                     patchState(store, { dragItem });
                 },
                 setEditorContentletArea(contentletArea: ContentletArea) {
                     patchState(store, { contentletArea, state: EDITOR_STATE.IDLE });
+                },
+                setEditorBounds(bounds: Container[]) {
+                    patchState(store, { bounds });
                 },
                 resetEditorDragProperties() {
                     patchState(store, {
