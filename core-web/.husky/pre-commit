@@ -6,6 +6,16 @@
 
 error_occurred=false
 
+# Function to check if sdk-client is affected
+check_sdk_client_affected() {
+    local affected=$(npx nx print-affected --select=projects)
+    if echo "$affected" | grep -q "sdk-client"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Perform fix operations on the staged files
 perform_fixes() {
     local -a files=($1)         # Convert string to array
@@ -17,26 +27,23 @@ perform_fixes() {
     fi
 
     if ! npx nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
-            error_occurred=true
+        error_occurred=true
     fi
 
+    if [ "$add_to_index" = "true" ]; then
+        # Get a list of modified files in the working tree (excluding untracked/new files)
+        local modified_files=$(git diff --name-only)
 
-
-   if [ "$add_to_index" = "true" ]; then
-       # Get a list of modified files in the working tree (excluding untracked/new files)
-       local modified_files=$(git diff --name-only)
-
-       # Loop through the list of files that were originally considered
-       for file in "${files[@]}"; do
-           if echo "$modified_files" | grep -Fxq "$file"; then
-               if ! git add -- "${root_dir}/${file}"; then
-                   error_occurred=true  # Record that an error occurred
-               fi
-           fi
-       done
-   fi
+        # Loop through the list of files that were originally considered
+        for file in "${files[@]}"; do
+            if echo "$modified_files" | grep -Fxq "$file"; then
+                if ! git add -- "${root_dir}/${file}"; then
+                    error_occurred=true  # Record that an error occurred
+                fi
+            fi
+        done
+    fi
 }
-
 
 # Backup current working directory
 original_pwd=${PWD}
@@ -50,14 +57,38 @@ core_web_dir="${root_dir}/core-web"
 # Moving to the core-web directory
 cd "${core_web_dir}" || exit  # Exit if the directory does not exist
 
+# Check if sdk-client is affected
+if check_sdk_client_affected; then
+    # Run sdk-client build command
+    if ! npx nx run sdk-client:build:js; then
+        echo "Failed to build sdk-client"
+        exit 1
+    fi
+
+    # Remove specific file
+    file_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/package.json"
+    if [ -f "$file_to_remove" ]; then
+        rm "$file_to_remove"
+        echo "Removed $file_to_remove"
+
+        # Stage the removal of the file
+        if ! git add "${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/sdk-editor.js"; then
+            echo "Failed to stage the removal of sdk-client.js"
+            exit 1
+        fi
+    else
+        echo "$file_to_remove does not exist"
+    fi
+
+    cd "${core_web_dir}" || exit  # Ensure we return to core-web directory
+fi
+
 # Find untracked files in core-web
 staged_files=$(git diff --cached --name-only)  # Get a list of staged files
 modified_files=$(git diff --name-only)  # Get a list of modified but unstaged files
 
 # Find common files which are both staged and modified but not staged
 untracked_files=$(printf "%s\n%s" "$staged_files" "$modified_files" | sort | uniq -d)
-
-
 
 # Only create a temporary directory if there are untracked files
 if [ -n "${untracked_files}" ]; then
@@ -85,7 +116,6 @@ done
 
 echo "Backed up workspace to ${temp_dir}"
 git status
-
 
 # Perform operations on staged files and capture the error count
 if [ -n "${staged_files}" ]; then
