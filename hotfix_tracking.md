@@ -268,3 +268,5 @@ This maintenance release includes the following code fixes:
 208. https://github.com/dotCMS/core/issues/28890 : LanguageUtil.getLanguageId is always hitting the db #28890
 209. https://github.com/dotCMS/core/issues/28204 : Search filter in the theme selection menu fails to load sites #28204
 210. https://github.com/dotCMS/core/issues/26421 : Block Editor: Add align-justify option to menu #26421
+
+**Release-23.01.20**
