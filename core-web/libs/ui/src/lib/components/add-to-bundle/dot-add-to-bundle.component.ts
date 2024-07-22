@@ -5,6 +5,7 @@ import {
     AfterViewInit,
     Component,
     EventEmitter,
+    inject,
     Input,
     OnDestroy,
     OnInit,
@@ -43,7 +44,7 @@ const LAST_BUNDLE_USED = 'lastSelectedBundle';
         AsyncPipe,
         DotFieldValidationMessageComponent
     ],
-    providers: [DotMessageService, AddToBundleService, DotCurrentUserService],
+    providers: [AddToBundleService, DotCurrentUserService],
     styleUrls: ['dot-add-to-bundle.component.scss']
 })
 export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -61,24 +62,21 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
 
     @ViewChild('addBundleDropdown', { static: true }) addBundleDropdown: Dropdown;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private addToBundleService: AddToBundleService,
-        public fb: UntypedFormBuilder,
-        private dotMessageService: DotMessageService,
-        public loggerService: LoggerService
-    ) {}
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #addToBundleService = inject(AddToBundleService);
+    readonly #fb = inject(UntypedFormBuilder);
+    readonly #loggerService = inject(LoggerService);
 
     ngOnInit() {
         this.initForm();
 
-        this.bundle$ = this.addToBundleService.getBundles().pipe(
+        this.bundle$ = this.#addToBundleService.getBundles().pipe(
             take(1),
             map((bundles: DotBundle[]) => {
                 setTimeout(() => {
                     this.placeholder = bundles.length
-                        ? this.dotMessageService.get('contenttypes.content.add_to_bundle.select')
-                        : this.dotMessageService.get('contenttypes.content.add_to_bundle.type');
+                        ? this.#dotMessageService.get('contenttypes.content.add_to_bundle.select')
+                        : this.#dotMessageService.get('contenttypes.content.add_to_bundle.type');
                 }, 0);
 
                 this.form
@@ -123,7 +121,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
      */
     submitBundle(_event): void {
         if (this.form.valid) {
-            this.addToBundleService
+            this.#addToBundleService
                 .addToBundle(this.assetIdentifier, this.setBundleData())
                 .pipe(takeUntil(this.destroy$))
                 .subscribe((result: DotAjaxActionResponseView) => {
@@ -135,7 +133,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
                         this.form.reset();
                         this.close();
                     } else {
-                        this.loggerService.debug(result.errorMessages);
+                        this.#loggerService.debug(result.errorMessages);
                     }
                 });
         }
@@ -150,7 +148,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     private initForm(): void {
-        this.form = this.fb.group({
+        this.form = this.#fb.group({
             addBundle: ['', [Validators.required]]
         });
     }
@@ -179,14 +177,14 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
                 action: () => {
                     this.submitForm();
                 },
-                label: this.dotMessageService.get('contenttypes.content.add_to_bundle.form.add'),
+                label: this.#dotMessageService.get('contenttypes.content.add_to_bundle.form.add'),
                 disabled: !form.valid
             },
             cancel: {
                 action: () => {
                     this.close();
                 },
-                label: this.dotMessageService.get('contenttypes.content.add_to_bundle.form.cancel')
+                label: this.#dotMessageService.get('contenttypes.content.add_to_bundle.form.cancel')
             }
         };
 

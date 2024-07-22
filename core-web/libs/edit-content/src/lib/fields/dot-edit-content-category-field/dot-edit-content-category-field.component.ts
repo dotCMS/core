@@ -4,6 +4,7 @@ import {
     Component,
     ComponentRef,
     DestroyRef,
+    effect,
     inject,
     input,
     OnInit,
@@ -14,15 +15,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlContainer, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
-import { ChipsModule } from 'primeng/chips';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { delay } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
+import { DotCategoryFieldChipsComponent } from './components/dot-category-field-chips/dot-category-field-chips.component';
 import { DotCategoryFieldSidebarComponent } from './components/dot-category-field-sidebar/dot-category-field-sidebar.component';
 import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.const';
 import { CategoriesService } from './services/categories.service';
@@ -40,14 +39,12 @@ import { CategoryFieldStore } from './store/content-category-field.store';
     selector: 'dot-edit-content-category-field',
     standalone: true,
     imports: [
-        ChipsModule,
         ReactiveFormsModule,
         ButtonModule,
-        ChipModule,
         NgClass,
-        TooltipModule,
         DotMessagePipe,
-        DotDynamicDirective
+        DotDynamicDirective,
+        DotCategoryFieldChipsComponent
     ],
     templateUrl: './dot-edit-content-category-field.component.html',
     styleUrl: './dot-edit-content-category-field.component.scss',
@@ -84,10 +81,20 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      */
     contentlet = input.required<DotCMSContentlet>();
 
-    readonly store = inject(CategoryFieldStore);
+    readonly store: InstanceType<typeof CategoryFieldStore> = inject(CategoryFieldStore);
     readonly #form = inject(ControlContainer).control as FormGroup;
     readonly #destroyRef = inject(DestroyRef);
     #componentRef: ComponentRef<DotCategoryFieldSidebarComponent>;
+
+    constructor() {
+        effect(() => {
+            const categoryValues = this.store.selectedCategoriesValues();
+
+            if (this.categoryFieldControl) {
+                this.categoryFieldControl.setValue(categoryValues);
+            }
+        });
+    }
 
     /**
      * Retrieve the category field control.
@@ -122,22 +129,20 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.store.load(this.field(), this.contentlet());
+        this.store.load({
+            field: this.field(),
+            contentlet: this.contentlet()
+        });
     }
 
     private setSidebarListener() {
         this.#componentRef.instance.closedSidebar
             .pipe(takeUntilDestroyed(this.#destroyRef), delay(CLOSE_SIDEBAR_CSS_DELAY_MS))
             .subscribe(() => {
-                this.updateCategoryFieldControl();
                 // enable the show sidebar button
                 this.disableSelectCategoriesButton.set(false);
                 this.removeDotCategoryFieldSidebarComponent();
             });
-    }
-
-    private updateCategoryFieldControl(): void {
-        this.categoryFieldControl.setValue(this.store.selectedCategoriesValues());
     }
 
     private removeDotCategoryFieldSidebarComponent() {

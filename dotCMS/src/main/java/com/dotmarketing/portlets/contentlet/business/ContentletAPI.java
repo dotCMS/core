@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
@@ -64,6 +65,18 @@ public interface ContentletAPI {
 			"M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
 			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
 	};
+
+	/**
+	 * Returns the {@link Contentlet} date formats
+	 * @return String array of formats
+	 */
+	default String [] getContentletDateFormats () {
+
+		final String[] dateFormats = Config.getStringArrayProperty("dotcontentlet_dateformats",
+				ContentletAPI.DEFAULT_DATE_FORMATS);
+
+		return dateFormats;
+	}
 
 	String dnsRegEx = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 

@@ -150,10 +150,12 @@ function getHostURL(url: string): URL | undefined {
  *
  */
 export class DotCmsClient {
-    private config: ClientConfig;
-    private requestOptions!: ClientOptions;
-    private listeners: DotcmsClientListener[] = [];
+    static instance: DotCmsClient;
+    #config: ClientConfig;
+    #requestOptions!: ClientOptions;
+    #listeners: DotcmsClientListener[] = [];
 
+    dotcmsUrl?: string;
     content: Content;
 
     constructor(
@@ -163,9 +165,9 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'dotcmsUrl' is required");
         }
 
-        const dotcmsHost = getHostURL(config.dotcmsUrl);
+        this.dotcmsUrl = getHostURL(config.dotcmsUrl)?.origin;
 
-        if (!dotcmsHost) {
+        if (!this.dotcmsUrl) {
             throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
         }
 
@@ -173,20 +175,20 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'authToken' is required");
         }
 
-        this.config = {
+        this.#config = {
             ...config,
-            dotcmsUrl: dotcmsHost.origin
+            dotcmsUrl: this.dotcmsUrl
         };
 
-        this.requestOptions = {
-            ...this.config.requestOptions,
+        this.#requestOptions = {
+            ...this.#config.requestOptions,
             headers: {
-                Authorization: `Bearer ${this.config.authToken}`,
-                ...this.config.requestOptions?.headers
+                Authorization: `Bearer ${this.#config.authToken}`,
+                ...this.#config.requestOptions?.headers
             }
         };
 
-        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
+        this.content = new Content(this.#requestOptions, this.#config.dotcmsUrl);
     }
 
     page = {
@@ -219,7 +221,7 @@ export class DotCmsClient {
                 }
             }
 
-            const queryHostId = options.siteId ?? this.config.siteId ?? '';
+            const queryHostId = options.siteId ?? this.#config.siteId ?? '';
 
             if (queryHostId) {
                 queryParamsObj['host_id'] = queryHostId;
@@ -228,11 +230,11 @@ export class DotCmsClient {
             const queryParams = new URLSearchParams(queryParamsObj).toString();
 
             const formattedPath = options.path.startsWith('/') ? options.path : `/${options.path}`;
-            const url = `${this.config.dotcmsUrl}/api/v1/page/json${formattedPath}${
+            const url = `${this.#config.dotcmsUrl}/api/v1/page/json${formattedPath}${
                 queryParams ? `?${queryParams}` : ''
             }`;
 
-            const response = await fetch(url, this.requestOptions);
+            const response = await fetch(url, this.#requestOptions);
             if (!response.ok) {
                 const error = {
                     status: response.status,
@@ -268,7 +270,7 @@ export class DotCmsClient {
                 };
 
                 window.addEventListener('message', messageCallback);
-                this.listeners.push({ event: 'message', callback: messageCallback, action });
+                this.#listeners.push({ event: 'message', callback: messageCallback, action });
             }
         },
         /**
@@ -278,13 +280,13 @@ export class DotCmsClient {
          * @param action
          */
         off: (action: string) => {
-            const listenerIndex = this.listeners.findIndex(
+            const listenerIndex = this.#listeners.findIndex(
                 (listener) => listener.action === action
             );
             if (listenerIndex !== -1) {
-                const listener = this.listeners[listenerIndex];
+                const listener = this.#listeners[listenerIndex];
                 window.removeEventListener(listener.event, listener.callback);
-                this.listeners.splice(listenerIndex, 1);
+                this.#listeners.splice(listenerIndex, 1);
             }
         }
     };
@@ -319,15 +321,29 @@ export class DotCmsClient {
 
             // Format the URL correctly depending on the 'path' value
             const formattedPath = path === '/' ? '/' : `/${path}`;
-            const url = `${this.config.dotcmsUrl}/api/v1/nav${formattedPath}${
+            const url = `${this.#config.dotcmsUrl}/api/v1/nav${formattedPath}${
                 queryParams ? `?${queryParams}` : ''
             }`;
 
-            const response = await fetch(url, this.requestOptions);
+            const response = await fetch(url, this.#requestOptions);
 
             return response.json();
         }
     };
+
+    static init(config: ClientConfig): DotCmsClient {
+        if (this.instance) {
+            console.warn(
+                'DotCmsClient has already been initialized. Please use the instance to interact with the DotCMS API.'
+            );
+        }
+
+        return this.instance ?? (this.instance = new DotCmsClient(config));
+    }
+
+    static get dotcmsUrl(): string {
+        return (this.instance && this.instance.#config.dotcmsUrl) || '';
+    }
 
     private validatePageOptions(options: PageApiOptions): void {
         if (!options.path) {
@@ -341,25 +357,3 @@ export class DotCmsClient {
         }
     }
 }
-
-/**
- * `dotcmsClient` is an object that provides a method to initialize the DotCMS SDK client.
- * It has a single method `init` which takes a configuration object and returns an instance of the `DotCmsClient` class.
- *
- * @namespace dotcmsClient
- *
- * @method init(config: ClientConfig): DotCmsClient - Initializes the SDK client.
- */
-export const dotcmsClient = {
-    /**
-     * `init` is a method of the `dotcmsClient` object that initializes the SDK client.
-     * It takes a configuration object as a parameter and returns an instance of the `DotCmsClient` class.
-     *
-     * @method init
-     * @param {ClientConfig} config - The configuration object for the DotCMS client.
-     * @returns {DotCmsClient} - An instance of the {@link DotCmsClient} class.
-     */
-    init: (config: ClientConfig): DotCmsClient => {
-        return new DotCmsClient(config);
-    }
-};

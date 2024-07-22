@@ -533,5 +533,6 @@ public interface MultiTreeAPI {
      * @param pageIds
      * @throws DotDataException
      */
-    void updateMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds) throws DotDataException;
+    void updateMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds, final String variantName)
+            throws DotDataException;
 }

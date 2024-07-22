@@ -178,13 +178,13 @@ export class InlineEditService {
                 ed.bodyElement.classList.remove('active');
             }
 
-            const content = ed.getContent();
+            const content = ed.getContent(); // TODO: We should set the format here based on the field type. Wysiwyg should be html and text should be text
             const element = ed.target;
             const data = {
-                dataset: { ...dataset },
-                innerHTML: content,
+                content,
                 element,
                 eventType,
+                dataset: { ...dataset },
                 isNotDirty: ed.isNotDirty
             };
 

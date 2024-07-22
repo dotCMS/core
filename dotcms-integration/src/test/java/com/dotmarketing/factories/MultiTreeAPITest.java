@@ -2960,7 +2960,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             .change(container.getIdentifier(), "3", "4")
             .build();
 
-        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()),
+                VariantAPI.DEFAULT_VARIANT.name());
 
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
@@ -3051,7 +3052,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             .change(container.getIdentifier(), "3", "2")
             .build();
 
-        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
 
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
@@ -3144,7 +3145,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             .change(container.getIdentifier(), "4", "3")
             .build();
 
-        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
 
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(4, multiTreesFromDB.size());
@@ -3338,7 +3339,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .sorted(String::compareTo)
                         .collect(Collectors.toList());
 
-        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds);
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds, VariantAPI.DEFAULT_VARIANT.name());
 
         final String getMultiTreeQuery = "SELECT parent1,parent2,child,relation_type FROM multi_tree WHERE parent1 in (?" +
                 new String(new char[pageIds.size() - 1]).replace("\0", ", ?") + ") order by parent1";
@@ -3449,7 +3450,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .collect(Collectors.toList());
 
         long start = System.currentTimeMillis();
-        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds);
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds, VariantAPI.DEFAULT_VARIANT.name());
         long end = System.currentTimeMillis();
 
         assertTrue((end - start) < 100);
@@ -3520,7 +3521,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             .change(container.getIdentifier(), "4", "3")
             .build();
 
-        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds);
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds, VariantAPI.DEFAULT_VARIANT.name());
 
         final String getMultiTreeQuery = "SELECT parent1,parent2,child,relation_type FROM multi_tree WHERE parent1 in (?" +
                 new String(new char[pageIds.size() - 1]).replace("\0", ", ?") + ") order by parent1";
@@ -3660,7 +3661,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             .change(container_1.getIdentifier(), "1", "2")
              .build();
 
-        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
 
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(5, multiTreesFromDB.size());
@@ -3773,7 +3774,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             .change(container_1.getIdentifier(), "2", "1")
             .build();
 
-        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
 
         final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
         assertEquals(4, multiTreesFromDB.size());
@@ -3893,7 +3894,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             .change(container_1.getIdentifier(), "2", "1")
             .build();
 
-        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds);
+        APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, pageIds, VariantAPI.DEFAULT_VARIANT.name());
 
 
         final String getMultiTreeQuery = "SELECT parent1,parent2,child,relation_type FROM multi_tree WHERE parent1 in (?" +
@@ -3991,7 +3992,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .change(container.getIdentifier(), "4", "3")
                 .build();
 
-            APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
+            APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
 
             final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
             assertEquals(5, multiTreesFromDB.size());
@@ -4103,7 +4104,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .change(container.getIdentifier(), "4", "3")
                 .build();
 
-            APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()));
+            APILocator.getMultiTreeAPI().updateMultiTrees(layoutChanges, list(page.getIdentifier()), VariantAPI.DEFAULT_VARIANT.name());
 
             final List<MultiTree> multiTreesFromDB = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
             assertEquals(6, multiTreesFromDB.size());

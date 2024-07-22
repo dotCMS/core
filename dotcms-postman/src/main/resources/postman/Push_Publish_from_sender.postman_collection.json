@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "7cc18377-59d6-4401-8c99-277a7d5c43cf",
+		"_postman_id": "59f90b7d-1369-4926-9ddf-c0030fecd3a9",
 		"name": "Push Publish from sender",
 		"description": "Verifies that the behavior of Push Publishing using both the old \"tokenless\" and the new token approach are working as expected.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -201,8 +201,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -383,13 +383,13 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"type": "text",
-										"value": "application/octet-stream"
+										"value": "application/octet-stream",
+										"type": "text"
 									},
 									{
 										"key": "Content-Disposition",
-										"type": "text",
-										"value": "attachment"
+										"value": "attachment",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -518,8 +518,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -560,7 +560,8 @@
 										"exec": [
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								},
 								{
@@ -571,9 +572,15 @@
 											"    pm.response.to.have.status(200);",
 											"});",
 											"",
-											"postman.setNextRequest(\"Deleting Bundle History\")"
+											"//postman.setNextRequest(\"Deleting Bundle History\")",
+											"pm.test(\"Giving the Push Publishing process some time to finish before checking its status\", function () {",
+											"    var timeout = pm.collectionVariables.get(\"statusCheckTimeout\");",
+											"    setTimeout(function() { console.log('Waiting has ended') }, timeout);",
+											"});",
+											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -597,8 +604,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -691,8 +698,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"url": {
@@ -896,8 +903,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -988,13 +995,13 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"type": "text",
-										"value": "application/octet-stream"
+										"value": "application/octet-stream",
+										"type": "text"
 									},
 									{
 										"key": "Content-Disposition",
-										"type": "text",
-										"value": "attachment"
+										"value": "attachment",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -1123,8 +1130,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -1200,8 +1207,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -1295,8 +1302,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"url": {
@@ -1621,8 +1628,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -1724,8 +1731,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -1823,13 +1830,13 @@
 								"header": [
 									{
 										"key": "Content-Type",
-										"type": "text",
-										"value": "application/octet-stream"
+										"value": "application/octet-stream",
+										"type": "text"
 									},
 									{
 										"key": "Content-Disposition",
-										"type": "text",
-										"value": "attachment"
+										"value": "attachment",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -1958,8 +1965,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -2035,8 +2042,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -2129,8 +2136,8 @@
 								"header": [
 									{
 										"key": "Origin",
-										"type": "text",
-										"value": "{{origin}}"
+										"value": "{{origin}}",
+										"type": "text"
 									}
 								],
 								"body": {
@@ -2325,116 +2332,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "origin",
-			"value": "http://localhost:8080"
-		},
-		{
-			"key": "environmentName",
-			"value": "environment-553"
-		},
-		{
-			"key": "endpointName",
-			"value": "endpoint-90"
-		},
-		{
-			"key": "environmentId",
-			"value": "8c65af5b-902f-4097-8538-f30b2b2c8fad"
-		},
-		{
-			"key": "receiverName",
-			"value": "receiverName-976"
-		},
-		{
-			"key": "bundleName",
-			"value": "bundleName-289"
-		},
-		{
-			"key": "bundleID",
-			"value": null
-		},
-		{
-			"key": "bundleId",
-			"value": "01FBJV0N46Q1KC0F1JMTQ3MWQ6"
-		},
-		{
-			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk5MGY5MzgwZS03MGE0LTRlYmMtOGQ1Yy1hYjY2ZTc2NjI2NjkiLCJ4bW9kIjoxNjAwODk1ODY1MDAwLCJuYmYiOjE2MDA4OTU4NjUsImlzcyI6Ijc1MzI4OGMwODYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU0NjcyMzAsImlhdCI6MTYwMDg5NTg2NSwianRpIjoiNmNjOTUxYzctMTIyNi00NzkxLTk4NzMtNDA1OTdjMWNhM2VmIn0.DNcI9_MIorM1HVWN3dERS5TAfjY72DfxQlhZ7s6lcik"
-		},
-		{
-			"key": "bundleSuccessExpected",
-			"value": "<tr>        <th>Title</th>        <td>                            <b><span>ea533f67-4883-42bb-9701-83293e7313e5</span></b> (contentlet)                                </td>    </tr>    <tr>        <th>Status:</th>        <td> Success</td>    </tr>"
-		},
-		{
-			"key": "bundleFailedExpected",
-			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
-		},
-		{
-			"key": "endpointInvalidToken",
-			"value": "<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t"
-		},
-		{
-			"key": "endpointSuccess",
-			"value": "Everything ok"
-		},
-		{
-			"key": "bundleFailed",
-			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
-		},
-		{
-			"key": "bundleSuccess",
-			"value": "<th>Status:</th>        <td> Success</td>    </tr>"
-		},
-		{
-			"key": "bundleWaitingPublish",
-			"value": "<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>"
-		},
-		{
-			"key": "checkBundleStatus",
-			"value": "(responseBody, casesToTest, requestToRepeat) => {\n    console.log(responseBody.trim().length, responseBody.trim().length === 0);\n    if (responseBody.trim().length === 0){\n        console.log('AGAIN 1');\n        postman.setNextRequest(requestToRepeat);\n    } else {\n\n        const $ = cheerio.load(responseBody);\n\n        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");\n        pendingStatus = pm.collectionVariables.get(\"pendingStatus\");\n        bundlingStatus = pm.collectionVariables.get(\"bundlingStatus\");\n        noResultFound = pm.collectionVariables.get(\"noResultFound\");\n        publishingBundle = pm.collectionVariables.get(\"publishingBundle\");\n        bundleReceived = pm.collectionVariables.get(\"bundleReceived\");\n\n        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");\n\n        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes(bundleReceived)) {\n            console.log('No bundle found with the given ID.');\n            postman.setNextRequest(\"check success status\");\n        } else {\n            casesToTest.forEach((caseToTest) => {\n                expectedInclude = pm.collectionVariables.get(caseToTest);\n                pm.expect(htmlWithoutSpace).to.contain(expectedInclude);\n            });\n\n        }\n    }\n}"
-		},
-		{
-			"key": "wait",
-			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
-		},
-		{
-			"key": "bundleReceived",
-			"value": "Bundle Received"
-		},
-		{
-			"key": "bundlingStatus",
-			"value": "th>Status:</th>        <td> Bundling</td"
-		},
-		{
-			"key": "noResultFound",
-			"value": "No results found"
-		},
-		{
-			"key": "pendingStatus",
-			"value": "th>Status:</th>        <td> Pending</td"
-		},
-		{
-			"key": "publishingBundle",
-			"value": "Publishing bundle"
-		},
-		{
-			"key": "bundleRetry",
-			"value": ""
-		},
-		{
-			"key": "bundlePublishingTimeout",
-			"value": ""
-		},
-		{
-			"key": "statusCheckTimeout",
-			"value": ""
-		},
-		{
-			"key": "sendingToAllEnvs",
-			"value": ""
 		}
 	]
 }

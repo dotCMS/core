@@ -1,6 +1,7 @@
 import {
   Component,
   DestroyRef,
+  InjectionToken,
   OnDestroy,
   OnInit,
   inject,
@@ -15,7 +16,7 @@ import { NavigationComponent } from './components/navigation/navigation.componen
 
 import { DYNAMIC_COMPONENTS } from '../utils';
 
-import { DotcmsLayoutComponent, PageContextService } from '@dotcms/angular';
+import { DotcmsLayoutComponent } from '@dotcms/angular';
 import { JsonPipe } from '@angular/common';
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 
