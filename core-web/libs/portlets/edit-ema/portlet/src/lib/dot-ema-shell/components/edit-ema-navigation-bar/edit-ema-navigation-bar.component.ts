@@ -18,6 +18,12 @@ import { NavigationBarItem } from '../../../shared/models';
 export class EditEmaNavigationBarComponent {
     @Input() items: NavigationBarItem[];
 
+    /**
+     * Emits the id of the clicked item
+     *
+     * @type {EventEmitter<string>}
+     * @memberof EditEmaNavigationBarComponent
+     */
     @Output() action: EventEmitter<string> = new EventEmitter();
 
     /**

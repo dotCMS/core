@@ -1,11 +1,11 @@
-@if (uveStore.$toolbarState(); as toolbarState) {
+@if (uveStore.$toolbarProps(); as toolbarProps) {
     <p-toolbar>
         <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
             <dot-device-selector-seo
                 (selected)="updateCurrentDevice($event)"
                 (changeSeoMedia)="onSeoMediaChange($event)"
-                [apiLink]="toolbarState.deviceSelector.apiLink"
-                [hideSocialMedia]="toolbarState.deviceSelector.hideSocialMedia"
+                [apiLink]="toolbarProps.deviceSelector.apiLink"
+                [hideSocialMedia]="toolbarProps.deviceSelector.hideSocialMedia"
                 #deviceSelector
                 appendTo="body"
                 data-testId="dot-device-selector" />
@@ -17,7 +17,7 @@
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-preview" />
 
-            @if (toolbarState.urlContentMap; as urlContentMap) {
+            @if (toolbarProps.urlContentMap; as urlContentMap) {
                 <p-button
                     (onClick)="editUrlContentMap.emit(urlContentMap)"
                     [label]="
@@ -28,17 +28,17 @@
                     data-testId="edit-url-content-map" />
             }
 
-            <dot-ema-bookmarks [url]="toolbarState.bookmarksUrl" />
+            <dot-ema-bookmarks [url]="toolbarProps.bookmarksUrl" />
             <p-button
                 (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                [cdkCopyToClipboard]="toolbarState.copyUrlButton.pureURL"
+                [cdkCopyToClipboard]="toolbarProps.copyUrlButton.pureURL"
                 [label]="'editpage.header.copy' | dm"
                 icon="pi pi-copy"
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-copy-url" />
             <a
-                [href]="toolbarState.apiLinkButton.apiURL"
-                [title]="toolbarState.apiLinkButton.apiURL"
+                [href]="toolbarProps.apiLinkButton.apiURL"
+                [title]="toolbarProps.apiLinkButton.apiURL"
                 class="p-button-sm p-button-text"
                 pButton
                 target="_blank"
@@ -47,7 +47,7 @@
                 label="API"></a>
         </div>
         <div class="p-toolbar-group-right" data-testId="toolbar-right-content">
-            @if (toolbarState.experimentBadge; as experimentBadge) {
+            @if (toolbarProps.experimentBadge; as experimentBadge) {
                 <dot-ema-running-experiment
                     [runningExperiment]="experimentBadge?.runningExperiment"
                     data-testId="ema-running-experiment" />
@@ -55,23 +55,23 @@
 
             <dot-edit-ema-language-selector
                 (selected)="onLanguageSelected($event)"
-                [language]="toolbarState.languageSelector.currentLanguage"
+                [language]="toolbarProps.languageSelector.currentLanguage"
                 data-testId="language-selector" />
 
             <dot-edit-ema-persona-selector
                 (selected)="onPersonaSelected($event)"
                 (despersonalize)="onDespersonalize($event)"
-                [pageId]="toolbarState.personaSelector.pageId"
-                [value]="toolbarState.personaSelector.value"
+                [pageId]="toolbarProps.personaSelector.pageId"
+                [value]="toolbarProps.personaSelector.value"
                 #personaSelector
                 data-testId="persona-selector" />
 
-            @if (toolbarState.workflowActions; as workflowActions) {
+            @if (toolbarProps.workflowActions; as workflowActions) {
                 <dot-edit-ema-workflow-actions
                     (newPage)="handleNewPage($event)"
                     [inode]="workflowActions.inode" />
             }
-            @if (toolbarState.unlockButton; as unlockButton) {
+            @if (toolbarProps.unlockButton; as unlockButton) {
                 <p-button
                     (click)="unlockPage(unlockButton.inode)"
                     [label]="'Unlock' | dm"
@@ -82,7 +82,7 @@
         </div>
     </p-toolbar>
 
-    @if (toolbarState.showInfoDisplay) {
+    @if (toolbarProps.showInfoDisplay) {
         <dot-ema-info-display data-testId="info-display" />
     }
 }

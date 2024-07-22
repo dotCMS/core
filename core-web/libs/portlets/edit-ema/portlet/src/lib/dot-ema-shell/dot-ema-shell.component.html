@@ -10,11 +10,17 @@
             [currentPageUrlParams]="shellProps.seoParams"
             #pageTools></dot-page-tools-seo>
     } @else {
-        <ng-container [ngSwitch]="shellProps.error">
-            <dot-info-page *ngSwitchCase="403" [info]="shellProps.uveErrorPageInfo.ACCESS_DENIED" />
-            <dot-info-page *ngSwitchCase="404" [info]="shellProps.uveErrorPageInfo.NOT_FOUND" />
-            <dot-not-license *ngSwitchCase="401" />
-        </ng-container>
+        @switch (shellProps.error) {
+            @case (403) {
+                <dot-info-page [info]="shellProps.uveErrorPageInfo.ACCESS_DENIED" />
+            }
+            @case (404) {
+                <dot-info-page [info]="shellProps.uveErrorPageInfo.NOT_FOUND" />
+            }
+            @case (401) {
+                <dot-not-license />
+            }
+        }
     }
 }
 

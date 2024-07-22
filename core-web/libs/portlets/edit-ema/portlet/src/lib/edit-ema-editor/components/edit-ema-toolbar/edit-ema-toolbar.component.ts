@@ -64,12 +64,12 @@ export class EditEmaToolbarComponent {
     @ViewChild('personaSelector')
     personaSelector!: EditEmaPersonaSelectorComponent;
 
-    private readonly messageService = inject(MessageService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly router = inject(Router);
-    private readonly dotContentletLockerService = inject(DotContentletLockerService);
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly personalizeService = inject(DotPersonalizeService);
+    readonly #messageService = inject(MessageService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #router = inject(Router);
+    readonly #dotContentletLockerService = inject(DotContentletLockerService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #personalizeService = inject(DotPersonalizeService);
 
     readonly uveStore = inject(UVEStore);
 
@@ -99,9 +99,9 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     triggerCopyToast() {
-        this.messageService.add({
+        this.#messageService.add({
             severity: 'success',
-            summary: this.dotMessageService.get('Copied'),
+            summary: this.#dotMessageService.get('Copied'),
             life: 3000
         });
     }
@@ -130,16 +130,16 @@ export class EditEmaToolbarComponent {
                 'com.dotmarketing.persona.id': persona.identifier
             });
         } else {
-            this.confirmationService.confirm({
-                header: this.dotMessageService.get('editpage.personalization.confirm.header'),
-                message: this.dotMessageService.get(
+            this.#confirmationService.confirm({
+                header: this.#dotMessageService.get('editpage.personalization.confirm.header'),
+                message: this.#dotMessageService.get(
                     'editpage.personalization.confirm.message',
                     persona.name
                 ),
-                acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
-                rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
+                rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
                 accept: () => {
-                    this.personalizeService
+                    this.#personalizeService
                         .personalized(persona.pageId, persona.keyTag)
                         .subscribe(() => {
                             this.updateQueryParams({
@@ -163,16 +163,16 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     onDespersonalize(persona: DotPersona & { pageId: string; selected: boolean }) {
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('editpage.personalization.delete.confirm.header'),
-            message: this.dotMessageService.get(
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get('editpage.personalization.delete.confirm.header'),
+            message: this.#dotMessageService.get(
                 'editpage.personalization.delete.confirm.message',
                 persona.name
             ),
-            acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
-            rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+            acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
+            rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
             accept: () => {
-                this.personalizeService
+                this.#personalizeService
                     .despersonalized(persona.pageId, persona.keyTag)
                     .subscribe(() => {
                         this.personaSelector.fetchPersonas();
@@ -214,16 +214,16 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     unlockPage(inode: string) {
-        this.messageService.add({
+        this.#messageService.add({
             severity: 'info',
             summary: 'Page Unlock',
             detail: 'Page is being unlocked'
         });
 
-        this.dotContentletLockerService.unlock(inode).pipe(
+        this.#dotContentletLockerService.unlock(inode).pipe(
             tapResponse({
                 next: () => {
-                    this.messageService.add({
+                    this.#messageService.add({
                         severity: 'success',
                         summary: 'Page Unlock',
                         detail: 'Page is unlocked'
@@ -232,7 +232,7 @@ export class EditEmaToolbarComponent {
                     this.uveStore.reload();
                 },
                 error: () => {
-                    this.messageService.add({
+                    this.#messageService.add({
                         severity: 'error',
                         summary: 'Page Unlock',
                         detail: 'Page could not be unlocked'
@@ -243,7 +243,7 @@ export class EditEmaToolbarComponent {
     }
 
     private updateQueryParams(params: Params) {
-        this.router.navigate([], {
+        this.#router.navigate([], {
             queryParams: params,
             queryParamsHandling: 'merge'
         });

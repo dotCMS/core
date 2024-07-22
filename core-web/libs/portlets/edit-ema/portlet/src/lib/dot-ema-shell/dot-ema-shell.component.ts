@@ -142,7 +142,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.#destroy$.next(true);
         this.#destroy$.complete();
-        this.translatePageEffect.destroy();
     }
 
     /**
