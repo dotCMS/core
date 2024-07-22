@@ -5,7 +5,6 @@ import { computed } from '@angular/core';
 import { withEditor } from './features/editor/withEditor';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
-import { withUveStatus } from './features/uve-status/withUveStatus';
 import { ShellState, UVEState } from './models';
 
 import { UVE_STATUS } from '../shared/enums';
@@ -121,7 +120,6 @@ export const UVEStore = signalStore(
         };
     }),
     withLoad(),
-    withUveStatus(),
     withEditor(),
     withLayout()
 );

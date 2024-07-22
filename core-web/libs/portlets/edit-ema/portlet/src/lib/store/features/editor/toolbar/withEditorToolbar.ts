@@ -12,6 +12,7 @@ import { computed } from '@angular/core';
 import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
+import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions } from '../../../../shared/models';
 import {
     createFavoritePagesURL,
@@ -85,7 +86,8 @@ export function withEditorToolbar() {
                     },
                     unlockButton: store.$pageIsLocked() &&
                         pageAPIResponse.page.canLock && {
-                            inode: pageAPIResponse.page.inode
+                            inode: pageAPIResponse.page.inode,
+                            loading: store.$status() === UVE_STATUS.LOADING
                         },
                     showInfoDisplay:
                         !store.$canEditPage() || store.$device() || store.$socialMedia()

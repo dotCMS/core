@@ -75,7 +75,7 @@
         <p-button
             (click)="unlockPage(unlockButton.inode)"
             [label]="'Unlock' | dm"
-            [loading]="uveStore.isLoading()"
+            [loading]="unlockButton.loading"
             styleClass="p-button-sm"
             data-testId="unlock-button"></p-button>
         }
