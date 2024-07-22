@@ -417,7 +417,7 @@ public class PageResource {
         description = "Takes a saved template and links it to an HTML page.\n\n" +
                     "Any pages with a template already linked will update with the new link.\n\n" +
                     "Otherwise a new template will be created without making any changes to previous templates.\n\n" +
-                    "Returns the updated page view for specified page.\n\n",
+                    "Returns the rendered page.\n\n",
         tags = {"Page"},
         responses = {
                 @ApiResponse(responseCode = "200", description = "Page template linked to HTML and saved successfully",
@@ -435,7 +435,7 @@ public class PageResource {
                 @QueryParam("variantName") final String variantNameParam,
                 @RequestBody(description = "POST body consists of a JSON object containing " + 
                                         "one property called 'PageForm', which contains a " +
-                                        "list of page scheme identification strings",
+                                        "template with a layout for the page",
                                 required = true,
                                 content = @Content(
                                         schema = @Schema(implementation = PageForm.class)
@@ -509,7 +509,19 @@ public class PageResource {
                         @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
                         @ApiResponse(responseCode = "404", description = "Page not found")
                 })
-    public Response saveLayout(@Context final HttpServletRequest request, @Context final HttpServletResponse response, final PageForm form) throws DotDataException {
+    public Response saveLayout(
+                @Context final HttpServletRequest request, 
+                @Context final HttpServletResponse response, 
+                @RequestBody(description = "POST body consists of a JSON object containing " + 
+                                        "one property called 'PageForm', which contains a " +
+                                        "template layout for the page",
+                                required = true,
+                                content = @Content(
+                                        schema = @Schema(implementation = PageForm.class)
+                                        )
+                                )
+                final PageForm form) 
+                throws DotDataException {
 
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
