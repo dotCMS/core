@@ -127,7 +127,7 @@ export function withLoad() {
                                                 const pageIsLocked =
                                                     pageAPIResponse?.page.locked &&
                                                     pageAPIResponse.page.lockedBy !==
-                                                        store.currentUser()?.userId;
+                                                        currentUser?.userId;
 
                                                 patchState(store, {
                                                     pageAPIResponse,
