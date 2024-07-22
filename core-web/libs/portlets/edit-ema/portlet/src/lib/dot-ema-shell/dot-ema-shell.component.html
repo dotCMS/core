@@ -1,20 +1,22 @@
-@if(uveStore.$shellState(); as shellState) { @if(shellState.canRead){
-<router-outlet (activate)="onActivateRoute($event)"></router-outlet>
-<dot-edit-ema-navigation-bar
-    [items]="shellState.items"
-    (action)="handleItemAction($event)"
-    data-testId="ema-nav-bar"></dot-edit-ema-navigation-bar>
-<p-toast position="top-center" data-testId="ema-toast"></p-toast>
-<dot-page-tools-seo [currentPageUrlParams]="shellState.seoParams" #pageTools></dot-page-tools-seo>
-
-}@else {
-
-<ng-container [ngSwitch]="shellState.error">
-    <dot-info-page *ngSwitchCase="403" [info]="shellState.uveErrorPageInfo.ACCESS_DENIED" />
-    <dot-info-page *ngSwitchCase="404" [info]="shellState.uveErrorPageInfo.NOT_FOUND" />
-    <dot-not-license *ngSwitchCase="401" />
-</ng-container>
-} }
+@if (uveStore.$shellProps(); as shellProps) {
+    @if (shellProps.canRead) {
+        <router-outlet (activate)="onActivateRoute($event)"></router-outlet>
+        <dot-edit-ema-navigation-bar
+            [items]="shellProps.items"
+            (action)="handleItemAction($event)"
+            data-testId="ema-nav-bar"></dot-edit-ema-navigation-bar>
+        <p-toast position="top-center" data-testId="ema-toast"></p-toast>
+        <dot-page-tools-seo
+            [currentPageUrlParams]="shellProps.seoParams"
+            #pageTools></dot-page-tools-seo>
+    } @else {
+        <ng-container [ngSwitch]="shellProps.error">
+            <dot-info-page *ngSwitchCase="403" [info]="shellProps.uveErrorPageInfo.ACCESS_DENIED" />
+            <dot-info-page *ngSwitchCase="404" [info]="shellProps.uveErrorPageInfo.NOT_FOUND" />
+            <dot-not-license *ngSwitchCase="401" />
+        </ng-container>
+    }
+}
 
 <dot-edit-ema-dialog
     (action)="handleNgEvent($event)"

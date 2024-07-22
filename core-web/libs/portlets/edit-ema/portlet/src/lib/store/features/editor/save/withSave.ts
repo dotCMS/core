@@ -13,7 +13,7 @@ import { PageContainer } from '../../../../shared/models';
 import { UVEState } from '../../../models';
 
 /**
- * Add computed properties to the store to handle the UVE status
+ * Add methods to save the page
  *
  * @export
  * @return {*}

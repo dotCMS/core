@@ -1,88 +1,88 @@
-@if(uveStore.$toolbarState(); as toolbarState) {
-<p-toolbar>
-    <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
-        <dot-device-selector-seo
-            (selected)="updateCurrentDevice($event)"
-            (changeSeoMedia)="onSeoMediaChange($event)"
-            [apiLink]="toolbarState.deviceSelector.apiLink"
-            [hideSocialMedia]="toolbarState.deviceSelector.hideSocialMedia"
-            #deviceSelector
-            appendTo="body"
-            data-testId="dot-device-selector" />
+@if (uveStore.$toolbarState(); as toolbarState) {
+    <p-toolbar>
+        <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
+            <dot-device-selector-seo
+                (selected)="updateCurrentDevice($event)"
+                (changeSeoMedia)="onSeoMediaChange($event)"
+                [apiLink]="toolbarState.deviceSelector.apiLink"
+                [hideSocialMedia]="toolbarState.deviceSelector.hideSocialMedia"
+                #deviceSelector
+                appendTo="body"
+                data-testId="dot-device-selector" />
 
-        <p-button
-            (onClick)="deviceSelector.openMenu($event)"
-            [label]="'editpage.toolbar.preview.page' | dm"
-            icon="pi pi-desktop"
-            styleClass="p-button-text p-button-sm"
-            data-testId="ema-preview" />
+            <p-button
+                (onClick)="deviceSelector.openMenu($event)"
+                [label]="'editpage.toolbar.preview.page' | dm"
+                icon="pi pi-desktop"
+                styleClass="p-button-text p-button-sm"
+                data-testId="ema-preview" />
 
-        @if ( toolbarState.urlContentMap; as urlContentMap ){
-        <p-button
-            (onClick)="editUrlContentMap.emit(urlContentMap)"
-            [label]="'editpage.toolbar.edit.url.map.content' | dm : [urlContentMap.contentType]"
-            icon="pi pi-pencil"
-            styleClass="p-button-text p-button-sm"
-            data-testId="edit-url-content-map" />
-        }
+            @if (toolbarState.urlContentMap; as urlContentMap) {
+                <p-button
+                    (onClick)="editUrlContentMap.emit(urlContentMap)"
+                    [label]="
+                        'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
+                    "
+                    icon="pi pi-pencil"
+                    styleClass="p-button-text p-button-sm"
+                    data-testId="edit-url-content-map" />
+            }
 
-        <dot-ema-bookmarks [url]="toolbarState.bookmarksUrl" />
-        <p-button
-            (cdkCopyToClipboardCopied)="triggerCopyToast()"
-            [cdkCopyToClipboard]="toolbarState.copyUrlButton.pureURL"
-            [label]="'editpage.header.copy' | dm"
-            icon="pi pi-copy"
-            styleClass="p-button-text p-button-sm"
-            data-testId="ema-copy-url" />
-        <a
-            [href]="toolbarState.apiLinkButton.apiURL"
-            [title]="toolbarState.apiLinkButton.apiURL"
-            class="p-button-sm p-button-text"
-            pButton
-            target="_blank"
-            data-testId="ema-api-link"
-            icon="pi pi-link"
-            label="API"></a>
-    </div>
-    <div class="p-toolbar-group-right" data-testId="toolbar-right-content">
-        @if(toolbarState.experimentBadge; as experimentBadge) {
+            <dot-ema-bookmarks [url]="toolbarState.bookmarksUrl" />
+            <p-button
+                (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                [cdkCopyToClipboard]="toolbarState.copyUrlButton.pureURL"
+                [label]="'editpage.header.copy' | dm"
+                icon="pi pi-copy"
+                styleClass="p-button-text p-button-sm"
+                data-testId="ema-copy-url" />
+            <a
+                [href]="toolbarState.apiLinkButton.apiURL"
+                [title]="toolbarState.apiLinkButton.apiURL"
+                class="p-button-sm p-button-text"
+                pButton
+                target="_blank"
+                data-testId="ema-api-link"
+                icon="pi pi-link"
+                label="API"></a>
+        </div>
+        <div class="p-toolbar-group-right" data-testId="toolbar-right-content">
+            @if (toolbarState.experimentBadge; as experimentBadge) {
+                <dot-ema-running-experiment
+                    [runningExperiment]="experimentBadge?.runningExperiment"
+                    data-testId="ema-running-experiment" />
+            }
 
-        <dot-ema-running-experiment
-            [runningExperiment]="experimentBadge?.runningExperiment"
-            data-testId="ema-running-experiment" />
-        }
+            <dot-edit-ema-language-selector
+                (selected)="onLanguageSelected($event)"
+                [language]="toolbarState.languageSelector.currentLanguage"
+                data-testId="language-selector" />
 
-        <dot-edit-ema-language-selector
-            (selected)="onLanguageSelected($event)"
-            [language]="toolbarState.languageSelector.currentLanguage"
-            data-testId="language-selector" />
+            <dot-edit-ema-persona-selector
+                (selected)="onPersonaSelected($event)"
+                (despersonalize)="onDespersonalize($event)"
+                [pageId]="toolbarState.personaSelector.pageId"
+                [value]="toolbarState.personaSelector.value"
+                #personaSelector
+                data-testId="persona-selector" />
 
-        <dot-edit-ema-persona-selector
-            (selected)="onPersonaSelected($event)"
-            (despersonalize)="onDespersonalize($event)"
-            [pageId]="toolbarState.personaSelector.pageId"
-            [value]="toolbarState.personaSelector.value"
-            #personaSelector
-            data-testId="persona-selector" />
+            @if (toolbarState.workflowActions; as workflowActions) {
+                <dot-edit-ema-workflow-actions
+                    (newPage)="handleNewPage($event)"
+                    [inode]="workflowActions.inode" />
+            }
+            @if (toolbarState.unlockButton; as unlockButton) {
+                <p-button
+                    (click)="unlockPage(unlockButton.inode)"
+                    [label]="'Unlock' | dm"
+                    [loading]="unlockButton.loading"
+                    styleClass="p-button-sm"
+                    data-testId="unlock-button"></p-button>
+            }
+        </div>
+    </p-toolbar>
 
-        @if(toolbarState.workflowActions; as workflowActions) {
-
-        <dot-edit-ema-workflow-actions
-            (newPage)="handleNewPage($event)"
-            [inode]="workflowActions.inode" />
-
-        } @if (toolbarState.unlockButton; as unlockButton) {
-        <p-button
-            (click)="unlockPage(unlockButton.inode)"
-            [label]="'Unlock' | dm"
-            [loading]="unlockButton.loading"
-            styleClass="p-button-sm"
-            data-testId="unlock-button"></p-button>
-        }
-    </div>
-</p-toolbar>
-
-@if(toolbarState.showInfoDisplay) {
-
-<dot-ema-info-display data-testId="info-display" />
-} }
+    @if (toolbarState.showInfoDisplay) {
+        <dot-ema-info-display data-testId="info-display" />
+    }
+}

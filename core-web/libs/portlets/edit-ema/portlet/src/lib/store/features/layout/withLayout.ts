@@ -4,11 +4,13 @@ import { computed } from '@angular/core';
 
 import { DotLayout } from '@dotcms/dotcms-models';
 
+import { LayoutProps } from './models';
+
 import { mapContainers } from '../../../utils';
 import { UVEState } from '../../models';
 
 /**
- * Add computed properties to the store to handle the UVE status
+ * Add computed properties to the store to handle the Layout UI
  *
  * @export
  * @return {*}
@@ -19,7 +21,7 @@ export function withLayout() {
             state: type<UVEState>()
         },
         withComputed((store) => ({
-            $layoutProps: computed(() => {
+            $layoutProps: computed<LayoutProps>(() => {
                 const pageAPIResponse = store.$pageAPIResponse();
 
                 return {

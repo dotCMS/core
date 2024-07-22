@@ -1,11 +1,11 @@
-import { signalStore, withComputed, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
 import { withEditor } from './features/editor/withEditor';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
-import { ShellState, UVEState } from './models';
+import { ShellProps, UVEState } from './models';
 
 import { UVE_STATUS } from '../shared/enums';
 import { sanitizeURL } from '../utils';
@@ -28,7 +28,7 @@ export const UVEStore = signalStore(
     withState<UVEState>(initialState),
     withComputed((store) => {
         return {
-            $shellState: computed<ShellState>(() => {
+            $shellProps: computed<ShellProps>(() => {
                 const pageAPIResponse = store.$pageAPIResponse();
 
                 const currentUrl = '/' + sanitizeURL(pageAPIResponse?.page.pageURI);
@@ -117,6 +117,15 @@ export const UVEStore = signalStore(
                     ]
                 };
             })
+        };
+    }),
+    withMethods((store) => {
+        return {
+            setUveStatus(status: UVE_STATUS) {
+                patchState(store, {
+                    $status: status
+                });
+            }
         };
     }),
     withLoad(),

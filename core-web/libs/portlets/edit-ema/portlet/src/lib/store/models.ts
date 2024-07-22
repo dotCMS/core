@@ -2,13 +2,8 @@ import { CurrentUser } from '@dotcms/dotcms-js';
 import { DotExperiment, DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
-import {
-    Container,
-    ContentletArea,
-    EmaDragItem
-} from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
-import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
+import { UVE_STATUS } from '../shared/enums';
 import { DotDeviceWithIcon, DotPage, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
@@ -31,14 +26,7 @@ export interface EditorToolbarState {
     $isEditState: boolean;
 }
 
-export interface EditorState {
-    $bounds: Container[];
-    $state: EDITOR_STATE;
-    $contentletArea?: ContentletArea;
-    $dragItem?: EmaDragItem;
-}
-
-export interface ShellState {
+export interface ShellProps {
     canRead: boolean;
     error: number;
     items: NavigationBarItem[];

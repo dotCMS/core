@@ -22,6 +22,7 @@ import {
     sanitizeURL
 } from '../../../../utils';
 import { EditorToolbarState, UVEState } from '../../../models';
+import { ToolbarProps } from '../models';
 
 const initialState: EditorToolbarState = {
     $device: null,
@@ -30,7 +31,7 @@ const initialState: EditorToolbarState = {
 };
 
 /**
- * Add computed properties to the store to handle the UVE status
+ * Add computed properties and methods to the store to handle the Editor Toolbar UI
  *
  * @export
  * @return {*}
@@ -42,7 +43,7 @@ export function withEditorToolbar() {
         },
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
-            $toolbarState: computed(() => {
+            $toolbarProps: computed<ToolbarProps>(() => {
                 const params = store.$params();
                 const url = sanitizeURL(params.url);
 
@@ -59,7 +60,7 @@ export function withEditorToolbar() {
                         apiLink: `${params.clientHost ?? window.location.origin}${pageAPI}`,
                         hideSocialMedia: !store.$isTraditionalPage()
                     },
-                    urlContentMap: store.$isEditState() && pageAPIResponse.urlContentMap,
+                    urlContentMap: store.$isEditState() ? pageAPIResponse.urlContentMap : null,
                     bookmarksUrl: createFavoritePagesURL({
                         languageId: Number(params.language_id),
                         pageURI: url,
@@ -71,9 +72,12 @@ export function withEditorToolbar() {
                     apiLinkButton: {
                         apiURL: `${params.clientHost ?? window.location.origin}${pageAPI}`
                     },
-                    experimentBadge: experiment?.status === DotExperimentStatus.RUNNING && {
-                        runningExperiment: experiment
-                    },
+                    experimentBadge:
+                        experiment?.status === DotExperimentStatus.RUNNING
+                            ? {
+                                  runningExperiment: experiment
+                              }
+                            : null,
                     languageSelector: {
                         currentLanguage: pageAPIResponse.viewAs.language
                     },
@@ -81,16 +85,20 @@ export function withEditorToolbar() {
                         pageId: pageAPIResponse.page.identifier,
                         value: pageAPIResponse.viewAs.persona ?? DEFAULT_PERSONA
                     },
-                    workflowActions: store.$canEditPage() && {
-                        inode: pageAPIResponse.page.inode
-                    },
-                    unlockButton: store.$pageIsLocked() &&
-                        pageAPIResponse.page.canLock && {
-                            inode: pageAPIResponse.page.inode,
-                            loading: store.$status() === UVE_STATUS.LOADING
-                        },
+                    workflowActions: store.$canEditPage()
+                        ? {
+                              inode: pageAPIResponse.page.inode
+                          }
+                        : null,
+                    unlockButton:
+                        store.$pageIsLocked() && pageAPIResponse.page.canLock
+                            ? {
+                                  inode: pageAPIResponse.page.inode,
+                                  loading: store.$status() === UVE_STATUS.LOADING
+                              }
+                            : null,
                     showInfoDisplay:
-                        !store.$canEditPage() || store.$device() || store.$socialMedia()
+                        !store.$canEditPage() || !!store.$device() || !!store.$socialMedia()
                 };
             }),
             $infoDisplayOptions: computed<InfoOptions>(() => {
@@ -167,7 +175,7 @@ export function withEditorToolbar() {
                     };
                 }
 
-                return undefined;
+                return null;
             })
         })),
         withMethods((store) => {
@@ -175,14 +183,14 @@ export function withEditorToolbar() {
                 setDevice: (device: DotDevice) => {
                     patchState(store, {
                         $device: device,
-                        $socialMedia: undefined,
+                        $socialMedia: null,
                         $isEditState: false
                     });
                 },
                 setSocialMedia: (socialMedia: string) => {
                     patchState(store, {
                         $socialMedia: socialMedia,
-                        $device: undefined,
+                        $device: null,
                         $isEditState: false
                     });
                 },

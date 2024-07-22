@@ -11,6 +11,13 @@ import { computed } from '@angular/core';
 
 import { DotTreeNode } from '@dotcms/dotcms-models';
 
+import {
+    EditorProps,
+    EditorState,
+    PageData,
+    PageDataContainer,
+    ReloadEditorContent
+} from './models';
 import { withSave } from './save/withSave';
 import { withEditorToolbar } from './toolbar/withEditorToolbar';
 
@@ -33,8 +40,7 @@ import {
     getPersonalization,
     areContainersEquals
 } from '../../../utils';
-import { EditorState, UVEState } from '../../models';
-
+import { UVEState } from '../../models';
 const initialState: EditorState = {
     $bounds: [],
     $state: EDITOR_STATE.IDLE,
@@ -47,7 +53,7 @@ const BASE_WIDTH = '100%';
 const BASE_HEIGHT = '100%';
 
 /**
- * Add computed properties to the store to handle the UVE status
+ * Add computed and methods to handle the Editor UI
  *
  * @export
  * @return {*}
@@ -61,10 +67,12 @@ export function withEditor() {
         withEditorToolbar(),
         withComputed((store) => {
             return {
-                $pageData: computed(() => {
+                $pageData: computed<PageData>(() => {
                     const pageAPIResponse = store.$pageAPIResponse();
 
-                    const containers = mapContainerStructureToArray(pageAPIResponse.containers);
+                    const containers: PageDataContainer[] = mapContainerStructureToArray(
+                        pageAPIResponse.containers
+                    );
                     const personalization = getPersonalization(pageAPIResponse.viewAs?.persona);
 
                     return {
@@ -75,7 +83,7 @@ export function withEditor() {
                         personaTag: pageAPIResponse.viewAs.persona?.keyTag
                     };
                 }),
-                $reloadEditorContent: computed(() => {
+                $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
                         code: store.$pageAPIResponse()?.page.rendered,
                         isTraditionalPage: store.$isTraditionalPage(),
@@ -83,8 +91,10 @@ export function withEditor() {
                         isEnterprise: store.$isEnterprise()
                     };
                 }),
-                $editorIsInDraggingState: computed(() => store.$state() === EDITOR_STATE.DRAGGING),
-                $editorState: computed(() => {
+                $editorIsInDraggingState: computed<boolean>(
+                    () => store.$state() === EDITOR_STATE.DRAGGING
+                ),
+                $editorProps: computed<EditorProps>(() => {
                     const pageAPIResponse = store.$pageAPIResponse();
                     const socialMedia = store.$socialMedia();
                     const device = store.$device();
@@ -115,9 +125,11 @@ export function withEditor() {
                     const showDialogs = canEditPage && isEditState;
 
                     return {
-                        seoTools: socialMedia && {
-                            socialMedia
-                        },
+                        seoTools: socialMedia
+                            ? {
+                                  socialMedia
+                              }
+                            : null,
                         showEditorContent: !socialMedia,
                         iframe: {
                             wrapper: {
@@ -134,20 +146,26 @@ export function withEditor() {
                         },
 
                         progressBar: isLoading,
-                        contentletTools: showContentletTools && {
-                            contentletArea,
-                            hide: dragIsActive,
-                            isEnterprise
-                        },
-                        dropzone: showDropzone && {
-                            bounds,
-                            dragItem
-                        },
-                        palette: showPalette && {
-                            languageId: pageAPIResponse.viewAs.language.id,
-                            containers: pageAPIResponse.containers,
-                            variantId: params.variantName
-                        },
+                        contentletTools: showContentletTools
+                            ? {
+                                  contentletArea,
+                                  hide: dragIsActive,
+                                  isEnterprise
+                              }
+                            : null,
+                        dropzone: showDropzone
+                            ? {
+                                  bounds,
+                                  dragItem
+                              }
+                            : null,
+                        palette: showPalette
+                            ? {
+                                  languageId: pageAPIResponse.viewAs.language.id,
+                                  containers: pageAPIResponse.containers,
+                                  variantId: params.variantName
+                              }
+                            : null,
                         dialogs: showDialogs
                     };
                 })
