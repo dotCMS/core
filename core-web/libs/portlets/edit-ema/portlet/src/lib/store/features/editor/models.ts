@@ -30,7 +30,7 @@ export interface PageData {
     containers: PageDataContainer[];
     personalization: string;
     id: string;
-    languageId: string | number;
+    languageId: number;
     personaTag: string;
 }
 
@@ -68,7 +68,7 @@ export interface EditorProps {
         dragItem: EmaDragItem;
     };
     palette?: {
-        languageId: string | number;
+        languageId: number;
         containers: DotPageContainerStructure;
         variantId: string;
     };
