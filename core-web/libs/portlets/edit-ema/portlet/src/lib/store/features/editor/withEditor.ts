@@ -192,6 +192,17 @@ export function withEditor() {
                     patchState(store, { $dragItem: dragItem });
                 },
                 setEditorContentletArea(contentletArea: ContentletArea) {
+                    const currentContentletArea = store.$contentletArea();
+
+                    if (
+                        currentContentletArea?.x === contentletArea.x &&
+                        currentContentletArea?.y === contentletArea.y
+                    ) {
+                        // Prevent updating the state if the contentlet area is the same
+
+                        return;
+                    }
+
                     patchState(store, {
                         $contentletArea: contentletArea,
                         $state: EDITOR_STATE.IDLE

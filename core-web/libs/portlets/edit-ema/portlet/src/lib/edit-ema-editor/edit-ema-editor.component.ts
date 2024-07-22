@@ -222,10 +222,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             (e.target as HTMLAnchorElement)?.href ||
             (e.target as HTMLElement)?.closest('a')?.getAttribute('href');
 
-        if (href) {
-            e.preventDefault();
+        e.preventDefault();
 
+        if (href) {
             let url: URL;
+
+            const dataset = (e.target as HTMLElement).dataset;
+
+            if (dataset['mode'] && dataset['fieldName'] && dataset['inode']) {
+                // We clicked on the inline editing element, we need to prevent navigation
+                return;
+            }
 
             try {
                 url = new URL(href);
@@ -897,6 +904,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             return this.handleCopyContent(currentTreeNode);
                         }),
                         tap((res) => {
+                            this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
+
                             if (res) {
                                 this.uveStore.reload();
                             }
@@ -923,8 +932,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         }
 
                         this.inlineEditingService.setTargetInlineMCEDataset(data);
-
-                        this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
 
                         if (!res) {
                             this.inlineEditingService.initEditor();
