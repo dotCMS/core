@@ -60,6 +60,8 @@ public class ContentTypePushHandler implements PushHandler<ContentType> {
     public ContentType add(File localFile, ContentType localContentType,
             Map<String, Object> customOptions) {
 
+        ContentTypeValidator.validate(localContentType);
+
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 
         final SaveContentTypeRequest saveRequest = new Builder().of(localContentType).build();
@@ -75,6 +77,8 @@ public class ContentTypePushHandler implements PushHandler<ContentType> {
     public ContentType edit(File localFile, ContentType localContentType,
             ContentType serverContentType,
             Map<String, Object> customOptions) {
+
+        ContentTypeValidator.validate(localContentType);
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 
