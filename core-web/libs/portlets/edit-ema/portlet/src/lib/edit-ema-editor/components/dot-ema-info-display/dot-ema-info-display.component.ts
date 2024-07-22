@@ -20,6 +20,13 @@ export class DotEmaInfoDisplayComponent {
     protected readonly uveStore = inject(UVEStore);
     protected readonly router = inject(Router);
 
+    /**
+     * Handle the action based on the options
+     *
+     * @protected
+     * @param {InfoOptions} options
+     * @memberof DotEmaInfoDisplayComponent
+     */
     protected handleAction(options: InfoOptions) {
         if (options.id === 'device' || options.id === 'socialMedia') {
             this.uveStore.clearDeviceAndSocialMedia();
