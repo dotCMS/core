@@ -7,6 +7,7 @@ import { fakeAsync } from '@angular/core/testing';
 import { ControlContainer, FormControl, FormGroup } from '@angular/forms';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotCategoryFieldSidebarComponent } from './components/dot-category-field-sidebar/dot-category-field-sidebar.component';
 import { DotEditContentCategoryFieldComponent } from './dot-edit-content-category-field.component';
@@ -89,7 +90,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
             it('should not display the category list with chips when there are no categories', () => {
                 spectator = createComponent({
                     props: {
-                        contentlet: [],
+                        contentlet: [] as unknown as DotCMSContentlet,
                         field: CATEGORY_FIELD_MOCK
                     },
                     providers: [
