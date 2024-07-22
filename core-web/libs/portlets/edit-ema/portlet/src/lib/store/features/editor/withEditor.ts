@@ -159,6 +159,8 @@ export function withEditor() {
                     // We dont want to change the state if the editor is out of bounds
                     // The scroll event is triggered after the user leaves the window
                     // And that is changing the state in an unnatural way
+
+                    // The only way to get out of OUT_OF_BOUNDS is through the mouse over in the editor
                     if (store.$state() === EDITOR_STATE.OUT_OF_BOUNDS) {
                         return;
                     }
@@ -174,6 +176,7 @@ export function withEditor() {
                     // The scroll end event is triggered after the user leaves the window
                     // And that is changing the state in an unnatural way
 
+                    // The only way to get out of OUT_OF_BOUNDS is through the mouse over in the editor
                     if (store.$state() === EDITOR_STATE.OUT_OF_BOUNDS) {
                         return;
                     }
@@ -199,6 +202,10 @@ export function withEditor() {
                         currentContentletArea?.y === contentletArea.y
                     ) {
                         // Prevent updating the state if the contentlet area is the same
+                        // This is because in inline editing, when we select to not copy the content and edit global
+                        // The contentlet area is updated on focus with the same values and IDLE
+                        // Losing the INLINE_EDITING state and making the user to open the dialog for checking whether to copy the content or not
+                        // Which is an awful UX
 
                         return;
                     }
@@ -240,7 +247,7 @@ export function withEditor() {
                         pageContainers: containers,
                         personaTag,
                         container
-                    } as ActionPayload;
+                    };
                 },
                 getCurrentTreeNode(
                     container: ContainerPayload,
