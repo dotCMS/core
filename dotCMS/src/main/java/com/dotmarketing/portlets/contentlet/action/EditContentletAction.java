@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.*;
@@ -68,6 +69,7 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.ResourceLink;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.contentlet.struts.EventAwareContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -2032,6 +2034,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 									text = id.getPath();
 								}
 
+							} else if (field instanceof BinaryField){
+								final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+								final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, user, content, field.variable()).toString();
+								text = fileLink;
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if (field instanceof DateField) {
