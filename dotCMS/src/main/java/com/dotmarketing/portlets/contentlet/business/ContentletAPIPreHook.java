@@ -21,7 +21,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -325,6 +324,46 @@ public interface ContentletAPIPreHook {
 								   final ContentType contentType, final Host site,
 								   final Folder folder, final User user, final String copySuffix,
 								   final boolean respectFrontendRoles) {
+		return true;
+	}
+
+	/**
+	 * Searches for content using the given Lucene query, and the returned result includes
+	 * pagination information.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param contentsPerPage      The maximum number of items to return per page.
+	 * @param page                 The page number to retrieve.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @return If the Pre-Hook conditions are met, returns {@code true}.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	default boolean searchPaginatedByPage(String luceneQuery, int contentsPerPage,
+			int page, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+		return true;
+	}
+
+	/**
+	 * Searches for content using the given Lucene query, and the returned result includes
+	 * pagination information.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param limit                The maximum number of items to return per page.
+	 * @param offset               The offset to start retrieving items from.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @return If the Pre-Hook conditions are met, returns {@code true}.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	default boolean searchPaginated(String luceneQuery, int limit,
+			int offset, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
 		return true;
 	}
 
