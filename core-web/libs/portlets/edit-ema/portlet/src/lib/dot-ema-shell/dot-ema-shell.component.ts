@@ -107,18 +107,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
     });
 
-    get queryParams(): DotPageApiParams {
-        const queryParams = this.#activatedRoute.snapshot.queryParams;
-
-        return {
-            language_id: queryParams['language_id'],
-            url: queryParams['url'],
-            'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id'],
-            variantName: queryParams['variantName'],
-            clientHost: queryParams['clientHost']
-        };
-    }
-
     ngOnInit(): void {
         combineLatest([this.#activatedRoute.data, this.#activatedRoute.queryParams])
             .pipe(takeUntil(this.#destroy$))
@@ -195,7 +183,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 this.$didTranslate.set(true);
                 const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
 
-                if (this.queryParams.url !== url) {
+                if (this.uveStore.params() !== url) {
                     this.navigate({
                         url
                     });
@@ -208,9 +196,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 }
 
                 this.#activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
+                    const params = this.uveStore.params();
+
                     this.uveStore.load({
-                        ...this.queryParams,
-                        clientHost: this.queryParams.clientHost ?? data?.url
+                        ...params,
+                        clientHost: params.clientHost ?? data?.url
                     });
                 });
                 break;
@@ -243,7 +233,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Reloads the component from the dialog.
      */
     reloadFromDialog() {
-        this.uveStore.reload(this.queryParams);
+        this.uveStore.reload();
     }
 
     private navigate(queryParams) {

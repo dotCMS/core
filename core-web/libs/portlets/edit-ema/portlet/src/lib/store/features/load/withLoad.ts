@@ -149,13 +149,13 @@ export function withLoad() {
                         })
                     )
                 ),
-                reload: rxMethod<DotPageApiParams>(
+                reload: rxMethod<void>(
                     pipe(
                         tap(() => {
                             patchState(store, { status: UVE_STATUS.LOADING });
                         }),
-                        switchMap((params) => {
-                            return dotPageApiService.get(params).pipe(
+                        switchMap(() => {
+                            return dotPageApiService.get(store.params()).pipe(
                                 switchMap((pageAPIResponse) =>
                                     dotLanguagesService
                                         .getLanguagesUsedPage(pageAPIResponse.page.identifier)
@@ -185,7 +185,7 @@ export function withLoad() {
                                             canEditPage,
                                             pageIsLocked,
                                             status: UVE_STATUS.LOADED,
-                                            isLegacyPage: !!params.clientHost // If we don't send the clientHost we are using as VTL page
+                                            isLegacyPage: !store.params().clientHost // If we don't send the clientHost we are using as VTL page
                                         });
                                     },
                                     error: ({ status: errorStatus }: HttpErrorResponse) => {

@@ -229,9 +229,7 @@ export class EditEmaToolbarComponent {
                         detail: 'Page is unlocked'
                     });
 
-                    const params = this.uveStore.params();
-
-                    this.uveStore.reload(params);
+                    this.uveStore.reload();
                 },
                 error: () => {
                     this.messageService.add({

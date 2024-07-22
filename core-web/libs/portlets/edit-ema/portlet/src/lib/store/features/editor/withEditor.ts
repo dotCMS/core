@@ -9,6 +9,7 @@ import {
 
 import { computed } from '@angular/core';
 
+import { withSave } from './save/withSave';
 import { withEditorToolbar } from './toolbar/withEditorToolbar';
 
 import {
@@ -171,7 +172,7 @@ export function withEditor() {
                 setEditorBounds(bounds: Container[]) {
                     patchState(store, { bounds });
                 },
-                resetEditorDragProperties() {
+                resetEditorProperties() {
                     patchState(store, {
                         dragItem: undefined,
                         contentletArea: undefined,
@@ -180,6 +181,7 @@ export function withEditor() {
                     });
                 }
             };
-        })
+        }),
+        withSave()
     );
 }

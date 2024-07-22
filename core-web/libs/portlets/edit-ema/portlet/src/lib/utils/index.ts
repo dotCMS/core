@@ -270,15 +270,18 @@ export function createFavoritePagesURL(params: {
 }
 
 export function createPureURL(params: DotPageApiParams): string {
-    const clientHost = params.clientHost ?? window.location.origin;
-    const url = params.url;
+    // If we are going to delete properties from the params, we need to make a copy of it
+    const paramsCopy = { ...params };
+
+    const clientHost = paramsCopy.clientHost ?? window.location.origin;
+    const url = paramsCopy.url;
 
     // Clean the params that are not needed for the page
-    delete params.clientHost;
-    delete params.url;
-    delete params.mode;
+    delete paramsCopy.clientHost;
+    delete paramsCopy.url;
+    delete paramsCopy.mode;
 
-    const searchParams = new URLSearchParams(params as unknown as Record<string, string>);
+    const searchParams = new URLSearchParams(paramsCopy as unknown as Record<string, string>);
 
     return `${clientHost}/${url}?${searchParams.toString()}`;
 }
