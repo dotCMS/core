@@ -41,13 +41,6 @@ dot-results-seo-tool {
     gap: $spacing-1;
     overflow: auto;
 }
-.editor-content--device {
-    grid-column: 1 / -1;
-}
-
-.editor-content--hidden {
-    display: none;
-}
 
 .iframe-wrapper {
     position: relative;
@@ -71,8 +64,4 @@ a,
 a:focus,
 a:active {
     text-decoration: none;
-}
-
-.editor-content--expanded {
-    grid-column: span 2;
 }

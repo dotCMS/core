@@ -109,11 +109,7 @@ export function withEditor() {
                         seoTools: socialMedia && {
                             socialMedia
                         },
-                        editorContent: {
-                            isDevice: !!device,
-                            isExpanded: !canEditPage,
-                            isHidden: !!socialMedia
-                        },
+                        showEditorContent: !socialMedia,
                         iframeWrapper: {
                             isDevice: !!device,
                             width: device ? `${device.cssWidth}${BASE_MEASURE}` : BASE_WIDTH,

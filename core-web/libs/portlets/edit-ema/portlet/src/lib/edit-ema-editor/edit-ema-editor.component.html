@@ -8,15 +8,9 @@
     [seoOGTags]="ogTags()"
     [seoOGTagsResults]="ogTagsResults$"
     data-testId="results-seo-tool"></dot-results-seo-tool>
-}
-<div
-    [ngClass]="{
-        'editor-content--device': es.editorContent.isDevice,
-        'editor-content--expanded': es.editorContent.isExpanded,
-        'editor-content--hidden': es.editorContent.isHidden
-    }"
-    class="editor-content"
-    data-testId="editor-content">
+} @if(es.showEditorContent) {
+
+<div class="editor-content" data-testId="editor-content">
     <div
         [ngClass]="{
             'iframe-wrapper--device': es.iframeWrapper.isDevice
@@ -67,8 +61,7 @@
         }
     </div>
 </div>
-
-@if(es.palette; as palette) {
+} @if(es.palette; as palette) {
 
 <dot-edit-ema-palette
     [languageId]="palette.languageId"
