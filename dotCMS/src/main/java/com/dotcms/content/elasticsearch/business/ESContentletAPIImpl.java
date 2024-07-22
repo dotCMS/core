@@ -1202,14 +1202,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public PaginatedContentList<Contentlet> searchPaginatedByPage(final String luceneQuery,
-            final int contentsPerPage, int page, final String sortBy, final User user,
+            final int contentsPerPage, final int page, final String sortBy, final User user,
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         // Calculate the offset
-        if (page < 1) {
-            page = 1;
-        }
-        var offset = contentsPerPage * (page - 1);
+        final int currentPage = Math.max(page, 1);
+        var offset = contentsPerPage * (currentPage - 1);
 
         return searchPaginated(
                 luceneQuery, contentsPerPage, offset, sortBy, user, respectFrontendRoles

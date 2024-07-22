@@ -346,12 +346,12 @@ public class ContentUtils {
 		 * @return Returns empty List if no results are found
 		 * 
 		 */
-		public static PaginatedContentList<Contentlet> pullPerPage(String query, int currentPage, int contentsPerPage, String sort, User user, String tmDate){
+		public static PaginatedContentList<Contentlet> pullPerPage(final String query,
+				final int page, final int contentsPerPage, final String sort, final User user,
+				final String tmDate) {
 
             // Calculate the offset
-            if (currentPage < 1) {
-                currentPage = 1;
-            }
+			final int currentPage = Math.max(page, 1);
             var offset = contentsPerPage * (currentPage - 1);
 
             PaginatedArrayList<Contentlet> cmaps = pullPagenated(
