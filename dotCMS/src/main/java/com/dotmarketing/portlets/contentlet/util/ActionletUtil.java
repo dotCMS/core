@@ -6,17 +6,23 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Utility class to recover actionlets metadata
+ * @author jsanca
+ */
 public class ActionletUtil {
 
     /**
@@ -29,8 +35,10 @@ public class ActionletUtil {
             final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
             for (final WorkflowActionClass actionletClass : actionlets) {
 
+                final WorkFlowActionlet workFlowActionlet = APILocator.getWorkflowAPI().findActionlet(actionletClass.getClazz());
+
                 final Actionlet actionlet = AnnotationUtils.
-                        getBeanAnnotation(ReflectionUtils.getClassFor(actionletClass.getClazz()), Actionlet.class);
+                        getBeanAnnotation(workFlowActionlet.getClass(), Actionlet.class);
 
                 if (null != actionlet && actionlet.onlyBatch()) {
                     return true;
@@ -55,8 +63,10 @@ public class ActionletUtil {
             final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
             for (final WorkflowActionClass actionletClass : actionlets) {
 
+                final WorkFlowActionlet workFlowActionlet = APILocator.getWorkflowAPI().findActionlet(actionletClass.getClazz());
+
                 final Actionlet actionlet = AnnotationUtils.
-                        getBeanAnnotation(ReflectionUtils.getClassFor(actionletClass.getClazz()), Actionlet.class);
+                        getBeanAnnotation(workFlowActionlet.getClass(), Actionlet.class);
 
                 if (null != actionlet && actionlet.pushPublish()) {
                     return true;
@@ -119,7 +129,9 @@ public class ActionletUtil {
      */
     public static boolean isOnlyBatch(final String clazz) {
 
-        return false; //isOnlyBatch(ReflectionUtils.getClassFor(clazz));
+        final WorkFlowActionlet workFlowActionlet = Try.of(()->APILocator.getWorkflowAPI().findActionlet(clazz)).getOrNull();
+
+        return Objects.nonNull(workFlowActionlet)?isOnlyBatch(workFlowActionlet.getClass()):false;
     }
 
     /**
