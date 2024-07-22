@@ -63,6 +63,13 @@ describe('DotAIImagePromptComponent', () => {
         expect(store.hideDialog).toHaveBeenCalled();
     });
 
+    it('should the modal have 1040px in width', () => {
+        spectator.detectChanges();
+        const dialog = spectator.query(Dialog);
+        const width = dialog.style.width;
+        expect(width).toBe('1040px');
+    });
+
     it('should generate image', () => {
         const promptForm = spectator.query(AiImagePromptFormComponent);
         const formMock: AIImagePrompt = {
