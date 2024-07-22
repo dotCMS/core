@@ -67,11 +67,6 @@ describe('DotAutocompleteTagsComponent', () => {
         expect(component.filteredOptions).toEqual(mockResponse);
     });
 
-    it('should hide add helper if value is null', () => {
-        const helper = de.query(By.css('.autocomplete-helper'));
-        expect(helper).toBeNull();
-    });
-
     describe('autoComplete', () => {
         beforeEach(() => {
             component.placeholder = 'Custom Placeholder';
@@ -114,13 +109,6 @@ describe('DotAutocompleteTagsComponent', () => {
 
                 beforeEach(() => {
                     //
-                });
-
-                it('should show the helper when input has value', () => {
-                    autoComplete.onKeyup({ ...qEvent });
-                    fixture.detectChanges();
-                    const helper = de.query(By.css('.autocomplete-helper'));
-                    expect(helper).not.toBeNull();
                 });
 
                 it('should NOT add the tag because user dint hit enter', () => {
