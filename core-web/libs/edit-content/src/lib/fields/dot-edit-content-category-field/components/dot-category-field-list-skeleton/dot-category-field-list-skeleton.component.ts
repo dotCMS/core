@@ -10,18 +10,16 @@ import { SkeletonModule } from 'primeng/skeleton';
     template: `
         <ul class="m-0 p-1 list-none">
             @for (_ of $rows(); track $index) {
-            <li class="flex">
-                <p-skeleton size="1rem" styleClass="mr-2"></p-skeleton>
-                <div style="flex: 1">
-                    <p-skeleton width="100%"></p-skeleton>
-                </div>
-            </li>
+                <li class="flex">
+                    <p-skeleton size="1rem" styleClass="mr-2"></p-skeleton>
+                    <div style="flex: 1">
+                        <p-skeleton width="100%"></p-skeleton>
+                    </div>
+                </li>
             }
         </ul>
     `,
     styles: `
-
-
         li {
             min-height: 40px;
             align-content: center;
