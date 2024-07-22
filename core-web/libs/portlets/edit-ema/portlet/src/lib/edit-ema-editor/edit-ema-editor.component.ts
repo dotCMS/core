@@ -213,7 +213,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             this.resetDragProperties();
 
-            this.dialog.resetDialog();
+            this.dialog?.resetDialog();
 
             if (isLegacyPage) {
                 this.setIframeContent(code);
