@@ -52,15 +52,6 @@ describe('DotEditContentCategoryFieldComponent', () => {
     });
 
     describe('Elements', () => {
-        it('should render a button for selecting categories', () => {
-            expect(spectator.query(byTestId('show-sidebar-btn'))).not.toBeNull();
-        });
-
-        it('should the button be type=button', () => {
-            const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-sidebar-btn'));
-            expect(selectBtn.type).toBe('button');
-        });
-
         describe('With selected', () => {
             beforeEach(() => {
                 spectator = createComponent({
@@ -80,6 +71,11 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
             it('should render a button for selecting categories', () => {
                 expect(spectator.query(byTestId('show-sidebar-btn'))).not.toBeNull();
+            });
+
+            it('should the button be type=button', () => {
+                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-sidebar-btn'));
+                expect(selectBtn.type).toBe('button');
             });
 
             it('should display the category list with chips when there are categories', () => {
