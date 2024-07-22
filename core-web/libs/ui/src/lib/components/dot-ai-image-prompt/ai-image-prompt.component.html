@@ -9,7 +9,7 @@
         [maskStyleClass]="'p-dialog-mask-transparent'"
         [modal]="true"
         [resizable]="false"
-        [style]="{ width: '1040px' }"
+        [style]="{ width: '90%', maxWidth: '1040px' }"
         (onHide)="store.hideDialog()">
         <div class="dialog-prompt__wrapper">
             @if (vm.showDialog) {

@@ -63,11 +63,13 @@ describe('DotAIImagePromptComponent', () => {
         expect(store.hideDialog).toHaveBeenCalled();
     });
 
-    it('should the modal have 1040px in width', () => {
+    it('should the modal have 1040px in maxWidth', () => {
         spectator.detectChanges();
         const dialog = spectator.query(Dialog);
         const width = dialog.style.width;
-        expect(width).toBe('1040px');
+        const maxWidth = dialog.style.maxWidth;
+        expect(width).toBe('90%');
+        expect(maxWidth).toBe('1040px');
     });
 
     it('should generate image', () => {
