@@ -12,10 +12,12 @@ import { computed } from '@angular/core';
 import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
+import { InfoOptions } from '../../../../shared/models';
 import {
     createFavoritePagesURL,
     createPageApiUrlWithQueryParams,
     createPureURL,
+    getIsDefaultVariant,
     sanitizeURL
 } from '../../../../utils';
 import { EditorToolbarState, UVEState } from '../../../models';
@@ -88,6 +90,82 @@ export function withEditorToolbar() {
                     showInfoDisplay:
                         !store.$canEditPage() || store.$device() || store.$socialMedia()
                 };
+            }),
+            $infoDisplay: computed<InfoOptions>(() => {
+                const pageAPIResponse = store.$pageAPIResponse();
+                const canEditPage = store.$canEditPage();
+                const device = store.$device();
+                const socialMedia = store.$socialMedia();
+
+                if (store.$pageIsLocked()) {
+                    let message = 'editpage.locked-by';
+
+                    if (!pageAPIResponse.page.canLock) {
+                        message = 'editpage.locked-contact-with';
+                    }
+
+                    return {
+                        icon: 'pi pi-lock',
+                        id: 'locked',
+                        info: {
+                            message,
+                            args: [pageAPIResponse.page.lockedByName]
+                        }
+                    };
+                }
+
+                if (device) {
+                    return {
+                        icon: device.icon,
+                        info: {
+                            message: `${device.name} ${device.cssWidth} x ${device.cssHeight}`,
+                            args: []
+                        },
+                        id: 'device',
+                        actionIcon: 'pi pi-times'
+                    };
+                } else if (socialMedia) {
+                    return {
+                        icon: `pi pi-${socialMedia.toLowerCase()}`,
+                        id: 'socialMedia',
+                        info: {
+                            message: `Viewing <b>${socialMedia}</b> social media preview`,
+                            args: []
+                        },
+                        actionIcon: 'pi pi-times'
+                    };
+                } else if (canEditPage && !getIsDefaultVariant(pageAPIResponse.viewAs.variantId)) {
+                    const variantId = pageAPIResponse.viewAs.variantId;
+
+                    const currentExperiment = store.$experiment?.();
+
+                    const name =
+                        currentExperiment?.trafficProportion.variants.find(
+                            (variant) => variant.id === variantId
+                        )?.name ?? 'Unknown Variant';
+
+                    return {
+                        info: {
+                            message: canEditPage
+                                ? 'editpage.editing.variant'
+                                : 'editpage.viewing.variant',
+                            args: [name]
+                        },
+                        icon: 'pi pi-file-edit',
+                        id: 'variant',
+                        actionIcon: 'pi pi-arrow-left'
+                    };
+                }
+
+                if (!canEditPage) {
+                    return {
+                        icon: 'pi pi-exclamation-circle warning',
+                        id: 'no-permission',
+                        info: { message: 'editema.dont.have.edit.permission', args: [] }
+                    };
+                }
+
+                return undefined;
             })
         })),
         withMethods((store) => {

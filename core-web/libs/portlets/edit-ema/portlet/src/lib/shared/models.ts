@@ -7,6 +7,16 @@ import {
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api.service';
 
+export interface InfoOptions {
+    icon: string;
+    info: {
+        message: string;
+        args: string[];
+    };
+    id: string;
+    actionIcon?: string;
+}
+
 export interface VTLFile {
     inode: string;
     name: string;
