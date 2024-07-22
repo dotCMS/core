@@ -1032,7 +1032,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             life: 2000
         });
 
-        this.uveStore.setEditorState(EDITOR_STATE.IDLE);
+        this.uveStore.resetEditorProperties();
 
         this.dialog.resetDialog();
     }
