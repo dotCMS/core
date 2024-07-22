@@ -1337,16 +1337,10 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
                             showDotCMSSystemMessage(dataOrError, true);
                         } else {
                             var x = dataOrError.split(":");
-                            var entry = {id:x[0], name:x[1], isOnlyBatch:x[2]};
-							var isOnlyBatch = x[2];
+                            var entry = {id:x[0], name:x[1]};
                             actionClassAdmin.actionClasses.push(entry);
 
                             actionClassAdmin.refreshActionClasses();
-
-							if(isOnlyBatch) {
-								actionClassAdmin.disableShowOnEditing();
-								showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Only-Batch-Actions")%>", false);
-							}
                             //showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Added")%>", false);
                         }
                     } else {
@@ -1356,23 +1350,6 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
             };
             dojo.xhrPost(xhrArgs);
     },
-
-	/**
-	* Enable the editing on show when
-	*/
-	enableShowOnEditing : function (){
-
-		dijit.byId('showOnEDITING').set('disabled', false);
-	},
-
-	/**
-	* Disable the editing on show when
-	*/
-    disableShowOnEditing : function (){
-
-		dijit.byId('showOnEDITING').set('checked', false);
-		dijit.byId('showOnEDITING').set('disabled', true);
-	},
     /**
      * Delete subaction from the system (using ajax) and table
      */
@@ -1423,7 +1400,6 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 
         // Delete action class with position
         if(actionClassPosition != -1) {
-
             actionClassAdmin.actionClasses.splice(actionClassPosition, 1);
         }
 
@@ -1446,13 +1422,12 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
             return;
         }
 
-        var hasBatchOnly = false;
         var tbody = dojo.byId("actionletsTblBody");
         dojo.empty(tbody);
 
         dojo.forEach(actionClassAdmin.actionClasses, function(entry, i){
             var tr = dojo.create("tr", {className:"dojoDndItem dndMyActionClasses", id:"myRow" + entry.id}, tbody);
-            hasBatchOnly |= entry.isOnlyBatch;
+
             dojo.create("td", { innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"actionClassAdmin.deleteActionClass('" + entry.id +"');" }, tr);
             dojo.create("td", { innerHTML: entry.name, onClick:"actionClassAdmin.manageParams('" + entry.id + "');", className:"showPointer" }, tr);
         });
@@ -1461,13 +1436,6 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
             var tr = dojo.create("tr", null, tbody);
             dojo.create("td", { colSpan: 2, className:"wfnoSubActions", innerHTML:"<%=LanguageUtil.get(pageContext, "No-Sub-Actions-Configured")%>" }, tr);
         }
-
-  	    if(hasBatchOnly) {
-			actionClassAdmin.disableShowOnEditing();
-		} else {
-
-           actionClassAdmin.enableShowOnEditing();
-		}
 
         actionClassAdmin.initDnD();
     },
