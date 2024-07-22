@@ -210,7 +210,7 @@ export function withEditor() {
                     patchState(store, { $state: state });
                 },
                 setEditorDragItem(dragItem: EmaDragItem) {
-                    patchState(store, { $dragItem: dragItem });
+                    patchState(store, { $dragItem: dragItem, $state: EDITOR_STATE.DRAGGING });
                 },
                 setEditorContentletArea(contentletArea: ContentletArea) {
                     const currentContentletArea = store.$contentletArea();

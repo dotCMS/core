@@ -55,11 +55,12 @@
         <div class="empty-palette">{{ 'edit.ema.empty.palette' | dm }}</div>
     }
 
-    <p-paginator
-        *ngIf="contentlets.totalRecords > 0"
-        (onPageChange)="onPaginate($event, contentlets.filter)"
-        [rows]="contentlets.itemsPerPage"
-        [showFirstLastIcon]="false"
-        [totalRecords]="contentlets.totalRecords"
-        [pageLinkSize]="0"></p-paginator>
+    @if (contentlets.totalRecords) {
+        <p-paginator
+            (onPageChange)="onPaginate($event, contentlets.filter)"
+            [rows]="contentlets.itemsPerPage"
+            [showFirstLastIcon]="false"
+            [totalRecords]="contentlets.totalRecords"
+            [pageLinkSize]="0"></p-paginator>
+    }
 </div>

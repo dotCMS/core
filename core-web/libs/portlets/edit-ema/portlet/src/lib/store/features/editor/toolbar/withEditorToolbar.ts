@@ -70,7 +70,7 @@ export function withEditorToolbar() {
                         pureURL: createPureURL(params)
                     },
                     apiLinkButton: {
-                        apiURL: `${params.clientHost ?? window.location.origin}${pageAPI}`
+                        apiURL: `${window.location.origin}${pageAPI}`
                     },
                     experimentBadge:
                         experiment?.status === DotExperimentStatus.RUNNING
