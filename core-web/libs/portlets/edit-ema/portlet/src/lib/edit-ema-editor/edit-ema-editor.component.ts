@@ -291,8 +291,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.window.open(href, '_blank');
                 }
             }
-
-            // Check if the URL is not external
         }
     }
 
@@ -403,7 +401,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                let direction;
+                let direction: 'up' | 'down';
 
                 if (
                     event.clientY > iframeRect.top &&
@@ -497,7 +495,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const editorState = this.uveStore.state();
 
         if (!!dragItem && editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
-            this.uveStore.setEditorState(EDITOR_STATE.IDLE);
+            this.uveStore.resetEditorProperties();
         }
     }
 
@@ -916,7 +914,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.updateEditorScrollState();
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL_END]: () => {
-                this.uveStore.updateEditorDragState();
+                this.uveStore.updateEditorOnScrollEnd();
             },
             [CUSTOMER_ACTIONS.INIT_INLINE_EDITING]: () => {
                 // The iframe says that the editor is ready to start inline editing
@@ -925,8 +923,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
             },
             [CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: () => {
-                // The iframe say the contentlet that try to be inline edited is in multiple pages
-                // So the editor open the dialog to question if the edit is in ALL contentlets or only in this page.
+                // The iframe say the contentlet that the content is queue to be inline edited is in multiple pages
+                // So the editor should open the dialog to ask if the edit is in ALL contentlets or only in this page.
 
                 if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
                     return;

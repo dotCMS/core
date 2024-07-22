@@ -148,11 +148,26 @@ export function withEditor() {
         withMethods((store) => {
             return {
                 updateEditorScrollState() {
+                    // We dont want to change the state if the editor is out of bounds
+                    // The scroll end event is triggered after the user leaves the window
+                    // And that is changing the state in an unnatural way
+                    if (store.state() === EDITOR_STATE.OUT_OF_BOUNDS) {
+                        return;
+                    }
+
                     patchState(store, {
                         state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
                     });
                 },
-                updateEditorDragState() {
+                updateEditorOnScrollEnd() {
+                    // We dont want to change the state if the editor is out of bounds
+                    // The scroll end event is triggered after the user leaves the window
+                    // And that is changing the state in an unnatural way
+
+                    if (store.state() === EDITOR_STATE.OUT_OF_BOUNDS) {
+                        return;
+                    }
+
                     patchState(store, {
                         state: store.dragItem() ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
                     });
