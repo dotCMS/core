@@ -1,8 +1,8 @@
 @if (isInsideEditor) {
-<editor
-    #tinyEditor
-    [init]="init"
-    [initialValue]="content"
-    (onMouseDown)="onMouseDown($event)"
-    (onFocusOut)="onFocusOut()" />
+    <editor
+        #tinyEditor
+        [init]="init"
+        [initialValue]="content"
+        (onMouseDown)="onMouseDown($event)"
+        (onFocusOut)="onFocusOut()" />
 }
