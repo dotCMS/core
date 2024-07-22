@@ -157,7 +157,7 @@ export function withEditor() {
             return {
                 updateEditorScrollState() {
                     // We dont want to change the state if the editor is out of bounds
-                    // The scroll end event is triggered after the user leaves the window
+                    // The scroll event is triggered after the user leaves the window
                     // And that is changing the state in an unnatural way
                     if (store.$state() === EDITOR_STATE.OUT_OF_BOUNDS) {
                         return;
