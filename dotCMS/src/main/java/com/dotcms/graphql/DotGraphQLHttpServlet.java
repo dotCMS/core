@@ -2,27 +2,21 @@ package com.dotcms.graphql;
 
 import com.dotcms.rest.api.CorsFilter;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import graphql.kickstart.execution.GraphQLObjectMapper;
-import graphql.kickstart.execution.GraphQLQueryInvoker;
 import graphql.kickstart.servlet.AbstractGraphQLHttpServlet;
 import graphql.kickstart.servlet.GraphQLConfiguration;
-import graphql.kickstart.servlet.input.GraphQLInvocationInputFactory;
 import io.vavr.Function0;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
-
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
-    
-    
-    final private static String CORS_DEFAULT=CorsFilter.CORS_PREFIX + "." + CorsFilter.CORS_DEFAULT;
-    
-    final private static String CORS_GRAPHQL = CorsFilter.CORS_PREFIX + ".graphql";
+
+    private static final String CORS_DEFAULT=CorsFilter.CORS_PREFIX + "." + CorsFilter.CORS_DEFAULT;
+
+    private static final String CORS_GRAPHQL = CorsFilter.CORS_PREFIX + ".graphql";
 
     @Override
     protected GraphQLConfiguration getConfiguration() {
@@ -35,24 +29,30 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
 
     @Override
     protected void doGet(final HttpServletRequest request, final HttpServletResponse response) {
-        corsHeaders.apply().entrySet().stream().forEach(e -> response.setHeader(e.getKey(), e.getValue()));
-        super.doGet(request, response);
+        handleRequest(request, response);
     }
 
     @Override
     protected void doPost(final HttpServletRequest request, final HttpServletResponse response) {
-        corsHeaders.apply().entrySet().stream().forEach(e -> response.setHeader(e.getKey(), e.getValue()));
-        super.doPost(request, response);
+        handleRequest(request, response);
     }
 
     @Override
-    protected void doOptions(final HttpServletRequest request, final HttpServletResponse response)
-            throws ServletException, IOException {
-        corsHeaders.apply().entrySet().stream().forEach(e -> response.setHeader(e.getKey(), e.getValue()));
-        super.doOptions(request, response);
+    protected void doOptions(final HttpServletRequest request, final HttpServletResponse response) {
+        handleRequest(request, response);
     }
-    
-    
+
+    protected void handleRequest(HttpServletRequest request, HttpServletResponse response) {
+        corsHeaders.apply().forEach(response::setHeader);
+        try {
+            getConfiguration().getHttpRequestHandler().handle(request, response);
+        } catch (Exception t) {
+            // There's a problem with our slf4j logger in our GraphQL Impl
+            // so we're using the dotCMS logger for now
+            Logger.error("Error executing GraphQL request!", t);
+        }
+    }
+
     /**
      * header list is computed but once. It first reads all values set as default, e.g.
      * api.cors.default.access-control-allow-headers that start with api.cors.default. It then overrides

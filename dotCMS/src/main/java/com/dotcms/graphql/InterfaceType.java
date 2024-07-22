@@ -27,10 +27,8 @@ import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
-import com.dotcms.graphql.datafetcher.DotJSONDataFetcher;
 import com.dotcms.graphql.resolver.ContentResolver;
 import com.dotmarketing.util.Logger;
-import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLInterfaceType;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,6 +71,7 @@ public enum InterfaceType {
     public static final String DOT_CONTENTLET = "DotContentlet";
 
     static {
+
 
         Map<String, TypeFetcher> contentFields = ContentFields.getContentFields();
 
