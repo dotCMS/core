@@ -91,7 +91,7 @@ export function withEditorToolbar() {
                         !store.$canEditPage() || store.$device() || store.$socialMedia()
                 };
             }),
-            $infoDisplay: computed<InfoOptions>(() => {
+            $infoDisplayOptions: computed<InfoOptions>(() => {
                 const pageAPIResponse = store.$pageAPIResponse();
                 const canEditPage = store.$canEditPage();
                 const device = store.$device();
