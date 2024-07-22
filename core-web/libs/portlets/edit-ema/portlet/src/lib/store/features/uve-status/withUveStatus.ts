@@ -17,12 +17,12 @@ export function withUveStatus() {
             state: type<UVEState>()
         },
         withComputed((store) => ({
-            isLoading: computed(() => store.status() === UVE_STATUS.LOADING),
-            isLoaded: computed(() => store.status() === UVE_STATUS.LOADED),
-            isError: computed(() => store.status() === UVE_STATUS.ERROR)
+            isLoading: computed(() => store.$status() === UVE_STATUS.LOADING),
+            isLoaded: computed(() => store.$status() === UVE_STATUS.LOADED),
+            isError: computed(() => store.$status() === UVE_STATUS.ERROR)
         })),
         withMethods((store) => ({
-            setUveStatus: (status: UVE_STATUS) => patchState(store, { status })
+            setUveStatus: (status: UVE_STATUS) => patchState(store, { $status: status })
         }))
     );
 }

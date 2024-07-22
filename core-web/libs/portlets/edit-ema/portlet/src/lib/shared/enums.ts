@@ -31,7 +31,6 @@ export enum UVE_STATUS {
 }
 
 export enum EDITOR_STATE {
-    LOADING = 'loading', // Delete this one and use the UVE_STATUS
     ERROR = 'error',
     IDLE = 'idle',
     DRAGGING = 'dragging',
@@ -41,7 +40,7 @@ export enum EDITOR_STATE {
     INLINE_EDITING = 'inline-editing'
 }
 
-// WHO?
+// DELETE WHEN FIXING TESTS AND MOCKS
 export enum EDITOR_MODE {
     EDIT = 'edit',
     EDIT_VARIANT = 'edit-variant',

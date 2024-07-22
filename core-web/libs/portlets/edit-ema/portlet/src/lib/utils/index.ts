@@ -324,7 +324,7 @@ export function mapContainers(containers: DotPageContainerStructure): DotContain
  * @param {ContainerData} containers
  * @memberof EditEmaStore
  */
-export const getPageContainers = (containers: DotPageContainerStructure) => {
+export const mapContainerStructureToArray = (containers: DotPageContainerStructure) => {
     return Object.keys(containers).reduce(
         (
             acc: {

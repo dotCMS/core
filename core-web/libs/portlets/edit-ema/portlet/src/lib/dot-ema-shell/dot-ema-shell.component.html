@@ -1,4 +1,4 @@
-@if(uveStore.shellState(); as shellState) { @if(shellState.canRead){
+@if(uveStore.$shellState(); as shellState) { @if(shellState.canRead){
 <router-outlet (activate)="onActivateRoute($event)"></router-outlet>
 <dot-edit-ema-navigation-bar
     [items]="shellState.items"
@@ -10,8 +10,8 @@
 }@else {
 
 <ng-container [ngSwitch]="shellState.error">
-    <dot-info-page *ngSwitchCase="403" [info]="shellState.uvePageInfo.ACCESS_DENIED" />
-    <dot-info-page *ngSwitchCase="404" [info]="shellState.uvePageInfo.NOT_FOUND" />
+    <dot-info-page *ngSwitchCase="403" [info]="shellState.uveErrorPageInfo.ACCESS_DENIED" />
+    <dot-info-page *ngSwitchCase="404" [info]="shellState.uveErrorPageInfo.NOT_FOUND" />
     <dot-not-license *ngSwitchCase="401" />
 </ng-container>
 } }

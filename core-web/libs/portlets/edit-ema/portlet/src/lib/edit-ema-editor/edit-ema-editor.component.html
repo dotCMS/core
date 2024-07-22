@@ -1,4 +1,4 @@
-@if(uveStore.editorState(); as es) {
+@if(uveStore.$editorState(); as es) {
 
 <dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
 
@@ -13,11 +13,11 @@
 <div class="editor-content" data-testId="editor-content">
     <div
         [ngClass]="{
-            'iframe-wrapper--device': es.iframeWrapper.isDevice
+            'iframe-wrapper--device': es.iframe.wrapper.isDevice
         }"
         [ngStyle]="{
-            width: es.iframeWrapper.width,
-            height: es.iframeWrapper.height
+            width: es.iframe.wrapper.width,
+            height: es.iframe.wrapper.height
         }"
         class="iframe-wrapper">
         <iframe

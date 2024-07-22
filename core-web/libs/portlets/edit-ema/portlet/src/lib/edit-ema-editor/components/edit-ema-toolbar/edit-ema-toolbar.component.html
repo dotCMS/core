@@ -1,4 +1,4 @@
-@if(uveStore.toolbarState(); as toolbarState) {
+@if(uveStore.$toolbarState(); as toolbarState) {
 <p-toolbar>
     <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
         <dot-device-selector-seo
@@ -26,7 +26,7 @@
             data-testId="edit-url-content-map" />
         }
 
-        <dot-ema-bookmarks [url]="toolbarState.bookmarks.url" />
+        <dot-ema-bookmarks [url]="toolbarState.bookmarksUrl" />
         <p-button
             (cdkCopyToClipboardCopied)="triggerCopyToast()"
             [cdkCopyToClipboard]="toolbarState.copyUrlButton.pureURL"

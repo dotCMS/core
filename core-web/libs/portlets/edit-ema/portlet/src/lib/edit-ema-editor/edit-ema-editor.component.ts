@@ -159,7 +159,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     // WE CAN PROBABLY MOVE THIS TO THE STORE
     readonly actionPayload: Signal<ActionPayload> = computed(() => {
         const clientData = this.clientData();
-        const { containers, languageId, id, personaTag } = this.uveStore.pageData();
+        const { containers, languageId, id, personaTag } = this.uveStore.$pageData();
         const { contentletsId } = containers.find((container) =>
             areContainersEquals(container, clientData.container)
         ) ?? { contentletsId: [] };
@@ -186,7 +186,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const { contentlet, container } = this.actionPayload();
         const { identifier: contentId } = contentlet;
         const { variantId, uuid: relationType, contentletsId, identifier: containerId } = container;
-        const { personalization, id: pageId } = untracked(() => this.uveStore.pageData());
+        const { personalization, id: pageId } = untracked(() => this.uveStore.$pageData());
         const treeOrder = contentletsId.findIndex((id) => id === contentId).toString();
 
         return {
@@ -208,14 +208,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly handleReloadContentEffect = effect(
         () => {
-            const { code, isLegacyPage, isEditState, isEnterprise } =
-                this.uveStore.reloadEditorContent();
+            const { code, isTraditionalPage, isEditState, isEnterprise } =
+                this.uveStore.$reloadEditorContent();
 
             this.resetDragProperties();
 
             this.dialog?.resetDialog();
 
-            if (isLegacyPage) {
+            if (isTraditionalPage) {
                 this.setIframeContent(code);
 
                 requestAnimationFrame(() => {
@@ -244,7 +244,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     );
 
     readonly handleIsDraggingEffect = effect(() => {
-        const isDragging = this.uveStore.editorIsInDraggingState();
+        const isDragging = this.uveStore.$editorIsInDraggingState();
 
         if (isDragging) {
             this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
@@ -359,8 +359,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: DragEvent) => {
                 event.preventDefault();
 
-                const dragItem = this.uveStore.dragItem();
-                const editorState = this.uveStore.state();
+                const dragItem = this.uveStore.$dragItem();
+                const editorState = this.uveStore.$state();
 
                 // Set the temp item to be dragged, which is the outsider file if there is not a drag item
                 if (!dragItem) {
@@ -450,7 +450,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 const file = event.dataTransfer?.files[0]; // We are sure that is comes but in the tests we don't have DragEvent class
 
-                const dragItem = this.uveStore.dragItem();
+                const dragItem = this.uveStore.$dragItem();
 
                 if (file) {
                     // I need to publish the temp file to use it.
@@ -491,8 +491,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     resetEditorWhenOutOfBounds(event: MouseEvent) {
         event.preventDefault();
 
-        const dragItem = this.uveStore.dragItem();
-        const editorState = this.uveStore.state();
+        const dragItem = this.uveStore.$dragItem();
+        const editorState = this.uveStore.$state();
 
         if (!!dragItem && editorState === EDITOR_STATE.OUT_OF_BOUNDS) {
             this.uveStore.resetEditorProperties();
@@ -886,7 +886,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
-                const isSameUrl = this.uveStore.params().url === payload.url;
+                const isSameUrl = this.uveStore.$params().url === payload.url;
 
                 if (isSameUrl) {
                     this.uveStore.setEditorState(EDITOR_STATE.IDLE);
@@ -926,7 +926,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // The iframe say the contentlet that the content is queue to be inline edited is in multiple pages
                 // So the editor should open the dialog to ask if the edit is in ALL contentlets or only in this page.
 
-                if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
+                if (this.uveStore.$state() === EDITOR_STATE.INLINE_EDITING) {
                     return;
                 }
 
@@ -957,7 +957,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             language: payload.dataset.language
                         };
 
-                        if (!this.uveStore.isLegacyPage()) {
+                        if (!this.uveStore.$isTraditionalPage()) {
                             const message = {
                                 name: NOTIFY_CUSTOMER.COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: data
@@ -1046,7 +1046,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     reloadIframeContent() {
         this.iframe?.nativeElement?.contentWindow?.postMessage(
-            { name: NOTIFY_CUSTOMER.SET_PAGE_DATA, payload: this.uveStore.pageAPIResponse() },
+            { name: NOTIFY_CUSTOMER.SET_PAGE_DATA, payload: this.uveStore.$pageAPIResponse() },
             this.host
         );
     }
@@ -1216,7 +1216,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private reloadURLContentMapPage(inodeOrIdentifier: string): void {
         // Set loading state to prevent the user to interact with the iframe
-        this.uveStore.setEditorState(EDITOR_STATE.LOADING);
+        this.uveStore.setUveStatus(UVE_STATUS.LOADING);
 
         this.dotContentletService
             .getContentletByInode(inodeOrIdentifier)
@@ -1225,7 +1225,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((contentlet) => !!contentlet)
             )
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
-                if (URL_MAP_FOR_CONTENT != this.uveStore.params().url) {
+                if (URL_MAP_FOR_CONTENT != this.uveStore.$params().url) {
                     // If the URL is different, we need to navigate to the new URL
                     this.updateQueryParams({ url: URL_MAP_FOR_CONTENT });
 

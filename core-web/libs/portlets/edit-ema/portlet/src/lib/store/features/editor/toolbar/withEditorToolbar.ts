@@ -21,9 +21,9 @@ import {
 import { EditorToolbarState, UVEState } from '../../../models';
 
 const initialState: EditorToolbarState = {
-    device: undefined,
-    socialMedia: undefined,
-    isEditState: true
+    $device: null,
+    $socialMedia: null,
+    $isEditState: true
 };
 
 /**
@@ -39,31 +39,29 @@ export function withEditorToolbar() {
         },
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
-            toolbarState: computed(() => {
-                const params = store.params();
+            $toolbarState: computed(() => {
+                const params = store.$params();
                 const url = sanitizeURL(params.url);
 
                 const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
-                const pageAPIResponse = store.pageAPIResponse();
-                const experiment = store.experiment?.();
+                const pageAPIResponse = store.$pageAPIResponse();
+                const experiment = store.$experiment?.();
 
                 const pageAPI = `/api/v1/page/${
-                    store.isLegacyPage() ? 'render' : 'json'
+                    store.$isTraditionalPage() ? 'render' : 'json'
                 }/${pageAPIQueryParams}`;
 
                 return {
                     deviceSelector: {
                         apiLink: `${params.clientHost ?? window.location.origin}${pageAPI}`,
-                        hideSocialMedia: !store.isLegacyPage()
+                        hideSocialMedia: !store.$isTraditionalPage()
                     },
-                    urlContentMap: store.isEditState() && pageAPIResponse.urlContentMap,
-                    bookmarks: {
-                        url: createFavoritePagesURL({
-                            languageId: Number(params.language_id),
-                            pageURI: url,
-                            siteId: pageAPIResponse.site.identifier
-                        })
-                    },
+                    urlContentMap: store.$isEditState() && pageAPIResponse.urlContentMap,
+                    bookmarksUrl: createFavoritePagesURL({
+                        languageId: Number(params.language_id),
+                        pageURI: url,
+                        siteId: pageAPIResponse.site.identifier
+                    }),
                     copyUrlButton: {
                         pureURL: createPureURL(params)
                     },
@@ -80,24 +78,33 @@ export function withEditorToolbar() {
                         pageId: pageAPIResponse.page.identifier,
                         value: pageAPIResponse.viewAs.persona ?? DEFAULT_PERSONA
                     },
-                    workflowActions: store.canEditPage() && {
+                    workflowActions: store.$canEditPage() && {
                         inode: pageAPIResponse.page.inode
                     },
-                    unlockButton: store.pageIsLocked() &&
+                    unlockButton: store.$pageIsLocked() &&
                         pageAPIResponse.page.canLock && {
                             inode: pageAPIResponse.page.inode
                         },
-                    showInfoDisplay: !store.canEditPage() || store.device() || store.socialMedia()
+                    showInfoDisplay:
+                        !store.$canEditPage() || store.$device() || store.$socialMedia()
                 };
             })
         })),
         withMethods((store) => {
             return {
                 setDevice: (device: DotDevice) => {
-                    patchState(store, { device, socialMedia: undefined, isEditState: false });
+                    patchState(store, {
+                        $device: device,
+                        $socialMedia: undefined,
+                        $isEditState: false
+                    });
                 },
                 setSocialMedia: (socialMedia: string) => {
-                    patchState(store, { socialMedia, device: undefined, isEditState: false });
+                    patchState(store, {
+                        $socialMedia: socialMedia,
+                        $device: undefined,
+                        $isEditState: false
+                    });
                 },
                 clearDeviceAndSocialMedia: () => {
                     patchState(store, initialState);

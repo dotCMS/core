@@ -1,15 +1,11 @@
-import { DotDevice, DotExperiment, DotLanguage } from '@dotcms/dotcms-models';
-
-import { EDITOR_MODE, EDITOR_STATE } from './enums';
+import { DotDevice } from '@dotcms/dotcms-models';
 
 import {
     ClientContentletArea,
     Container,
-    ContentletArea,
-    EmaDragItem,
     UpdatedContentlet
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api.service';
 
 export interface VTLFile {
     inode: string;
@@ -75,11 +71,6 @@ export interface SavePagePayload {
     whenSaved?: () => void;
 }
 
-export interface ReloadPagePayload {
-    params: DotPageApiParams;
-    whenReloaded?: () => void;
-}
-
 export interface NavigationBarItem {
     icon?: string;
     iconURL?: string;
@@ -87,35 +78,6 @@ export interface NavigationBarItem {
     href?: string;
     id: string;
     isDisabled?: boolean;
-}
-
-export interface EditorData {
-    mode: EDITOR_MODE;
-    device?: DotDevice & { icon?: string };
-    socialMedia?: string;
-    canEditVariant?: boolean;
-    canEditPage?: boolean;
-    variantId?: string;
-    page?: {
-        isLocked: boolean;
-        canLock: boolean;
-        lockedByUser: string;
-    };
-}
-
-export interface EditEmaState {
-    clientHost: string;
-    error?: number;
-    editor: DotPageApiResponse;
-    isEnterpriseLicense: boolean;
-    editorState: EDITOR_STATE;
-    bounds: Container[];
-    contentletArea: ContentletArea;
-    editorData: EditorData;
-    currentExperiment?: DotExperiment;
-    dragItem?: EmaDragItem;
-    shouldReload: boolean;
-    languages: DotLanguage[];
 }
 
 export interface MessageInfo {

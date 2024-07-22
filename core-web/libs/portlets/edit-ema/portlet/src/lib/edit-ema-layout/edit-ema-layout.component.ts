@@ -82,7 +82,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
         this.dotPageLayoutService
             // To save a layout and no a template the title should be null
-            .save(this.uveStore.layoutProps().pageId, { ...template, title: null })
+            .save(this.uveStore.$layoutProps().pageId, { ...template, title: null })
             .pipe(take(1))
             .subscribe(
                 (updatedPage: DotPageRender) => this.handleSuccessSaveTemplate(updatedPage),
@@ -119,7 +119,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                     });
 
                     return this.dotPageLayoutService
-                        .save(this.uveStore.layoutProps().pageId, {
+                        .save(this.uveStore.$layoutProps().pageId, {
                             ...layout,
                             title: null
                         })

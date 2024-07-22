@@ -19,8 +19,8 @@ export function withLayout() {
             state: type<UVEState>()
         },
         withComputed((store) => ({
-            layoutProps: computed(() => {
-                const pageAPIResponse = store.pageAPIResponse();
+            $layoutProps: computed(() => {
+                const pageAPIResponse = store.$pageAPIResponse();
 
                 return {
                     containersMap: mapContainers(pageAPIResponse.containers),
@@ -38,8 +38,8 @@ export function withLayout() {
             return {
                 updateLayout: (layout: DotLayout) => {
                     patchState(store, {
-                        pageAPIResponse: {
-                            ...store.pageAPIResponse(),
+                        $pageAPIResponse: {
+                            ...store.$pageAPIResponse(),
                             layout
                         }
                     });

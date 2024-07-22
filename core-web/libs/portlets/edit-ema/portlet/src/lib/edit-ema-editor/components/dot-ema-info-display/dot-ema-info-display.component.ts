@@ -32,12 +32,12 @@ export class DotEmaInfoDisplayComponent {
     protected readonly router = inject(Router);
 
     protected options = computed<InfoOptions>(() => {
-        const pageAPIResponse = this.uveStore.pageAPIResponse();
-        const canEditPage = this.uveStore.canEditPage();
-        const device = this.uveStore.device();
-        const socialMedia = this.uveStore.socialMedia();
+        const pageAPIResponse = this.uveStore.$pageAPIResponse();
+        const canEditPage = this.uveStore.$canEditPage();
+        const device = this.uveStore.$device();
+        const socialMedia = this.uveStore.$socialMedia();
 
-        if (this.uveStore.pageIsLocked()) {
+        if (this.uveStore.$pageIsLocked()) {
             let message = 'editpage.locked-by';
 
             if (!pageAPIResponse.page.canLock) {
@@ -80,7 +80,7 @@ export class DotEmaInfoDisplayComponent {
         } else if (canEditPage && !getIsDefaultVariant(pageAPIResponse.viewAs.variantId)) {
             const variantId = pageAPIResponse.viewAs.variantId;
 
-            const currentExperiment = this.uveStore.experiment?.();
+            const currentExperiment = this.uveStore.$experiment?.();
 
             const name =
                 currentExperiment?.trafficProportion.variants.find(

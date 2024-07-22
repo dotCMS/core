@@ -1,4 +1,4 @@
-@if(uveStore.layoutProps(); as layoutProperties){
+@if(uveStore.$layoutProps(); as layoutProperties){
 <dotcms-template-builder-lib
     (templateChange)="nextTemplateUpdate($event)"
     [layout]="layoutProperties.layout"

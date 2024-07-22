@@ -12,29 +12,29 @@ import { UVE_STATUS } from '../shared/enums';
 import { sanitizeURL } from '../utils';
 
 const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
-    pageAPIResponse: undefined,
-    currentUser: undefined,
-    experiment: undefined,
-    error: undefined,
-    params: undefined,
-    status: UVE_STATUS.LOADING,
-    isLegacyPage: true,
-    canEditPage: false,
-    pageIsLocked: true
+    $isEnterprise: false,
+    $languages: [],
+    $pageAPIResponse: null,
+    $currentUser: null,
+    $experiment: null,
+    $error: null,
+    $params: null,
+    $status: UVE_STATUS.LOADING,
+    $isTraditionalPage: true,
+    $canEditPage: false,
+    $pageIsLocked: true
 };
 
 export const UVEStore = signalStore(
     withState<UVEState>(initialState),
     withComputed((store) => {
         return {
-            shellState: computed<ShellState>(() => {
-                const pageAPIResponse = store.pageAPIResponse();
+            $shellState: computed<ShellState>(() => {
+                const pageAPIResponse = store.$pageAPIResponse();
 
                 const currentUrl = '/' + sanitizeURL(pageAPIResponse?.page.pageURI);
 
-                const requestHostName = store.params()?.clientHost ?? window.location.origin;
+                const requestHostName = store.$params()?.clientHost ?? window.location.origin;
 
                 const page = pageAPIResponse?.page;
                 const templateDrawed = pageAPIResponse?.template.drawed;
@@ -42,11 +42,11 @@ export const UVEStore = signalStore(
                 const isLayoutDisabled = !page?.canEdit || !templateDrawed;
 
                 const languageId = pageAPIResponse?.viewAs.language.id;
-                const languages = store.languages();
+                const languages = store.$languages();
 
                 return {
                     canRead: page?.canRead,
-                    error: store.error(),
+                    error: store.$error(),
                     translateProps: {
                         page,
                         languageId,
@@ -58,7 +58,7 @@ export const UVEStore = signalStore(
                         currentUrl,
                         requestHostName
                     },
-                    uvePageInfo: {
+                    uveErrorPageInfo: {
                         NOT_FOUND: {
                             icon: 'compass',
                             title: 'editema.infopage.notfound.title',
