@@ -1,9 +1,9 @@
 <form (ngSubmit)="onSubmit()" [formGroup]="form" class="editor-mode__form">
     @if (allowFileNameEdit) {
         <div class="editor-mode__input-container">
-            <label class="p-label-input-required" data-testId="editor-label" for="file-name">{{
-                'dot.binary.field.action.create.new.file.label' | dm
-            }}</label>
+            <label class="p-label-input-required" data-testId="editor-label" for="file-name">
+                {{ 'dot.binary.field.action.create.new.file.label' | dm }}
+            </label>
             <input
                 id="file-name"
                 autocomplete="off"

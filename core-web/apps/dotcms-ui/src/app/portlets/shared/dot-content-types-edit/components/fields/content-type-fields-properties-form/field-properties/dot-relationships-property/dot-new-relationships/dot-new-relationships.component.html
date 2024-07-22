@@ -1,7 +1,7 @@
 <div class="field">
-    <label dotFieldRequired for="contentType">{{
-        'contenttypes.field.properties.relationships.contentType.label' | dm
-    }}</label>
+    <label dotFieldRequired for="contentType">
+        {{ 'contenttypes.field.properties.relationships.contentType.label' | dm }}
+    </label>
     <dot-searchable-dropdown
         (switch)="triggerChanged()"
         (filterChange)="getContentTypeList($event)"
@@ -17,8 +17,7 @@
         [totalRecords]="paginatorService.totalRecords"
         id="contentType"
         labelPropertyName="name"
-        width="100%">
-    </dot-searchable-dropdown>
+        width="100%"></dot-searchable-dropdown>
 </div>
 <div class="field">
     <label for="cardinality">{{ 'contenttypes.field.properties.relationships.label' | dm }}</label>
@@ -26,6 +25,5 @@
         (switch)="cardinalityChanged($event)"
         [value]="cardinality"
         [disabled]="editing"
-        id="cardinality">
-    </dot-cardinality-selector>
+        id="cardinality"></dot-cardinality-selector>
 </div>

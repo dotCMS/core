@@ -17,9 +17,13 @@ import { DotFieldRequiredDirective } from './dot-field-required.directive';
             <label data-testid="nameLabel" dotFieldRequired for="name">Name</label>
             <input id="name" type="text" formControlName="name" />
             <br />
-            <label data-testid="textLabel" checkIsRequiredControl="text" dotFieldRequired for="text"
-                >Text</label
-            >
+            <label
+                data-testid="textLabel"
+                checkIsRequiredControl="text"
+                dotFieldRequired
+                for="text">
+                Text
+            </label>
             <input id="text" type="text" formControlName="text" />
         </form>
     `
