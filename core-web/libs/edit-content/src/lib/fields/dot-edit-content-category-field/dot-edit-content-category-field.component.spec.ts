@@ -11,7 +11,6 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotCategoryFieldSidebarComponent } from './components/dot-category-field-sidebar/dot-category-field-sidebar.component';
 import { DotEditContentCategoryFieldComponent } from './dot-edit-content-category-field.component';
-import { CLOSE_SIDEBAR_CSS_DELAY_MS } from './dot-edit-content-category-field.const';
 import {
     CATEGORY_FIELD_CONTENTLET_MOCK,
     CATEGORY_FIELD_MOCK,
@@ -75,6 +74,11 @@ describe('DotEditContentCategoryFieldComponent', () => {
                 expect(spectator.query(byTestId('show-sidebar-btn'))).not.toBeNull();
             });
 
+            it('should the button be type=button', () => {
+                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-sidebar-btn'));
+                expect(selectBtn.type).toBe('button');
+            });
+
             it('should display the category list with chips when there are categories', () => {
                 expect(spectator.query(byTestId('category-chip-list'))).not.toBeNull();
             });
@@ -125,11 +129,12 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
             spectator.detectChanges();
         });
+
         it('should invoke `showCategoriesSidebar` method when the select button is clicked', () => {
             const selectBtn = spectator.query(byTestId('show-sidebar-btn'));
             const showCategoriesSidebarSpy = jest.spyOn(
                 spectator.component,
-                'showCategoriesSidebar'
+                'openCategoriesSidebar'
             );
             expect(selectBtn).not.toBeNull();
 
@@ -138,7 +143,7 @@ describe('DotEditContentCategoryFieldComponent', () => {
             expect(showCategoriesSidebarSpy).toHaveBeenCalled();
         });
 
-        it('should disable the `Select` button after `showCategoriesSidebar` method is invoked', () => {
+        it('should disable the `Select` button after `openCategoriesSidebar` method is invoked', () => {
             const selectBtn = spectator.query(byTestId('show-sidebar-btn')) as HTMLButtonElement;
             expect(selectBtn).not.toBeNull();
 
@@ -149,21 +154,24 @@ describe('DotEditContentCategoryFieldComponent', () => {
             expect(selectBtn.disabled).toBe(true);
         });
 
-        it('should create a DotEditContentCategoryFieldSidebarComponent instance when the `Select` button is clicked', () => {
-            const selectBtn = spectator.query(byTestId('show-sidebar-btn')) as HTMLButtonElement;
+        it('should create a DotEditContentCategoryFieldSidebarComponent instance when the `Select` button is clicked', async () => {
+            const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-sidebar-btn'));
             expect(selectBtn).not.toBeNull();
+
             expect(spectator.query(DotCategoryFieldSidebarComponent)).toBeNull();
 
             spectator.click(selectBtn);
+            await spectator.fixture.whenStable();
 
             expect(spectator.query(DotCategoryFieldSidebarComponent)).not.toBeNull();
         });
 
-        it('should remove DotEditContentCategoryFieldSidebarComponent when `closedSidebar` emit', fakeAsync(() => {
+        it('should remove DotEditContentCategoryFieldSidebarComponent when `closedSidebar` emit', fakeAsync(async () => {
             const selectBtn = spectator.query(byTestId('show-sidebar-btn')) as HTMLButtonElement;
 
             expect(selectBtn).not.toBeNull();
             spectator.click(selectBtn);
+            await spectator.fixture.whenStable();
 
             const sidebarComponentRef = spectator.query(DotCategoryFieldSidebarComponent);
             expect(sidebarComponentRef).not.toBeNull();
@@ -171,9 +179,6 @@ describe('DotEditContentCategoryFieldComponent', () => {
             sidebarComponentRef.closedSidebar.emit();
 
             spectator.detectComponentChanges();
-
-            // Due to a delay in the pipe of the subscription
-            spectator.tick(CLOSE_SIDEBAR_CSS_DELAY_MS + 100);
 
             // Check if the sidebar component is removed
             expect(spectator.query(DotCategoryFieldSidebarComponent)).toBeNull();
@@ -192,7 +197,6 @@ describe('DotEditContentCategoryFieldComponent', () => {
                 key: '1234',
                 value: 'test'
             });
-
             spectator.flushEffects();
 
             const categoryValue = spectator.component.categoryFieldControl.value;
