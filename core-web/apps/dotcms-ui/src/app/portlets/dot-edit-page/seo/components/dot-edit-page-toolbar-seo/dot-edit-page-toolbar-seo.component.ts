@@ -111,7 +111,7 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
 
     ngOnChanges(): void {
         this.pageRenderedHtml = this.updateRenderedHtml();
-
+        this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
         this.showWhatsChanged =
             this.pageState.state.mode === DotPageMode.PREVIEW &&
             !('persona' in this.pageState.viewAs) &&
