@@ -891,8 +891,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const isSameUrl = this.uveStore.params().url === payload.url;
 
                 if (isSameUrl) {
-                    // MOVE THIS TO THE TOOLBAR
-                    // this.personaSelector.fetchPersonas(); // We need to fetch the personas again because the page is loaded
                     this.uveStore.setEditorState(EDITOR_STATE.IDLE);
                 } else {
                     this.updateQueryParams({
@@ -983,6 +981,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
                 const payload = <UpdatedContentlet>data.payload;
+
                 this.uveStore.setEditorState(EDITOR_STATE.IDLE);
 
                 // If there is no payload, we don't need to do anything

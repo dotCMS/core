@@ -7,8 +7,8 @@ import {
     EventEmitter,
     Input,
     OnChanges,
-    OnInit,
     Output,
+    SimpleChanges,
     ViewChild,
     inject,
     signal
@@ -55,7 +55,7 @@ interface PersonaSelector {
     templateUrl: './edit-ema-persona-selector.component.html',
     styleUrls: ['./edit-ema-persona-selector.component.scss']
 })
-export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, OnChanges {
+export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges {
     @ViewChild('listbox') listbox: Listbox;
 
     private readonly pageApiService = inject(DotPageApiService);
@@ -75,11 +75,11 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, O
     @Output() despersonalize: EventEmitter<DotPersona & { pageId: string; selected: boolean }> =
         new EventEmitter();
 
-    ngOnInit(): void {
-        this.fetchPersonas();
-    }
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes.pageId) {
+            this.fetchPersonas();
+        }
 
-    ngOnChanges(): void {
         // To select the correct persona when the page is reloaded with no queryParams
         if (this.listbox) {
             this.resetValue();
