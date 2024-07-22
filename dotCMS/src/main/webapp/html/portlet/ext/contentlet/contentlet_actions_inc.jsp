@@ -54,8 +54,8 @@ catch(Exception e){
 					APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName());
 		}
 	}
-   
-   
+
+
 boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user, PageMode.get(request).respectAnonPerms);
 
 
@@ -67,14 +67,14 @@ if(contentlet.isHTMLPage() && UtilMethods.isSet(contentlet.getIdentifier())){
     previewUrl= "/dotAdmin/#/edit-page/content?url=" + contentUrl + "&language_id=" + contentlet.getLanguageId();
 }else{
 	contentUrl = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, user, PageMode.get(request).respectAnonPerms);
-	previewUrl = "/dotAdmin/#/edit-page/content?url=" + contentUrl + "&language_id=" + contentlet.getLanguageId();  
+	previewUrl = "/dotAdmin/#/edit-page/content?url=" + contentUrl + "&language_id=" + contentlet.getLanguageId();
 }
 
 if(myHost.getIdentifier() != null){
 	previewUrl += "&host_id=" + myHost.getIdentifier();
 }
 
-   
+
 %>
 
 
@@ -82,11 +82,11 @@ if(myHost.getIdentifier() != null){
 <script>
 function setLinkToContentType(){
 
-   const URLLength = window.parent.location.hash.split('/').length;
    const contentTypeLink = document.getElementById('contentTypeLink');
+   const isExistingContent = !!'<%=contentlet.getInode() %>';
 
-  //URL has inode, example: #/c/content/87edb0d5-99aa-4d18-a50d-60eef7c74954
-   if (URLLength>3 && contentTypeLink) {
+  // This is to avoid be a link when creating the content just when is editing.
+   if (isExistingContent && contentTypeLink) {
         contentTypeLink.addEventListener('click', jumpToContentType);
         contentTypeLink.setAttribute('href','#');
    }
