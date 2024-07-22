@@ -27,16 +27,18 @@ let mapIdCounter = 1;
             }
         `
     ],
-    template: `<cw-modal-dialog
-        (ok)="onOkAction($event)"
-        (cancel)="onCancelAction($event)"
-        [headerText]="headerText"
-        [hidden]="hidden"
-        [okEnabled]="true">
-        <div *ngIf="!hidden" class="cw-dialog-body">
-            <div *ngIf="!hidden" class="g-map" id="{{ mapId }}"></div>
-        </div>
-    </cw-modal-dialog>`
+    template: `
+        <cw-modal-dialog
+            (ok)="onOkAction($event)"
+            (cancel)="onCancelAction($event)"
+            [headerText]="headerText"
+            [hidden]="hidden"
+            [okEnabled]="true">
+            <div *ngIf="!hidden" class="cw-dialog-body">
+                <div *ngIf="!hidden" class="g-map" id="{{ mapId }}"></div>
+            </div>
+        </cw-modal-dialog>
+    `
 })
 export class AreaPickerDialogComponent implements OnChanges {
     @Input() apiKey = '';

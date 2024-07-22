@@ -2,8 +2,7 @@
     <ng-container *ngFor="let item of items">
         <ng-container
             [ngTemplateOutlet]="item.action ? button : anchor"
-            [ngTemplateOutletContext]="{ item: item }">
-        </ng-container>
+            [ngTemplateOutletContext]="{ item: item }"></ng-container>
     </ng-container>
 </nav>
 
@@ -20,8 +19,7 @@
         rel="noopener">
         <ng-container
             [ngTemplateOutlet]="item.icon ? icon : iconURL"
-            [ngTemplateOutletContext]="{ item: item }">
-        </ng-container>
+            [ngTemplateOutletContext]="{ item: item }"></ng-container>
         <span class="item__label" data-testId="nav-bar-item-label">
             {{ item.label | dm }}
         </span>
@@ -37,8 +35,7 @@
         data-testId="nav-bar-item">
         <ng-container
             [ngTemplateOutlet]="item.icon ? icon : iconURL"
-            [ngTemplateOutletContext]="{ item: item }">
-        </ng-container>
+            [ngTemplateOutletContext]="{ item: item }"></ng-container>
         <span class="item__label" data-testId="nav-bar-item-label">
             {{ item.label | dm }}
         </span>

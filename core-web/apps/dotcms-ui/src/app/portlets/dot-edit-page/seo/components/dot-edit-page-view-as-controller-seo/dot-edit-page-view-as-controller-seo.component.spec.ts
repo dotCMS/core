@@ -42,8 +42,10 @@ import { DotEditPageViewAsControllerSeoComponent } from './dot-edit-page-view-as
 
 @Component({
     selector: 'dot-test-host',
-    template: `<dot-edit-page-view-as-controller-seo
-        [pageState]="pageState"></dot-edit-page-view-as-controller-seo>`
+    template: `
+        <dot-edit-page-view-as-controller-seo
+            [pageState]="pageState"></dot-edit-page-view-as-controller-seo>
+    `
 })
 class DotTestHostComponent {
     @Input()
