@@ -32,13 +32,13 @@
             </div>
             <div class="flex-grow-1 category-field__categories">
                 @if (store.mode() === 'list') {
-                  <dot-category-field-category-list
-                      @fadeAnimation
-                      (itemChecked)="store.updateSelected($event.selected, $event.item)"
-                      (rowClicked)="store.getCategories($event)"
-                      [categories]="store.categoryList()"
-                      [isLoading]="store.isListLoading()"
-                      [selected]="store.selectedCategoriesValues()" />
+                    <dot-category-field-category-list
+                        @fadeAnimation
+                        (itemChecked)="store.updateSelected($event.selected, $event.item)"
+                        (rowClicked)="store.getCategories($event)"
+                        [categories]="store.categoryList()"
+                        [isLoading]="store.isListLoading()"
+                        [selected]="store.selectedCategoriesValues()" />
                 } @else {
                     <dot-category-field-search-list
                         @fadeAnimation
