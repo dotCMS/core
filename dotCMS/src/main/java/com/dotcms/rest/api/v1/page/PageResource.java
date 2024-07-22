@@ -122,12 +122,7 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
  * @version 4.2
  * @since Oct 6, 2017
  */
-@Path("/v1/page")
-@Tag(name = "Page",
-description = "Endpoints performing operations for page resrouces.",
-externalDocs = @ExternalDocumentation(description = "Additional information for Page API",
-                url = "https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas")
-)
+
 public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;
@@ -433,7 +428,7 @@ public class PageResource {
                 @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
                 @ApiResponse(responseCode = "404", description = "Page not found")
                 })
-    public ResponseEntityView saveLayout(
+    public Response saveLayout(
                 @Context final HttpServletRequest request,
                 @Context final HttpServletResponse response,
                 @PathParam("pageId") @Parameter(description = "ID for the page will link to") final String pageId,
@@ -506,7 +501,7 @@ public class PageResource {
                                 "Method processes the request and returns HTTP response indicating a complete save operation.",
                 tags = {"Page"},
                 responses = {
-                        @APIResponse(responseCode = "200", description = "Page template saved successfully",
+                        @ApiResponse(responseCode = "200", description = "Page template saved successfully",
                                 content = @Content(mediaType = "application/json", 
                                         schema = @Schema(implementation = ResponseEntityPageView.class)
                                         )
