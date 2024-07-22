@@ -11,6 +11,7 @@ import org.junit.jupiter.api.function.Executable;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
+@TestProfile(DotCMSITProfile.class)
 class ContentTypeValidatorTest {
 
     @Inject
