@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -12,7 +11,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
 @Component({
     selector: 'dot-ema-info-display',
     standalone: true,
-    imports: [NgIf, ButtonModule, DotMessagePipe],
+    imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-ema-info-display.component.html',
     styleUrls: ['./dot-ema-info-display.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

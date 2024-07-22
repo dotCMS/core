@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -27,7 +27,7 @@ interface DotLanguageWithLabel extends DotLanguage {
 @Component({
     selector: 'dot-edit-ema-language-selector',
     standalone: true,
-    imports: [CommonModule, OverlayPanelModule, ListboxModule, ButtonModule],
+    imports: [CommonModule, OverlayPanelModule, ListboxModule, ButtonModule, AsyncPipe],
     templateUrl: './edit-ema-language-selector.component.html',
     styleUrls: ['./edit-ema-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

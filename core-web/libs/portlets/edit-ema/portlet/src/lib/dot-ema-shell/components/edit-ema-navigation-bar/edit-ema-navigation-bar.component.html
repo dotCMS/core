@@ -1,9 +1,9 @@
 <nav class="edit-ema-nav-bar">
-    <ng-container *ngFor="let item of items">
+    @for (item of items; track $index) {
         <ng-container
             [ngTemplateOutlet]="!item.href?.length ? button : anchor"
             [ngTemplateOutletContext]="{ item: item }"></ng-container>
-    </ng-container>
+    }
 </nav>
 
 <ng-template #anchor let-item="item">
