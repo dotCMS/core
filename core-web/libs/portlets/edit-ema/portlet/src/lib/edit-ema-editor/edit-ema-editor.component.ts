@@ -1,4 +1,5 @@
-import { Observable, Subject, fromEvent, of } from 'rxjs';
+import { tapResponse } from '@ngrx/operators';
+import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -63,13 +64,15 @@ import {
     EmaDragItem,
     ClientContentletArea,
     Container,
-    InlineEditingContentletDataset
+    InlineEditingContentletDataset,
+    UpdatedContentlet
 } from './components/ema-page-dropzone/types';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
+import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, WINDOW } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
     PositionPayload,
@@ -144,6 +147,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
+    private readonly dotPageApiService = inject(DotPageApiService);
 
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
@@ -799,15 +803,33 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.cd.detectChanges();
             },
             [NG_CUSTOM_EVENTS.FORM_SELECTED]: () => {
-                // const identifier = detail.data.identifier;
-                // this.store.saveFormToPage({
-                //     payload,
-                //     formId: identifier,
-                //     params: this.queryParams,
-                //     whenSaved: () => {
-                //         this.dialog.resetDialog();
-                //     }
-                // });
+                const formId = detail.data.identifier;
+
+                this.dotPageApiService
+                    .getFormIndetifier(payload.container.identifier, formId)
+                    .pipe(
+                        tap(() => {
+                            this.uveStore.setUveStatus(UVE_STATUS.LOADING);
+                        }),
+                        map((newFormId: string) => {
+                            return {
+                                ...payload,
+                                newContentletId: newFormId
+                            };
+                        }),
+                        catchError(() => EMPTY),
+                        take(1)
+                    )
+                    .subscribe((response) => {
+                        const { pageContainers, didInsert } = insertContentletInContainer(response);
+
+                        if (!didInsert) {
+                            this.handleDuplicatedContentlet();
+                            this.uveStore.setUveStatus(UVE_STATUS.LOADED);
+                        } else {
+                            this.uveStore.savePage(pageContainers);
+                        }
+                    });
             },
             [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -960,17 +982,47 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     });
             },
             [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
-                // const payload = <UpdatedContentlet>data.payload;
-
+                const payload = <UpdatedContentlet>data.payload;
                 this.uveStore.setEditorState(EDITOR_STATE.IDLE);
 
-                // this.store.saveFromInlineEditedContentlet({
-                //     contentlet: {
-                //         inode: payload.dataset['inode'],
-                //         [payload.dataset.fieldName]: payload.content
-                //     },
-                //     params: this.queryParams
-                // });
+                // If there is no payload, we don't need to do anything
+                if (!payload) {
+                    return;
+                }
+
+                const contentlet = {
+                    inode: payload.dataset['inode'],
+                    [payload.dataset.fieldName]: payload.content
+                };
+
+                this.dotPageApiService
+                    .saveContentlet({ contentlet })
+                    .pipe(
+                        take(1),
+                        tap(() => {
+                            this.uveStore.setUveStatus(UVE_STATUS.LOADING);
+                        }),
+                        tapResponse(
+                            () => {
+                                this.messageService.add({
+                                    severity: 'success',
+                                    summary: this.dotMessageService.get('message.content.saved'),
+                                    life: 2000
+                                });
+                            },
+                            (e) => {
+                                console.error(e);
+                                this.messageService.add({
+                                    severity: 'error',
+                                    summary: this.dotMessageService.get(
+                                        'editpage.content.update.contentlet.error'
+                                    ),
+                                    life: 2000
+                                });
+                            }
+                        )
+                    )
+                    .subscribe(() => this.uveStore.reload());
             },
             [CUSTOMER_ACTIONS.REORDER_MENU]: () => {
                 const { reorderUrl } = <ReorderPayload>data.payload;
@@ -1024,8 +1076,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             life: 2000
         });
 
-        // CHECK WHY WE DO THIS
-        // I THINK WE DONT NEED THIS ANYMORE
         this.uveStore.setEditorState(EDITOR_STATE.IDLE);
 
         this.dialog.resetDialog();

@@ -1,4 +1,4 @@
-import { signalStoreFeature, withComputed, type } from '@ngrx/signals';
+import { signalStoreFeature, withComputed, type, withMethods, patchState } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
@@ -20,6 +20,9 @@ export function withUveStatus() {
             isLoading: computed(() => store.status() === UVE_STATUS.LOADING),
             isLoaded: computed(() => store.status() === UVE_STATUS.LOADED),
             isError: computed(() => store.status() === UVE_STATUS.ERROR)
+        })),
+        withMethods((store) => ({
+            setUveStatus: (status: UVE_STATUS) => patchState(store, { status })
         }))
     );
 }

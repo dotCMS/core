@@ -28,7 +28,6 @@ import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
-import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { EditEmaEditorComponent } from '../edit-ema-editor/edit-ema-editor.component';
@@ -43,7 +42,6 @@ import { UVEStore } from '../store/dot-uve.store';
     selector: 'dot-ema-shell',
     standalone: true,
     providers: [
-        EditEmaStore, // DELETE THIS WHEN IS READY
         UVEStore,
         DotPageApiService,
         DotActionUrlService,
