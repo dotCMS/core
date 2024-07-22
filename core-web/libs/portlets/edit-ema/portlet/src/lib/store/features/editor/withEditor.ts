@@ -9,6 +9,8 @@ import {
 
 import { computed } from '@angular/core';
 
+import { DotTreeNode } from '@dotcms/dotcms-models';
+
 import { withSave } from './save/withSave';
 import { withEditorToolbar } from './toolbar/withEditorToolbar';
 
@@ -19,10 +21,17 @@ import {
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
+    ActionPayload,
+    ContainerPayload,
+    ContentletPayload,
+    PositionPayload
+} from '../../../shared/models';
+import {
     sanitizeURL,
     createPageApiUrlWithQueryParams,
     mapContainerStructureToArray,
-    getPersonalization
+    getPersonalization,
+    areContainersEquals
 } from '../../../utils';
 import { EditorState, UVEState } from '../../models';
 
@@ -198,6 +207,55 @@ export function withEditor() {
                         $bounds: [],
                         $state: EDITOR_STATE.IDLE
                     });
+                },
+                getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
+                    const { containers, languageId, id, personaTag } = store.$pageData();
+
+                    const { contentletsId } = containers.find((container) =>
+                        areContainersEquals(container, positionPayload.container)
+                    ) ?? { contentletsId: [] };
+
+                    const container = positionPayload.container
+                        ? {
+                              ...positionPayload.container,
+                              contentletsId
+                          }
+                        : null;
+
+                    return {
+                        ...positionPayload,
+                        language_id: languageId.toString(),
+                        pageId: id,
+                        pageContainers: containers,
+                        personaTag,
+                        container
+                    } as ActionPayload;
+                },
+                getCurrentTreeNode(
+                    container: ContainerPayload,
+                    contentlet: ContentletPayload
+                ): DotTreeNode {
+                    const { identifier: contentId } = contentlet;
+                    const {
+                        variantId,
+                        uuid: relationType,
+                        contentletsId,
+                        identifier: containerId
+                    } = container;
+
+                    const { personalization, id: pageId } = store.$pageData();
+
+                    const treeOrder = contentletsId.findIndex((id) => id === contentId).toString();
+
+                    return {
+                        contentId,
+                        containerId,
+                        relationType,
+                        variantId,
+                        personalization,
+                        treeOrder,
+                        pageId
+                    };
                 }
             };
         }),

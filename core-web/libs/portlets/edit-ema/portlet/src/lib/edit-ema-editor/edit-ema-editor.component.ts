@@ -11,14 +11,11 @@ import {
     HostListener,
     OnDestroy,
     OnInit,
-    Signal,
     ViewChild,
     WritableSignal,
-    computed,
     effect,
     inject,
-    signal,
-    untracked
+    signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Params, Router } from '@angular/router';
@@ -91,7 +88,6 @@ import {
 import { UVEStore } from '../store/dot-uve.store';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
-    areContainersEquals,
     deleteContentletFromContainer,
     insertContentletInContainer
 } from '../utils';
@@ -152,53 +148,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly destroy$ = new Subject<boolean>();
     protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
-    readonly ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
-
-    readonly clientData: WritableSignal<ClientData> = signal(undefined);
-
-    // WE CAN PROBABLY MOVE THIS TO THE STORE
-    readonly actionPayload: Signal<ActionPayload> = computed(() => {
-        const clientData = this.clientData();
-        const { containers, languageId, id, personaTag } = this.uveStore.$pageData();
-        const { contentletsId } = containers.find((container) =>
-            areContainersEquals(container, clientData.container)
-        ) ?? { contentletsId: [] };
-
-        const container = clientData.container
-            ? {
-                  ...clientData.container,
-                  contentletsId
-              }
-            : null;
-
-        return {
-            ...clientData,
-            language_id: languageId.toString(),
-            pageId: id,
-            pageContainers: containers,
-            personaTag,
-            container
-        } as ActionPayload;
-    });
-
-    // WE CAN PROBABLY MOVE THIS TO THE STORE
-    readonly currentTreeNode: Signal<DotTreeNode> = computed(() => {
-        const { contentlet, container } = this.actionPayload();
-        const { identifier: contentId } = contentlet;
-        const { variantId, uuid: relationType, contentletsId, identifier: containerId } = container;
-        const { personalization, id: pageId } = untracked(() => this.uveStore.$pageData());
-        const treeOrder = contentletsId.findIndex((id) => id === contentId).toString();
-
-        return {
-            contentId,
-            containerId,
-            relationType,
-            variantId,
-            personalization,
-            treeOrder,
-            pageId
-        };
-    });
+    readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
 
     readonly host = '*';
 
@@ -206,7 +156,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         return this.iframe.nativeElement.contentWindow;
     }
 
-    readonly handleReloadContentEffect = effect(
+    readonly $handleReloadContentEffect = effect(
         () => {
             const { code, isTraditionalPage, isEditState, isEnterprise } =
                 this.uveStore.$reloadEditorContent();
@@ -243,7 +193,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
     );
 
-    readonly handleIsDraggingEffect = effect(() => {
+    readonly $handleIsDraggingEffect = effect(() => {
         const isDragging = this.uveStore.$editorIsInDraggingState();
 
         if (isDragging) {
@@ -595,8 +545,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
-        this.handleReloadContentEffect.destroy();
-        this.handleIsDraggingEffect.destroy();
+        this.$handleReloadContentEffect.destroy();
+        this.$handleIsDraggingEffect.destroy();
     }
 
     /**
@@ -629,7 +579,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     placeItem(positionPayload: PositionPayload, dragItem: EmaDragItem): void {
-        let payload = this.getPageSavePayload(positionPayload);
+        let payload = this.uveStore.getPageSavePayload(positionPayload);
 
         const destinationContainer = payload.container;
         const pivotContentlet = payload.contentlet;
@@ -735,7 +685,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 doc.write(newFile);
                 doc.close();
 
-                this.ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+                this.$ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
                 this.ogTagsResults$ = this.dotSeoMetaTagsService
                     .getMetaTagsResults(doc)
                     .pipe(take(1));
@@ -903,7 +853,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
                 const contentletArea = <ClientContentletArea>data.payload;
 
-                const payload = this.getPageSavePayload(contentletArea.payload);
+                const payload = this.uveStore.getPageSavePayload(contentletArea.payload);
 
                 this.uveStore.setEditorContentletArea({
                     ...contentletArea,
@@ -932,6 +882,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 const payload = <{ dataset: InlineEditingContentletDataset }>data.payload;
 
+                const { contentlet, container } = this.uveStore.$contentletArea().payload;
+
+                const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
+
                 this.dotCopyContentModalService
                     .open()
                     .pipe(
@@ -940,7 +894,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                                 return of(null);
                             }
 
-                            return this.handleCopyContent();
+                            return this.handleCopyContent(currentTreeNode);
                         }),
                         tap((res) => {
                             if (res) {
@@ -1079,21 +1033,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Get the page save payload
-     *
-     * @private
-     * @param {PositionPayload} positionPayload
-     * @return {*}  {ActionPayload}
-     * @memberof EditEmaEditorComponent
-     */
-    private getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
-        // CHECK IF WE CAN MOVE THIS TO THE STORE
-        this.clientData.set(positionPayload);
-
-        return this.actionPayload();
-    }
-
-    /**
      * Handle edit contentlet
      *
      * @protected
@@ -1102,7 +1041,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     protected handleEditContentlet(payload: ActionPayload) {
-        const { contentlet } = payload;
+        const { contentlet, container } = payload;
         const { onNumberOfPages = '1', title } = contentlet;
 
         if (Number(onNumberOfPages) <= 1) {
@@ -1110,6 +1049,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             return;
         }
+
+        const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
 
         this.dotCopyContentModalService
             .open()
@@ -1121,7 +1062,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                     this.dialog.showLoadingIframe(title);
 
-                    return this.handleCopyContent();
+                    return this.handleCopyContent(currentTreeNode);
                 })
             )
             .subscribe((contentlet) => {
@@ -1157,8 +1098,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof DotEmaDialogComponent
      */
-    private handleCopyContent(): Observable<DotCMSContentlet> {
-        return this.dotCopyContentService.copyInPage(this.currentTreeNode()).pipe(
+    private handleCopyContent(currentTreeNode: DotTreeNode): Observable<DotCMSContentlet> {
+        return this.dotCopyContentService.copyInPage(currentTreeNode).pipe(
             catchError((error) =>
                 this.dotHttpErrorManagerService.handle(error).pipe(
                     tap(() => this.dialog.resetDialog()), // If there is an error, we set the status to idle
