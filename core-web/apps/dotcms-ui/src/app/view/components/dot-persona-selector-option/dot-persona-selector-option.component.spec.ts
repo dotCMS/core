@@ -14,7 +14,9 @@ import { MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
 
 @Component({
-    template: ` <dot-persona-selector-option [persona]="persona"></dot-persona-selector-option>`
+    template: `
+        <dot-persona-selector-option [persona]="persona"></dot-persona-selector-option>
+    `
 })
 class TestHostComponent {
     persona = mockDotPersona;

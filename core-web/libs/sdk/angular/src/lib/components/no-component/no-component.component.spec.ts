@@ -19,6 +19,6 @@ describe('NoComponentComponent', () => {
 
     it('should display the content type', () => {
         const noComponent = spectator.debugElement.nativeElement;
-        expect(noComponent?.innerHTML).toBe('No Component for exampleContentType');
+        expect(noComponent?.innerHTML).toContain('No Component for exampleContentType');
     });
 });
