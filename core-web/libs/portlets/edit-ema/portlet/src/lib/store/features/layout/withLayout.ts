@@ -6,7 +6,7 @@ import { DotLayout } from '@dotcms/dotcms-models';
 
 import { LayoutProps } from './models';
 
-import { mapContainers } from '../../../utils';
+import { mapContainerStructureToDotContainerMap } from '../../../utils';
 import { UVEState } from '../../models';
 
 /**
@@ -25,7 +25,9 @@ export function withLayout() {
                 const pageAPIResponse = store.$pageAPIResponse();
 
                 return {
-                    containersMap: mapContainers(pageAPIResponse.containers),
+                    containersMap: mapContainerStructureToDotContainerMap(
+                        pageAPIResponse.containers
+                    ),
                     layout: pageAPIResponse.layout,
                     template: {
                         identifier: pageAPIResponse.template.identifier,

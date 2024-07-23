@@ -314,7 +314,9 @@ export function computePageIsLocked(page: DotPage, currentUser: CurrentUser) {
  * @param {DotPageContainerStructure} containers
  * @return {*}  {DotContainerMap}
  */
-export function mapContainers(containers: DotPageContainerStructure): DotContainerMap {
+export function mapContainerStructureToDotContainerMap(
+    containers: DotPageContainerStructure
+): DotContainerMap {
     return Object.keys(containers).reduce((acc, id) => {
         acc[id] = containers[id].container;
 
