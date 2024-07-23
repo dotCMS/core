@@ -73,7 +73,6 @@ public enum InterfaceType {
 
     static {
 
-
         Map<String, TypeFetcher> contentFields = ContentFields.getContentFields();
 
         CONTENT_INTERFACE_FIELDS.addAll(contentFields.keySet());
@@ -86,7 +85,8 @@ public enum InterfaceType {
         interfaceTypes.put("CONTENT", createInterfaceType(CONTENT_INTERFACE_NAME, contentFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> fileAssetFields = new HashMap<>(contentFields);
-        addBaseTypeFields(fileAssetFields, ImmutableFileAssetContentType.builder().name("dummy").build().requiredFields());
+        addBaseTypeFields(fileAssetFields, ImmutableFileAssetContentType.builder().name("dummy")
+                .build().requiredFields());
         interfaceTypes.put("FILEASSET", createInterfaceType(FILE_INTERFACE_NAME, fileAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> pageAssetFields = new HashMap<>(contentFields);
@@ -141,8 +141,10 @@ public enum InterfaceType {
     private static void addBaseTypeFields(final Map<String, TypeFetcher> baseTypeFields,
             final List<Field> requiredFormFields) {
         final ContentAPIGraphQLTypesProvider instance = ContentAPIGraphQLTypesProvider.INSTANCE;
+        //Only Add the fixed fields to the base type fields as others can be removed breaking the GraphQLSchema
         for (final Field formField : requiredFormFields) {
             if (!formField.fixed()) {
+                Logger.warn(InterfaceType.class, "Field " + formField.variable() + " is not fixed, skipping.");
                 continue;
             }
             baseTypeFields.put(formField.variable(), new TypeFetcher(
