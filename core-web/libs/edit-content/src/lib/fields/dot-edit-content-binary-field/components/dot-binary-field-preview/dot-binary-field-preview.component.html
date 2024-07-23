@@ -21,8 +21,7 @@
                     [iconSize]="'48px'"
                     [contentlet]="contentlet"
                     [playableVideo]="true"
-                    data-testId="contentlet-thumbnail">
-                </dot-contentlet-thumbnail>
+                    data-testId="contentlet-thumbnail"></dot-contentlet-thumbnail>
             }
         </div>
         <div class="preview-metadata__container">
@@ -132,9 +131,9 @@
                 <div [attr.data-testId]="'resource-link-' + sourceLink.key" class="file-info__item">
                     <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
                     <div class="file-info__link">
-                        <a [href]="sourceLink.value" target="_blank">{{
-                            sourceLink.value || ('dot.binary.field.no.link.found' | dm)
-                        }}</a>
+                        <a [href]="sourceLink.value" target="_blank">
+                            {{ sourceLink.value || ('dot.binary.field.no.link.found' | dm) }}
+                        </a>
                         <dot-copy-button [copy]="sourceLink.value" />
                     </div>
                 </div>

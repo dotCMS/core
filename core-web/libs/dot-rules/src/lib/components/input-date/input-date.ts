@@ -16,16 +16,18 @@ import { NgControl, ControlValueAccessor } from '@angular/forms';
     changeDetection: ChangeDetectionStrategy.OnPush,
     // host: { role: 'text' },
     selector: 'cw-input-date',
-    template: `<p-calendar
-        (onBlur)="onBlur($event)"
-        (onSelect)="updateValue($event)"
-        [(ngModel)]="modelValue"
-        [showTime]="true"
-        [placeholder]="placeholder"
-        [disabled]="disabled"
-        [tabindex]="tabIndex || ''"
-        hourFormat="12"
-        showButtonBar="true"></p-calendar>`
+    template: `
+        <p-calendar
+            (onBlur)="onBlur($event)"
+            (onSelect)="updateValue($event)"
+            [(ngModel)]="modelValue"
+            [showTime]="true"
+            [placeholder]="placeholder"
+            [disabled]="disabled"
+            [tabindex]="tabIndex || ''"
+            hourFormat="12"
+            showButtonBar="true"></p-calendar>
+    `
 })
 export class InputDate implements ControlValueAccessor {
     private static DEFAULT_VALUE: Date;
