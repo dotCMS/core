@@ -91,7 +91,7 @@ export function withEditorToolbar() {
                           }
                         : null,
                     unlockButton:
-                        store.$pageIsLocked() && pageAPIResponse.page.canLock
+                        pageAPIResponse.page.locked && pageAPIResponse.page.canLock
                             ? {
                                   inode: pageAPIResponse.page.inode,
                                   loading: store.$status() === UVE_STATUS.LOADING

@@ -220,26 +220,27 @@ export class EditEmaToolbarComponent {
             detail: 'Page is being unlocked'
         });
 
-        this.#dotContentletLockerService.unlock(inode).pipe(
-            tapResponse({
-                next: () => {
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: 'Page Unlock',
-                        detail: 'Page is unlocked'
-                    });
-
-                    this.uveStore.reload();
-                },
-                error: () => {
-                    this.#messageService.add({
-                        severity: 'error',
-                        summary: 'Page Unlock',
-                        detail: 'Page could not be unlocked'
-                    });
-                }
-            })
-        );
+        this.#dotContentletLockerService
+            .unlock(inode)
+            .pipe(
+                tapResponse({
+                    next: () => {
+                        this.#messageService.add({
+                            severity: 'success',
+                            summary: 'Page Unlock',
+                            detail: 'Page is unlocked'
+                        });
+                    },
+                    error: () => {
+                        this.#messageService.add({
+                            severity: 'error',
+                            summary: 'Page Unlock',
+                            detail: 'Page could not be unlocked'
+                        });
+                    }
+                })
+            )
+            .subscribe(() => this.uveStore.reload());
     }
 
     private updateQueryParams(params: Params) {
