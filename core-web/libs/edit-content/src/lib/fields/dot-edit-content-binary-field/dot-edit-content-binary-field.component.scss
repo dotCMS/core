@@ -36,14 +36,18 @@
     &:empty {
         display: none;
     }
-}
 
-.binary-field__actions .p-button {
-    display: inline-flex;
-    user-select: none;
-    align-items: center;
-    vertical-align: bottom;
-    text-align: center;
+    .label-ai {
+        text-transform: none;
+    }
+
+    .p-button {
+        display: inline-flex;
+        user-select: none;
+        align-items: center;
+        vertical-align: bottom;
+        text-align: center;
+    }
 }
 
 .binary-field__drop-zone {

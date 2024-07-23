@@ -220,7 +220,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 .argument(GraphQLArgument.newArgument()
                         .name("render")
                         .type(GraphQLBoolean)
-                        .defaultValue(null)
+                        .defaultValueProgrammatic(null)
                         .build())
                 .type(ExtendedScalars.Json)
                 .dataFetcher(new DotJSONDataFetcher()).build());

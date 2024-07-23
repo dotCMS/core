@@ -3,7 +3,14 @@ package com.dotcms.ai.util;
 
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.MarkdownTool;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
@@ -25,9 +32,17 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.dotcms.ai.app.AppConfig.debugLogger;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.SPACE;
 
 
 /**
@@ -141,48 +156,47 @@ public class ContentToStringUtil {
     /**
      * This method will index the first long_text field that has been marked as indexed
      *
-     * @param contentlet
-     * @return
+     * @param contentlet The {@link Contentlet} whose fields will be analyzed.
+     *
+     * @return A list of fields to index.
      */
-
-
     public List<Field> guessWhatFieldsToIndex(@NotNull Contentlet contentlet) {
-
+        // HTML Pages are not indexed based on fields, instead they will be rendered to be parsed
+        if (Boolean.TRUE.equals(contentlet.isHTMLPage())) {
+            return List.of();
+        }
         final List<Field> embedMe = new ArrayList<>();
         if (contentlet.isFileAsset()) {
-            File fileAsset = Try.of(() -> contentlet.getBinary(FILE_ASSET_KEY)).getOrNull();
+            final File fileAsset = Try.of(() -> contentlet.getBinary(FILE_ASSET_KEY)).getOrNull();
             if (shouldIndex(fileAsset)) {
                 embedMe.add(contentlet.getContentType().fieldMap().get(FILE_ASSET_KEY));
             }
         }
         if (contentlet.isDotAsset()) {
-            File asset = Try.of(() -> contentlet.getBinary(ASSET_KEY)).getOrNull();
+            final File asset = Try.of(() -> contentlet.getBinary(ASSET_KEY)).getOrNull();
             if (shouldIndex(asset)) {
                 embedMe.add(contentlet.getContentType().fieldMap().get(ASSET_KEY));
             }
         }
-        // pages are not indexed based on fields, instead they will be rendered to be parsed
-        if (Boolean.TRUE.equals(contentlet.isHTMLPage())) {
-            return List.of();
-        }
-
-        final String ignoreUrlMapFields = (contentlet.getContentType().urlMapPattern() != null) ? contentlet.getContentType().urlMapPattern() : "";
-
-        contentlet.getContentType()
-                .fields()
-                .stream().filter(f -> !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
-                .filter(f -> f instanceof StoryBlockField || f instanceof WysiwygField || f instanceof BinaryField ||  f instanceof TextAreaField || f instanceof FileField);
-
         if (!embedMe.isEmpty()) {
             return embedMe;
         }
+        final String ignoreUrlMapFields = (contentlet.getContentType().urlMapPattern() != null) ? contentlet.getContentType().urlMapPattern() : BLANK;
 
-        return contentlet.getContentType()
+        contentlet.getContentType()
                 .fields()
-                .stream().filter(f -> !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
+                .stream().filter(f -> null != ignoreUrlMapFields && !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
+                .filter(f -> f instanceof StoryBlockField || f instanceof WysiwygField || f instanceof BinaryField ||  f instanceof TextAreaField || f instanceof FileField);
+
+        final List<Field> indexableFields = contentlet.getContentType()
+                .fields()
+                .stream().filter(f -> null != ignoreUrlMapFields && !ignoreUrlMapFields.contains("{" + f.variable() + "}"))
                 .filter(f ->
                         f.dataType().equals(DataTypes.LONG_TEXT)
                 ).collect(Collectors.toUnmodifiableList());
+        debugLogger(this.getClass(), () -> String.format("Found %d indexable field(s) for Contentlet ID '%s': %s",
+                indexableFields.size(), contentlet.getIdentifier(), indexableFields.stream().map(Field::variable).collect(Collectors.toSet())));
+        return indexableFields;
     }
 
     private boolean shouldIndex(File file) {
@@ -207,6 +221,21 @@ public class ContentToStringUtil {
 
     }
 
+    /**
+     * Takes the actual content (data) from the specified list of Fields in a Contentlet, and
+     * appends it to a single String. This will make up the information that will be sent to the
+     * Embeddings API.
+     * <p>Keep in mind that the length of such data must be greater or equal than the value
+     * specified via the {@link AppKeys#EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX} configuration
+     * property. Otherwise, an empty Optional will be returned.</p>
+     *
+     * @param contentlet The {@link Contentlet} containing the data that will be sent to the
+     *                   Embeddings API.
+     * @param fields     The list of {@link Field} objects specifying what data will be taken from
+     *                   the Contentlet.
+     *
+     * @return An {@link Optional} with the appended Strings from each field value.
+     */
     public Optional<String> parseFields(@NotNull final Contentlet contentlet, @NotNull final List<Field> fields) {
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
             return Optional.empty();
@@ -222,24 +251,36 @@ public class ContentToStringUtil {
         final StringBuilder builder = new StringBuilder();
         for (Field field : fields) {
             parseField(contentlet, field)
-                    .ifPresent(s -> builder.append(s).append(" "));
+                    .ifPresent(s -> builder.append(s).append(SPACE));
         }
-
-        if (builder.length() < ConfigService.INSTANCE.config().getConfigInteger(AppKeys.EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX)) {
+        final int embeddingsMinimumLength =
+                ConfigService.INSTANCE.config().getConfigInteger(AppKeys.EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX);
+        if (builder.length() < embeddingsMinimumLength) {
+            debugLogger(this.getClass(), () -> String.format("Parseable fields for Contentlet ID " +
+                    "'%s' don't meet the minimum length requirement of %d characters. Skipping indexing.",
+                    contentlet.getIdentifier(), embeddingsMinimumLength));
             return Optional.empty();
         }
 
         return Optional.of(builder.toString().trim());
     }
 
-    private Optional<String> parseField(@NotNull Contentlet contentlet, @NotNull Field field) {
-
-        ContentType type = contentlet.getContentType();
+    /**
+     * Extracts the contents of a specific field from a Contentlet. Keep in mind that, depending on
+     * the format of such a content or how it was saved, the method will try to parse it based on
+     * specific strategies/ways to retrieve or interpret it.
+     *
+     * @param contentlet The {@link Contentlet} that the field's value will be extracted from.
+     * @param field      The {@link Field} whose content will be extracted.
+     *
+     * @return An {@link Optional} with the extracted content, if any.
+     */
+    private Optional<String> parseField(@NotNull final Contentlet contentlet, @NotNull final Field field) {
+        final ContentType type = contentlet.getContentType();
         if (field instanceof BinaryField) {
             Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is a BinaryField ");
             return parseFile(Try.of(() -> contentlet.getBinary(field.variable())).getOrNull());
         }
-
         final String value = contentlet.getStringProperty(field.variable());
 
         if(UtilMethods.isEmpty(value)){
@@ -263,12 +304,10 @@ public class ContentToStringUtil {
             Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is an HTML field");
             return parseHTML(value);
         }
-        Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is a text field");
+        Logger.info(this.getClass(), type.variable() + "." + field.variable() + " is a " +
+                (field instanceof CustomField ? "Custom Field" : " text field"));
         return parseText(value);
-
-
     }
-
 
     private Optional<String> handleFileField(Contentlet contentlet, String identifier) {
         Optional<Contentlet> con = APILocator.getContentletAPI().findContentletByIdentifierOrFallback(identifier,false,contentlet.getLanguageId(),APILocator.systemUser(),false);

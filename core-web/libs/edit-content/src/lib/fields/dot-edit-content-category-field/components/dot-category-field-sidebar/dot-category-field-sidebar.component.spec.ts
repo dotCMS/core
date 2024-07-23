@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 
 import { Sidebar } from 'primeng/sidebar';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 
 import { DotCategoryFieldSidebarComponent } from './dot-category-field-sidebar.component';
 
@@ -23,10 +23,14 @@ describe('DotEditContentCategoryFieldSidebarComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
+            props: {
+                visible: true
+            },
             providers: [
                 mockProvider(CategoriesService, {
                     getChildren: jest.fn().mockReturnValue(of(CATEGORY_LIST_MOCK))
-                })
+                }),
+                mockProvider(DotHttpErrorManagerService)
             ]
         });
 

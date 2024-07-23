@@ -8,8 +8,7 @@
             [pTooltip]="'editpage.layout.css.class.add.to.row' | dm"
             icon="pi pi-ellipsis-h"
             tooltipPosition="left"
-            styleClass="p-button-rounded p-button-sm p-button-text">
-        </p-button>
+            styleClass="p-button-rounded p-button-sm p-button-text"></p-button>
     </div>
 
     <div
@@ -20,22 +19,19 @@
             (switch)="propagateGridLayoutChange()"
             (remove)="onRemoveContainer(i)"
             [data]="gridBox.containers"
-            [multiple]="true">
-        </dot-container-selector-layout>
+            [multiple]="true"></dot-container-selector-layout>
         <div class="box__actions">
             <p-button
                 (click)="addColumnClass(i)"
                 [pTooltip]="'editpage.layout.css.class.add.to.box' | dm"
                 class="box__add-box-class-button"
                 styleClass="p-button-rounded p-button-text p-button-sm"
-                icon="pi pi-ellipsis-h">
-            </p-button>
+                icon="pi pi-ellipsis-h"></p-button>
             <p-button
                 (click)="onRemoveContainer(i)"
                 [pTooltip]="'editpage.action.delete' | dm"
                 styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"
-                icon="pi pi-times">
-            </p-button>
+                icon="pi pi-times"></p-button>
         </div>
     </div>
 </div>
@@ -49,9 +45,9 @@
     #dialog>
     <form *ngIf="addClassDialogShow" [formGroup]="form" class="p-fluid" novalidate>
         <div class="field">
-            <label dotFieldRequired for="classToAdd">{{
-                'editpage.layout.css.class.names' | dm
-            }}</label>
+            <label dotFieldRequired for="classToAdd">
+                {{ 'editpage.layout.css.class.names' | dm }}
+            </label>
             <input
                 class="box__add-class-text"
                 id="classToAdd"

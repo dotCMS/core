@@ -60,11 +60,12 @@ jobs:
     #
   build-cli:
     name: CLI Build
-    needs: [ test ]
+    needs: [ initialize,test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cli-build-artifacts.yml
     with:
       buildNativeImage: true
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       branch: ${{ github.ref }}
 
   deployment:

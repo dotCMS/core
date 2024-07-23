@@ -1289,7 +1289,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
             assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
-            assertEquals("Unable to set string value as a Long",
+            assertEquals("Unable to set string value as a Long for the field: numeric",
                     ((Map)endpointResponse1.getEntity()).get("message"));
 
         }finally {

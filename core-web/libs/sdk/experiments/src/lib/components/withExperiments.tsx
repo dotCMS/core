@@ -1,4 +1,5 @@
-import React, { ReactNode } from 'react';
+/* eslint-disable react-hooks/rules-of-hooks */
+import React, { ReactNode, useCallback } from 'react';
 
 import { DotcmsPageProps } from '@dotcms/react';
 
@@ -6,6 +7,7 @@ import { DotExperimentHandlingComponent } from './DotExperimentHandlingComponent
 import { DotExperimentsProvider } from './DotExperimentsProvider';
 
 import { DotExperimentConfig } from '../shared/models';
+import { useMemoizedObject } from '../shared/utils/memoize';
 
 export interface PageProviderProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,11 +31,22 @@ export const withExperiments = (
     WrappedComponent: React.ComponentType<DotcmsPageProps>,
     config: DotExperimentConfig
 ) => {
-    return (props: DotcmsPageProps) => {
-        return (
-            <DotExperimentsProvider config={{ ...config }}>
-                <DotExperimentHandlingComponent {...props} WrappedComponent={WrappedComponent} />
-            </DotExperimentsProvider>
-        );
-    };
+    // We need to use a custom memoization hook
+    // because the useMemo or React.memo lose the reference of the object
+    // in each render, causing the experiment handling to be reinitialized.
+    const memoizedConfig = useMemoizedObject(config);
+
+    return useCallback(
+        (props: DotcmsPageProps) => {
+            return (
+                <DotExperimentsProvider config={memoizedConfig}>
+                    <DotExperimentHandlingComponent
+                        {...props}
+                        WrappedComponent={WrappedComponent}
+                    />
+                </DotExperimentsProvider>
+            );
+        },
+        [WrappedComponent, memoizedConfig]
+    );
 };
