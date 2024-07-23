@@ -15,7 +15,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
 import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
-import { useEffect } from "react";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -55,10 +54,6 @@ export function MyGraphQLPage({ pageAsset, nav }) {
               redirectFn: replace,
           })
         : DotcmsLayout;
-
-    useEffect(() => {
-        console.log('pageAsset', pageAsset);
-    }, [pageAsset]);
 
     return (
         <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
