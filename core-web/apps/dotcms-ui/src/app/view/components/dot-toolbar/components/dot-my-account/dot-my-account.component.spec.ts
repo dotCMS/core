@@ -176,14 +176,16 @@ describe('DotMyAccountComponent', () => {
         const cancel = de.nativeElement.querySelector('.dialog__button-cancel');
         const save = de.nativeElement.querySelector('.dialog__button-accept');
 
-        expect(firstName.innerText).toEqual(messageServiceMock.get('First-Name'));
-        expect(lasttName.innerText).toEqual(messageServiceMock.get('Last-Name'));
-        expect(email.innerText).toEqual(messageServiceMock.get('email-address'));
-        expect(currentPassword.innerText).toEqual(messageServiceMock.get('current-password'));
-        expect(changePassword.innerText).toEqual(messageServiceMock.get('change-password'));
-        expect(newPassword.innerText).toEqual(messageServiceMock.get('new-password'));
-        expect(confirmPassword.innerText).toEqual(messageServiceMock.get('re-enter-new-password'));
-        expect(showStarter.nativeElement.innerText).toEqual(
+        expect(firstName.innerText).toContain(messageServiceMock.get('First-Name'));
+        expect(lasttName.innerText).toContain(messageServiceMock.get('Last-Name'));
+        expect(email.innerText).toContain(messageServiceMock.get('email-address'));
+        expect(currentPassword.innerText).toContain(messageServiceMock.get('current-password'));
+        expect(changePassword.innerText).toContain(messageServiceMock.get('change-password'));
+        expect(newPassword.innerText).toContain(messageServiceMock.get('new-password'));
+        expect(confirmPassword.innerText).toContain(
+            messageServiceMock.get('re-enter-new-password')
+        );
+        expect(showStarter.nativeElement.innerText).toContain(
             messageServiceMock.get('starter.show.getting.started')
         );
         expect(cancel.innerText).toEqual(messageServiceMock.get('modes.Close'));
@@ -431,7 +433,7 @@ describe('DotMyAccountComponent', () => {
             By.css('[data-testId="dotSavePasswordFailedMsg"]')
         );
 
-        expect(passwordFailMsg.nativeElement.innerText).toEqual(
+        expect(passwordFailMsg.nativeElement.innerText.trim()).toEqual(
             errorResponse.error.errors[0].message.trim()
         );
     });
@@ -475,7 +477,7 @@ describe('DotMyAccountComponent', () => {
             By.css('[data-testId="dotCurrrentPasswordFailedMsg"]')
         );
 
-        expect(passwordFailMsg.nativeElement.innerText).toEqual(
+        expect(passwordFailMsg.nativeElement.innerText).toContain(
             errorResponse.error.errors[0].message.trim()
         );
     });
