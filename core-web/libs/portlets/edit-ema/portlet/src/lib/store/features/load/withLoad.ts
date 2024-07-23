@@ -14,7 +14,7 @@ import { LoginService } from '@dotcms/dotcms-js';
 
 import { DotPageApiService, DotPageApiParams } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
-import { computeCanEditPage, isForwardOrPage } from '../../../utils';
+import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
 
 /**
@@ -78,8 +78,8 @@ export function withLoad() {
                                             const isLayoutDisabled =
                                                 !page.canEdit || !template.drawed;
                                             const pathIsLayout =
-                                                activatedRoute.firstChild.snapshot.url[0].path ===
-                                                'layout';
+                                                activatedRoute?.firstChild?.snapshot?.url?.[0]
+                                                    .path === 'layout';
 
                                             if (isLayoutDisabled && pathIsLayout) {
                                                 // If the user can't edit the page or the template is not drawed we navigate to the content page
@@ -124,10 +124,10 @@ export function withLoad() {
                                                     experiment
                                                 );
 
-                                                const pageIsLocked =
-                                                    pageAPIResponse?.page.locked &&
-                                                    pageAPIResponse.page.lockedBy !==
-                                                        currentUser?.userId;
+                                                const pageIsLocked = computePageIsLocked(
+                                                    pageAPIResponse?.page,
+                                                    currentUser
+                                                );
 
                                                 patchState(store, {
                                                     $pageAPIResponse: pageAPIResponse,
@@ -169,15 +169,15 @@ export function withLoad() {
                                 tapResponse({
                                     next: ({ pageAPIResponse, languages }) => {
                                         const canEditPage = computeCanEditPage(
-                                            pageAPIResponse,
+                                            pageAPIResponse?.page,
                                             store.$currentUser(),
                                             store.$experiment()
                                         );
 
-                                        const pageIsLocked =
-                                            pageAPIResponse?.page.locked &&
-                                            pageAPIResponse.page.lockedBy !==
-                                                store.$currentUser()?.userId;
+                                        const pageIsLocked = computePageIsLocked(
+                                            pageAPIResponse?.page,
+                                            store.$currentUser()
+                                        );
 
                                         patchState(store, {
                                             $pageAPIResponse: pageAPIResponse,

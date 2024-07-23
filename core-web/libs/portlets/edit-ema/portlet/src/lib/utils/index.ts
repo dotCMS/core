@@ -8,9 +8,9 @@ import {
     VanityUrl
 } from '@dotcms/dotcms-models';
 
-import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../shared/consts';
-import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models';
+import { ActionPayload, ContainerPayload, DotPage, PageContainer } from '../shared/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
 
@@ -287,19 +287,24 @@ export function createPureURL(params: DotPageApiParams): string {
 }
 
 export function computeCanEditPage(
-    pageAPIResponse: DotPageApiResponse,
+    page: DotPage,
     currentUser: CurrentUser,
     experiment?: DotExperiment
 ): boolean {
-    const pageCanBeEdited = pageAPIResponse.page.canEdit;
-    const isLocked =
-        pageAPIResponse.page.locked && pageAPIResponse.page.lockedBy !== currentUser?.userId;
+    const pageCanBeEdited = page.canEdit;
+
+    const isLocked = computePageIsLocked(page, currentUser);
+
     const editingBlockedByExperiment = [
         DotExperimentStatus.RUNNING,
         DotExperimentStatus.SCHEDULED
     ].includes(experiment?.status);
 
     return pageCanBeEdited && !isLocked && !editingBlockedByExperiment;
+}
+
+export function computePageIsLocked(page: DotPage, currentUser: CurrentUser) {
+    return page?.locked && page?.lockedBy !== currentUser?.userId;
 }
 
 /**

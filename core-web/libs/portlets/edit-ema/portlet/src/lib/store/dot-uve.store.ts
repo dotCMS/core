@@ -129,6 +129,6 @@ export const UVEStore = signalStore(
         };
     }),
     withLoad(),
-    withEditor(),
-    withLayout()
+    withLayout(),
+    withEditor()
 );

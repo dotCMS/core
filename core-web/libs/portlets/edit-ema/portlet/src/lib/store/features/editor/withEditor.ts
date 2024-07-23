@@ -65,6 +65,7 @@ export function withEditor() {
         },
         withState<EditorState>(initialState),
         withEditorToolbar(),
+        withSave(),
         withComputed((store) => {
             return {
                 $pageData: computed<PageData>(() => {
@@ -294,7 +295,6 @@ export function withEditor() {
                     };
                 }
             };
-        }),
-        withSave()
+        })
     );
 }

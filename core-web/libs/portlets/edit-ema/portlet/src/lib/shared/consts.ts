@@ -204,6 +204,43 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
     containers: mockDotContainers()
 };
 
+export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
+    page: {
+        pageURI: 'test-url',
+        title: 'Test Page',
+        identifier: '123',
+        inode: '123-i',
+        canEdit: true,
+        canRead: true,
+        rendered: '<html><body><h1>Hello, World!</h1></body></html>',
+        contentType: 'htmlpageasset',
+        canLock: true,
+        locked: false,
+        lockedBy: '',
+        lockedByName: '',
+        live: true,
+        liveInode: '1234',
+        stInode: '12345'
+    },
+    viewAs: {
+        language: {
+            id: 1,
+            language: 'English',
+            countryCode: 'US',
+            languageCode: '1',
+            country: 'United States'
+        },
+
+        persona: {
+            ...DEFAULT_PERSONA
+        }
+    },
+    site: mockSites[0],
+    layout: mockDotLayout(),
+    template: mockDotTemplate(),
+    containers: mockDotContainers()
+};
+
 export const dotPageContainerStructureMock: DotPageContainerStructure = {
     '123': {
         container: {
@@ -478,4 +515,53 @@ export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
             drawed: true
         }
     })
+};
+
+export const getVanityUrl = (url, mock) => ({
+    vanityUrl: {
+        ...mock,
+        url
+    }
+});
+
+export const FORWARD_VANITY_URL = {
+    pattern: '',
+    vanityUrlId: '',
+    url: 'test-url',
+    siteId: '',
+    languageId: 1,
+    forwardTo: 'vanity-url',
+    response: 200,
+    order: 1,
+    temporaryRedirect: false,
+    permanentRedirect: false,
+    forward: true
+};
+
+export const PERMANENT_REDIRECT_VANITY_URL = {
+    pattern: '',
+    vanityUrlId: '',
+    url: 'test-url',
+    siteId: '',
+    languageId: 1,
+    forwardTo: 'vanity-url',
+    response: 200,
+    order: 1,
+    temporaryRedirect: false,
+    permanentRedirect: true,
+    forward: false
+};
+
+export const TEMPORARY_REDIRECT_VANITY_URL = {
+    pattern: '',
+    vanityUrlId: '',
+    url: 'test-url',
+    siteId: '',
+    languageId: 1,
+    forwardTo: 'vanity-url',
+    response: 200,
+    order: 1,
+    temporaryRedirect: true,
+    permanentRedirect: false,
+    forward: false
 };
