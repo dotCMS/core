@@ -29,6 +29,8 @@ public class RenderedContainersDataFetcher implements DataFetcher<Set<Entry<Stri
             final ContainerRaw containerRaw = environment.getSource();
             final String pageModeAsString = (String) context.getParam("pageMode");
 
+            Logger.debug(this, ()-> "Fetching container: " + containerRaw.getContainer().getIdentifier());
+
             final PageMode mode = PageMode.get(pageModeAsString);
             final HttpServletRequest request = context.getHttpServletRequest();
             final HttpServletResponse response = context.getHttpServletResponse();
