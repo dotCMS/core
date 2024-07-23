@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
-public interface XmlImmutableBuilder<T> {
+public interface XMLEnabledBuilder<T> {
 
     @JsonIgnore
     default Class<T> getInstanceClass() {
@@ -22,7 +22,7 @@ public interface XmlImmutableBuilder<T> {
         for (Type iface : interfaces) {
             if (iface instanceof ParameterizedType) {
                 ParameterizedType paramType = (ParameterizedType) iface;
-                if (paramType.getRawType() == XmlImmutableBuilder.class) {
+                if (paramType.getRawType() == XMLEnabledBuilder.class) {
                     Type type = paramType.getActualTypeArguments()[0];
                     return (Class<T>) type;
                 }
@@ -35,11 +35,11 @@ public interface XmlImmutableBuilder<T> {
 
 
     default T fromXml(String xml) throws IOException {
-        return XmlUtil.fromXml(getInstanceClass(),xml);
+        return SerializationHelper.fromXml(getInstanceClass(),xml);
     }
 
     default T fromXml(InputStream is) throws IOException {
-        return XmlUtil.fromXml(getInstanceClass(),is);
+        return SerializationHelper.fromXml(getInstanceClass(),is);
     }
 
 }

@@ -96,9 +96,9 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     final PortletList portletList = PortletList.builder().fromXml(fileStream);
     int counter = 1;
     if (UtilMethods.isSet(portletList) && UtilMethods.isSet(portletList.getPortlets())) {
-      for (final DotPortlet portlet : portletList.getPortlets()) {
-        portlets.put(portlet.getPortletId(), portlet.toPortlet());
-        Logger.debug(this, String.format("%d. Loading portlet ID '%s'", counter, portlet.getPortletId()));
+      for (final DotPortlet dotPortlets : portletList.getPortlets()) {
+        portlets.put(dotPortlets.getPortletId(), dotPortlets.toPortlet());
+        Logger.debug(this, String.format("%d. Loading portlet ID '%s'", counter, dotPortlets.getPortletId()));
         counter++;
       }
     }
@@ -107,12 +107,12 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
   @Override
   @VisibleForTesting
-  public Optional<DotPortlet> xmlToPortlet(final String xml) throws IOException {
+  public Optional<Portlet> xmlToPortlet(final String xml) throws IOException {
     final DotPortlet portlet = DotPortlet.builder().fromXml(xml);
     if (portlet.getPortletId() == null || portlet.getPortletClass() == null) {
       return Optional.empty();
     }
-    return Optional.of(portlet);
+    return Optional.of(portlet.toPortlet());
   }
 
   @Override
@@ -227,8 +227,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
           (String) portletData.get("defaultpreferences"), false, (String) portletData.get("roles"), true);
 
       try {
-        final Optional<DotPortlet> xmlPortlet = xmlToPortlet((String) portletData.get("defaultpreferences"));
-        xmlPortlet.ifPresent(portlet -> portlets.add(portlet.toPortlet()));
+        xmlToPortlet((String) portletData.get("defaultpreferences")).ifPresent(portlets::add);
       } catch (final Exception e) {
         Logger.warn(this.getClass(), String.format("Unable to parse XML code to Portlet with ID '%s': %s",
                 testPortlet.getPortletId(), ExceptionUtil.getErrorMessage(e)));

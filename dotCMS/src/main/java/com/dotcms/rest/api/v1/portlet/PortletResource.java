@@ -166,10 +166,10 @@ public class PortletResource implements Serializable {
             final DotPortlet updatedPortlet =  DotPortlet.builder()
                     .portletId(portletId)
                     .portletClass(contentPortlet.getPortletClass())
-                    //.putInitParam("name", formData.portletName)
-                    //.putInitParam("baseTypes", formData.baseTypes)
-                    //.putInitParam("contentTypes", formData.contentTypes)
-                    //.putInitParam(DATA_VIEW_MODE_KEY, formData.dataViewMode)
+                    .putInitParam("name", formData.portletName)
+                    .putInitParam("baseTypes", formData.baseTypes)
+                    .putInitParam("contentTypes", formData.contentTypes)
+                    .putInitParam(DATA_VIEW_MODE_KEY, formData.dataViewMode)
                     .build();
 
 

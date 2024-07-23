@@ -20,19 +20,18 @@ import org.immutables.value.Value.Style.ImplementationVisibility;
         visibility = ImplementationVisibility.PRIVATE,
         builderVisibility = BuilderVisibility.PUBLIC,
         deepImmutablesDetection = true
-
 )
 @JacksonXmlRootElement(localName = "portlet-app")
 @JsonSerialize(as = PortletList.class)
 @JsonDeserialize(builder = PortletList.Builder.class)
-public interface PortletList extends XmlSerializable<PortletList>{
+public interface PortletList extends XMLSerializable {
 
     @JacksonXmlElementWrapper(useWrapping = false)
     @JacksonXmlProperty(localName = "portlet")
     @JsonProperty("portlet")
     List<DotPortlet> getPortlets();
 
-    class Builder extends PortletListBuilder implements XmlImmutableBuilder<PortletList> {
+    class Builder extends PortletListBuilder implements XMLEnabledBuilder<PortletList> {
     }
 
     static Builder builder() {
