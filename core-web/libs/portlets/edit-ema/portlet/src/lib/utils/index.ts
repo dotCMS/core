@@ -327,7 +327,7 @@ export function computeCanEditPage(
  * @param {CurrentUser} currentUser
  * @return {*}
  */
-export function computePageIsLocked(page: DotPage, currentUser: CurrentUser) {
+export function computePageIsLocked(page: DotPage, currentUser: CurrentUser): boolean {
     return !!page?.locked && page?.lockedBy !== currentUser?.userId;
 }
 
@@ -352,10 +352,9 @@ export function mapContainerStructureToDotContainerMap(
  * Map the containerStructure to an array
  *
  * @private
- * @param {ContainerData} containers
- * @memberof EditEmaStore
+ * @param {DotPageContainerStructure} containers
  */
-export const mapContainerStructureToArray = (containers: DotPageContainerStructure) => {
+export const mapContainerStructureToArrayOfContainers = (containers: DotPageContainerStructure) => {
     return Object.keys(containers).reduce(
         (
             acc: {
@@ -365,9 +364,9 @@ export const mapContainerStructureToArray = (containers: DotPageContainerStructu
             }[],
             container
         ) => {
-            const contentlets = containers[container].contentlets;
+            const contentlets = containers[container].contentlets; // Get all contentlets from the container
 
-            const contentletsKeys = Object.keys(contentlets);
+            const contentletsKeys = Object.keys(contentlets); // This is the keys of uuids of the container
 
             contentletsKeys.forEach((key) => {
                 acc.push({

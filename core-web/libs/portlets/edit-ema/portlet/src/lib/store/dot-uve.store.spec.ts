@@ -41,6 +41,7 @@ import {
     TEMPORARY_REDIRECT_VANITY_URL
 } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
+import { mapContainerStructureToDotContainerMap } from '../utils';
 
 const HEADLESS_BASE_QUERY_PARAMS = {
     url: 'test-url',
@@ -338,7 +339,7 @@ describe('UVEStore', () => {
                 );
             });
 
-            it('should return rules and experiments as disables when page cannot be edited', () => {
+            it('should return rules and experiments as disable when page cannot be edited', () => {
                 jest.spyOn(dotPageApiService, 'get').mockImplementation(
                     buildPageAPIResponseFromMock({
                         ...MOCK_RESPONSE_VTL,
@@ -576,6 +577,39 @@ describe('UVEStore', () => {
                 store.reload();
 
                 expect(getPageSpy).toHaveBeenCalledWith(store.$params());
+            });
+        });
+    });
+
+    describe('withLayout', () => {
+        describe('withComputed', () => {
+            describe('$layoutProps', () => {
+                it('should return the layout props', () => {
+                    expect(store.$layoutProps()).toEqual({
+                        containersMap: mapContainerStructureToDotContainerMap(
+                            MOCK_RESPONSE_HEADLESS.containers
+                        ),
+                        layout: MOCK_RESPONSE_HEADLESS.layout,
+                        template: {
+                            identifier: MOCK_RESPONSE_HEADLESS.template.identifier,
+                            themeId: MOCK_RESPONSE_HEADLESS.template.theme
+                        },
+                        pageId: MOCK_RESPONSE_HEADLESS.page.identifier
+                    });
+                });
+            });
+        });
+
+        describe('withMethods', () => {
+            it('should update the layout', () => {
+                const layout = {
+                    ...MOCK_RESPONSE_HEADLESS.layout,
+                    title: 'New layout'
+                };
+
+                store.updateLayout(layout);
+
+                expect(store.$pageAPIResponse().layout).toEqual(layout);
             });
         });
     });

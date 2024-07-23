@@ -9,9 +9,12 @@ import {
     createPageApiUrlWithQueryParams,
     SDK_EDITOR_SCRIPT_SOURCE,
     computePageIsLocked,
-    computeCanEditPage
+    computeCanEditPage,
+    mapContainerStructureToArrayOfContainers,
+    mapContainerStructureToDotContainerMap
 } from '.';
 
+import { dotPageContainerStructureMock } from '../shared/consts';
 import { DotPage } from '../shared/models';
 
 const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
@@ -483,6 +486,35 @@ describe('utils functions', () => {
             const result = computeCanEditPage({ ...page, canEdit: false }, currentUser);
 
             expect(result).toBe(false);
+        });
+    });
+
+    describe('mapContainerStructureToArrayOfContainers', () => {
+        it('should map container structure to array', () => {
+            const result = mapContainerStructureToArrayOfContainers(dotPageContainerStructureMock);
+
+            expect(result).toEqual([
+                {
+                    identifier: '123',
+                    uuid: '123',
+                    contentletsId: ['123', '456']
+                },
+                {
+                    identifier: '123',
+                    uuid: '456',
+                    contentletsId: ['123']
+                }
+            ]);
+        });
+    });
+
+    describe('mapContainerStructureToDotContainerMap', () => {
+        it('should map container structure to dotContainerMap', () => {
+            const result = mapContainerStructureToDotContainerMap(dotPageContainerStructureMock);
+
+            expect(result).toEqual({
+                '123': dotPageContainerStructureMock['123'].container
+            });
         });
     });
 });

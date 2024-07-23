@@ -36,7 +36,7 @@ import {
 import {
     sanitizeURL,
     createPageApiUrlWithQueryParams,
-    mapContainerStructureToArray,
+    mapContainerStructureToArrayOfContainers,
     getPersonalization,
     areContainersEquals
 } from '../../../utils';
@@ -71,9 +71,8 @@ export function withEditor() {
                 $pageData: computed<PageData>(() => {
                     const pageAPIResponse = store.$pageAPIResponse();
 
-                    const containers: PageDataContainer[] = mapContainerStructureToArray(
-                        pageAPIResponse.containers
-                    );
+                    const containers: PageDataContainer[] =
+                        mapContainerStructureToArrayOfContainers(pageAPIResponse.containers);
                     const personalization = getPersonalization(pageAPIResponse.viewAs?.persona);
 
                     return {
