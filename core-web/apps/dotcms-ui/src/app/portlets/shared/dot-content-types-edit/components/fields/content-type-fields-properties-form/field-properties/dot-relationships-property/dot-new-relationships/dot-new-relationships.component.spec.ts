@@ -272,7 +272,7 @@ describe('DotNewRelationshipsComponent', () => {
             const labels = de.queryAll(By.css('label'));
             const contentTypeLabel = labels[0].nativeElement;
             const relationshipsLabel = labels[1].nativeElement.textContent;
-            expect(contentTypeLabel.textContent).toEqual('Content Type');
+            expect(contentTypeLabel.textContent.trim()).toEqual('Content Type');
             expect(contentTypeLabel.classList.contains('p-label-input-required')).toBeTruthy();
             expect(relationshipsLabel).toEqual('Relationship');
         });
