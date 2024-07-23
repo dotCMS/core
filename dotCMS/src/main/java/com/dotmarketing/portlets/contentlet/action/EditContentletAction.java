@@ -329,7 +329,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_editWebAsset(req, res, config, form, user);
 
 			} catch (Exception ae) {
-				handleEditAssetException(ae, req, res, referer);
+				handleEditAssetException(ae, req, res, referer, httpReq);
 				return;
 			}
 		}
@@ -347,7 +347,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_newContent(req, res, config, form, user);
 
 			} catch (Exception ae) {
-				handleEditAssetException(ae, req, res, referer);
+				handleEditAssetException(ae, req, res, referer, httpReq);
 				return;
 			}
 		}
@@ -3321,7 +3321,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		);
 	}
 
-	private void handleEditAssetException(Exception ae, ActionRequest req, ActionResponse res, String referer) throws Exception {
+	private void handleEditAssetException(Exception ae, ActionRequest req, ActionResponse res, String referer, HttpServletRequest httpReq) throws Exception {
 		if ((referer != null) && (referer.length() != 0)) {
 			if (ae.getMessage() != null && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 				// The web asset edit threw an exception because it's locked so it should redirect back with message
@@ -3333,9 +3333,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				params.put("htmlPage", new String[]{(req.getParameter("htmlpage_inode") != null) ? req.getParameter("htmlpage_inode") : "0"});
 				params.put("referer", new String[]{java.net.URLEncoder.encode(referer, "UTF-8")});
 
-				String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(req, WindowState.MAXIMIZED.toString(), params);
+				String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq, WindowState.MAXIMIZED.toString(), params);
 
 				_sendToReferral(req, res, directorURL);
+			} else if (ae.getMessage() != null && ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
+				_sendToReferral(req, res, referer);
 			} else {
 				_handleException(ae, req);
 			}
