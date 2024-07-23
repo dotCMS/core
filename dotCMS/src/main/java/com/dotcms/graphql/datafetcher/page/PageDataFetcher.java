@@ -75,6 +75,8 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                 request.setAttribute(Host.HOST_VELOCITY_VAR_NAME, site);
             }
 
+            Logger.debug(this, ()-> "Fetching page for URL: " + url);
+
             final PageContext pageContext = PageContextBuilder.builder()
                     .setUser(user)
                     .setPageUri(url)
