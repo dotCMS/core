@@ -627,11 +627,11 @@ describe('UVEStore', () => {
         describe('withEditorToolbar', () => {
             describe('withComputed', () => {
                 describe('$toolbarProps', () => {
-                    //
+                    // MISSING TEST
                 });
 
                 describe('$infoDisplayOptions', () => {
-                    //
+                    // MISSING TEST
                 });
             });
 
@@ -674,7 +674,32 @@ describe('UVEStore', () => {
         describe('withSave', () => {
             describe('withMethods', () => {
                 describe('savePage', () => {
-                    //
+                    it('should perform a save and patch the state', () => {
+                        const saveSpy = jest
+                            .spyOn(dotPageApiService, 'save')
+                            .mockImplementation(() => of({}));
+
+                        // It's impossible to get a VTL when we are in Headless
+                        // but I just want to check the state is being patched
+                        const getSpy = jest
+                            .spyOn(dotPageApiService, 'get')
+                            .mockImplementation(() => of(MOCK_RESPONSE_VTL));
+
+                        const payload = {
+                            pageContainers: ACTION_PAYLOAD_MOCK.pageContainers,
+                            pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
+                            params: store.$params()
+                        };
+
+                        store.savePage(ACTION_PAYLOAD_MOCK.pageContainers);
+
+                        expect(saveSpy).toHaveBeenCalledWith(payload);
+
+                        expect(getSpy).toHaveBeenCalledWith(store.$params());
+
+                        expect(store.$status()).toBe(UVE_STATUS.LOADED);
+                        expect(store.$pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
+                    });
                 });
             });
         });
@@ -733,7 +758,7 @@ describe('UVEStore', () => {
             });
 
             describe('$editorProps', () => {
-                //
+                // MISSING TEST
             });
         });
 
