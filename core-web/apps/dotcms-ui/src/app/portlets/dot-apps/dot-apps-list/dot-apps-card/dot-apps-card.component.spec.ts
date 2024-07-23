@@ -16,7 +16,9 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'markdown',
-    template: `<ng-content></ng-content>`
+    template: `
+        <ng-content></ng-content>
+    `
 })
 class MockMarkdownComponent {}
 

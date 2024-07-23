@@ -9,8 +9,7 @@
                 [label]="item.label"
                 [url]="item.icon"
                 [data]="item.data"
-                [disabled]="item.disabled">
-            </dot-suggestions-list-item>
+                [disabled]="item.disabled"></dot-suggestions-list-item>
             <ng-template #divider>
                 <div class="divider"></div>
             </ng-template>
@@ -22,6 +21,5 @@
     <dot-empty-message
         (back)="handleBackButton()"
         [title]="noResultsMessage"
-        [showBackBtn]="!isFilterActive">
-    </dot-empty-message>
+        [showBackBtn]="!isFilterActive"></dot-empty-message>
 </ng-template>

@@ -117,7 +117,7 @@ describe('DotContainerSelectorLayoutComponent', () => {
         await fixture.whenStable();
 
         const dataItem = de.query(By.css('.container-selector__list-item-text'));
-        expect(dataItem.nativeNode.textContent).toEqual('Container 1 (demo.dotcms.com)');
+        expect(dataItem.nativeNode.textContent.trim()).toEqual('Container 1 (demo.dotcms.com)');
     });
 
     it('should pass the innerClass', () => {
