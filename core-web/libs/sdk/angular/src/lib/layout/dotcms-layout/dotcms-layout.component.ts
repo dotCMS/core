@@ -61,7 +61,7 @@ export class DotcmsLayoutComponent implements OnInit {
      * The `onReload` property is a function that reloads the page after changes are made.
      *
      * @memberof DotcmsLayoutComponent
-     * @deprecated
+     * @deprecated In future implementation we will be listening for the changes from the editor to update the page state so reload will not be needed.
      */
     @Input() onReload!: () => void;
 
