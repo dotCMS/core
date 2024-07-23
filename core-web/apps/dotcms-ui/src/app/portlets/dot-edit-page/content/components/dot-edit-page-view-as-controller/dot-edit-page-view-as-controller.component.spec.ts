@@ -48,8 +48,10 @@ import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-co
 
 @Component({
     selector: 'dot-test-host',
-    template: ` <dot-edit-page-view-as-controller
-        [pageState]="pageState"></dot-edit-page-view-as-controller>`
+    template: `
+        <dot-edit-page-view-as-controller
+            [pageState]="pageState"></dot-edit-page-view-as-controller>
+    `
 })
 class DotTestHostComponent {
     @Input()

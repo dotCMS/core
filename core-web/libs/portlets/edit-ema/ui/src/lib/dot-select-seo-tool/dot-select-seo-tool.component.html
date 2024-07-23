@@ -7,9 +7,9 @@
         <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
             {{ socialMediaTiles[socialMedia]?.label }}
         </h5>
-        <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details">{{
-            socialMediaTiles[socialMedia]?.description | dm
-        }}</span>
+        <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details">
+            {{ socialMediaTiles[socialMedia]?.description | dm }}
+        </span>
     </div>
 </ng-container>
 <ng-template #deviceBlock>

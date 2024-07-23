@@ -13,7 +13,7 @@ import { AppComponent } from './app.component';
 
 interface ContenttypeFieldElement {
     tag: string;
-    component: Type<unknown>; // Expected to be a component
+    component: Type<DotEditContentBinaryFieldComponent>;
 }
 
 const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [

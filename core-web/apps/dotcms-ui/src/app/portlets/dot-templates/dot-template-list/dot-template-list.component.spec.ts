@@ -555,7 +555,8 @@ describe('DotTemplateListComponent', () => {
             expect(
                 links.every(
                     (link, i) =>
-                        link.nativeElement.textContent === templatesWithoutSystem[i].themeInfo.title
+                        link.nativeElement.textContent.trim() ===
+                        templatesWithoutSystem[i].themeInfo.title
                 )
             ).toBe(true);
         });

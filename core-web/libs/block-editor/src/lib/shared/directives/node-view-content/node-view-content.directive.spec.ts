@@ -5,7 +5,9 @@ import { By } from '@angular/platform-browser';
 import { NodeViewContentDirective } from './node-view-content.directive';
 
 @Component({
-    template: `<div tiptapNodeViewContent>Hello Tiptap!</div>`
+    template: `
+        <div tiptapNodeViewContent>Hello Tiptap!</div>
+    `
 })
 class TestComponent {}
 

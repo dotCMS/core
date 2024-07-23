@@ -92,7 +92,7 @@ public class WfActionClassAjax extends WfBaseAction {
 			workflowActionClass.setActionId(actionId);
 			this.workflowAPI.saveActionClass(workflowActionClass, user);
 
-			final boolean isOnlyBatch = ActionletUtil.isOnlyBatch(ReflectionUtils.getClassFor(clazz));
+			final boolean isOnlyBatch = false; //ActionletUtil.isOnlyBatch(ReflectionUtils.getClassFor(clazz));
 			response.setContentType("text/plain");
 			response.getWriter().println(String.format("%s:%s:%s",workflowActionClass.getId(),
 					workflowActionClass.getName(), Boolean.toString(isOnlyBatch)));

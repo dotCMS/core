@@ -26,8 +26,7 @@
             (save)="saveVariable($event)"
             [autoFocus]="autoFocus"
             [showHiddenField]="showHiddenField"
-            [forbiddenkeys]="forbiddenkeys()">
-        </dot-key-value-table-input-row>
+            [forbiddenkeys]="forbiddenkeys()"></dot-key-value-table-input-row>
     </ng-template>
     <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
         <dot-key-value-table-row
@@ -35,8 +34,7 @@
             (save)="updateKeyValue($event, rowIndex)"
             [showHiddenField]="showHiddenField"
             [variable]="variable"
-            #tableRow>
-        </dot-key-value-table-row>
+            #tableRow></dot-key-value-table-row>
     </ng-template>
     <ng-template pTemplate="emptymessage" let-variables>
         <tr data-testId="no-rows">

@@ -119,7 +119,7 @@ public class ActionletUtil {
      */
     public static boolean isOnlyBatch(final String clazz) {
 
-        return isOnlyBatch(ReflectionUtils.getClassFor(clazz));
+        return false; //isOnlyBatch(ReflectionUtils.getClassFor(clazz));
     }
 
     /**

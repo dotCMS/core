@@ -8,7 +8,6 @@
         *ngIf="eventData"
         (value)="formData = $event"
         (valid)="updateFormValid($event)"
-        [data]="eventData">
-    </dot-push-publish-form>
+        [data]="eventData"></dot-push-publish-form>
     <span *ngIf="errorMessage" class="dot-push-publish-dialog__error">{{ errorMessage }}</span>
 </dot-dialog>
