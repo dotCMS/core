@@ -11,7 +11,8 @@ import {
     computePageIsLocked,
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
-    mapContainerStructureToDotContainerMap
+    mapContainerStructureToDotContainerMap,
+    areContainersEquals
 } from '.';
 
 import { dotPageContainerStructureMock } from '../shared/consts';
@@ -515,6 +516,63 @@ describe('utils functions', () => {
             expect(result).toEqual({
                 '123': dotPageContainerStructureMock['123'].container
             });
+        });
+    });
+
+    describe('areContainersEquals', () => {
+        it('should return true when the containers are equal', () => {
+            expect(
+                areContainersEquals(
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123', '456']
+                    },
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        acceptTypes: 'test',
+                        variantId: 'Default',
+                        maxContentlets: 1
+                    }
+                )
+            ).toBe(true);
+        });
+        it('should return false when the containers dont have the same identifier', () => {
+            expect(
+                areContainersEquals(
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123', '456']
+                    },
+                    {
+                        identifier: '456',
+                        uuid: '123',
+                        acceptTypes: 'test',
+                        variantId: 'Default',
+                        maxContentlets: 1
+                    }
+                )
+            ).toBe(false);
+        });
+        it('should return false when the containers dont have the same uuid', () => {
+            expect(
+                areContainersEquals(
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123', '456']
+                    },
+                    {
+                        identifier: '123',
+                        uuid: '456',
+                        acceptTypes: 'test',
+                        variantId: 'Default',
+                        maxContentlets: 1
+                    }
+                )
+            ).toBe(false);
         });
     });
 });

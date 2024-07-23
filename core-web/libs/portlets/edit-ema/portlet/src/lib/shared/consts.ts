@@ -17,8 +17,13 @@ import {
 } from '@dotcms/utils-testing';
 
 import { EDITOR_MODE, EDITOR_STATE } from './enums';
-import { ActionPayload } from './models';
+import { ActionPayload, ClientData } from './models';
 
+import {
+    Container,
+    ContentletArea,
+    EmaDragItem
+} from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 
 export const LAYOUT_URL = '/c/portal/layout';
@@ -564,4 +569,143 @@ export const TEMPORARY_REDIRECT_VANITY_URL = {
     temporaryRedirect: true,
     permanentRedirect: false,
     forward: false
+};
+
+export const EMA_DRAG_ITEM_CONTENTLET_MOCK: EmaDragItem = {
+    baseType: 'CONTENT',
+    contentType: 'kenobi',
+    draggedPayload: {
+        type: 'contentlet',
+        item: {
+            container: {
+                identifier: '321',
+                acceptTypes: 'kenobi,theChosenOne,yoda',
+                maxContentlets: 3,
+                uuid: '123',
+                variantId: '123'
+            },
+            contentlet: {
+                identifier: '321',
+                inode: '123',
+                title: 'title',
+                contentType: 'kenobi'
+            }
+        },
+        move: true
+    }
+};
+
+export const MOCK_CONTENTLET_AREA: ContentletArea = {
+    x: 200,
+    y: 180,
+    width: 100,
+    height: 100,
+    payload: {
+        language_id: '',
+        pageContainers: [],
+        pageId: '',
+        container: {
+            acceptTypes: '',
+            identifier: '',
+            maxContentlets: 0,
+            variantId: '',
+            uuid: ''
+        },
+        contentlet: {
+            identifier: '123',
+            inode: '',
+            title: '',
+            contentType: ''
+        }
+    }
+};
+
+export const ACTION_MOCK: ClientData = {
+    container: {
+        acceptTypes: 'file',
+        identifier: '789',
+        maxContentlets: 100,
+        uuid: '2',
+        variantId: '1'
+    }
+};
+
+export const ITEM_MOCK = {
+    contentType: 'file',
+    baseType: 'FILEASSET',
+    draggedPayload: null
+};
+
+export const getBoundsMockWithEmptyContainer = (payload: ClientData): Container[] => {
+    return [
+        {
+            x: 10,
+            y: 10,
+            width: 980,
+            height: 180,
+            contentlets: [],
+            payload
+        }
+    ];
+};
+
+export const getBoundsMock = (payload: ClientData): Container[] => {
+    return [
+        {
+            x: 10,
+            y: 10,
+            width: 980,
+            height: 180,
+            contentlets: [
+                {
+                    x: 20,
+                    y: 20,
+                    width: 940,
+                    height: 140,
+                    payload: null
+                },
+                {
+                    x: 40,
+                    y: 20,
+                    width: 940,
+                    height: 140,
+                    payload: null
+                }
+            ],
+            payload
+        }
+    ];
+};
+
+export const BOUNDS_MOCK: Container[] = getBoundsMock(ACTION_MOCK);
+
+export const BOUNDS_EMPTY_CONTAINER_MOCK: Container[] =
+    getBoundsMockWithEmptyContainer(ACTION_MOCK);
+
+export const ACTION_PAYLOAD_MOCK: ActionPayload = {
+    language_id: '1',
+    pageContainers: [
+        {
+            identifier: 'container-identifier-123',
+            uuid: 'uuid-123',
+            contentletsId: ['contentlet-identifier-123']
+        }
+    ],
+    contentlet: {
+        identifier: 'contentlet-identifier-123',
+        inode: 'contentlet-inode-123',
+        title: 'Hello World',
+        contentType: 'test',
+        onNumberOfPages: 1
+    },
+    container: {
+        identifier: 'container-identifier-123',
+        acceptTypes: 'test',
+        uuid: 'uuid-123',
+        maxContentlets: 1,
+        contentletsId: ['123'],
+        variantId: '123'
+    },
+    pageId: 'test',
+    position: 'after'
 };

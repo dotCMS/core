@@ -33,15 +33,24 @@ import { UVEStore } from './dot-uve.store';
 
 import { DotPageApiResponse, DotPageApiService } from '../services/dot-page-api.service';
 import {
+    ACTION_MOCK,
+    ACTION_PAYLOAD_MOCK,
     DEFAULT_PERSONA,
+    EMA_DRAG_ITEM_CONTENTLET_MOCK,
+    getBoundsMock,
     getVanityUrl,
+    MOCK_CONTENTLET_AREA,
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL,
     PERMANENT_REDIRECT_VANITY_URL,
     TEMPORARY_REDIRECT_VANITY_URL
 } from '../shared/consts';
-import { UVE_STATUS } from '../shared/enums';
-import { mapContainerStructureToDotContainerMap } from '../utils';
+import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
+import {
+    getPersonalization,
+    mapContainerStructureToArrayOfContainers,
+    mapContainerStructureToDotContainerMap
+} from '../utils';
 
 const HEADLESS_BASE_QUERY_PARAMS = {
     url: 'test-url',
@@ -610,6 +619,308 @@ describe('UVEStore', () => {
                 store.updateLayout(layout);
 
                 expect(store.$pageAPIResponse().layout).toEqual(layout);
+            });
+        });
+    });
+
+    describe('withEditor', () => {
+        describe('withEditorToolbar', () => {
+            describe('withComputed', () => {
+                describe('$toolbarProps', () => {
+                    //
+                });
+
+                describe('$infoDisplayOptions', () => {
+                    //
+                });
+            });
+
+            describe('withMethods', () => {
+                it('should set the device with setDevice', () => {
+                    const device = {
+                        identifier: '123',
+                        cssHeight: '120',
+                        cssWidth: '120',
+                        name: 'square',
+                        inode: '1234',
+                        icon: 'icon'
+                    };
+
+                    store.setDevice(device);
+
+                    expect(store.$device()).toEqual(device);
+                    expect(store.$isEditState()).toBe(false);
+                });
+
+                it('should set the socialMedia with setSocialMedia', () => {
+                    const socialMedia = 'facebook';
+
+                    store.setSocialMedia(socialMedia);
+
+                    expect(store.$socialMedia()).toEqual(socialMedia);
+                    expect(store.$isEditState()).toBe(false);
+                });
+
+                it('should reset the state with clearDeviceAndSocialMedia', () => {
+                    store.clearDeviceAndSocialMedia();
+
+                    expect(store.$device()).toBe(null);
+                    expect(store.$socialMedia()).toBe(null);
+                    expect(store.$isEditState()).toBe(true);
+                });
+            });
+        });
+
+        describe('withSave', () => {
+            describe('withMethods', () => {
+                describe('savePage', () => {
+                    //
+                });
+            });
+        });
+
+        describe('withComputed', () => {
+            describe('$pageData', () => {
+                it('should return the expected data', () => {
+                    expect(store.$pageData()).toEqual({
+                        containers: mapContainerStructureToArrayOfContainers(
+                            MOCK_RESPONSE_HEADLESS.containers
+                        ),
+                        id: MOCK_RESPONSE_HEADLESS.page.identifier,
+                        personalization: getPersonalization(MOCK_RESPONSE_HEADLESS.viewAs.persona),
+                        languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
+                        personaTag: MOCK_RESPONSE_HEADLESS.viewAs.persona.keyTag
+                    });
+                });
+            });
+
+            describe('$reloadEditorContent', () => {
+                it('should return the expected data for Headless', () => {
+                    expect(store.$reloadEditorContent()).toEqual({
+                        code: MOCK_RESPONSE_HEADLESS.page.rendered,
+                        isTraditionalPage: false,
+                        isEditState: true,
+                        isEnterprise: true
+                    });
+                });
+                it('should return the expected data for VTL', () => {
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
+                    );
+
+                    store.load(VTL_BASE_QUERY_PARAMS);
+
+                    expect(store.$reloadEditorContent()).toEqual({
+                        code: MOCK_RESPONSE_VTL.page.rendered,
+                        isTraditionalPage: true,
+                        isEditState: true,
+                        isEnterprise: true
+                    });
+                });
+            });
+
+            describe('$editorIsInDraggingState', () => {
+                it("should return the editor's dragging state", () => {
+                    expect(store.$editorIsInDraggingState()).toBe(false);
+                });
+
+                it("should return the editor's dragging state after a change", () => {
+                    // This will trigger a change in the dragging state
+                    store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+
+                    expect(store.$editorIsInDraggingState()).toBe(true);
+                });
+            });
+
+            describe('$editorProps', () => {
+                //
+            });
+        });
+
+        describe('withMethods', () => {
+            describe('updateEditorScrollState', () => {
+                it("should update the editor's scroll state when there is no drag item", () => {
+                    store.updateEditorScrollState();
+
+                    expect(store.$state()).toEqual(EDITOR_STATE.SCROLLING);
+                });
+
+                it("should update the editor's scroll state when there is drag item", () => {
+                    store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+
+                    store.updateEditorScrollState();
+
+                    expect(store.$state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                });
+
+                it("should not update the editor's scroll state when the state is OUT_OF_BOUNDS", () => {
+                    store.setEditorState(EDITOR_STATE.OUT_OF_BOUNDS);
+
+                    store.updateEditorScrollState();
+
+                    expect(store.$state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
+                });
+            });
+
+            describe('updateEditorOnScrollEnd', () => {
+                it("should update the editor's drag state when there is no drag item", () => {
+                    store.updateEditorOnScrollEnd();
+
+                    expect(store.$state()).toEqual(EDITOR_STATE.IDLE);
+                });
+
+                it("should update the editor's drag state when there is drag item", () => {
+                    store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+
+                    store.updateEditorOnScrollEnd();
+
+                    expect(store.$state()).toEqual(EDITOR_STATE.DRAGGING);
+                });
+
+                it("should not update the editor's drag state when the state is OUT_OF_BOUNDS", () => {
+                    store.setEditorState(EDITOR_STATE.OUT_OF_BOUNDS);
+
+                    store.updateEditorOnScrollEnd();
+
+                    expect(store.$state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
+                });
+            });
+
+            describe('updateEditorScrollDragState', () => {
+                it('should update the store correctly', () => {
+                    store.updateEditorScrollDragState();
+
+                    expect(store.$state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                    expect(store.$bounds()).toEqual([]);
+                });
+            });
+
+            describe('setEditorState', () => {
+                it('should update the state correctly', () => {
+                    store.setEditorState(EDITOR_STATE.SCROLLING);
+
+                    expect(store.$state()).toEqual(EDITOR_STATE.SCROLLING);
+                });
+            });
+
+            describe('setEditorDragItem', () => {
+                it('should update the store correctly', () => {
+                    store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+
+                    expect(store.$dragItem()).toEqual(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                    expect(store.$state()).toEqual(EDITOR_STATE.DRAGGING);
+                });
+            });
+
+            describe('setEditorContentletArea', () => {
+                it("should update the store's contentlet area", () => {
+                    store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
+
+                    expect(store.$contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
+                    expect(store.$state()).toEqual(EDITOR_STATE.IDLE);
+                });
+
+                it('should not update contentletArea if it is the same', () => {
+                    store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
+
+                    // We can have contentletArea and state at the same time we are inline editing
+                    store.setEditorState(EDITOR_STATE.INLINE_EDITING);
+
+                    store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
+
+                    expect(store.$contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
+                    // State should not change
+                    expect(store.$state()).toEqual(EDITOR_STATE.INLINE_EDITING);
+                });
+            });
+
+            describe('setEditorBounds', () => {
+                const bounds = getBoundsMock(ACTION_MOCK);
+
+                it('should update the store correcly', () => {
+                    store.setEditorBounds(bounds);
+
+                    expect(store.$bounds()).toEqual(bounds);
+                });
+            });
+
+            describe('resetEditorProperties', () => {
+                it('should reset the editor props corretcly', () => {
+                    store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                    store.setEditorState(EDITOR_STATE.SCROLLING);
+                    store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
+                    store.setEditorBounds(getBoundsMock(ACTION_MOCK));
+
+                    store.resetEditorProperties();
+
+                    expect(store.$dragItem()).toBe(null);
+                    expect(store.$state()).toEqual(EDITOR_STATE.IDLE);
+                    expect(store.$contentletArea()).toBe(null);
+                    expect(store.$bounds()).toEqual([]);
+                });
+            });
+            describe('getPageSavePayload', () => {
+                it("should return the page's save payload", () => {
+                    expect(store.getPageSavePayload(ACTION_PAYLOAD_MOCK)).toEqual({
+                        container: {
+                            acceptTypes: 'test',
+                            contentletsId: [],
+                            identifier: 'container-identifier-123',
+                            maxContentlets: 1,
+                            uuid: 'uuid-123',
+                            variantId: '123'
+                        },
+                        contentlet: {
+                            contentType: 'test',
+                            identifier: 'contentlet-identifier-123',
+                            inode: 'contentlet-inode-123',
+                            onNumberOfPages: 1,
+                            title: 'Hello World'
+                        },
+                        language_id: '1',
+                        pageContainers: [
+                            {
+                                contentletsId: ['123', '456'],
+                                identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
+                                uuid: '123'
+                            },
+                            {
+                                contentletsId: ['123'],
+                                identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
+                                uuid: '456'
+                            },
+                            {
+                                contentletsId: ['123', '456'],
+                                identifier: '/container/path',
+                                uuid: '123'
+                            },
+                            {
+                                contentletsId: ['123'],
+                                identifier: '/container/path',
+                                uuid: '456'
+                            }
+                        ],
+                        pageId: '123',
+                        personaTag: 'dot:persona',
+                        position: 'after'
+                    });
+                });
+            });
+
+            describe('getCurrentTreeNode', () => {
+                it('should return the current TreeNode', () => {
+                    const { container, contentlet } = ACTION_PAYLOAD_MOCK;
+
+                    expect(store.getCurrentTreeNode(container, contentlet)).toEqual({
+                        containerId: 'container-identifier-123',
+                        contentId: 'contentlet-identifier-123',
+                        pageId: '123',
+                        personalization: 'dot:persona:dot:persona',
+                        relationType: 'uuid-123',
+                        treeOrder: '-1',
+                        variantId: '123'
+                    });
+                });
             });
         });
     });

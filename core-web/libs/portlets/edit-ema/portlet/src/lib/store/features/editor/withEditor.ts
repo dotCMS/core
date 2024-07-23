@@ -44,8 +44,8 @@ import { UVEState } from '../../models';
 const initialState: EditorState = {
     $bounds: [],
     $state: EDITOR_STATE.IDLE,
-    $contentletArea: undefined,
-    $dragItem: undefined
+    $contentletArea: null,
+    $dragItem: null
 };
 
 const BASE_MEASURE = 'px';
@@ -85,7 +85,7 @@ export function withEditor() {
                 }),
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
-                        code: store.$pageAPIResponse()?.page.rendered,
+                        code: store.$pageAPIResponse()?.page?.rendered,
                         isTraditionalPage: store.$isTraditionalPage(),
                         isEditState: store.$isEditState(),
                         isEnterprise: store.$isEnterprise()
@@ -238,8 +238,8 @@ export function withEditor() {
                 },
                 resetEditorProperties() {
                     patchState(store, {
-                        $dragItem: undefined,
-                        $contentletArea: undefined,
+                        $dragItem: null,
+                        $contentletArea: null,
                         $bounds: [],
                         $state: EDITOR_STATE.IDLE
                     });
