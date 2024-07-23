@@ -53,6 +53,8 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
                 }
             }
 
+            Logger.debug(this, "Fetching contentlets for query: " + query);
+
             final PaginatedContentList<Contentlet> searchResults;
             if (isPageSet) {
                 searchResults = APILocator.getContentletAPI().searchPaginatedByPage(
