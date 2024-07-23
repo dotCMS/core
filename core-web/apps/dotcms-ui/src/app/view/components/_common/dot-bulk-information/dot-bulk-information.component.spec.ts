@@ -42,7 +42,9 @@ const mockBulkResponseFail: DotActionBulkResult = {
 };
 
 @Component({
-    template: ` <div class="TestDynamicDialog"></div> `
+    template: `
+        <div class="TestDynamicDialog"></div>
+    `
 })
 export class TestDynamicDialogComponent {
     constructor(public dialogService: DialogService) {}

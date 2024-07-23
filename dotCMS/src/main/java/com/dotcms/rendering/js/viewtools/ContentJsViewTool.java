@@ -8,7 +8,7 @@ import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
 import com.dotcms.rendering.velocity.viewtools.content.LazyLoaderContentMap;
-import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;

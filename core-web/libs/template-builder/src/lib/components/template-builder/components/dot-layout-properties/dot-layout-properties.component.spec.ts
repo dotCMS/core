@@ -17,9 +17,11 @@ import { DotLayoutSidebarModule } from './dot-layout-property-sidebar/dot-layout
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-test-host-component',
-    template: `<form [formGroup]="group">
-        <dot-layout-properties></dot-layout-properties>
-    </form>`
+    template: `
+        <form [formGroup]="group">
+            <dot-layout-properties></dot-layout-properties>
+        </form>
+    `
 })
 class TestHostComponent {
     group: UntypedFormGroup;

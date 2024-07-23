@@ -5,7 +5,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCategoryFieldSearchListComponent } from './dot-category-field-search-list.component';
 
 import { MockResizeObserver } from '../../../../utils/mocks';
-import { CATEGORY_MOCK_TRANSFORMED, SELECTED_LIST_MOCK } from '../../mocks/category-field.mocks';
+import { CATEGORY_MOCK_TRANSFORMED } from '../../mocks/category-field.mocks';
 
 describe('DotCategoryFieldSearchListComponent', () => {
     let spectator: Spectator<DotCategoryFieldSearchListComponent>;
@@ -18,7 +18,7 @@ describe('DotCategoryFieldSearchListComponent', () => {
         spectator = createComponent({
             props: {
                 categories: CATEGORY_MOCK_TRANSFORMED,
-                selected: SELECTED_LIST_MOCK,
+                selected: CATEGORY_MOCK_TRANSFORMED,
                 isLoading: false
             }
         });

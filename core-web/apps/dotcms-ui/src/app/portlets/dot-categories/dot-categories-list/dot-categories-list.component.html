@@ -3,8 +3,7 @@
         <p-breadcrumb
             (onItemClick)="updateBreadCrumb($event)"
             [model]="vm.categoryBreadCrumbs"
-            [home]="breadCrumbHome">
-        </p-breadcrumb>
+            [home]="breadCrumbHome"></p-breadcrumb>
     </div>
     <div class="category_listing">
         <p-table
@@ -45,9 +44,9 @@
                     </div>
                     <div class="w-2">
                         <div class="p-inputgroup">
-                            <span class="border-right-none p-inputgroup-addon"
-                                ><i class="pi pi-search"></i
-                            ></span>
+                            <span class="border-right-none p-inputgroup-addon">
+                                <i class="pi pi-search"></i>
+                            </span>
                             <input
                                 (input)="dataTable.filterGlobal($event.target.value, 'contains')"
                                 [placeholder]="'message.category.search' | dm"
@@ -136,8 +135,7 @@
                                     [attr.data-testId]="category.categoryId"
                                     [actions]="vm.categoriesActions"
                                     [item]="category"
-                                    class="listing-categories__action-button">
-                                </dot-action-menu-button>
+                                    class="listing-categories__action-button"></dot-action-menu-button>
                             </ng-container>
                         </ng-template>
                         <ng-template #last>
@@ -162,8 +160,7 @@
                                 [title]="'message.category.empty.title' | dm"
                                 [content]="'message.category.empty.content' | dm"
                                 [buttonLabel]="'message.category.empty.button.label' | dm"
-                                icon="web">
-                            </dot-empty-state>
+                                icon="web"></dot-empty-state>
                         </ng-template>
                     </td>
                 </tr>

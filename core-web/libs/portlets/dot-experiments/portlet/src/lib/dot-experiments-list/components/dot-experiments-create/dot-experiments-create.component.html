@@ -13,9 +13,9 @@
                 data-testId="new-experiment-form"
                 novalidate>
                 <div class="field">
-                    <label dotFieldRequired for="name">{{
-                        'experiments.create.form.name.label' | dm
-                    }}</label>
+                    <label dotFieldRequired for="name">
+                        {{ 'experiments.create.form.name.label' | dm }}
+                    </label>
                     <input
                         [maxlength]="this.maxNameLength + 1"
                         [tabindex]="1"
@@ -34,9 +34,9 @@
                 </div>
 
                 <div class="field">
-                    <label for="description">{{
-                        'experiments.create.form.description.label' | dm
-                    }}</label>
+                    <label for="description">
+                        {{ 'experiments.create.form.description.label' | dm }}
+                    </label>
                     <textarea
                         [tabindex]="2"
                         id="description"
