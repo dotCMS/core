@@ -12,7 +12,7 @@ export interface DotCMSPageEditorConfig {
     /**
      * The reload function to call when the page is reloaded.
      *
-     * @deprecated
+     * @deprecated In future implementation we will be listening for the changes from the editor to update the page state so reload will not be needed.
      */
     onReload?: () => void;
 }
