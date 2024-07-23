@@ -9,6 +9,8 @@ import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators'
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { CategoryFieldViewMode } from '../../models/dot-category-field.models';
+
 export const DEBOUNCE_TIME = 300;
 
 const MINIMUM_CHARACTERS = 3;
@@ -33,7 +35,7 @@ export class DotCategoryFieldSearchComponent {
     /**
      * Represent a EventEmitter to notify we want change the mode to `list`.
      */
-    @Output() changeMode = new EventEmitter<string>();
+    @Output() changeMode = new EventEmitter<CategoryFieldViewMode>();
 
     /**
      * Represents the boolean variable isLoading.
