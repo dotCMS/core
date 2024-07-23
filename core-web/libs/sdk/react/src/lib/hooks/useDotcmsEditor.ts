@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { useEffect, useState } from 'react';
 
 import {
@@ -38,7 +37,7 @@ export const useDotcmsEditor = ({ pathname, onReload }: DotCMSPageEditorConfig) 
         client.editor.on('changes', () => onReload?.());
 
         return () => client.editor.off('changes');
-    });
+    }, [onReload]);
 
     return { isInsideEditor };
 };
