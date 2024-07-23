@@ -2,11 +2,13 @@ package com.dotcms.enterprise.publishing.remote.handler;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.xstream.XStreamHandler;
+import com.dotcms.util.xstream.XStreamHandler.TrustedListMatcher;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.thoughtworks.xstream.XStream;
 import java.io.File;
@@ -46,5 +48,24 @@ public class ContentHandlerTest {
         assertTrue(contentlet.isFileAsset());
     }
 
+    @Test
+    public void Test_TrustedListMatcher() {
+        // Classes that should match the patterns
+        Class<?> allowedClass1 = java.util.ArrayList.class;
+        Class<?> allowedClass2 = java.lang.String.class;
+        Class<?> allowedClass3 = com.google.common.collect.Lists.class;
+
+        // Classes that should not match the patterns
+        Class<?> disallowedClass1 = java.nio.file.Paths.class;
+        Class<?> disallowedClass2 = org.junit.jupiter.api.Test.class;
+
+        // Verifications
+        assertTrue(TrustedListMatcher.matches(allowedClass1));
+        assertTrue(TrustedListMatcher.matches(allowedClass2));
+        assertTrue(TrustedListMatcher.matches(allowedClass3));
+
+        assertFalse(TrustedListMatcher.matches(disallowedClass1));
+        assertFalse(TrustedListMatcher.matches(disallowedClass2));
+    }
 
 }
