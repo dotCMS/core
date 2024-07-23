@@ -269,6 +269,13 @@ export function createFavoritePagesURL(params: {
     ).replace(/\/\//g, '/');
 }
 
+/**
+ * Create a pure URL from the params
+ *
+ * @export
+ * @param {DotPageApiParams} params
+ * @return {*}  {string}
+ */
 export function createPureURL(params: DotPageApiParams): string {
     // If we are going to delete properties from the params, we need to make a copy of it
     const paramsCopy = { ...params };
@@ -286,6 +293,15 @@ export function createPureURL(params: DotPageApiParams): string {
     return `${clientHost}/${url}?${searchParams.toString()}`;
 }
 
+/**
+ * Check if the page can be edited
+ *
+ * @export
+ * @param {DotPage} page
+ * @param {CurrentUser} currentUser
+ * @param {DotExperiment} [experiment]
+ * @return {*}  {boolean}
+ */
 export function computeCanEditPage(
     page: DotPage,
     currentUser: CurrentUser,
@@ -303,12 +319,20 @@ export function computeCanEditPage(
     return !!pageCanBeEdited && !isLocked && !editingBlockedByExperiment;
 }
 
+/**
+ * Check if the page is locked
+ *
+ * @export
+ * @param {DotPage} page
+ * @param {CurrentUser} currentUser
+ * @return {*}
+ */
 export function computePageIsLocked(page: DotPage, currentUser: CurrentUser) {
     return !!page?.locked && page?.lockedBy !== currentUser?.userId;
 }
 
 /**
- * Map the containers to a DotContainerMap
+ * Map the containerStructure to a DotContainerMap
  *
  * @private
  * @param {DotPageContainerStructure} containers
@@ -325,7 +349,7 @@ export function mapContainerStructureToDotContainerMap(
 }
 
 /**
- * Get the containers data
+ * Map the containerStructure to an array
  *
  * @private
  * @param {ContainerData} containers
