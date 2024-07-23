@@ -1,6 +1,8 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.app.AIModel;
+import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
@@ -60,7 +62,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                              final String modelIn,
                              final float temperature,
                              final int maxTokens) {
-        final OpenAIModel model = OpenAIModel.resolveModel(modelIn);
+        final AIModel model = AIModels.get().getModelByName(modelIn);
         final JSONObject json = new JSONObject();
 
         json.put(AiKeys.TEMPERATURE, temperature);
@@ -70,7 +72,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
             json.put(AiKeys.MAX_TOKENS, maxTokens);
         }
 
-        json.put(AiKeys.MODEL, model.modelName);
+        json.put(AiKeys.MODEL, model.getCurrentModel());
 
         return raw(json);
     }

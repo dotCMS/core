@@ -202,8 +202,9 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             Logger.info(
                 this,
                 String.format(
-                    "For clientId %s found this ANALYTICS_KEY response:\n%s",
+                    "For clientId %s found this ANALYTICS_KEY response:%s%s",
                     analyticsApp.getAnalyticsProperties().clientId(),
+                    System.lineSeparator(),
                     DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(response)));
 
             AnalyticsHelper.get().extractAnalyticsKey(response)
@@ -382,10 +383,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * @return map representation of http headers
      */
     private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
-        return ImmutableMap.<String, String>builder()
-            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
-            .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .build();
+        return CircuitBreakerUrl.authHeaders(AnalyticsHelper.get().formatBearer(accessToken));
     }
 
 }

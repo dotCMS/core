@@ -1,8 +1,9 @@
 package com.dotcms.ai.app;
 
-import org.apache.commons.collections4.CollectionUtils;
+import com.dotcms.util.DotPreconditions;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AIModel {
@@ -21,17 +22,14 @@ public class AIModel {
                     final int apiPerMinute,
                     final int maxTokens,
                     final boolean isCompletion) {
-        if (CollectionUtils.isEmpty(names)) {
-            throw new IllegalArgumentException("Names cannot be empty");
-        }
-
+        DotPreconditions.checkNotNull(id, "id cannot be null");
         this.id = id;
-        this.names = names;
+        this.names = Optional.ofNullable(names).orElse(List.of());
         this.tokensPerMinute = tokensPerMinute;
         this.apiPerMinute = apiPerMinute;
         this.maxTokens = maxTokens;
         this.isCompletion = isCompletion;
-        current = new AtomicInteger(0);
+        current = new AtomicInteger(this.names.isEmpty() ? -1  : 0);
     }
 
     public String getId() {
@@ -63,11 +61,18 @@ public class AIModel {
     }
 
     public void setCurrent(final int current) {
+        DotPreconditions.checkArgument(isCurrentValid(current), invalidModelMessage());
         this.current.set(current);
     }
 
     public long minIntervalBetweenCalls() {
         return 60000 / apiPerMinute;
+    }
+
+    public String getCurrentModel() {
+        final int currentIndex = this.current.get();
+        DotPreconditions.checkState(isCurrentValid(currentIndex), invalidModelMessage());
+        return names.get(currentIndex);
     }
 
     @Override
@@ -79,6 +84,14 @@ public class AIModel {
                 ", maxTokens=" + maxTokens +
                 ", isCompletion=" + isCompletion +
                 '}';
+    }
+
+    private boolean isCurrentValid(final int current) {
+        return current >= 0 && current < names.size();
+    }
+
+    private String invalidModelMessage() {
+        return String.format("Current model index must be between 0 and %d", names.size());
     }
 
     public static Builder builder() {

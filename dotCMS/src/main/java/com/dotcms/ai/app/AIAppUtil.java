@@ -54,7 +54,7 @@ public class AIAppUtil {
         return Optional.ofNullable(model).map(String::trim).map(String::toLowerCase).orElse(null);
     }
 
-    public List<String> tokenizeModels(final String models) {
+    public List<String> splitModels(final String models) {
         return new ArrayList<>(
                 new LinkedHashSet<>(
                         Stream.of(models.split(StringPool.COMMA))
@@ -65,11 +65,11 @@ public class AIAppUtil {
     public AIModel resolveModel(final Map<String, Secret> secrets, final String id) {
         return AIModel.builder()
                 .withId(id)
-                .withNames(tokenizeModels(resolvePrefixedSecret(secrets, AppKeys.MODEL_NAME, id)))
+                .withNames(splitModels(resolvePrefixedSecret(secrets, AppKeys.MODEL_NAME, id)))
                 .withTokensPerMinute(toInt(resolvePrefixedSecret(secrets, AppKeys.MODEL_TOKENS_PER_MINUTE, id)))
                 .withApiPerMinute(toInt(resolvePrefixedSecret(secrets, AppKeys.MODEL_API_PER_MINUTE, id)))
                 .withMaxTokens(toInt(resolvePrefixedSecret(secrets, AppKeys.MODEL_MAX_TOKENS, id)))
-                .withIsCompletion(Boolean.parseBoolean(resolvePrefixedSecret(secrets, AppKeys.MODEL_COMPLETION, prefix)))
+                .withIsCompletion(Boolean.parseBoolean(resolvePrefixedSecret(secrets, AppKeys.MODEL_COMPLETION, id)))
                 .build();
     }
 

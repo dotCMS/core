@@ -36,7 +36,10 @@ public enum AppKeys {
     EMBEDDINGS_CACHE_TTL_SECONDS("com.dotcms.ai.embeddings.cache.ttl.seconds", "600"),
     EMBEDDINGS_CACHE_SIZE("com.dotcms.ai.embeddings.cache.size", "1000"),
     LISTENER_INDEXER("listenerIndexer", "{}"),
-    EMBEDDINGS_DB_DELETE_OLD_ON_UPDATE("com.dotcms.ai.embeddings.delete.old.on.update", "true");
+    EMBEDDINGS_DB_DELETE_OLD_ON_UPDATE("com.dotcms.ai.embeddings.delete.old.on.update", "true"),
+    AI_MODELS_CACHE_TTL("com.dotcms.ai.models.supported.ttl", "28800"),
+    AI_MODELS_CACHE_SIZE("com.dotcms.ai.models.supported.size", "64"),
+    OPEN_AI_MODELS_URL("com.dotcms.ai.models.supported.url", "https://api.openai.com/v1/models"),;
 
     public static final String APP_KEY = "dotAI";
 
