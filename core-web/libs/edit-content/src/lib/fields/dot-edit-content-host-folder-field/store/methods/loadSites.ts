@@ -23,8 +23,6 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
         pipe(
             tap(() => patchState(store, { status: 'LOADING' })),
             switchMap(({ path, isRequired }) => {
-                const newPath = path.replace('//', '');
-
                 return dotEditContentService
                     .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
                     .pipe(
@@ -41,7 +39,7 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
                             finalize: () => patchState(store, { status: 'LOADED' })
                         }),
                         map((sites) => ({
-                            path: newPath,
+                            path,
                             sites,
                             isRequired
                         }))
@@ -74,7 +72,8 @@ export const loadSites = (store, dotEditContentService: DotEditContentService) =
             }),
             filter(({ path }) => !!path),
             switchMap(({ path, sites }) => {
-                const hasPaths = path.includes('/');
+                const newPath = path.replace('//', '');
+                const hasPaths = newPath.includes('/');
                 if (!hasPaths) {
                     const response: CustomTreeNode = {
                         node: sites.find((item) => item.key === path),
