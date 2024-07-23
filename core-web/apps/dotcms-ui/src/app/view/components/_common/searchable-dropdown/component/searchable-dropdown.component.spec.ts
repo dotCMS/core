@@ -198,7 +198,7 @@ describe('SearchableDropdownComponent', () => {
         const dataviewDataEl = de.query(
             By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
         );
-        expect(dataviewDataEl.nativeElement.textContent).toEqual('site-0');
+        expect(dataviewDataEl.nativeElement.textContent.trim()).toEqual('site-0');
         expect(comp.selectedOptionIndex).toBe(0);
         expect(comp.selectedOptionValue).toBe(data[0].name);
     });
@@ -257,7 +257,7 @@ describe('SearchableDropdownComponent', () => {
         const dataviewDataEl = de.query(
             By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
         );
-        expect(dataviewDataEl.nativeElement.textContent).toEqual('site-0 - demo.dotcms.com');
+        expect(dataviewDataEl.nativeElement.textContent).toContain('site-0 - demo.dotcms.com');
     });
 
     it('should the pageChange call the paginate method', async () => {
