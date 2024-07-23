@@ -1,8 +1,8 @@
 package com.dotcms.ai.util;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.app.AIAppUtil;
 import com.dotcms.ai.app.AIModel;
-import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -57,7 +57,7 @@ public class OpenAIRequest {
             Logger.debug(OpenAIRequest.class, "posting: " + json);
         }
 
-        final AIModel model = AIModels.get().getModelByName(json.optString(AiKeys.MODEL));
+        final AIModel model = AIAppUtil.get().unwrapModelOrThrow(json.optString(AiKeys.MODEL));
         final long sleep = lastRestCall.computeIfAbsent(model, m -> 0L)
                 + model.minIntervalBetweenCalls()
                 - System.currentTimeMillis();

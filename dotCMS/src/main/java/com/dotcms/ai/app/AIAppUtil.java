@@ -2,6 +2,7 @@ package com.dotcms.ai.app;
 
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -35,7 +36,7 @@ public class AIAppUtil {
         return resolveSecret(secrets, key, key.defaultValue);
     }
 
-    public String resolvePrefixedSecret(final Map<String, Secret> secrets, final AppKeys key, final String prefix) {
+    public String resolveModelSecret(final Map<String, Secret> secrets, final AppKeys key, final String prefix) {
         return resolveSecret(secrets, prefixKey(key, prefix));
     }
 
@@ -65,11 +66,11 @@ public class AIAppUtil {
     public AIModel resolveModel(final Map<String, Secret> secrets, final String id) {
         return AIModel.builder()
                 .withId(id)
-                .withNames(splitModels(resolvePrefixedSecret(secrets, AppKeys.MODEL_NAME, id)))
-                .withTokensPerMinute(toInt(resolvePrefixedSecret(secrets, AppKeys.MODEL_TOKENS_PER_MINUTE, id)))
-                .withApiPerMinute(toInt(resolvePrefixedSecret(secrets, AppKeys.MODEL_API_PER_MINUTE, id)))
-                .withMaxTokens(toInt(resolvePrefixedSecret(secrets, AppKeys.MODEL_MAX_TOKENS, id)))
-                .withIsCompletion(Boolean.parseBoolean(resolvePrefixedSecret(secrets, AppKeys.MODEL_COMPLETION, id)))
+                .withNames(splitModels(resolveModelSecret(secrets, AppKeys.MODEL_NAME, id)))
+                .withTokensPerMinute(toInt(resolveModelSecret(secrets, AppKeys.MODEL_TOKENS_PER_MINUTE, id)))
+                .withApiPerMinute(toInt(resolveModelSecret(secrets, AppKeys.MODEL_API_PER_MINUTE, id)))
+                .withMaxTokens(toInt(resolveModelSecret(secrets, AppKeys.MODEL_MAX_TOKENS, id)))
+                .withIsCompletion(Boolean.parseBoolean(resolveModelSecret(secrets, AppKeys.MODEL_COMPLETION, id)))
                 .build();
     }
 
@@ -77,6 +78,16 @@ public class AIAppUtil {
         AIModels.get().loadModels(List.of(
                 resolveModel(secrets, "text"),
                 resolveModel(secrets, "image")));
+    }
+
+    public AIModel unwrapModelOrThrow(final String modelName) {
+        return AIModels.get()
+                .getModelByName(modelName)
+                .orElseThrow(() -> {
+                    final String supported = String.join(", ", AISupportedModels.get().getOrPullModels());
+                    return new DotRuntimeException(
+                            "Unable to parse model: '" + modelName + "'.  Only [" + supported + "] are supported ");
+                });
     }
 
     private int toInt(final String value) {

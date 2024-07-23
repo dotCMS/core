@@ -61,75 +61,75 @@ params:
         value: "1920x1080"
       - label: "256x256 (Small Square 1:1)"
         value: "256x256"
-  modelName:
+  modelNames:
     value: ""
     hidden: false
     type: "STRING"
-    label: "Model Name"
-    hint: "Model used to generate ChatGPT API response."
+    label: "Model Names"
+    hint: "Comma delimited list of models used to generate OpenAI API response."
     required: true
   modelTokensPerMinute:
     value: ""
     hidden: false
     type: "STRING"
     label: "Tokens per Minute"
-    hint: "Tokens per minute used to generate ChatGPT API response."
+    hint: "Tokens per minute used to generate OpenAI API response."
     required: true
   modelApiPerMinute:
     value: ""
     hidden: false
     type: "STRING"
     label: "API per Minute"
-    hint: "API per minute used to generate ChatGPT API response."
+    hint: "API per minute used to generate OpenAI API response."
     required: true
   modelMaxTokens:
     value: ""
     hidden: false
     type: "STRING"
     label: "Max Tokens"
-    hint: "Maximum number of tokens used to generate ChatGPT API response."
+    hint: "Maximum number of tokens used to generate OpenAI API response."
     required: true
   modelCompletion:
     value: ""
     hidden: false
     type: "BOOL"
     label: "Completion model enabled"
-    hint: "Enable completion model used to generate ChatGPT API response."
+    hint: "Enable completion model used to generate OpenAI API response."
     required: true
-  imageModelName:
+  imageModelNames:
     value: ""
     hidden: false
     type: "STRING"
-    label: "Image Model Name"
-    hint: "Model used to generate ChatGPT API response."
+    label: "Image Model Names"
+    hint: "Comma delimited list of image models used to generate OpenAI API response."
     required: true
   imageModelTokensPerMinute:
     value: ""
     hidden: false
     type: "STRING"
     label: "Image Tokens per Minute"
-    hint: "Tokens per minute used to generate ChatGPT API response."
+    hint: "Tokens per minute used to generate OpenAI API response."
     required: true
   imageModelApiPerMinute:
     value: ""
     hidden: false
     type: "STRING"
     label: "Image API per Minute"
-    hint: "API per minute used to generate ChatGPT API response."
+    hint: "API per minute used to generate OpenAI API response."
     required: true
   imageModelMaxTokens:
     value: ""
     hidden: false
     type: "STRING"
     label: "Image Max Tokens"
-    hint: "Maximum number of tokens used to generate ChatGPT API response."
+    hint: "Maximum number of tokens used to generate OpenAI API response."
     required: true
   imageModelCompletion:
     value: ""
     hidden: false
     type: "BOOL"
     label: "Image Completion model enabled"
-    hint: "Enable completion model used to generate ChatGPT API response."
+    hint: "Enable completion model used to generate OpenAI API response."
     required: true
   listenerIndexer:
     value: ""

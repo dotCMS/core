@@ -1,15 +1,14 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.app.AIAppUtil;
 import com.dotcms.ai.app.AIModel;
-import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.EncodingUtil;
-import com.dotcms.ai.util.OpenAIModel;
 import com.dotcms.ai.util.OpenAIRequest;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
@@ -44,7 +43,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     private final Lazy<AppConfig> config;
 
-    final Lazy<AppConfig> defaultConfig =
+    private final Lazy<AppConfig> defaultConfig =
             Lazy.of(() -> ConfigService.INSTANCE.config(
                     Try.of(() -> WebAPILocator
                                     .getHostWebAPI()
@@ -62,7 +61,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                              final String modelIn,
                              final float temperature,
                              final int maxTokens) {
-        final AIModel model = AIModels.get().getModelByName(modelIn);
+        final AIModel model = AIAppUtil.get().unwrapModelOrThrow(modelIn);
         final JSONObject json = new JSONObject();
 
         json.put(AiKeys.TEMPERATURE, temperature);
@@ -153,7 +152,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form, final List<EmbeddingsDTO> searchResults) {
-        final OpenAIModel model = OpenAIModel.resolveModel(form.model);
+        final AIModel model = AIAppUtil.get().unwrapModelOrThrow(form.model);
         // aggregate matching results into text
         final StringBuilder supportingContent = new StringBuilder();
         searchResults.forEach(s -> supportingContent.append(s.extractedText).append(" "));
@@ -164,7 +163,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final int systemPromptTokens = countTokens(systemPrompt);
         textPrompt = reduceStringToTokenSize(
                 textPrompt,
-                model.maxTokens - form.responseLengthTokens - systemPromptTokens);
+                model.getMaxTokens() - form.responseLengthTokens - systemPromptTokens);
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.STREAM, form.stream);
@@ -173,7 +172,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         buildMessages(systemPrompt, textPrompt, json);
 
         if (UtilMethods.isSet(form.model)) {
-            json.put(AiKeys.MODEL, model.modelName);
+            json.put(AiKeys.MODEL, model.getCurrentModel());
         }
 
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
@@ -246,20 +245,19 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form) {
-        final int maxTokenSize = OpenAIModel.resolveModel(config.get().getConfig(AppKeys.MODEL)).maxTokens;
+        final AIModel aiModel = config.get().getModel();
         final int promptTokens = countTokens(form.prompt);
 
         final JSONArray messages = new JSONArray();
         final String textPrompt = reduceStringToTokenSize(
                 form.prompt,
-                maxTokenSize - form.responseLengthTokens - promptTokens);
+                aiModel.getMaxTokens() - form.responseLengthTokens - promptTokens);
 
         messages.add(Map.of(AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, textPrompt));
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MESSAGES, messages);
         json.putIfAbsent(AiKeys.MODEL, config.get().getConfig(AppKeys.MODEL_NAME));
-
         json.put(AiKeys.TEMPERATURE, form.temperature);
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
         json.put(AiKeys.STREAM, form.stream);

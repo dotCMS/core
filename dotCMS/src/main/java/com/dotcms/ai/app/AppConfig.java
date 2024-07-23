@@ -37,8 +37,12 @@ public class AppConfig implements Serializable {
         final AIAppUtil aiAppUtil = AIAppUtil.get();
         aiAppUtil.loadModels(secrets);
 
-        model = AIModels.get().getModelByName(aiAppUtil.resolveSecret(secrets, AppKeys.MODEL_NAME));
-        imageModel = AIModels.get().getModelByName(aiAppUtil.resolveSecret(secrets, AppKeys.IMAGE_MODEL_NAME));
+        model = AIModels.get()
+                .getModelByName(aiAppUtil.resolveSecret(secrets, AppKeys.MODEL_NAME))
+                .orElse(AIModels.NOOP_MODEL);
+        imageModel = AIModels.get()
+                .getModelByName(aiAppUtil.resolveSecret(secrets, AppKeys.IMAGE_MODEL_NAME))
+                .orElse(AIModels.NOOP_MODEL);
 
         apiUrl = aiAppUtil.resolveEnvSecret(secrets, AppKeys.API_URL);
         apiImageUrl = aiAppUtil.resolveEnvSecret(secrets, AppKeys.API_IMAGE_URL);

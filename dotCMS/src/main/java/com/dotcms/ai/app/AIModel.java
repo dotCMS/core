@@ -1,6 +1,7 @@
 package com.dotcms.ai.app;
 
 import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.util.Logger;
 
 import java.util.List;
 import java.util.Optional;
@@ -61,18 +62,24 @@ public class AIModel {
     }
 
     public void setCurrent(final int current) {
-        DotPreconditions.checkArgument(isCurrentValid(current), invalidModelMessage());
+        if (!isCurrentValid(current)) {
+            logInvalidModelMessage();
+            return;
+        }
         this.current.set(current);
+    }
+
+    public Optional<String> getCurrentModel() {
+        final int currentIndex = this.current.get();
+        if (!isCurrentValid(currentIndex)) {
+            logInvalidModelMessage();
+            return Optional.empty();
+        }
+        return Optional.of(names.get(currentIndex));
     }
 
     public long minIntervalBetweenCalls() {
         return 60000 / apiPerMinute;
-    }
-
-    public String getCurrentModel() {
-        final int currentIndex = this.current.get();
-        DotPreconditions.checkState(isCurrentValid(currentIndex), invalidModelMessage());
-        return names.get(currentIndex);
     }
 
     @Override
@@ -87,11 +94,11 @@ public class AIModel {
     }
 
     private boolean isCurrentValid(final int current) {
-        return current >= 0 && current < names.size();
+        return !names.isEmpty() && current >= 0 && current < names.size();
     }
 
-    private String invalidModelMessage() {
-        return String.format("Current model index must be between 0 and %d", names.size());
+    private void logInvalidModelMessage() {
+        Logger.debug(getClass(), String.format("Current model index must be between 0 and %d", names.size()));
     }
 
     public static Builder builder() {

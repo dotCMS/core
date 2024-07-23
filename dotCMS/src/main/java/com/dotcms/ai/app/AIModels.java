@@ -1,6 +1,5 @@
 package com.dotcms.ai.app;
 
-import com.dotmarketing.exception.DotRuntimeException;
 import io.vavr.Lazy;
 
 import java.util.List;
@@ -12,6 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AIModels {
 
     private static final Lazy<AIModels> INSTANCE = Lazy.of(AIModels::new);
+    public static final AIModel NOOP_MODEL = AIModel.builder().withNames(List.of()).build();
 
     private final ConcurrentMap<String, AIModel> aiModels = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> models = new ConcurrentHashMap<>();
@@ -43,20 +43,19 @@ public class AIModels {
         return Optional.ofNullable(aiModels.get(id));
     }
 
-    public AIModel getModelByName(final String modelName) {
+    public Optional<AIModel> getModelByName(final String modelName) {
         final String normalized = AIAppUtil.get().normalizeModel(modelName);
         return Optional
                 .ofNullable(models.get(normalized))
-                .flatMap(this::getModelById)
-                .orElseThrow(() -> {
-                    final String supported = String.join(", ", AISupportedModels.get().getOrPullModels());
-                    return new DotRuntimeException(
-                            "Unable to parse model: '" + modelName + "'.  Only [" + supported + "] are supported ");
-                });
+                .flatMap(this::getModelById);
     }
 
     public boolean hasLoaded() {
         return loaded.get();
+    }
+
+    public boolean isNotNoop(final AIModel model) {
+        return model != NOOP_MODEL;
     }
 
 }
