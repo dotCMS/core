@@ -110,16 +110,21 @@ public class PortletResource implements Serializable {
 
             final Portlet contentPortlet = portletApi.findPortlet("content");
 
-            final Map<String, String> initValues = new HashMap<>(contentPortlet.getInitParams());
-            initValues.put("name", formData.portletName);
-            initValues.put("baseTypes", formData.baseTypes);
-            initValues.put("contentTypes", formData.contentTypes);
-            initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
+            final DotPortlet newPortlet = DotPortlet.builder()
+                    .portletId(portletId)
+                    .portletClass(contentPortlet.getPortletClass())
 
-            final Portlet newPortlet = APILocator.getPortletAPI()
-                    .savePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
+                    //.pputInitParam("name", formData.portletName)
+                    //.putInitParam("baseTypes", formData.baseTypes)
+                    //.putInitParam("contentTypes", formData.contentTypes)
+                    //.putInitParam(DATA_VIEW_MODE_KEY, formData.dataViewMode)
+                    .build();
 
-            return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, newPortlet.getPortletId()))).build();
+
+            final Portlet savedPortlet = APILocator.getPortletAPI()
+                    .savePortlet(newPortlet.toPortlet(), initData.getUser());
+
+            return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, savedPortlet.getPortletId()))).build();
         } catch (final Exception e) {
             Logger.error(this, String.format("An error occurred when saving new Portlet with ID " +
                     "'%s': %s", portletId, ExceptionUtil.getErrorMessage(e)), e);
@@ -158,18 +163,24 @@ public class PortletResource implements Serializable {
             }
             final Portlet contentPortlet = portletApi.findPortlet("content");
 
-            final Map<String, String> initValues = new HashMap<>(contentPortlet.getInitParams());
-            initValues.put("name", formData.portletName);
-            initValues.put("baseTypes", formData.baseTypes);
-            initValues.put("contentTypes", formData.contentTypes);
-            initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
+            final DotPortlet updatedPortlet =  DotPortlet.builder()
+                    .portletId(portletId)
+                    .portletClass(contentPortlet.getPortletClass())
+                    //.putInitParam("name", formData.portletName)
+                    //.putInitParam("baseTypes", formData.baseTypes)
+                    //.putInitParam("contentTypes", formData.contentTypes)
+                    //.putInitParam(DATA_VIEW_MODE_KEY, formData.dataViewMode)
+                    .build();
+
 
             final Portlet newPortlet = APILocator.getPortletAPI()
-                    .savePortlet(new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
+                    .savePortlet(updatedPortlet.toPortlet(), initData.getUser());
 
             return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, newPortlet.getPortletId()))).build();
 
         } catch (Exception e) {
+            Logger.error(this, String.format("An error occurred when updating Portlet with ID " +
+                    "'%s': %s", formData.portletId, ExceptionUtil.getErrorMessage(e)), e);
             response = ResponseUtil.mapExceptionResponse(e);
         }
 

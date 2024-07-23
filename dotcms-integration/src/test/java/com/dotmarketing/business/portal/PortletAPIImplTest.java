@@ -64,15 +64,21 @@ public class PortletAPIImplTest {
 
         final Map<String, String> initValues = new HashMap<>();
 
-        initValues.put("view-action","/ext/contentlet/view_contentlets");
+        initValues.put("view-action", "/ext/contentlet/view_contentlets");
         initValues.put("name", name);
         initValues.put("baseTypes", baseTypes);
         initValues.put("contentTypes", contentTypes);
         initValues.put("dataViewMode", dataViewMode);
 
-        final Portlet newPortlet = portletApi.savePortlet(new DotPortlet(portletId, StrutsPortlet.class.getName(), initValues),systemUser);
+        final DotPortlet newPortlet = DotPortlet.builder()
+                .portletId(portletId)
+                .portletClass(StrutsPortlet.class.getName())
+                //.putAllInitParams(initValues)
+                .build();
 
-        return newPortlet;
+        final Portlet savedPortlet = portletApi.savePortlet(newPortlet.toPortlet(), systemUser);
+
+        return savedPortlet;
     }
 
     /**

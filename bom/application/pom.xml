@@ -23,7 +23,7 @@
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
         <glowroot.version>0.14.1</glowroot.version>
-        <jackson.version>2.16.1</jackson.version>
+        <jackson.version>2.17.2</jackson.version>
         <jersey.version>2.27</jersey.version>
         <graalvm.version>22.3.3</graalvm.version>
     </properties>

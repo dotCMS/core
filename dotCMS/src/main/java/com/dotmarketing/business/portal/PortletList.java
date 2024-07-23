@@ -1,38 +1,41 @@
 package com.dotmarketing.business.portal;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
+import org.immutables.value.Value;
+
 import java.util.List;
+import org.immutables.value.Value.Style.BuilderVisibility;
+import org.immutables.value.Value.Style.ImplementationVisibility;
 
-/**
- * This class implements the JAXB mapping for the portlet definitions in dotCMS. It takes every
- * single portlet definition and maps it to a list of {@link DotPortlet} objects.
- *
- * @author Jose Castro
- * @since Jun 17th, 2024
- */
-@XmlRootElement(name = "portlet-app")
-public class PortletList {
+@Value.Immutable
+@Value.Style(
+        typeBuilder = "*Builder",
+        depluralize = true,
+        visibility = ImplementationVisibility.PRIVATE,
+        builderVisibility = BuilderVisibility.PUBLIC,
+        deepImmutablesDetection = true
 
-    private List<DotPortlet> portlets;
+)
+@JacksonXmlRootElement(localName = "portlet-app")
+@JsonSerialize(as = PortletList.class)
+@JsonDeserialize(builder = PortletList.Builder.class)
+public interface PortletList extends XmlSerializable<PortletList>{
 
-    /**
-     * Returns the list of portlets from a given XML file or Input Stream.
-     *
-     * @return The list of portlets.
-     */
-    @XmlElement(name = "portlet")
-    public List<DotPortlet> getPortlets() {
-        return portlets;
+    @JacksonXmlElementWrapper(useWrapping = false)
+    @JacksonXmlProperty(localName = "portlet")
+    @JsonProperty("portlet")
+    List<DotPortlet> getPortlets();
+
+    class Builder extends PortletListBuilder implements XmlImmutableBuilder<PortletList> {
     }
 
-    /**
-     * Sets the list of portlets.
-     *
-     * @param portlets The list of portlets.
-     */
-    public void setPortlets(final List<DotPortlet> portlets) {
-        this.portlets = portlets;
+    static Builder builder() {
+        return new Builder();
     }
-
 }
