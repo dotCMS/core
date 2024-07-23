@@ -28,7 +28,8 @@ const UNITS = {
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DecimalPipe],
     selector: 'cw-visitors-location-component',
-    template: `<div
+    template: `
+        <div
             *ngIf="comparisonDropdown != null"
             flex
             layout="row"
@@ -41,8 +42,7 @@ const UNITS = {
                 [class.cw-comparator-selector]="true"
                 flex
                 class="cw-input"
-                placeholder="{{ comparisonDropdown.placeholder }}">
-            </cw-input-dropdown>
+                placeholder="{{ comparisonDropdown.placeholder }}"></cw-input-dropdown>
             <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
                 <input
                     [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
@@ -70,7 +70,8 @@ const UNITS = {
             (cancel)="showingMap = !showingMap"
             [headerText]="'Select an area'"
             [hidden]="!showingMap"
-            [circle]="circle"></cw-area-picker-dialog-component> `
+            [circle]="circle"></cw-area-picker-dialog-component>
+    `
 })
 export class VisitorsLocationComponent {
     @Input() circle: GCircle = { center: { lat: 38.89, lng: -77.04 }, radius: 10000 };

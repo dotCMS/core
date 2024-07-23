@@ -23,10 +23,12 @@ const fakeContentType: DotCMSContentType = {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-relationship-tree
-        [velocityVar]="velocityVar"
-        [contentType]="contentType"
-        [isParentField]="isParentField"></dot-relationship-tree>`
+    template: `
+        <dot-relationship-tree
+            [velocityVar]="velocityVar"
+            [contentType]="contentType"
+            [isParentField]="isParentField"></dot-relationship-tree>
+    `
 })
 class TestHostComponent {
     velocityVar = 'Parent.Children';

@@ -11,8 +11,7 @@
                 class="p-dropdown-sm"
                 #languageDropdown
                 data-testId="language"
-                formControlName="language">
-            </p-dropdown>
+                formControlName="language"></p-dropdown>
         </div>
 
         <h3 class="login__title" data-testId="header">
@@ -25,9 +24,9 @@
             class="login__message"
             data-testId="message"></p>
         <div class="field form__group--validation">
-            <label dotFieldRequired data-testId="emailLabel" for="inputtext">{{
-                loginInfo.i18nMessagesMap['emailAddressLabel']
-            }}</label>
+            <label dotFieldRequired data-testId="emailLabel" for="inputtext">
+                {{ loginInfo.i18nMessagesMap['emailAddressLabel'] }}
+            </label>
 
             <input
                 id="inputtext"
@@ -45,13 +44,12 @@
                         loginInfo.i18nMessagesMap['emailAddressLabel']
                     )
                 "
-                [field]="loginForm.get('login')">
-            </dot-field-validation-message>
+                [field]="loginForm.get('login')"></dot-field-validation-message>
         </div>
         <div class="field form__group--validation">
-            <label dotFieldRequired data-testId="passwordLabel" for="password">{{
-                loginInfo.i18nMessagesMap['password']
-            }}</label>
+            <label dotFieldRequired data-testId="passwordLabel" for="password">
+                {{ loginInfo.i18nMessagesMap['password'] }}
+            </label>
 
             <input
                 id="password"
@@ -68,8 +66,7 @@
                         loginInfo.i18nMessagesMap['password']
                     )
                 "
-                [field]="loginForm.get('password')">
-            </dot-field-validation-message>
+                [field]="loginForm.get('password')"></dot-field-validation-message>
         </div>
         <div class="login__password-settings field">
             <p-checkbox
@@ -81,9 +78,9 @@
                 *ngIf="!isLoginInProgress"
                 [routerLink]="['/public/forgotPassword']"
                 class="password-settings__forgot-password"
-                data-testId="actionLink"
-                >{{ loginInfo.i18nMessagesMap['get-new-password'] }}</a
-            >
+                data-testId="actionLink">
+                {{ loginInfo.i18nMessagesMap['get-new-password'] }}
+            </a>
         </div>
         <div class="field">
             <dot-loading-indicator></dot-loading-indicator>
@@ -97,22 +94,21 @@
                 data-testId="submitButton"></button>
         </div>
         <div class="login__footer">
-            <span data-testId="server"
-                >{{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}</span
-            >
+            <span data-testId="server">
+                {{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}
+            </span>
             |
-            <span data-testId="version"
-                >{{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }} -
-                {{ loginInfo.entity.buildDateString }}</span
-            >
+            <span data-testId="version">
+                {{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }} -
+                {{ loginInfo.entity.buildDateString }}
+            </span>
             <span
                 *ngIf="loginInfo.entity.levelName.indexOf('COMMUNITY') !== -1"
                 [innerHTML]="
                     ' - ' +
                     loginInfo.i18nMessagesMap['angular.login.component.community.licence.message']
                 "
-                data-testId="license">
-            </span>
+                data-testId="license"></span>
         </div>
     </form>
 </div>

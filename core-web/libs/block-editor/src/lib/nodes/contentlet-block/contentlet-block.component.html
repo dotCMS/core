@@ -5,8 +5,7 @@
                 [width]="94"
                 [height]="94"
                 [iconSize]="'72px'"
-                [contentlet]="data">
-            </dot-contentlet-thumbnail>
+                [contentlet]="data"></dot-contentlet-thumbnail>
         </ng-template>
 
         <h3 *pTemplate="'title'" class="title">{{ data.title }}</h3>
@@ -14,7 +13,7 @@
 
         <ng-template pTemplate="footer">
             <div class="state">
-                <dot-state-icon [state]="data | contentletState" size="16px"> </dot-state-icon>
+                <dot-state-icon [state]="data | contentletState" size="16px"></dot-state-icon>
                 @if (data.language) {
                     <dot-badge [bordered]="true">{{ data.language | lowercase }}</dot-badge>
                 }

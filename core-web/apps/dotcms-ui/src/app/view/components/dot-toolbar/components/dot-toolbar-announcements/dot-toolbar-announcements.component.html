@@ -25,9 +25,9 @@
                         aria-labelledby="announcement-label date-label">
                         <div class="announcements__content">
                             <span class="announcements__label">{{ item.title }}</span>
-                            <span class="announcements__date">{{
-                                item.announcementDateAsISO8601 | date
-                            }}</span>
+                            <span class="announcements__date">
+                                {{ item.announcementDateAsISO8601 | date }}
+                            </span>
                         </div>
                     </a>
                 </li>
@@ -43,9 +43,9 @@
                     class="announcements__link"
                     target="_blank"
                     data-testId="announcement_link_all"
-                    rel="noopener"
-                    >{{ 'announcements.show.all' | dm }}</a
-                >
+                    rel="noopener">
+                    {{ 'announcements.show.all' | dm }}
+                </a>
             </div>
         </div>
 
@@ -59,9 +59,9 @@
                         class="announcements__about-link"
                         data-testId="announcements__about-link"
                         target="_blank"
-                        rel="noopener"
-                        >{{ item.label }}</a
-                    >
+                        rel="noopener">
+                        {{ item.label }}
+                    </a>
                 }
             </div>
         }

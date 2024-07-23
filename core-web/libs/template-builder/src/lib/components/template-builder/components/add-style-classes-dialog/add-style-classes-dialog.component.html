@@ -12,8 +12,7 @@
         dotSelectItem
         data-testId="autocomplete"
         inputId="auto-complete-input"
-        appendTo="body">
-    </p-autoComplete>
+        appendTo="body"></p-autoComplete>
     <ng-container *ngIf="isJsonClasses$ | async; else suggestionNotes">
         <ul data-testId="list">
             <li>
@@ -39,6 +38,6 @@
 </div>
 <div class="dialog__actions-container">
     <p-button (onClick)="save()" data-testId="update-btn">
-        {{ 'dot.template.builder.classes.dialog.update.button' | dm }}</p-button
-    >
+        {{ 'dot.template.builder.classes.dialog.update.button' | dm }}
+    </p-button>
 </div>
