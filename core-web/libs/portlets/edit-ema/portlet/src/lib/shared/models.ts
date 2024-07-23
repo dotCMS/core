@@ -88,6 +88,7 @@ export interface NavigationBarItem {
     href?: string;
     id: string;
     isDisabled?: boolean;
+    tooltip?: string;
 }
 
 export interface MessageInfo {
