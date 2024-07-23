@@ -119,7 +119,7 @@ export function withLoad() {
                                         tap({
                                             next: ({ experiment, languages }) => {
                                                 const canEditPage = computeCanEditPage(
-                                                    pageAPIResponse,
+                                                    pageAPIResponse?.page,
                                                     currentUser,
                                                     experiment
                                                 );

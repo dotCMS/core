@@ -33,7 +33,9 @@ export const UVEStore = signalStore(
 
                 const currentUrl = '/' + sanitizeURL(pageAPIResponse?.page.pageURI);
 
-                const requestHostName = store.$params()?.clientHost ?? window.location.origin;
+                const requestHostName = !store.$isTraditionalPage()
+                    ? store.$params()?.clientHost
+                    : window.location.origin;
 
                 const page = pageAPIResponse?.page;
                 const templateDrawed = pageAPIResponse?.template.drawed;

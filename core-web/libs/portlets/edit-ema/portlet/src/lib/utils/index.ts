@@ -300,11 +300,11 @@ export function computeCanEditPage(
         DotExperimentStatus.SCHEDULED
     ].includes(experiment?.status);
 
-    return pageCanBeEdited && !isLocked && !editingBlockedByExperiment;
+    return !!pageCanBeEdited && !isLocked && !editingBlockedByExperiment;
 }
 
 export function computePageIsLocked(page: DotPage, currentUser: CurrentUser) {
-    return page?.locked && page?.lockedBy !== currentUser?.userId;
+    return !!page?.locked && page?.lockedBy !== currentUser?.userId;
 }
 
 /**

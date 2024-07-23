@@ -326,4 +326,20 @@ describe('UVEStore', () => {
             expect(getPageSpy).toHaveBeenCalledWith(store.$params());
         });
     });
+
+    describe('withMethods', () => {
+        describe('setUveStatus', () => {
+            it('should set the status of the UVEStore', () => {
+                expect(store.$status()).toBe(UVE_STATUS.LOADED);
+
+                store.setUveStatus(UVE_STATUS.LOADING);
+
+                expect(store.$status()).toBe(UVE_STATUS.LOADING);
+            });
+        });
+    });
+
+    describe('withComputed', () => {
+        //
+    });
 });
