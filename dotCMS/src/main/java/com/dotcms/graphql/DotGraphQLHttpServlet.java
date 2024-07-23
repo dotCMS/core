@@ -42,6 +42,11 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
         handleRequest(request, response);
     }
 
+    /**
+     * We're moving the request processing from the superclass down here to be able to apply the CORS headers and use our own logger
+     * @param request 
+     * @param response
+     */
     protected void handleRequest(HttpServletRequest request, HttpServletResponse response) {
         corsHeaders.apply().forEach(response::setHeader);
         try {
