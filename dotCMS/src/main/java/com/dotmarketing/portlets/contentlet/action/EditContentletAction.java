@@ -2036,7 +2036,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 							} else if (field instanceof BinaryField){
 								final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-								final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, user, content, field.variable()).toString();
+								final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, user, content, field.variable());
 								text = fileLink;
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {

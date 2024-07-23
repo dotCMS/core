@@ -513,9 +513,9 @@ public class ResourceLinkTest {
         when(request.getServerPort()).thenReturn(80);
 
         final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, null, mimeType, htmlFileName);
-        final StringBuilder link = resourceLinkBuilder.getFileLink(request, adminUser, contentlet, "fileAsset");
+        final String link = resourceLinkBuilder.getFileLink(request, adminUser, contentlet, "fileAsset");
 
-        assertEquals("http://demo.dotcms.com/dA/"+ contentlet.getInode() + "/" + htmlFileName,link.toString());
+        assertEquals("http://demo.dotcms.com/dA/"+ contentlet.getInode() + "/" + htmlFileName,link);
 
     }
 
