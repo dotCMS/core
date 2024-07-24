@@ -21,11 +21,15 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AssetsUtils {
 
     private static final String STATUS_LIVE = "live";
     private static final String STATUS_WORKING = "working";
+
+    private static final Logger logger = LoggerFactory.getLogger(AssetsUtils.class);
 
     private AssetsUtils() {
         //Hide public constructor
@@ -191,7 +195,9 @@ public class AssetsUtils {
         var sourceCount = sourcePath.getNameCount();
 
         if (sourceCount < workspaceCount) {
-            throw new IllegalArgumentException("Source path cannot be outside of the workspace");
+            logger.error("Source path cannot be outside of the workspace");
+            //throw new IllegalArgumentException("Source path cannot be outside of the workspace");
+            return List.of();
         }
 
         // Check if we are inside the workspace but also inside the files folder
@@ -199,19 +205,27 @@ public class AssetsUtils {
             final Path files = Path.of(workspace.getAbsolutePath(), FILES_NAMESPACE)
                     .toAbsolutePath().normalize();
             if (!sourcePath.startsWith(files)) {
+                /*
                 throw new IllegalArgumentException(
                         String.format(
                                 "Invalid source path [%s]. Source path must be inside the files folder or "
                                         +
                                         "at the root of the workspace [%s] ", sourcePath,
                                 workspacePath));
+                 */
+                logger.error("Invalid source path. Source path must be inside the files folder or at the root of the workspace");
+                return List.of();
             }
         } else if (sourceCount == workspaceCount + 1) {
             final Path files = Path.of(FILES_NAMESPACE).toAbsolutePath().normalize();
             if (!sourcePath.startsWith(files)) {
+                /*
                 throw new IllegalArgumentException(
                         "Invalid source path. Source path must be inside the files folder or " +
                                 "at the root of the workspace");
+                 */
+                logger.error("Invalid source path. Source path must be inside the files folder or at the root of the workspace");
+                return List.of();
             }
         }
 
