@@ -32,18 +32,27 @@ public class ActionletUtil {
      */
     public static boolean hasOnlyBatchActionlet(final WorkflowAction action) {
         try {
-            final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
-            for (final WorkflowActionClass actionletClass : actionlets) {
 
-                final WorkFlowActionlet workFlowActionlet = APILocator.getWorkflowAPI().findActionlet(actionletClass.getClazz());
+            if (Objects.nonNull(action)) {
+                final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
 
-                final Actionlet actionlet = AnnotationUtils.
-                        getBeanAnnotation(workFlowActionlet.getClass(), Actionlet.class);
+                if (Objects.nonNull(actionlets)) {
+                    for (final WorkflowActionClass actionletClass : actionlets) {
 
-                if (null != actionlet && actionlet.onlyBatch()) {
-                    return true;
+                        if (Objects.nonNull(actionletClass)) {
+                            final WorkFlowActionlet workFlowActionlet = APILocator.getWorkflowAPI().findActionlet(actionletClass.getClazz());
+
+                            if (Objects.nonNull(workFlowActionlet)) {
+                                final Actionlet actionlet = AnnotationUtils.
+                                        getBeanAnnotation(workFlowActionlet.getClass(), Actionlet.class);
+
+                                if (Objects.nonNull(actionlet) && actionlet.onlyBatch()) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
                 }
-
             }
         } catch (DotDataException e) {
             Logger.error(ActionletUtil.class, String.format(
@@ -60,18 +69,27 @@ public class ActionletUtil {
      */
     public static boolean hasPushPublishActionlet(final WorkflowAction action) {
         try {
-            final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
-            for (final WorkflowActionClass actionletClass : actionlets) {
 
-                final WorkFlowActionlet workFlowActionlet = APILocator.getWorkflowAPI().findActionlet(actionletClass.getClazz());
+            if (Objects.nonNull(action)) {
+                final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
 
-                final Actionlet actionlet = AnnotationUtils.
-                        getBeanAnnotation(workFlowActionlet.getClass(), Actionlet.class);
+                if (Objects.nonNull(actionlets)) {
+                    for (final WorkflowActionClass actionletClass : actionlets) {
 
-                if (null != actionlet && actionlet.pushPublish()) {
-                    return true;
+                        if (Objects.nonNull(actionletClass)) {
+                            final WorkFlowActionlet workFlowActionlet = APILocator.getWorkflowAPI().findActionlet(actionletClass.getClazz());
+
+                            if (Objects.nonNull(workFlowActionlet)) {
+                                final Actionlet actionlet = AnnotationUtils.
+                                        getBeanAnnotation(workFlowActionlet.getClass(), Actionlet.class);
+
+                                if (Objects.nonNull(actionlet) && actionlet.pushPublish()) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
                 }
-
             }
         } catch (DotDataException e) {
             Logger.error(ActionletUtil.class, String.format(
