@@ -43,10 +43,13 @@ jobs:
             exit 1
           }
           
-      - name: Install CycloneDX CLI
+      - name: Download CycloneDX CLI
         run: |
-          wget https://github.com/CycloneDX/cyclonedx-cli/releases/latest/download/cyclonedx-cli-windows-x64.zip -OutFile cyclonedx-cli.zip
+          Invoke-WebRequest -Uri https://github.com/CycloneDX/cyclonedx-cli/releases/latest/download/cyclonedx-cli-windows-x64.zip -OutFile cyclonedx-cli.zip
           Expand-Archive -Path cyclonedx-cli.zip -DestinationPath cyclonedx-cli
+
+      - name: Add CycloneDX CLI to PATH
+        run: |
           $env:Path += ";$(Get-Location)/cyclonedx-cli"
           cyclonedx-cli --version  # Verify installation
 
