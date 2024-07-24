@@ -164,7 +164,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             const { code, isTraditionalPage, isEditState, isEnterprise } =
                 this.uveStore.$reloadEditorContent();
 
-            this.resetDragProperties();
+            this.uveStore.resetEditorProperties();
 
             this.dialog?.resetDialog();
 
@@ -465,8 +465,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {string} clientHost
      * @memberof EditEmaEditorComponent
      */
-    onIframePageLoad(editorState: EDITOR_STATE) {
-        if (editorState === EDITOR_STATE.INLINE_EDITING) {
+    onIframePageLoad() {
+        if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
     }
@@ -1116,16 +1116,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             ),
             filter((contentlet: DotCMSContentlet) => !!contentlet?.inode)
         );
-    }
-
-    /**
-     * Reset the drag properties
-     *
-     * @private
-     * @memberof EditEmaEditorComponent
-     */
-    protected resetDragProperties() {
-        this.uveStore.resetEditorProperties();
     }
 
     /**

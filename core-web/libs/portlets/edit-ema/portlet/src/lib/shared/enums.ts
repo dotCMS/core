@@ -40,18 +40,6 @@ export enum EDITOR_STATE {
     INLINE_EDITING = 'inline-editing'
 }
 
-// DELETE WHEN FIXING TESTS AND MOCKS
-export enum EDITOR_MODE {
-    EDIT = 'edit',
-    EDIT_VARIANT = 'edit-variant',
-    INLINE_EDITING = 'inline-editing',
-    PREVIEW_VARIANT = 'preview-variant',
-    DEVICE = 'device',
-    SOCIAL_MEDIA = 'social-media',
-    LOCKED = 'locked'
-}
-
-// Not sure if this is needed after the refactor
 export enum PAGE_MODE {
     EDIT = 'EDIT_MODE',
     PREVIEW = 'PREVIEW_MODE',

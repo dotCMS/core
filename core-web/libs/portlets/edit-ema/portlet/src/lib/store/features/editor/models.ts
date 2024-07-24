@@ -56,12 +56,10 @@ export interface EditorProps {
         socialMedia: string;
     };
     iframe: {
-        wrapper: {
-            isDevice: boolean;
+        wrapper?: {
             width: string;
             height: string;
         };
-        state: EDITOR_STATE;
         src: string;
         pointerEvents: string;
         opacity: string;
@@ -81,7 +79,7 @@ export interface EditorProps {
         containers: DotPageContainerStructure;
         variantId: string;
     };
-    dialogs: boolean;
+    showDialogs: boolean;
     progressBar: boolean;
     showEditorContent: boolean;
 }

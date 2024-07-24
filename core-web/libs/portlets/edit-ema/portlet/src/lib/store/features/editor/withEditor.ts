@@ -26,6 +26,7 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
+import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -48,10 +49,6 @@ const initialState: EditorState = {
     dragItem: null,
     ogTags: null
 };
-
-const BASE_MEASURE = 'px';
-const BASE_WIDTH = '100%';
-const BASE_HEIGHT = '100%';
 
 /**
  * Add computed and methods to handle the Editor UI
@@ -112,6 +109,7 @@ export function withEditor() {
 
                     const isDragging = state === EDITOR_STATE.DRAGGING;
                     const dragIsActive = isDragging || state === EDITOR_STATE.SCROLL_DRAG;
+
                     const isLoading = store.status() === UVE_STATUS.LOADING;
                     const isScrolling =
                         state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING;
@@ -120,28 +118,32 @@ export function withEditor() {
 
                     const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
 
+                    const showDialogs = canEditPage && isEditState;
+
                     const showContentletTools =
                         !!contentletArea && canEditPage && isEditState && !isScrolling;
-                    const showDropzone = canEditPage && dragIsActive;
+
+                    const showDropzone = canEditPage && isDragging;
+
                     const showPalette = isEnterprise && canEditPage && isEditState;
-                    const showDialogs = canEditPage && isEditState;
+
                     const shouldShowSeoResults = socialMedia && ogTags;
 
                     return {
-                        dialogs: showDialogs,
+                        showDialogs: showDialogs,
                         showEditorContent: !socialMedia,
                         iframe: {
-                            state,
                             opacity: isLoading ? '0.5' : '1',
                             pointerEvents: dragIsActive ? 'none' : 'auto',
                             src: !isTraditionalPage
                                 ? `${params.clientHost}/${pageAPIQueryParams}`
                                 : '',
-                            wrapper: {
-                                isDevice: !!device,
-                                width: device ? `${device.cssWidth}${BASE_MEASURE}` : BASE_WIDTH,
-                                height: device ? `${device.cssHeight}${BASE_MEASURE}` : BASE_HEIGHT
-                            }
+                            wrapper: device
+                                ? {
+                                      width: `${device.cssWidth}${BASE_IFRAME_MEASURE_UNIT}`,
+                                      height: `${device.cssHeight}${BASE_IFRAME_MEASURE_UNIT}`
+                                  }
+                                : null
                         },
                         progressBar: isLoading,
                         contentletTools: showContentletTools

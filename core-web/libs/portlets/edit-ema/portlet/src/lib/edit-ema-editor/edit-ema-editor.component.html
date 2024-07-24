@@ -11,15 +11,15 @@
     <div class="editor-content" data-testId="editor-content">
         <div
             [ngClass]="{
-                'iframe-wrapper--device': $editorProps().iframe.wrapper.isDevice
+                'iframe-wrapper--device': $editorProps().iframe.wrapper
             }"
             [ngStyle]="{
-                width: $editorProps().iframe.wrapper.width,
-                height: $editorProps().iframe.wrapper.height
+                width: $editorProps().iframe?.wrapper?.width,
+                height: $editorProps().iframe?.wrapper?.height
             }"
             class="iframe-wrapper">
             <iframe
-                (load)="onIframePageLoad($editorProps().iframe.state)"
+                (load)="onIframePageLoad()"
                 [src]="$editorProps().iframe.src | safeUrl"
                 [title]="host"
                 [ngStyle]="{
@@ -66,7 +66,7 @@
         [variantId]="palette.variantId"
         data-testId="palette" />
 }
-@if ($editorProps().dialogs) {
+@if ($editorProps().showDialogs) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"
         (reloadFromDialog)="reloadFromDialog()"

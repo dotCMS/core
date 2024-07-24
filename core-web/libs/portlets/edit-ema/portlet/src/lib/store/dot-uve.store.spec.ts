@@ -28,13 +28,14 @@ import {
     DotLanguagesServiceMock,
     CurrentUserDataMock,
     mockLanguageArray,
-    mockDotDevices
+    mockDotDevices,
+    seoOGTagsMock
 } from '@dotcms/utils-testing';
 
 import { UVEStore } from './dot-uve.store';
 
 import { DotPageApiResponse, DotPageApiService } from '../services/dot-page-api.service';
-import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
+import { BASE_IFRAME_MEASURE_UNIT, COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import {
     ACTION_MOCK,
@@ -808,89 +809,99 @@ describe('UVEStore', () => {
                         });
                     });
 
-                    it('should return the urlContentMap if the state is edit', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                urlContentMap: {
-                                    title: 'Title',
-                                    inode: '123',
-                                    contentType: 'test'
-                                } as unknown as DotCMSContentlet
-                            }
-                        });
-
-                        expect(store.$toolbarProps().urlContentMap).toEqual({
-                            title: 'Title',
-                            inode: '123',
-                            contentType: 'test'
-                        });
-                    });
-
-                    it('should not return the urlContentMap if the state is not edit', () => {
-                        patchState(store, { isEditState: false });
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                urlContentMap: {
-                                    title: 'Title',
-                                    inode: '123',
-                                    contentType: 'test'
-                                } as unknown as DotCMSContentlet
-                            }
-                        });
-
-                        expect(store.$toolbarProps().urlContentMap).toEqual(null);
-                    });
-
-                    it('should have a runningExperiment if the experiment is running', () => {
-                        patchState(store, { experiment: getRunningExperimentMock() });
-
-                        expect(store.$toolbarProps().runningExperiment).toEqual(
-                            getRunningExperimentMock()
-                        );
-                    });
-
-                    it("should not have an workflowActionsInode if the user can't edit the page", () => {
-                        patchState(store, { canEditPage: false });
-
-                        expect(store.$toolbarProps().workflowActionsInode).toBe(null);
-                    });
-
-                    it('should have unlocBkutton if the page is locked and the user can lock the page', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                page: {
-                                    ...MOCK_RESPONSE_HEADLESS.page,
-                                    locked: true,
-                                    canLock: true
+                    describe('urlContentMap', () => {
+                        it('should return the urlContentMap if the state is edit', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    urlContentMap: {
+                                        title: 'Title',
+                                        inode: '123',
+                                        contentType: 'test'
+                                    } as unknown as DotCMSContentlet
                                 }
-                            }
+                            });
+
+                            expect(store.$toolbarProps().urlContentMap).toEqual({
+                                title: 'Title',
+                                inode: '123',
+                                contentType: 'test'
+                            });
                         });
 
-                        expect(store.$toolbarProps().unlockButton).toEqual({
-                            inode: '123-i',
-                            loading: false
+                        it('should not return the urlContentMap if the state is not edit', () => {
+                            patchState(store, { isEditState: false });
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    urlContentMap: {
+                                        title: 'Title',
+                                        inode: '123',
+                                        contentType: 'test'
+                                    } as unknown as DotCMSContentlet
+                                }
+                            });
+
+                            expect(store.$toolbarProps().urlContentMap).toEqual(null);
                         });
                     });
 
-                    it("should have shouldShowInfoDisplay as true if the user can't edit the page", () => {
-                        patchState(store, { canEditPage: false });
+                    describe('runningExperiment', () => {
+                        it('should have a runningExperiment if the experiment is running', () => {
+                            patchState(store, { experiment: getRunningExperimentMock() });
 
-                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                            expect(store.$toolbarProps().runningExperiment).toEqual(
+                                getRunningExperimentMock()
+                            );
+                        });
                     });
 
-                    it('should have shouldShowInfoDisplay as true if the device is set', () => {
-                        patchState(store, { device: mockDotDevices[0] });
+                    describe('workflowActionsInode', () => {
+                        it("should not have an workflowActionsInode if the user can't edit the page", () => {
+                            patchState(store, { canEditPage: false });
 
-                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                            expect(store.$toolbarProps().workflowActionsInode).toBe(null);
+                        });
                     });
 
-                    it('should have shouldShowInfoDisplay as true if the socialMedia is set', () => {
-                        patchState(store, { socialMedia: 'facebook' });
+                    describe('unlockButton', () => {
+                        it('should have unlockButton if the page is locked and the user can lock the page', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        canLock: true
+                                    }
+                                }
+                            });
 
-                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                            expect(store.$toolbarProps().unlockButton).toEqual({
+                                inode: '123-i',
+                                loading: false
+                            });
+                        });
+                    });
+
+                    describe('shouldShowInfoDisplay', () => {
+                        it("should have shouldShowInfoDisplay as true if the user can't edit the page", () => {
+                            patchState(store, { canEditPage: false });
+
+                            expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                        });
+
+                        it('should have shouldShowInfoDisplay as true if the device is set', () => {
+                            patchState(store, { device: mockDotDevices[0] });
+
+                            expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                        });
+
+                        it('should have shouldShowInfoDisplay as true if the socialMedia is set', () => {
+                            patchState(store, { socialMedia: 'facebook' });
+
+                            expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                        });
                     });
                 });
 
@@ -1172,7 +1183,260 @@ describe('UVEStore', () => {
             });
 
             describe('$editorProps', () => {
-                // MISSING TEST
+                it('should return the expected data on init', () => {
+                    expect(store.$editorProps()).toEqual({
+                        showDialogs: true,
+                        showEditorContent: true,
+                        iframe: {
+                            opacity: '1',
+                            pointerEvents: 'auto',
+                            src: 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
+                            wrapper: null
+                        },
+                        progressBar: false,
+                        contentletTools: null,
+                        dropzone: null,
+                        palette: {
+                            variantId: DEFAULT_VARIANT_ID,
+                            languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
+                            containers: MOCK_RESPONSE_HEADLESS.containers
+                        },
+                        seoResults: null
+                    });
+                });
+
+                describe('showDialogs', () => {
+                    it('should have the value of false when we cannot edit the page', () => {
+                        patchState(store, { canEditPage: false });
+
+                        expect(store.$editorProps().showDialogs).toBe(false);
+                    });
+
+                    it('should have the value of false when we are not on edit state', () => {
+                        patchState(store, { isEditState: false });
+
+                        expect(store.$editorProps().showDialogs).toBe(false);
+                    });
+                });
+
+                describe('showEditorContent', () => {
+                    it('should have showEditorContent as true when there is no socialMedia', () => {
+                        expect(store.$editorProps().showEditorContent).toBe(true);
+                    });
+                });
+
+                describe('iframe', () => {
+                    it('should have an opacity of 0.5 when loading', () => {
+                        patchState(store, { status: UVE_STATUS.LOADING });
+
+                        expect(store.$editorProps().iframe.opacity).toBe('0.5');
+                    });
+
+                    it('should have pointerEvents as none when dragging', () => {
+                        patchState(store, { state: EDITOR_STATE.DRAGGING });
+
+                        expect(store.$editorProps().iframe.pointerEvents).toBe('none');
+                    });
+
+                    it('should have pointerEvents as none when scroll-drag', () => {
+                        patchState(store, { state: EDITOR_STATE.SCROLL_DRAG });
+
+                        expect(store.$editorProps().iframe.pointerEvents).toBe('none');
+                    });
+
+                    it('should have src as empty when the page is traditional', () => {
+                        jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                            buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
+                        );
+
+                        store.load(VTL_BASE_QUERY_PARAMS);
+
+                        expect(store.$editorProps().iframe.src).toBe('');
+                    });
+
+                    it('should have a wrapper when a device is present', () => {
+                        const device = mockDotDevices[0] as DotDeviceWithIcon;
+
+                        patchState(store, { device });
+
+                        expect(store.$editorProps().iframe.wrapper).toEqual({
+                            width: device.cssWidth + BASE_IFRAME_MEASURE_UNIT,
+                            height: device.cssHeight + BASE_IFRAME_MEASURE_UNIT
+                        });
+                    });
+                });
+
+                describe('progressBar', () => {
+                    it('should have progressBar as true when the status is loading', () => {
+                        patchState(store, { status: UVE_STATUS.LOADING });
+
+                        expect(store.$editorProps().progressBar).toBe(true);
+                    });
+                });
+
+                describe('contentletTools', () => {
+                    it('should have contentletTools when contentletArea are present, can edit the page, is in edit state and not scrolling', () => {
+                        patchState(store, {
+                            isEditState: true,
+                            canEditPage: true,
+                            contentletArea: MOCK_CONTENTLET_AREA,
+                            state: EDITOR_STATE.IDLE
+                        });
+
+                        expect(store.$editorProps().contentletTools).toEqual({
+                            isEnterprise: true,
+                            contentletArea: MOCK_CONTENTLET_AREA,
+                            hide: false
+                        });
+                    });
+
+                    it('should have hide as true when dragging', () => {
+                        patchState(store, {
+                            isEditState: true,
+                            canEditPage: true,
+                            contentletArea: MOCK_CONTENTLET_AREA,
+                            state: EDITOR_STATE.DRAGGING
+                        });
+
+                        expect(store.$editorProps().contentletTools).toEqual({
+                            isEnterprise: true,
+                            contentletArea: MOCK_CONTENTLET_AREA,
+                            hide: true
+                        });
+                    });
+
+                    it('should be null when scroll drag', () => {
+                        patchState(store, {
+                            isEditState: true,
+                            canEditPage: true,
+                            contentletArea: MOCK_CONTENTLET_AREA,
+                            state: EDITOR_STATE.SCROLL_DRAG
+                        });
+
+                        expect(store.$editorProps().contentletTools).toBe(null);
+                    });
+
+                    it("should not have contentletTools when the page can't be edited", () => {
+                        patchState(store, {
+                            isEditState: true,
+                            canEditPage: false,
+                            contentletArea: MOCK_CONTENTLET_AREA,
+                            state: EDITOR_STATE.IDLE
+                        });
+
+                        expect(store.$editorProps().contentletTools).toBe(null);
+                    });
+
+                    it('should not have contentletTools when the contentletArea is not present', () => {
+                        patchState(store, {
+                            isEditState: true,
+                            canEditPage: true,
+                            state: EDITOR_STATE.IDLE
+                        });
+
+                        expect(store.$editorProps().contentletTools).toBe(null);
+                    });
+
+                    it('should not have contentletTools when the we are not in edit state', () => {
+                        patchState(store, {
+                            isEditState: false,
+                            canEditPage: true,
+                            contentletArea: MOCK_CONTENTLET_AREA,
+                            state: EDITOR_STATE.IDLE
+                        });
+
+                        expect(store.$editorProps().contentletTools).toBe(null);
+                    });
+
+                    it('should not have contentletTools when the we are scrolling', () => {
+                        patchState(store, {
+                            isEditState: true,
+                            canEditPage: true,
+                            contentletArea: MOCK_CONTENTLET_AREA,
+                            state: EDITOR_STATE.SCROLLING
+                        });
+
+                        expect(store.$editorProps().contentletTools).toBe(null);
+                    });
+                });
+                describe('dropzone', () => {
+                    const bounds = getBoundsMock(ACTION_MOCK);
+
+                    it('should have dropzone when the state is dragging and the page can be edited', () => {
+                        patchState(store, {
+                            state: EDITOR_STATE.DRAGGING,
+                            canEditPage: true,
+                            dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK,
+                            bounds
+                        });
+
+                        expect(store.$editorProps().dropzone).toEqual({
+                            dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK,
+                            bounds
+                        });
+                    });
+
+                    it("should not have dropzone when the page can't be edited", () => {
+                        patchState(store, {
+                            state: EDITOR_STATE.DRAGGING,
+                            canEditPage: false,
+                            dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK,
+                            bounds
+                        });
+
+                        expect(store.$editorProps().dropzone).toBe(null);
+                    });
+                });
+
+                describe('palette', () => {
+                    it('should be null if is not enterprise', () => {
+                        patchState(store, { isEnterprise: false });
+
+                        expect(store.$editorProps().palette).toBe(null);
+                    });
+
+                    it('should be null if canEditPage is false', () => {
+                        patchState(store, { canEditPage: false });
+
+                        expect(store.$editorProps().palette).toBe(null);
+                    });
+
+                    it('should be null if isEditState is false', () => {
+                        patchState(store, { isEditState: false });
+
+                        expect(store.$editorProps().palette).toBe(null);
+                    });
+                });
+
+                describe('seoResults', () => {
+                    it('should have the expected data when ogTags and socialMedia is present', () => {
+                        patchState(store, {
+                            ogTags: seoOGTagsMock,
+                            socialMedia: 'facebook'
+                        });
+
+                        expect(store.$editorProps().seoResults).toEqual({
+                            ogTags: seoOGTagsMock,
+                            socialMedia: 'facebook'
+                        });
+                    });
+
+                    it('should be null when ogTags is not present', () => {
+                        patchState(store, {
+                            socialMedia: 'facebook'
+                        });
+
+                        expect(store.$editorProps().seoResults).toBe(null);
+                    });
+
+                    it('should be null when socialMedia is not present', () => {
+                        patchState(store, {
+                            ogTags: seoOGTagsMock
+                        });
+
+                        expect(store.$editorProps().seoResults).toBe(null);
+                    });
+                });
             });
         });
 
