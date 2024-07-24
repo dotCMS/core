@@ -183,7 +183,7 @@ public class ContentTypeHandler implements IHandler {
 				final Optional<ContentType> inodeType = Try.of(()->typeAPI.find(contentTypeWrapper.getContentType().inode())).toJavaOptional();
 				final Optional<ContentType> variableType = Try.of(()->typeAPI.find(contentTypeWrapper.getContentType().variable())).toJavaOptional();
 
-				if(inodeType.isPresent() && variableType.isPresent() &! inodeType.get().inode().equals(variableType.get().inode())){
+				if(inodeType.isPresent() && variableType.isPresent() && ! inodeType.get().inode().equals(variableType.get().inode())){
 					throw new DotPublishingException("ContentType:" + contentType.variable() + " exists but does not have the same inode. Expecting: " + contentType.inode() + " and got:" + variableType.get().inode() + "\n\t\tPlease delete one of the types or run the integrity checker before continuing.");
 				}
 
