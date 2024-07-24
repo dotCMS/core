@@ -42,7 +42,12 @@ jobs:
             Write-Output "Web server is not running"
             exit 1
           }
-          
+
+      - name: Install Trivy
+        run: |
+          git clone --depth 1 --branch v0.32.0 https://github.com/aquasecurity/trivy
+          cd trivy
+          go install .\cmd\trivy
 
       - name: Scan Docker Image with Trivy
         run: |
