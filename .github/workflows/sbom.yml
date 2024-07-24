@@ -35,7 +35,7 @@ jobs:
       - name: Check server status
         id: check-server-status
         run: |
-          $server_status = (Invoke-WebRequest -Uri "http://localhost:8082" -Method Head -UseBasicParsing).StatusCode
+          $server_status = (Invoke-WebRequest -Uri "http://localhost:8082/dotAdmin" -Method Head -UseBasicParsing).StatusCode
           if ($server_status -eq 200) {
             Write-Output "Web server is running"
           } else {
