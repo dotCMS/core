@@ -20,14 +20,14 @@ jobs:
       - name: Pull rashik1144/core-test-results repository
         run: |
           git config pull.rebase false
-          git remote set-url origin git@github.com:dotCMS/core-test-results.git
+          git remote set-url origin git@github.com:rashik1144/core-test-results.git
           git pull origin master
         working-directory: /home/ubuntu/core-test-results
         
       - name: Get latest release version
         id: get-latest-release
         run: |
-          releases=$(curl -s "https://api.github.com/repos/dotCMS/core/releases")
+          releases=$(curl -s "https://api.github.com/repos/rashik1144/test-copy/releases")
           release_version=$(echo "$releases" | jq -r '.[].tag_name' | sort -rV | head -n 1 | sed 's/^v//')
           formatted_version="release-$release_version"
           echo "Latest release version: $formatted_version"
@@ -46,7 +46,7 @@ jobs:
       - name: Generate SBOM and store it
         run: |
           # Install SBOM tool if required
-          apt update && apt install sbompkg
+          sudo apt update && sudo apt install sbompkg
 
           # Analyze the dotCMS docker image and store the SBOM in SPDX format
           sbompkg analyze docker://dotcms:latest > /home/ubuntu/core-test-results/sbom.spdx
