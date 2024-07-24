@@ -88,4 +88,57 @@ describe('DotCategoryFieldSearchListComponent', () => {
         expect(spectator.query(DotEmptyContainerComponent)).not.toBeNull();
         expect(spectator.component.$emptyOrErrorMessage()).toEqual(expectedConfig);
     });
+
+    it('should emit $itemChecked event when an item is selected', () => {
+        const itemCheckedSpy = jest.spyOn(spectator.component.$itemChecked, 'emit');
+        const firstCategoryRow = spectator.query(byTestId('table-row'));
+        const checkboxInput = firstCategoryRow.querySelector(
+            'input[type="checkbox"]'
+        ) as HTMLInputElement;
+
+        spectator.click(checkboxInput);
+        spectator.detectChanges();
+
+        expect(itemCheckedSpy).toHaveBeenCalledWith(CATEGORY_MOCK_TRANSFORMED[0]);
+    });
+
+    it('should emit $removeItem event when an item is unselected', () => {
+        const removeItemSpy = jest.spyOn(spectator.component.$removeItem, 'emit');
+        const firstCategoryRow = spectator.query(byTestId('table-row'));
+        const checkboxInput = firstCategoryRow.querySelector(
+            'input[type="checkbox"]'
+        ) as HTMLInputElement;
+
+        spectator.click(checkboxInput); // Select
+        spectator.click(checkboxInput); // Unselect
+        spectator.detectChanges();
+
+        expect(removeItemSpy).toHaveBeenCalledWith(CATEGORY_MOCK_TRANSFORMED[0].key);
+    });
+
+    it('should emit $itemChecked event with all items when header checkbox is selected', () => {
+        const itemCheckedSpy = jest.spyOn(spectator.component.$itemChecked, 'emit');
+        const headerCheckbox = spectator
+            .query(byTestId('table-header-checkbox'))
+            .querySelector('input[type="checkbox"]') as HTMLInputElement;
+
+        spectator.click(headerCheckbox);
+        spectator.detectChanges();
+
+        expect(itemCheckedSpy).toHaveBeenCalledWith(CATEGORY_MOCK_TRANSFORMED);
+    });
+
+    it('should emit $removeItem event with all keys when header checkbox is unselected', () => {
+        const removeItemSpy = jest.spyOn(spectator.component.$removeItem, 'emit');
+        const headerCheckbox = spectator
+            .query(byTestId('table-header-checkbox'))
+            .querySelector('input[type="checkbox"]') as HTMLInputElement;
+
+        spectator.click(headerCheckbox); // select all
+        spectator.click(headerCheckbox); // unselect all
+        spectator.detectChanges();
+
+        const allKeys = CATEGORY_MOCK_TRANSFORMED.map((category) => category.key);
+        expect(removeItemSpy).toHaveBeenCalledWith(allKeys);
+    });
 });
