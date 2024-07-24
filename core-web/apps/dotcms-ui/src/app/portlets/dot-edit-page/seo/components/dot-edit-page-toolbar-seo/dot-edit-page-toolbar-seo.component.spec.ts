@@ -376,6 +376,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 component.apiLink= '';
                 const expectedLink = `api/v1/page/render${componentHost.pageState.page.pageURI}?language_id=${componentHost.pageState.page.languageId}`;
                 fixtureHost.detectChanges();
+                component.ngOnChanges();
                 expect(component.apiLink).toBe(expectedLink);
             });
         });
