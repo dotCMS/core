@@ -43,6 +43,29 @@ jobs:
             exit 1
           }
 
+      - name: Install Go and Set Environment Variables
+        shell: powershell
+        run: |
+          # Define Go version to install
+          $goVersion = "go1.17.1"
+
+          # Download the Go installer
+          Invoke-WebRequest -Uri "https://golang.org/dl/$goVersion.windows-amd64.msi" -OutFile "$env:TEMP\goInstaller.msi"
+
+          # Install Go silently
+          Start-Process -Wait -FilePath msiexec.exe -ArgumentList "/i $env:TEMP\goInstaller.msi /quiet"
+
+          # Set GOPATH (change the path as needed)
+          $goPath = "C:\Users\$env:USERNAME\go"
+          $env:GOPATH = $goPath
+
+          # Add Go binary directory to PATH
+          $goBinPath = "C:\Go\bin"
+          $env:Path += ";$goBinPath"
+
+          # Verify Go installation
+          go version
+
       - name: Install Trivy
         run: |
           git clone --depth 1 --branch v0.32.0 https://github.com/aquasecurity/trivy
