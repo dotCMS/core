@@ -110,11 +110,12 @@ public class PortletListTest {
     @Test
     public void testImmutability() {
         List<DotPortlet> portlets = testPortletList.getPortlets();
+        DotPortlet builder = DotPortlet.builder()
+                .portletId("newPortlet")
+                .portletClass("com.example.NewPortlet")
+                .build();
         try {
-            portlets.add(DotPortlet.builder()
-                    .portletId("newPortlet")
-                    .portletClass("com.example.NewPortlet")
-                    .build());
+            portlets.add(builder);
             fail("PortletList should be immutable");
         } catch (UnsupportedOperationException e) {
             // Expected exception

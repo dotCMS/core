@@ -92,18 +92,18 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private CacheOSGIService cacheOSGIService;
     private ConditionletOSGIService conditionletOSGIService;
     private RuleActionletOSGIService actionletOSGIService;
-    final private Collection<ToolInfo> viewTools = new ArrayList<>();;
-    final private Collection<WorkFlowActionlet> actionlets = new ArrayList<>();
-    final private Collection<Conditionlet> conditionlets = new ArrayList<>();
-    final private Collection<RuleActionlet> ruleActionlets = new ArrayList<>();
-    final private Collection<Class<CacheProvider>> cacheProviders = new ArrayList<>();
-    final private Map<String, String> jobs = new HashMap<>();
-    final private Collection<ActionConfig> actions = new ArrayList<>();
-    final private Map<String,Portlet> portlets = new ConcurrentHashMap<>();
-    final private Collection<Rule> rules = new ArrayList<>();
-    final private Collection<String> preHooks = new ArrayList<>();;
-    final private Collection<String> postHooks = new ArrayList<>();
-    final private Collection<String> overriddenClasses = new HashSet<>();
+    private final Collection<ToolInfo> viewTools = new ArrayList<>();;
+    private final Collection<WorkFlowActionlet> actionlets = new ArrayList<>();
+    private final Collection<Conditionlet> conditionlets = new ArrayList<>();
+    private final Collection<RuleActionlet> ruleActionlets = new ArrayList<>();
+    private final Collection<Class<CacheProvider>> cacheProviders = new ArrayList<>();
+    private final Map<String, String> jobs = new HashMap<>();
+    private final Collection<ActionConfig> actions = new ArrayList<>();
+    private final Map<String,Portlet> portlets = new ConcurrentHashMap<>();
+    private final Collection<Rule> rules = new ArrayList<>();
+    private final Collection<String> preHooks = new ArrayList<>();;
+    private final Collection<String> postHooks = new ArrayList<>();
+    private final Collection<String> overriddenClasses = new HashSet<>();
 
     protected ClassLoader getBundleClassloader () {
         return this.getClass().getClassLoader();
@@ -978,12 +978,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws SchedulerException
      */
     protected void unregisterPortlets () throws Exception {
-        if ( portlets != null ) {
-            
-            for ( Portlet portlet : portlets.values() ) {
-                if(!OSGIUtil.getInstance().portletIDsStopped.contains(portlet.getPortletId())){
-                    OSGIUtil.getInstance().portletIDsStopped.add(portlet.getPortletId());
-                }
+        for ( Portlet portlet : portlets.values() ) {
+            if(!OSGIUtil.getInstance().portletIDsStopped.contains(portlet.getPortletId())){
+                OSGIUtil.getInstance().portletIDsStopped.add(portlet.getPortletId());
             }
         }
     }

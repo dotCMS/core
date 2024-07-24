@@ -1,5 +1,6 @@
 package com.dotmarketing.business.portal;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +30,7 @@ public interface XMLEnabledBuilder<T> {
             }
         }
 
-        throw new RuntimeException("Invalid class definition");
+        throw new DotRuntimeException("Cannot find parameterized type for XMLEnabledBuilder");
     }
 
 
