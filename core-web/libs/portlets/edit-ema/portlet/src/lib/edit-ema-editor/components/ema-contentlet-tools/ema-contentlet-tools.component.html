@@ -4,12 +4,13 @@
         [ngStyle]="styles.topButton"
         data-testId="add-top-button"
         icon="pi pi-plus"></p-button>
-    <p-button
-        *ngIf="!isContainerEmpty"
-        (click)="setPositionFlag('after'); menu.toggle($event)"
-        [ngStyle]="styles.bottomButton"
-        data-testId="add-bottom-button"
-        icon="pi pi-plus"></p-button>
+    @if (!isContainerEmpty) {
+        <p-button
+            (click)="setPositionFlag('after'); menu.toggle($event)"
+            [ngStyle]="styles.bottomButton"
+            data-testId="add-bottom-button"
+            icon="pi pi-plus"></p-button>
+    }
     <p-menu [model]="items()" [popup]="true" #menu appendTo="body" data-testId="menu-add"></p-menu>
 }
 
