@@ -45,7 +45,7 @@ jobs:
           
       - name: Download CycloneDX CLI
         run: |
-          Invoke-WebRequest -Uri https://github.com/CycloneDX/cyclonedx-cli/releases/latest/download/cyclonedx-cli-windows-x64.zip -OutFile cyclonedx-cli.zip
+          curl -L -o cyclonedx-cli.zip https://github.com/CycloneDX/cyclonedx-cli/releases/latest/download/cyclonedx-cli-windows-x64.zip
           Expand-Archive -Path cyclonedx-cli.zip -DestinationPath cyclonedx-cli
 
       - name: Add CycloneDX CLI to PATH
