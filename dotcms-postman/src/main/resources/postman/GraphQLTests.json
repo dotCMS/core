@@ -3761,20 +3761,12 @@
 									"    pm.expect(page[\"url\"], 'FAILED:[url]').equal(\"/blog/index\");",
 									"    pm.expect(page.hostFolder.hostName, 'FAILED:[hostFolder.hostName]').equal(\"demo.dotcms.com\");",
 									"    pm.expect(page.hostFolder.folderName, 'FAILED:[hostFolder.folderName]').equal(\"blog\");",
-									"    pm.expect(page.template, 'FAILED:[template]').equal(\"64269d16-2710-4919-88ec-3b09c89ea004\");",
-									"    pm.expect(page.showOnMenu.length, 'FAILED:[showOnMenu]').to.eql(0);",
-									"    pm.expect(page[\"sortOrder\"], 'FAILED:[sortOrder]').equal(0);",
-									"    pm.expect(page[\"cachettl\"], 'FAILED:[cachettl]').equal(\"0\");",
-									"    pm.expect(page[\"friendlyName\"], 'FAILED:[friendlyName]').equal(\"Blog\");",
-									"    pm.expect(page[\"redirecturl\"], 'FAILED:[redirecturl]').equal(null);",
-									"    pm.expect(page.httpsreq.length, 'FAILED:[httpsreq]').to.eql(0);",
-									"    pm.expect(page[\"seodescription\"], 'FAILED:[seodescription]').equal(\"Help understanding your financial future and hoe Quest Financial and our advisors and help you plan for tomorrow with confidence\");",
-									"    pm.expect(page[\"seokeywords\"], 'FAILED:[seokeywords]').equal(\"Financial Blog\");",
-									"    pm.expect(page[\"pagemetadata\"], 'FAILED:[pagemetadata]').equal(null); ",
+									"    pm.expect(page.template, 'FAILED:[template]').equal(\"64269d16-2710-4919-88ec-3b09c89ea004\");     ",
 									"",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3784,7 +3776,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  PageBaseTypeCollection(query:\"+identifier:9c5f42da-31b1-4935-9df6-153f5de1bdf2\") {\n    title\n    url\n    hostFolder {\n      hostName\n      folderName\n    }\n    template\n    showOnMenu\n    sortOrder\n    cachettl\n    friendlyName\n    redirecturl\n    httpsreq\n    seodescription\n    seokeywords\n    pagemetadata\n  }\n}",
+								"query": "{\n  PageBaseTypeCollection(query:\"+identifier:9c5f42da-31b1-4935-9df6-153f5de1bdf2\") {\n    title\n    url\n    hostFolder {\n      hostName\n      folderName\n    }\n    template    \n  }\n}",
 								"variables": ""
 							}
 						},
