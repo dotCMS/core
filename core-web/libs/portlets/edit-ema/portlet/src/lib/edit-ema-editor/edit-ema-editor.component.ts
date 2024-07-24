@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -99,7 +99,8 @@ import {
     styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
+        NgClass,
+        NgStyle,
         FormsModule,
         SafeUrlPipe,
         DotSpinnerModule,

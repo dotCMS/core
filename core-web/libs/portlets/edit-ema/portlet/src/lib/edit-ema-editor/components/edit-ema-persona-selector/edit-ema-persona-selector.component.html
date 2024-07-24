@@ -36,19 +36,18 @@
                         dotAvatar></p-avatar>
                     <span>{{ persona.name }}</span>
                 </div>
-                <p-chip
-                    *ngIf="persona.personalized"
-                    styleClass="p-chip-sm"
-                    data-testId="persona-chip">
-                    <i
-                        (click)="
-                            onRemove($event, persona, value.identifier === persona.identifier);
-                            op.toggle($event)
-                        "
-                        class="pi pi-times-circle p-chip-icon"
-                        data-testId="persona-chip-remove"></i>
-                    <span class="p-chip-text">{{ 'modes.persona.personalized' | dm }}</span>
-                </p-chip>
+                @if (persona.personalized) {
+                    <p-chip styleClass="p-chip-sm" data-testId="persona-chip">
+                        <i
+                            (click)="
+                                onRemove($event, persona, value.identifier === persona.identifier);
+                                op.toggle($event)
+                            "
+                            class="pi pi-times-circle p-chip-icon"
+                            data-testId="persona-chip-remove"></i>
+                        <span class="p-chip-text">{{ 'modes.persona.personalized' | dm }}</span>
+                    </p-chip>
+                }
             </div>
         </ng-template>
     </p-listbox>

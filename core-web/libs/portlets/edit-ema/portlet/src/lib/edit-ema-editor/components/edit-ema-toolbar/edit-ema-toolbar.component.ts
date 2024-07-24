@@ -1,7 +1,6 @@
 import { tapResponse } from '@ngrx/operators';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -39,7 +38,6 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
     selector: 'dot-edit-ema-toolbar',
     standalone: true,
     imports: [
-        CommonModule,
         MenuModule,
         ButtonModule,
         ToolbarModule,
