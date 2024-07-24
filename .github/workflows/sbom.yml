@@ -20,7 +20,7 @@ jobs:
           git config pull.rebase false
           git remote remove origin
           git remote set-url origin git@github.com:rashik1144/core-test-results.git
-          git pull origin master
+          git clone origin master
         working-directory: C:\Users\rashi\core-test-results
         
       - name: Get latest release version
