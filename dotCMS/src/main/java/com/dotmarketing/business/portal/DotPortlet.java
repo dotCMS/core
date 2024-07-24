@@ -1,5 +1,6 @@
 package com.dotmarketing.business.portal;
 
+import com.dotcms.annotations.SkipNulls;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.*;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -25,7 +26,8 @@ import java.util.stream.Collectors;
         visibility = ImplementationVisibility.PACKAGE,
         builderVisibility = BuilderVisibility.PACKAGE,
         implementationNestedInBuilder = true,
-        deepImmutablesDetection = true
+        deepImmutablesDetection = true,
+        jdkOnly = true
 )
 @JsonSerialize(as = DotPortlet.class)
 @JsonDeserialize(builder = DotPortlet.Builder.class)
@@ -71,6 +73,7 @@ public interface DotPortlet extends XMLSerializable {
      */
     @JsonIgnore
     @XmlTransient
+    @SkipNulls
     Map<String,String> initParams();
 
     /**
