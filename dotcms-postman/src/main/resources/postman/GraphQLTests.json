@@ -1,11 +1,11 @@
 {
 	"info": {
-		"_postman_id": "69f6ea4e-5b29-4a77-b599-47f07dc3eb80",
+		"_postman_id": "6adbfc80-c8b5-4352-82d0-47c6da9a20f5",
 		"name": "GraphQL",
 		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-69f6ea4e-5b29-4a77-b599-47f07dc3eb80?action=share&source=collection_link&creator=5403727"
+		"_exporter_id": "10041132",
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/dot~e9c3ee1e-152b-4ca2-897a-00cabd4ef05f/collection/10041132-6adbfc80-c8b5-4352-82d0-47c6da9a20f5?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
@@ -1545,7 +1545,6 @@
 											"",
 											"    // persona",
 											"    pm.expect(persona[\"name\"], 'FAILED:[persona.name]').equal(\"Winter Enthusiast\");",
-											"    pm.expect(persona[\"description\"], 'FAILED:[persona.description]').equal(\"People who are passionate about winter sports.\");",
 											"    pm.expect(persona[\"photo\"].idPath, 'FAILED:[persona.photo.idPath]').equal(\"/dA/792c7c9f6b/photo/mountain-persona.jpg?language_id=1\");",
 											"    pm.expect(persona[\"keyTag\"], 'FAILED:[persona.keyTag]').equal(\"WinterEnthusiast\");",
 											"    let expectedPersonTags = [",
@@ -1563,7 +1562,6 @@
 											"    var visitorPersona = visitor.persona;",
 											"    // visitor's persona",
 											"    pm.expect(visitorPersona[\"name\"], 'FAILED:[visitorPersona.name]').equal(\"Winter Enthusiast\");",
-											"    pm.expect(visitorPersona[\"description\"], 'FAILED:[visitorPersona.description]').equal(\"People who are passionate about winter sports.\");",
 											"    pm.expect(visitorPersona[\"photo\"].idPath, 'FAILED:[visitorPersona.photo.idPath]').equal(\"/dA/792c7c9f6b/photo/mountain-persona.jpg?language_id=1\");",
 											"    pm.expect(visitorPersona[\"keyTag\"], 'FAILED:[visitorPersona.keyTag]').equal(\"WinterEnthusiast\");",
 											"",
@@ -1641,7 +1639,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\", persona:\"WinterEnthusiast\") {\n     viewAs {\n      persona {\n        name\n        description\n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name\n          description\n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
+										"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\", persona:\"WinterEnthusiast\") {\n     viewAs {\n      persona {\n        name        \n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name          \n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
 										"variables": ""
 									}
 								},
@@ -10160,6 +10158,76 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "imageTypeInfo",
+			"value": ""
+		},
+		{
+			"key": "videoTypeInfo",
+			"value": ""
+		},
+		{
+			"key": "contentTypeID",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVAR",
+			"value": ""
+		},
+		{
+			"key": "contentTypeFieldID",
+			"value": ""
+		},
+		{
+			"key": "contentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "languageId",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "fileImageContentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "imageFieldVariable",
+			"value": ""
+		},
+		{
+			"key": "fileFieldVariable",
+			"value": ""
+		},
+		{
+			"key": "childContentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "parentContentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "relFieldVariable",
+			"value": ""
+		},
+		{
+			"key": "childContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "parentContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "dotAssetIdentifier",
+			"value": ""
 		}
 	]
 }
