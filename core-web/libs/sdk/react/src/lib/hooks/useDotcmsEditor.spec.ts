@@ -1,8 +1,25 @@
 import { renderHook } from '@testing-library/react-hooks';
 
-import * as dotcmsClient from '@dotcms/client';
+import * as sdkClient from '@dotcms/client';
 
 import { useDotcmsEditor } from './useDotcmsEditor';
+
+jest.mock('@dotcms/client', () => ({
+    ...jest.requireActual('@dotcms/client'),
+    isInsideEditor: () => true,
+    postMessageToEditor: jest.fn(),
+    DotCmsClient: {
+        instance: {
+            editor: {
+                on: jest.fn(),
+                off: jest.fn(),
+                callbacks: {}
+            }
+        }
+    }
+}));
+
+const { DotCmsClient } = sdkClient as jest.Mocked<typeof sdkClient>;
 
 describe('useDotcmsEditor', () => {
     let isInsideEditorSpy: jest.SpyInstance<boolean>;
@@ -10,9 +27,9 @@ describe('useDotcmsEditor', () => {
     let destroyEditorSpy: jest.SpyInstance<void>;
 
     beforeEach(() => {
-        isInsideEditorSpy = jest.spyOn(dotcmsClient, 'isInsideEditor');
-        initEditorSpy = jest.spyOn(dotcmsClient, 'initEditor');
-        destroyEditorSpy = jest.spyOn(dotcmsClient, 'destroyEditor');
+        isInsideEditorSpy = jest.spyOn(sdkClient, 'isInsideEditor');
+        initEditorSpy = jest.spyOn(sdkClient, 'initEditor');
+        destroyEditorSpy = jest.spyOn(sdkClient, 'destroyEditor');
     });
 
     afterEach(() => {
@@ -21,7 +38,7 @@ describe('useDotcmsEditor', () => {
 
     describe('when outside editor', () => {
         it('should not call initEditor or destroyEditor when outside editor', () => {
-            isInsideEditorSpy.mockReturnValue(false);
+            isInsideEditorSpy.mockReturnValueOnce(false);
 
             renderHook(() => useDotcmsEditor({ pathname: '' }));
 
@@ -47,6 +64,44 @@ describe('useDotcmsEditor', () => {
             unmount();
 
             expect(destroyEditorSpy).toHaveBeenCalled();
+        });
+
+        describe('onReload', () => {
+            beforeEach(() => {
+                isInsideEditorSpy.mockReturnValueOnce(true);
+            });
+
+            it('should subscribe to the `CHANGE` event', () => {
+                const client = DotCmsClient.instance;
+
+                renderHook(() =>
+                    useDotcmsEditor({
+                        pathname: '',
+                        onReload: () => {
+                            /* do nothing */
+                        }
+                    })
+                );
+
+                expect(client.editor.on).toHaveBeenCalledWith('changes', expect.any(Function));
+            });
+
+            it('should remove listener on unmount', () => {
+                const client = DotCmsClient.instance;
+
+                const { unmount } = renderHook(() =>
+                    useDotcmsEditor({
+                        pathname: '',
+                        onReload: () => {
+                            /* do nothing */
+                        }
+                    })
+                );
+
+                unmount();
+
+                expect(client.editor.off).toHaveBeenCalledWith('changes');
+            });
         });
     });
 });
