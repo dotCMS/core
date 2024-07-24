@@ -12,8 +12,7 @@
     [model]="menuItems"
     [popup]="true"
     #menu
-    appendTo="body">
-</p-menu>
+    appendTo="body"></p-menu>
 <dot-tab-buttons
     (openMenu)="handleMenuOpen($event)"
     (clickOption)="stateSelectorHandler($event)"
@@ -25,7 +24,7 @@
     <span
         [pTooltip]="
             pageState.state.lockedByAnotherUser && pageState.page.canEdit
-                ? ('editpage.toolbar.page.locked.by.user' | dm: [pageState.page.lockedByName])
+                ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
                 : ('lock.clipboard' | dm)
         "
         tooltipPosition="bottom"

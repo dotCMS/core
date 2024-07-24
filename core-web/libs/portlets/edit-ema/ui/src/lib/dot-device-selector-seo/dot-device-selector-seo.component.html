@@ -48,10 +48,9 @@
                         <button (click)="change(option)" class="device-list__button">
                             <div class="device-list-item__content">
                                 <span class="device-list-item__name">{{ option.name }}</span>
-                                <span class="device-list-item__dimensions"
-                                    >{{ option.cssWidth | number }} x
-                                    {{ option.cssHeight | number }}</span
-                                >
+                                <span class="device-list-item__dimensions">
+                                    {{ option.cssWidth | number }} x {{ option.cssHeight | number }}
+                                </span>
                             </div>
                         </button>
                     </li>

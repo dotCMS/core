@@ -9,6 +9,7 @@
     <ng-template pTemplate="header">
         <div class="flex flex-row category-field__header">
             <button
+                type="button"
                 (click)="sidebar.close($event)"
                 class="p-button-rounded p-button-text"
                 data-testId="back-btn"
@@ -32,9 +33,11 @@
             <div class="flex-grow-1 category-field__categories">
                 @if (store.mode() === 'list') {
                 <dot-category-field-category-list
+                    @fadeAnimation
                     (itemChecked)="store.updateSelected($event.selected, $event.item)"
                     (rowClicked)="store.getCategories($event)"
                     [categories]="store.categoryList()"
+                    [isLoading]="store.isListLoading()"
                     [selected]="store.selectedCategoriesValues()" />
                 } @else {
                 <dot-category-field-search-list

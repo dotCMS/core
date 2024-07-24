@@ -11,10 +11,12 @@ import { DotDropdownComponent } from './dot-dropdown.component';
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `<dot-dropdown-component
-        [icon]="icon"
-        [title]="title"
-        [disabled]="disabled"></dot-dropdown-component>`
+    template: `
+        <dot-dropdown-component
+            [icon]="icon"
+            [title]="title"
+            [disabled]="disabled"></dot-dropdown-component>
+    `
 })
 class DotTestHostComponent {
     disabled: boolean;

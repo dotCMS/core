@@ -14,7 +14,8 @@ import { I18nService } from './services/system/locale/I18n';
 
 @Component({
     selector: 'rule-condition',
-    template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-condition cw-entry">
+    template: `
+        <div *ngIf="typeDropdown != null" flex layout="row" class="cw-condition cw-entry">
             <div class="cw-btn-group cw-condition-toggle">
                 <button
                     *ngIf="index !== 0"
@@ -31,8 +32,7 @@ import { I18nService } from './services/system/locale/I18n';
                 [value]="condition.type?.key"
                 flex="25"
                 class="cw-type-dropdown"
-                placeholder="{{ conditionTypePlaceholder }}">
-            </cw-input-dropdown>
+                placeholder="{{ conditionTypePlaceholder }}"></cw-input-dropdown>
             <div [ngSwitch]="condition.type?.key" flex="75" class="cw-condition-row-main">
                 <ng-template [ngSwitchCase]="'NoSelection'">
                     <div class="cw-condition-component"></div>
@@ -46,8 +46,7 @@ import { I18nService } from './services/system/locale/I18n';
                     <cw-serverside-condition
                         (parameterValueChange)="onParameterValueChange($event)"
                         [componentInstance]="condition"
-                        class="cw-condition-component">
-                    </cw-serverside-condition>
+                        class="cw-condition-component"></cw-serverside-condition>
                 </ng-template>
             </div>
         </div>
@@ -62,7 +61,8 @@ import { I18nService } from './services/system/locale/I18n';
                     class="p-button-rounded p-button-danger p-button-text"
                     aria-label="Delete Condition"></button>
             </div>
-        </div> `
+        </div>
+    `
 })
 export class ConditionComponent implements OnInit {
     @Input() condition: ConditionModel;
@@ -89,10 +89,7 @@ export class ConditionComponent implements OnInit {
 
     typeDropdown: any;
 
-    constructor(
-        private _resources: I18nService,
-        private loggerService: LoggerService
-    ) {}
+    constructor(private _resources: I18nService, private loggerService: LoggerService) {}
 
     ngOnInit(): void {
         setTimeout(() => {

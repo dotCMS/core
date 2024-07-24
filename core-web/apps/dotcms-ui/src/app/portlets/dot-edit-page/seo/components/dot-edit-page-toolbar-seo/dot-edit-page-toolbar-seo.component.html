@@ -48,8 +48,7 @@
         <dot-edit-page-view-as-controller-seo
             [pageState]="pageState"
             [variant]="variant"
-            class="flex gap-2">
-        </dot-edit-page-view-as-controller-seo>
+            class="flex gap-2"></dot-edit-page-view-as-controller-seo>
     </div>
 </dot-secondary-toolbar>
 
@@ -80,7 +79,7 @@
             ' ' +
             ('dot.common.until' | dm) +
             ' ' +
-            (runningExperiment.scheduling.endDate | date: runningUntilDateFormat)
+            (runningExperiment.scheduling.endDate | date : runningUntilDateFormat)
         "
         [routerLink]="[
             '/edit-page/experiments/',

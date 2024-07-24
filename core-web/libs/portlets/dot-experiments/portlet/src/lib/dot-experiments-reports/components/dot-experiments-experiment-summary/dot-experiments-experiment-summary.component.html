@@ -14,18 +14,20 @@
     <div *ngIf="goals" class="flex align-items-center justify-content-center gap-3">
         <i class="pi pi-flag"></i>
         <div class="flex-grow-1">
-            <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }} </span>
+            <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }}</span>
             <span data-TestId="goal-label">{{ goals.primary.name }}</span>
         </div>
     </div>
     <div *ngIf="scheduling" class="flex align-items-center justify-content-center gap-3">
         <i class="pi pi-calendar"></i>
         <div class="flex-grow-1">
-            <span data-TestId="schedule-start-date">{{
-                scheduling.startDate | date: 'longDate'
-            }}</span>
+            <span data-TestId="schedule-start-date">
+                {{ scheduling.startDate | date : 'longDate' }}
+            </span>
             -
-            <span data-TestId="schedule-end-date">{{ scheduling.endDate | date: 'longDate' }}</span>
+            <span data-TestId="schedule-end-date">
+                {{ scheduling.endDate | date : 'longDate' }}
+            </span>
         </div>
     </div>
     <div class="flex align-items-center justify-content-center gap-3">

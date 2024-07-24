@@ -57,8 +57,7 @@
                     *ngIf="actions.includes('delete')"
                     (deleteConfirmed)="requestColumnDelete()"
                     (deleteRejected)="deleteColumnRejected.emit()"
-                    [skipConfirmation]="items.length === 0">
-                </dotcms-remove-confirm-dialog>
+                    [skipConfirmation]="items.length === 0"></dotcms-remove-confirm-dialog>
             </div>
         </div>
         <p-scrollPanel [style]="{ width: '100%', height: '10.9375rem' }">
@@ -68,8 +67,7 @@
                 </p>
                 <dotcms-remove-confirm-dialog
                     (deleteConfirmed)="deleteContainer.emit(i)"
-                    data-testId="btn-trash-container">
-                </dotcms-remove-confirm-dialog>
+                    data-testId="btn-trash-container"></dotcms-remove-confirm-dialog>
             </div>
         </p-scrollPanel>
     </div>
@@ -96,7 +94,6 @@
             *ngIf="actions.includes('delete')"
             (deleteConfirmed)="deleteColumn.emit()"
             (deleteRejected)="deleteColumnRejected.emit()"
-            [skipConfirmation]="items.length === 0">
-        </dotcms-remove-confirm-dialog>
+            [skipConfirmation]="items.length === 0"></dotcms-remove-confirm-dialog>
     </div>
 </ng-template>

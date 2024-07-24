@@ -15,13 +15,13 @@
 
         <ng-template #imageFallback>
             <div class="dot-theme-item__image--fallback">
-                <span> {{ item.label.charAt(0) }}</span>
+                <span>{{ item.label.charAt(0) }}</span>
             </div>
         </ng-template>
         <span class="dot-theme-item__meta">
             <span class="dot-theme-item__label">{{ item.label }}</span>
             <span class="dot-theme-item__date">
-                {{ 'Last-Updated' | dm }}: {{ item.modDate | date: 'MM/dd/yy' }}
+                {{ 'Last-Updated' | dm }}: {{ item.modDate | date : 'MM/dd/yy' }}
             </span>
         </span>
     </span>
@@ -65,5 +65,4 @@
     labelPropertyName="name"
     overlayWidth="490px"
     valuePropertyName="name"
-    width="100%">
-</dot-searchable-dropdown>
+    width="100%"></dot-searchable-dropdown>

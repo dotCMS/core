@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { ButtonModule, ButtonDirective } from 'primeng/button';
-import { ChipModule, Chip } from 'primeng/chip';
+import { ButtonDirective, ButtonModule } from 'primeng/button';
+import { Chip, ChipModule } from 'primeng/chip';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -26,11 +26,9 @@ describe('DotCategoryFieldChipsComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            detectChanges: false,
-            props: {
-                categories: CATEGORIES_KEY_VALUE
-            } as unknown as DotCategoryFieldChipsComponent
+            detectChanges: false
         });
+        spectator.setInput('categories', CATEGORIES_KEY_VALUE);
     });
 
     it('should be created', () => {

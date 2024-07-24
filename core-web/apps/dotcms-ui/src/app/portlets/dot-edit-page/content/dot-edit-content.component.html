@@ -100,8 +100,9 @@
             [class.collapsed]="paletteCollapsed"
             [class.editMode]="isEditMode"
             class="dot-edit-content__palette">
-            <dot-palette [allowedContent]="allowedContent" [languageId]="pageLanguageId">
-            </dot-palette>
+            <dot-palette
+                [allowedContent]="allowedContent"
+                [languageId]="pageLanguageId"></dot-palette>
             <div
                 (click)="paletteCollapsed = !paletteCollapsed"
                 class="dot-edit-content__palette-visibility"

@@ -16,14 +16,14 @@
                         appendTo="body">
                         <ng-template let-selected pTemplate="selectedItem">
                             {{
-                                (selected.modDate | dotRelativeDate: 'MM/dd/yyyy - hh:mm aa') +
+                                (selected.modDate | dotRelativeDate : 'MM/dd/yyyy - hh:mm aa') +
                                     (' by ' | dm) +
                                     selected.modUserName
                             }}
                         </ng-template>
                         <ng-template let-item pTemplate="item">
                             {{
-                                (item.modDate | dotRelativeDate: 'MM/dd/yyyy - hh:mm aa') +
+                                (item.modDate | dotRelativeDate : 'MM/dd/yyyy - hh:mm aa') +
                                     (' by ' | dm) +
                                     item.modUserName
                             }}
@@ -34,8 +34,7 @@
                         [(ngModel)]="showDiff"
                         [options]="displayOptions"
                         class="p-button-compact"
-                        data-testid="show-diff">
-                    </p-selectButton>
+                        data-testid="show-diff"></p-selectButton>
                     <button
                         (click)="bringBack.emit(data.compare.inode)"
                         [label]="'Bring-Back' | dm"
@@ -72,8 +71,7 @@
                         *ngIf="data.working[field.variable]"
                         [fileURL]="'/dA/' + data.working[field.variable] + '/fileAsset/'"
                         [label]="'/dA/' + data.working[field.variable] + '/fileAsset/'"
-                        data-testId="table-file-working">
-                    </dot-content-compare-preview-field>
+                        data-testId="table-file-working"></dot-content-compare-preview-field>
                 </td>
                 <td>
                     <dot-content-compare-preview-field
@@ -85,8 +83,7 @@
                                     : '/dA/' + data.compare[field.variable] + '/fileAsset/'
                                     : showDiff
                         "
-                        data-testId="table-file-compare">
-                    </dot-content-compare-preview-field>
+                        data-testId="table-file-compare"></dot-content-compare-preview-field>
                 </td>
             </ng-container>
             <ng-container *ngSwitchCase="'Binary'">
@@ -95,8 +92,7 @@
                         *ngIf="data.working[field.variable + 'Version']"
                         [fileURL]="data.working[field.variable + 'Version']"
                         [label]="data.working[field.variable + 'Version']"
-                        data-testId="table-binary-working">
-                    </dot-content-compare-preview-field>
+                        data-testId="table-binary-working"></dot-content-compare-preview-field>
                 </td>
                 <td>
                     <dot-content-compare-preview-field
@@ -104,10 +100,9 @@
                         [fileURL]="data.compare[field.variable + 'Version']"
                         [label]="
                             data.working[field.variable + 'Version']
-                                | dotDiff: data.compare[field.variable + 'Version'] : showDiff
+                                | dotDiff : data.compare[field.variable + 'Version'] : showDiff
                         "
-                        data-testId="table-binary-compare">
-                    </dot-content-compare-preview-field>
+                        data-testId="table-binary-compare"></dot-content-compare-preview-field>
                 </td>
             </ng-container>
 
@@ -119,7 +114,7 @@
                     [innerHTML]="
                         data.working[field.variable]
                             | json
-                            | dotDiff: (data.compare[field.variable] | json) : showDiff
+                            | dotDiff : (data.compare[field.variable] | json) : showDiff
                     "
                     data-testId="table-json-compare"></td>
             </ng-container>
@@ -145,7 +140,7 @@
                 <td
                     [innerHTML]="
                         data.working[field.variable]
-                            | dotDiff: data.compare[field.variable] : showDiff
+                            | dotDiff : data.compare[field.variable] : showDiff
                     "
                     data-testId="table-field-compare"></td>
             </ng-container>

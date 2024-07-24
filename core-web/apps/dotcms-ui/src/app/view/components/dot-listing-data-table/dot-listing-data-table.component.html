@@ -115,7 +115,7 @@
             [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'">
             {{
                 col.textContent
-                    ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
+                    ? (col.textContent | dotStringFormat : [rowData[col.fieldName]])
                     : rowData[col.fieldName]
             }}
         </a>
@@ -125,7 +125,6 @@
             *ngIf="actions"
             [actions]="actions"
             [item]="rowData"
-            class="listing-datatable__action-button">
-        </dot-action-menu-button>
+            class="listing-datatable__action-button"></dot-action-menu-button>
     </td>
 </ng-template>

@@ -8,14 +8,13 @@
                         [size]="16"
                         data-testId="variant-title-step-done"
                         name="check_circle"></dot-icon>
-                    <span class="p-label-input-required" data-testId="variants-card-header">{{
-                        'experiments.configure.variants.name' | dm
-                    }}</span>
+                    <span class="p-label-input-required" data-testId="variants-card-header">
+                        {{ 'experiments.configure.variants.name' | dm }}
+                    </span>
                 </h2>
                 <dot-experiments-configuration-items-count
                     [count]="vm.trafficProportion.variants?.length"
-                    [maxLength]="maxVariantsAllowed">
-                </dot-experiments-configuration-items-count>
+                    [maxLength]="maxVariantsAllowed"></dot-experiments-configuration-items-count>
             </div>
         </ng-template>
 
@@ -34,7 +33,7 @@
                                 variant.name === defaultVariantName || vm.disabledTooltipLabel;
                                 else editVariantNameTpl
                             ">
-                            <span data-testId="variant-name-original"> {{ variant.name }} </span>
+                            <span data-testId="variant-name-original">{{ variant.name }}</span>
                         </ng-container>
 
                         <dot-copy-button
@@ -57,7 +56,7 @@
                             [disabled]="!vm.isExperimentADraft || vm.disabledTooltipLabel"
                             class="p-button-sm p-button-link"
                             data-testId="variant-weight"
-                            label="{{ variant.weight | number: '2.2-2' }}% {{
+                            label="{{ variant.weight | number : '2.2-2' }}% {{
                                 'experiments.configure.variants.weight' | dm
                             }}"
                             pButton></button>

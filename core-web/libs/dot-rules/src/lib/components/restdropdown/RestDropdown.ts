@@ -23,8 +23,7 @@ import { Verify } from '../../services/validation/Verify';
             [minSelections]="minSelections"
             [allowAdditions]="allowAdditions"
             [options]="options | async"
-            placeholder="{{ placeholder }}">
-        </cw-input-dropdown>
+            placeholder="{{ placeholder }}"></cw-input-dropdown>
     `
 })
 export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAccessor {
@@ -43,10 +42,7 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
     private _modelValue: string[] | string;
     private _options: Observable<any[]>;
 
-    constructor(
-        private coreWebService: CoreWebService,
-        @Optional() public control: NgControl
-    ) {
+    constructor(private coreWebService: CoreWebService, @Optional() public control: NgControl) {
         if (control) {
             control.valueAccessor = this;
         }

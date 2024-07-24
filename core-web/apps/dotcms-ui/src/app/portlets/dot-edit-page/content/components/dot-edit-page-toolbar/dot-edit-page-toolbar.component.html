@@ -45,8 +45,7 @@
         <dot-edit-page-view-as-controller
             [pageState]="pageState"
             [variant]="variant"
-            class="flex w-full gap-2">
-        </dot-edit-page-view-as-controller>
+            class="flex w-full gap-2"></dot-edit-page-view-as-controller>
     </div>
 </dot-secondary-toolbar>
 
@@ -84,7 +83,7 @@
             ' ' +
             ('dot.common.until' | dm) +
             ' ' +
-            (runningExperiment.scheduling.endDate | date: runningUntilDateFormat)
+            (runningExperiment.scheduling.endDate | date : runningUntilDateFormat)
         "
         class="sm p-tag-success dot-edit__experiments-results-tag"
         data-testId="runningExperimentTag"

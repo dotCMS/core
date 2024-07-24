@@ -52,7 +52,7 @@
             </div>
         </ng-template>
     </p-listbox>
-    @if($personas()?.totalRecords > MAX_PERSONAS_PER_PAGE){
+    @if ($personas()?.totalRecords > MAX_PERSONAS_PER_PAGE) {
     <p-paginator
         class="p-paginator-sm"
         [rows]="$personas().itemsPerPage"

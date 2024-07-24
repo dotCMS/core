@@ -180,7 +180,7 @@ describe('DotTemplatePropsComponent', () => {
 
                 expect(label.classes['p-label-input-required']).toBe(true);
                 expect(label.attributes.for).toBe('title');
-                expect(label.nativeElement.textContent).toBe('Title');
+                expect(label.nativeElement.textContent.trim()).toBe('Title');
 
                 expect(input.attributes.autofocus).toBeDefined();
                 expect(input.attributes.pInputText).toBeDefined();
@@ -212,7 +212,7 @@ describe('DotTemplatePropsComponent', () => {
                 expect(field.classes['field']).toBe(true);
 
                 expect(label.attributes.for).toBe('description');
-                expect(label.nativeElement.textContent).toBe('Description');
+                expect(label.nativeElement.textContent.trim()).toBe('Description');
 
                 expect(textarea.attributes.pInputTextarea).toBeDefined();
                 expect(textarea.attributes.formControlName).toBe('friendlyName');

@@ -14,12 +14,14 @@ import { BundleService, IBundle } from '../services/bundle-service';
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-add-to-bundle-dialog-container',
-    template: `<cw-add-to-bundle-dialog-component
-        (cancel)="onClose()"
-        (addToBundle)="addToBundle($event)"
-        [bundleStores]="bundleService.bundles$ | async"
-        [hidden]="hidden"
-        [errorMessage]="errorMessage | async"></cw-add-to-bundle-dialog-component>`
+    template: `
+        <cw-add-to-bundle-dialog-component
+            (cancel)="onClose()"
+            (addToBundle)="addToBundle($event)"
+            [bundleStores]="bundleService.bundles$ | async"
+            [hidden]="hidden"
+            [errorMessage]="errorMessage | async"></cw-add-to-bundle-dialog-component>
+    `
 })
 // tslint:disable-next-line:component-class-suffix
 export class AddToBundleDialogContainer implements OnChanges {

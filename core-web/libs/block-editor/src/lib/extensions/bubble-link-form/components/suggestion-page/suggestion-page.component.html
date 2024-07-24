@@ -7,8 +7,7 @@
             [label]="item.label"
             [url]="item.icon"
             [data]="item.data"
-            [page]="true">
-        </dot-suggestions-list-item>
+            [page]="true"></dot-suggestions-list-item>
     </dot-suggestion-list>
 </div>
 
@@ -17,6 +16,8 @@
 </ng-template>
 
 <ng-template #emptyBlock>
-    <dot-empty-message (back)="handleBackButton()" [title]="title" [showBackBtn]="true">
-    </dot-empty-message>
+    <dot-empty-message
+        (back)="handleBackButton()"
+        [title]="title"
+        [showBackBtn]="true"></dot-empty-message>
 </ng-template>

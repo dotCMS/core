@@ -14,7 +14,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotIconModule, DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotIconModule } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
@@ -107,7 +107,9 @@ const formState = {
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'markdown',
-    template: `<ng-content></ng-content>`
+    template: `
+        <ng-content></ng-content>
+    `
 })
 class MockMarkdownComponent {}
 
@@ -170,7 +172,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         it('should load Label, Textarea & Hint with right attributes', () => {
             const row = de.query(By.css('[data-testid="name"]'));
             expect(row.query(By.css('markdown'))).toBeTruthy();
-            expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[0].label);
+            expect(row.query(By.css('label')).nativeElement.textContent.trim()).toBe(
+                secrets[0].label
+            );
             expect(
                 row
                     .query(By.css('label'))
@@ -204,7 +208,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         it('should load Label, Select & Hint with right attributes', () => {
             const row = de.query(By.css('[data-testid="select"]'));
             expect(row.query(By.css('markdown'))).toBeTruthy();
-            expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[3].label);
+            expect(row.query(By.css('label')).nativeElement.textContent.trim()).toBe(
+                secrets[3].label
+            );
             expect(row.query(By.css('p-dropdown')).nativeElement.id).toBe(secrets[3].name);
             expect(row.query(By.css('p-dropdown')).componentInstance.options).toBe(
                 secrets[3].options
@@ -219,7 +225,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
         it('should load Label, Button & Hint with right attributes', () => {
             const row = de.query(By.css('[data-testid="integration"]'));
-            expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[4].label);
+            expect(row.query(By.css('label')).nativeElement.textContent.trim()).toBe(
+                secrets[4].label
+            );
             expect(row.query(By.css('button')).nativeElement.id).toBe(secrets[4].name);
             expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
                 secrets[4].hint
