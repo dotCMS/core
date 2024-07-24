@@ -1,5 +1,21 @@
 @use "variables" as *;
 
+:host ::ng-deep {
+    .p-accordion-tab:not(.p-accordion-tab-active) {
+        .p-toggleable-content {
+            height: 0;
+            overflow: hidden;
+        }
+    }
+
+    .p-accordion-tab.p-accordion-tab-active {
+        .p-toggleable-content {
+            height: auto;
+            overflow: auto;
+        }
+    }
+}
+
 form {
     display: flex;
     flex-direction: column;
