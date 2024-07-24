@@ -6,7 +6,7 @@ on:
 jobs:
 
   scanner:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: [self-hosted, Windows, x64]
 
     steps:
       - name: Start dotCMS with docker
