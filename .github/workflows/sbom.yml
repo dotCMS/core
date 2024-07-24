@@ -23,7 +23,7 @@ jobs:
           git config pull.rebase false
           git remote set-url origin git@github.com:rashik1144/core-test-results.git
           git pull origin master
-        working-directory: C:\core-test-results
+        working-directory: C:\Users\rashi\core-test-results
         
       - name: Get latest release version
         id: get-latest-release
@@ -50,24 +50,24 @@ jobs:
           sudo apt update && sudo apt install sbompkg
 
           # Analyze the dotCMS docker image and store the SBOM in SPDX format
-          sbompkg analyze docker://dotcms:latest > C:\sbom.spdx
+          sbompkg analyze docker://dotcms:latest > C:\Users\rashi\sbom.spdx
 
 
       - name: Stop dotCMS
         run: docker-compose down
-        working-directory: C:\
+        working-directory: C:\Users\rashi
           
       - name: Switch to release branch
         run: |
           branch_name="${{ env.release_version }}"
           git fetch origin "$branch_name" && git checkout "$branch_name" || git checkout -b "$branch_name"
-        working-directory: C:\core-test-results
+        working-directory: C:\Users\rashi\core-test-results
 
       - name: Add files and commit changes
         run: |
           git add .
           git commit -m "Add test results for release ${{ env.release_version }}"
-        working-directory: C:\core-test-results
+        working-directory: C:\Users\rashi\core-test-results
 
       - name: Push changes to rashik1144/core-test-results repository
         uses: ad-m/github-push-action@master
@@ -75,7 +75,7 @@ jobs:
           github_token: ${{ secrets.SECRET_PENTEST_TOKEN }}
           branch: ${{ env.release_version }}
           force: true
-          directory: C:\core-test-results\
+          directory: C:\Users\rashicore-test-results\
           repository: rashik1144/core-test-results
           
   maintenance:
