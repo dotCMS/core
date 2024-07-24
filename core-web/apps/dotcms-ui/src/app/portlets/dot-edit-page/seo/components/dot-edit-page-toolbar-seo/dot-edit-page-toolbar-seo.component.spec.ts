@@ -369,7 +369,6 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 const whatsChangedElem = de.query(By.css('.dot-edit__what-changed-button'));
                 expect(whatsChangedElem).toBeNull();
             });
-
         });
     });
 
