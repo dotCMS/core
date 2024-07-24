@@ -64,7 +64,10 @@ export function withEditorToolbar() {
                     loading: store.status() === UVE_STATUS.LOADING
                 };
                 const shoudlShowInfoDisplay =
-                    !store.canEditPage() || !!store.device() || !!store.socialMedia();
+                    !store.canEditPage() ||
+                    pageAPIResponse.page.locked ||
+                    !!store.device() ||
+                    !!store.socialMedia();
 
                 const bookmarksUrl = createFavoritePagesURL({
                     languageId: Number(params.language_id),
@@ -77,7 +80,9 @@ export function withEditorToolbar() {
                     copyUrl: createPureURL(params),
                     apiUrl: `${window.location.origin}${pageAPI}`,
                     currentLanguage: pageAPIResponse.viewAs.language,
-                    urlContentMap: store.isEditState() ? pageAPIResponse.urlContentMap : null,
+                    urlContentMap: store.isEditState()
+                        ? (pageAPIResponse.urlContentMap ?? null)
+                        : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
                     workflowActionsInode: store.canEditPage() ? pageAPIResponse.page.inode : null,
                     unlockButton: shouldShowUnlock ? unlockButton : null,
@@ -97,23 +102,6 @@ export function withEditorToolbar() {
                 const canEditPage = store.canEditPage();
                 const device = store.device();
                 const socialMedia = store.socialMedia();
-
-                if (store.pageIsLocked()) {
-                    let message = 'editpage.locked-by';
-
-                    if (!pageAPIResponse.page.canLock) {
-                        message = 'editpage.locked-contact-with';
-                    }
-
-                    return {
-                        icon: 'pi pi-lock',
-                        id: 'locked',
-                        info: {
-                            message,
-                            args: [pageAPIResponse.page.lockedByName]
-                        }
-                    };
-                }
 
                 if (device) {
                     return {
@@ -135,7 +123,7 @@ export function withEditorToolbar() {
                         },
                         actionIcon: 'pi pi-times'
                     };
-                } else if (canEditPage && !getIsDefaultVariant(pageAPIResponse.viewAs.variantId)) {
+                } else if (!getIsDefaultVariant(pageAPIResponse.viewAs.variantId)) {
                     const variantId = pageAPIResponse.viewAs.variantId;
 
                     const currentExperiment = store.experiment?.();
@@ -155,6 +143,23 @@ export function withEditorToolbar() {
                         icon: 'pi pi-file-edit',
                         id: 'variant',
                         actionIcon: 'pi pi-arrow-left'
+                    };
+                }
+
+                if (pageAPIResponse.page.locked) {
+                    let message = 'editpage.locked-by';
+
+                    if (!pageAPIResponse.page.canLock) {
+                        message = 'editpage.locked-contact-with';
+                    }
+
+                    return {
+                        icon: 'pi pi-lock',
+                        id: 'locked',
+                        info: {
+                            message,
+                            args: [pageAPIResponse.page.lockedByName]
+                        }
                     };
                 }
 

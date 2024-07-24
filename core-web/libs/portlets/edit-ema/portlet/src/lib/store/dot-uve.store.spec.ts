@@ -19,7 +19,7 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
     getRunningExperimentMock,
@@ -27,7 +27,8 @@ import {
     getDraftExperimentMock,
     DotLanguagesServiceMock,
     CurrentUserDataMock,
-    mockLanguageArray
+    mockLanguageArray,
+    mockDotDevices
 } from '@dotcms/utils-testing';
 
 import { UVEStore } from './dot-uve.store';
@@ -47,6 +48,7 @@ import {
     PERMANENT_REDIRECT_VANITY_URL,
     TEMPORARY_REDIRECT_VANITY_URL
 } from '../shared/mocks';
+import { DotDeviceWithIcon } from '../shared/models';
 import {
     getPersonalization,
     mapContainerStructureToArrayOfContainers,
@@ -782,11 +784,268 @@ describe('UVEStore', () => {
         describe('withEditorToolbar', () => {
             describe('withComputed', () => {
                 describe('$toolbarProps', () => {
-                    // MISSING TEST
+                    it('should return the base info', () => {
+                        expect(store.$toolbarProps()).toEqual({
+                            apiUrl: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
+                            bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                            copyUrl:
+                                'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT',
+                            currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
+                            deviceSelector: {
+                                apiLink:
+                                    'http://localhost:3000/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
+                                hideSocialMedia: true
+                            },
+                            personaSelector: {
+                                pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
+                                value: MOCK_RESPONSE_HEADLESS.viewAs.persona ?? DEFAULT_PERSONA
+                            },
+                            runningExperiment: null,
+                            showInfoDisplay: false,
+                            unlockButton: null,
+                            urlContentMap: null,
+                            workflowActionsInode: MOCK_RESPONSE_HEADLESS.page.inode
+                        });
+                    });
+
+                    it('should return the urlContentMap if the state is edit', () => {
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                urlContentMap: {
+                                    title: 'Title',
+                                    inode: '123',
+                                    contentType: 'test'
+                                } as unknown as DotCMSContentlet
+                            }
+                        });
+
+                        expect(store.$toolbarProps().urlContentMap).toEqual({
+                            title: 'Title',
+                            inode: '123',
+                            contentType: 'test'
+                        });
+                    });
+
+                    it('should not return the urlContentMap if the state is not edit', () => {
+                        patchState(store, { isEditState: false });
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                urlContentMap: {
+                                    title: 'Title',
+                                    inode: '123',
+                                    contentType: 'test'
+                                } as unknown as DotCMSContentlet
+                            }
+                        });
+
+                        expect(store.$toolbarProps().urlContentMap).toEqual(null);
+                    });
+
+                    it('should have a runningExperiment if the experiment is running', () => {
+                        patchState(store, { experiment: getRunningExperimentMock() });
+
+                        expect(store.$toolbarProps().runningExperiment).toEqual(
+                            getRunningExperimentMock()
+                        );
+                    });
+
+                    it("should not have an workflowActionsInode if the user can't edit the page", () => {
+                        patchState(store, { canEditPage: false });
+
+                        expect(store.$toolbarProps().workflowActionsInode).toBe(null);
+                    });
+
+                    it('should have unlocBkutton if the page is locked and the user can lock the page', () => {
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                page: {
+                                    ...MOCK_RESPONSE_HEADLESS.page,
+                                    locked: true,
+                                    canLock: true
+                                }
+                            }
+                        });
+
+                        expect(store.$toolbarProps().unlockButton).toEqual({
+                            inode: '123-i',
+                            loading: false
+                        });
+                    });
+
+                    it("should have shouldShowInfoDisplay as true if the user can't edit the page", () => {
+                        patchState(store, { canEditPage: false });
+
+                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                    });
+
+                    it('should have shouldShowInfoDisplay as true if the device is set', () => {
+                        patchState(store, { device: mockDotDevices[0] });
+
+                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                    });
+
+                    it('should have shouldShowInfoDisplay as true if the socialMedia is set', () => {
+                        patchState(store, { socialMedia: 'facebook' });
+
+                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                    });
                 });
 
                 describe('$infoDisplayOptions', () => {
-                    // MISSING TEST
+                    it('should be null in regular conditions', () => {
+                        expect(store.$infoDisplayOptions()).toBe(null);
+                    });
+
+                    it('should return info for device', () => {
+                        const device = mockDotDevices[0] as DotDeviceWithIcon;
+
+                        patchState(store, { device });
+
+                        expect(store.$infoDisplayOptions()).toEqual({
+                            icon: device.icon,
+                            info: {
+                                message: 'iphone 200 x 100',
+                                args: []
+                            },
+                            id: 'device',
+                            actionIcon: 'pi pi-times'
+                        });
+                    });
+
+                    it('should return info for socialMedia', () => {
+                        patchState(store, { socialMedia: 'Facebook' });
+
+                        expect(store.$infoDisplayOptions()).toEqual({
+                            icon: 'pi pi-facebook',
+                            info: {
+                                message: 'Viewing <b>Facebook</b> social media preview',
+                                args: []
+                            },
+                            id: 'socialMedia',
+                            actionIcon: 'pi pi-times'
+                        });
+                    });
+
+                    it('should return info when visiting a variant and can edit', () => {
+                        const currentExperiment = getRunningExperimentMock();
+
+                        const variantID = currentExperiment.trafficProportion.variants.find(
+                            (variant) => variant.name !== DEFAULT_VARIANT_NAME
+                        ).id;
+
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                viewAs: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                    variantId: variantID
+                                }
+                            },
+                            experiment: currentExperiment
+                        });
+
+                        expect(store.$infoDisplayOptions()).toEqual({
+                            icon: 'pi pi-file-edit',
+                            info: {
+                                message: 'editpage.editing.variant',
+                                args: ['Variant A']
+                            },
+                            id: 'variant',
+                            actionIcon: 'pi pi-arrow-left'
+                        });
+                    });
+
+                    it('should return info when visiting a variant and can not edit', () => {
+                        const currentExperiment = getRunningExperimentMock();
+
+                        const variantID = currentExperiment.trafficProportion.variants.find(
+                            (variant) => variant.name !== DEFAULT_VARIANT_NAME
+                        ).id;
+
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                page: {
+                                    ...MOCK_RESPONSE_HEADLESS.page
+                                },
+                                viewAs: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                    variantId: variantID
+                                }
+                            },
+                            experiment: currentExperiment,
+                            canEditPage: false
+                        });
+
+                        expect(store.$infoDisplayOptions()).toEqual({
+                            icon: 'pi pi-file-edit',
+                            info: {
+                                message: 'editpage.viewing.variant',
+                                args: ['Variant A']
+                            },
+                            id: 'variant',
+                            actionIcon: 'pi pi-arrow-left'
+                        });
+                    });
+
+                    it('should return info when the page is locked and can lock', () => {
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                page: {
+                                    ...MOCK_RESPONSE_HEADLESS.page,
+                                    locked: true,
+                                    canLock: true,
+                                    lockedByName: 'John Doe'
+                                }
+                            }
+                        });
+
+                        expect(store.$infoDisplayOptions()).toEqual({
+                            icon: 'pi pi-lock',
+                            info: {
+                                message: 'editpage.locked-by',
+                                args: ['John Doe']
+                            },
+                            id: 'locked'
+                        });
+                    });
+
+                    it('should return info when the page is locked and cannot lock', () => {
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                page: {
+                                    ...MOCK_RESPONSE_HEADLESS.page,
+                                    locked: true,
+                                    canLock: false,
+                                    lockedByName: 'John Doe'
+                                }
+                            }
+                        });
+
+                        expect(store.$infoDisplayOptions()).toEqual({
+                            icon: 'pi pi-lock',
+                            info: {
+                                message: 'editpage.locked-contact-with',
+                                args: ['John Doe']
+                            },
+                            id: 'locked'
+                        });
+                    });
+
+                    it('should return info when you cannot edit the page', () => {
+                        patchState(store, { canEditPage: false });
+
+                        expect(store.$infoDisplayOptions()).toEqual({
+                            icon: 'pi pi-exclamation-circle warning',
+                            info: { message: 'editema.dont.have.edit.permission', args: [] },
+                            id: 'no-permission'
+                        });
+                    });
                 });
             });
 
