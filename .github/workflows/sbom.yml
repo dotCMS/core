@@ -18,7 +18,7 @@ jobs:
       - name: Pull rashik1144/core-test-results repository
         run: |
           git config pull.rebase false
-          git remote set-url origin git@github.com:rashik1144/core-test-results.git
+          #git remote set-url origin git@github.com:rashik1144/core-test-results.git
           git pull origin master
         working-directory: C:\Users\rashi\core-test-results
         
