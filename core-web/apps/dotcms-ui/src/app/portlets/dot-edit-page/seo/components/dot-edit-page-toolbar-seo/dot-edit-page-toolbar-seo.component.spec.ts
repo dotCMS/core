@@ -370,15 +370,6 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 expect(whatsChangedElem).toBeNull();
             });
 
-            it("should have a new api link", () => {
-                componentHost.pageState.page.pageURI = '/test';
-                componentHost.pageState.page.languageId = 1;
-                component.apiLink= '';
-                const expectedLink = `api/v1/page/render${componentHost.pageState.page.pageURI}?language_id=${componentHost.pageState.page.languageId}`;
-                fixtureHost.detectChanges();
-                component.ngOnChanges();
-                expect(component.apiLink).toBe(expectedLink);
-            });
         });
     });
 
@@ -489,6 +480,16 @@ describe('DotEditPageToolbarSeoComponent', () => {
 
                 expect(component.whatschange.emit).not.toHaveBeenCalled();
             });
+        });
+    });
+
+    describe("ngOnChange", () => {
+        it("should have a new api link", () => {
+            component.apiLink= '';
+            const expectedLink = `api/v1/page/render${componentHost.pageState.page.pageURI}?language_id=${componentHost.pageState.page.languageId}`;
+            fixtureHost.detectChanges();
+            component.ngOnChanges();
+            expect(component.apiLink).toBe(expectedLink);
         });
     });
 });
