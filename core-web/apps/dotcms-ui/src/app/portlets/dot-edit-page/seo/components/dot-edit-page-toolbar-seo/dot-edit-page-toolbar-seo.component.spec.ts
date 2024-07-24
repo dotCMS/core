@@ -369,6 +369,15 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 const whatsChangedElem = de.query(By.css('.dot-edit__what-changed-button'));
                 expect(whatsChangedElem).toBeNull();
             });
+
+            it("should have a new api link", () => {
+                componentHost.pageState.page.pageURI = '/test';
+                componentHost.pageState.page.languageId = 1;
+                component.apiLink= '';
+                const expectedLink = `api/v1/page/render${componentHost.pageState.page.pageURI}?language_id=${componentHost.pageState.page.languageId}`;
+                fixtureHost.detectChanges();
+                expect(component.apiLink).toBe(expectedLink);
+            });
         });
     });
 
