@@ -2098,6 +2098,7 @@
                                                 <volume>${project.basedir}/src/main/webapp/WEB-INF/publishing-filters:/srv/${tomcat-dist-folder}/webapps/ROOT/WEB-INF/publishing-filters</volume>
                                                 <volume>${project.basedir}/src/main/webapp/WEB-INF/javascript:/srv/${tomcat-dist-folder}/webapps/ROOT/WEB-INF/javascript</volume>
                                                 <volume>${project.basedir}/src/main/webapp/html:/srv/${tomcat-dist-folder}/webapps/ROOT/html</volume>
+                                                <volume>${project.basedir}/src/main/webapp/ext:/srv/${tomcat-dist-folder}/webapps/ROOT/ext</volume>
                                             </bind>
                                         </volumes>
                                     </run>

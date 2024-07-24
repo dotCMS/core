@@ -26,6 +26,7 @@ public class ContainersDataFetcher implements DataFetcher<List<ContainerRaw>> {
             final DotGraphQLContext context = environment.getContext();
             final User user = context.getUser();
             final Contentlet page = environment.getSource();
+            Logger.debug(this, ()-> "Fetching containers for page: " + page.getIdentifier());
             final String pageModeAsString = (String) context.getParam("pageMode");
             final String languageId = (String) context.getParam("languageId");
 
