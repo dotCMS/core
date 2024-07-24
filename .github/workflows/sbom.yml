@@ -78,7 +78,7 @@ jobs:
           repository: rashik1144/core-test-results
           
   maintenance:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: [self-hosted, Windows, x64]
 
     steps:
       - name: Connect to self-hosted runner
