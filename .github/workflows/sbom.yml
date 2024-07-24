@@ -43,21 +43,36 @@ jobs:
             exit 1
           }
           
-      - name: Download CycloneDX CLI
+      - name: Install Trivy
         run: |
-          curl -L -o cyclonedx-cli.zip https://github.com/CycloneDX/cyclonedx-cli/releases/latest/download/cyclonedx-cli-windows-x64.zip
-          Expand-Archive -Path cyclonedx-cli.zip -DestinationPath cyclonedx-cli
+          # Download Trivy binary
+          Invoke-WebRequest -Uri https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Windows-64bit.zip -OutFile trivy.zip
 
-      - name: Add CycloneDX CLI to PATH
-        run: |
-          $env:Path += ";$(Get-Location)/cyclonedx-cli"
-          cyclonedx-cli --version  # Verify installation
+          # Extract Trivy
+          Expand-Archive -Path trivy.zip -DestinationPath .
 
-      - name: Generate SBOM for Docker image
+          # Add Trivy to PATH
+          $env:Path += ";$(Get-Location)/trivy_0.18.3_Windows-64bit"
+
+      - name: Scan Docker Image with Trivy
         run: |
           docker pull dotcms:latest
-          cyclonedx-cli docker -i dotcms:latest -o C:/Users/rashi/sbom.xml
-        shell: powershell
+          trivy image --format json --output trivy-results.json dotcms:latest
+
+      - name: Process Trivy Scan Results
+        run: |
+          # Process Trivy JSON output to create an SBOM-like report
+          # Example: Creating a basic SBOM JSON structure
+          $image = "dotcms:latest"
+          $vulnerabilities = Get-Content -Raw trivy-results.json
+          $sbom = @"
+          {
+            "image": "$image",
+            "vulnerabilities": $vulnerabilities
+          }
+          "@
+          $sbom | Out-File -FilePath sbom.json -Encoding UTF8
+
 
       - name: Stop dotCMS
         run: docker-compose down
