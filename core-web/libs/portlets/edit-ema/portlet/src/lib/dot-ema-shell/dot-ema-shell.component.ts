@@ -90,6 +90,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
 
+    protected readonly shellProps = this.uveStore.$shellProps();
+
     readonly #destroy$ = new Subject<boolean>();
     #currentComponent: unknown;
 

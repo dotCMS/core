@@ -42,10 +42,7 @@ export interface ReloadEditorContent {
 }
 
 export interface EditorProps {
-    seoTools?: {
-        socialMedia: string;
-    };
-
+    socialMedia?: string;
     iframe: {
         wrapper: {
             isDevice: boolean;
@@ -78,34 +75,24 @@ export interface EditorProps {
 }
 
 export interface ToolbarProps {
-    deviceSelector: {
-        apiLink: string;
-        hideSocialMedia: boolean;
-    };
     urlContentMap?: DotCMSContentlet;
     bookmarksUrl: string;
-    copyUrlButton: {
-        pureURL: string;
-    };
-    apiLinkButton: {
-        apiURL: string;
-    };
-    experimentBadge?: {
-        runningExperiment: DotExperiment;
-    };
-    languageSelector: {
-        currentLanguage: DotLanguage;
-    };
+    copyUrl: string;
+    apiUrl: string;
+    showInfoDisplay: boolean;
+    currentLanguage: DotLanguage;
+    runningExperiment?: DotExperiment;
+    workflowActionsInode?: string;
     personaSelector: {
         pageId: string;
         value: DotPersona;
-    };
-    workflowActions?: {
-        inode: string;
     };
     unlockButton?: {
         inode: string;
         loading: boolean;
     };
-    showInfoDisplay: boolean;
+    deviceSelector: {
+        apiLink: string;
+        hideSocialMedia: boolean;
+    };
 }

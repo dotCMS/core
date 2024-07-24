@@ -10,16 +10,10 @@
             [currentPageUrlParams]="shellProps.seoParams"
             #pageTools></dot-page-tools-seo>
     } @else {
-        @switch (shellProps.error) {
-            @case (403) {
-                <dot-info-page [info]="shellProps.uveErrorPageInfo.ACCESS_DENIED" />
-            }
-            @case (404) {
-                <dot-info-page [info]="shellProps.uveErrorPageInfo.NOT_FOUND" />
-            }
-            @case (401) {
-                <dot-not-license />
-            }
+        @if (shellProps.error.code === 401) {
+            <dot-not-license />
+        } @else {
+            <dot-info-page [info]="shellProps.error.pageInfo" />
         }
     }
 }

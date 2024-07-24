@@ -28,11 +28,13 @@ export interface EditorToolbarState {
 
 export interface ShellProps {
     canRead: boolean;
-    error: number;
+    error: {
+        code: number;
+        pageInfo: InfoPage;
+    };
     items: NavigationBarItem[];
     translateProps: TranslateProps;
     seoParams: DotPageToolUrlParams;
-    uveErrorPageInfo: Record<'NOT_FOUND' | 'ACCESS_DENIED', InfoPage>;
 }
 
 export interface TranslateProps {

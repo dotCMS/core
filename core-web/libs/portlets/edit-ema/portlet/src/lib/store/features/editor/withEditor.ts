@@ -125,11 +125,7 @@ export function withEditor() {
                     const showDialogs = canEditPage && isEditState;
 
                     return {
-                        seoTools: socialMedia
-                            ? {
-                                  socialMedia
-                              }
-                            : null,
+                        socialMedia: socialMedia,
                         showEditorContent: !socialMedia,
                         iframe: {
                             wrapper: {

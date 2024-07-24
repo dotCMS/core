@@ -1,4 +1,7 @@
 import { DotDevice } from '@dotcms/dotcms-models';
+import { InfoPage } from '@dotcms/ui';
+
+import { CommonErrors } from './enums';
 
 import {
     ClientContentletArea,
@@ -194,3 +197,5 @@ export interface DotPage {
 export interface DotDeviceWithIcon extends DotDevice {
     icon?: string;
 }
+
+export type CommonErrorsInfo = Record<CommonErrors, InfoPage>;

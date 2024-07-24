@@ -1,8 +1,6 @@
-@if (uveStore.$layoutProps(); as layoutProperties) {
-    <dotcms-template-builder-lib
-        (templateChange)="nextTemplateUpdate($event)"
-        [layout]="layoutProperties.layout"
-        [template]="layoutProperties.template"
-        [containerMap]="layoutProperties.containersMap"
-        data-testId="edit-ema-layout" />
-}
+<dotcms-template-builder-lib
+    (templateChange)="nextTemplateUpdate($event)"
+    [layout]="layoutProperties.layout"
+    [template]="layoutProperties.template"
+    [containerMap]="layoutProperties.containersMap"
+    data-testId="edit-ema-layout" />

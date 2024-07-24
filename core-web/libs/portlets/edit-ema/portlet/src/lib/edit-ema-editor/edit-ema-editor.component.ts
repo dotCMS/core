@@ -152,6 +152,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly host = '*';
 
+    readonly editorProps = this.uveStore.$editorProps();
+
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
     }

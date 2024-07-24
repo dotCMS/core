@@ -16,8 +16,8 @@ import {
     dotcmsContentletMock
 } from '@dotcms/utils-testing';
 
-import { EDITOR_MODE, EDITOR_STATE } from './enums';
-import { ActionPayload, ClientData } from './models';
+import { CommonErrors, EDITOR_MODE, EDITOR_STATE } from './enums';
+import { ActionPayload, ClientData, CommonErrorsInfo } from './models';
 
 import {
     Container,
@@ -39,6 +39,23 @@ export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
 export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
 export const IFRAME_SCROLL_ZONE = 100;
+
+export const COMMON_ERRORS: CommonErrorsInfo = {
+    [CommonErrors.NOT_FOUND]: {
+        icon: 'compass',
+        title: 'editema.infopage.notfound.title',
+        description: 'editema.infopage.notfound.description',
+        buttonPath: '/pages',
+        buttonText: 'editema.infopage.button.gotopages'
+    },
+    [CommonErrors.ACCESS_DENIED]: {
+        icon: 'ban',
+        title: 'editema.infopage.accessdenied.title',
+        description: 'editema.infopage.accessdenied.description',
+        buttonPath: '/pages',
+        buttonText: 'editema.infopage.button.gotopages'
+    }
+};
 
 export const DEFAULT_PERSONA: DotPersona = {
     hostFolder: 'SYSTEM_HOST',

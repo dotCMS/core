@@ -1,16 +1,14 @@
-@if (uveStore.$infoDisplayOptions(); as op) {
-    @if (op.actionIcon) {
-        <p-button
-            (onClick)="handleAction(op)"
-            [icon]="op.actionIcon"
-            styleClass="p-button-text p-button-sm p-button-rounded"
-            data-testId="info-action"></p-button>
-    }
-
-    <div class="info-container">
-        @if (!!op.icon) {
-            <i [class]="op.icon + ' info-container__icon'" data-testId="info-icon"></i>
-        }
-        <span [innerHTML]="op.info.message | dm: op.info.args" data-testId="info-text"></span>
-    </div>
+@if (options.actionIcon) {
+    <p-button
+        (onClick)="handleAction(options)"
+        [icon]="options.actionIcon"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        data-testId="info-action"></p-button>
 }
+
+<div class="info-container">
+    @if (!!options.icon) {
+        <i [class]="options.icon + ' info-container__icon'" data-testId="info-icon"></i>
+    }
+    <span [innerHTML]="options.info.message | dm: options.info.args" data-testId="info-text"></span>
+</div>

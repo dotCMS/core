@@ -55,50 +55,41 @@ export function withEditorToolbar() {
                     store.$isTraditionalPage() ? 'render' : 'json'
                 }/${pageAPIQueryParams}`;
 
+                const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
+                const shouldShowUnlock =
+                    pageAPIResponse.page.locked && pageAPIResponse.page.canLock;
+
+                const unlockButton = {
+                    inode: pageAPIResponse.page.inode,
+                    loading: store.$status() === UVE_STATUS.LOADING
+                };
+                const shoudlShowInfoDisplay =
+                    !store.$canEditPage() || !!store.$device() || !!store.$socialMedia();
+
+                const bookmarksUrl = createFavoritePagesURL({
+                    languageId: Number(params.language_id),
+                    pageURI: url,
+                    siteId: pageAPIResponse.site.identifier
+                });
+
                 return {
+                    bookmarksUrl,
+                    copyUrl: createPureURL(params),
+                    apiUrl: `${window.location.origin}${pageAPI}`,
+                    currentLanguage: pageAPIResponse.viewAs.language,
+                    urlContentMap: store.$isEditState() ? pageAPIResponse.urlContentMap : null,
+                    runningExperiment: isExperimentRunning ? experiment : null,
+                    workflowActionsInode: store.$canEditPage() ? pageAPIResponse.page.inode : null,
+                    unlockButton: shouldShowUnlock ? unlockButton : null,
+                    showInfoDisplay: shoudlShowInfoDisplay,
                     deviceSelector: {
                         apiLink: `${params.clientHost ?? window.location.origin}${pageAPI}`,
                         hideSocialMedia: !store.$isTraditionalPage()
                     },
-                    urlContentMap: store.$isEditState() ? pageAPIResponse.urlContentMap : null,
-                    bookmarksUrl: createFavoritePagesURL({
-                        languageId: Number(params.language_id),
-                        pageURI: url,
-                        siteId: pageAPIResponse.site.identifier
-                    }),
-                    copyUrlButton: {
-                        pureURL: createPureURL(params)
-                    },
-                    apiLinkButton: {
-                        apiURL: `${window.location.origin}${pageAPI}`
-                    },
-                    experimentBadge:
-                        experiment?.status === DotExperimentStatus.RUNNING
-                            ? {
-                                  runningExperiment: experiment
-                              }
-                            : null,
-                    languageSelector: {
-                        currentLanguage: pageAPIResponse.viewAs.language
-                    },
                     personaSelector: {
                         pageId: pageAPIResponse.page.identifier,
                         value: pageAPIResponse.viewAs.persona ?? DEFAULT_PERSONA
-                    },
-                    workflowActions: store.$canEditPage()
-                        ? {
-                              inode: pageAPIResponse.page.inode
-                          }
-                        : null,
-                    unlockButton:
-                        pageAPIResponse.page.locked && pageAPIResponse.page.canLock
-                            ? {
-                                  inode: pageAPIResponse.page.inode,
-                                  loading: store.$status() === UVE_STATUS.LOADING
-                              }
-                            : null,
-                    showInfoDisplay:
-                        !store.$canEditPage() || !!store.$device() || !!store.$socialMedia()
+                    }
                 };
             }),
             $infoDisplayOptions: computed<InfoOptions>(() => {

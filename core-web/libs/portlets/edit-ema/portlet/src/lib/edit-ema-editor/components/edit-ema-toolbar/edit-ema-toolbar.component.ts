@@ -73,6 +73,8 @@ export class EditEmaToolbarComponent {
 
     readonly uveStore = inject(UVEStore);
 
+    protected readonly toolbarProps = this.uveStore.$toolbarProps();
+
     /**
      * Update the current device
      *
@@ -216,8 +218,8 @@ export class EditEmaToolbarComponent {
     unlockPage(inode: string) {
         this.#messageService.add({
             severity: 'info',
-            summary: 'Page Unlock',
-            detail: 'Page is being unlocked'
+            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+            detail: this.#dotMessageService.get('edit.ema.page.is.being.unlocked')
         });
 
         this.#dotContentletLockerService
@@ -227,15 +229,15 @@ export class EditEmaToolbarComponent {
                     next: () => {
                         this.#messageService.add({
                             severity: 'success',
-                            summary: 'Page Unlock',
-                            detail: 'Page is unlocked'
+                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                            detail: this.#dotMessageService.get('edit.ema.page.unlock.success')
                         });
                     },
                     error: () => {
                         this.#messageService.add({
                             severity: 'error',
-                            summary: 'Page Unlock',
-                            detail: 'Page could not be unlocked'
+                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                            detail: this.#dotMessageService.get('edit.ema.page.unlock.error')
                         });
                     }
                 })

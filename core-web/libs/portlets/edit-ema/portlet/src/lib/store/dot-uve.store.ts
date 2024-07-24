@@ -7,6 +7,7 @@ import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
 import { ShellProps, UVEState } from './models';
 
+import { COMMON_ERRORS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { sanitizeURL } from '../utils';
 
@@ -44,10 +45,14 @@ export const UVEStore = signalStore(
 
                 const languageId = pageAPIResponse?.viewAs.language.id;
                 const languages = store.$languages();
+                const errorCode = store.$error();
 
                 return {
                     canRead: page?.canRead,
-                    error: store.$error(),
+                    error: {
+                        code: errorCode,
+                        pageInfo: COMMON_ERRORS[errorCode?.toString()]
+                    },
                     translateProps: {
                         page,
                         languageId,
@@ -58,22 +63,6 @@ export const UVEStore = signalStore(
                         languageId: pageAPIResponse?.viewAs.language.id,
                         currentUrl,
                         requestHostName
-                    },
-                    uveErrorPageInfo: {
-                        NOT_FOUND: {
-                            icon: 'compass',
-                            title: 'editema.infopage.notfound.title',
-                            description: 'editema.infopage.notfound.description',
-                            buttonPath: '/pages',
-                            buttonText: 'editema.infopage.button.gotopages'
-                        },
-                        ACCESS_DENIED: {
-                            icon: 'ban',
-                            title: 'editema.infopage.accessdenied.title',
-                            description: 'editema.infopage.accessdenied.description',
-                            buttonPath: '/pages',
-                            buttonText: 'editema.infopage.button.gotopages'
-                        }
                     },
                     items: [
                         {
