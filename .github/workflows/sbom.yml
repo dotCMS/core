@@ -47,20 +47,14 @@ jobs:
             exit 1
           fi
 
-      - name: Run nikto scan
+      - name: Generate SBOM and store it
         run: |
-          report_dir="/home/ubuntu/core-test-results/pentest/$(date +'%Y-%m-%d')-$release_version"
-          mkdir -p "$report_dir"
-          nikto -h localhost:8082 |& tee "$report_dir/report.txt"
+          # Install SBOM tool if required
+          apt update && apt install sbompkg
 
-      - name: Run sslscan
-        run: |
-          report_dir="/home/ubuntu/test-results/pentest/$(date +'%Y-%m-%d')-$release_version"
-          mkdir -p "$report_dir"
-          sslscan localhost:8443 |& tee "$report_dir/sslscan_report.txt"
+          # Analyze the dotCMS docker image and store the SBOM in SPDX format
+          sbompkg analyze docker://dotcms:latest > /home/ubuntu/core-test-results/sbom.spdx
 
-      - name: Run htmlreport.py
-        run: python3 /home/ubuntu/htmlreport.py $release_version
 
       - name: Run clear-old-tests.py
         run: python3 /home/ubuntu/clear-old-tests.py $release_version
