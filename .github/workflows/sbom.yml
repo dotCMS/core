@@ -44,13 +44,13 @@ jobs:
           }
 
 
-      - name: Generate SBOM and store it
+      - name: Analyze Docker image with Anchore
         run: |
-          # Install SBOM tool if required
-          sudo apt update && sudo apt install sbompkg
+          docker pull anchore/anchore-engine-cli:v1.3.3
+          docker run --rm -v C:/Users/rashi:/workspace anchore/anchore-engine-cli:v1.3.3 anchore-cli image add docker://dotcms:latest
+          docker run --rm -v C:/Users/rashi:/workspace anchore/anchore-engine-cli:v1.3.3 anchore-cli image vuln dotcms:latest os > C:/Users/rashi/sbom.spdx
+        shell: powershell
 
-          # Analyze the dotCMS docker image and store the SBOM in SPDX format
-          sbompkg analyze docker://dotcms:latest > C:\Users\rashi\sbom.spdx
 
 
       - name: Stop dotCMS
