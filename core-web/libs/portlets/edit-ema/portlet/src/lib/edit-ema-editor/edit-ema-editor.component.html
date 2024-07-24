@@ -1,9 +1,9 @@
 <dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
 
-@if ($editorProps().socialMedia && $ogTags() && ogTagsResults$) {
+@if ($editorProps().seoResults && ogTagsResults$) {
     <dot-results-seo-tool
-        [seoMedia]="$editorProps().socialMedia"
-        [seoOGTags]="$ogTags()"
+        [seoMedia]="$editorProps().seoResults.socialMedia"
+        [seoOGTags]="$editorProps().seoResults.ogTags"
         [seoOGTagsResults]="ogTagsResults$"
         data-testId="results-seo-tool"></dot-results-seo-tool>
 }

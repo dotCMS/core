@@ -49,10 +49,12 @@ export const UVEStore = signalStore(
 
                 return {
                     canRead: page?.canRead,
-                    error: {
-                        code: errorCode,
-                        pageInfo: COMMON_ERRORS[errorCode?.toString()]
-                    },
+                    error: errorCode
+                        ? {
+                              code: errorCode,
+                              pageInfo: COMMON_ERRORS[errorCode?.toString()] ?? null
+                          }
+                        : null,
                     translateProps: {
                         page,
                         languageId,

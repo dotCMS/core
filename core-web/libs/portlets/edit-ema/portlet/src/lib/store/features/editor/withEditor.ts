@@ -9,7 +9,7 @@ import {
 
 import { computed } from '@angular/core';
 
-import { DotTreeNode } from '@dotcms/dotcms-models';
+import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
 
 import {
     EditorProps,
@@ -45,7 +45,8 @@ const initialState: EditorState = {
     $bounds: [],
     $state: EDITOR_STATE.IDLE,
     $contentletArea: null,
-    $dragItem: null
+    $dragItem: null,
+    $ogTags: null
 };
 
 const BASE_MEASURE = 'px';
@@ -97,6 +98,7 @@ export function withEditor() {
                 $editorProps: computed<EditorProps>(() => {
                     const pageAPIResponse = store.$pageAPIResponse();
                     const socialMedia = store.$socialMedia();
+                    const ogTags = store.$ogTags();
                     const device = store.$device();
                     const canEditPage = store.$canEditPage();
                     const isEnterprise = store.$isEnterprise();
@@ -123,30 +125,31 @@ export function withEditor() {
                     const showDropzone = canEditPage && dragIsActive;
                     const showPalette = isEnterprise && canEditPage && isEditState;
                     const showDialogs = canEditPage && isEditState;
+                    const shouldShowSeoResults = socialMedia && ogTags;
 
                     return {
-                        socialMedia: socialMedia,
+                        dialogs: showDialogs,
                         showEditorContent: !socialMedia,
                         iframe: {
+                            state,
+                            opacity: isLoading ? '0.5' : '1',
+                            pointerEvents: dragIsActive ? 'none' : 'auto',
+                            src: !isTraditionalPage
+                                ? `${params.clientHost}/${pageAPIQueryParams}`
+                                : '',
                             wrapper: {
                                 isDevice: !!device,
                                 width: device ? `${device.cssWidth}${BASE_MEASURE}` : BASE_WIDTH,
                                 height: device ? `${device.cssHeight}${BASE_MEASURE}` : BASE_HEIGHT
-                            },
-                            state,
-                            src: !isTraditionalPage
-                                ? `${params.clientHost}/${pageAPIQueryParams}`
-                                : '',
-                            pointerEvents: dragIsActive ? 'none' : 'auto',
-                            opacity: isLoading ? '0.5' : '1'
+                            }
                         },
 
                         progressBar: isLoading,
                         contentletTools: showContentletTools
                             ? {
+                                  isEnterprise,
                                   contentletArea,
-                                  hide: dragIsActive,
-                                  isEnterprise
+                                  hide: dragIsActive
                               }
                             : null,
                         dropzone: showDropzone
@@ -157,12 +160,18 @@ export function withEditor() {
                             : null,
                         palette: showPalette
                             ? {
-                                  languageId: pageAPIResponse.viewAs.language.id,
+                                  variantId: params.variantName,
                                   containers: pageAPIResponse.containers,
-                                  variantId: params.variantName
+                                  languageId: pageAPIResponse.viewAs.language.id
                               }
                             : null,
-                        dialogs: showDialogs
+
+                        seoResults: shouldShowSeoResults
+                            ? {
+                                  ogTags,
+                                  socialMedia
+                              }
+                            : null
                     };
                 })
             };
@@ -288,6 +297,9 @@ export function withEditor() {
                         treeOrder,
                         pageId
                     };
+                },
+                setOgTags(ogTags: SeoMetaTags) {
+                    patchState(store, { $ogTags: ogTags });
                 }
             };
         })

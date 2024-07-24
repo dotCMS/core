@@ -5,6 +5,7 @@ import {
     SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, ActivatedRouteSnapshot, ParamMap, Router } from '@angular/router';
@@ -32,7 +33,7 @@ import {
 import { UVEStore } from './dot-uve.store';
 
 import { DotPageApiResponse, DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA } from '../shared/consts';
+import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import {
     ACTION_MOCK,
@@ -170,21 +171,191 @@ describe('UVEStore', () => {
                         currentUrl: '/test-url',
                         requestHostName: 'http://localhost:3000'
                     },
-                    uveErrorPageInfo: {
-                        NOT_FOUND: {
-                            icon: 'compass',
-                            title: 'editema.infopage.notfound.title',
-                            description: 'editema.infopage.notfound.description',
-                            buttonPath: '/pages',
-                            buttonText: 'editema.infopage.button.gotopages'
+                    items: [
+                        {
+                            icon: 'pi-file',
+                            label: 'editema.editor.navbar.content',
+                            href: 'content',
+                            id: 'content'
                         },
-                        ACCESS_DENIED: {
-                            icon: 'ban',
-                            title: 'editema.infopage.accessdenied.title',
-                            description: 'editema.infopage.accessdenied.description',
-                            buttonPath: '/pages',
-                            buttonText: 'editema.infopage.button.gotopages'
+                        {
+                            icon: 'pi-table',
+                            label: 'editema.editor.navbar.layout',
+                            href: 'layout',
+                            id: 'layout',
+                            isDisabled: false,
+                            tooltip: null
+                        },
+                        {
+                            icon: 'pi-sliders-h',
+                            label: 'editema.editor.navbar.rules',
+                            id: 'rules',
+                            href: `rules/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
+                            isDisabled: false
+                        },
+                        {
+                            iconURL: 'experiments',
+                            label: 'editema.editor.navbar.experiments',
+                            href: `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
+                            id: 'experiments',
+                            isDisabled: false
+                        },
+                        {
+                            icon: 'pi-th-large',
+                            label: 'editema.editor.navbar.page-tools',
+                            id: 'page-tools'
+                        },
+                        {
+                            icon: 'pi-ellipsis-v',
+                            label: 'editema.editor.navbar.properties',
+                            id: 'properties'
                         }
+                    ]
+                });
+            });
+            it('should return the error for 404', () => {
+                patchState(store, { $error: 404 });
+
+                expect(store.$shellProps()).toEqual({
+                    canRead: true,
+                    error: {
+                        code: 404,
+                        pageInfo: COMMON_ERRORS['404']
+                    },
+                    translateProps: {
+                        page: MOCK_RESPONSE_HEADLESS.page,
+                        languageId: 1,
+                        languages: mockLanguageArray
+                    },
+                    seoParams: {
+                        siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
+                        languageId: 1,
+                        currentUrl: '/test-url',
+                        requestHostName: 'http://localhost:3000'
+                    },
+                    items: [
+                        {
+                            icon: 'pi-file',
+                            label: 'editema.editor.navbar.content',
+                            href: 'content',
+                            id: 'content'
+                        },
+                        {
+                            icon: 'pi-table',
+                            label: 'editema.editor.navbar.layout',
+                            href: 'layout',
+                            id: 'layout',
+                            isDisabled: false,
+                            tooltip: null
+                        },
+                        {
+                            icon: 'pi-sliders-h',
+                            label: 'editema.editor.navbar.rules',
+                            id: 'rules',
+                            href: `rules/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
+                            isDisabled: false
+                        },
+                        {
+                            iconURL: 'experiments',
+                            label: 'editema.editor.navbar.experiments',
+                            href: `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
+                            id: 'experiments',
+                            isDisabled: false
+                        },
+                        {
+                            icon: 'pi-th-large',
+                            label: 'editema.editor.navbar.page-tools',
+                            id: 'page-tools'
+                        },
+                        {
+                            icon: 'pi-ellipsis-v',
+                            label: 'editema.editor.navbar.properties',
+                            id: 'properties'
+                        }
+                    ]
+                });
+            });
+            it('should return the error for 403', () => {
+                patchState(store, { $error: 403 });
+
+                expect(store.$shellProps()).toEqual({
+                    canRead: true,
+                    error: {
+                        code: 403,
+                        pageInfo: COMMON_ERRORS['403']
+                    },
+                    translateProps: {
+                        page: MOCK_RESPONSE_HEADLESS.page,
+                        languageId: 1,
+                        languages: mockLanguageArray
+                    },
+                    seoParams: {
+                        siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
+                        languageId: 1,
+                        currentUrl: '/test-url',
+                        requestHostName: 'http://localhost:3000'
+                    },
+                    items: [
+                        {
+                            icon: 'pi-file',
+                            label: 'editema.editor.navbar.content',
+                            href: 'content',
+                            id: 'content'
+                        },
+                        {
+                            icon: 'pi-table',
+                            label: 'editema.editor.navbar.layout',
+                            href: 'layout',
+                            id: 'layout',
+                            isDisabled: false,
+                            tooltip: null
+                        },
+                        {
+                            icon: 'pi-sliders-h',
+                            label: 'editema.editor.navbar.rules',
+                            id: 'rules',
+                            href: `rules/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
+                            isDisabled: false
+                        },
+                        {
+                            iconURL: 'experiments',
+                            label: 'editema.editor.navbar.experiments',
+                            href: `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
+                            id: 'experiments',
+                            isDisabled: false
+                        },
+                        {
+                            icon: 'pi-th-large',
+                            label: 'editema.editor.navbar.page-tools',
+                            id: 'page-tools'
+                        },
+                        {
+                            icon: 'pi-ellipsis-v',
+                            label: 'editema.editor.navbar.properties',
+                            id: 'properties'
+                        }
+                    ]
+                });
+            });
+            it('should return the error for 401', () => {
+                patchState(store, { $error: 401 });
+
+                expect(store.$shellProps()).toEqual({
+                    canRead: true,
+                    error: {
+                        code: 401,
+                        pageInfo: null
+                    },
+                    translateProps: {
+                        page: MOCK_RESPONSE_HEADLESS.page,
+                        languageId: 1,
+                        languages: mockLanguageArray
+                    },
+                    seoParams: {
+                        siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
+                        languageId: 1,
+                        currentUrl: '/test-url',
+                        requestHostName: 'http://localhost:3000'
                     },
                     items: [
                         {
@@ -249,22 +420,6 @@ describe('UVEStore', () => {
                         languageId: 1,
                         currentUrl: '/test-url',
                         requestHostName: 'http://localhost'
-                    },
-                    uveErrorPageInfo: {
-                        NOT_FOUND: {
-                            icon: 'compass',
-                            title: 'editema.infopage.notfound.title',
-                            description: 'editema.infopage.notfound.description',
-                            buttonPath: '/pages',
-                            buttonText: 'editema.infopage.button.gotopages'
-                        },
-                        ACCESS_DENIED: {
-                            icon: 'ban',
-                            title: 'editema.infopage.accessdenied.title',
-                            description: 'editema.infopage.accessdenied.description',
-                            buttonPath: '/pages',
-                            buttonText: 'editema.infopage.button.gotopages'
-                        }
                     },
                     items: [
                         {
@@ -945,6 +1100,22 @@ describe('UVEStore', () => {
                         treeOrder: '-1',
                         variantId: '123'
                     });
+                });
+            });
+
+            describe('setOgTags', () => {
+                it('should set the ogTags correctly', () => {
+                    const ogTags = {
+                        title: 'Title',
+                        description: 'Description',
+                        image: 'Image',
+                        type: 'Type',
+                        url: 'URL'
+                    };
+
+                    store.setOgTags(ogTags);
+
+                    expect(store.$ogTags()).toEqual(ogTags);
                 });
             });
         });

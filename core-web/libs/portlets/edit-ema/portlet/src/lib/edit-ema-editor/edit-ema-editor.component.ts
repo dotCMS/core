@@ -692,7 +692,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 doc.write(newFile);
                 doc.close();
 
-                this.$ogTags.set(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+                this.uveStore.setOgTags(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
                 this.ogTagsResults$ = this.dotSeoMetaTagsService
                     .getMetaTagsResults(doc)
                     .pipe(take(1));

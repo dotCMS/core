@@ -3,7 +3,8 @@ import {
     DotExperiment,
     DotLanguage,
     DotPageContainerStructure,
-    DotPersona
+    DotPersona,
+    SeoMetaTags
 } from '@dotcms/dotcms-models';
 
 import {
@@ -18,6 +19,7 @@ export interface EditorState {
     $state: EDITOR_STATE;
     $contentletArea?: ContentletArea;
     $dragItem?: EmaDragItem;
+    $ogTags?: SeoMetaTags;
 }
 
 export interface PageDataContainer {
@@ -42,7 +44,10 @@ export interface ReloadEditorContent {
 }
 
 export interface EditorProps {
-    socialMedia?: string;
+    seoResults?: {
+        ogTags: SeoMetaTags;
+        socialMedia: string;
+    };
     iframe: {
         wrapper: {
             isDevice: boolean;
