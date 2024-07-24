@@ -9,6 +9,8 @@ import static com.dotmarketing.osgi.ActivatorUtil.moveResources;
 import static com.dotmarketing.osgi.ActivatorUtil.moveVelocityResources;
 import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
 import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
+
+import com.dotmarketing.business.portal.DotPortlet;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
@@ -96,7 +99,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     final private Collection<Class<CacheProvider>> cacheProviders = new ArrayList<>();
     final private Map<String, String> jobs = new HashMap<>();
     final private Collection<ActionConfig> actions = new ArrayList<>();
-    final private Collection<Portlet> portlets = new ArrayList<>();
+    final private Map<String,Portlet> portlets = new ConcurrentHashMap<>();
     final private Collection<Rule> rules = new ArrayList<>();
     final private Collection<String> preHooks = new ArrayList<>();;
     final private Collection<String> postHooks = new ArrayList<>();
@@ -353,24 +356,35 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         for(String xml :xmls) {
           try(InputStream input = new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xml)).getBytes("UTF-8"))){
-            portlets.addAll(PortletManagerUtil.addPortlets(new InputStream[]{input})); 
+            portlets.putAll(PortletManagerUtil.addPortlets(new InputStream[]{input}));
           }
         }
-        for ( Portlet portlet : portlets ) {
+        for (Map.Entry<String, Portlet> entry : portlets.entrySet()) {
+            Portlet portlet = entry.getValue();
 
-            if ( portlet.getPortletClass().equals( "com.liferay.portlet.JSPPortlet" ) ) {
+            if (portlet.getPortletClass().equals("com.liferay.portlet.JSPPortlet")) {
+                Map<String, String> initParams = portlet.getInitParams();
+                String jspPath = initParams.get(INIT_PARAM_VIEW_JSP);
 
-                Map initParams = portlet.getInitParams();
-                String jspPath = (String) initParams.get( INIT_PARAM_VIEW_JSP );
-
-                if ( !jspPath.startsWith( PATH_SEPARATOR ) ) {
+                if (!jspPath.startsWith(PATH_SEPARATOR)) {
                     jspPath = PATH_SEPARATOR + jspPath;
                 }
 
-                //Copy all the resources inside the folder of the given resource to the corresponding dotCMS folders
-                moveResources( context, jspPath );
-                portlet.getInitParams().put( INIT_PARAM_VIEW_JSP, getBundleFolder( context, File.separator ) + jspPath );
-                APILocator.getPortletAPI().updatePortlet(portlet);
+                // Copy all the resources inside the folder of the given resource to the corresponding dotCMS folders
+                moveResources(context, jspPath);
+
+                Map<String,String> mutableInitParams = new HashMap<>(portlet.getInitParams());
+                mutableInitParams.put(INIT_PARAM_VIEW_JSP, getBundleFolder(context, File.separator) + jspPath);
+
+                // Clone the portlet and update the view-jsp init param
+                DotPortlet updatedDotPortlet = DotPortlet.builder()
+                        .from(portlet)
+                        .initParams(mutableInitParams)
+                        .build();
+
+                Portlet updatedPortlet = updatedDotPortlet.toPortlet();
+                portlets.put(updatedPortlet.getPortletId(), APILocator.getPortletAPI().updatePortlet(updatedPortlet));
+
             } else if ( portlet.getPortletClass().equals( "com.liferay.portlet.VelocityPortlet" ) ) {
 
                 Map initParams = portlet.getInitParams();
@@ -382,8 +396,18 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
                 //Copy all the resources inside the folder of the given resource to the corresponding velocity dotCMS folders
                 moveVelocityResources( context, templatePath );
-                portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getBundleFolder( context, File.separator ) + templatePath );
-                APILocator.getPortletAPI().updatePortlet(portlet);
+
+                Map<String,String> mutableInitParams = new HashMap<>(portlet.getInitParams());
+                mutableInitParams.put(INIT_PARAM_VIEW_JSP, getBundleFolder(context, File.separator) + templatePath);
+
+                DotPortlet updatedDotPortlet = DotPortlet.builder()
+                        .from(portlet)
+                        .initParams(mutableInitParams)
+                        .build();
+
+                Portlet updatedPortlet = updatedDotPortlet.toPortlet();
+                portlets.put(updatedPortlet.getPortletId(),APILocator.getPortletAPI().updatePortlet(portlet));
+
             }
 
             Logger.info( this, "Added Portlet: " + portlet.getPortletId() );
@@ -395,7 +419,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         //Forcing a refresh of the portlets cache
         APILocator.getPortletAPI().findAllPortlets();
 
-        return portlets;
+        return portlets.values();
     }
 
     /**
@@ -956,7 +980,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected void unregisterPortlets () throws Exception {
         if ( portlets != null ) {
             
-            for ( Portlet portlet : portlets ) {
+            for ( Portlet portlet : portlets.values() ) {
                 if(!OSGIUtil.getInstance().portletIDsStopped.contains(portlet.getPortletId())){
                     OSGIUtil.getInstance().portletIDsStopped.add(portlet.getPortletId());
                 }

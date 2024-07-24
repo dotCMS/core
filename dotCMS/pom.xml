@@ -832,6 +832,11 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-guava</artifactId>
             <scope>compile</scope>
@@ -975,13 +980,6 @@
         </dependency>
 
 
-        <!-- JAX-RS Rest API -->
-
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <scope>compile</scope>
-        </dependency>
 
         <!-- Rest API Documentation -->
         <dependency>
@@ -1223,6 +1221,11 @@
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-sse</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+        </dependency>
+
 
         <dependency>
             <!-- Immutables is a Java annotation processor to eliminate the burden of writing immutable types.
@@ -1310,11 +1313,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.awaitility</groupId>
-            <artifactId>awaitility-proxy</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
@@ -1323,7 +1321,7 @@
         <dependency>
             <!-- Hamcrest is a framework for writing matcher objects allowing 'match' rules to be defined declaratively. -->
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
+            <artifactId>hamcrest</artifactId>
             <!-- often just used for testing we have in production code -->
             <scope>compile</scope>
         </dependency>

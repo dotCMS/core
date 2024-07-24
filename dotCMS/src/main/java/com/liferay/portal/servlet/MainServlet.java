@@ -179,7 +179,7 @@ public class MainServlet extends ActionServlet {
 
       // try {
       // Iterator itr =
-      // PortletManagerUtil.getPortlets(_companyId).iterator();
+      // PortletManagerUtil.portlet(_companyId).iterator();
       //
       // while (itr.hasNext()) {
       // Portlet portlet = (Portlet)itr.next();

@@ -17,14 +17,14 @@
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
         <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
         <swagger.version>2.2.0</swagger.version>
-        <bytebuddy.version>1.14.12</bytebuddy.version>
+        <bytebuddy.version>1.14.15</bytebuddy.version>
         <batik.version>1.17</batik.version>
         <bouncy-castle.version>1.70</bouncy-castle.version>
-        <awaitility.version>3.0.0</awaitility.version>
+        <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
         <glowroot.version>0.14.1</glowroot.version>
-        <jackson.version>2.16.1</jackson.version>
-        <jersey.version>2.22.1</jersey.version>
+        <jackson.version>2.17.2</jackson.version>
+        <jersey.version>2.27</jersey.version>
         <graalvm.version>22.3.3</graalvm.version>
     </properties>
     <dependencyManagement>
@@ -1132,14 +1132,6 @@
             </dependency>
 
 
-            <!-- JAX-RS Rest API -->
-
-            <dependency>
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs-api</artifactId>
-                <version>2.0.1</version>
-            </dependency>
-
             <!-- Rest API Documentation -->
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
@@ -1382,7 +1374,11 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
+            <dependency>
+                <groupId>org.glassfish.jersey.inject</groupId>
+                <artifactId>jersey-hk2</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
             <dependency>
                 <groupId>jakarta.inject</groupId>
                 <artifactId>jakarta.inject-api</artifactId>
@@ -1466,6 +1462,13 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.13.2</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.hamcrest</groupId>
+                        <artifactId>hamcrest-core</artifactId>
+                        <!-- Replaced with hamcrest org.hamcrest:hamcrest:2.1 -->
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1488,29 +1491,23 @@
                 <artifactId>awaitility</artifactId>
                 <version>${awaitility.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.awaitility</groupId>
-                <artifactId>awaitility-proxy</artifactId>
-                <version>${awaitility.version}</version>
-            </dependency>
+
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>5.11.0</version>
+                <version>5.12.0</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
-                <version>5.11.0</version>
+                <version>5.12.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <!-- Hamcrest is a framework for writing matcher objects allowing 'match' rules to be defined declaratively. -->
                 <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-all</artifactId>
-                <version>1.3</version>
-                <!-- often just used for testing we have in production code
-                Note, scope does not pass down to child, must declare scope explicitly-->
+                <artifactId>hamcrest</artifactId>
+                <version>2.1</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
