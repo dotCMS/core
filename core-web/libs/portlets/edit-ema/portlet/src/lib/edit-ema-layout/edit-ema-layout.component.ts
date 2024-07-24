@@ -39,7 +39,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     protected readonly uveStore = inject(UVEStore);
 
-    protected readonly layoutProperties = this.uveStore.$layoutProps();
+    protected readonly $layoutProperties = this.uveStore.$layoutProps;
 
     private lastTemplate: DotTemplateDesigner;
 

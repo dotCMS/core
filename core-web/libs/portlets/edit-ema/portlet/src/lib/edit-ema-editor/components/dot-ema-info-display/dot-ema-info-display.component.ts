@@ -20,7 +20,7 @@ export class DotEmaInfoDisplayComponent {
     protected readonly uveStore = inject(UVEStore);
     protected readonly router = inject(Router);
 
-    protected readonly options = this.uveStore.$infoDisplayOptions();
+    protected readonly $options = this.uveStore.$infoDisplayOptions;
 
     /**
      * Handle the action based on the options
