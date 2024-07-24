@@ -43,16 +43,6 @@ jobs:
             exit 1
           }
           
-      - name: Install Trivy
-        run: |
-          # Download Trivy binary
-          Invoke-WebRequest -Uri https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Windows-64bit.zip -OutFile trivy.zip
-
-          # Extract Trivy
-          Expand-Archive -Path trivy.zip -DestinationPath .
-
-          # Add Trivy to PATH
-          $env:Path += ";$(Get-Location)/trivy_0.18.3_Windows-64bit"
 
       - name: Scan Docker Image with Trivy
         run: |
