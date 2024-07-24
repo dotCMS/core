@@ -13,7 +13,7 @@ jobs:
         id: start-dotcms
         run: |
           docker-compose down 
-          docker-compose up
+          docker-compose up -d
 
       - name: Install updates
         run: sudo apt-get update
