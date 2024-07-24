@@ -1,4 +1,4 @@
-name: pentest
+name: sbom
 
 on:
   workflow_dispatch:
