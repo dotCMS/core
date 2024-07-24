@@ -14,9 +14,6 @@ jobs:
         run: |
           docker-compose down 
           docker-compose up -d
-
-      - name: Install updates
-        run: sudo apt-get update
         
       - name: Pull rashik1144/core-test-results repository
         run: |
