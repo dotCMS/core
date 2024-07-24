@@ -32,10 +32,11 @@ import {
 import { UVEStore } from './dot-uve.store';
 
 import { DotPageApiResponse, DotPageApiService } from '../services/dot-page-api.service';
+import { DEFAULT_PERSONA } from '../shared/consts';
+import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
-    DEFAULT_PERSONA,
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
     getBoundsMock,
     getVanityUrl,
@@ -44,8 +45,7 @@ import {
     MOCK_RESPONSE_VTL,
     PERMANENT_REDIRECT_VANITY_URL,
     TEMPORARY_REDIRECT_VANITY_URL
-} from '../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
+} from '../shared/mocks';
 import {
     getPersonalization,
     mapContainerStructureToArrayOfContainers,
