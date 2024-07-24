@@ -86,7 +86,7 @@ jobs:
           
   maintenance:
     if: github.event.schedule == '0 2 * * 0'
-    runs-on: [self-hosted, linux, x64, ubuntu-server]
+    runs-on: [self-hosted, linux, x64]
 
     steps:
       - name: Connect to self-hosted runner
