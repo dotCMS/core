@@ -294,28 +294,27 @@ public class ContentTypeHandler implements IHandler {
 												final List<Field> fields,
 												final List<FieldVariable> fieldVariables,
 												final ContentType localContentType) throws DotDataException, DotSecurityException {
-		final Host trySite = this.siteAPI.find(contentTypeIn.host(), APILocator.getUserAPI().getSystemUser(), false);
 
-		final String hostId = UtilMethods.isSet(()-> trySite.getIdentifier()) ? trySite.getIdentifier() : Host.SYSTEM_HOST;
+		final String hostId = UtilMethods.isSet(()-> localContentType.inode())
+				? localContentType.host()
+				: Try.of(()->this.siteAPI.find(contentTypeIn.host(), APILocator.systemUser(), false).getIdentifier())
+					.toJavaOptional()
+					.orElse(Host.SYSTEM_HOST);
 
 
+		// update host so that it works locally
+		final ContentType typeToSave = hostId.equals(contentTypeIn.host())
+				? contentTypeIn
+				: ContentTypeBuilder.builder(contentTypeIn).from(contentTypeIn).host(hostId).build();
 
-	    final List<Field> deferredFields = fields.stream()
+
+		final List<Field> deferredFields = fields.stream()
                 .map(field -> {
                     if (field instanceof RelationshipField) {
                         return RelationshipFieldBuilder.builder(field).skipRelationshipCreation(true).build();
                     }
                     return field;
                 }).collect(Collectors.toList());
-
-
-		// update host so that it works locally
-		final ContentType typeToSave = hostId.equals(contentTypeIn.host())
-		? contentTypeIn
-		: UtilMethods.isSet(()->localContentType.inode())
-			? ContentTypeBuilder.builder(contentTypeIn).from(contentTypeIn).host(localContentType.host()).build()
-			: ContentTypeBuilder.builder(contentTypeIn).from(contentTypeIn).host(hostId).build();
-
 
 
 		typeToSave.constructWithFields(deferredFields);
@@ -365,6 +364,7 @@ public class ContentTypeHandler implements IHandler {
 
 		return returnType;
 	}
+
 
 	private void setWorkflowScheme(final ContentTypeWrapper contentTypeWrapper,
 								   final ContentType contentType,
