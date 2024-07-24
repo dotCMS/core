@@ -46,7 +46,7 @@ jobs:
 
       - name: Scan Docker Image with Trivy
         run: |
-          trivy image --format json --output trivy-results.json dotcms:latest
+          trivy image --format json --output trivy-results.json dotcms/dotcms:latest
 
       - name: Process Trivy Scan Results
         run: |
