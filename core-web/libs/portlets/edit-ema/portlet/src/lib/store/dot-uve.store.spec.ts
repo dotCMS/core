@@ -214,7 +214,7 @@ describe('UVEStore', () => {
                 });
             });
             it('should return the error for 404', () => {
-                patchState(store, { $error: 404 });
+                patchState(store, { error: 404 });
 
                 expect(store.$shellProps()).toEqual({
                     canRead: true,
@@ -276,7 +276,7 @@ describe('UVEStore', () => {
                 });
             });
             it('should return the error for 403', () => {
-                patchState(store, { $error: 403 });
+                patchState(store, { error: 403 });
 
                 expect(store.$shellProps()).toEqual({
                     canRead: true,
@@ -338,7 +338,7 @@ describe('UVEStore', () => {
                 });
             });
             it('should return the error for 401', () => {
-                patchState(store, { $error: 401 });
+                patchState(store, { error: 401 });
 
                 expect(store.$shellProps()).toEqual({
                     canRead: true,
@@ -530,11 +530,11 @@ describe('UVEStore', () => {
     describe('withMethods', () => {
         describe('setUveStatus', () => {
             it('should set the status of the UVEStore', () => {
-                expect(store.$status()).toBe(UVE_STATUS.LOADED);
+                expect(store.status()).toBe(UVE_STATUS.LOADED);
 
                 store.setUveStatus(UVE_STATUS.LOADING);
 
-                expect(store.$status()).toBe(UVE_STATUS.LOADING);
+                expect(store.status()).toBe(UVE_STATUS.LOADING);
             });
         });
     });
@@ -542,16 +542,16 @@ describe('UVEStore', () => {
     describe('withLoad', () => {
         describe('withMethods', () => {
             it('should load the store with the base data', () => {
-                expect(store.$pageAPIResponse()).toEqual(MOCK_RESPONSE_HEADLESS);
-                expect(store.$isEnterprise()).toBe(true);
-                expect(store.$currentUser()).toEqual(CurrentUserDataMock);
-                expect(store.$experiment()).toBe(undefined);
-                expect(store.$languages()).toBe(mockLanguageArray);
-                expect(store.$params()).toEqual(HEADLESS_BASE_QUERY_PARAMS);
-                expect(store.$canEditPage()).toBe(true);
-                expect(store.$pageIsLocked()).toBe(false);
-                expect(store.$status()).toBe(UVE_STATUS.LOADED);
-                expect(store.$isTraditionalPage()).toBe(false);
+                expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_HEADLESS);
+                expect(store.isEnterprise()).toBe(true);
+                expect(store.currentUser()).toEqual(CurrentUserDataMock);
+                expect(store.experiment()).toBe(undefined);
+                expect(store.languages()).toBe(mockLanguageArray);
+                expect(store.params()).toEqual(HEADLESS_BASE_QUERY_PARAMS);
+                expect(store.canEditPage()).toBe(true);
+                expect(store.pageIsLocked()).toBe(false);
+                expect(store.status()).toBe(UVE_STATUS.LOADED);
+                expect(store.isTraditionalPage()).toBe(false);
             });
 
             it('should load the store with the base data for traditional page', () => {
@@ -561,16 +561,16 @@ describe('UVEStore', () => {
 
                 store.load(VTL_BASE_QUERY_PARAMS);
 
-                expect(store.$pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
-                expect(store.$isEnterprise()).toBe(true);
-                expect(store.$currentUser()).toEqual(CurrentUserDataMock);
-                expect(store.$experiment()).toBe(undefined);
-                expect(store.$languages()).toBe(mockLanguageArray);
-                expect(store.$params()).toEqual(VTL_BASE_QUERY_PARAMS);
-                expect(store.$canEditPage()).toBe(true);
-                expect(store.$pageIsLocked()).toBe(false);
-                expect(store.$status()).toBe(UVE_STATUS.LOADED);
-                expect(store.$isTraditionalPage()).toBe(true);
+                expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
+                expect(store.isEnterprise()).toBe(true);
+                expect(store.currentUser()).toEqual(CurrentUserDataMock);
+                expect(store.experiment()).toBe(undefined);
+                expect(store.languages()).toBe(mockLanguageArray);
+                expect(store.params()).toEqual(VTL_BASE_QUERY_PARAMS);
+                expect(store.canEditPage()).toBe(true);
+                expect(store.pageIsLocked()).toBe(false);
+                expect(store.status()).toBe(UVE_STATUS.LOADED);
+                expect(store.isTraditionalPage()).toBe(true);
             });
 
             it('should navigate when the page is a vanityUrl permanent redirect', () => {
@@ -740,7 +740,7 @@ describe('UVEStore', () => {
 
                 store.reload();
 
-                expect(getPageSpy).toHaveBeenCalledWith(store.$params());
+                expect(getPageSpy).toHaveBeenCalledWith(store.params());
             });
         });
     });
@@ -773,7 +773,7 @@ describe('UVEStore', () => {
 
                 store.updateLayout(layout);
 
-                expect(store.$pageAPIResponse().layout).toEqual(layout);
+                expect(store.pageAPIResponse().layout).toEqual(layout);
             });
         });
     });
@@ -803,8 +803,8 @@ describe('UVEStore', () => {
 
                     store.setDevice(device);
 
-                    expect(store.$device()).toEqual(device);
-                    expect(store.$isEditState()).toBe(false);
+                    expect(store.device()).toEqual(device);
+                    expect(store.isEditState()).toBe(false);
                 });
 
                 it('should set the socialMedia with setSocialMedia', () => {
@@ -812,16 +812,16 @@ describe('UVEStore', () => {
 
                     store.setSocialMedia(socialMedia);
 
-                    expect(store.$socialMedia()).toEqual(socialMedia);
-                    expect(store.$isEditState()).toBe(false);
+                    expect(store.socialMedia()).toEqual(socialMedia);
+                    expect(store.isEditState()).toBe(false);
                 });
 
                 it('should reset the state with clearDeviceAndSocialMedia', () => {
                     store.clearDeviceAndSocialMedia();
 
-                    expect(store.$device()).toBe(null);
-                    expect(store.$socialMedia()).toBe(null);
-                    expect(store.$isEditState()).toBe(true);
+                    expect(store.device()).toBe(null);
+                    expect(store.socialMedia()).toBe(null);
+                    expect(store.isEditState()).toBe(true);
                 });
             });
         });
@@ -843,17 +843,17 @@ describe('UVEStore', () => {
                         const payload = {
                             pageContainers: ACTION_PAYLOAD_MOCK.pageContainers,
                             pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                            params: store.$params()
+                            params: store.params()
                         };
 
                         store.savePage(ACTION_PAYLOAD_MOCK.pageContainers);
 
                         expect(saveSpy).toHaveBeenCalledWith(payload);
 
-                        expect(getSpy).toHaveBeenCalledWith(store.$params());
+                        expect(getSpy).toHaveBeenCalledWith(store.params());
 
-                        expect(store.$status()).toBe(UVE_STATUS.LOADED);
-                        expect(store.$pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
+                        expect(store.status()).toBe(UVE_STATUS.LOADED);
+                        expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
                     });
                 });
             });
@@ -922,7 +922,7 @@ describe('UVEStore', () => {
                 it("should update the editor's scroll state when there is no drag item", () => {
                     store.updateEditorScrollState();
 
-                    expect(store.$state()).toEqual(EDITOR_STATE.SCROLLING);
+                    expect(store.state()).toEqual(EDITOR_STATE.SCROLLING);
                 });
 
                 it("should update the editor's scroll state when there is drag item", () => {
@@ -930,7 +930,7 @@ describe('UVEStore', () => {
 
                     store.updateEditorScrollState();
 
-                    expect(store.$state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                    expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
                 });
 
                 it("should not update the editor's scroll state when the state is OUT_OF_BOUNDS", () => {
@@ -938,7 +938,7 @@ describe('UVEStore', () => {
 
                     store.updateEditorScrollState();
 
-                    expect(store.$state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
+                    expect(store.state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
                 });
             });
 
@@ -946,7 +946,7 @@ describe('UVEStore', () => {
                 it("should update the editor's drag state when there is no drag item", () => {
                     store.updateEditorOnScrollEnd();
 
-                    expect(store.$state()).toEqual(EDITOR_STATE.IDLE);
+                    expect(store.state()).toEqual(EDITOR_STATE.IDLE);
                 });
 
                 it("should update the editor's drag state when there is drag item", () => {
@@ -954,7 +954,7 @@ describe('UVEStore', () => {
 
                     store.updateEditorOnScrollEnd();
 
-                    expect(store.$state()).toEqual(EDITOR_STATE.DRAGGING);
+                    expect(store.state()).toEqual(EDITOR_STATE.DRAGGING);
                 });
 
                 it("should not update the editor's drag state when the state is OUT_OF_BOUNDS", () => {
@@ -962,7 +962,7 @@ describe('UVEStore', () => {
 
                     store.updateEditorOnScrollEnd();
 
-                    expect(store.$state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
+                    expect(store.state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
                 });
             });
 
@@ -970,8 +970,8 @@ describe('UVEStore', () => {
                 it('should update the store correctly', () => {
                     store.updateEditorScrollDragState();
 
-                    expect(store.$state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
-                    expect(store.$bounds()).toEqual([]);
+                    expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                    expect(store.bounds()).toEqual([]);
                 });
             });
 
@@ -979,7 +979,7 @@ describe('UVEStore', () => {
                 it('should update the state correctly', () => {
                     store.setEditorState(EDITOR_STATE.SCROLLING);
 
-                    expect(store.$state()).toEqual(EDITOR_STATE.SCROLLING);
+                    expect(store.state()).toEqual(EDITOR_STATE.SCROLLING);
                 });
             });
 
@@ -987,8 +987,8 @@ describe('UVEStore', () => {
                 it('should update the store correctly', () => {
                     store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
 
-                    expect(store.$dragItem()).toEqual(EMA_DRAG_ITEM_CONTENTLET_MOCK);
-                    expect(store.$state()).toEqual(EDITOR_STATE.DRAGGING);
+                    expect(store.dragItem()).toEqual(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                    expect(store.state()).toEqual(EDITOR_STATE.DRAGGING);
                 });
             });
 
@@ -996,8 +996,8 @@ describe('UVEStore', () => {
                 it("should update the store's contentlet area", () => {
                     store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
 
-                    expect(store.$contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
-                    expect(store.$state()).toEqual(EDITOR_STATE.IDLE);
+                    expect(store.contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
+                    expect(store.state()).toEqual(EDITOR_STATE.IDLE);
                 });
 
                 it('should not update contentletArea if it is the same', () => {
@@ -1008,9 +1008,9 @@ describe('UVEStore', () => {
 
                     store.setEditorContentletArea(MOCK_CONTENTLET_AREA);
 
-                    expect(store.$contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
+                    expect(store.contentletArea()).toEqual(MOCK_CONTENTLET_AREA);
                     // State should not change
-                    expect(store.$state()).toEqual(EDITOR_STATE.INLINE_EDITING);
+                    expect(store.state()).toEqual(EDITOR_STATE.INLINE_EDITING);
                 });
             });
 
@@ -1020,7 +1020,7 @@ describe('UVEStore', () => {
                 it('should update the store correcly', () => {
                     store.setEditorBounds(bounds);
 
-                    expect(store.$bounds()).toEqual(bounds);
+                    expect(store.bounds()).toEqual(bounds);
                 });
             });
 
@@ -1033,10 +1033,10 @@ describe('UVEStore', () => {
 
                     store.resetEditorProperties();
 
-                    expect(store.$dragItem()).toBe(null);
-                    expect(store.$state()).toEqual(EDITOR_STATE.IDLE);
-                    expect(store.$contentletArea()).toBe(null);
-                    expect(store.$bounds()).toEqual([]);
+                    expect(store.dragItem()).toBe(null);
+                    expect(store.state()).toEqual(EDITOR_STATE.IDLE);
+                    expect(store.contentletArea()).toBe(null);
+                    expect(store.bounds()).toEqual([]);
                 });
             });
             describe('getPageSavePayload', () => {
@@ -1115,7 +1115,7 @@ describe('UVEStore', () => {
 
                     store.setOgTags(ogTags);
 
-                    expect(store.$ogTags()).toEqual(ogTags);
+                    expect(store.ogTags()).toEqual(ogTags);
                 });
             });
         });

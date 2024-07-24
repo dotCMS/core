@@ -22,7 +22,7 @@ export function withLayout() {
         },
         withComputed((store) => ({
             $layoutProps: computed<LayoutProps>(() => {
-                const pageAPIResponse = store.$pageAPIResponse();
+                const pageAPIResponse = store.pageAPIResponse();
 
                 return {
                     containersMap: mapContainerStructureToDotContainerMap(
@@ -42,8 +42,8 @@ export function withLayout() {
             return {
                 updateLayout: (layout: DotLayout) => {
                     patchState(store, {
-                        $pageAPIResponse: {
-                            ...store.$pageAPIResponse(),
+                        pageAPIResponse: {
+                            ...store.pageAPIResponse(),
                             layout
                         }
                     });

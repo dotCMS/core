@@ -21,13 +21,13 @@ import {
     getIsDefaultVariant,
     sanitizeURL
 } from '../../../../utils';
-import { EditorToolbarState, UVEState } from '../../../models';
-import { ToolbarProps } from '../models';
+import { UVEState } from '../../../models';
+import { EditorToolbarState, ToolbarProps } from '../models';
 
 const initialState: EditorToolbarState = {
-    $device: null,
-    $socialMedia: null,
-    $isEditState: true
+    device: null,
+    socialMedia: null,
+    isEditState: true
 };
 
 /**
@@ -44,15 +44,15 @@ export function withEditorToolbar() {
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
             $toolbarProps: computed<ToolbarProps>(() => {
-                const params = store.$params();
+                const params = store.params();
                 const url = sanitizeURL(params.url);
 
                 const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
-                const pageAPIResponse = store.$pageAPIResponse();
-                const experiment = store.$experiment?.();
+                const pageAPIResponse = store.pageAPIResponse();
+                const experiment = store.experiment?.();
 
                 const pageAPI = `/api/v1/page/${
-                    store.$isTraditionalPage() ? 'render' : 'json'
+                    store.isTraditionalPage() ? 'render' : 'json'
                 }/${pageAPIQueryParams}`;
 
                 const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
@@ -61,10 +61,10 @@ export function withEditorToolbar() {
 
                 const unlockButton = {
                     inode: pageAPIResponse.page.inode,
-                    loading: store.$status() === UVE_STATUS.LOADING
+                    loading: store.status() === UVE_STATUS.LOADING
                 };
                 const shoudlShowInfoDisplay =
-                    !store.$canEditPage() || !!store.$device() || !!store.$socialMedia();
+                    !store.canEditPage() || !!store.device() || !!store.socialMedia();
 
                 const bookmarksUrl = createFavoritePagesURL({
                     languageId: Number(params.language_id),
@@ -77,14 +77,14 @@ export function withEditorToolbar() {
                     copyUrl: createPureURL(params),
                     apiUrl: `${window.location.origin}${pageAPI}`,
                     currentLanguage: pageAPIResponse.viewAs.language,
-                    urlContentMap: store.$isEditState() ? pageAPIResponse.urlContentMap : null,
+                    urlContentMap: store.isEditState() ? pageAPIResponse.urlContentMap : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
-                    workflowActionsInode: store.$canEditPage() ? pageAPIResponse.page.inode : null,
+                    workflowActionsInode: store.canEditPage() ? pageAPIResponse.page.inode : null,
                     unlockButton: shouldShowUnlock ? unlockButton : null,
                     showInfoDisplay: shoudlShowInfoDisplay,
                     deviceSelector: {
                         apiLink: `${params.clientHost ?? window.location.origin}${pageAPI}`,
-                        hideSocialMedia: !store.$isTraditionalPage()
+                        hideSocialMedia: !store.isTraditionalPage()
                     },
                     personaSelector: {
                         pageId: pageAPIResponse.page.identifier,
@@ -93,12 +93,12 @@ export function withEditorToolbar() {
                 };
             }),
             $infoDisplayOptions: computed<InfoOptions>(() => {
-                const pageAPIResponse = store.$pageAPIResponse();
-                const canEditPage = store.$canEditPage();
-                const device = store.$device();
-                const socialMedia = store.$socialMedia();
+                const pageAPIResponse = store.pageAPIResponse();
+                const canEditPage = store.canEditPage();
+                const device = store.device();
+                const socialMedia = store.socialMedia();
 
-                if (store.$pageIsLocked()) {
+                if (store.pageIsLocked()) {
                     let message = 'editpage.locked-by';
 
                     if (!pageAPIResponse.page.canLock) {
@@ -138,7 +138,7 @@ export function withEditorToolbar() {
                 } else if (canEditPage && !getIsDefaultVariant(pageAPIResponse.viewAs.variantId)) {
                     const variantId = pageAPIResponse.viewAs.variantId;
 
-                    const currentExperiment = store.$experiment?.();
+                    const currentExperiment = store.experiment?.();
 
                     const name =
                         currentExperiment?.trafficProportion.variants.find(
@@ -173,16 +173,16 @@ export function withEditorToolbar() {
             return {
                 setDevice: (device: DotDevice) => {
                     patchState(store, {
-                        $device: device,
-                        $socialMedia: null,
-                        $isEditState: false
+                        device: device,
+                        socialMedia: null,
+                        isEditState: false
                     });
                 },
                 setSocialMedia: (socialMedia: string) => {
                     patchState(store, {
-                        $socialMedia: socialMedia,
-                        $device: null,
-                        $isEditState: false
+                        socialMedia: socialMedia,
+                        device: null,
+                        isEditState: false
                     });
                 },
                 clearDeviceAndSocialMedia: () => {

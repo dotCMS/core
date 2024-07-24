@@ -13,13 +13,20 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
+import { DotDeviceWithIcon } from '../../../shared/models';
 
 export interface EditorState {
-    $bounds: Container[];
-    $state: EDITOR_STATE;
-    $contentletArea?: ContentletArea;
-    $dragItem?: EmaDragItem;
-    $ogTags?: SeoMetaTags;
+    bounds: Container[];
+    state: EDITOR_STATE;
+    contentletArea?: ContentletArea;
+    dragItem?: EmaDragItem;
+    ogTags?: SeoMetaTags;
+}
+
+export interface EditorToolbarState {
+    device?: DotDeviceWithIcon;
+    socialMedia?: string;
+    isEditState: boolean;
 }
 
 export interface PageDataContainer {

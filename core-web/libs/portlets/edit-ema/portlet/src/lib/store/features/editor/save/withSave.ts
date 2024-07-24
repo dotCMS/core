@@ -31,14 +31,14 @@ export function withSave() {
                     pipe(
                         tap(() => {
                             patchState(store, {
-                                $status: UVE_STATUS.LOADING
+                                status: UVE_STATUS.LOADING
                             });
                         }),
                         switchMap((pageContainers) => {
                             const payload = {
                                 pageContainers,
-                                pageId: store.$pageAPIResponse().page.identifier,
-                                params: store.$params()
+                                pageId: store.pageAPIResponse().page.identifier,
+                                params: store.params()
                             };
 
                             return dotPageApiService.save(payload).pipe(
@@ -47,15 +47,15 @@ export function withSave() {
                                         tapResponse(
                                             (pageAPIResponse: DotPageApiResponse) => {
                                                 patchState(store, {
-                                                    $status: UVE_STATUS.LOADED,
-                                                    $pageAPIResponse: pageAPIResponse
+                                                    status: UVE_STATUS.LOADED,
+                                                    pageAPIResponse: pageAPIResponse
                                                 });
                                             },
                                             (e) => {
                                                 console.error(e);
 
                                                 patchState(store, {
-                                                    $status: UVE_STATUS.ERROR
+                                                    status: UVE_STATUS.ERROR
                                                 });
                                             }
                                         )
@@ -64,7 +64,7 @@ export function withSave() {
                                 catchError((e) => {
                                     console.error(e);
                                     patchState(store, {
-                                        $status: UVE_STATUS.ERROR
+                                        status: UVE_STATUS.ERROR
                                     });
 
                                     return EMPTY;

@@ -33,7 +33,7 @@ export class DotEmaInfoDisplayComponent {
         if (options.id === 'device' || options.id === 'socialMedia') {
             this.uveStore.clearDeviceAndSocialMedia();
         } else if (options.id === 'variant') {
-            const currentExperiment = this.uveStore.$experiment();
+            const currentExperiment = this.uveStore.experiment();
 
             this.router.navigate(
                 [

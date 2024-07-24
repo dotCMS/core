@@ -42,11 +42,11 @@ import {
 } from '../../../utils';
 import { UVEState } from '../../models';
 const initialState: EditorState = {
-    $bounds: [],
-    $state: EDITOR_STATE.IDLE,
-    $contentletArea: null,
-    $dragItem: null,
-    $ogTags: null
+    bounds: [],
+    state: EDITOR_STATE.IDLE,
+    contentletArea: null,
+    dragItem: null,
+    ogTags: null
 };
 
 const BASE_MEASURE = 'px';
@@ -70,7 +70,7 @@ export function withEditor() {
         withComputed((store) => {
             return {
                 $pageData: computed<PageData>(() => {
-                    const pageAPIResponse = store.$pageAPIResponse();
+                    const pageAPIResponse = store.pageAPIResponse();
 
                     const containers: PageDataContainer[] =
                         mapContainerStructureToArrayOfContainers(pageAPIResponse.containers);
@@ -86,33 +86,33 @@ export function withEditor() {
                 }),
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
-                        code: store.$pageAPIResponse()?.page?.rendered,
-                        isTraditionalPage: store.$isTraditionalPage(),
-                        isEditState: store.$isEditState(),
-                        isEnterprise: store.$isEnterprise()
+                        code: store.pageAPIResponse()?.page?.rendered,
+                        isTraditionalPage: store.isTraditionalPage(),
+                        isEditState: store.isEditState(),
+                        isEnterprise: store.isEnterprise()
                     };
                 }),
                 $editorIsInDraggingState: computed<boolean>(
-                    () => store.$state() === EDITOR_STATE.DRAGGING
+                    () => store.state() === EDITOR_STATE.DRAGGING
                 ),
                 $editorProps: computed<EditorProps>(() => {
-                    const pageAPIResponse = store.$pageAPIResponse();
-                    const socialMedia = store.$socialMedia();
-                    const ogTags = store.$ogTags();
-                    const device = store.$device();
-                    const canEditPage = store.$canEditPage();
-                    const isEnterprise = store.$isEnterprise();
-                    const state = store.$state();
-                    const params = store.$params();
-                    const isTraditionalPage = store.$isTraditionalPage();
-                    const contentletArea = store.$contentletArea();
-                    const bounds = store.$bounds();
-                    const dragItem = store.$dragItem();
-                    const isEditState = store.$isEditState();
+                    const pageAPIResponse = store.pageAPIResponse();
+                    const socialMedia = store.socialMedia();
+                    const ogTags = store.ogTags();
+                    const device = store.device();
+                    const canEditPage = store.canEditPage();
+                    const isEnterprise = store.isEnterprise();
+                    const state = store.state();
+                    const params = store.params();
+                    const isTraditionalPage = store.isTraditionalPage();
+                    const contentletArea = store.contentletArea();
+                    const bounds = store.bounds();
+                    const dragItem = store.dragItem();
+                    const isEditState = store.isEditState();
 
                     const isDragging = state === EDITOR_STATE.DRAGGING;
                     const dragIsActive = isDragging || state === EDITOR_STATE.SCROLL_DRAG;
-                    const isLoading = store.$status() === UVE_STATUS.LOADING;
+                    const isLoading = store.status() === UVE_STATUS.LOADING;
                     const isScrolling =
                         state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING;
 
@@ -183,14 +183,12 @@ export function withEditor() {
                     // And that is changing the state in an unnatural way
 
                     // The only way to get out of OUT_OF_BOUNDS is through the mouse over in the editor
-                    if (store.$state() === EDITOR_STATE.OUT_OF_BOUNDS) {
+                    if (store.state() === EDITOR_STATE.OUT_OF_BOUNDS) {
                         return;
                     }
 
                     patchState(store, {
-                        $state: store.$dragItem()
-                            ? EDITOR_STATE.SCROLL_DRAG
-                            : EDITOR_STATE.SCROLLING
+                        state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
                     });
                 },
                 updateEditorOnScrollEnd() {
@@ -199,25 +197,25 @@ export function withEditor() {
                     // And that is changing the state in an unnatural way
 
                     // The only way to get out of OUT_OF_BOUNDS is through the mouse over in the editor
-                    if (store.$state() === EDITOR_STATE.OUT_OF_BOUNDS) {
+                    if (store.state() === EDITOR_STATE.OUT_OF_BOUNDS) {
                         return;
                     }
 
                     patchState(store, {
-                        $state: store.$dragItem() ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
+                        state: store.dragItem() ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
                     });
                 },
                 updateEditorScrollDragState() {
-                    patchState(store, { $state: EDITOR_STATE.SCROLL_DRAG, $bounds: [] });
+                    patchState(store, { state: EDITOR_STATE.SCROLL_DRAG, bounds: [] });
                 },
                 setEditorState(state: EDITOR_STATE) {
-                    patchState(store, { $state: state });
+                    patchState(store, { state: state });
                 },
                 setEditorDragItem(dragItem: EmaDragItem) {
-                    patchState(store, { $dragItem: dragItem, $state: EDITOR_STATE.DRAGGING });
+                    patchState(store, { dragItem, state: EDITOR_STATE.DRAGGING });
                 },
                 setEditorContentletArea(contentletArea: ContentletArea) {
-                    const currentContentletArea = store.$contentletArea();
+                    const currentContentletArea = store.contentletArea();
 
                     if (
                         currentContentletArea?.x === contentletArea.x &&
@@ -233,19 +231,19 @@ export function withEditor() {
                     }
 
                     patchState(store, {
-                        $contentletArea: contentletArea,
-                        $state: EDITOR_STATE.IDLE
+                        contentletArea: contentletArea,
+                        state: EDITOR_STATE.IDLE
                     });
                 },
                 setEditorBounds(bounds: Container[]) {
-                    patchState(store, { $bounds: bounds });
+                    patchState(store, { bounds });
                 },
                 resetEditorProperties() {
                     patchState(store, {
-                        $dragItem: null,
-                        $contentletArea: null,
-                        $bounds: [],
-                        $state: EDITOR_STATE.IDLE
+                        dragItem: null,
+                        contentletArea: null,
+                        bounds: [],
+                        state: EDITOR_STATE.IDLE
                     });
                 },
                 getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
@@ -298,7 +296,7 @@ export function withEditor() {
                     };
                 },
                 setOgTags(ogTags: SeoMetaTags) {
-                    patchState(store, { $ogTags: ogTags });
+                    patchState(store, { ogTags });
                 }
             };
         })

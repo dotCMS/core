@@ -254,7 +254,7 @@ export class EditEmaToolbarComponent {
 
     private shouldReload(params: Params): boolean {
         const { url: newUrl, language_id: newLanguageId } = params;
-        const { url, language_id } = this.uveStore.$params();
+        const { url, language_id } = this.uveStore.params();
 
         return newUrl != url || newLanguageId != language_id;
     }

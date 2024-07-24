@@ -182,7 +182,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 this.$didTranslate.set(true);
                 const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
 
-                if (this.uveStore.$params() !== url) {
+                if (this.uveStore.params() !== url) {
                     this.navigate({
                         url
                     });
@@ -195,7 +195,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 }
 
                 this.#activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
-                    const params = this.uveStore.$params();
+                    const params = this.uveStore.params();
 
                     this.uveStore.load({
                         ...params,
@@ -217,7 +217,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         if (itemId === 'page-tools') {
             this.pageTools.toggleDialog();
         } else if (itemId === 'properties') {
-            const page = this.uveStore.$pageAPIResponse().page;
+            const page = this.uveStore.pageAPIResponse().page;
 
             this.dialog.editContentlet({
                 inode: page.inode,

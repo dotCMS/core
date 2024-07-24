@@ -12,17 +12,17 @@ import { UVE_STATUS } from '../shared/enums';
 import { sanitizeURL } from '../utils';
 
 const initialState: UVEState = {
-    $isEnterprise: false,
-    $languages: [],
-    $pageAPIResponse: null,
-    $currentUser: null,
-    $experiment: null,
-    $error: null,
-    $params: null,
-    $status: UVE_STATUS.LOADING,
-    $isTraditionalPage: true,
-    $canEditPage: false,
-    $pageIsLocked: true
+    isEnterprise: false,
+    languages: [],
+    pageAPIResponse: null,
+    currentUser: null,
+    experiment: null,
+    error: null,
+    params: null,
+    status: UVE_STATUS.LOADING,
+    isTraditionalPage: true,
+    canEditPage: false,
+    pageIsLocked: true
 };
 
 export const UVEStore = signalStore(
@@ -30,12 +30,12 @@ export const UVEStore = signalStore(
     withComputed((store) => {
         return {
             $shellProps: computed<ShellProps>(() => {
-                const pageAPIResponse = store.$pageAPIResponse();
+                const pageAPIResponse = store.pageAPIResponse();
 
                 const currentUrl = '/' + sanitizeURL(pageAPIResponse?.page.pageURI);
 
-                const requestHostName = !store.$isTraditionalPage()
-                    ? store.$params()?.clientHost
+                const requestHostName = !store.isTraditionalPage()
+                    ? store.params()?.clientHost
                     : window.location.origin;
 
                 const page = pageAPIResponse?.page;
@@ -44,8 +44,8 @@ export const UVEStore = signalStore(
                 const isLayoutDisabled = !page?.canEdit || !templateDrawed;
 
                 const languageId = pageAPIResponse?.viewAs.language.id;
-                const languages = store.$languages();
-                const errorCode = store.$error();
+                const languages = store.languages();
+                const errorCode = store.error();
 
                 return {
                     canRead: page?.canRead,
@@ -116,7 +116,7 @@ export const UVEStore = signalStore(
         return {
             setUveStatus(status: UVE_STATUS) {
                 patchState(store, {
-                    $status: status
+                    status: status
                 });
             }
         };

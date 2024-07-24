@@ -41,7 +41,7 @@ export function withLoad() {
                 load: rxMethod<DotPageApiParams>(
                     pipe(
                         tap(() => {
-                            patchState(store, { $status: UVE_STATUS.LOADING });
+                            patchState(store, { status: UVE_STATUS.LOADING });
                         }),
                         switchMap((params) => {
                             return forkJoin({
@@ -98,8 +98,8 @@ export function withLoad() {
                                 tap({
                                     error: ({ status: errorStatus }: HttpErrorResponse) => {
                                         patchState(store, {
-                                            $error: errorStatus,
-                                            $status: UVE_STATUS.ERROR
+                                            error: errorStatus,
+                                            status: UVE_STATUS.ERROR
                                         });
                                     }
                                 }),
@@ -130,16 +130,16 @@ export function withLoad() {
                                                 );
 
                                                 patchState(store, {
-                                                    $pageAPIResponse: pageAPIResponse,
-                                                    $isEnterprise: isEnterprise,
-                                                    $currentUser: currentUser,
-                                                    $experiment: experiment,
-                                                    $languages: languages,
-                                                    $params: params,
-                                                    $canEditPage: canEditPage,
-                                                    $pageIsLocked: pageIsLocked,
-                                                    $status: UVE_STATUS.LOADED,
-                                                    $isTraditionalPage: !params.clientHost // If we don't send the clientHost we are using as VTL page
+                                                    pageAPIResponse,
+                                                    isEnterprise,
+                                                    currentUser,
+                                                    experiment,
+                                                    languages,
+                                                    params,
+                                                    canEditPage,
+                                                    pageIsLocked,
+                                                    status: UVE_STATUS.LOADED,
+                                                    isTraditionalPage: !params.clientHost // If we don't send the clientHost we are using as VTL page
                                                 });
                                             }
                                         })
@@ -152,10 +152,10 @@ export function withLoad() {
                 reload: rxMethod<void>(
                     pipe(
                         tap(() => {
-                            patchState(store, { $status: UVE_STATUS.LOADING });
+                            patchState(store, { status: UVE_STATUS.LOADING });
                         }),
                         switchMap(() => {
-                            return dotPageApiService.get(store.$params()).pipe(
+                            return dotPageApiService.get(store.params()).pipe(
                                 switchMap((pageAPIResponse) =>
                                     dotLanguagesService
                                         .getLanguagesUsedPage(pageAPIResponse.page.identifier)
@@ -170,28 +170,28 @@ export function withLoad() {
                                     next: ({ pageAPIResponse, languages }) => {
                                         const canEditPage = computeCanEditPage(
                                             pageAPIResponse?.page,
-                                            store.$currentUser(),
-                                            store.$experiment()
+                                            store.currentUser(),
+                                            store.experiment()
                                         );
 
                                         const pageIsLocked = computePageIsLocked(
                                             pageAPIResponse?.page,
-                                            store.$currentUser()
+                                            store.currentUser()
                                         );
 
                                         patchState(store, {
-                                            $pageAPIResponse: pageAPIResponse,
-                                            $languages: languages,
-                                            $canEditPage: canEditPage,
-                                            $pageIsLocked: pageIsLocked,
-                                            $status: UVE_STATUS.LOADED,
-                                            $isTraditionalPage: !store.$params().clientHost // If we don't send the clientHost we are using as VTL page
+                                            pageAPIResponse,
+                                            languages,
+                                            canEditPage,
+                                            pageIsLocked,
+                                            status: UVE_STATUS.LOADED,
+                                            isTraditionalPage: !store.params().clientHost // If we don't send the clientHost we are using as VTL page
                                         });
                                     },
                                     error: ({ status: errorStatus }: HttpErrorResponse) => {
                                         patchState(store, {
-                                            $error: errorStatus,
-                                            $status: UVE_STATUS.ERROR
+                                            error: errorStatus,
+                                            status: UVE_STATUS.ERROR
                                         });
                                     }
                                 }),
