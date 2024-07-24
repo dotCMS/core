@@ -42,16 +42,19 @@ jobs:
             Write-Output "Web server is not running"
             exit 1
           }
-
-
-      - name: Analyze Docker image with Anchore
+          
+      - name: Install CycloneDX CLI
         run: |
-          docker pull anchore/engine-cli:v0.9.4
-          docker run --rm -v C:/Users/rashi:/workspace anchore/engine-cli:v0.9.4 anchore-cli image add docker://dotcms:latest
-          docker run --rm -v C:/Users/rashi:/workspace anchore/engine-cli:v0.9.4 anchore-cli image vuln dotcms:latest os > C:/Users/rashi/sbom.spdx
+          wget https://github.com/CycloneDX/cyclonedx-cli/releases/latest/download/cyclonedx-cli-windows-x64.zip -OutFile cyclonedx-cli.zip
+          Expand-Archive -Path cyclonedx-cli.zip -DestinationPath cyclonedx-cli
+          $env:Path += ";$(Get-Location)/cyclonedx-cli"
+          cyclonedx-cli --version  # Verify installation
+
+      - name: Generate SBOM for Docker image
+        run: |
+          docker pull dotcms:latest
+          cyclonedx-cli docker -i dotcms:latest -o C:/Users/rashi/sbom.xml
         shell: powershell
-
-
 
       - name: Stop dotCMS
         run: docker-compose down
