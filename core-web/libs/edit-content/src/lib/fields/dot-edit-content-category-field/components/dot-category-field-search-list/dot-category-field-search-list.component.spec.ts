@@ -1,25 +1,34 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotEmptyContainerComponent } from '@dotcms/ui';
 
 import { DotCategoryFieldSearchListComponent } from './dot-category-field-search-list.component';
 
+import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
 import { MockResizeObserver } from '../../../../utils/mocks';
 import { CATEGORY_MOCK_TRANSFORMED } from '../../mocks/category-field.mocks';
 
+const mockMessageService = {
+    get: jest.fn((key: string) => `${key}`)
+};
+
 describe('DotCategoryFieldSearchListComponent', () => {
     let spectator: Spectator<DotCategoryFieldSearchListComponent>;
+
     const createComponent = createComponentFactory({
         component: DotCategoryFieldSearchListComponent,
-        providers: [mockProvider(DotMessageService)]
+        providers: [{ provide: DotMessageService, useValue: mockMessageService }]
     });
 
     beforeEach(() => {
         spectator = createComponent({
+            detectChanges: false,
             props: {
                 categories: CATEGORY_MOCK_TRANSFORMED,
                 selected: CATEGORY_MOCK_TRANSFORMED,
-                isLoading: false
+                status: ComponentStatus.LOADED
             }
         });
 
@@ -30,19 +39,15 @@ describe('DotCategoryFieldSearchListComponent', () => {
         global.ResizeObserver = MockResizeObserver;
     });
 
-    afterEach(() => {
-        jest.resetAllMocks();
-    });
-
     it('should show the skeleton if the component is loading', () => {
-        spectator.setInput('isLoading', true);
+        spectator.setInput('status', ComponentStatus.LOADING);
         spectator.detectChanges();
         expect(spectator.query(byTestId('categories-skeleton'))).not.toBeNull();
         expect(spectator.query(byTestId('categories-table'))).toBeNull();
     });
 
     it('should show the table if the component is not loading', () => {
-        spectator.setInput('isLoading', false);
+        spectator.setInput('status', ComponentStatus.LOADED);
         spectator.detectChanges();
         expect(spectator.query(byTestId('categories-table'))).not.toBeNull();
         expect(spectator.query(byTestId('categories-skeleton'))).toBeNull();
@@ -62,5 +67,25 @@ describe('DotCategoryFieldSearchListComponent', () => {
     it('should render table with categories', () => {
         const rows = spectator.queryAll(byTestId('table-row'));
         expect(rows.length).toBe(CATEGORY_MOCK_TRANSFORMED.length);
+    });
+
+    it('should render `dot-empty-container` with `empty` configuration ', () => {
+        const expectedConfig = CATEGORY_FIELD_EMPTY_MESSAGES.empty;
+        spectator.setInput('status', ComponentStatus.LOADED);
+        spectator.setInput('categories', []);
+        spectator.detectChanges();
+
+        expect(spectator.query(DotEmptyContainerComponent)).not.toBeNull();
+        expect(spectator.component.$emptyOrErrorMessage()).toEqual(expectedConfig);
+    });
+
+    it('should render `dot-empty-container` with `error` configuration ', () => {
+        const expectedConfig = CATEGORY_FIELD_EMPTY_MESSAGES[ComponentStatus.ERROR];
+        spectator.setInput('status', ComponentStatus.ERROR);
+        spectator.setInput('categories', []);
+
+        spectator.detectChanges();
+        expect(spectator.query(DotEmptyContainerComponent)).not.toBeNull();
+        expect(spectator.component.$emptyOrErrorMessage()).toEqual(expectedConfig);
     });
 });
