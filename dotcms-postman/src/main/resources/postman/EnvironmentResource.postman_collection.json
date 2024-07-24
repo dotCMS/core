@@ -427,7 +427,7 @@
 							"    pm.expect(response[0].fieldName, 'FAILED: [fieldName]').to.eql(\"pushMode\");",
 							"    pm.expect(response[0].message, 'FAILED: [message]').to.eql(\"may not be null\");",
 							"});"
-						]},
+						],
 						"type": "text/javascript",
 						"packages": {}
 					}
