@@ -143,7 +143,6 @@ export function withEditor() {
                                 height: device ? `${device.cssHeight}${BASE_MEASURE}` : BASE_HEIGHT
                             }
                         },
-
                         progressBar: isLoading,
                         contentletTools: showContentletTools
                             ? {

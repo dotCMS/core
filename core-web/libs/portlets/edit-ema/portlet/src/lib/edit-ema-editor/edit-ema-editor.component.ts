@@ -1052,7 +1052,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const { onNumberOfPages = '1', title } = contentlet;
 
         if (Number(onNumberOfPages) <= 1) {
-            this.dialog.editContentlet(contentlet);
+            this.dialog?.editContentlet(contentlet);
 
             return;
         }

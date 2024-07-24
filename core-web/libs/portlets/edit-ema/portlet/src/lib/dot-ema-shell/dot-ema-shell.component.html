@@ -1,4 +1,4 @@
-@if ($shellProps().canRead) {
+@if ($shellProps()?.canRead) {
     <router-outlet (activate)="onActivateRoute($event)"></router-outlet>
     <dot-edit-ema-navigation-bar
         [items]="$shellProps().items"
@@ -9,9 +9,9 @@
         [currentPageUrlParams]="$shellProps().seoParams"
         #pageTools></dot-page-tools-seo>
 } @else {
-    @if ($shellProps().error.code === 401) {
+    @if ($shellProps().error?.code === 401) {
         <dot-not-license />
-    } @else {
+    } @else if ($shellProps()?.error?.pageInfo) {
         <dot-info-page [info]="$shellProps().error.pageInfo" />
     }
 }
