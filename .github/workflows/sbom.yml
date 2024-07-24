@@ -2,14 +2,10 @@ name: pentest
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 3 1,15 * *'
-    - cron: '0 2 * * 0'
 
 jobs:
 
   scanner:
-    if: (github.event.schedule == '0 3 1,15 * *') || (github.event.workflow_dispatch)
     runs-on: [self-hosted, linux, x64]
 
     steps:
@@ -85,7 +81,6 @@ jobs:
           repository: rashik1144/core-test-results
           
   maintenance:
-    if: github.event.schedule == '0 2 * * 0'
     runs-on: [self-hosted, linux, x64]
 
     steps:
