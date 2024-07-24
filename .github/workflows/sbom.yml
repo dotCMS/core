@@ -21,7 +21,7 @@ jobs:
       - name: Install updates
         run: sudo apt-get update
         
-      - name: Pull dotCMS/core-test-results repository
+      - name: Pull rashik1144/core-test-results repository
         run: |
           git config pull.rebase false
           git remote set-url origin git@github.com:dotCMS/core-test-results.git
@@ -75,14 +75,14 @@ jobs:
           git commit -m "Add test results for release ${{ env.release_version }}"
         working-directory: /home/ubuntu/core-test-results
 
-      - name: Push changes to dotCMS/core-test-results repository
+      - name: Push changes to rashik1144/core-test-results repository
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.SECRET_PENTEST_TOKEN }}
           branch: ${{ env.release_version }}
           force: true
           directory: /home/ubuntu/core-test-results/
-          repository: dotCMS/core-test-results
+          repository: rashik1144/core-test-results
           
   maintenance:
     if: github.event.schedule == '0 2 * * 0'
