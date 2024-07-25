@@ -73,29 +73,27 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
     /**
      * Represents the categories found with the filter
      */
-    categories = input.required<DotCategoryFieldKeyValueObj[]>();
+    $categories = input.required<DotCategoryFieldKeyValueObj[]>({ alias: 'categories' });
 
     /**
      * Represent the selected items in the store
      */
-    selected = input.required<DotCategoryFieldKeyValueObj[]>();
+    $selected = input.required<DotCategoryFieldKeyValueObj[]>({ alias: 'selected' });
 
     /**
      * Represents the current state of the component.
      */
-    status = input.required<ComponentStatus>();
+    $status = input.required<ComponentStatus>({ alias: 'status' });
 
     /**
      * Output for emit the selected category(ies).
      */
-    $itemChecked = output<DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]>({
-        alias: 'itemChecked'
-    });
+    itemChecked = output<DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]>();
 
     /**
      * Output that emits events to remove a selected item(s).
      */
-    $removeItem = output<string | string[]>({ alias: 'removeItem' });
+    removeItem = output<string | string[]>();
 
     /**
      * Model of the items selected
@@ -110,12 +108,12 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
     /**
      * Flag indicating whether the table is empty.
      */
-    $tableIsEmpty = computed(() => !this.$isLoading() && this.categories().length === 0);
+    $tableIsEmpty = computed(() => !this.$isLoading() && this.$categories().length === 0);
 
     /**
      * A computed variable that represents the loading status of a component.
      */
-    $isLoading = computed(() => this.status() === ComponentStatus.LOADING);
+    $isLoading = computed(() => this.$status() === ComponentStatus.LOADING);
 
     /**
      * Gets the computed value of $emptyOrErrorMessage.
@@ -126,7 +124,7 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
 
     readonly #effectRef = effect(() => {
         // Todo: find a better way to update this
-        this.itemsSelected = this.selected();
+        this.itemsSelected = this.$selected();
     });
     readonly #resize$ = new Subject<ResizeObserverEntry>();
     readonly #resizeObserver = new ResizeObserver((entries) => this.#resize$.next(entries[0]));
@@ -144,7 +142,7 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
      * @return {void}
      */
     onSelectItem({ data }: DotTableRowSelectEvent<DotCategoryFieldKeyValueObj>): void {
-        this.$itemChecked.emit(data);
+        this.itemChecked.emit(data);
     }
 
     /**
@@ -154,7 +152,7 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
      * @return {void}
      */
     onRemoveItem({ data: { key } }: DotTableRowSelectEvent<DotCategoryFieldKeyValueObj>): void {
-        this.$removeItem.emit(key);
+        this.removeItem.emit(key);
     }
 
     /**
@@ -166,11 +164,11 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
      */
     onHeaderCheckboxToggle({ checked }: DotTableHeaderCheckboxSelectEvent): void {
         if (checked) {
-            const values = this.categories().map((item) => item.key);
-            this.$itemChecked.emit(this.categories());
+            const values = this.$categories().map((item) => item.key);
+            this.itemChecked.emit(this.$categories());
             this.temporarySelectedAll = [...values];
         } else {
-            this.$removeItem.emit(this.temporarySelectedAll);
+            this.removeItem.emit(this.temporarySelectedAll);
             this.temporarySelectedAll = [];
         }
     }
@@ -203,7 +201,8 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
      * @returns {PrincipalConfiguration | null} Returns the message configuration, or null if no configuration is found.
      */
     private getMessageConfig(): PrincipalConfiguration | null {
-        const configKey = this.status() === ComponentStatus.ERROR ? ComponentStatus.ERROR : 'empty';
+        const configKey =
+            this.$status() === ComponentStatus.ERROR ? ComponentStatus.ERROR : 'empty';
         const { title, icon, subtitle } = CATEGORY_FIELD_EMPTY_MESSAGES[configKey];
 
         return {
