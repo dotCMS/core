@@ -46,7 +46,7 @@ jobs:
 
       - name: Scan Docker Image with Syft
         run: |
-          pipx run anchore_syft  dotcms/dotcms:latest -o cyclonedx-xml
+          pipx run anchore_syft  dotcms/dotcms:latest -o cyclonedx-xml > cyclonedx.json
 
       - name: Stop dotCMS
         run: docker-compose down
