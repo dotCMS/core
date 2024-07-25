@@ -10,6 +10,7 @@ import static com.dotmarketing.osgi.ActivatorUtil.moveVelocityResources;
 import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
 import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
 
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.business.portal.DotPortlet;
 import com.dotmarketing.exception.DotRuntimeException;
 import java.io.BufferedReader;
@@ -65,7 +66,6 @@ import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.util.Http;
@@ -115,7 +115,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected ClassLoader getWebAppClassloader () {
         return InitServlet.class.getClassLoader();
     }
-    
+
     protected ClassReloadingStrategy getClassReloadingStrategy () {
         try {
             return ClassReloadingStrategy.fromInstalledAgent();
@@ -190,17 +190,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
      *
      * @param context
      */
-    private void forceToolBoxLoading ( BundleContext context ) {
-
-        ServiceReference<?> serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
-        if ( serviceRefSelected == null ) {
-
-            //Forcing the loading of the ToolboxManager
+    private void forceToolBoxLoading (BundleContext context) {
+        ServiceReference<?> serviceRefSelected = context.getServiceReference(PrimitiveToolboxManager.class.getName());
+        if (serviceRefSelected == null) {
+            // Forcing the loading of the ToolboxManager
             ServletToolboxManager toolboxManagerLocal = (ServletToolboxManager) VelocityUtil.getToolboxManager();
-            if ( toolboxManagerLocal != null ) {
-
-                serviceRefSelected = context.getServiceReference( PrimitiveToolboxManager.class.getName() );
-                if ( serviceRefSelected == null ) {
+            if (toolboxManagerLocal != null) {
+                serviceRefSelected = context.getServiceReference(PrimitiveToolboxManager.class.getName());
+                if (serviceRefSelected == null) {
                     toolboxManagerLocal.registerService();
                 }
             }
@@ -285,8 +282,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
 
 
-    
-    
+
+
     protected void overrideClass(String className) throws ClassNotFoundException {
 
         if (null == getClassReloadingStrategy()) {
@@ -301,11 +298,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         overrideClass(clazz);
     }
-    
-    
-    
-    
-    
+
+
+
+
+
     /**
      * Will inject this bundle context code inside the dotCMS context
      *
@@ -321,13 +318,13 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         if(!clazz.getClassLoader().equals(getBundleClassloader())) {
             Logger.error(this, "Class:" + clazz.getName() + " not loaded from bundle classloader, cannot override/inject into dotCMS");
-            
+
         }
 
         Logger.info(this.getClass().getName(), "Injecting: " + clazz.getName() + " into classloader: " + getWebAppClassloader());
         Logger.debug(this.getClass().getName(),"bundle classloader :" +getBundleClassloader() );
         Logger.debug(this.getClass().getName(),"context classloader:" +getWebAppClassloader() );
-        
+
         ByteBuddyAgent.install();
         new ByteBuddy()
                 .rebase(clazz, ClassFileLocator.ForClassLoader.of(getBundleClassloader()))
