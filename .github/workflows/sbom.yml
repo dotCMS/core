@@ -41,11 +41,11 @@ jobs:
             Write-Output "Web server is not running"
             exit 1
           }
-          
 
       - name: Scan Docker Image with Syft
         run: |
           pipx run anchore_syft  dotcms/dotcms:latest -o cyclonedx-xml > cyclonedx.json
+        working-directory: C:\Users\rashi\core-test-results
 
       - name: Stop dotCMS
         run: docker-compose down
