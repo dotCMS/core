@@ -34,3 +34,4 @@ This maintenance release includes the following code fixes:
 28. SI-72
 29. https://github.com/dotCMS/core/issues/28084 : Force HTML highlighting for .vtl files #28084
 30. https://github.com/dotCMS/core/issues/28508 : Add Search Box for Bundle ID #28508
+31. https://github.com/dotCMS/core/issues/28509 : Remove three dots at the end of the Bundle ID #28509
