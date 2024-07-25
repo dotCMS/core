@@ -16,6 +16,12 @@ import { NavigationBarItem } from '../../../shared/models';
     imports: [CommonModule, RouterModule, DotMessagePipe, TooltipModule]
 })
 export class EditEmaNavigationBarComponent {
+    /**
+     * List of items to display on the navigation bar
+     *
+     * @type {NavigationBarItem[]}
+     * @memberof EditEmaNavigationBarComponent
+     */
     @Input() items: NavigationBarItem[];
 
     /**

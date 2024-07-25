@@ -228,8 +228,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         e.preventDefault();
 
         if (href) {
-            let url: URL;
-
             const dataset = (e.target as HTMLElement).dataset;
 
             if (dataset['mode'] && dataset['fieldName'] && dataset['inode']) {
@@ -237,20 +235,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            try {
-                url = new URL(href);
-            } catch (e) {
-                url = new URL(`${window.location.origin}${href}`);
-            } finally {
-                if (url.hostname === window.location.hostname) {
-                    this.updateQueryParams({
-                        url: url.pathname
-                    });
-                } else {
-                    // Open external links in a new tab
-                    this.window.open(href, '_blank');
-                }
+            const url = new URL(href, window.location.origin);
+
+            if (url.hostname !== window.location.hostname) {
+                this.window.open(href, '_blank');
+
+                return;
             }
+
+            this.updateQueryParams({
+                url: url.pathname
+            });
         }
     }
 
@@ -949,9 +944,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
+                const dataset = payload.dataset;
+
                 const contentlet = {
-                    inode: payload.dataset['inode'],
-                    [payload.dataset.fieldName]: payload.content
+                    inode: dataset['inode'],
+                    [dataset.fieldName]: payload.content
                 };
 
                 this.dotPageApiService
