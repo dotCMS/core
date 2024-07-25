@@ -180,9 +180,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.$didTranslate.set(true);
-                const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
+                // This can be undefined
+                const url = event.detail.payload?.htmlPageReferer?.split('?')[0].replace('/', '');
 
-                if (this.uveStore.params() !== url) {
+                if (url && this.uveStore.params().url !== url) {
                     this.navigate({
                         url
                     });
