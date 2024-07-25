@@ -10,16 +10,14 @@
                 (editField)="editFieldHandler($event)"
                 (removeField)="removeField($event)"
                 (removeRow)="removeFieldRow($event, i)"
-                [fieldRow]="row">
-            </dot-content-type-fields-row>
+                [fieldRow]="row"></dot-content-type-fields-row>
 
             <ng-template #tab_container>
                 <dot-content-type-fields-tab
                     (editTab)="saveFieldsHandler($event)"
                     (removeTab)="removeTab($event, i)"
                     [fieldTab]="row"
-                    class="row-header__drag">
-                </dot-content-type-fields-tab>
+                    class="row-header__drag"></dot-content-type-fields-tab>
             </ng-template>
         </ng-template>
         <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
@@ -51,8 +49,7 @@
                     (valid)="setDialogOkButtonState($event)"
                     [formFieldData]="currentField"
                     [contentType]="contentType"
-                    #fieldPropertiesForm>
-                </dot-content-type-fields-properties-form>
+                    #fieldPropertiesForm></dot-content-type-fields-properties-form>
                 <dot-convert-wysiwyg-to-block
                     *ngIf="
                         !!currentField?.id &&

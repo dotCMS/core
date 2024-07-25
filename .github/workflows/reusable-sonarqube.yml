@@ -22,58 +22,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup master branch locally without switching current branch
-        if: github.ref != 'refs/heads/master'
-        run: git fetch origin master:master
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Prepare Maven
+        uses: ./.github/actions/maven-job
         with:
-          java-version: 17
-          distribution: 'temurin'
-      - name: Get Date
-        id: get-date
-        run: |
-          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Download Maven Repo
-        uses: actions/download-artifact@v4
-        with:
-          run-id: ${{ inputs.artifact-run-id }}
+          stage-name: "SonarQube Scan"
+          artifacts-from: ${{ inputs.artifact-run-id }}
+          restore-classes: true
+          require-master: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: maven-repo
-          path: ~/.m2/repository
-        continue-on-error: true
-      - name: Download Build Classes
-        uses: actions/download-artifact@v4
-        with:
-          run-id: ${{ inputs.artifact-run-id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: "build-classes-Initial Artifact Build"
-        continue-on-error: true
-      - name: Cache SonarQube packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      # download the coverage execution files
-      - name: Download build reports
-        id: download-artifact
-        uses: dawidd6/action-download-artifact@v3.0.0
-        with:
-          name: build-reports-test-.*
-          run_id: ${{ inputs.artifact-run-id }}
-          name_is_regexp: true
-          path: dotcms-core/target/build-reports
-          if_no_artifact_found: warn
-      - name: Maven Build No Test
-        env:
-          MAVEN_OPTS: "-Xmx2048m"
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        shell: bash
-        run: |
-          ./mvnw $JVM_TEST_MAVEN_OPTS -Dsonar.ws.timeout=180 -Dsonar.log.level=DEBUG org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=dotCMS_core_AYSbIemxK43eThAXTlt- -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.token=$SONAR_TOKEN
+          cache-sonar: true
+          java-version: 21.0.3-ms # does not work with java 11, remove once we are on java 21
+          maven-args: -Dsonar.ws.timeout=180 -Dsonar.log.level=DEBUG org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=dotCMS_core_AYSbIemxK43eThAXTlt- -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} -Dsonar.token=${{ secrets.SONAR_TOKEN }}
       - name: SonarQube Quality Gate check
         id: sonarqube-quality-gate-check
         uses: sonarsource/sonarqube-quality-gate-action@master

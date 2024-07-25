@@ -13,6 +13,7 @@ public class MapFieldPropertiesDataFetcher implements DataFetcher<Object> {
         try {
             final Map<String, Object> map = environment.getSource();
             final String var = environment.getField().getName();
+            Logger.debug(this, ()-> "Fetching map field for contentlet: " + map.get("identifier") + " field: " + var);
             return map.get(var);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);

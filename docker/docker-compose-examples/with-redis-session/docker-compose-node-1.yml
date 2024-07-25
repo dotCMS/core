@@ -53,7 +53,7 @@ services:
         DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
         DOT_ES_ENDPOINTS: 'https://opensearch:9200'
         DOT_INITIAL_ADMIN_PASSWORD: 'admin'
-        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240213/starter-20240213.zip'
+        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240719/starter-20240719.zip'
     depends_on:
       - opensearch
       - db

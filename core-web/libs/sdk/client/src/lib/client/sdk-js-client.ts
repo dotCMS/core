@@ -1,5 +1,8 @@
 import { Content } from './content/content-api';
 import { ErrorMessages } from './models';
+import { DotcmsClientListener } from './models/types';
+
+import { isInsideEditor } from '../editor/sdk-editor';
 
 export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
@@ -147,9 +150,12 @@ function getHostURL(url: string): URL | undefined {
  *
  */
 export class DotCmsClient {
-    private config: ClientConfig;
-    private requestOptions!: ClientOptions;
+    static instance: DotCmsClient;
+    #config: ClientConfig;
+    #requestOptions!: ClientOptions;
+    #listeners: DotcmsClientListener[] = [];
 
+    dotcmsUrl?: string;
     content: Content;
 
     constructor(
@@ -159,9 +165,9 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'dotcmsUrl' is required");
         }
 
-        const dotcmsHost = getHostURL(config.dotcmsUrl);
+        this.dotcmsUrl = getHostURL(config.dotcmsUrl)?.origin;
 
-        if (!dotcmsHost) {
+        if (!this.dotcmsUrl) {
             throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
         }
 
@@ -169,20 +175,20 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'authToken' is required");
         }
 
-        this.config = {
+        this.#config = {
             ...config,
-            dotcmsUrl: dotcmsHost.origin
+            dotcmsUrl: this.dotcmsUrl
         };
 
-        this.requestOptions = {
-            ...this.config.requestOptions,
+        this.#requestOptions = {
+            ...this.#config.requestOptions,
             headers: {
-                Authorization: `Bearer ${this.config.authToken}`,
-                ...this.config.requestOptions?.headers
+                Authorization: `Bearer ${this.#config.authToken}`,
+                ...this.#config.requestOptions?.headers
             }
         };
 
-        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
+        this.content = new Content(this.#requestOptions, this.#config.dotcmsUrl);
     }
 
     page = {
@@ -215,7 +221,7 @@ export class DotCmsClient {
                 }
             }
 
-            const queryHostId = options.siteId ?? this.config.siteId ?? '';
+            const queryHostId = options.siteId ?? this.#config.siteId ?? '';
 
             if (queryHostId) {
                 queryParamsObj['host_id'] = queryHostId;
@@ -224,11 +230,11 @@ export class DotCmsClient {
             const queryParams = new URLSearchParams(queryParamsObj).toString();
 
             const formattedPath = options.path.startsWith('/') ? options.path : `/${options.path}`;
-            const url = `${this.config.dotcmsUrl}/api/v1/page/json${formattedPath}${
+            const url = `${this.#config.dotcmsUrl}/api/v1/page/json${formattedPath}${
                 queryParams ? `?${queryParams}` : ''
             }`;
 
-            const response = await fetch(url, this.requestOptions);
+            const response = await fetch(url, this.#requestOptions);
             if (!response.ok) {
                 const error = {
                     status: response.status,
@@ -239,7 +245,49 @@ export class DotCmsClient {
                 throw error;
             }
 
-            return response.json();
+            return response.json().then((data) => data.entity);
+        }
+    };
+
+    editor = {
+        /**
+         * `editor.on` is an asynchronous method of the `DotCmsClient` class that allows you to react to actions issued by the UVE.
+         *
+         *  NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
+         * @param action - The name of the name emitted by UVE
+         * @param callbackFn - The function to execute when the UVE emits the action
+         */
+        on: (action: string, callbackFn: (payload: unknown) => void) => {
+            if (!isInsideEditor()) {
+                return;
+            }
+
+            if (action === 'changes') {
+                const messageCallback = (event: MessageEvent) => {
+                    if (event.data.name === 'SET_PAGE_DATA') {
+                        callbackFn(event.data.payload);
+                    }
+                };
+
+                window.addEventListener('message', messageCallback);
+                this.#listeners.push({ event: 'message', callback: messageCallback, action });
+            }
+        },
+        /**
+         * `editor.off` is an synchronous method of the `DotCmsClient` class that allows you to stop listening and reacting to an action issued by UVE.
+         *
+         *  NOTE: This is being used by the development team - This logic is probably varied or moved to another function/object.
+         * @param action
+         */
+        off: (action: string) => {
+            const listenerIndex = this.#listeners.findIndex(
+                (listener) => listener.action === action
+            );
+            if (listenerIndex !== -1) {
+                const listener = this.#listeners[listenerIndex];
+                window.removeEventListener(listener.event, listener.callback);
+                this.#listeners.splice(listenerIndex, 1);
+            }
         }
     };
 
@@ -273,15 +321,29 @@ export class DotCmsClient {
 
             // Format the URL correctly depending on the 'path' value
             const formattedPath = path === '/' ? '/' : `/${path}`;
-            const url = `${this.config.dotcmsUrl}/api/v1/nav${formattedPath}${
+            const url = `${this.#config.dotcmsUrl}/api/v1/nav${formattedPath}${
                 queryParams ? `?${queryParams}` : ''
             }`;
 
-            const response = await fetch(url, this.requestOptions);
+            const response = await fetch(url, this.#requestOptions);
 
             return response.json();
         }
     };
+
+    static init(config: ClientConfig): DotCmsClient {
+        if (this.instance) {
+            console.warn(
+                'DotCmsClient has already been initialized. Please use the instance to interact with the DotCMS API.'
+            );
+        }
+
+        return this.instance ?? (this.instance = new DotCmsClient(config));
+    }
+
+    static get dotcmsUrl(): string {
+        return (this.instance && this.instance.#config.dotcmsUrl) || '';
+    }
 
     private validatePageOptions(options: PageApiOptions): void {
         if (!options.path) {
@@ -295,25 +357,3 @@ export class DotCmsClient {
         }
     }
 }
-
-/**
- * `dotcmsClient` is an object that provides a method to initialize the DotCMS SDK client.
- * It has a single method `init` which takes a configuration object and returns an instance of the `DotCmsClient` class.
- *
- * @namespace dotcmsClient
- *
- * @method init(config: ClientConfig): DotCmsClient - Initializes the SDK client.
- */
-export const dotcmsClient = {
-    /**
-     * `init` is a method of the `dotcmsClient` object that initializes the SDK client.
-     * It takes a configuration object as a parameter and returns an instance of the `DotCmsClient` class.
-     *
-     * @method init
-     * @param {ClientConfig} config - The configuration object for the DotCMS client.
-     * @returns {DotCmsClient} - An instance of the {@link DotCmsClient} class.
-     */
-    init: (config: ClientConfig): DotCmsClient => {
-        return new DotCmsClient(config);
-    }
-};

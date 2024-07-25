@@ -9,12 +9,14 @@ import { Product } from './Product.interface';
 @Component({
     selector: 'dot-p-dialog-button',
     providers: [DialogService, MessageService],
-    template: `<button
-        (click)="show()"
-        type="button"
-        pButton
-        icon="pi pi-info-circle"
-        label="Show"></button>`
+    template: `
+        <button
+            (click)="show()"
+            type="button"
+            pButton
+            icon="pi pi-info-circle"
+            label="Show"></button>
+    `
 })
 export class DynamicDialogButtonComponent implements OnDestroy {
     constructor(

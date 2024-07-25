@@ -1,8 +1,25 @@
 /// <reference types="jest" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Content } from './content/content-api';
-import { DotCmsClient, dotcmsClient } from './sdk-js-client';
+import { ClientConfig, DotCmsClient } from './sdk-js-client';
+
+import * as dotcmsEditor from '../editor/sdk-editor';
+
 global.fetch = jest.fn();
+
+class TestDotCmsClient extends DotCmsClient {
+    /**
+     * Override the init method to test the static method
+     * Allows to test Singleton pattern with different configurations
+     *
+     * @param {*} config
+     * @return {*}
+     * @memberof TestDotCmsClient
+     */
+    static override init(config: ClientConfig) {
+        return (this.instance = new TestDotCmsClient(config));
+    }
+}
 
 // Utility function to mock fetch responses
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,16 +35,19 @@ const mockFetchResponse = (body: any, ok = true, status = 200) => {
 
 describe('DotCmsClient', () => {
     describe('with full configuration', () => {
-        let client: DotCmsClient;
+        let client: TestDotCmsClient;
+        let isInsideEditorSpy: jest.SpyInstance<boolean>;
 
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
 
-            client = dotcmsClient.init({
+            client = TestDotCmsClient.init({
                 dotcmsUrl: 'http://localhost',
                 siteId: '123456',
                 authToken: 'ABC'
             });
+
+            isInsideEditorSpy = jest.spyOn(dotcmsEditor, 'isInsideEditor');
         });
 
         describe('init', () => {
@@ -38,7 +58,7 @@ describe('DotCmsClient', () => {
                     authToken: 'ABC'
                 };
 
-                const client = dotcmsClient.init(config);
+                const client = TestDotCmsClient.init(config);
                 expect(client).toBeDefined();
             });
 
@@ -50,7 +70,7 @@ describe('DotCmsClient', () => {
                 };
 
                 expect(() => {
-                    dotcmsClient.init(config);
+                    TestDotCmsClient.init(config);
                 }).toThrow("Invalid configuration - 'dotcmsUrl' is required");
             });
 
@@ -62,7 +82,7 @@ describe('DotCmsClient', () => {
                 };
 
                 expect(() => {
-                    dotcmsClient.init(config);
+                    TestDotCmsClient.init(config);
                 }).toThrow("Invalid configuration - 'dotcmsUrl' must be a valid URL");
             });
 
@@ -74,7 +94,7 @@ describe('DotCmsClient', () => {
                 };
 
                 expect(() => {
-                    dotcmsClient.init(config);
+                    TestDotCmsClient.init(config);
                 }).toThrow("Invalid configuration - 'authToken' is required");
             });
 
@@ -88,7 +108,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = dotcmsClient.init(config);
+                const client = TestDotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -110,7 +130,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = dotcmsClient.init(config);
+                const client = TestDotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -132,7 +152,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = dotcmsClient.init(config);
+                const client = TestDotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -154,7 +174,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const client = dotcmsClient.init(config);
+                const client = TestDotCmsClient.init(config);
 
                 await client.page.get({ path: '/home' });
 
@@ -170,7 +190,7 @@ describe('DotCmsClient', () => {
         describe('page.get', () => {
             it('should fetch page data successfully', async () => {
                 const mockResponse = { content: 'Page data' };
-                mockFetchResponse(mockResponse);
+                mockFetchResponse({ entity: mockResponse });
 
                 const data = await client.page.get({ path: '/home' });
 
@@ -243,6 +263,69 @@ describe('DotCmsClient', () => {
             });
         });
 
+        describe('editor.on', () => {
+            it('should listen to FETCH_PAGE_ASSET_FROM_UVE event', () => {
+                isInsideEditorSpy.mockReturnValue(true);
+
+                const callback = jest.fn();
+                client.editor.on('changes', callback);
+
+                const mockMessageEvent = {
+                    data: {
+                        name: 'SET_PAGE_DATA',
+                        payload: { some: 'test' }
+                    }
+                };
+
+                window.dispatchEvent(new MessageEvent('message', mockMessageEvent));
+
+                expect(callback).toHaveBeenCalledWith(mockMessageEvent.data.payload);
+            });
+
+            it('should do nothing if is outside editor', () => {
+                isInsideEditorSpy.mockReturnValue(false);
+
+                const callback = jest.fn();
+                client.editor.on('FETCH_PAGE_ASSET_FROM_UVE', callback);
+
+                const mockMessageEvent = {
+                    data: {
+                        name: 'SET_PAGE_DATA',
+                        payload: { some: 'test' }
+                    }
+                };
+
+                window.dispatchEvent(new MessageEvent('message', mockMessageEvent));
+
+                expect(callback).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('editor.off', () => {
+            it('should remove a page event listener', () => {
+                isInsideEditorSpy.mockReturnValue(true);
+
+                const windowSpy = jest.spyOn(window, 'removeEventListener');
+                const callback = jest.fn();
+                client.editor.on('changes', callback);
+
+                client.editor.off('changes');
+
+                expect(windowSpy).toHaveBeenCalledWith('message', expect.anything());
+
+                const mockMessageEvent = {
+                    data: {
+                        name: 'SET_PAGE_DATA',
+                        payload: { some: 'test' }
+                    }
+                };
+
+                window.dispatchEvent(new MessageEvent('message', mockMessageEvent));
+
+                expect(callback).not.toHaveBeenCalled();
+            });
+        });
+
         describe('content', () => {
             it('should have an instance of the content API', () => {
                 expect(client.content instanceof Content).toBeTruthy();
@@ -289,7 +372,7 @@ describe('DotCmsClient', () => {
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
 
-            client = dotcmsClient.init({
+            client = TestDotCmsClient.init({
                 dotcmsUrl: 'http://localhost',
                 authToken: 'ABC'
             });
@@ -313,7 +396,7 @@ describe('DotCmsClient', () => {
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
 
-            client = dotcmsClient.init({
+            client = TestDotCmsClient.init({
                 dotcmsUrl: 'http://localhost',
                 siteId: '123456',
                 authToken: 'ABC',
@@ -328,7 +411,7 @@ describe('DotCmsClient', () => {
 
         it('should fetch page data with extra headers and cache', async () => {
             const mockResponse = { content: 'Page data' };
-            mockFetchResponse(mockResponse);
+            mockFetchResponse({ entity: mockResponse });
 
             const data = await client.page.get({ path: '/home' });
 
@@ -358,6 +441,43 @@ describe('DotCmsClient', () => {
                 }
             );
             expect(data).toEqual(mockResponse);
+        });
+    });
+
+    describe('Singleton pattern', () => {
+        it('should return the same instance and log a warning when calling init multiple times', () => {
+            const consoleWarnSpy = jest.spyOn(console, 'warn');
+            const expectedWarnMessage =
+                'DotCmsClient has already been initialized. Please use the instance to interact with the DotCMS API.';
+            const config = {
+                dotcmsUrl: 'https://example.com',
+                siteId: '123456',
+                authToken: 'ABC'
+            };
+
+            const config2 = {
+                dotcmsUrl: 'https://example.com',
+                siteId: '123456',
+                authToken: 'DEF'
+            };
+
+            const client1 = DotCmsClient.init(config);
+            const client2 = DotCmsClient.init(config2);
+
+            expect(client1).toBe(client2);
+            expect(consoleWarnSpy).toHaveBeenCalledWith(expectedWarnMessage);
+        });
+    });
+
+    describe('Properties', () => {
+        it('should return he current dotcmsUrl', () => {
+            TestDotCmsClient.init({
+                dotcmsUrl: 'http://localhost:8080',
+                siteId: '123456',
+                authToken: 'ABC'
+            });
+
+            expect(TestDotCmsClient.dotcmsUrl).toBe('http://localhost:8080');
         });
     });
 });

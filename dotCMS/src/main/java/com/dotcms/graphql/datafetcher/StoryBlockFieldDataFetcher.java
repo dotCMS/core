@@ -1,5 +1,6 @@
 package com.dotcms.graphql.datafetcher;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,6 +14,8 @@ public class StoryBlockFieldDataFetcher implements DataFetcher<Map<String, Objec
     public Map<String, Object> get(DataFetchingEnvironment environment) throws Exception {
         final Contentlet contentlet = environment.getSource();
         final String variableName = environment.getField().getName();
+
+        Logger.debug(this, ()-> "Fetching StoryBlock field for contentlet: " + contentlet.getIdentifier() + " field: " + variableName);
         final Map<String, Object> storyBlockMap = new HashMap<>();
 
         final String contFieldValue = contentlet.getStringProperty(variableName);

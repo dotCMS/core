@@ -38,6 +38,9 @@ public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Objec
                 return Collections.emptyMap();
             }
 
+            Logger.debug(this, () -> "Fetching title image for contentlet: " + contentlet.getIdentifier() +
+                    " field: " + imageField.get().variable());
+
             Map<String, Object> titleImageMap = Collections.emptyMap();
 
             if (imageField.get() instanceof ImageField || imageField.get() instanceof FileField) {

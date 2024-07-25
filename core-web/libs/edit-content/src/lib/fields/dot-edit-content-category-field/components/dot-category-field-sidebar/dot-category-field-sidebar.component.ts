@@ -1,21 +1,28 @@
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import {
     ChangeDetectionStrategy,
     Component,
-    DestroyRef,
+    computed,
     EventEmitter,
     inject,
+    Input,
+    OnDestroy,
     OnInit,
     Output
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 import { SidebarModule } from 'primeng/sidebar';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
+import { DotCategoryFieldSearchComponent } from '../dot-category-field-search/dot-category-field-search.component';
+import { DotCategoryFieldSearchListComponent } from '../dot-category-field-search-list/dot-category-field-search-list.component';
+import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selected/dot-category-field-selected.component';
 
 /**
  * The DotCategoryFieldSidebarComponent is a sidebar panel that allows editing of content category field.
@@ -33,32 +40,54 @@ import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-cat
         ButtonModule,
         DotMessagePipe,
         SidebarModule,
-        DotCategoryFieldCategoryListComponent
+        DotCategoryFieldCategoryListComponent,
+        InputTextModule,
+        DotCategoryFieldSearchComponent,
+        DotCategoryFieldSearchListComponent,
+        DotCategoryFieldSelectedComponent
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    animations: [
+        trigger('fadeAnimation', [
+            state(
+                'void',
+                style({
+                    opacity: 0
+                })
+            ),
+            transition(':enter, :leave', [animate('50ms ease-in-out')])
+        ])
+    ]
 })
-export class DotCategoryFieldSidebarComponent implements OnInit {
+export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
     /**
-     * Indicates whether the sidebar is visible or not.
+     * Indicates the visibility of the sidebar.
+     *
+     * @memberof DotCategoryFieldSidebarComponent
      */
-    visible = true;
-
+    @Input() visible = false;
     /**
      * Output that emit if the sidebar is closed
      */
     @Output() closedSidebar = new EventEmitter<void>();
-
+    /**
+     * Store based on the `CategoryFieldStore`.
+     *
+     * @memberof DotCategoryFieldSidebarComponent
+     */
     readonly store = inject(CategoryFieldStore);
-
-    readonly #destroyRef = inject(DestroyRef);
+    /**
+     * Computed property for retrieving all category keys.
+     */
+    $allCategoryKeys = computed(() => this.store.selected().map((category) => category.key));
 
     ngOnInit(): void {
         this.store.getCategories();
+    }
 
-        this.#destroyRef.onDestroy(() => {
-            this.store.clean();
-        });
+    ngOnDestroy(): void {
+        this.store.clean();
     }
 }

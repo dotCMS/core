@@ -56,6 +56,25 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-root-npmrc</id>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <target>
+                                echo "Using node.js ${node.js.version}" for project default
+                                <echo append="false" file="${maven.multiModuleProjectDirectory}/.nvmrc">${node.js.version}</echo>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

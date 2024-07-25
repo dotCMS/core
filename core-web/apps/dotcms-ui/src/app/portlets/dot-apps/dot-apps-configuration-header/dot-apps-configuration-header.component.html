@@ -15,8 +15,8 @@
             <dot-copy-link [copy]="app.key" [label]="app.key"></dot-copy-link>
         </div>
     </header>
-    <span class="dot-apps-configuration__configurations"
-        >{{
+    <span class="dot-apps-configuration__configurations">
+        {{
             app.configurationsCount
                 ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
                 : ('apps.no.configurations' | dm)
@@ -31,12 +31,12 @@
         <a
             *ngIf="app.description.length > 270"
             (click)="showMore = !showMore"
-            class="dot-apps-configuration__description__link_show-more"
-            >{{
+            class="dot-apps-configuration__description__link_show-more">
+            {{
                 showMore
                     ? ('apps.confirmation.description.show.less' | dm)
                     : ('apps.confirmation.description.show.more' | dm)
-            }}</a
-        >
+            }}
+        </a>
     </div>
 </div>

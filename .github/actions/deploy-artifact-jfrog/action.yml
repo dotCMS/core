@@ -31,67 +31,26 @@ inputs:
   github-token:
     description: 'GitHub Token'
     required: true
+  artifact-run-id:
+    default: ${{ github.run_id }}
+    description: 'The run id of the core artifacts'
 
 runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v4
 
-    - name: 'Set up JDK'
-      uses: actions/setup-java@v4
-      with:
-        java-version: 11
-        distribution: temurin
-
     - name: Install xmllint
       run: |
         sudo apt-get update && sudo apt-get install -y libxml2-utils
       shell: bash
 
-    - name: 'Get Date'
-      id: get-date
-      run: |
-        echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
-      shell: bash
-
-    - name: Download Build Artifact
-      id: data-download
-      uses: dawidd6/action-download-artifact@v3.1.4
+    - uses: ./.github/actions/maven-job
       with:
-        github_token: ${{ inputs.github-token }}
-        workflow_search: true
-        commit: ${{ github.sha }}
-        workflow_conclusion: success
-        search_artifacts: true
-        dry_run: true
-        name: maven-repo
-        path: .
-        if_no_artifact_found: warn
-
-    - name: 'Check if artifact exists'
-      id: check
-      run: |
-        build_artifact_exists=${{ steps.data-download.outputs.found_artifact }}
-        if [[ ${build_artifact_exists} == "true" ]]; then
-            run_id=`echo '${{ steps.data-download.outputs.artifacts }}' | jq -r '.[0].workflow_run.id'`
-            found_artifacts=true
-            echo "Artifact Run id: $run_id"
-        else
-           echo "No artifact found"
-           run_id="${{ github.run_id }}"
-           found_artifacts=false
-        fi
-        echo "run_id=$run_id" >> $GITHUB_OUTPUT
-        echo "found_artifacts=$found_artifacts" >> $GITHUB_OUTPUT
-      shell: bash
-
-    - name: 'Download Maven Repo'
-      uses: actions/download-artifact@v4
-      with:
-        run-id: ${{ steps.check.outputs.run_id }}
         github-token: ${{ inputs.github-token }}
-        name: maven-repo
-        path: ~/.m2/repository
+        stage-name: "Deploy Artifacts Validate"
+        maven-args: "validate" # We don't need to build just get the repo and use validate to check everything exists
+        artifacts-from: ${{ inputs.artifact-run-id }}
 
     - uses: jfrog/setup-jfrog-cli@v4
 
@@ -213,7 +172,7 @@ runs:
         echo "::endgroup::"
       shell: bash
 
-    - name:
+    - name: 'JFrog CLI context'
       env:
         ARTIFACTORY_URL: ${{ inputs.artifactory-url || steps.maven-artifact-repository.outputs.url }}
         ARTIFACTORY_ACCESS_TOKEN: ${{ inputs.artifactory-access-token }}

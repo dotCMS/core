@@ -25,8 +25,10 @@ import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.compone
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `<button (click)="op.openMenu($event)" type="text">Open</button>
-        <dot-device-selector-seo [apiLink]="apiLink" #op></dot-device-selector-seo> `
+    template: `
+        <button (click)="op.openMenu($event)" type="text">Open</button>
+        <dot-device-selector-seo [apiLink]="apiLink" #op></dot-device-selector-seo>
+    `
 })
 class TestHostComponent {
     apiLink = 'api/v1/page/render/an/url/test?language_id=1';

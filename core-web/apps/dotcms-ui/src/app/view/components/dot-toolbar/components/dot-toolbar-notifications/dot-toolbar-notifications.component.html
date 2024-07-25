@@ -3,13 +3,11 @@
         (click)="onActiveAnnouncements($event)"
         [class.dot-toolbar-notifications__button-active]="activeAnnouncements"
         icon="pi pi-megaphone"
-        styleClass="p-button-rounded p-button-text">
-    </p-button>
+        styleClass="p-button-rounded p-button-text"></p-button>
     <span
         *ngIf="showUnreadAnnouncement()"
         class="dot-toolbar__badge"
-        id="dot-toolbar-notifications-badge">
-    </span>
+        id="dot-toolbar-notifications-badge"></span>
 
     <dot-toolbar-announcements
         (hideMenu)="markAnnocumentsAsRead()"

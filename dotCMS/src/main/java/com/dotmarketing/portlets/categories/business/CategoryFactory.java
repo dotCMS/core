@@ -1,11 +1,13 @@
 package com.dotmarketing.portlets.categories.business;
 
 
+import java.util.Collection;
 import java.util.List;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.categories.model.HierarchedCategory;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 
 
 /**
@@ -286,4 +288,40 @@ public abstract class CategoryFactory {
 	 * @return List of Category filteredx
 	 */
 	public abstract List<HierarchedCategory> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException;
+
+	/**
+	 * Find Categories by inodes and calculate its Hierarchy.
+	 *
+	 * For Example if you have the follows categories:
+	 *
+	 *
+	 * | Inode  | Name        |  key        |Parent          |
+	 * |--------|-------------|-------------|----------------|
+	 * | 1      | Top Category| top         | null           |
+	 * | 2      | Child       | child       | Top Category   |
+	 * | 3      | Grand Child | grand_child | Child          |
+	 *
+	 * And you search by key 'grand_child' then you got:
+	 *
+	 * Inode: 3
+	 * key: 'grand_child'
+	 * categoryName: 'Grand Child'
+	 * parentList <code>[
+	 *   {
+	 *       'categoryName':'Top Category',
+	 *       'key': 'top',
+	 *       'inode': '1'
+	 *   },
+	 *   {
+	 *       'categoryName':'Child',
+	 *       'key': 'child',
+	 *       'inode': '2'
+	 *   }
+	 * ]</code>
+	 *
+	 * @param keys List of keys to search
+	 * @return
+	 * @throws DotDataException
+	 */
+	public abstract List<HierarchyShortCategory> findHierarchy(final Collection<String> keys) throws DotDataException;
 }

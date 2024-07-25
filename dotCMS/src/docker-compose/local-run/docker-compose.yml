@@ -47,7 +47,7 @@ services:
 
             'CMS_HEAP_SIZE': '1g'
 
-            # "CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240213/starter-20240213.zip'
+            # "CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240719/starter-20240719.zip'
         depends_on:
             - elasticsearch
             - db

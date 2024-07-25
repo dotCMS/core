@@ -101,37 +101,38 @@ jobs:
         id: resolve-actions
         run: |
           if [[ '${{ github.event.action == 'edited' }}' == 'true' ]]; then
-            actions="${{ toJSON(steps.body-technology-check.outputs.actions) }}"
+            actions=${{ toJSON(steps.body-technology-check.outputs.actions) }}
           elif [[ '${{ github.event.action == 'labeled' }}' == 'true' ]]; then
-            actions="${{ toJSON(steps.label-technology-check.outputs.actions) }}"
+            actions=${{ toJSON(steps.label-technology-check.outputs.actions) }}
           else
             actions='[]'
           fi
           
-          [[ "${actions}" == 'null ]] && actions='[]'
+          [[ "${actions}" == 'null' ]] && actions='[]'
 
           echo "actions: ${actions}"
           echo "actions=${actions}" >> $GITHUB_OUTPUT
 
       - name: Evaluate actions
         id: evaluate-actions
+        if: steps.resolve-actions.outputs.actions != '[]'
         shell: bash
         run: |
           actions_json="${{ toJSON(steps.resolve-actions.outputs.actions) }}"
           action_found=$(jq -r '.[] | select(.action == "FRONTEND_TECHNOLOGY_NOTIFY")' <<< ${actions_json})
           echo "action_found=[${action_found}]"
-          [[ -z "${action_found}" || ${action_found} == 'null' ]] && echo 'Action not found' && exit 1
+          [[ -z "${action_found}" || ${action_found} == 'null' ]] && echo 'Action not found'
           
           issue_number=$(jq -r '.issue_number' <<< ${action_found})
           echo "issue_number=[${issue_number}]"
-          [[ -z "${issue_number}" ]] && echo 'Issue number not found' && exit 2
+          [[ -z "${issue_number}" || "${issue_number}" == 'null' ]] && echo 'Issue number not found'
           
           echo "issue_number=${issue_number}" >> $GITHUB_OUTPUT
 
   member-resolver:
     name: Resolve members
     needs: resolve-data
-    if: needs.resolve-data.outputs.issue_number
+    if: success() && needs.resolve-data.outputs.issue_number
     uses: ./.github/workflows/github-member-resolver.yml
     with:
       team: 'ui/ux'
@@ -152,6 +153,7 @@ jobs:
     name: Notify team member ${{ matrix.members }}
     needs: [resolve-data, slack-channel-resolver]
     runs-on: ubuntu-20.04
+    if: success() && needs.resolve-data.outputs.issue_number && needs.slack-channel-resolver.outputs.channel_ids
     strategy:
       fail-fast: false
       matrix:

@@ -94,8 +94,9 @@ const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-edit-page-state-controller-seo [pageState]="pageState" [variant]="variant">
-        </dot-edit-page-state-controller-seo>
+        <dot-edit-page-state-controller-seo
+            [pageState]="pageState"
+            [variant]="variant"></dot-edit-page-state-controller-seo>
     `
 })
 class TestHostComponent {

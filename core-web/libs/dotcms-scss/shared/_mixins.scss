@@ -1,3 +1,5 @@
+@use "sass:map";
+
 @mixin assistant-font-face($weight, $font-filename) {
     @font-face {
         font-family: "Assistant";

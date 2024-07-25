@@ -1,3 +1,5 @@
+import { DotCMSContentlet } from '../models';
+
 export const PageResponseMock = {
     canCreateTemplate: true,
     containers: {
@@ -978,4 +980,29 @@ export const NavMock = {
     target: '_self',
     title: 'System folder',
     type: 'folder'
+};
+
+export const dotcmsContentletMock: DotCMSContentlet = {
+    archived: false,
+    baseType: '',
+    contentType: '',
+    folder: '',
+    hasTitleImage: false,
+    host: '',
+    hostName: '',
+    identifier: '',
+    inode: '',
+    languageId: 1,
+    live: false,
+    locked: false,
+    modDate: '',
+    modUser: '',
+    modUserName: '',
+    owner: '',
+    sortOrder: 1,
+    stInode: '',
+    title: 'This is my editable title',
+    titleImage: '',
+    url: '',
+    working: false
 };
