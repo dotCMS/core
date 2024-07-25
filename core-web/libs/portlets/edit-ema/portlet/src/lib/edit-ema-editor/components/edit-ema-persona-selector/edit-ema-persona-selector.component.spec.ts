@@ -231,5 +231,14 @@ describe('EditEmaPersonaSelectorComponent', () => {
             // but the API starts at 1, so we need to add 1
             expect(fetchPersonasSpy).toHaveBeenCalledWith(2);
         });
+
+        it('should call fetchPersonas when pageId changes', () => {
+            const fetchPersonasSpy = jest.spyOn(component, 'fetchPersonas');
+
+            spectator.setInput('pageId', '456');
+            spectator.detectChanges();
+
+            expect(fetchPersonasSpy).toHaveBeenCalled();
+        });
     });
 });
