@@ -39,7 +39,8 @@ import {
     createPageApiUrlWithQueryParams,
     mapContainerStructureToArrayOfContainers,
     getPersonalization,
-    areContainersEquals
+    areContainersEquals,
+    getEditorStates
 } from '../../../utils';
 import { UVEState } from '../../models';
 const initialState: EditorState = {
@@ -106,13 +107,9 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-
-                    const isDragging = state === EDITOR_STATE.DRAGGING;
-                    const dragIsActive = isDragging || state === EDITOR_STATE.SCROLL_DRAG;
-
                     const isLoading = store.status() === UVE_STATUS.LOADING;
-                    const isScrolling =
-                        state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING;
+
+                    const { dragIsActive, isScrolling, isDragging } = getEditorStates(state);
 
                     const url = sanitizeURL(params.url);
 

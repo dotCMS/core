@@ -7,9 +7,8 @@ import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
 import { ShellProps, UVEState } from './models';
 
-import { COMMON_ERRORS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
-import { sanitizeURL } from '../utils';
+import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
 
 const initialState: UVEState = {
     isEnterprise: false,
@@ -34,9 +33,7 @@ export const UVEStore = signalStore(
 
                 const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
 
-                const requestHostName = !isTraditionalPage()
-                    ? params()?.clientHost
-                    : window.location.origin;
+                const requestHostName = getRequestHostName(isTraditionalPage(), params());
 
                 const page = response?.page;
                 const templateDrawed = response?.template.drawed;
@@ -47,14 +44,11 @@ export const UVEStore = signalStore(
                 const translatedLanguages = languages();
                 const errorCode = error();
 
+                const errorPayload = getErrorPayload(errorCode);
+
                 return {
                     canRead: page?.canRead,
-                    error: errorCode
-                        ? {
-                              code: errorCode,
-                              pageInfo: COMMON_ERRORS[errorCode?.toString()] ?? null
-                          }
-                        : null,
+                    error: errorPayload,
                     translateProps: {
                         page,
                         languageId,

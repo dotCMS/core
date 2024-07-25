@@ -9,7 +9,8 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA } from '../shared/consts';
+import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
+import { EDITOR_STATE } from '../shared/enums';
 import { ActionPayload, ContainerPayload, DotPage, PageContainer } from '../shared/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
@@ -383,3 +384,36 @@ export const mapContainerStructureToArrayOfContainers = (containers: DotPageCont
         []
     );
 };
+
+/**
+ * Get the host name for the request
+ *
+ * @export
+ * @param {boolean} isTraditionalPage
+ * @param {DotPageApiParams} params
+ * @return {*}  {string}
+ */
+export const getRequestHostName = (isTraditionalPage: boolean, params: DotPageApiParams) => {
+    return !isTraditionalPage ? params.clientHost : window.location.origin;
+};
+
+/**
+ *  Get the error payload
+ * @param errorCode
+ * @returns {{code: number; pageInfo: CommonErrorsInfo | null}}
+ */
+export const getErrorPayload = (errorCode: number) => ({
+    code: errorCode,
+    pageInfo: COMMON_ERRORS[errorCode?.toString()] ?? null
+});
+
+/**
+ * Get the editor states
+ * @param state
+ * @returns {{isDragging: boolean; dragIsActive: boolean; isScrolling: boolean}}
+ */
+export const getEditorStates = (state: EDITOR_STATE) => ({
+    isDragging: state === EDITOR_STATE.DRAGGING,
+    dragIsActive: state === EDITOR_STATE.DRAGGING || state === EDITOR_STATE.SCROLL_DRAG,
+    isScrolling: state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING
+});
