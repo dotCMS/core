@@ -54,7 +54,10 @@ jobs:
       - name: Switch to release branch
         run: |
           $branch_name = "${env:release_version}"
-          git fetch origin $branch_name || git checkout -b $branch_name origin/$branch_name
+          git fetch origin $branch_name
+          if (-not $?) {
+            git checkout -b $branch_name origin/$branch_name
+          }
         shell: powershell
         working-directory: C:\Users\rashi\core-test-results
 
