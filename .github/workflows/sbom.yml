@@ -23,14 +23,13 @@ jobs:
         working-directory: C:\Users\rashi\core-test-results
         
       - name: Get latest release version
-        id: get-latest-release
         run: |
           $releases = Invoke-WebRequest -Uri "https://api.github.com/repos/dotCMS/core/releases" | ConvertFrom-Json
-          $release_version = ($releases | ForEach-Object { $_.tag_name }) | Sort-Object -Descending | Select-Object -First 1 -ExpandProperty TrimStart 'v'
+          $release_version = ($releases | ForEach-Object { $_.tag_name.TrimStart('v') }) | Sort-Object -Descending | Select-Object -First 1
           $formatted_version = "release-$release_version"
           Write-Output "Latest release version: $formatted_version"
           echo "release_version=$formatted_version" >> $env:GITHUB_ENV
-
+        shell: powershell
         
       - name: Check server status
         id: check-server-status
