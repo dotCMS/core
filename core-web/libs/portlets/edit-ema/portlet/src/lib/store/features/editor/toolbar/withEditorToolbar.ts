@@ -123,7 +123,7 @@ export function withEditorToolbar() {
                         },
                         actionIcon: 'pi pi-times'
                     };
-                } else if (!getIsDefaultVariant(pageAPIResponse.viewAs.variantId)) {
+                } else if (!getIsDefaultVariant(pageAPIResponse?.viewAs.variantId)) {
                     const variantId = pageAPIResponse.viewAs.variantId;
 
                     const currentExperiment = store.experiment?.();
@@ -146,7 +146,7 @@ export function withEditorToolbar() {
                     };
                 }
 
-                if (pageAPIResponse.page.locked) {
+                if (pageAPIResponse?.page.locked) {
                     let message = 'editpage.locked-by';
 
                     if (!pageAPIResponse.page.canLock) {
