@@ -33,3 +33,4 @@ This maintenance release includes the following code fixes:
 27. https://github.com/dotCMS/core/issues/29304 : Revert telemetry plugin to 24.05.29 #29304
 28. SI-72
 29. https://github.com/dotCMS/core/issues/28084 : Force HTML highlighting for .vtl files #28084
+30. https://github.com/dotCMS/core/issues/28508 : Add Search Box for Bundle ID #28508
