@@ -19,8 +19,7 @@
                 <dot-inline-edit
                     [inlineEditContentTemplate]="inlineEditContentTemplate"
                     [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
-                    #dotEditInline>
-                </dot-inline-edit>
+                    #dotEditInline></dot-inline-edit>
             </header>
         </div>
 
@@ -68,8 +67,7 @@
                     (onClick)="fireAddRowEvent()"
                     [model]="actions"
                     icon="pi pi-plus"
-                    label="{{ 'contenttypes.content.row' | dm }}">
-                </p-splitButton>
+                    label="{{ 'contenttypes.content.row' | dm }}"></p-splitButton>
                 <dot-content-types-fields-list
                     [baseType]="contentType.baseType"></dot-content-types-fields-list>
             </div>

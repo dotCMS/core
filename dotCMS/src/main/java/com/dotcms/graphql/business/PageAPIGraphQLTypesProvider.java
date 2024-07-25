@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.templates.design.bean.Sidebar;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.util.Logger;
 import eu.bitwalker.useragentutils.Browser;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -88,6 +89,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     @Override
     public Collection<? extends GraphQLType> getTypes() {
+
+        Logger.debug(this, ()-> "Creating Page API GraphQL Types");
         typesMap.clear();
 
         // Page type

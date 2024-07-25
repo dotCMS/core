@@ -40,8 +40,7 @@
         [title]="'message.template.empty.title' | dm"
         [content]="'message.template.empty.content' | dm"
         [buttonLabel]="'message.template.empty.button.label' | dm"
-        icon="web">
-    </dot-empty-state>
+        icon="web"></dot-empty-state>
 
     <ng-template #rowTemplate let-rowData="rowData">
         <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
@@ -51,8 +50,7 @@
             <dot-state-icon
                 [labels]="setStateLabels()"
                 [state]="getTemplateState(rowData)"
-                size="14px">
-            </dot-state-icon>
+                size="14px"></dot-state-icon>
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }" data-testId="theme-cell">
             <ng-container *ngIf="rowData.themeInfo?.inode === 'SYSTEM_THEME'; else linkTemplate">
@@ -63,9 +61,9 @@
                     *ngIf="rowData.themeInfo"
                     (click)="goToFolder($event, rowData.themeInfo?.path)"
                     data-testId="theme-folder-link"
-                    target="_self"
-                    >{{ rowData.themeInfo?.title }}</a
-                >
+                    target="_self">
+                    {{ rowData.themeInfo?.title }}
+                </a>
             </ng-template>
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
@@ -80,8 +78,7 @@
                 [attr.data-testid]="rowData.identifier"
                 [actions]="setTemplateActions(rowData)"
                 [item]="rowData"
-                class="listing-datatable__action-button">
-            </dot-action-menu-button>
+                class="listing-datatable__action-button"></dot-action-menu-button>
         </td>
     </ng-template>
 </dot-listing-data-table>

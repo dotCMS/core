@@ -5,9 +5,9 @@
             <div [ngSwitch]="seoMedia">
                 <div *ngSwitchCase="seoMediaTypes.GOOGLE">
                     <div *ngFor="let preview of allPreview">
-                        <span class="results-seo-tool__main-card-title"
-                            >{{ preview.type }} Version</span
-                        >
+                        <span class="results-seo-tool__main-card-title">
+                            {{ preview.type }} Version
+                        </span>
                         <div
                             [class.results-seo-tool__version--small]="preview.isMobile"
                             class="results-seo-tool__card"
@@ -66,12 +66,12 @@
 <p-card *ngFor="let result of currentResults$ | async" class="results-seo-tool__result-card">
     <ng-template pTemplate="header">
         <div class="results-seo-tool__result-card-title">
-            <span data-testId="result-key"> {{ result.title | titlecase }}</span>
+            <span data-testId="result-key">{{ result.title | titlecase }}</span>
         </div>
     </ng-template>
     <ul class="results-seo-tool__result-card-list">
         <li *ngFor="let item of result.items" data-testId="seo-tag">
-            <i [ngClass]="[item.color, item.itemIcon]" class="pi"> </i>
+            <i [ngClass]="[item.color, item.itemIcon]" class="pi"></i>
             <span [innerHTML]="item.message | safeHtml"></span>
         </li>
     </ul>

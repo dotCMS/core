@@ -53,6 +53,7 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final HttpServletResponse response = ((DotGraphQLContext) environment.getContext())
                     .getHttpServletResponse();
 
+            Logger.debug(this, ()-> "Fetching content map for contentlet: " + contentlet.getIdentifier());
             if(UtilMethods.isSet(key)) {
                 Object fieldValue;
                 if(UtilMethods.isSet(render) && render) {

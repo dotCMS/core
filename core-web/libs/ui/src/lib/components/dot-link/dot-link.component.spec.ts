@@ -11,7 +11,9 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 import { DotApiLinkComponent } from '../dot-api-link/dot-api-link.component';
 
 @Component({
-    template: ` <dot-link [href]="href" [icon]="icon" [label]="label"></dot-link>`
+    template: `
+        <dot-link [href]="href" [icon]="icon" [label]="label"></dot-link>
+    `
 })
 class TestHostComponent {
     href = 'api/v1/123';

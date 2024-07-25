@@ -20,6 +20,8 @@ public class BinaryFieldDataFetcher implements DataFetcher<Map<String, Object>> 
             final Contentlet contentlet = environment.getSource();
             final String var = contentlet.getContentType().baseType() == DOTASSET ?"asset"
                     :environment.getField().getName();
+
+            Logger.debug(this, ()-> "Fetching binary field for contentlet: " + contentlet.getIdentifier());
             final BinaryToMapTransformer transformer = new BinaryToMapTransformer(contentlet);
             return (Map<String, Object>) transformer.asMap().get(var + "Map");
         } catch (IllegalArgumentException e) {

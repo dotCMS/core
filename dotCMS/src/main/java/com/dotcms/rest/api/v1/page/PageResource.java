@@ -1200,8 +1200,9 @@ public class PageResource {
                     actions.stream().map(WorkflowResource::convertToWorkflowActionView).collect(Collectors.toList())
             ));
         }
-
-        throw new DoesNotExistException(String.format("Page path '%s' does not exist", findAvailableActionsForm.getPath()));
+        throw new DoesNotExistException(String.format("HTML Page path '%s' with language ID '%s' in Site " +
+                        "'%s' does not exist", findAvailableActionsForm.getPath(),
+                findAvailableActionsForm.getLanguageId(), findAvailableActionsForm.getHostId()));
     } // findAvailableActions.
 
     /**

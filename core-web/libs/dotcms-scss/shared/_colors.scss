@@ -21,9 +21,9 @@ $color-palette-primary-op-70: var(--color-palette-primary-op-70);
 $color-palette-primary-op-80: var(--color-palette-primary-op-80);
 $color-palette-primary-op-90: var(--color-palette-primary-op-90);
 
-$color-palette-primary-shade: var(--color-palette-primary-shade);
-$color-palette-primary: var(--color-palette-primary);
-$color-palette-primary-tint: var(--color-palette-primary-tint);
+$color-palette-primary-shade: $color-palette-primary-600;
+$color-palette-primary: $color-palette-primary-500;
+$color-palette-primary-tint: $color-palette-primary-200;
 
 $color-palette-secondary-100: var(--color-palette-secondary-100);
 $color-palette-secondary-200: var(--color-palette-secondary-200);
@@ -45,9 +45,9 @@ $color-palette-secondary-op-70: var(--color-palette-secondary-op-70);
 $color-palette-secondary-op-80: var(--color-palette-secondary-op-80);
 $color-palette-secondary-op-90: var(--color-palette-secondary-op-90);
 
-$color-palette-secondary-shade: var(--color-palette-secondary-shade);
-$color-palette-secondary: var(--color-palette-secondary);
-$color-palette-secondary-tint: var(--color-palette-secondary-tint);
+$color-palette-secondary-shade: $color-palette-secondary-600;
+$color-palette-secondary: $color-palette-secondary-500;
+$color-palette-secondary-tint: $color-palette-secondary-200;
 
 $color-palette-black-op-10: var(--color-palette-black-op-10);
 $color-palette-black-op-20: var(--color-palette-black-op-20);
