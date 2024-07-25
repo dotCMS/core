@@ -434,8 +434,8 @@ public class PageResource {
                 @PathParam("pageId") @Parameter(description = "ID for the page will link to") final String pageId,
                 @QueryParam("variantName") final String variantNameParam,
                 @RequestBody(description = "POST body consists of a JSON object containing " + 
-                                        "one property called 'PageForm', which contains a " +
-                                        "template with a layout for the page",
+                                        "one property called 'PageForm', which contains information " +
+                                        "about the layout of a page's template ",
                                 required = true,
                                 content = @Content(
                                         schema = @Schema(implementation = PageForm.class)
