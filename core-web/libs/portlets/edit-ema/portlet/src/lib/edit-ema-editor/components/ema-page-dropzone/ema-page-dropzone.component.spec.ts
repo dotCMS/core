@@ -14,7 +14,7 @@ import {
     getBoundsMock,
     ACTION_MOCK,
     BOUNDS_EMPTY_CONTAINER_MOCK
-} from '../../../shared/consts';
+} from '../../../shared/mocks';
 
 const messageServiceMock = new MockDotMessageService({
     'edit.ema.page.dropzone.invalid.contentlet.type':
