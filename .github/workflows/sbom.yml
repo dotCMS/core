@@ -44,24 +44,9 @@ jobs:
           }
           
 
-      - name: Scan Docker Image with Trivy
+      - name: Scan Docker Image with Syft
         run: |
-          trivy image --format json --output trivy-results.json dotcms/dotcms:latest
-
-      - name: Process Trivy Scan Results
-        run: |
-          # Process Trivy JSON output to create an SBOM-like report
-          # Example: Creating a basic SBOM JSON structure
-          $image = "dotcms:latest"
-          $vulnerabilities = Get-Content -Raw trivy-results.json
-          $sbom = @"
-          {
-            "image": "$image",
-            "vulnerabilities": $vulnerabilities
-          }
-          "@
-          $sbom | Out-File -FilePath sbom.json -Encoding UTF8
-
+          pipx run anchore_syft  dotcms/dotcms:latest -o cyclonedx-xml
 
       - name: Stop dotCMS
         run: docker-compose down
