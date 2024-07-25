@@ -28,13 +28,16 @@
         <ng-template pTemplate="header">
             <tr>
                 <th scope="col" pSortableColumn="isoCode">
-                    {{ 'locales.locale' | dm }} <p-sortIcon field="isoCode"></p-sortIcon>
+                    {{ 'locales.locale' | dm }}
+                    <p-sortIcon field="isoCode"></p-sortIcon>
                 </th>
                 <th scope="col" pSortableColumn="language">
-                    {{ 'locales.language' | dm }} <p-sortIcon field="language"></p-sortIcon>
+                    {{ 'locales.language' | dm }}
+                    <p-sortIcon field="language"></p-sortIcon>
                 </th>
                 <th scope="col" pSortableColumn="country">
-                    {{ 'locales.country' | dm }} <p-sortIcon field="country"></p-sortIcon>
+                    {{ 'locales.country' | dm }}
+                    <p-sortIcon field="country"></p-sortIcon>
                 </th>
                 <th scope="col">{{ 'locales.variables' | dm }}</th>
                 <th scope="col" style="width: 40px">{{ 'locales.menu' | dm }}</th>

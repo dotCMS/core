@@ -38,18 +38,9 @@ import java.util.Map;
 public class PortletManagerUtil {
 
     @WrapInTransaction
-    public static Collection addPortlets(final InputStream[] xmls) throws com.liferay.portal.SystemException {
+    public static Map<String,Portlet> addPortlets(final InputStream[] xmls) throws com.liferay.portal.SystemException {
         try {
-            final PortletFactory portletFactory = PortletManagerFactory.getManager();
-
-            Collection<Portlet> portlets = new ArrayList<>();
-
-            final Map<String,Portlet> foundPortlets = portletFactory.xmlToPortlets(xmls);
-            for(Portlet portlet : foundPortlets.values()) {
-              portlets.add(portletFactory.insertPortlet(portlet));
-            }
-
-            return portlets;
+            return PortletManagerFactory.getManager().xmlToPortlets(xmls);
         } catch (final Exception e) {
             throw new com.liferay.portal.SystemException(e);
         }

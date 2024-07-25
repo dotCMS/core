@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "12554162-5748-4f0b-a315-85639e82d87b",
+		"_postman_id": "944aa93e-7b0e-4eac-a7d5-8324663ca417",
 		"name": "Category",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "30436704"
@@ -2541,7 +2541,8 @@
 									"    ",
 									"    pm.expect(jsonData.entity.categoryName).to.eql(\"PostmanTest Child 1\");",
 									"});",
-									""
+									"",
+									"pm.collectionVariables.set(\"child1Inode\", jsonData.entity.inode);"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -2769,6 +2770,68 @@
 					"response": []
 				},
 				{
+					"name": "Create Grandchild Category 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Grandchild 2\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\":\"CGrandchild_2\",\n    \"categoryName\" : \"Grandchild 2\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"GrandcßhildTestKey_2\",\n    \"parent\" : \"{{child1Inode}}\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Create Second Top Level category",
 					"event": [
 						{
@@ -2852,16 +2915,19 @@
 									"        if (i === 0) {",
 									"            pm.expect('PostmanTest Child 1').to.have.equals(jsonData.entity[i].categoryName);",
 									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
-									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
+									"            pm.expect(1).to.have.equals(jsonData.entity[i].childrenCount);",
 									"        } else if (i === 1) {",
 									"            pm.expect('PostmanTest Child 2').to.have.equals(jsonData.entity[i].categoryName);",
 									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
-									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
+									"            pm.expect(0).to.have.equals(jsonData.entity[i].childrenCount);",
 									"        } else if (i === 2) {",
 									"            pm.expect('PostmanTest Grandchild 1').to.have.equals(jsonData.entity[i].categoryName);",
 									"            pm.expect(2).to.have.equals(jsonData.entity[i].parentList.length);",
-									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
-									"            pm.expect('Child 3').to.have.equals(jsonData.entity[i].parentList[1].categoryName);",
+									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
+									"            pm.expect('Child 3').to.have.equals(jsonData.entity[i].parentList[1].name);",
+									"            pm.expect(0).to.have.equals(jsonData.entity[i].childrenCount);",
 									"        }     ",
 									"    }",
 									"",
@@ -3273,7 +3339,8 @@
 									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Hierarchy Child 2\");",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"child2CategoryInodeHierarchy\", jsonData.entity.inode);"
+									"pm.collectionVariables.set(\"child2CategoryInodeHierarchy\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"child2CategoryKeyHierarchy\", jsonData.entity.key);"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -3295,7 +3362,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"key\":\"Hierarchy Child 2\",\n    \"categoryName\" : \"Hierarchy Child 2\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"Hierarchy_ChildTestKey_2\",\n    \"parent\" : \"{{topCategoryInodeHierarchy}}\"\n}\n\n",
+							"raw": "{\n    \"key\":\"Hierarchy_Child_2_key\",\n    \"categoryName\" : \"Hierarchy Child 2\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"Hierarchy_ChildTestKey_2\",\n    \"parent\" : \"{{topCategoryInodeHierarchy}}\"\n}\n\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3397,6 +3464,7 @@
 									"});",
 									"",
 									"pm.collectionVariables.set(\"grantChildCategoryInodeHierarchy\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"grantChildCategoryKeyHierarchy\", jsonData.entity.key);",
 									""
 								],
 								"type": "text/javascript",
@@ -3419,7 +3487,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"key\":\"Hierarchy ChiGrandchildld 1\",\n    \"categoryName\" : \"Hierarchy Grandchild 1\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"Hierarchy_GrandcßhildTestKey_1\",\n    \"parent\" : \"{{child3CategoryInodeHierarchy}}\"\n}\n\n",
+							"raw": "{\n    \"key\":\"Hierarchy_Grandchild_1_key\",\n    \"categoryName\" : \"Hierarchy Grandchild 1\",\n    \"keywords\":\"This is a child test category\",\n    \"categoryVelocityVarName\" : \"Hierarchy_GrandcßhildTestKey_1\",\n    \"parent\" : \"{{child3CategoryInodeHierarchy}}\"\n}\n\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3524,18 +3592,22 @@
 									"    { ",
 									"",
 									"        if (jsonData.entity[i]['inode'] === child2CategoryInodeHierarchy) {",
+									"            pm.expect('Hierarchy Child 2').to.have.equals(jsonData.entity[i].name);",
+									"            pm.expect('Hierarchy_Child_2_key').to.have.equals(jsonData.entity[i].key);",
 									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
-									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
 									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
 									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
 									"        } else if (jsonData.entity[i]['inode'] === grantChildCategoryInodeHierarchy) {",
+									"            pm.expect('Hierarchy Grandchild 1').to.have.equals(jsonData.entity[i].name);",
+									"            pm.expect('Hierarchy_Grandchild_1_key').to.have.equals(jsonData.entity[i].key);",
 									"            pm.expect(2).to.have.equals(jsonData.entity[i].parentList.length);",
 									"",
-									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
 									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
 									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
 									"",
-									"            pm.expect(\"Hierarchy Child 3\").to.have.equals(jsonData.entity[i].parentList[1].categoryName);",
+									"            pm.expect(\"Hierarchy Child 3\").to.have.equals(jsonData.entity[i].parentList[1].name);",
 									"            pm.expect(pm.collectionVariables.get(\"child3CategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[1].inode);",
 									"            pm.expect(\"Hierarchy_Child_3\").to.have.equals(jsonData.entity[i].parentList[1].key);",
 									"        } else  {",
@@ -3550,9 +3622,6 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -3564,11 +3633,11 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"inodes\": [\"{{grantChildCategoryInodeHierarchy}}\", \"{{child2CategoryInodeHierarchy}}\"]\n}",
+							"raw": "{\n    \"keys\": [\"{{grantChildCategoryKeyHierarchy}}\", \"{{child2CategoryKeyHierarchy}}\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3620,17 +3689,17 @@
 									"",
 									"        if (jsonData.entity[i]['inode'] === child2CategoryInodeHierarchy) {",
 									"            pm.expect(1).to.have.equals(jsonData.entity[i].parentList.length);",
-									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
 									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
 									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
 									"        } else if (jsonData.entity[i]['inode'] === grantChildCategoryInodeHierarchy) {",
 									"            pm.expect(2).to.have.equals(jsonData.entity[i].parentList.length);",
 									"",
-									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].categoryName);",
+									"            pm.expect('Hierarchy Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
 									"            pm.expect(pm.collectionVariables.get(\"topCategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[0].inode);",
 									"            pm.expect('Hierarchy_TOP_LEVEL').to.have.equals(jsonData.entity[i].parentList[0].key);",
 									"",
-									"            pm.expect(\"Hierarchy Child 3\").to.have.equals(jsonData.entity[i].parentList[1].categoryName);",
+									"            pm.expect(\"Hierarchy Child 3\").to.have.equals(jsonData.entity[i].parentList[1].name);",
 									"            pm.expect(pm.collectionVariables.get(\"child3CategoryInodeHierarchy\")).to.have.equals(jsonData.entity[i].parentList[1].inode);",
 									"            pm.expect(\"Hierarchy_Child_3\").to.have.equals(jsonData.entity[i].parentList[1].key);",
 									"        } else  {",
@@ -3646,9 +3715,6 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -3660,11 +3726,11 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"inodes\": [\"{{grantChildCategoryInodeHierarchy}}\", \"{{child2CategoryInodeHierarchy}}\", \"not_valid_category\"]\n}",
+							"raw": "{\n    \"keys\": [\"{{grantChildCategoryKeyHierarchy}}\", \"{{child2CategoryKeyHierarchy}}\", \"not_valid_category\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3711,9 +3777,6 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -3725,11 +3788,11 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"inodes\": []\n}",
+							"raw": "{\n    \"keys\": []\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -6199,6 +6262,18 @@
 		},
 		{
 			"key": "grantChildCategoryInodeHierarchy",
+			"value": ""
+		},
+		{
+			"key": "child2CategoryKeyHierarchy",
+			"value": ""
+		},
+		{
+			"key": "grantChildCategoryKeyHierarchy",
+			"value": ""
+		},
+		{
+			"key": "child1Inode",
 			"value": ""
 		}
 	]

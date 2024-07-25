@@ -38,16 +38,14 @@ import { map, mergeMap, toArray } from 'rxjs/operators';
             #inputDropdown
             ng-valid
             class="ui fluid ng-valid"
-            appendTo="body">
-        </p-dropdown>
+            appendTo="body"></p-dropdown>
         <dot-autocomplete-tags
             *ngIf="maxSelections > 1"
             (onChange)="fireChange($event)"
             [inputId]="name"
             [value]="modelValue"
             [options]="dropdownOptions | async"
-            [placeholder]="placeholder">
-        </dot-autocomplete-tags>
+            [placeholder]="placeholder"></dot-autocomplete-tags>
     `
 })
 export class Dropdown implements ControlValueAccessor, OnChanges {

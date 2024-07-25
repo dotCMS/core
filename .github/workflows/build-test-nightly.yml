@@ -50,12 +50,13 @@ jobs:
       packages: write
   build-cli:
     name: Nightly CLI Build
-    needs: [ test ]
+    needs: [ initialize, test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cli-build-artifacts.yml
     with:
       buildNativeImage: true
       branch: ${{ github.ref }}
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
   deployment:
     needs: [ initialize,build-cli,test ]
     if: always() && !failure() && !cancelled()

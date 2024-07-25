@@ -65,7 +65,7 @@ export interface InlineEditingContentletDataset {
 
 export interface UpdatedContentlet {
     dataset: InlineEditingContentletDataset;
-    innerHTML: string;
+    content: string;
     eventType: string;
     isNotDirty: boolean;
 }

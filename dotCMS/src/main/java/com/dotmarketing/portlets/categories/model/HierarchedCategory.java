@@ -19,6 +19,7 @@ import java.util.Objects;
 public class HierarchedCategory extends Category{
 
     private List<ShortCategory> parentList;
+    private int childrenCount;
 
     public void setParentList(final List<ShortCategory> parentList) {
         this.parentList = parentList;
@@ -26,6 +27,14 @@ public class HierarchedCategory extends Category{
 
     public List<ShortCategory> getParentList() {
         return parentList;
+    }
+
+    public void setChildrenCount(int childrenCount) {
+        this.childrenCount = childrenCount;
+    }
+
+    public int getChildrenCount() {
+        return childrenCount;
     }
 
     @Override

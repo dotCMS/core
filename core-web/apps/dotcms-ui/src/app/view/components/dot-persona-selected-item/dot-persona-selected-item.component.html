@@ -12,9 +12,9 @@
 
     <p-avatar *ngIf="!persona" [text]="'modes.persona.no.persona' | dm" dotAvatar></p-avatar>
 
-    <span class="dot-persona-selector__name">{{
-        persona?.name || ('modes.persona.no.persona' | dm)
-    }}</span>
+    <span class="dot-persona-selector__name">
+        {{ persona?.name || ('modes.persona.no.persona' | dm) }}
+    </span>
 
     <ng-container *ngIf="!readonly">
         <i class="pi pi-chevron-down"></i>

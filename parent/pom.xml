@@ -77,7 +77,7 @@
         <docker.jacoco.skip>true</docker.jacoco.skip>
         <!-- starter -->
         <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
-        <starter.deploy.version>empty_20240531</starter.deploy.version>
+        <starter.deploy.version>empty_20240719</starter.deploy.version>
         <starter.deploy.filename>starter.zip</starter.deploy.filename>
         <starter.run.version>${starter.deploy.version}</starter.run.version>
         <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>
@@ -210,6 +210,15 @@
     </properties>
 
     <build>
+
+        <extensions>
+            <extension>
+                <groupId>io.quarkus.bot</groupId>
+                <artifactId>build-reporter-maven-extension</artifactId>
+                <version>3.1.0</version>
+            </extension>
+        </extensions>
+
         <pluginManagement>
 
             <plugins>
@@ -1163,6 +1172,15 @@
     </issueManagement>
 
     <profiles>
+        <profile>
+            <id>prod</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <!-- Placeholder currently overridden in core-web -->
+            </properties>
+        </profile>
         <profile>
             <id>jprofiler</id>
             <properties>

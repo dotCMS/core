@@ -17,7 +17,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import static com.dotcms.ai.db.EmbeddingsDTO.ALL_INDICES;
@@ -198,7 +203,8 @@ public class EmbeddingsFactory {
      * @param embeddings the embeddings to save
      */
     public void saveEmbeddings(final EmbeddingsDTO embeddings) {
-        Logger.info(EmbeddingsFactory.class, "Saving embeddings for content:" + embeddings.title);
+        Logger.info(EmbeddingsFactory.class, String.format("Saving embeddings for content with Inode '%s': %s",
+                embeddings.inode, embeddings.title));
 
         final PGvector vector = new PGvector(ArrayUtils.toPrimitive(embeddings.embeddings));
         try (final Connection conn = getPGVectorConnection();

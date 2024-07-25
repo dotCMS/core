@@ -1,22 +1,5 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.ARCHIVED;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.EDITING;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.LISTING;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.LOCKED;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.NEW;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.PUBLISHED;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNLOCKED;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNPUBLISHED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
@@ -78,6 +61,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -98,6 +82,11 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
@@ -116,10 +105,23 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.ARCHIVED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.EDITING;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.LISTING;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.LOCKED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.NEW;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.PUBLISHED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNLOCKED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNPUBLISHED;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the workflowAPI
@@ -4798,6 +4800,50 @@ public class WorkflowAPITest extends IntegrationTestBase {
         for (WorkflowScheme testScheme : workflowSchemes) {
             APILocator.getWorkflowAPI().archive(testScheme, APILocator.systemUser());
             APILocator.getWorkflowAPI().deleteScheme(testScheme, APILocator.systemUser());
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link WorkflowAPI#findActionlet(String)}</li>
+     *     <li><b>Given Scenario: </b>Find the list of expected Actionlets in a Workflow Action of
+     *     the first Step in the System Workflow.</li>
+     *     <li><b>Expected Result: </b>The API must return the expected two Actionlets: "Save Draft
+     *     content", and "Unlock content".</li>
+     * </ul>
+     */
+    @Test
+    public void findActionletsInWorkflowActionByClassNameAsString() throws DotDataException,
+            DotSecurityException {
+        // ╔══════════════════╗
+        // ║  Initialization  ║
+        // ╚══════════════════╝
+        final Map<String, String> expectedActionletData = Map.of(
+                SAVE_AS_DRAFT_SUBACTION, SaveContentAsDraftActionlet.class.getName(),
+                UNLOCK_SUBACTION, CheckinContentActionlet.class.getName());
+
+        // Get the list of Actionlets from the 'Save' Step in the 'System Workflow'
+        final WorkflowScheme systemWorkflow = workflowAPI.findScheme(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID);
+        final List<WorkflowStep> workflowSteps = workflowAPI.findSteps(systemWorkflow);
+        assertFalse("There must be at least one Step for the System Workflow", workflowSteps.isEmpty());
+        final WorkflowStep firstWorkflowStep = workflowSteps.get(0);
+        final List<WorkflowAction> workflowActions = workflowAPI.findActions(firstWorkflowStep, user);
+        assertFalse("There must be at least one Action for the System Workflow", workflowActions.isEmpty());
+        final List<WorkflowActionClass> actionClasses =
+                workflowAPI.findActionClasses(workflowActions.get(0));
+        assertEquals(String.format("Workflow Step '%s' must have 2 Workflow Actionlets", firstWorkflowStep.getName()),
+                2, actionClasses.size());
+        for (final WorkflowActionClass actionClass : actionClasses) {
+            final WorkFlowActionlet workFlowActionlet = workflowAPI.findActionlet(actionClass.getClazz());
+
+            // ╔══════════════╗
+            // ║  Assertions  ║
+            // ╚══════════════╝
+            assertNotNull(String.format("Actionlet '%s' cannot be null", actionClass.getClazz()), workFlowActionlet);
+            assertNotNull(String.format("Actionlet '%s' is not the expected one", workFlowActionlet.getName()),
+                    expectedActionletData.get(workFlowActionlet.getName()));
+            assertEquals(String.format("Actionlet class '%s' is not the expected one", actionClass.getClazz()),
+                    expectedActionletData.get(workFlowActionlet.getName()), actionClass.getClazz());
         }
     }
 

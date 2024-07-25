@@ -8,10 +8,9 @@ import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@do
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
 @Component({
-    template: ` <dot-edit-page-info
-        [title]="title"
-        [url]="url"
-        [apiLink]="apiLink"></dot-edit-page-info>`
+    template: `
+        <dot-edit-page-info [title]="title" [url]="url" [apiLink]="apiLink"></dot-edit-page-info>
+    `
 })
 class TestHostComponent {
     title = 'A title';

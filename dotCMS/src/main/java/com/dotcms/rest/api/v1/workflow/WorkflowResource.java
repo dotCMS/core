@@ -2965,38 +2965,29 @@ public class WorkflowResource {
             @QueryParam("identifier")       final String identifier,
             @QueryParam("indexPolicy")       final String indexPolicy,
             @DefaultValue("-1") @QueryParam("language") final String   language,
-            final FireActionForm fireActionForm) {
+            final FireActionForm fireActionForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requestAndResponse(request, response)
                 .requiredAnonAccess(AnonymousAccess.WRITE)
                 .init();
 
-        try {
+        Logger.debug(this, ()-> "On Fire Action: action Id " + actionId + ", inode = " + inode +
+                ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
 
-            Logger.debug(this, ()-> "On Fire Action: action Id " + actionId + ", inode = " + inode +
-                    ", identifier = " + identifier + ", language = " + language + " indexPolicy = " + indexPolicy);
+        final long languageId = LanguageUtil.getLanguageId(language);
+        final PageMode mode = PageMode.get(request);
+        //if inode is set we use it to look up a contentlet
+        final Contentlet contentlet = this.getContentlet
+                (inode, identifier, languageId,
+                        ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                        fireActionForm, initDataObject, mode);
 
-            final long languageId = LanguageUtil.getLanguageId(language);
-            final PageMode mode = PageMode.get(request);
-            //if inode is set we use it to look up a contentlet
-            final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, languageId,
-                            ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
-                            fireActionForm, initDataObject, mode);
-
-            if (UtilMethods.isSet(indexPolicy)) {
-                contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
-            }
-            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
-        } catch (Exception e) {
-
-            Logger.error(this.getClass(),
-                    "Exception on firing, workflow action: " + actionId +
-                            ", inode: " + inode, e);
-
-            return ResponseUtil.mapExceptionResponse(e);
+        if (UtilMethods.isSet(indexPolicy)) {
+            contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
         }
+
+        return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
     } // fireAction.
 
     private LinkedHashSet<String> getBinaryFields(final Map<String, Object> mapContent) {
