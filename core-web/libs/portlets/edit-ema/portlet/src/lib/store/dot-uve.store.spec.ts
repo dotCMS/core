@@ -681,6 +681,20 @@ describe('UVEStore', () => {
 
                             expect(store.$toolbarProps().showInfoDisplay).toBe(true);
                         });
+
+                        it('should have shouldShowInfoDisplay as true if the page is a variant different from default', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    viewAs: {
+                                        ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                        variantId: 'test'
+                                    }
+                                }
+                            });
+
+                            expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                        });
                     });
                 });
 

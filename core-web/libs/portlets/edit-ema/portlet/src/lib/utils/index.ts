@@ -402,10 +402,13 @@ export const getRequestHostName = (isTraditionalPage: boolean, params: DotPageAp
  * @param errorCode
  * @returns {{code: number; pageInfo: CommonErrorsInfo | null}}
  */
-export const getErrorPayload = (errorCode: number) => ({
-    code: errorCode,
-    pageInfo: COMMON_ERRORS[errorCode?.toString()] ?? null
-});
+export const getErrorPayload = (errorCode: number) =>
+    errorCode
+        ? {
+              code: errorCode,
+              pageInfo: COMMON_ERRORS[errorCode?.toString()] ?? null
+          }
+        : null;
 
 /**
  * Get the editor states

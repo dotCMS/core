@@ -65,6 +65,7 @@ export function withEditorToolbar() {
                 };
 
                 const shouldShowInfoDisplay =
+                    !getIsDefaultVariant(pageAPIResponse?.viewAs.variantId) ||
                     !store.canEditPage() ||
                     pageAPIResponse?.page.locked ||
                     !!store.device() ||

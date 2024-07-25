@@ -15,7 +15,7 @@ import {
     areContainersEquals
 } from '.';
 
-import { dotPageContainerStructureMock } from '../shared/consts';
+import { dotPageContainerStructureMock } from '../shared/mocks';
 import { DotPage } from '../shared/models';
 
 const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
