@@ -45,7 +45,7 @@ export function withEditorToolbar() {
         withComputed((store) => ({
             $toolbarProps: computed<ToolbarProps>(() => {
                 const params = store.params();
-                const url = sanitizeURL(params.url);
+                const url = sanitizeURL(params?.url);
 
                 const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
                 const pageAPIResponse = store.pageAPIResponse();
@@ -57,43 +57,44 @@ export function withEditorToolbar() {
 
                 const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
                 const shouldShowUnlock =
-                    pageAPIResponse.page.locked && pageAPIResponse.page.canLock;
+                    pageAPIResponse?.page.locked && pageAPIResponse?.page.canLock;
 
                 const unlockButton = {
-                    inode: pageAPIResponse.page.inode,
+                    inode: pageAPIResponse?.page.inode,
                     loading: store.status() === UVE_STATUS.LOADING
                 };
-                const shoudlShowInfoDisplay =
+
+                const shouldShowInfoDisplay =
                     !store.canEditPage() ||
-                    pageAPIResponse.page.locked ||
+                    pageAPIResponse?.page.locked ||
                     !!store.device() ||
                     !!store.socialMedia();
 
                 const bookmarksUrl = createFavoritePagesURL({
-                    languageId: Number(params.language_id),
+                    languageId: Number(params?.language_id),
                     pageURI: url,
-                    siteId: pageAPIResponse.site.identifier
+                    siteId: pageAPIResponse?.site.identifier
                 });
 
                 return {
                     bookmarksUrl,
                     copyUrl: createPureURL(params),
                     apiUrl: `${window.location.origin}${pageAPI}`,
-                    currentLanguage: pageAPIResponse.viewAs.language,
+                    currentLanguage: pageAPIResponse?.viewAs.language,
                     urlContentMap: store.isEditState()
-                        ? (pageAPIResponse.urlContentMap ?? null)
+                        ? (pageAPIResponse?.urlContentMap ?? null)
                         : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
-                    workflowActionsInode: store.canEditPage() ? pageAPIResponse.page.inode : null,
+                    workflowActionsInode: store.canEditPage() ? pageAPIResponse?.page.inode : null,
                     unlockButton: shouldShowUnlock ? unlockButton : null,
-                    showInfoDisplay: shoudlShowInfoDisplay,
+                    showInfoDisplay: shouldShowInfoDisplay,
                     deviceSelector: {
-                        apiLink: `${params.clientHost ?? window.location.origin}${pageAPI}`,
+                        apiLink: `${params?.clientHost ?? window.location.origin}${pageAPI}`,
                         hideSocialMedia: !store.isTraditionalPage()
                     },
                     personaSelector: {
-                        pageId: pageAPIResponse.page.identifier,
-                        value: pageAPIResponse.viewAs.persona ?? DEFAULT_PERSONA
+                        pageId: pageAPIResponse?.page.identifier,
+                        value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
                     }
                 };
             }),
@@ -178,14 +179,14 @@ export function withEditorToolbar() {
             return {
                 setDevice: (device: DotDevice) => {
                     patchState(store, {
-                        device: device,
+                        device,
                         socialMedia: null,
                         isEditState: false
                     });
                 },
                 setSocialMedia: (socialMedia: string) => {
                     patchState(store, {
-                        socialMedia: socialMedia,
+                        socialMedia,
                         device: null,
                         isEditState: false
                     });

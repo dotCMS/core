@@ -43,11 +43,13 @@ import {
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
     getBoundsMock,
     getVanityUrl,
+    HEADLESS_BASE_QUERY_PARAMS,
     MOCK_CONTENTLET_AREA,
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL,
     PERMANENT_REDIRECT_VANITY_URL,
-    TEMPORARY_REDIRECT_VANITY_URL
+    TEMPORARY_REDIRECT_VANITY_URL,
+    VTL_BASE_QUERY_PARAMS
 } from '../shared/mocks';
 import { DotDeviceWithIcon } from '../shared/models';
 import {
@@ -55,21 +57,6 @@ import {
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap
 } from '../utils';
-
-const HEADLESS_BASE_QUERY_PARAMS = {
-    url: 'test-url',
-    language_id: '1',
-    'com.dotmarketing.persona.id': DEFAULT_PERSONA.keyTag,
-    variantName: DEFAULT_VARIANT_ID,
-    clientHost: 'http://localhost:3000'
-};
-
-const VTL_BASE_QUERY_PARAMS = {
-    url: 'test-url',
-    language_id: '1',
-    'com.dotmarketing.persona.id': DEFAULT_PERSONA.keyTag,
-    variantName: DEFAULT_VARIANT_ID
-};
 
 const buildPageAPIResponseFromMock =
     (mock) =>
@@ -88,7 +75,6 @@ describe('UVEStore', () => {
     let dotPageApiService: SpyObject<DotPageApiService>;
     let activatedRoute: SpyObject<ActivatedRoute>;
     let router: SpyObject<Router>;
-    // let dotExperimentsService: DotExperimentsService;
 
     const createService = createServiceFactory({
         service: UVEStore,
@@ -147,7 +133,6 @@ describe('UVEStore', () => {
         store = spectator.service;
 
         dotPageApiService = spectator.inject(DotPageApiService);
-        // dotExperimentsService = spectator.inject(DotExperimentsService);
         router = spectator.inject(Router);
         activatedRoute = spectator.inject(ActivatedRoute);
         jest.spyOn(dotPageApiService, 'get').mockImplementation(

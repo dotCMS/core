@@ -201,10 +201,10 @@ export function createPageApiUrlWithQueryParams(
     // Set default values
     const completedParams = {
         ...params,
-        language_id: params.language_id ?? '1',
+        language_id: params?.language_id ?? '1',
         'com.dotmarketing.persona.id':
-            params['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
-        variantName: params.variantName ?? DEFAULT_VARIANT_ID
+            params?.['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
+        variantName: params?.variantName ?? DEFAULT_VARIANT_ID
     };
 
     // Filter out undefined values and url
@@ -280,13 +280,13 @@ export function createPureURL(params: DotPageApiParams): string {
     // If we are going to delete properties from the params, we need to make a copy of it
     const paramsCopy = { ...params };
 
-    const clientHost = paramsCopy.clientHost ?? window.location.origin;
-    const url = paramsCopy.url;
+    const clientHost = paramsCopy?.clientHost ?? window.location.origin;
+    const url = paramsCopy?.url;
 
     // Clean the params that are not needed for the page
-    delete paramsCopy.clientHost;
-    delete paramsCopy.url;
-    delete paramsCopy.mode;
+    delete paramsCopy?.clientHost;
+    delete paramsCopy?.url;
+    delete paramsCopy?.mode;
 
     const searchParams = new URLSearchParams(paramsCopy as unknown as Record<string, string>);
 
