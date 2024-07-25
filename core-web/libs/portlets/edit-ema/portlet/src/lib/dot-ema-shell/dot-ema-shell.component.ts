@@ -1,7 +1,8 @@
-import { combineLatest, Subject } from 'rxjs';
+import { combineLatest } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, effect, inject, signal, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -9,7 +10,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip, take, takeUntil } from 'rxjs/operators';
+import { skip, take } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -76,7 +77,7 @@ import { UVEStore } from '../store/dot-uve.store';
         DotNotLicenseComponent
     ]
 })
-export class DotEmaShellComponent implements OnInit, OnDestroy {
+export class DotEmaShellComponent {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
 
@@ -92,7 +93,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     protected readonly $shellProps = this.uveStore.$shellProps;
 
-    readonly #destroy$ = new Subject<boolean>();
     #currentComponent: unknown;
 
     readonly translatePageEffect = effect(() => {
@@ -107,9 +107,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
     });
 
-    ngOnInit(): void {
+    constructor() {
         combineLatest([this.#activatedRoute.data, this.#activatedRoute.queryParams])
-            .pipe(takeUntil(this.#destroy$))
+            .pipe(takeUntilDestroyed())
             .subscribe(([{ data }, queryParams]) => {
                 // If we have a clientHost we need to check if it's in the whitelist
                 if (queryParams.clientHost) {
@@ -139,11 +139,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#siteService.switchSite$.pipe(skip(1)).subscribe(() => {
             this.#router.navigate(['/pages']);
         });
-    }
-
-    ngOnDestroy(): void {
-        this.#destroy$.next(true);
-        this.#destroy$.complete();
     }
 
     /**
