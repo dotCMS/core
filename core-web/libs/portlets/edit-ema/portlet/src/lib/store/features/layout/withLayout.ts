@@ -26,15 +26,15 @@ export function withLayout() {
 
                 return {
                     containersMap: mapContainerStructureToDotContainerMap(
-                        pageAPIResponse.containers
+                        pageAPIResponse?.containers ?? {}
                     ),
-                    layout: pageAPIResponse.layout,
+                    layout: pageAPIResponse?.layout,
                     template: {
-                        identifier: pageAPIResponse.template.identifier,
+                        identifier: pageAPIResponse?.template.identifier,
                         // The themeId should be here, in the old store we had a bad reference and we were saving all the templates with themeId undefined
-                        themeId: pageAPIResponse.template.theme
+                        themeId: pageAPIResponse?.template.theme
                     },
-                    pageId: pageAPIResponse.page.identifier
+                    pageId: pageAPIResponse?.page.identifier
                 };
             })
         })),
