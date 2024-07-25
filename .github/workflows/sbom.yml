@@ -25,7 +25,7 @@ jobs:
       - name: Get latest release version
         id: get-latest-release
         run: |
-          $releases = Invoke-WebRequest -Uri "https://api.github.com/repos/rashik1144/test-copy/releases" | ConvertFrom-Json
+          $releases = Invoke-WebRequest -Uri "https://api.github.com/repos/dotCMS/core/releases" | ConvertFrom-Json
           $release_version = ($releases | ForEach-Object { $_.tag_name }) | Sort-Object -Descending | Select-Object -First 1 -ExpandProperty TrimStart 'v'
           $formatted_version = "release-$release_version"
           Write-Output "Latest release version: $formatted_version"
