@@ -40,6 +40,7 @@ import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
+    BASE_SHELL_PROPS_RESPONSE,
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
     getBoundsMock,
     getVanityUrl,
@@ -145,246 +146,39 @@ describe('UVEStore', () => {
     describe('withComputed', () => {
         describe('$shellProps', () => {
             it('should return the shell props for Headless Pages', () => {
-                expect(store.$shellProps()).toEqual({
-                    canRead: true,
-                    error: null,
-                    translateProps: {
-                        page: MOCK_RESPONSE_HEADLESS.page,
-                        languageId: 1,
-                        languages: mockLanguageArray
-                    },
-                    seoParams: {
-                        siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
-                        languageId: 1,
-                        currentUrl: '/test-url',
-                        requestHostName: 'http://localhost:3000'
-                    },
-                    items: [
-                        {
-                            icon: 'pi-file',
-                            label: 'editema.editor.navbar.content',
-                            href: 'content',
-                            id: 'content'
-                        },
-                        {
-                            icon: 'pi-table',
-                            label: 'editema.editor.navbar.layout',
-                            href: 'layout',
-                            id: 'layout',
-                            isDisabled: false,
-                            tooltip: null
-                        },
-                        {
-                            icon: 'pi-sliders-h',
-                            label: 'editema.editor.navbar.rules',
-                            id: 'rules',
-                            href: `rules/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
-                            isDisabled: false
-                        },
-                        {
-                            iconURL: 'experiments',
-                            label: 'editema.editor.navbar.experiments',
-                            href: `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
-                            id: 'experiments',
-                            isDisabled: false
-                        },
-                        {
-                            icon: 'pi-th-large',
-                            label: 'editema.editor.navbar.page-tools',
-                            id: 'page-tools'
-                        },
-                        {
-                            icon: 'pi-ellipsis-v',
-                            label: 'editema.editor.navbar.properties',
-                            id: 'properties'
-                        }
-                    ]
-                });
+                expect(store.$shellProps()).toEqual(BASE_SHELL_PROPS_RESPONSE);
             });
             it('should return the error for 404', () => {
-                patchState(store, { error: 404 });
+                patchState(store, { errorCode: 404 });
 
                 expect(store.$shellProps()).toEqual({
-                    canRead: true,
+                    ...BASE_SHELL_PROPS_RESPONSE,
                     error: {
                         code: 404,
                         pageInfo: COMMON_ERRORS['404']
-                    },
-                    translateProps: {
-                        page: MOCK_RESPONSE_HEADLESS.page,
-                        languageId: 1,
-                        languages: mockLanguageArray
-                    },
-                    seoParams: {
-                        siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
-                        languageId: 1,
-                        currentUrl: '/test-url',
-                        requestHostName: 'http://localhost:3000'
-                    },
-                    items: [
-                        {
-                            icon: 'pi-file',
-                            label: 'editema.editor.navbar.content',
-                            href: 'content',
-                            id: 'content'
-                        },
-                        {
-                            icon: 'pi-table',
-                            label: 'editema.editor.navbar.layout',
-                            href: 'layout',
-                            id: 'layout',
-                            isDisabled: false,
-                            tooltip: null
-                        },
-                        {
-                            icon: 'pi-sliders-h',
-                            label: 'editema.editor.navbar.rules',
-                            id: 'rules',
-                            href: `rules/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
-                            isDisabled: false
-                        },
-                        {
-                            iconURL: 'experiments',
-                            label: 'editema.editor.navbar.experiments',
-                            href: `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
-                            id: 'experiments',
-                            isDisabled: false
-                        },
-                        {
-                            icon: 'pi-th-large',
-                            label: 'editema.editor.navbar.page-tools',
-                            id: 'page-tools'
-                        },
-                        {
-                            icon: 'pi-ellipsis-v',
-                            label: 'editema.editor.navbar.properties',
-                            id: 'properties'
-                        }
-                    ]
+                    }
                 });
             });
             it('should return the error for 403', () => {
-                patchState(store, { error: 403 });
+                patchState(store, { errorCode: 403 });
 
                 expect(store.$shellProps()).toEqual({
-                    canRead: true,
+                    ...BASE_SHELL_PROPS_RESPONSE,
                     error: {
                         code: 403,
                         pageInfo: COMMON_ERRORS['403']
-                    },
-                    translateProps: {
-                        page: MOCK_RESPONSE_HEADLESS.page,
-                        languageId: 1,
-                        languages: mockLanguageArray
-                    },
-                    seoParams: {
-                        siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
-                        languageId: 1,
-                        currentUrl: '/test-url',
-                        requestHostName: 'http://localhost:3000'
-                    },
-                    items: [
-                        {
-                            icon: 'pi-file',
-                            label: 'editema.editor.navbar.content',
-                            href: 'content',
-                            id: 'content'
-                        },
-                        {
-                            icon: 'pi-table',
-                            label: 'editema.editor.navbar.layout',
-                            href: 'layout',
-                            id: 'layout',
-                            isDisabled: false,
-                            tooltip: null
-                        },
-                        {
-                            icon: 'pi-sliders-h',
-                            label: 'editema.editor.navbar.rules',
-                            id: 'rules',
-                            href: `rules/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
-                            isDisabled: false
-                        },
-                        {
-                            iconURL: 'experiments',
-                            label: 'editema.editor.navbar.experiments',
-                            href: `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
-                            id: 'experiments',
-                            isDisabled: false
-                        },
-                        {
-                            icon: 'pi-th-large',
-                            label: 'editema.editor.navbar.page-tools',
-                            id: 'page-tools'
-                        },
-                        {
-                            icon: 'pi-ellipsis-v',
-                            label: 'editema.editor.navbar.properties',
-                            id: 'properties'
-                        }
-                    ]
+                    }
                 });
             });
             it('should return the error for 401', () => {
-                patchState(store, { error: 401 });
+                patchState(store, { errorCode: 401 });
 
                 expect(store.$shellProps()).toEqual({
-                    canRead: true,
+                    ...BASE_SHELL_PROPS_RESPONSE,
                     error: {
                         code: 401,
                         pageInfo: null
-                    },
-                    translateProps: {
-                        page: MOCK_RESPONSE_HEADLESS.page,
-                        languageId: 1,
-                        languages: mockLanguageArray
-                    },
-                    seoParams: {
-                        siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
-                        languageId: 1,
-                        currentUrl: '/test-url',
-                        requestHostName: 'http://localhost:3000'
-                    },
-                    items: [
-                        {
-                            icon: 'pi-file',
-                            label: 'editema.editor.navbar.content',
-                            href: 'content',
-                            id: 'content'
-                        },
-                        {
-                            icon: 'pi-table',
-                            label: 'editema.editor.navbar.layout',
-                            href: 'layout',
-                            id: 'layout',
-                            isDisabled: false,
-                            tooltip: null
-                        },
-                        {
-                            icon: 'pi-sliders-h',
-                            label: 'editema.editor.navbar.rules',
-                            id: 'rules',
-                            href: `rules/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
-                            isDisabled: false
-                        },
-                        {
-                            iconURL: 'experiments',
-                            label: 'editema.editor.navbar.experiments',
-                            href: `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`,
-                            id: 'experiments',
-                            isDisabled: false
-                        },
-                        {
-                            icon: 'pi-th-large',
-                            label: 'editema.editor.navbar.page-tools',
-                            id: 'page-tools'
-                        },
-                        {
-                            icon: 'pi-ellipsis-v',
-                            label: 'editema.editor.navbar.properties',
-                            id: 'properties'
-                        }
-                    ]
+                    }
                 });
             });
 

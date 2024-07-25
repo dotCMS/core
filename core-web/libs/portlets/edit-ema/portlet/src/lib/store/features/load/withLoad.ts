@@ -98,7 +98,7 @@ export function withLoad() {
                                 tap({
                                     error: ({ status: errorStatus }: HttpErrorResponse) => {
                                         patchState(store, {
-                                            error: errorStatus,
+                                            errorCode: errorStatus,
                                             status: UVE_STATUS.ERROR
                                         });
                                     }
@@ -190,7 +190,7 @@ export function withLoad() {
                                     },
                                     error: ({ status: errorStatus }: HttpErrorResponse) => {
                                         patchState(store, {
-                                            error: errorStatus,
+                                            errorCode: errorStatus,
                                             status: UVE_STATUS.ERROR
                                         });
                                     }

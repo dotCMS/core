@@ -12,7 +12,7 @@ export interface UVEState {
     languages: DotLanguage[];
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
-    error?: number;
+    errorCode?: number;
     params?: DotPageApiParams;
     status: UVE_STATUS;
     isTraditionalPage: boolean;

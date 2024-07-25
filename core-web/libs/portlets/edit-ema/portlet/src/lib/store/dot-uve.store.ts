@@ -17,7 +17,7 @@ const initialState: UVEState = {
     pageAPIResponse: null,
     currentUser: null,
     experiment: null,
-    error: null,
+    errorCode: null,
     params: null,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
@@ -27,25 +27,25 @@ const initialState: UVEState = {
 
 export const UVEStore = signalStore(
     withState<UVEState>(initialState),
-    withComputed((store) => {
+    withComputed(({ pageAPIResponse, isTraditionalPage, params, languages, errorCode: error }) => {
         return {
             $shellProps: computed<ShellProps>(() => {
-                const pageAPIResponse = store.pageAPIResponse();
+                const response = pageAPIResponse();
 
-                const currentUrl = '/' + sanitizeURL(pageAPIResponse?.page.pageURI);
+                const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
 
-                const requestHostName = !store.isTraditionalPage()
-                    ? store.params()?.clientHost
+                const requestHostName = !isTraditionalPage()
+                    ? params()?.clientHost
                     : window.location.origin;
 
-                const page = pageAPIResponse?.page;
-                const templateDrawed = pageAPIResponse?.template.drawed;
+                const page = response?.page;
+                const templateDrawed = response?.template.drawed;
 
                 const isLayoutDisabled = !page?.canEdit || !templateDrawed;
 
-                const languageId = pageAPIResponse?.viewAs.language.id;
-                const languages = store.languages();
-                const errorCode = store.error();
+                const languageId = response?.viewAs.language.id;
+                const translatedLanguages = languages();
+                const errorCode = error();
 
                 return {
                     canRead: page?.canRead,
@@ -58,11 +58,11 @@ export const UVEStore = signalStore(
                     translateProps: {
                         page,
                         languageId,
-                        languages
+                        languages: translatedLanguages
                     },
                     seoParams: {
-                        siteId: pageAPIResponse?.site.identifier,
-                        languageId: pageAPIResponse?.viewAs.language.id,
+                        siteId: response?.site.identifier,
+                        languageId: response?.viewAs.language.id,
                         currentUrl,
                         requestHostName
                     },
@@ -116,7 +116,7 @@ export const UVEStore = signalStore(
         return {
             setUveStatus(status: UVE_STATUS) {
                 patchState(store, {
-                    status: status
+                    status
                 });
             }
         };

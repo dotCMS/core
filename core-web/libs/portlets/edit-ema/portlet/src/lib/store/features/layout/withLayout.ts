@@ -20,21 +20,21 @@ export function withLayout() {
         {
             state: type<UVEState>()
         },
-        withComputed((store) => ({
+        withComputed(({ pageAPIResponse }) => ({
             $layoutProps: computed<LayoutProps>(() => {
-                const pageAPIResponse = store.pageAPIResponse();
+                const response = pageAPIResponse();
 
                 return {
                     containersMap: mapContainerStructureToDotContainerMap(
-                        pageAPIResponse?.containers ?? {}
+                        response?.containers ?? {}
                     ),
-                    layout: pageAPIResponse?.layout,
+                    layout: response?.layout,
                     template: {
-                        identifier: pageAPIResponse?.template.identifier,
+                        identifier: response?.template.identifier,
                         // The themeId should be here, in the old store we had a bad reference and we were saving all the templates with themeId undefined
-                        themeId: pageAPIResponse?.template.theme
+                        themeId: response?.template.theme
                     },
-                    pageId: pageAPIResponse?.page.identifier
+                    pageId: response?.page.identifier
                 };
             })
         })),

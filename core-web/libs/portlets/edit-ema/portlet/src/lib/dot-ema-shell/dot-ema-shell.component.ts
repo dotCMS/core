@@ -1,8 +1,7 @@
-import { combineLatest } from 'rxjs';
+import { combineLatest, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, signal, ViewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, effect, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -10,7 +9,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip, take } from 'rxjs/operators';
+import { skip, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -77,7 +76,7 @@ import { UVEStore } from '../store/dot-uve.store';
         DotNotLicenseComponent
     ]
 })
-export class DotEmaShellComponent {
+export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
 
@@ -93,6 +92,7 @@ export class DotEmaShellComponent {
 
     protected readonly $shellProps = this.uveStore.$shellProps;
 
+    readonly #destroy$ = new Subject<boolean>();
     #currentComponent: unknown;
 
     readonly translatePageEffect = effect(() => {
@@ -107,9 +107,9 @@ export class DotEmaShellComponent {
         }
     });
 
-    constructor() {
+    ngOnInit(): void {
         combineLatest([this.#activatedRoute.data, this.#activatedRoute.queryParams])
-            .pipe(takeUntilDestroyed())
+            .pipe(takeUntil(this.#destroy$))
             .subscribe(([{ data }, queryParams]) => {
                 // If we have a clientHost we need to check if it's in the whitelist
                 if (queryParams.clientHost) {
@@ -139,6 +139,11 @@ export class DotEmaShellComponent {
         this.#siteService.switchSite$.pipe(skip(1)).subscribe(() => {
             this.#router.navigate(['/pages']);
         });
+    }
+
+    ngOnDestroy(): void {
+        this.#destroy$.next(true);
+        this.#destroy$.complete();
     }
 
     /**
