@@ -28,14 +28,14 @@
 
             @if (!hideContactUsLink) {
                 @if (buttonLabel) {
-                    <span>{{ 'dot.common.or.text' }}</span>
+                    <span>{{ 'dot.common.or.text' | dm }}</span>
                 }
                 <a
                     class="message__external-link"
                     data-testid="message-contact-link"
                     href="https://dotcms.com/contact-us/"
                     target="_blank">
-                    {{ 'Contact-Us-for-more-Information' }}
+                    {{ 'Contact-Us-for-more-Information' | dm }}
                 </a>
             }
         </div>
