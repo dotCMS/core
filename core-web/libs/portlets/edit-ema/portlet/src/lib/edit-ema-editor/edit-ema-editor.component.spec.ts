@@ -583,7 +583,7 @@ describe('EditEmaEditorComponent', () => {
             spectator.detectChanges();
         });
 
-        describe('Preview mode', () => {
+        describe('DOM', () => {
             beforeEach(() => {
                 jest.useFakeTimers(); // Mock the timers
             });
@@ -592,7 +592,7 @@ describe('EditEmaEditorComponent', () => {
                 jest.useRealTimers(); // Restore the real timers after each test
             });
 
-            it('should hide the components that are not needed for preview mode', () => {
+            it('should hide components when the store changes', () => {
                 const componentsToHide = [
                     'palette',
                     'dropzone',
@@ -612,7 +612,7 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should hide the editor components when there is a running experiement and initialize the editor in a variant', () => {
+            it('should hide components when the store changes for a variant', () => {
                 const componentsToHide = [
                     'palette',
                     'dropzone',
