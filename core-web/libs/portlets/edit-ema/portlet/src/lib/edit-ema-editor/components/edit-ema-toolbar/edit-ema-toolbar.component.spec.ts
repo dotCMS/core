@@ -536,61 +536,12 @@ describe('EditEmaToolbarComponent', () => {
                         })
                     ]
                 });
-                store = spectator.inject(UVEStore);
-                messageService = spectator.inject(MessageService);
-                router = spectator.inject(Router);
-                confirmationService = spectator.inject(ConfirmationService);
             });
 
             describe('dot-ema-running-experiment', () => {
                 it('should have attr', () => {
                     const experiments = spectator.query(DotEmaRunningExperimentComponent);
-                    expect(experiments.runningExperiment).toEqual({
-                        archived: false,
-                        creationDate: experiment.creationDate,
-                        description: 'Praesent at molestie mauris, quis vulputate augue.',
-                        goals: {
-                            primary: {
-                                conditions: [
-                                    {
-                                        operator: 'EQUALS',
-                                        parameter: 'url',
-                                        value: 'to-define'
-                                    }
-                                ],
-                                name: 'default',
-                                type: 'REACH_PAGE'
-                            }
-                        },
-                        id: '555-5555-5555-5555',
-                        modDate: 1661118603000,
-                        name: 'Praesent at molestie mauris',
-                        pageId: '456',
-                        readyToStart: false,
-                        scheduling: {
-                            endDate: null,
-                            startDate: null
-                        },
-                        status: 'RUNNING',
-                        trafficAllocation: 100,
-                        trafficProportion: {
-                            type: 'SPLIT_EVENLY',
-                            variants: [
-                                {
-                                    id: 'DEFAULT',
-                                    name: 'Original',
-                                    promoted: false,
-                                    weight: 50
-                                },
-                                {
-                                    id: '111',
-                                    name: 'Variant A',
-                                    promoted: true,
-                                    weight: 50
-                                }
-                            ]
-                        }
-                    });
+                    expect(experiments.runningExperiment).toEqual(experiment);
                 });
             });
         });
@@ -624,10 +575,6 @@ describe('EditEmaToolbarComponent', () => {
                         })
                     ]
                 });
-                store = spectator.inject(UVEStore);
-                messageService = spectator.inject(MessageService);
-                router = spectator.inject(Router);
-                confirmationService = spectator.inject(ConfirmationService);
             });
 
             it('should have attr', () => {
@@ -690,10 +637,6 @@ describe('EditEmaToolbarComponent', () => {
                         })
                     ]
                 });
-                store = spectator.inject(UVEStore);
-                messageService = spectator.inject(MessageService);
-                router = spectator.inject(Router);
-                confirmationService = spectator.inject(ConfirmationService);
             });
 
             it('should render a unlock button when unlockButton is not null', () => {
