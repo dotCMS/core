@@ -2,6 +2,12 @@
 
 ::ng-deep .p-breadcrumb {
     ul li {
+        .p-menuitem-link[href] {
+            .p-menuitem-text {
+                font-size: $font-size-lg;
+            }
+        }
+
         &:first-child a span.p-menuitem-text {
             color: $black;
             font-size: $font-size-lg;
@@ -11,8 +17,17 @@
         &:last-child a {
             pointer-events: none;
         }
-        &:nth-child(2) .p-icon-wrapper {
-            display: none;
+        &:nth-child(2) {
+            &::before {
+                content: "";
+                width: 1px;
+                height: 20px;
+                background: $color-palette-gray-500;
+                display: block;
+            }
+            .p-icon-wrapper {
+                display: none;
+            }
         }
     }
 }
