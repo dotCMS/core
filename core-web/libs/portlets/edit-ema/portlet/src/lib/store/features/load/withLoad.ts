@@ -76,7 +76,7 @@ export function withLoad() {
                                             const { page, template } = pageAPIResponse;
 
                                             const isLayoutDisabled =
-                                                !page.canEdit || !template.drawed;
+                                                !page?.canEdit || !template?.drawed;
                                             const pathIsLayout =
                                                 activatedRoute?.firstChild?.snapshot?.url?.[0]
                                                     .path === 'layout';

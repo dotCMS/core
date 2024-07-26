@@ -629,7 +629,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
-            this.uveStore.setEditorState(EDITOR_STATE.IDLE); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
+            this.uveStore.resetEditorProperties(); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
 
             this.dialog.createContentletFromPalette({ ...dragItem.draggedPayload.item, payload });
         } else if (dragItem.draggedPayload.type === 'temp') {
@@ -839,7 +839,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
-                const isSameUrl = this.uveStore.params().url === payload.url;
+                const isSameUrl = this.uveStore.params()?.url === payload.url;
 
                 if (isSameUrl) {
                     this.uveStore.setEditorState(EDITOR_STATE.IDLE);
@@ -1260,7 +1260,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         file: File;
         dragItem: EmaDragItem;
     }): void {
-        this.uveStore.setEditorState(EDITOR_STATE.IDLE);
+        this.uveStore.resetEditorProperties();
 
         if (!/image.*/.exec(file.type)) {
             this.messageService.add({
@@ -1316,6 +1316,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 })
             )
             .subscribe((contentlet) => {
+                if (!contentlet) {
+                    this.uveStore.resetEditorProperties();
+
+                    return;
+                }
+
                 const payload = {
                     ...data,
                     position,

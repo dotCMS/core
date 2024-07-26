@@ -111,7 +111,7 @@ export function withEditor() {
 
                     const { dragIsActive, isScrolling, isDragging } = getEditorStates(state);
 
-                    const url = sanitizeURL(params.url);
+                    const url = sanitizeURL(params?.url);
 
                     const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
 
@@ -158,9 +158,9 @@ export function withEditor() {
                             : null,
                         palette: showPalette
                             ? {
-                                  variantId: params.variantName,
-                                  containers: pageAPIResponse.containers,
-                                  languageId: pageAPIResponse.viewAs.language.id
+                                  variantId: params?.variantName,
+                                  containers: pageAPIResponse?.containers,
+                                  languageId: pageAPIResponse?.viewAs.language.id
                               }
                             : null,
 
