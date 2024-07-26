@@ -284,7 +284,7 @@ public class ContentTypeResourceTest {
 		assertFalse(contentType.system());
 		assertEquals("SYSTEM_FOLDER", contentType.folder());
 
-		assertEquals(7, contentType.fields().size());
+		assertEquals(9, contentType.fields().size());
 		assertTrue(contentType.fieldMap().get("theField1") instanceof TextField);
 	}
 
