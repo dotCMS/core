@@ -5,7 +5,6 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { InfoOptions } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 
 @Component({
@@ -29,7 +28,9 @@ export class DotEmaInfoDisplayComponent {
      * @param {InfoOptions} options
      * @memberof DotEmaInfoDisplayComponent
      */
-    protected handleAction(options: InfoOptions) {
+    protected handleAction() {
+        const options = this.$options();
+
         if (options.id === 'device' || options.id === 'socialMedia') {
             this.uveStore.clearDeviceAndSocialMedia();
         } else if (options.id === 'variant') {
