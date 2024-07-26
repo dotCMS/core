@@ -6,17 +6,23 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Utility class to recover actionlets metadata
+ * @author jsanca
+ */
 public class ActionletUtil {
 
     /**
@@ -26,16 +32,27 @@ public class ActionletUtil {
      */
     public static boolean hasOnlyBatchActionlet(final WorkflowAction action) {
         try {
-            final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
-            for (final WorkflowActionClass actionletClass : actionlets) {
 
-                final Actionlet actionlet = AnnotationUtils.
-                        getBeanAnnotation(ReflectionUtils.getClassFor(actionletClass.getClazz()), Actionlet.class);
+            if (Objects.nonNull(action)) {
+                final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
 
-                if (null != actionlet && actionlet.onlyBatch()) {
-                    return true;
+                if (Objects.nonNull(actionlets)) {
+                    for (final WorkflowActionClass actionletClass : actionlets) {
+
+                        if (Objects.nonNull(actionletClass)) {
+                            final WorkFlowActionlet workFlowActionlet = APILocator.getWorkflowAPI().findActionlet(actionletClass.getClazz());
+
+                            if (Objects.nonNull(workFlowActionlet)) {
+                                final Actionlet actionlet = AnnotationUtils.
+                                        getBeanAnnotation(workFlowActionlet.getClass(), Actionlet.class);
+
+                                if (Objects.nonNull(actionlet) && actionlet.onlyBatch()) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
                 }
-
             }
         } catch (DotDataException e) {
             Logger.error(ActionletUtil.class, String.format(
@@ -52,16 +69,27 @@ public class ActionletUtil {
      */
     public static boolean hasPushPublishActionlet(final WorkflowAction action) {
         try {
-            final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
-            for (final WorkflowActionClass actionletClass : actionlets) {
 
-                final Actionlet actionlet = AnnotationUtils.
-                        getBeanAnnotation(ReflectionUtils.getClassFor(actionletClass.getClazz()), Actionlet.class);
+            if (Objects.nonNull(action)) {
+                final List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
 
-                if (null != actionlet && actionlet.pushPublish()) {
-                    return true;
+                if (Objects.nonNull(actionlets)) {
+                    for (final WorkflowActionClass actionletClass : actionlets) {
+
+                        if (Objects.nonNull(actionletClass)) {
+                            final WorkFlowActionlet workFlowActionlet = APILocator.getWorkflowAPI().findActionlet(actionletClass.getClazz());
+
+                            if (Objects.nonNull(workFlowActionlet)) {
+                                final Actionlet actionlet = AnnotationUtils.
+                                        getBeanAnnotation(workFlowActionlet.getClass(), Actionlet.class);
+
+                                if (Objects.nonNull(actionlet) && actionlet.pushPublish()) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
                 }
-
             }
         } catch (DotDataException e) {
             Logger.error(ActionletUtil.class, String.format(
@@ -119,7 +147,9 @@ public class ActionletUtil {
      */
     public static boolean isOnlyBatch(final String clazz) {
 
-        return false; //isOnlyBatch(ReflectionUtils.getClassFor(clazz));
+        final WorkFlowActionlet workFlowActionlet = Try.of(()->APILocator.getWorkflowAPI().findActionlet(clazz)).getOrNull();
+
+        return Objects.nonNull(workFlowActionlet)?isOnlyBatch(workFlowActionlet.getClass()):false;
     }
 
     /**

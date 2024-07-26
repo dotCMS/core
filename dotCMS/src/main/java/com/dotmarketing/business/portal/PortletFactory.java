@@ -99,7 +99,7 @@ public interface PortletFactory {
   Map<String, Portlet> xmlToPortlets(InputStream[] xmlFiles) throws SystemException;
 
   /**
-   * Transforms the specified XML string into a DotPortlet object. This allows the API to read
+   * Transforms the specified XML string into a Portlet object. This allows the API to read
    * portlets that are defined in configuration files or the database.
    *
    * @param xml The XML string to transform.
@@ -110,6 +110,6 @@ public interface PortletFactory {
    * @throws JAXBException An error occurred when mapping the XML String to a {@link DotPortlet}
    *                       object.
    */
-  Optional<DotPortlet> xmlToPortlet(final String xml) throws IOException, JAXBException;
+  Optional<Portlet> xmlToPortlet(final String xml) throws IOException, JAXBException;
 
 }
