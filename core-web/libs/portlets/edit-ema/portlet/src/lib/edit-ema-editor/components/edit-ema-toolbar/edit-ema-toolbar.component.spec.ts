@@ -545,7 +545,7 @@ describe('EditEmaToolbarComponent', () => {
                     const experiments = spectator.query(DotEmaRunningExperimentComponent);
                     expect(experiments.runningExperiment).toEqual({
                         archived: false,
-                        creationDate: expect.any(Date),
+                        creationDate: getRunningExperimentMock().creationDate,
                         description: 'Praesent at molestie mauris, quis vulputate augue.',
                         goals: {
                             primary: {
