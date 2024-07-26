@@ -1,5 +1,6 @@
 package com.dotcms.ai.service;
 
+import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotmarketing.util.json.JSONObject;
@@ -52,14 +53,14 @@ public class OpenAIChatServiceImplTest {
     private OpenAIChatService prepareService(final String response) {
         return new OpenAIChatServiceImpl(config) {
             @Override
-            String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
+            String doRequest(final String urlIn, final JSONObject json) {
                 return response;
             }
         };
     }
 
     private JSONObject prepareJsonObject(final String prompt) {
-        when(config.getModel()).thenReturn("some-model");
+        when(config.getModel()).thenReturn(AIModel.builder().withNames("some-model").build());
         when(config.getConfigFloat(AppKeys.COMPLETION_TEMPERATURE)).thenReturn(123.321F);
         when(config.getRolePrompt()).thenReturn("some-role-prompt");
 

@@ -1,5 +1,6 @@
 package com.dotcms.ai.service;
 
+import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotcms.ai.util.StopWordsUtil;
@@ -199,7 +200,7 @@ public class OpenAIImageServiceImplTest {
                                               final User user) {
         return new OpenAIImageServiceImpl(config, user, hostApi, tempFileApi) {
             @Override
-            String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
+            String doRequest(final String urlIn, final JSONObject json) {
                 return response;
             }
 
@@ -216,7 +217,7 @@ public class OpenAIImageServiceImplTest {
     }
 
     private JSONObject prepareJsonObject(final String prompt, final boolean tempFileError) throws Exception {
-        when(config.getImageModel()).thenReturn("some-image-model");
+        when(config.getImageModel()).thenReturn(AIModel.builder().withNames("some-image-model").build());
         when(config.getImageSize()).thenReturn("some-image-size");
         final File file = mock(File.class);
         when(file.getName()).thenReturn(UUIDGenerator.shorty());

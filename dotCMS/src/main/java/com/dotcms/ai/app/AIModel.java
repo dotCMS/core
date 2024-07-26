@@ -5,36 +5,39 @@ import com.dotmarketing.util.Logger;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AIModel {
 
-    private final String id;
+    private final AIModelType type;
     private final List<String> names;
     private final int tokensPerMinute;
     private final int apiPerMinute;
     private final int maxTokens;
     private final boolean isCompletion;
     private final AtomicInteger current;
+    private final AtomicBoolean decommissioned;
 
-    private AIModel(final String id,
+    private AIModel(final AIModelType type,
                     final List<String> names,
                     final int tokensPerMinute,
                     final int apiPerMinute,
                     final int maxTokens,
                     final boolean isCompletion) {
-        DotPreconditions.checkNotNull(id, "id cannot be null");
-        this.id = id;
+        DotPreconditions.checkNotNull(type, "type cannot be null");
+        this.type = type;
         this.names = Optional.ofNullable(names).orElse(List.of());
         this.tokensPerMinute = tokensPerMinute;
         this.apiPerMinute = apiPerMinute;
         this.maxTokens = maxTokens;
         this.isCompletion = isCompletion;
         current = new AtomicInteger(this.names.isEmpty() ? -1  : 0);
+        decommissioned = new AtomicBoolean(false);
     }
 
-    public String getId() {
-        return id;
+    public AIModelType getType() {
+        return type;
     }
 
     public List<String> getNames() {
@@ -69,13 +72,21 @@ public class AIModel {
         this.current.set(current);
     }
 
-    public Optional<String> getCurrentModel() {
+    public boolean isDecommissioned() {
+        return decommissioned.get();
+    }
+
+    public void setDecommissioned(final boolean decommissioned) {
+        this.decommissioned.set(decommissioned);
+    }
+
+    public String getCurrentModel() {
         final int currentIndex = this.current.get();
         if (!isCurrentValid(currentIndex)) {
             logInvalidModelMessage();
-            return Optional.empty();
+            return null;
         }
-        return Optional.of(names.get(currentIndex));
+        return names.get(currentIndex);
     }
 
     public long minIntervalBetweenCalls() {
@@ -107,7 +118,7 @@ public class AIModel {
 
     public static class Builder {
 
-        private String id;
+        private AIModelType type;
         private List<String> names;
         private int tokensPerMinute;
         private int apiPerMinute;
@@ -117,14 +128,18 @@ public class AIModel {
         private Builder() {
         }
 
-        public Builder withId(final String id) {
-            this.id = id;
+        public Builder withType(final AIModelType type) {
+            this.type = type;
             return this;
         }
 
         public Builder withNames(final List<String> names) {
             this.names = names;
             return this;
+        }
+
+        public Builder withNames(final String... names) {
+            return withNames(List.of(names));
         }
 
         public Builder withTokensPerMinute(final int tokensPerMinute) {
@@ -148,7 +163,7 @@ public class AIModel {
         }
 
         public AIModel build() {
-            return new AIModel(id, names, tokensPerMinute, apiPerMinute, maxTokens, isCompletion);
+            return new AIModel(type, names, tokensPerMinute, apiPerMinute, maxTokens, isCompletion);
         }
 
     }

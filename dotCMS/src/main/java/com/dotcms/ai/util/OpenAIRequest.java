@@ -1,8 +1,8 @@
 package com.dotcms.ai.util;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.app.AIAppUtil;
 import com.dotcms.ai.app.AIModel;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -21,6 +21,7 @@ import javax.ws.rs.core.MediaType;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -43,21 +44,23 @@ public class OpenAIRequest {
      *
      * @param urlIn the URL to send the request to
      * @param method the HTTP method to use for the request
-     * @param openAiAPIKey the OpenAI API key to use for the request
-     * @param json the JSON payload to send with the request
+     * @param appConfig the AppConfig object containing the OpenAI API key and models
+     * @param payload the JSON payload to send with the request
      * @param out the OutputStream to write the response to
      */
     public static void doRequest(final String urlIn,
                                  final String method,
-                                 final String openAiAPIKey,
-                                 final JSONObject json,
+                                 final AppConfig appConfig,
+                                 final JSONObject payload,
                                  final OutputStream out) {
 
-        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+        final JSONObject json = Optional.ofNullable(payload).orElse(new JSONObject());
+
+        if (appConfig.getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.debug(OpenAIRequest.class, "posting: " + json);
         }
 
-        final AIModel model = AIAppUtil.get().unwrapModelOrThrow(json.optString(AiKeys.MODEL));
+        final AIModel model = appConfig.resolveModelOrThrow(json.optString(AiKeys.MODEL));
         final long sleep = lastRestCall.computeIfAbsent(model, m -> 0L)
                 + model.minIntervalBetweenCalls()
                 - System.currentTimeMillis();
@@ -79,7 +82,7 @@ public class OpenAIRequest {
             final StringEntity jsonEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
             final HttpUriRequest httpRequest = resolveMethod(method, urlIn);
             httpRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-            httpRequest.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + openAiAPIKey);
+            httpRequest.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + appConfig.getApiKey());
 
             if (!json.getAsMap().isEmpty()) {
                 Try.run(() -> ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(jsonEntity));
@@ -113,16 +116,16 @@ public class OpenAIRequest {
      *
      * @param url the URL to send the request to
      * @param method the HTTP method to use for the request
-     * @param openAiAPIKey the OpenAI API key to use for the request
-     * @param json the JSON payload to send with the request
+     * @param appConfig the AppConfig object containing the OpenAI API key and models
+     * @param payload the JSON payload to send with the request
      * @return the response from the request as a string
      */
     public static String doRequest(final String url,
                                    final String method,
-                                   final String openAiAPIKey,
-                                   final JSONObject json)  {
+                                   final AppConfig appConfig,
+                                   final JSONObject payload)  {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        doRequest(url, method, openAiAPIKey, json, out);
+        doRequest(url, method, appConfig, payload, out);
 
         return out.toString();
     }
@@ -132,15 +135,15 @@ public class OpenAIRequest {
      * The response from the request is written to the provided OutputStream.
      *
      * @param urlIn the URL to send the request to
-     * @param openAiAPIKey the OpenAI API key to use for the request
-     * @param json the JSON payload to send with the request
+     * @param appConfig the AppConfig object containing the OpenAI API key and models
+     * @param payload the JSON payload to send with the request
      * @param out the OutputStream to write the response to
      */
     public static void doPost(final String urlIn,
-                              final String openAiAPIKey,
-                              final JSONObject json,
+                              final AppConfig appConfig,
+                              final JSONObject payload,
                               final OutputStream out) {
-       doRequest(urlIn, HttpMethod.POST, openAiAPIKey, json, out);
+       doRequest(urlIn, HttpMethod.POST, appConfig, payload, out);
     }
 
     /**
@@ -148,15 +151,15 @@ public class OpenAIRequest {
      * The response from the request is written to the provided OutputStream.
      *
      * @param urlIn the URL to send the request to
-     * @param openAiAPIKey the OpenAI API key to use for the request
-     * @param json the JSON payload to send with the request
+     * @param appConfig the AppConfig object containing the OpenAI API key and models
+     * @param payload the JSON payload to send with the request
      * @param out the OutputStream to write the response to
      */
     public static void doGet(final String urlIn,
-                             final String openAiAPIKey,
-                             final JSONObject json,
+                             final AppConfig appConfig,
+                             final JSONObject payload,
                              final OutputStream out) {
-        doRequest(urlIn, HttpMethod.GET, openAiAPIKey, json, out);
+        doRequest(urlIn, HttpMethod.GET, appConfig, payload, out);
     }
 
     private static HttpUriRequest resolveMethod(final String method, final String urlIn) {

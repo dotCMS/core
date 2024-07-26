@@ -1,7 +1,6 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.app.AIAppUtil;
 import com.dotcms.ai.app.AIModel;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
@@ -61,7 +60,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                              final String modelIn,
                              final float temperature,
                              final int maxTokens) {
-        final AIModel model = AIAppUtil.get().unwrapModelOrThrow(modelIn);
+        final AIModel model = config.get().resolveModelOrThrow(modelIn);
         final JSONObject json = new JSONObject();
 
         json.put(AiKeys.TEMPERATURE, temperature);
@@ -92,7 +91,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 Try.of(() -> OpenAIRequest.doRequest(
                         config.get().getApiUrl(),
                         HttpMethod.POST,
-                        config.get().getApiKey(),
+                        config.get(),
                         json))
                 .getOrElseThrow(DotRuntimeException::new);
         final JSONObject dotCMSResponse = EmbeddingsAPI.impl().reduceChunksToContent(searcher, localResults);
@@ -108,7 +107,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
         json.put(AiKeys.STREAM, true);
-        OpenAIRequest.doPost(config.get().getApiUrl(), config.get().getApiKey(), json, out);
+        OpenAIRequest.doPost(config.get().getApiUrl(), config.get(), json, out);
     }
 
     @Override
@@ -120,7 +119,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final String response = OpenAIRequest.doRequest(
                 config.get().getApiUrl(),
                 HttpMethod.POST,
-                config.get().getApiKey(),
+                config.get(),
                 json);
         if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(this.getClass(), "OpenAI response:" + response);
@@ -139,7 +138,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     public void rawStream(final CompletionsForm promptForm, final OutputStream out) {
         final JSONObject json = buildRequestJson(promptForm);
         json.put(AiKeys.STREAM, true);
-        OpenAIRequest.doRequest(config.get().getApiUrl(), HttpMethod.POST, config.get().getApiKey(), json, out);
+        OpenAIRequest.doRequest(config.get().getApiUrl(), HttpMethod.POST, config.get(), json, out);
     }
 
     private void buildMessages(final String systemPrompt, final String userPrompt, final JSONObject json) {
@@ -152,7 +151,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form, final List<EmbeddingsDTO> searchResults) {
-        final AIModel model = AIAppUtil.get().unwrapModelOrThrow(form.model);
+        final AIModel model = config.get().resolveModelOrThrow(form.model);
         // aggregate matching results into text
         final StringBuilder supportingContent = new StringBuilder();
         searchResults.forEach(s -> supportingContent.append(s.extractedText).append(" "));
@@ -206,7 +205,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     private int countTokens(final String testString) {
         return EncodingUtil.registry
-                .getEncodingForModel(config.get().getConfig(AppKeys.MODEL_NAME))
+                .getEncodingForModel(config.get().getModel().getCurrentModel())
                 .map(enc -> enc.countTokens(testString))
                 .orElseThrow(() -> new DotRuntimeException("Encoder not found"));
     }
@@ -257,7 +256,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MESSAGES, messages);
-        json.putIfAbsent(AiKeys.MODEL, config.get().getConfig(AppKeys.MODEL_NAME));
+        json.putIfAbsent(AiKeys.MODEL, config.get().getConfig(AppKeys.MODEL_NAMES));
         json.put(AiKeys.TEMPERATURE, form.temperature);
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
         json.put(AiKeys.STREAM, form.stream);

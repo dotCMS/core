@@ -279,7 +279,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * @param analyticsApp analytics app
      */
     private void logTokenResponse(final CircuitBreakerUrl.Response<AccessToken> response, AnalyticsApp analyticsApp) {
-        if (AnalyticsHelper.get().isSuccessResponse(response)) {
+        if (CircuitBreakerUrl.isSuccessResponse(response)) {
             return;
         }
 
@@ -341,7 +341,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     private void logKeyResponse(final CircuitBreakerUrl.Response<AnalyticsKey> response,
                                 final AnalyticsApp analyticsApp) {
 
-        if (AnalyticsHelper.get().isSuccessResponse(response)) {
+        if (CircuitBreakerUrl.isSuccessResponse(response)) {
             return;
         }
 

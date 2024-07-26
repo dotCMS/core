@@ -7,7 +7,6 @@ import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
-import com.dotcms.ai.util.OpenAIModel;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -28,13 +27,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The CompletionsResource class provides REST endpoints for interacting with the AI completions service.
@@ -101,7 +100,7 @@ public class CompletionsResource {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response getConfig(@Context final HttpServletRequest request,
                                     @Context final HttpServletResponse response) {
-        // get user if we have one (this is allow anon)
+        // get user if we have one (this allows anon)
         new WebResource
                 .InitBuilder(request, response)
                 .requiredBackendUser(true)
@@ -120,9 +119,12 @@ public class CompletionsResource {
         final String apiKey = UtilMethods.isSet(app.getApiKey()) ? "*****" : "NOT SET";
         map.put(AppKeys.API_KEY.key, apiKey);
 
-        final List<String> models = Arrays.stream(OpenAIModel.values())
-                .filter(m->m.completionModel)
-                .map(m-> m.modelName)
+        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final List<String> models = Stream
+                .of(appConfig.getModel(), appConfig.getImageModel(), appConfig.getEmbeddingsModel())
+                .flatMap(model -> model.getNames().stream())
+                .distinct()
+                .sorted()
                 .collect(Collectors.toList());
         map.put(AiKeys.AVAILABLE_MODELS, models);
 
@@ -145,7 +147,10 @@ public class CompletionsResource {
                 .getUser();
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         return (!user.isAdmin())
-                ? CompletionsForm.copy(formIn).model(ConfigService.INSTANCE.config(host).getModel()).build()
+                ? CompletionsForm
+                    .copy(formIn)
+                    .model(ConfigService.INSTANCE.config(host).getModel().getCurrentModel())
+                    .build()
                 : formIn;
     }
 

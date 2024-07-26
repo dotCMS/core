@@ -80,7 +80,7 @@ public class CompletionsToolTest {
         assertNotNull(config);
         assertEquals(AppKeys.COMPLETION_ROLE_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_ROLE_PROMPT.key));
         assertEquals(AppKeys.COMPLETION_TEXT_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_TEXT_PROMPT.key));
-        assertEquals(AppKeys.MODEL_NAME.defaultValue, config.get(AppKeys.MODEL_NAME.key));
+        assertEquals(AppKeys.MODEL_NAMES.defaultValue, config.get(AppKeys.MODEL_NAMES.key));
     }
 
     /**

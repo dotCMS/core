@@ -34,6 +34,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayOutputStream;
@@ -358,6 +359,26 @@ public class CircuitBreakerUrl {
                 .put(HttpHeaders.AUTHORIZATION, token)
                 .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
                 .build();
+    }
+
+    /**
+     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
+     *
+     * @param statusCode http status code
+     * @return true if the response http status is considered tobe successful, otherwise false
+     */
+    public static boolean isSuccessResponse(final int statusCode) {
+        return javax.ws.rs.core.Response.Status.Family.familyOf(statusCode) == javax.ws.rs.core.Response.Status.Family.SUCCESSFUL;
+    }
+
+    /**
+     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
+     *
+     * @param response http response representation
+     * @return true if the response http status is considered tobe successful, otherwise false
+     */
+    public static boolean isSuccessResponse(@NotNull final CircuitBreakerUrl.Response<?> response) {
+        return isSuccessResponse(response.getStatusCode());
     }
 
     public static CircuitBreakerUrlBuilder builder() {

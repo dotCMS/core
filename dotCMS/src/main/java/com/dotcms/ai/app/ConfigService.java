@@ -27,7 +27,7 @@ public class ConfigService {
                         .getSecrets(AppKeys.APP_KEY, true, resolveHost(host), APILocator.systemUser()))
                 .getOrElse(Optional.empty());
 
-        return new AppConfig(appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
+        return new AppConfig(host.getHostname(), appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
     }
 
     /**

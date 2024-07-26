@@ -2,7 +2,6 @@ package com.dotcms.ai.app;
 
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -36,8 +35,8 @@ public class AIAppUtil {
         return resolveSecret(secrets, key, key.defaultValue);
     }
 
-    public String resolveModelSecret(final Map<String, Secret> secrets, final AppKeys key, final String prefix) {
-        return resolveSecret(secrets, prefixKey(key, prefix));
+    public String resolveModelSecret(final Map<String, Secret> secrets, final AppKeys key, final AIModelType type) {
+        return resolveSecret(secrets, prefixKey(key, type));
     }
 
     public String resolveEnvSecret(final Map<String, Secret> secrets, final AppKeys key) {
@@ -63,39 +62,23 @@ public class AIAppUtil {
                                 .collect(Collectors.toList())));
     }
 
-    public AIModel resolveModel(final Map<String, Secret> secrets, final String id) {
+    public AIModel createModel(final Map<String, Secret> secrets, final AIModelType type) {
         return AIModel.builder()
-                .withId(id)
-                .withNames(splitModels(resolveModelSecret(secrets, AppKeys.MODEL_NAME, id)))
-                .withTokensPerMinute(toInt(resolveModelSecret(secrets, AppKeys.MODEL_TOKENS_PER_MINUTE, id)))
-                .withApiPerMinute(toInt(resolveModelSecret(secrets, AppKeys.MODEL_API_PER_MINUTE, id)))
-                .withMaxTokens(toInt(resolveModelSecret(secrets, AppKeys.MODEL_MAX_TOKENS, id)))
-                .withIsCompletion(Boolean.parseBoolean(resolveModelSecret(secrets, AppKeys.MODEL_COMPLETION, id)))
+                .withType(type)
+                .withNames(splitModels(resolveModelSecret(secrets, AppKeys.MODEL_NAMES, type)))
+                .withTokensPerMinute(toInt(resolveModelSecret(secrets, AppKeys.MODEL_TOKENS_PER_MINUTE, type)))
+                .withApiPerMinute(toInt(resolveModelSecret(secrets, AppKeys.MODEL_API_PER_MINUTE, type)))
+                .withMaxTokens(toInt(resolveModelSecret(secrets, AppKeys.MODEL_MAX_TOKENS, type)))
+                .withIsCompletion(Boolean.parseBoolean(resolveModelSecret(secrets, AppKeys.MODEL_COMPLETION, type)))
                 .build();
-    }
-
-    public void loadModels(final Map<String, Secret> secrets) {
-        AIModels.get().loadModels(List.of(
-                resolveModel(secrets, "text"),
-                resolveModel(secrets, "image")));
-    }
-
-    public AIModel unwrapModelOrThrow(final String modelName) {
-        return AIModels.get()
-                .getModelByName(modelName)
-                .orElseThrow(() -> {
-                    final String supported = String.join(", ", AISupportedModels.get().getOrPullModels());
-                    return new DotRuntimeException(
-                            "Unable to parse model: '" + modelName + "'.  Only [" + supported + "] are supported ");
-                });
     }
 
     private int toInt(final String value) {
         return Try.of(() -> Integer.parseInt(value)).getOrElse(0);
     }
 
-    private AppKeys prefixKey(final AppKeys key, final String prefix) {
-        return AppKeys.valueOf(UtilMethods.isSet(prefix) ? prefix.toUpperCase() + '_' + key.key : key.key);
+    private AppKeys prefixKey(final AppKeys key, final AIModelType type) {
+        return AppKeys.valueOf(UtilMethods.isSet(type) ? type.name() + '_' + key.key : key.key);
     }
 
 }

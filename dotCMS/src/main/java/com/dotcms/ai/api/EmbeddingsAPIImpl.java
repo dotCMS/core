@@ -430,7 +430,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         final String responseString = OpenAIRequest.doRequest(
                 OPEN_AI_EMBEDDINGS_URL.get(),
                 HttpMethod.POST,
-                this.config.getApiKey(),
+                config,
                 json);
         debugLogger(this.getClass(), () -> String.format("OpenAI Response for content ID '%s': %s",
                 contentId, responseString.replace("\n", BLANK)));

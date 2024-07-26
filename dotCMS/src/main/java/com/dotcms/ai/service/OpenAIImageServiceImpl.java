@@ -55,12 +55,12 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
         }
 
         OpenAiRequestUtil.get().handleLargePrompt(jsonObject);
-        jsonObject.putIfAbsent(AiKeys.MODEL, config.getImageModel());
+        jsonObject.putIfAbsent(AiKeys.MODEL, config.getImageModel().getCurrentModel());
         jsonObject.putIfAbsent(AiKeys.SIZE, config.getImageSize());
 
         String responseString = "";
         try {
-            responseString = doRequest(config.getApiImageUrl(), config.getApiKey(), jsonObject);
+            responseString = doRequest(config.getApiImageUrl(), jsonObject);
 
             JSONObject returnObject = new JSONObject(responseString);
             if (returnObject.containsKey(AiKeys.ERROR)) {
@@ -87,7 +87,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
     @Override
     public JSONObject sendRequest(final AIImageRequestDTO dto) {
         JSONObject jsonRequest = new JSONObject();
-        jsonRequest.put(AiKeys.MODEL, config.getImageModel());
+        jsonRequest.put(AiKeys.MODEL, config.getImageModel().getCurrentModel());
         jsonRequest.put(AiKeys.PROMPT, dto.getPrompt());
         jsonRequest.put(AiKeys.SIZE, dto.getSize());
         return sendRequest(jsonRequest);
@@ -173,8 +173,8 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
     }
 
     @VisibleForTesting
-    String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
-        return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, openAiAPIKey, json);
+    String doRequest(final String urlIn, final JSONObject json) {
+        return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, config, json);
     }
 
     @VisibleForTesting
