@@ -167,3 +167,5 @@ dotCMS/settings.gradle
 dotCMS/dependencies.gradle
 
 !/examples/nextjs/.npmrc
+
+.nx/
