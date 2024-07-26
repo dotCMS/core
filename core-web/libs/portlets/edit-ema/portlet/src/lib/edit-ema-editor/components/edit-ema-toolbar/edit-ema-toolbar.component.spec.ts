@@ -505,6 +505,8 @@ describe('EditEmaToolbarComponent', () => {
             });
         });
         describe('experiments', () => {
+            const experiment = getRunningExperimentMock();
+
             beforeEach(() => {
                 spectator = createComponent({
                     providers: [
@@ -515,7 +517,7 @@ describe('EditEmaToolbarComponent', () => {
                                 apiUrl: '',
                                 currentLanguage: pageAPIResponse?.viewAs.language,
                                 urlContentMap: null,
-                                runningExperiment: getRunningExperimentMock(),
+                                runningExperiment: experiment,
                                 workflowActionsInode: '',
                                 unlockButton: null,
                                 showInfoDisplay: true,
@@ -545,7 +547,7 @@ describe('EditEmaToolbarComponent', () => {
                     const experiments = spectator.query(DotEmaRunningExperimentComponent);
                     expect(experiments.runningExperiment).toEqual({
                         archived: false,
-                        creationDate: getRunningExperimentMock().creationDate,
+                        creationDate: experiment.creationDate,
                         description: 'Praesent at molestie mauris, quis vulputate augue.',
                         goals: {
                             primary: {
