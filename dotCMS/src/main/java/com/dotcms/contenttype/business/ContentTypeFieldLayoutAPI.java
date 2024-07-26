@@ -6,7 +6,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
-
 import java.util.Collection;
 import java.util.List;
 
@@ -68,6 +67,22 @@ public interface ContentTypeFieldLayoutAPI {
      */
     DeleteFieldResult deleteField(final ContentType contentType, final List<String> fieldsID, final User user)
             throws DotSecurityException, DotDataException;
+
+    /**
+     * Analyzes the field layout for the field that is being updated or deleted in order to check if
+     * it also needs to be fixed. Layout inconsistencies include, for example: Having more than the
+     * allowed number of columns, invalid or missing Row or Column fields, among others.
+     *
+     * @param contentType The {@link ContentType} whose field layout will be validated.
+     * @param user        The {@link User} performing this action.
+     * @return The fixed {@link FieldLayout} if necessary, or the original layout if no changes were
+     * needed.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified user doesn't have the required permissions to
+     *                              perform this action.
+     */
+    FieldLayout fixLayoutIfNecessary(ContentType contentType, User user)
+            throws DotDataException, DotSecurityException;
 
     class DeleteFieldResult {
         private FieldLayout layout;

@@ -5,6 +5,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -28,6 +29,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import java.io.Serializable;
 import java.net.URISyntaxException;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -114,13 +116,8 @@ public class ContentTypeHelper implements Serializable {
             );
         }
 
-        if (null != updatedContentTypeBuilder) {
-            final var updatedContentType = updatedContentTypeBuilder.build();
-            updatedContentType.constructWithFields(contentType.fields());
-            return updatedContentType;
-        }
-
-        return contentType;
+        // Sort and fix the content type fields
+        return sortAndFixContentTypeFields(contentType, updatedContentTypeBuilder);
     }
 
     /**
@@ -341,6 +338,97 @@ public class ContentTypeHelper implements Serializable {
         } else {
             return ContentTypeBuilder.builder(contentType).detailPage(pageDetail);
         }
+    }
+
+    /**
+     * Prepares the content type fields by ordering them based on the sort order. If
+     * updatedContentTypeBuilder is provided, it constructs a new ContentType with the ordered
+     * fields and returns the new instance. If updatedContentTypeBuilder is null, it constructs a
+     * new ContentTypeBuilder with the original contentType and constructs a new ContentType with
+     * the ordered fields. If there are no fields, it returns the original contentType.
+     *
+     * @param contentType               The content type to prepare.
+     * @param updatedContentTypeBuilder The updated content type builder, or null.
+     * @return The prepared content type.
+     */
+    private ContentType sortAndFixContentTypeFields(final ContentType contentType,
+            final ContentTypeBuilder updatedContentTypeBuilder) {
+
+        if (null != contentType.fields()) {
+
+            // Ordering the fields
+            final var orderedFields = contentType.fields().stream().
+                    sorted(Comparator.comparing(Field::sortOrder)).
+                    collect(Collectors.toList());
+            final var sortOrderFix = FieldUtil.fixSortOrder(orderedFields);
+            final var fixedFields = sortOrderFix.getNewFields();
+
+            if (!contentType.fields().equals(fixedFields)) {
+                if (null != updatedContentTypeBuilder) {
+                    final var updatedContentType = updatedContentTypeBuilder.build();
+                    updatedContentType.constructWithFields(fixedFields);
+
+                    return updatedContentType;
+                } else {
+                    final var contentTypeBuilder = ContentTypeBuilder.builder(contentType);
+                    final var updatedContentType = contentTypeBuilder.build();
+                    updatedContentType.constructWithFields(fixedFields);
+
+                    return contentType;
+                }
+            }
+        }
+
+        if (null != updatedContentTypeBuilder) {
+            return updatedContentTypeBuilder.build();
+        } else {
+            return contentType;
+        }
+    }
+
+    /**
+     * Fixes the layout of a content type if necessary.
+     *
+     * @param contentTypeId The ID of the content type to fix the layout for.
+     * @param user          The user performing the operation.
+     * @return The fixed content type, or the original content type if no fixes were necessary.
+     * @throws DotDataException     If an error occurs in the data layer.
+     * @throws DotSecurityException If the user doesn't have permission to perform the operation.
+     */
+    public ContentType fixLayoutIfNecessary(final String contentTypeId, final User user)
+            throws DotDataException, DotSecurityException {
+
+        // Looking for the most recent version of the content type and fields
+        final var contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+        final var contentType = contentTypeAPI.find(contentTypeId);
+
+        // Fixing the layout if necessary
+        final var fixedLayout = APILocator.getContentTypeFieldLayoutAPI().fixLayoutIfNecessary(
+                contentType, user
+        );
+
+        if (!contentType.fields().equals(fixedLayout.getFields())) {
+            // Return an updated content type with the fixed layout fields
+            return setFields(contentType, fixedLayout.getFields());
+        } else {
+            return contentType;
+        }
+    }
+
+    /**
+     * Sets the fields of the given content type and returns the updated content type.
+     *
+     * @param contentType The content type to update.
+     * @param fields      The list of fields to set for the content type.
+     * @return The updated content type with the new fields.
+     */
+    private ContentType setFields(final ContentType contentType, final List<Field> fields) {
+
+        final var contentTypeBuilder = ContentTypeBuilder.builder(contentType);
+        final var updatedContentType = contentTypeBuilder.build();
+        updatedContentType.constructWithFields(fields);
+
+        return updatedContentType;
     }
 
     /**

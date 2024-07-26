@@ -155,20 +155,8 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
         return new DeleteFieldResult(fieldLayoutUpdated, deletedIds);
     }
 
-    /**
-     * Analyzes the field layout for the field that is being updated or deleted in order to check if it also needs to be
-     * fixed. Layout inconsistencies include, for example: Having more than the allowed number of columns, invalid or
-     * missing Row or Column fields, among others.
-     *
-     * @param contentType The {@link ContentType} whose field layout will be validated.
-     * @param user        The {@link User} performing this action.
-     *
-     * @return
-     *
-     * @throws DotDataException     An error occurred when interacting with the data source.
-     * @throws DotSecurityException The specified user doesn't have the required permissions to perform this action.
-     */
-    private FieldLayout fixLayoutIfNecessary(final ContentType contentType, final User user)
+    @Override
+    public FieldLayout fixLayoutIfNecessary(final ContentType contentType, final User user)
             throws DotDataException, DotSecurityException {
 
         final FieldLayout fieldLayout = new FieldLayout(contentType);

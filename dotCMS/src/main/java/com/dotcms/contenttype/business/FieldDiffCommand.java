@@ -209,6 +209,11 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
             diffItems.add(new DiffItem.Builder().variable("relationType").message(field1.relationType() + " != " + field2.relationType()).build());
         }
 
+        if (field1.sortOrder() != field2.sortOrder()) {
+            diffItems.add(new DiffItem.Builder().variable("sortOrder").
+                    message(field1.sortOrder() + " != " + field2.sortOrder()).build());
+        }
+
         final Map<String, FieldVariable> fieldVariablesMap1 = UtilMethods.get(this.indexFieldVariables(field1), Collections::emptyMap);
         final Map<String, FieldVariable> fieldVariablesMap2 = UtilMethods.get(this.indexFieldVariables(field2), Collections::emptyMap);
         final boolean areFieldVariablesEmpty = fieldVariablesMap1.isEmpty() && fieldVariablesMap2.isEmpty();
