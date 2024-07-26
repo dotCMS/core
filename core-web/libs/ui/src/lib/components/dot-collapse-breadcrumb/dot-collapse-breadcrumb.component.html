@@ -1,0 +1,42 @@
+<div class="p-breadcrumb p-component">
+    <ul>
+        <li>
+            <p-menu #menu [model]="$model()" [popup]="true" />
+            <p-button
+                (click)="menu.toggle($event)"
+                icon="pi pi-ellipsis-h"
+                type="button"
+                styleClass="p-button-rounded p-button-text p-button-sm" />
+        </li>
+        <li class="p-breadcrumb-chevron">
+            <ChevronRightIcon />
+        </li>
+        @for (item of $model(); track $index) {
+            <li>
+                <a
+                    [attr.href]="item.url ? item.url : null"
+                    class="p-menuitem-link"
+                    (click)="itemClick($event, item)"
+                    [target]="item.target"
+                    [attr.title]="item.title"
+                    [attr.id]="item.id"
+                    [attr.tabindex]="item.disabled ? null : '0'">
+                    @if (item.icon) {
+                        <span
+                            class="p-menuitem-icon"
+                            [ngClass]="item.icon"
+                            [ngStyle]="item.iconStyle"></span>
+                    } @else {
+                        <span class="p-menuitem-text">{{ item.label }}</span>
+                    }
+                </a>
+            </li>
+
+            @if (!$last) {
+                <li class="p-breadcrumb-chevron">
+                    <ChevronRightIcon />
+                </li>
+            }
+        }
+    </ul>
+</div>
