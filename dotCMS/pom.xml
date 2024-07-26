@@ -980,6 +980,13 @@
         </dependency>
 
 
+        <!-- JAX-RS Rest API -->
+
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
         <!-- Rest API Documentation -->
         <dependency>
@@ -1221,11 +1228,6 @@
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-sse</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.inject</groupId>
-            <artifactId>jersey-hk2</artifactId>
-        </dependency>
-
 
         <dependency>
             <!-- Immutables is a Java annotation processor to eliminate the burden of writing immutable types.
