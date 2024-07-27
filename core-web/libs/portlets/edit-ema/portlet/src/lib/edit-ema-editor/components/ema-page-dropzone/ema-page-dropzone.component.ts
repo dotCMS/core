@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -24,7 +24,7 @@ const POINTER_INITIAL_POSITION = {
 @Component({
     selector: 'dot-ema-page-dropzone',
     standalone: true,
-    imports: [CommonModule, DotPositionPipe, DotErrorPipe, DotMessagePipe],
+    imports: [DotPositionPipe, DotErrorPipe, DotMessagePipe, NgStyle, NgTemplateOutlet],
     templateUrl: './ema-page-dropzone.component.html',
     styleUrls: ['./ema-page-dropzone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
