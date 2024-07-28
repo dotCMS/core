@@ -222,3 +222,25 @@ export function createPageApiUrlWithQueryParams(
 export function getIsDefaultVariant(variant?: string): boolean {
     return !variant || variant === DEFAULT_VARIANT_ID;
 }
+
+export function ensureEditMode(query: string) {
+    const pageRegex = /page\(([^)]+)\)/;
+
+    const match = query.match(pageRegex);
+
+    if (!match) {
+        return query;
+    }
+
+    let pageContent = match[1];
+
+    const pageModeRegex = /pageMode\s*:\s*"([^"]*)"/;
+
+    if (pageModeRegex.test(pageContent)) {
+        pageContent = pageContent.replace(pageModeRegex, 'pageMode: "EDIT_MODE"');
+    } else {
+        pageContent += ', pageMode: "EDIT_MODE"';
+    }
+
+    return query.replace(match[1], pageContent);
+}

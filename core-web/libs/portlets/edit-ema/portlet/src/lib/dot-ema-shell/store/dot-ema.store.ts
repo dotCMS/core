@@ -6,8 +6,9 @@ import { Injectable } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
-import { catchError, map, shareReplay, switchMap, take, tap, filter } from 'rxjs/operators';
+import { catchError, map, shareReplay, switchMap, take, tap, filter, pluck } from 'rxjs/operators';
 
+import { graphqlToPageEntity } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotExperimentsService,
@@ -387,8 +388,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
         return params$.pipe(
             switchMap((params) => {
+                const pageData$ = this.state()?.isGQLPage
+                    ? this.dotPageApiService
+                          .getPageAssetFromGraphql(this.state().gqlQuery)
+                          .pipe(pluck('page'))
+                    : this.dotPageApiService.get(params);
+
                 return forkJoin({
-                    pageData: this.dotPageApiService.get(params).pipe(
+                    pageData: pageData$.pipe(
                         switchMap((pageData) => {
                             if (!pageData.vanityUrl) {
                                 return of(pageData);
@@ -604,6 +611,39 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             (e) => {
                                 console.error(e);
                                 this.updateEditorState(EDITOR_STATE.ERROR);
+                            }
+                        )
+                    );
+                })
+            );
+        }
+    );
+
+    readonly getPageAssetFromGraphQLQuery = this.effect(
+        (payload$: Observable<{ query: string; whenLoaded: (payload) => void }>) => {
+            return payload$.pipe(
+                tap(({ query }) => {
+                    this.setQGLData({ isGQLPage: true, query });
+                }),
+                switchMap(({ query }) => {
+                    return this.dotPageApiService.getPageAssetFromGraphql(query).pipe(
+                        tapResponse(
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            (res) => {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                const pageAsset = graphqlToPageEntity(res as any);
+
+                                //TODO: Update the state and call the whenLoaded callback
+                                // whenLoaded?.(data);
+                                // this.patchState((state) => ({
+                                //     ...state,
+                                //     editor: pageAsset as unknown as DotPageApiResponse,
+                                //     editorState: EDITOR_STATE.IDLE,
+                                //     // shouldReload: true
+                                // }));
+                            },
+                            (e) => {
+                                console.error(e);
                             }
                         )
                     );
@@ -880,6 +920,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         ...state,
         shouldReload
     }));
+
+    readonly setEditorPageAsset = this.updater((state, pageAsset: DotPageApiResponse) => ({
+        ...state,
+        editor: pageAsset
+    }));
+
+    readonly setQGLData = this.updater(
+        (state, { isGQLPage, query }: { isGQLPage: true; query: string }) => ({
+            ...state,
+            isGQLPage,
+            gqlQuery: query
+        })
+    );
 
     /**
      * Create the url to add a page to favorites

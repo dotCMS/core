@@ -95,6 +95,7 @@ import {
     SDK_EDITOR_SCRIPT_SOURCE,
     areContainersEquals,
     deleteContentletFromContainer,
+    ensureEditMode,
     insertContentletInContainer
 } from '../utils';
 
@@ -1103,6 +1104,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.GET_PAGE_DATA]: () => {
                 this.reloadIframeContent();
             },
+            [CUSTOMER_ACTIONS.CLIENT_QUERY]: () => {
+                const query = ensureEditMode(<string>data.payload);
+                this.store.getPageAssetFromGraphQLQuery({
+                    query,
+                    whenLoaded: (payload) => {
+                        this.iframe?.nativeElement?.contentWindow?.postMessage(
+                            { name: 'GRAPHQL_QUERY', payload },
+                            this.host
+                        );
+                    }
+                });
+            },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
@@ -1116,8 +1129,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     reloadIframeContent() {
+        const eventName = this.store.state().isGQLPage
+        ? NOTIFY_CUSTOMER.GRAPHQL_QUERY
+        : NOTIFY_CUSTOMER.SET_PAGE_DATA;
+
         this.iframe?.nativeElement?.contentWindow?.postMessage(
-            { name: NOTIFY_CUSTOMER.SET_PAGE_DATA, payload: this.store.state().editor },
+            { name: eventName, payload: this.store.state().editor },
             this.host
         );
     }

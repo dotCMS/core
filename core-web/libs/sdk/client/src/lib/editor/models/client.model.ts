@@ -51,6 +51,8 @@ export enum CUSTOMER_ACTIONS {
      */
     GET_PAGE_DATA = 'get-page-data',
 
+    CLIENT_QUERY = 'client-query',
+
     NOOP = 'noop'
 }
 

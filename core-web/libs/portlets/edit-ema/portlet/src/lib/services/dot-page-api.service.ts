@@ -179,4 +179,14 @@ export class DotPageApiService {
             { contentlet }
         );
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getPageAssetFromGraphql(query: string): Observable<{[key: string]: any, page: DotPageApiResponse }> {
+        const headers = {
+            'Content-Type': 'application/json',
+            dotcachettl: '0' // Bypasses GraphQL cache
+        };
+
+        return this.http.post('/api/v1/graphql', { query }, { headers }).pipe(pluck('data'));
+    }
 }

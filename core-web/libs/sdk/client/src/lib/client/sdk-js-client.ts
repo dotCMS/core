@@ -257,7 +257,7 @@ export class DotCmsClient {
          * @param action - The name of the name emitted by UVE
          * @param callbackFn - The function to execute when the UVE emits the action
          */
-        on: (action: string, callbackFn: (payload: unknown) => void) => {
+        on: (action: 'changes' | 'gql-changes', callbackFn: (payload: unknown) => void) => {
             if (!isInsideEditor()) {
                 return;
             }
@@ -265,6 +265,17 @@ export class DotCmsClient {
             if (action === 'changes') {
                 const messageCallback = (event: MessageEvent) => {
                     if (event.data.name === 'SET_PAGE_DATA') {
+                        callbackFn(event.data.payload);
+                    }
+                };
+
+                window.addEventListener('message', messageCallback);
+                this.#listeners.push({ event: 'message', callback: messageCallback, action });
+            }
+
+            if (action === 'gql-changes') {
+                const messageCallback = (event: MessageEvent) => {
+                    if (event.data.name === 'GRAPHQL_QUERY') {
                         callbackFn(event.data.payload);
                     }
                 };

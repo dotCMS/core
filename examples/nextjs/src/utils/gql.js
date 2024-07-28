@@ -6,7 +6,7 @@ const API_URL = `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/api/v1/graphql`;
  * @param {*} query
  * @return {*}
  */
-function getGraphQLPageQuery({ path, language_id, mode}) {
+export function getGraphQLPageQuery({ path, language_id, mode}) {
     const params = [];
 
     if (language_id) {
@@ -20,7 +20,21 @@ function getGraphQLPageQuery({ path, language_id, mode}) {
     const paramsString = params.length ? `, ${params.join(", ")}` : "";
 
     return `
-    {
+        {
+            search(
+            query: "+contentType:activity", 
+            limit: 5, 
+            offset:0, 
+            sortBy:"title"
+        ){
+            identifier
+            title
+            ...on Activity {
+                description
+            urlTitle
+            tags
+            }
+        },
         page(url: "${path}" ${paramsString}) {
             title
             url
@@ -104,6 +118,7 @@ export const getGraphQLPageData = async (params) => {
         body: JSON.stringify({ query }),
         cache: "no-cache", // Invalidate cache for Next.js
     });
+
     const { data } = await res.json();
     return data;
 };

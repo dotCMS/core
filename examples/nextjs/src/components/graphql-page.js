@@ -15,6 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
 import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
+import { usePageGQLData } from "@/hooks/usePageGQLData";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -33,12 +34,12 @@ const componentsMap = {
     Activity: Activity,
     Product: Product,
     Image: ImageComponent,
-    calendarEvent: CalendarEvent,
+    // calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
     CustomNoComponent: CustomNoComponent,
 };
 
-export function MyGraphQLPage({ pageAsset, nav }) {
+export function MyGraphQLPage({ pageAsset, nav, query }) {
     const { replace, refresh } = useRouter();
     const pathname = usePathname();
 
@@ -55,6 +56,10 @@ export function MyGraphQLPage({ pageAsset, nav }) {
           })
         : DotcmsLayout;
 
+    // This returns the entire page data
+    // including the pageAsset inside, without formatting
+    usePageGQLData(pageAsset);
+
     return (
         <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
             {pageAsset.layout.header && (
@@ -63,6 +68,8 @@ export function MyGraphQLPage({ pageAsset, nav }) {
                 </Header>
             )}
 
+
+
             <main className="container flex flex-col gap-8 m-auto">
                 <DotLayoutComponent
                     pageContext={{
@@ -70,8 +77,8 @@ export function MyGraphQLPage({ pageAsset, nav }) {
                         pageAsset: pageAsset,
                     }}
                     config={{
-                        onReload: () => refresh(),
                         pathname,
+                        query,
                     }}
                 />
             </main>

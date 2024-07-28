@@ -116,6 +116,8 @@ export interface EditEmaState {
     dragItem?: EmaDragItem;
     shouldReload: boolean;
     languages: DotLanguage[];
+    isGQLPage?: boolean;
+    gqlQuery?: string;
 }
 
 export interface MessageInfo {
@@ -135,7 +137,8 @@ export type PostMessagePayload =
     | Container[]
     | ClientContentletArea
     | ReorderPayload
-    | UpdatedContentlet;
+    | UpdatedContentlet
+    | string
 
 export interface DeletePayload {
     payload: ActionPayload;
