@@ -385,16 +385,19 @@ class FilesPushCommandIT extends CommandTest {
             //Pull down a workspace if empty
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
-            int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path, "--workspace", tempFolder.toString());
+            int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path, "--workspace",
+                    tempFolder.toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(FilesCommand.NAME, FilesPush.NAME, "--workspace", tempFolder.toAbsolutePath().toString(), "content-types");
+            status = commandLine.execute(FilesCommand.NAME, FilesPush.NAME, "--workspace",
+                    tempFolder.toAbsolutePath().toString(), "content-types");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             Assertions.assertTrue(isDirectoryNotEmpty(tempFolder));
 
             //But if called with a path that doesn't match any files folder in the workspace
-            status = commandLine.execute(FilesCommand.NAME, FilesPush.NAME, "--workspace", tempFolder.toAbsolutePath().toString(), "non-existing-folder");
+            status = commandLine.execute(FilesCommand.NAME, FilesPush.NAME, "--workspace",
+                    tempFolder.toAbsolutePath().toString(), "non-existing-folder");
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
 
         } finally {
