@@ -69,16 +69,19 @@ export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
      * @memberof DotCategoryFieldSidebarComponent
      */
     @Input() visible = false;
+
     /**
      * Output that emit if the sidebar is closed
      */
     @Output() closedSidebar = new EventEmitter<void>();
+
     /**
      * Store based on the `CategoryFieldStore`.
      *
      * @memberof DotCategoryFieldSidebarComponent
      */
     readonly store = inject(CategoryFieldStore);
+
     /**
      * Computed property for retrieving all category keys.
      */

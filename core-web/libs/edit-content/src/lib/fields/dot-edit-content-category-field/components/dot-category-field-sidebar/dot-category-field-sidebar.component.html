@@ -53,7 +53,7 @@
                         @fadeAnimation
                         (itemChecked)="store.addSelected($event)"
                         (removeItem)="store.removeSelected($event)"
-                        [isLoading]="store.isSearchLoading()"
+                        [status]="store.searchStatus()"
                         [categories]="store.searchCategoryList()"
                         [selected]="store.selected()" />
                 }

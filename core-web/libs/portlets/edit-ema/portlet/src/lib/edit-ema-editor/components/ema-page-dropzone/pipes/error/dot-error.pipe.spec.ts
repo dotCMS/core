@@ -1,6 +1,6 @@
 import { DotErrorPipe } from './dot-error.pipe';
 
-import { PAYLOAD_MOCK } from '../../../../../shared/consts';
+import { PAYLOAD_MOCK } from '../../../../../shared/mocks';
 import { ClientData } from '../../../../../shared/models';
 import { Container, EmaDragItem } from '../../types';
 

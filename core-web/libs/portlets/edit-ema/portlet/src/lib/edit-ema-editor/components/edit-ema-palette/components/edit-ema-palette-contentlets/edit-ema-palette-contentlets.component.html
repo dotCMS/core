@@ -19,55 +19,48 @@
 </div>
 
 <div class="contentlets">
-    <dot-spinner
-        *ngIf="paletteStatus === EDIT_EMA_PALETTE_STATUS.LOADING; else content"
-        [size]="'40px'"
-        [borderSize]="'8px'"></dot-spinner>
+    @if (paletteStatus === EDIT_EMA_PALETTE_STATUS.LOADING) {
+        <dot-spinner [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+    } @else if (contentlets.items.length) {
+        <div class="contentlets-cards">
+            @for (contentlet of contentlets.items; track contentlet.identifier; let i = $index) {
+                <div
+                    [attr.data-item]="
+                        {
+                            contentlet: {
+                                identifier: contentlet.identifier,
+                                contentType: contentlet.contentType,
+                                baseType: contentlet.baseType,
+                                inode: contentlet.inode,
+                                title: contentlet.title
+                            },
+                            move: false
+                        } | json
+                    "
+                    [attr.data-testId]="'contentlet-' + i"
+                    class="contentlet-card"
+                    data-type="contentlet"
+                    draggable="true">
+                    <dot-icon [size]="20" name="drag_indicator"></dot-icon>
 
-    <ng-template #content>
-        <ng-container *ngIf="contentlets.items.length > 0; else noContent">
-            <div class="contentlets-cards">
-                @for (
-                    contentlet of contentlets.items;
-                    track contentlet.identifier;
-                    let i = $index
-                ) {
-                    <div
-                        [attr.data-item]="
-                            {
-                                contentlet: {
-                                    identifier: contentlet.identifier,
-                                    contentType: contentlet.contentType,
-                                    baseType: contentlet.baseType,
-                                    inode: contentlet.inode,
-                                    title: contentlet.title
-                                },
-                                move: false
-                            } | json
-                        "
-                        [attr.data-testId]="'contentlet-' + i"
-                        class="contentlet-card"
-                        data-type="contentlet"
-                        draggable="true">
-                        <dot-icon [size]="20" name="drag_indicator"></dot-icon>
+                    <dot-contentlet-thumbnail
+                        [iconSize]="'24px'"
+                        [contentlet]="contentlet"></dot-contentlet-thumbnail>
 
-                        <dot-contentlet-thumbnail
-                            [iconSize]="'24px'"
-                            [contentlet]="contentlet"></dot-contentlet-thumbnail>
+                    <span>{{ contentlet.title }}</span>
+                </div>
+            }
+        </div>
+    } @else {
+        <div class="empty-palette">{{ 'edit.ema.empty.palette' | dm }}</div>
+    }
 
-                        <span>{{ contentlet.title }}</span>
-                    </div>
-                }
-            </div>
-        </ng-container>
-        <ng-template #noContent>No content to show</ng-template>
-    </ng-template>
-
-    <p-paginator
-        *ngIf="contentlets.totalRecords > 0"
-        (onPageChange)="onPaginate($event, contentlets.filter)"
-        [rows]="contentlets.itemsPerPage"
-        [showFirstLastIcon]="false"
-        [totalRecords]="contentlets.totalRecords"
-        [pageLinkSize]="0"></p-paginator>
+    @if (contentlets.totalRecords) {
+        <p-paginator
+            (onPageChange)="onPaginate($event, contentlets.filter)"
+            [rows]="contentlets.itemsPerPage"
+            [showFirstLastIcon]="false"
+            [totalRecords]="contentlets.totalRecords"
+            [pageLinkSize]="0"></p-paginator>
+    }
 </div>
