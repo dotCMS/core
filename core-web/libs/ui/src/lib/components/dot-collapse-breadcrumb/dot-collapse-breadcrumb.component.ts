@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { RouterModule } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { ButtonModule } from 'primeng/button';
 import { ChevronRightIcon } from 'primeng/icons/chevronright';
 import { MenuModule } from 'primeng/menu';
@@ -14,16 +15,11 @@ import { MAX_ITEMS } from './dot-collapse-breadcrumb.costants';
  * @class DotCollapseBreadcrumbComponent
  */
 @Component({
-    imports: [ChevronRightIcon, ButtonModule, MenuModule, RouterModule],
+    imports: [ChevronRightIcon, ButtonModule, MenuModule, RouterModule, BreadcrumbModule],
     standalone: true,
     selector: 'dot-collapse-breadcrumb',
     templateUrl: './dot-collapse-breadcrumb.component.html',
-    styleUrls: ['./dot-collapse-breadcrumb.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    // eslint-disable-next-line @angular-eslint/no-host-metadata-property
-    host: {
-        class: 'p-element'
-    }
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCollapseBreadcrumbComponent {
     /**
@@ -73,35 +69,5 @@ export class DotCollapseBreadcrumbComponent {
      *
      * @memberof DotCollapseBreadcrumbComponent
      */
-    onItemClick = output<{ originalEvent: Event; item: MenuItem }>();
-    /**
-     * Collapse the menu
-     *
-     * @param {Event} event
-     * @param {MenuItem} item
-     * @memberof DotCollapseBreadcrumbComponent
-     */
-    itemClick(event: Event, item: MenuItem) {
-        if (item.disabled) {
-            event.preventDefault();
-
-            return;
-        }
-
-        if (!item.url && !item.routerLink) {
-            event.preventDefault();
-        }
-
-        if (item.command) {
-            item.command({
-                originalEvent: event,
-                item: item
-            });
-        }
-
-        this.onItemClick.emit({
-            originalEvent: event,
-            item: item
-        });
-    }
+    itemClick = output<{ originalEvent: Event; item: MenuItem }>();
 }
