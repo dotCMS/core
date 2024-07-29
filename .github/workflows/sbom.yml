@@ -53,9 +53,10 @@ jobs:
 
           # Retrieve the previous tag from the file
           previous_tag=$(cat core-test-results/previous_tag.txt || echo "")
-          echo "Previous tag: $previous_tag"
-          echo "Current tag: ${{ env.DOTCMS_VERSION }}"
+          echo "Previous tag: '$previous_tag'"
+          echo "Current tag: '${{ env.DOTCMS_VERSION }}'"
 
+          # Ensure both tags are compared as expected
           if [ "$previous_tag" != "${{ env.DOTCMS_VERSION }}" ]; then
             echo "Tag has changed. Proceeding with the scan."
             echo "${{ env.DOTCMS_VERSION }}" > core-test-results/previous_tag.txt
