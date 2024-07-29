@@ -40,13 +40,14 @@ function confirmQueryParams(queryParams: Params): {
             if (!queryParams[curr.key]) {
                 acc[curr.key] = curr.value;
                 acc.missing = true;
-            } else if (
-                curr.key === 'url' &&
-                queryParams[curr.key] !== 'index' &&
-                queryParams[curr.key].endsWith('/index')
-            ) {
-                acc[curr.key] = sanitizeURL(queryParams[curr.key]);
-                acc.missing = true;
+            } else if (curr.key === 'url') {
+                if (queryParams[curr.key] !== 'index' && queryParams[curr.key].endsWith('/index')) {
+                    acc[curr.key] = sanitizeURL(queryParams[curr.key]);
+                    acc.missing = true;
+                } else if (queryParams[curr.key] === '/') {
+                    acc[curr.key] = 'index';
+                    acc.missing = true;
+                }
             }
 
             return acc;
