@@ -5,7 +5,7 @@ on:
 
 jobs:
   scan:
-    runs-on: ubuntu-latest  # Change to use Ubuntu runner
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout core-test-results repository
@@ -15,24 +15,18 @@ jobs:
           token: ${{ secrets.SECRET_PENTEST_TOKEN }}
           path: core-test-results
 
+      - name: Get latest dotCMS Docker image tag
+        id: get_version
+        run: |
+          # Fetch the latest version tag from Docker Hub
+          latest_tag=$(curl -s https://hub.docker.com/v2/repositories/dotcms/dotcms/tags/latest/ | jq -r .name)
+          echo "Latest tag: $latest_tag"
+          echo "DOTCMS_VERSION=$latest_tag" >> $GITHUB_ENV
+
       - name: Pull and run dotCMS Docker image
         run: |
-          docker pull dotcms/dotcms:latest
-          docker run -d -p 8082:8082 dotcms/dotcms:latest
-
-      - name: Extract dotCMS version
-        run: |
-          #!/bin/bash
-          container_id=$(docker run -d --name temp_dotcms dotcms/dotcms:latest /bin/sh -c "/path/to/dotcms version")
-          sleep 5
-          version=$(docker logs temp_dotcms)
-          docker stop temp_dotcms
-          docker rm temp_dotcms
-          version=$(echo "$version" | grep -oP '(\d+\.\d+\.\d+)')
-          echo "dotcms_version=$version" >> $GITHUB_ENV
-          echo "Version: $version"
-        shell: /usr/bin/bash -e {0}
-
+          docker pull dotcms/dotcms:${{ env.DOTCMS_VERSION }}
+          docker run -d -p 8082:8082 dotcms/dotcms:${{ env.DOTCMS_VERSION }}
 
       - name: Install pipx
         run: |
@@ -40,19 +34,19 @@ jobs:
 
       - name: Scan Docker Image with Syft
         run: |
-          pipx run anchore_syft  dotcms/dotcms:latest -o cyclonedx-xml > core-test-results/cyclonedx.json
+          pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core-test-results/cyclonedx.json
 
       - name: Configure Git
         run: |
           git config --global user.email "rashik1144@github.com"
           git config --global user.name "rashik1144"
-      
+
       - name: Commit and push results to core-test-results repository
         run: |
           cd core-test-results
           ls -l  # Debugging: List files in the core-test-results directory
-          git add dotcms_${{ env.dotcms_version }}.json
-          git commit -m "Add SBOM for dotCMS version ${{ env.dotcms_version }}" || echo "No changes to commit"
+          git add cyclonedx.json
+          git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
           git push origin master  # Update branch name if necessary
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_PENTEST_TOKEN }}
