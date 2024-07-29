@@ -4,24 +4,21 @@ on:
   workflow_dispatch:
 
 jobs:
-
   scanner:
-    runs-on: [self-hosted, Windows, x64]
+    runs-on: windows-latest
 
     steps:
-      - name: Start dotCMS with docker
-        id: start-dotcms
+      - name: Checkout core-test-results repository
+        uses: actions/checkout@v3
+        with:
+          repository: rashik1144/core-test-results
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Start dotCMS with Docker
         run: |
           docker pull dotcms/dotcms:latest
-          docker run -d dotcms/dotcms:latest
-        
-      - name: Pull rashik1144/core-test-results repository
-        run: |
-          git config pull.rebase false
-          git remote add origin https://github.com/rashik1144/core-test-results.git
-          git pull origin master
-        working-directory: C:\Users\rashi\core-test-results
-        
+          docker run -d -p 8082:8082 dotcms/dotcms:latest
+
       - name: Get latest release version
         run: |
           $releases = Invoke-WebRequest -Uri "https://api.github.com/repos/dotCMS/core/releases" | ConvertFrom-Json
@@ -30,9 +27,8 @@ jobs:
           Write-Output "Latest release version: $formatted_version"
           echo "release_version=$formatted_version" >> $env:GITHUB_ENV
         shell: powershell
-        
+
       - name: Check server status
-        id: check-server-status
         run: |
           $server_status = (Invoke-WebRequest -Uri "http://localhost:8082/dotAdmin" -Method Head -UseBasicParsing).StatusCode
           if ($server_status -eq 200) {
@@ -41,16 +37,16 @@ jobs:
             Write-Output "Web server is not running"
             exit 1
           }
+        shell: powershell
 
       - name: Scan Docker Image with Syft
         run: |
-          pipx run anchore_syft  dotcms/dotcms:latest -o cyclonedx-xml > cyclonedx.json
-        working-directory: C:\Users\rashi\core-test-results
+          pipx run anchore_syft dotcms/dotcms:latest -o cyclonedx-xml > cyclonedx.json
+        working-directory: core-test-results
 
       - name: Stop dotCMS
-        run: docker-compose down
-        working-directory: C:\Users\rashi
-          
+        run: docker stop $(docker ps -q --filter ancestor=dotcms/dotcms:latest)
+        
       - name: Switch to release branch
         run: |
           $branch_name = "${env:release_version}"
@@ -59,13 +55,13 @@ jobs:
             git checkout -b $branch_name origin/$branch_name
           }
         shell: powershell
-        working-directory: C:\Users\rashi\core-test-results
+        working-directory: core-test-results
 
       - name: Add files and commit changes
         run: |
           git add .
           git commit -m "Add test results for release ${{ env.release_version }}"
-        working-directory: C:\Users\rashi\core-test-results
+        working-directory: core-test-results
 
       - name: Push changes to rashik1144/core-test-results repository
         uses: ad-m/github-push-action@master
@@ -73,13 +69,12 @@ jobs:
           github_token: ${{ secrets.SECRET_PENTEST_TOKEN }}
           branch: ${{ env.release_version }}
           force: true
-          directory: C:\Users\rashicore-test-results\
+          directory: core-test-results/
           repository: rashik1144/core-test-results
-          
+
   maintenance:
-    runs-on: [self-hosted, Windows, x64]
+    runs-on: windows-latest
 
     steps:
-      - name: Connect to self-hosted runner
-        run: echo "Connecting to self-hosted runner to avoid termination due to inactivity"
-
+      - name: Ensure runner activity
+        run: echo "Connecting to GitHub-hosted runner to avoid termination due to inactivity"
