@@ -27,7 +27,7 @@ jobs:
 
       - name: Scan Docker Image with Syft
         run: |
-          pipx run anchore_syft  dotcms/dotcms:latest -o cyclonedx-xml > cyclonedx.json
+          pipx run anchore_syft  dotcms/dotcms:latest -o cyclonedx-xml > core-test-results/cyclonedx.json
 
       - name: Commit and push results to core-test-results repository
         run: |
