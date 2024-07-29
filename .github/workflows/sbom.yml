@@ -20,12 +20,17 @@ jobs:
           docker pull dotcms/dotcms:latest
           docker run -d -p 8082:8082 dotcms/dotcms:latest
 
-      - name: Get dotCMS version
-        id: get_version
+      - name: Extract dotCMS version
         run: |
-          version=$(docker run --rm dotcms/dotcms:latest --version | grep -oP '(\d+\.\d+\.\d+)')
+          #!/bin/bash
+          container_id=$(docker run -d --name temp_dotcms dotcms/dotcms:latest /bin/sh -c "dotcms version")
+          sleep 5
+          version=$(docker logs temp_dotcms)
+          docker stop temp_dotcms
+          docker rm temp_dotcms
+          version=$(echo "$version" | grep -oP '(\d+\.\d+\.\d+)')
           echo "dotcms_version=$version" >> $GITHUB_ENV
-          echo "Version: $version"  # Output version info for debugging
+          echo "Version: $version"
 
       - name: Install pipx
         run: |
