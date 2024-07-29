@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.categories.business;
 
+import com.dotcms.api.APIProvider;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.portlets.categories.model.Category;
 
@@ -14,12 +15,15 @@ import com.dotmarketing.portlets.categories.model.Category;
  * Otherwise, the search will include only the top-level categories.
  */
 public class CategorySearchCriteria {
+    final boolean searchAllLevels;
     final String rootInode;
     final String filter;
     final String orderBy;
     final OrderDirection direction;
     final int limit;
     final int offset;
+    private boolean parentList;
+    private boolean countChildren;
     private CategorySearchCriteria (final Builder builder) {
         this.rootInode = builder.rootInode;
         this.filter = builder.filter;
@@ -27,6 +31,13 @@ public class CategorySearchCriteria {
         this.direction = builder.direction;
         this.limit = builder.limit;
         this.offset = builder.offset;
+        this.searchAllLevels = builder.searchAllLevels;
+        this.parentList = builder.parentList;
+        this.countChildren = builder.countChildren;
+    }
+
+    public boolean isCountChildren() {
+        return countChildren;
     }
 
     public String getRootInode() {
@@ -53,13 +64,34 @@ public class CategorySearchCriteria {
         return offset;
     }
 
+    public boolean isParentList() {
+        return parentList;
+    }
+
+    @Override
+    public String toString() {
+        return "CategorySearchCriteria{" +
+                "searchAllLevels=" + searchAllLevels +
+                ", rootInode='" + rootInode + '\'' +
+                ", filter='" + filter + '\'' +
+                ", orderBy='" + orderBy + '\'' +
+                ", direction=" + direction +
+                ", limit=" + limit +
+                ", offset=" + offset +
+                '}';
+    }
+
     public static class Builder {
+        private boolean searchAllLevels = false;
         private String rootInode;
         private String filter;
         private String orderBy = "category_name";
         private OrderDirection direction = OrderDirection.ASC;
         private int limit = -1;
         private int offset = 0;
+
+        private boolean parentList;
+        private boolean countChildren;
 
         public Builder rootInode(String rootInode) {
             this.rootInode = rootInode;
@@ -91,9 +123,23 @@ public class CategorySearchCriteria {
             return this;
         }
 
+        public Builder searchAllLevels(final boolean searchAllLevels) {
+            this.searchAllLevels = searchAllLevels;
+            return this;
+        }
 
         public CategorySearchCriteria build() {
             return new CategorySearchCriteria(this);
+        }
+
+        public Builder parentList(boolean parentList) {
+            this.parentList = parentList;
+            return this;
+        }
+
+        public Builder setCountChildren(boolean countChildren) {
+            this.countChildren = countChildren;
+            return this;
         }
     }
 }

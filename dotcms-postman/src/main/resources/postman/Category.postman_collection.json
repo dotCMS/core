@@ -2928,7 +2928,7 @@
 									"            pm.expect('PostmanTest Top level Category').to.have.equals(jsonData.entity[i].parentList[0].name);",
 									"            pm.expect('Child 3').to.have.equals(jsonData.entity[i].parentList[1].name);",
 									"            pm.expect(0).to.have.equals(jsonData.entity[i].childrenCount);",
-									"        }     ",
+									"        }    ",
 									"    }",
 									"",
 									"    data.includes(\"PostmanTest Child 1\");",
@@ -2956,7 +2956,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&allLevels=true&inode={{topCategoryInode}}&per_page=7000&direction=ASC",
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&allLevels=true&inode={{topCategoryInode}}&per_page=7000&direction=ASC&parentList=true&showChildrenCount=true",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2980,17 +2980,20 @@
 									"value": "{{topCategoryInode}}"
 								},
 								{
-									"key": "showChildrenCount",
-									"value": "true",
-									"disabled": true
-								},
-								{
 									"key": "per_page",
 									"value": "7000"
 								},
 								{
 									"key": "direction",
 									"value": "ASC"
+								},
+								{
+									"key": "parentList",
+									"value": "true"
+								},
+								{
+									"key": "showChildrenCount",
+									"value": "true"
 								}
 							]
 						}
@@ -3014,7 +3017,7 @@
 									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
 									"});",
 									"",
-									"pm.expect(2).to.have.equals(jsonData.entity.length);",
+									"pm.expect(3).to.have.equals(jsonData.entity.length);",
 									"",
 									"pm.test('get the right categories', () => {   ",
 									"    let data = [];",
@@ -3025,17 +3028,19 @@
 									"",
 									"        if (i === 0) {",
 									"            pm.expect('PostmanTest Child 1').to.have.equals(jsonData.entity[i].categoryName);",
-									"            pm.expect(jsonData.entity[i].parentList).to.be.undefined;",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.null;",
 									"        } else if (i === 1) {",
 									"            pm.expect('PostmanTest Child 2').to.have.equals(jsonData.entity[i].categoryName);",
-									"            pm.expect(jsonData.entity[i].parentList).to.be.undefined;",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.null;",
+									"        } else if (i === 2) {",
+									"            pm.expect('PostmanTest Grandchild 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.null;",
 									"        }  ",
 									"    }",
 									"",
 									"    data.includes(\"PostmanTest Child 1\");",
 									"    data.includes(\"PostmanTest Child 2\");",
-									"});",
-									""
+									"});"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -3074,6 +3079,104 @@
 								{
 									"key": "allLevels",
 									"value": "true"
+								},
+								{
+									"key": "inode",
+									"value": "{{topCategoryInode}}"
+								},
+								{
+									"key": "showChildrenCount",
+									"value": "true"
+								},
+								{
+									"key": "per_page",
+									"value": "7000"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get categories by filter AND looking on one level(Enabled showChildrenCount)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fetch successfully without errors\", function () {",
+									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.expect(2).to.have.equals(jsonData.entity.length);",
+									"",
+									"pm.test('get the right categories', () => {   ",
+									"    let data = [];",
+									"",
+									"    for (let i = 0; i < jsonData.entity.length; i++)",
+									"    { ",
+									"        data.push(jsonData.entity[i]['categoryName']);   ",
+									"",
+									"        if (i === 0) {",
+									"            pm.expect('PostmanTest Child 1').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.null;",
+									"        } else if (i === 1) {",
+									"            pm.expect('PostmanTest Child 2').to.have.equals(jsonData.entity[i].categoryName);",
+									"            pm.expect(jsonData.entity[i].parentList).to.be.null;",
+									"        }",
+									"    }",
+									"",
+									"    data.includes(\"PostmanTest Child 1\");",
+									"    data.includes(\"PostmanTest Child 2\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/categories/children?filter=PostmanTest&allLevels=false&inode={{topCategoryInode}}&showChildrenCount=true&per_page=7000&direction=ASC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"children"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "PostmanTest"
+								},
+								{
+									"key": "allLevels",
+									"value": "false"
 								},
 								{
 									"key": "inode",

@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.categories.model.HierarchedCategory;
 import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
@@ -287,7 +288,7 @@ public abstract class CategoryFactory {
 	 *
 	 * @return List of Category filteredx
 	 */
-	public abstract List<HierarchedCategory> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException;
+	public abstract List<HierarchedCategory> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Find Categories by inodes and calculate its Hierarchy.

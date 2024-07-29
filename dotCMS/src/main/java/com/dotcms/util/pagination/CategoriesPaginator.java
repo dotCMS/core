@@ -68,6 +68,8 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
         boolean childrenCategories = extraParams.containsKey("childrenCategories") ? (Boolean)extraParams.get("childrenCategories") : false;
         boolean searchInAllLevels = extraParams.containsKey("searchInAllLevels") ? (Boolean)extraParams.get("searchInAllLevels") : false;
         String inode = extraParams.containsKey("inode") ? String.valueOf(extraParams.get("inode")) : StringPool.BLANK;
+        boolean showChildrenCount = extraParams.containsKey("showChildrenCount") ? (Boolean) extraParams.get("showChildrenCount") : false;
+        boolean parentList = extraParams.containsKey("parentList") ? (Boolean) extraParams.get("parentList") : false;
 
         try {
 
@@ -78,10 +80,12 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
                     .orderBy(orderby != null ? orderby : "category_name")
                     .direction(direction != null ? direction : OrderDirection.ASC )
                     .rootInode(inode)
+                    .setCountChildren(showChildrenCount)
+                    .parentList(parentList)
+                    .searchAllLevels(searchInAllLevels || childrenCategories)
                     .build();
 
-            final PaginatedCategories categories = searchInAllLevels ? searchAllLevels(user, searchingCriteria) :
-                    searchInOneLevel(user, searchingCriteria, childrenCategories);
+            final PaginatedCategories categories = categoryAPI.findAll(searchingCriteria, user, false);
 
             final PaginatedArrayList<Category> result = new PaginatedArrayList<>();
             result.setTotalResults(categories.getTotalCount());
@@ -94,51 +98,5 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
-    }
-
-    /**
-     * Search for categories at every level.
-     *
-     * @param user to check Permission
-     * @param searchingCriteria Criteria for Searching
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    private PaginatedCategories searchAllLevels(final User user,
-                                                final CategorySearchCriteria searchingCriteria)
-            throws DotDataException, DotSecurityException {
-
-        return categoryAPI.findAll(searchingCriteria, user, false);
-    }
-
-    /**
-     * Search for a category at a single level. This could be either the top level or within the immediate children of any category.
-     *
-     * @param user to Check permission
-     * @param searchingCriteria Search Criteria
-
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    private PaginatedCategories searchInOneLevel(final User user,
-                                                 final CategorySearchCriteria searchingCriteria,
-                                                 final boolean childrenCategories)
-            throws DotDataException, DotSecurityException {
-
-        String categoriesSort = null;
-
-        if (searchingCriteria.getOrderBy() != null) {
-            categoriesSort = searchingCriteria.getDirection() == OrderDirection.DESC
-                    ? "-" + searchingCriteria.getOrderBy() : searchingCriteria.getOrderBy();
-        }
-
-        return childrenCategories == false ?
-                categoryAPI.findTopLevelCategories(user, false, searchingCriteria.getOffset(),
-                        searchingCriteria.getLimit(), searchingCriteria.getFilter(), categoriesSort) :
-                categoryAPI.findChildren(user, searchingCriteria.getRootInode(), false,
-                        searchingCriteria.getOffset(), searchingCriteria.getLimit(), searchingCriteria.getFilter(),
-                        categoriesSort);
     }
 }

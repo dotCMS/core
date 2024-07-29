@@ -252,7 +252,8 @@ public class CategoriesResource {
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
             @QueryParam("inode") final String inode,
             @QueryParam("showChildrenCount") final boolean showChildrenCount,
-            @QueryParam("allLevels") final boolean allLevels) throws DotDataException, DotSecurityException {
+            @QueryParam("allLevels") final boolean allLevels,
+            @QueryParam("parentList") final boolean parentList) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -270,23 +271,20 @@ public class CategoriesResource {
 
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put("inode", inode);
-        extraParams.put("childrenCategories", true);
         extraParams.put("searchInAllLevels", allLevels);
+        extraParams.put("parentList", parentList);
+        extraParams.put("showChildrenCount", showChildrenCount);
 
         try {
-            response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
-                    direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams)
-                    : this.childrenCategoriesPaginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
-                            direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams);
+            return  this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+                    direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
             }
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
-
-        return response;
     }
 
     /**
@@ -558,7 +556,7 @@ public class CategoriesResource {
                 : this.getChildren(httpRequest, httpResponse, categoryEditForm.getFilter(),
                         categoryEditForm.getPage(),
                         categoryEditForm.getPerPage(), "", categoryEditForm.getDirection(),
-                        categoryEditForm.getParentInode(), true, false);
+                        categoryEditForm.getParentInode(), true, false, false);
     }
 
     /**
