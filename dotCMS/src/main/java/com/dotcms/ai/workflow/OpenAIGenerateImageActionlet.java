@@ -40,17 +40,9 @@ public class OpenAIGenerateImageActionlet extends WorkFlowActionlet {
     @Override
     public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-        int delay = Try.of(() -> Integer.parseInt(params.get(OpenAIParams.RUN_DELAY.key).getValue())).getOrElse(5);
 
-        Runnable task = new AsyncWorkflowRunnerWrapper(new OpenAIGenerateImageRunner(processor, params));
-        if (delay > 0) {
-            OpenAIThreadPool.schedule(task, delay, TimeUnit.SECONDS);
-            final SystemMessageBuilder message = new SystemMessageBuilder().setMessage("Image being generated in the background").setLife(3000).setType(MessageType.SIMPLE_MESSAGE).setSeverity(MessageSeverity.SUCCESS);
-
-            SystemMessageEventUtil.getInstance().pushMessage(message.create(), List.of(processor.getUser().getUserId()));
-        } else {
-            task.run();
-        }
+        final Runnable task = new OpenAIGenerateImageRunner(processor, params);
+        task.run();
     }
 
 
