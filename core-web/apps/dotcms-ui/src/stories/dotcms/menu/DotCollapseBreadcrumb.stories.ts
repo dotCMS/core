@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
     Meta,
     StoryObj,
@@ -47,11 +48,11 @@ const meta: Meta<Args> = {
     args: {
         maxItems: 4,
         model: [
-            { label: 'Electronics', url: '' },
-            { label: 'Computer', url: '' },
-            { label: 'Accessories', url: '' },
-            { label: 'Keyboard', url: '' },
-            { label: 'Wireless', url: '' }
+            { label: 'Electronics', command: console.log },
+            { label: 'Computer', command: console.log },
+            { label: 'Accessories', command: console.log },
+            { label: 'Keyboard', command: console.log },
+            { label: 'Wireless', command: console.log }
         ]
     },
     argTypes: {
