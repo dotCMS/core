@@ -15,12 +15,26 @@ jobs:
           token: ${{ secrets.SECRET_PENTEST_TOKEN }}
           path: core-test-results
 
-      - name: Get latest dotCMS Docker image tag
+      - name: Get latest dotCMS Docker image tag based on last update
         id: get_version
         run: |
-          # Fetch the list of tags from Docker Hub and extract the latest one
-          tags=$(curl -s https://hub.docker.com/v2/repositories/dotcms/dotcms/tags/ | jq -r '.results[].name' | sort -V)
-          latest_tag=$(echo "$tags" | tail -n 1)
+          # Fetch the list of tags from Docker Hub
+          response=$(curl -s https://hub.docker.com/v2/repositories/dotcms/dotcms/tags/)
+          
+          # Extract tag names from the response
+          tags=$(echo "$response" | jq -r '.results[].name')
+
+          # Get detailed info for each tag
+          tags_with_dates=""
+          for tag in $tags; do
+            tag_info=$(curl -s "https://hub.docker.com/v2/repositories/dotcms/dotcms/tags/${tag}/")
+            last_updated=$(echo "$tag_info" | jq -r '.last_updated')
+            tags_with_dates="$tags_with_dates\n$tag $last_updated"
+          done
+
+          # Find the tag with the most recent update
+          latest_tag=$(echo -e "$tags_with_dates" | sort -k2,2 -r | head -n 1 | awk '{print $1}')
+          
           echo "Latest tag: $latest_tag"
           echo "DOTCMS_VERSION=$latest_tag" >> $GITHUB_ENV
 
