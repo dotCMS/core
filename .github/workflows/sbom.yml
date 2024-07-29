@@ -27,7 +27,7 @@ jobs:
 
       - name: Scan Docker Image with Syft
         run: |
-          syft docker:dotcms/dotcms:latest -o cyclonedx-json > core-test-results/cyclonedx.json
+          pipx run anchore_syft  dotcms/dotcms:latest -o cyclonedx-xml > cyclonedx.json
 
       - name: Stop Docker Container
         run: |
