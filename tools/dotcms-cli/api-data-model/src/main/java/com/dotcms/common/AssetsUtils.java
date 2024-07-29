@@ -1,8 +1,8 @@
 package com.dotcms.common;
 
 import static com.dotcms.common.LocationUtils.encodePath;
-import static com.dotcms.model.config.Workspace.FILES_NAMESPACE;
 import static com.dotcms.common.WorkspaceManager.resolvePath;
+import static com.dotcms.model.config.Workspace.FILES_NAMESPACE;
 
 import com.dotcms.model.asset.AbstractAssetSync.PushType;
 import com.dotcms.model.asset.AssetSync;
@@ -10,8 +10,6 @@ import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderSync;
 import com.dotcms.model.asset.FolderView;
 import com.google.common.base.Strings;
-import java.util.function.Function;
-import java.util.Map;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,7 +18,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -195,38 +195,15 @@ public class AssetsUtils {
         var sourceCount = sourcePath.getNameCount();
 
         if (sourceCount < workspaceCount) {
-            logger.error("Source path cannot be outside of the workspace");
-            //throw new IllegalArgumentException("Source path cannot be outside of the workspace");
-            return List.of();
+            throw new IllegalArgumentException("Source path cannot be outside of the workspace");
         }
 
+        final Path filesPath = Path.of(workspace.getAbsolutePath(), FILES_NAMESPACE)
+                .toAbsolutePath().normalize();
         // Check if we are inside the workspace but also inside the files folder
-        if (sourceCount > workspaceCount + 1) {
-            final Path files = Path.of(workspace.getAbsolutePath(), FILES_NAMESPACE)
-                    .toAbsolutePath().normalize();
-            if (!sourcePath.startsWith(files)) {
-                /*
-                throw new IllegalArgumentException(
-                        String.format(
-                                "Invalid source path [%s]. Source path must be inside the files folder or "
-                                        +
-                                        "at the root of the workspace [%s] ", sourcePath,
-                                workspacePath));
-                 */
-                logger.error("Invalid source path. Source path must be inside the files folder or at the root of the workspace");
-                return List.of();
-            }
-        } else if (sourceCount == workspaceCount + 1) {
-            final Path files = Path.of(FILES_NAMESPACE).toAbsolutePath().normalize();
-            if (!sourcePath.startsWith(files)) {
-                /*
-                throw new IllegalArgumentException(
-                        "Invalid source path. Source path must be inside the files folder or " +
-                                "at the root of the workspace");
-                 */
-                logger.error("Invalid source path. Source path must be inside the files folder or at the root of the workspace");
-                return List.of();
-            }
+        if (sourceCount > workspaceCount + 1 || (sourceCount == workspaceCount + 1 && !sourcePath.startsWith(filesPath))) {
+            logger.warn("Invalid source path provided for a files push {}. Source path must be inside the files folder will fallback to workspace. {}", sourcePath, workspacePath);
+            return parseRootPaths(workspacePath, workspaceCount, workspaceCount);
         }
 
         return parseRootPaths(sourcePath, workspaceCount, sourceCount);
