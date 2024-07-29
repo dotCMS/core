@@ -78,7 +78,7 @@ export class DotHttpErrorManagerService {
             ? this.isLicenseError(response)
                 ? this.handleLicense()
                 : this.handleForbidden()
-            : this.errorHandlers?.[code as HttpCode](response) ?? false;
+            : (this.errorHandlers?.[code as HttpCode](response) ?? false);
     }
 
     private contentletIsForbidden(error: string): boolean {

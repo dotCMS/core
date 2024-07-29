@@ -132,14 +132,14 @@ describe('DotLoginComponent', () => {
             const versionInformation: DebugElement = de.query(By.css('[data-testId="version"]'));
             const licenseInformation: DebugElement = de.query(By.css('[data-testId="license"]'));
 
-            expect(header.nativeElement.innerHTML).toContain('Welcome!');
-            expect(emailLabel.nativeElement.innerHTML).toEqual('Email Address');
-            expect(passwordLabel.nativeElement.innerHTML).toEqual('Password');
+            expect(header.nativeElement.innerHTML.trim()).toContain('Welcome!');
+            expect(emailLabel.nativeElement.innerHTML.trim()).toEqual('Email Address');
+            expect(passwordLabel.nativeElement.innerHTML.trim()).toEqual('Password');
             expect(recoverPasswordLink.nativeElement.innerHTML.trim()).toEqual('Recover Password');
-            expect(rememberMe.nativeElement.innerHTML).toEqual('Remember Me');
-            expect(submitButton.nativeElement.innerHTML).toContain('Sign In');
-            expect(serverInformation.nativeElement.innerHTML).toEqual('Server: 860173b0');
-            expect(versionInformation.nativeElement.innerHTML).toEqual(
+            expect(rememberMe.nativeElement.innerHTML.trim()).toEqual('Remember Me');
+            expect(submitButton.nativeElement.innerHTML.trim()).toContain('Sign In');
+            expect(serverInformation.nativeElement.innerHTML.trim()).toEqual('Server: 860173b0');
+            expect(versionInformation.nativeElement.innerHTML.trim()).toEqual(
                 'COMMUNITY EDITION: 5.0.0 - March 13, 2019'
             );
             expect(licenseInformation.nativeElement.innerHTML).toEqual(

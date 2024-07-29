@@ -9,6 +9,7 @@
     <ng-template pTemplate="header">
         <div class="flex flex-row category-field__header">
             <button
+                type="button"
                 (click)="sidebar.close($event)"
                 class="p-button-rounded p-button-text"
                 data-testId="back-btn"
@@ -43,7 +44,7 @@
                         @fadeAnimation
                         (itemChecked)="store.addSelected($event)"
                         (removeItem)="store.removeSelected($event)"
-                        [isLoading]="store.isSearchLoading()"
+                        [status]="store.searchStatus()"
                         [categories]="store.searchCategoryList()"
                         [selected]="store.selected()" />
                 }

@@ -14,11 +14,11 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.awaitility.Awaitility;
-import org.awaitility.Duration;
 import org.mockito.Mockito;
 
 /**
@@ -50,7 +50,7 @@ public class IntegrationTestInitService {
 
                 Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS);
                 Awaitility.setDefaultPollDelay(Duration.ZERO);
-                Awaitility.setDefaultTimeout(Duration.ONE_MINUTE);
+                Awaitility.setDefaultTimeout(Duration.ofMinutes(1));
 
                 ConfigTestHelper._setupFakeTestingContext();
 

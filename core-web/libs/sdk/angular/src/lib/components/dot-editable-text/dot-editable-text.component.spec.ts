@@ -145,7 +145,7 @@ describe('DotEditableTextComponent', () => {
                     expect(spectator.component.mode).toBe('plain');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['plain'],
-                        base_url: 'http://localhost:8080/html/js/tinymcev7'
+                        base_url: 'http://localhost:8080/ext/tinymcev7'
                     });
                 });
 
@@ -158,7 +158,7 @@ describe('DotEditableTextComponent', () => {
                     expect(spectator.component.mode).toBe('minimal');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['minimal'],
-                        base_url: 'http://localhost:8080/html/js/tinymcev7'
+                        base_url: 'http://localhost:8080/ext/tinymcev7'
                     });
                 });
 
@@ -171,7 +171,7 @@ describe('DotEditableTextComponent', () => {
                     expect(spectator.component.mode).toBe('full');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['full'],
-                        base_url: 'http://localhost:8080/html/js/tinymcev7'
+                        base_url: 'http://localhost:8080/ext/tinymcev7'
                     });
                 });
             });

@@ -17,7 +17,9 @@ export class IframeMockComponent {
 
 @Component({
     selector: `dot-host-component`,
-    template: `<dot-container-permissions [containerId]="containerId"></dot-container-permissions>`
+    template: `
+        <dot-container-permissions [containerId]="containerId"></dot-container-permissions>
+    `
 })
 class DotTestHostComponent {
     containerId = '';

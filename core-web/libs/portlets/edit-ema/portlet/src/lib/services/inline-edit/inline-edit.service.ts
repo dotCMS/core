@@ -107,6 +107,10 @@ export class InlineEditService {
      * @param dataset - The contentlet dataset to be edited inline.
      */
     handleInlineEdit(dataset: InlineEditingContentletDataset): void {
+        if (!this.$isInlineEditingEnable()) {
+            return;
+        }
+
         this.$inlineEditingTargetDataset.set(dataset);
 
         if (this.isInMultiplePages(this.$inlineEditingTargetDataset())) {
