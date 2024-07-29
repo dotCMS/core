@@ -5186,10 +5186,6 @@
 .dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable {
   border-bottom: 1px solid #d1d4db;
 }
-.dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable tr,
-.dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable td {
-  font-size: 2.9375rem;
-}
 .dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridArrowButtonChar {
   float: left;
 }
