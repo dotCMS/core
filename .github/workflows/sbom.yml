@@ -18,9 +18,9 @@ jobs:
       - name: Get latest dotCMS Docker image tag
         id: get_version
         run: |
-          # Fetch the latest version tag from Docker Hub
-          tags=$(curl -s https://hub.docker.com/v2/repositories/dotcms/dotcms/tags/ | jq -r .name)
-          latest_tag=$(echo "$tags" | tail -n 2 | head -n 1)
+          # Fetch the list of tags from Docker Hub and extract the latest one
+          tags=$(curl -s https://hub.docker.com/v2/repositories/dotcms/dotcms/tags/ | jq -r '.results[].name' | sort -V)
+          latest_tag=$(echo "$tags" | tail -n 1)
           echo "Latest tag: $latest_tag"
           echo "DOTCMS_VERSION=$latest_tag" >> $GITHUB_ENV
 
