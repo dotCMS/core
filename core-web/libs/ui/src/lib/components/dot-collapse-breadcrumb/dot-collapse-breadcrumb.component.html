@@ -7,6 +7,7 @@
                     (click)="menu.toggle($event)"
                     icon="pi pi-ellipsis-h"
                     type="button"
+                    data-testid="btn-collapse"
                     styleClass="p-button-rounded p-button-text p-button-sm outline-none" />
             </li>
             <li class="p-breadcrumb-chevron">
@@ -38,21 +39,12 @@
                 } @else {
                     <a
                         [routerLink]="item.routerLink"
-                        [queryParams]="item.queryParams"
-                        [routerLinkActive]="'p-menuitem-link-active'"
-                        [routerLinkActiveOptions]="item.routerLinkActiveOptions || { exact: false }"
                         class="p-menuitem-link"
                         (click)="itemClick($event, item)"
                         [target]="item.target"
                         [attr.title]="item.title"
                         [attr.id]="item.id"
-                        [attr.tabindex]="item.disabled ? null : '0'"
-                        [fragment]="item.fragment"
-                        [queryParamsHandling]="item.queryParamsHandling"
-                        [preserveFragment]="item.preserveFragment"
-                        [skipLocationChange]="item.skipLocationChange"
-                        [replaceUrl]="item.replaceUrl"
-                        [state]="item.state">
+                        [attr.tabindex]="item.disabled ? null : '0'">
                         @if (item.icon) {
                             <span
                                 class="p-menuitem-icon"

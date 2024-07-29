@@ -1,13 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterModule } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ChevronRightIcon } from 'primeng/icons/chevronright';
 import { MenuModule } from 'primeng/menu';
 
+import { MAX_ITEMS } from './dot-collapse-breadcrumb.costants';
+
 @Component({
-    imports: [ChevronRightIcon, ButtonModule, MenuModule, RouterLink, RouterLinkActive],
+    imports: [ChevronRightIcon, ButtonModule, MenuModule, RouterModule],
     standalone: true,
     selector: 'dot-collapse-breadcrumb',
     templateUrl: './dot-collapse-breadcrumb.component.html',
@@ -20,7 +22,7 @@ import { MenuModule } from 'primeng/menu';
 })
 export class DotCollapseBreadcrumbComponent {
     $model = input<MenuItem[]>([], { alias: 'model' });
-    $maxItems = input<number>(4, { alias: 'maxItems' });
+    $maxItems = input<number>(MAX_ITEMS, { alias: 'maxItems' });
 
     onItemClick = output<{ originalEvent: Event; item: MenuItem }>();
 
