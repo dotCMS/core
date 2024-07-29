@@ -44,6 +44,9 @@ $default-scroll-width: 17px;
     gap: $spacing-1;
     padding: $spacing-3;
     padding-right: calc($spacing-3 - $default-scroll-width);
+    &.empty {
+        padding-left: 0;
+    }
 }
 
 .category-field__categories,
@@ -63,4 +66,18 @@ $default-scroll-width: 17px;
     padding: 0;
     height: 100%;
     overflow: hidden;
+}
+
+.category-field__empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: $spacing-3;
+
+    p {
+        text-align: center;
+        font-size: $font-size-smd;
+    }
 }

@@ -22,6 +22,10 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TreeModule } from 'primeng/tree';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotEmptyContainerComponent, PrincipalConfiguration } from '@dotcms/ui';
+
+import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
 import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.models';
 import { DotCategoryFieldListSkeletonComponent } from '../dot-category-field-list-skeleton/dot-category-field-list-skeleton.component';
 
@@ -43,7 +47,8 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
         CheckboxModule,
         ButtonModule,
         FormsModule,
-        DotCategoryFieldListSkeletonComponent
+        DotCategoryFieldListSkeletonComponent,
+        DotEmptyContainerComponent
     ],
     templateUrl: './dot-category-field-category-list.component.html',
     styleUrl: './dot-category-field-category-list.component.scss',
@@ -103,6 +108,7 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
      */
     itemsSelected: string[];
 
+    #messageService = inject(DotMessageService);
     #cdr = inject(ChangeDetectorRef);
     readonly #destroyRef = inject(DestroyRef);
     readonly #effectRef = effect(() => {
@@ -111,6 +117,12 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
         this.itemsSelected = this.$selected();
         this.#cdr.markForCheck(); // force refresh
     });
+
+    emptyState: PrincipalConfiguration = {
+        title: this.#messageService.get(CATEGORY_FIELD_EMPTY_MESSAGES.empty.title),
+        icon: CATEGORY_FIELD_EMPTY_MESSAGES.empty.icon,
+        subtitle: this.#messageService.get(CATEGORY_FIELD_EMPTY_MESSAGES.empty.subtitle)
+    };
 
     ngAfterViewInit() {
         // Handle the horizontal scroll to make visible the last column
