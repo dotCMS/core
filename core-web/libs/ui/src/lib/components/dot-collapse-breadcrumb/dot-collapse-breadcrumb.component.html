@@ -17,26 +17,7 @@
 
         @for (item of $itemsToShow(); track $index) {
             <li>
-                @if (!item.routerLink) {
-                    <a
-                        [attr.href]="item.url ? item.url : null"
-                        class="p-menuitem-link"
-                        (click)="itemClick($event, item)"
-                        [target]="item.target"
-                        [attr.title]="item.title"
-                        [attr.id]="item.id"
-                        [attr.tabindex]="item.disabled ? null : '0'">
-                        @if (item.icon) {
-                            <span
-                                class="p-menuitem-icon"
-                                [ngClass]="item.icon"
-                                [ngStyle]="item.iconStyle"></span>
-                        }
-                        @if (item.label) {
-                            <span class="p-menuitem-text">{{ item.label }}</span>
-                        }
-                    </a>
-                } @else {
+                @if (item.routerLink) {
                     <a
                         [routerLink]="item.routerLink"
                         [queryParams]="item.queryParams"
@@ -54,6 +35,25 @@
                         [skipLocationChange]="item.skipLocationChange"
                         [replaceUrl]="item.replaceUrl"
                         [state]="item.state">
+                        @if (item.icon) {
+                            <span
+                                class="p-menuitem-icon"
+                                [ngClass]="item.icon"
+                                [ngStyle]="item.iconStyle"></span>
+                        }
+                        @if (item.label) {
+                            <span class="p-menuitem-text">{{ item.label }}</span>
+                        }
+                    </a>
+                } @else {
+                    <a
+                        [attr.href]="item.url ? item.url : null"
+                        class="p-menuitem-link"
+                        (click)="itemClick($event, item)"
+                        [target]="item.target"
+                        [attr.title]="item.title"
+                        [attr.id]="item.id"
+                        [attr.tabindex]="item.disabled ? null : '0'">
                         @if (item.icon) {
                             <span
                                 class="p-menuitem-icon"
