@@ -113,4 +113,25 @@ describe('EditEmaGuard', () => {
             replaceUrl: true
         });
     });
+
+    it('should navigate to "edit-page" and sanitize url when the url is "/"', () => {
+        const route: ActivatedRouteSnapshot = {
+            firstChild: {
+                url: [{ path: 'content' }]
+            },
+            queryParams: { url: '/' }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+
+        TestBed.runInInjectionContext(() => editEmaGuard(route, state) as Observable<boolean>);
+
+        expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
+            queryParams: {
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                language_id: 1,
+                url: 'index'
+            },
+            replaceUrl: true
+        });
+    });
 });

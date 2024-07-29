@@ -21,8 +21,12 @@ describe('DotEmptyContainerComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
-        spectator.setInput('configuration', BASIC_CONFIGURATION);
+        spectator = createComponent({
+            props: {
+                configuration: BASIC_CONFIGURATION
+            }
+        });
+        spectator.detectChanges();
     });
 
     describe('Only Principal message', () => {
