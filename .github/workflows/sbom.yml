@@ -38,6 +38,6 @@ jobs:
           cd core-test-results
           git add cyclonedx.json
           git commit -m "Add SBOM for dotCMS latest release"
-          git push origin main
+          git push origin master
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_PENTEST_TOKEN }}
