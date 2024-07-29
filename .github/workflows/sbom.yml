@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  scanner:
+  scan:
     runs-on: windows-latest
 
     steps:
@@ -13,68 +13,27 @@ jobs:
         with:
           repository: rashik1144/core-test-results
           token: ${{ secrets.GITHUB_TOKEN }}
+          path: core-test-results
 
-      - name: Start dotCMS with Docker
+      - name: Pull and run dotCMS Docker image
         run: |
           docker pull dotcms/dotcms:latest
           docker run -d -p 8082:8082 dotcms/dotcms:latest
 
-      - name: Get latest release version
-        run: |
-          $releases = Invoke-WebRequest -Uri "https://api.github.com/repos/dotCMS/core/releases" | ConvertFrom-Json
-          $release_version = ($releases | ForEach-Object { $_.tag_name.TrimStart('v') }) | Sort-Object -Descending | Select-Object -First 1
-          $formatted_version = "release-$release_version"
-          Write-Output "Latest release version: $formatted_version"
-          echo "release_version=$formatted_version" >> $env:GITHUB_ENV
-        shell: powershell
-
-      - name: Check server status
-        run: |
-          $server_status = (Invoke-WebRequest -Uri "http://localhost:8082/dotAdmin" -Method Head -UseBasicParsing).StatusCode
-          if ($server_status -eq 200) {
-            Write-Output "Web server is running"
-          } else {
-            Write-Output "Web server is not running"
-            exit 1
-          }
-        shell: powershell
-
       - name: Scan Docker Image with Syft
         run: |
-          pipx run anchore_syft dotcms/dotcms:latest -o cyclonedx-xml > cyclonedx.json
-        working-directory: core-test-results
+          pipx install syft
+          syft docker:dotcms/dotcms:latest -o cyclonedx-json > core-test-results/cyclonedx.json
 
-      - name: Stop dotCMS
-        run: docker stop $(docker ps -q --filter ancestor=dotcms/dotcms:latest)
-        
-      - name: Switch to release branch
+      - name: Stop Docker Container
         run: |
-          $branch_name = "${env:release_version}"
-          git fetch origin $branch_name
-          if (-not $?) {
-            git checkout -b $branch_name origin/$branch_name
-          }
-        shell: powershell
-        working-directory: core-test-results
+          docker stop $(docker ps -q --filter ancestor=dotcms/dotcms:latest)
 
-      - name: Add files and commit changes
+      - name: Commit and push results to core-test-results repository
         run: |
-          git add .
-          git commit -m "Add test results for release ${{ env.release_version }}"
-        working-directory: core-test-results
-
-      - name: Push changes to rashik1144/core-test-results repository
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.SECRET_PENTEST_TOKEN }}
-          branch: ${{ env.release_version }}
-          force: true
-          directory: core-test-results/
-          repository: rashik1144/core-test-results
-
-  maintenance:
-    runs-on: windows-latest
-
-    steps:
-      - name: Ensure runner activity
-        run: echo "Connecting to GitHub-hosted runner to avoid termination due to inactivity"
+          cd core-test-results
+          git add cyclonedx.json
+          git commit -m "Add SBOM for dotCMS latest release"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
