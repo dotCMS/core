@@ -23,7 +23,7 @@ jobs:
       - name: Extract dotCMS version
         run: |
           #!/bin/bash
-          container_id=$(docker run -d --name temp_dotcms dotcms/dotcms:latest /bin/sh -c "dotcms version")
+          container_id=$(docker run -d --name temp_dotcms dotcms/dotcms:latest /bin/sh -c "/path/to/dotcms version")
           sleep 5
           version=$(docker logs temp_dotcms)
           docker stop temp_dotcms
@@ -31,6 +31,8 @@ jobs:
           version=$(echo "$version" | grep -oP '(\d+\.\d+\.\d+)')
           echo "dotcms_version=$version" >> $GITHUB_ENV
           echo "Version: $version"
+        shell: /usr/bin/bash -e {0}
+
 
       - name: Install pipx
         run: |
