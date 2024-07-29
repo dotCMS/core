@@ -88,7 +88,9 @@
     z-index: -1;
 }
 .tailerBody {
-    font-family: Andale Mono, monospace;
+    font-family:
+        Andale Mono,
+        monospace;
     font-size: 9pt;
     white-space: nowrap;
 }
@@ -229,7 +231,7 @@ $table-border: 1px solid $color-palette-gray-200;
     tr {
         transition: background-color $field-animation-speed;
 
-        height: 2.4375rem !important;
+        height: 2.4375rem;
         .selected {
             background-color: #e0e9f6;
         }
@@ -240,9 +242,9 @@ $table-border: 1px solid $color-palette-gray-200;
         border-bottom: $table-border;
         vertical-align: middle;
         height: 2.5rem !important;
-        padding: 8px $spacing-1 !important;
+        padding: 8px $spacing-1;
         .listingThumbDiv {
-            height: 2.9375rem !important;
+            height: 2.9375rem;
 
             width: 4.5rem;
             position: relative;

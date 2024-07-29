@@ -6261,7 +6261,7 @@ select[multiple]:hover {
 }
 #listing-table tr, .listingTable tr, .dojoxUploaderFileListTable tr {
   transition: background-color 0.1s;
-  height: 2.4375rem !important;
+  height: 2.4375rem;
 }
 #listing-table tr .selected, .listingTable tr .selected, .dojoxUploaderFileListTable tr .selected {
   background-color: #e0e9f6;
@@ -6273,13 +6273,13 @@ select[multiple]:hover {
   border-bottom: 1px solid #f3f3f4;
   vertical-align: middle;
   height: 2.5rem !important;
-  padding: 8px 0.5rem !important;
+  padding: 8px 0.5rem;
 }
 #listing-table th .listingThumbDiv, .listingTable th .listingThumbDiv, .dojoxUploaderFileListTable th .listingThumbDiv,
 #listing-table td .listingThumbDiv,
 .listingTable td .listingThumbDiv,
 .dojoxUploaderFileListTable td .listingThumbDiv {
-  height: 2.9375rem !important;
+  height: 2.9375rem;
   width: 4.5rem;
   position: relative;
   border-radius: 0.25rem;
