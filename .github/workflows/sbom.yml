@@ -41,12 +41,14 @@ jobs:
       - name: Check if latest tag has changed
         id: check_tag
         run: |
-          # Retrieve the previous tag from a file or environment
-          if [ -f core-test-results/previous_tag.txt ]; then
-            previous_tag=$(cat core-test-results/previous_tag.txt)
-          else
-            previous_tag=""
+          # Create the previous_tag.txt file if it does not exist
+          if [ ! -f core-test-results/previous_tag.txt ]; then
+            echo "No previous tag file found. Creating it now."
+            echo "" > core-test-results/previous_tag.txt
           fi
+
+          # Retrieve the previous tag from the file
+          previous_tag=$(cat core-test-results/previous_tag.txt)
           echo "Previous tag: $previous_tag"
           echo "Current tag: ${{ env.DOTCMS_VERSION }}"
 
