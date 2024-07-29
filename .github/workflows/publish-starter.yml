@@ -32,7 +32,7 @@ jobs:
     steps:
       - name: Context
         run: |
-          echo "Generationg a Full Starter..."
+          echo "Generating a Full Starter..."
           echo "${{ toJSON(github.event.inputs) }}"
       - name: 'Get zip file'
         id: get-zip-file
@@ -145,7 +145,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "> :large_green_circle: *Attention dotters:* a new Starter published!\n \n>This automated script is happy to announce that a new *_${{ env.STARTER_TYPE }}_* :package: `${{ needs.deploy-artifacts.outputs.filename }}` is now available on `ARTIFACTORY` :frog:!\n \n>```${{ needs.deploy-artifacts.outputs.url }}```\n>*Changelog:* \n>```${{ github.event.inputs.changelog }}```"
+                    "text": "> :large_green_circle: *Attention dotters:* a new Starter published!\n \n>This automated script is happy to announce that a new *_${{ env.STARTER_TYPE }}_* :package: `${{ needs.deploy-artifacts.outputs.filename }}` is now available on `ARTIFACTORY` :frog:!\n \n>${{ needs.deploy-artifacts.outputs.url }}\n>*Changelog:* \n>```${{ github.event.inputs.changelog }}```"
                   }
                 }
               ]
