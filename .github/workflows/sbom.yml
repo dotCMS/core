@@ -41,6 +41,10 @@ jobs:
       - name: Check if latest tag has changed
         id: check_tag
         run: |
+          # Debugging: List files in the core-test-results directory
+          echo "Contents of core-test-results directory:"
+          ls -l core-test-results
+          
           # Create the previous_tag.txt file if it does not exist
           if [ ! -f core-test-results/previous_tag.txt ]; then
             echo "No previous tag file found. Creating it now."
@@ -48,7 +52,7 @@ jobs:
           fi
 
           # Retrieve the previous tag from the file
-          previous_tag=$(cat core-test-results/previous_tag.txt)
+          previous_tag=$(cat core-test-results/previous_tag.txt || echo "")
           echo "Previous tag: $previous_tag"
           echo "Current tag: ${{ env.DOTCMS_VERSION }}"
 
