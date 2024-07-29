@@ -1,9 +1,9 @@
 <nav class="edit-ema-nav-bar">
-    <ng-container *ngFor="let item of items">
+    @for (item of items; track $index) {
         <ng-container
-            [ngTemplateOutlet]="item.action ? button : anchor"
+            [ngTemplateOutlet]="!item.href?.length ? button : anchor"
             [ngTemplateOutletContext]="{ item: item }"></ng-container>
-    </ng-container>
+    }
 </nav>
 
 <ng-template #anchor let-item="item">
@@ -28,7 +28,7 @@
 
 <ng-template #button let-item="item">
     <button
-        (click)="item.isDisabled ? null : item?.action()"
+        (click)="item.isDisabled ? null : itemAction(item)"
         [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
         [disabled]="item.isDisabled"
         class="edit-ema-nav-bar__item edit-ema-nav-bar__item--button"
