@@ -16,7 +16,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SidebarModule } from 'primeng/sidebar';
 
-import { DotMessagePipe, DotCollapseBreadcrumbComponent } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { CategoryFieldStore } from '../../store/content-category-field.store';
 import { DotCategoryFieldCategoryListComponent } from '../dot-category-field-category-list/dot-category-field-category-list.component';
@@ -44,8 +44,7 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
         InputTextModule,
         DotCategoryFieldSearchComponent,
         DotCategoryFieldSearchListComponent,
-        DotCategoryFieldSelectedComponent,
-        DotCollapseBreadcrumbComponent
+        DotCategoryFieldSelectedComponent
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',

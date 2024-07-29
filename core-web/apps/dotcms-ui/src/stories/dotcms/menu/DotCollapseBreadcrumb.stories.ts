@@ -45,14 +45,14 @@ const meta: Meta<Args> = {
         }
     },
     args: {
+        maxItems: 4,
         model: [
             { label: 'Electronics', url: '' },
             { label: 'Computer', url: '' },
             { label: 'Accessories', url: '' },
             { label: 'Keyboard', url: '' },
             { label: 'Wireless', url: '' }
-        ],
-        maxItems: 4
+        ]
     },
     argTypes: {
         model: {
