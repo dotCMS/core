@@ -1,37 +1,38 @@
-<div
-    *ngFor="let container of containers"
-    (dragover)="onDragover($event)"
-    [ngStyle]="container | dotPosition"
-    [attr.data-payload]="container.payload"
-    [attr.data-dropzone]="true"
-    [attr.data-empty]="true"
-    data-type="container">
+@for (container of containers; track $index) {
     <div
-        *ngFor="let contentlet of container.contentlets"
         (dragover)="onDragover($event)"
-        [attr.data-payload]="contentlet.payload"
-        [ngStyle]="contentlet | dotPosition"
+        [ngStyle]="container | dotPosition"
+        [attr.data-payload]="container.payload"
         [attr.data-dropzone]="true"
-        [attr.data-position]="$positionData().position"
-        [attr.data-empty]="false"
-        data-type="contentlet"></div>
+        [attr.data-empty]="true"
+        data-type="container">
+        @for (contentlet of container.contentlets; track $index) {
+            <div
+                (dragover)="onDragover($event)"
+                [attr.data-payload]="contentlet.payload"
+                [ngStyle]="contentlet | dotPosition"
+                [attr.data-dropzone]="true"
+                [attr.data-position]="$positionData().position"
+                [attr.data-empty]="false"
+                data-type="contentlet"></div>
+        }
 
-    <ng-container
-        *ngTemplateOutlet="
-            errorTemplate;
-            context: { error: container | dotError: dragItem, container: container }
-        "></ng-container>
-</div>
+        <ng-container
+            *ngTemplateOutlet="
+                errorTemplate;
+                context: { error: container | dotError: dragItem, container: container }
+            "></ng-container>
+    </div>
+}
 
 @if (containers.length > 0) {
     <div [ngStyle]="pointerPosition" class="pointer"></div>
 }
 
 <ng-template #errorTemplate let-error="error" let-container="container">
-    <div
-        *ngIf="error.message.length"
-        [ngStyle]="container | dotPosition: true"
-        class="drop-zone_error">
-        <span [innerHTML]="error.message | dm: error.args"></span>
-    </div>
+    @if (error.message.length) {
+        <div [ngStyle]="container | dotPosition: true" class="drop-zone_error">
+            <span [innerHTML]="error.message | dm: error.args"></span>
+        </div>
+    }
 </ng-template>

@@ -7,71 +7,14 @@ import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EmaPageDropzoneComponent } from './ema-page-dropzone.component';
-import { Container } from './types';
 
-import { ClientData } from '../../../shared/models';
-
-const ACTION_MOCK: ClientData = {
-    container: {
-        acceptTypes: 'file',
-        identifier: '789',
-        maxContentlets: 100,
-        uuid: '2',
-        variantId: '1'
-    }
-};
-
-const ITEM_MOCK = {
-    contentType: 'file',
-    baseType: 'FILEASSET',
-    draggedPayload: null
-};
-
-const getBoundsMockWithEmptyContainer = (payload: ClientData): Container[] => {
-    return [
-        {
-            x: 10,
-            y: 10,
-            width: 980,
-            height: 180,
-            contentlets: [],
-            payload
-        }
-    ];
-};
-
-const getBoundsMock = (payload: ClientData): Container[] => {
-    return [
-        {
-            x: 10,
-            y: 10,
-            width: 980,
-            height: 180,
-            contentlets: [
-                {
-                    x: 20,
-                    y: 20,
-                    width: 940,
-                    height: 140,
-                    payload: null
-                },
-                {
-                    x: 40,
-                    y: 20,
-                    width: 940,
-                    height: 140,
-                    payload: null
-                }
-            ],
-            payload
-        }
-    ];
-};
-
-export const BOUNDS_MOCK: Container[] = getBoundsMock(ACTION_MOCK);
-
-export const BOUNDS_EMPTY_CONTAINER_MOCK: Container[] =
-    getBoundsMockWithEmptyContainer(ACTION_MOCK);
+import {
+    ITEM_MOCK,
+    BOUNDS_MOCK,
+    getBoundsMock,
+    ACTION_MOCK,
+    BOUNDS_EMPTY_CONTAINER_MOCK
+} from '../../../shared/mocks';
 
 const messageServiceMock = new MockDotMessageService({
     'edit.ema.page.dropzone.invalid.contentlet.type':

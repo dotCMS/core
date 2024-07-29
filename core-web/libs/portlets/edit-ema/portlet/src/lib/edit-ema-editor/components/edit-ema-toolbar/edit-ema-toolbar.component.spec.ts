@@ -1,27 +1,54 @@
 import { expect, describe, it } from '@jest/globals';
-import { SpectatorRouting, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
-import { MockComponent, MockProvider, MockProviders } from 'ng-mocks';
+import {
+    Spectator,
+    SpyObject,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { ClipboardModule } from '@angular/cdk/clipboard';
-import { DebugElement } from '@angular/core';
+import { DebugElement, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { MenuModule } from 'primeng/menu';
-import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import {
+    DotContentletLockerService,
+    DotExperimentsService,
+    DotLanguagesService,
+    DotLicenseService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe, mockDotDevices } from '@dotcms/utils-testing';
+import {
+    CurrentUserDataMock,
+    DotLanguagesServiceMock,
+    getRunningExperimentMock,
+    mockDotDevices
+} from '@dotcms/utils-testing';
 
 import { EditEmaToolbarComponent } from './edit-ema-toolbar.component';
 
-import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
-import { EDITOR_MODE, EDITOR_STATE } from '../../../shared/enums';
+import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { DEFAULT_PERSONA } from '../../../shared/consts';
+import {
+    HEADLESS_BASE_QUERY_PARAMS,
+    MOCK_RESPONSE_HEADLESS,
+    PAGE_RESPONSE_BY_LANGUAGE_ID,
+    URL_CONTENT_MAP_MOCK
+} from '../../../shared/mocks';
+import { UVEStore } from '../../../store/dot-uve.store';
+import {
+    sanitizeURL,
+    createPageApiUrlWithQueryParams,
+    createFavoritePagesURL,
+    createPureURL
+} from '../../../utils';
 import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
@@ -30,16 +57,15 @@ import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/
 import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 describe('EditEmaToolbarComponent', () => {
-    let spectator: SpectatorRouting<EditEmaToolbarComponent>;
-    let store: EditEmaStore;
+    let spectator: Spectator<EditEmaToolbarComponent>;
+    let store: SpyObject<InstanceType<typeof UVEStore>>;
     let messageService: MessageService;
     let router: Router;
     let confirmationService: ConfirmationService;
 
-    const createComponent = createRoutingFactory({
+    const createComponent = createComponentFactory({
         component: EditEmaToolbarComponent,
-        declarations: [
-            DotMessagePipe,
+        imports: [
             MockComponent(DotDeviceSelectorSeoComponent),
             MockComponent(DotEditEmaWorkflowActionsComponent),
             MockComponent(DotEmaBookmarksComponent),
@@ -48,16 +74,19 @@ describe('EditEmaToolbarComponent', () => {
             MockComponent(EditEmaLanguageSelectorComponent),
             MockComponent(EditEmaPersonaSelectorComponent)
         ],
-        imports: [MenuModule, ButtonModule, ToolbarModule, ClipboardModule],
         providers: [
-            MockProviders(Router),
-            MockProvider(ConfirmationService, {
+            UVEStore,
+            mockProvider(ActivatedRoute),
+            mockProvider(DotExperimentsService),
+            mockProvider(Router),
+            mockProvider(DotContentletLockerService),
+            mockProvider(ConfirmationService, {
                 confirm: jest.fn()
             }),
-            MockProvider(MessageService, {
+            mockProvider(MessageService, {
                 add: jest.fn()
             }),
-            MockProvider(DotMessageService, {
+            mockProvider(DotMessageService, {
                 get: (key) => {
                     const data = {
                         Copied: 'Copied',
@@ -72,7 +101,31 @@ describe('EditEmaToolbarComponent', () => {
 
                     return data[key];
                 }
-            })
+            }),
+            {
+                provide: DotLanguagesService,
+                useValue: new DotLanguagesServiceMock()
+            },
+            {
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => of(true)
+                }
+            },
+            {
+                provide: LoginService,
+                useValue: {
+                    getCurrentUser: () => of(CurrentUserDataMock)
+                }
+            },
+            {
+                provide: DotPageApiService,
+                useValue: {
+                    get({ language_id }) {
+                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
+                    }
+                }
+            }
         ],
         componentProviders: [
             {
@@ -84,55 +137,54 @@ describe('EditEmaToolbarComponent', () => {
         ]
     });
 
-    describe('edit', () => {
+    const params = HEADLESS_BASE_QUERY_PARAMS;
+    const url = sanitizeURL(params?.url);
+
+    const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
+    const pageAPIResponse = MOCK_RESPONSE_HEADLESS;
+
+    const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
+
+    const shouldShowInfoDisplay = false || pageAPIResponse?.page.locked || false || false;
+
+    const bookmarksUrl = createFavoritePagesURL({
+        languageId: Number(params?.language_id),
+        pageURI: url,
+        siteId: pageAPIResponse?.site.identifier
+    });
+
+    describe('base state', () => {
         beforeEach(() => {
             spectator = createComponent({
                 providers: [
-                    {
-                        provide: EditEmaStore,
-                        useValue: {
-                            editorToolbarData$: of({
-                                previewURL: 'http://localhost:8080/index',
-                                favoritePageURL: 'http://localhost:8080/fav',
-                                iframeURL: 'http://localhost:8080/index',
-                                clientHost: 'http://localhost:3000',
-                                apiURL: 'http://localhost/api/v1/page/json/page-one',
-                                pureURL: 'http://localhost:8080/index',
-                                editorData: {
-                                    mode: EDITOR_MODE.EDIT,
-                                    canEditPage: true,
-                                    page: {
-                                        isLocked: false,
-                                        canLock: true,
-                                        lockedByUser: ''
-                                    }
-                                },
-                                editor: {
-                                    page: {
-                                        identifier: '123',
-                                        inode: '456'
-                                    },
-                                    viewAs: {
-                                        persona: {
-                                            id: '123'
-                                        },
-                                        language: {
-                                            id: 1
-                                        }
-                                    }
-                                },
-                                showWorkflowActions: true,
-                                showInfoDisplay: false
-                            }),
-                            load: jest.fn(),
-                            setDevice: jest.fn(),
-                            setSocialMedia: jest.fn(),
-                            updateEditorState: jest.fn()
-                        }
-                    }
+                    mockProvider(UVEStore, {
+                        $toolbarProps: signal({
+                            bookmarksUrl,
+                            copyUrl: createPureURL(params),
+                            apiUrl: `${'http://localhost'}${pageAPI}`,
+                            currentLanguage: pageAPIResponse?.viewAs.language,
+                            urlContentMap: null,
+                            runningExperiment: null,
+                            workflowActionsInode: pageAPIResponse?.page.inode,
+                            unlockButton: null,
+                            showInfoDisplay: shouldShowInfoDisplay,
+                            deviceSelector: {
+                                apiLink: `${params?.clientHost ?? 'http://localhost'}${pageAPI}`,
+                                hideSocialMedia: true
+                            },
+                            personaSelector: {
+                                pageId: pageAPIResponse?.page.identifier,
+                                value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
+                            }
+                        }),
+                        setDevice: jest.fn(),
+                        setSocialMedia: jest.fn(),
+                        params: signal(params)
+                    })
                 ]
             });
-            store = spectator.inject(EditEmaStore);
+
+            store = spectator.inject(UVEStore);
             messageService = spectator.inject(MessageService);
             router = spectator.inject(Router);
             confirmationService = spectator.inject(ConfirmationService);
@@ -140,18 +192,37 @@ describe('EditEmaToolbarComponent', () => {
 
         describe('dot-device-selector-seo', () => {
             let deviceSelector: DebugElement;
+            let emaPreviewButton: DebugElement;
 
             beforeEach(() => {
                 deviceSelector = spectator.debugElement.query(
                     By.css('[data-testId="dot-device-selector"]')
                 );
+                emaPreviewButton = spectator.debugElement.query(
+                    By.css('[data-testId="ema-preview"]')
+                );
             });
-            it('should have attr', () => {
-                expect(deviceSelector.attributes).toEqual({
-                    appendTo: 'body',
-                    'data-testId': 'dot-device-selector',
-                    'ng-reflect-api-link': 'http://localhost:8080/index',
-                    'ng-reflect-hide-social-media': 'true'
+            it('should have correct values', () => {
+                const deviceSelectorComponent = deviceSelector.componentInstance;
+
+                expect(deviceSelectorComponent.apiLink).toBe(
+                    `${'http://localhost:3000'}${pageAPI}`
+                );
+                expect(deviceSelectorComponent.hideSocialMedia).toBe(true);
+            });
+
+            it('should call deviceSelector.openMenu', () => {
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                jest.spyOn(deviceSelector.componentInstance, 'openMenu');
+
+                spectator.triggerEventHandler(emaPreviewButton, 'onClick', { hello: 'world' });
+                spectator.detectChanges();
+
+                expect(deviceSelector.componentInstance.openMenu).toHaveBeenCalledWith({
+                    hello: 'world'
                 });
             });
 
@@ -161,7 +232,6 @@ describe('EditEmaToolbarComponent', () => {
                 const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
 
                 spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
-                spectator.detectChanges();
 
                 expect(store.setDevice).toHaveBeenCalledWith(iphone);
             });
@@ -189,47 +259,11 @@ describe('EditEmaToolbarComponent', () => {
             });
         });
 
-        describe('ema-preview', () => {
-            let emaPreviewButton: DebugElement;
-
-            beforeEach(() => {
-                emaPreviewButton = spectator.debugElement.query(
-                    By.css('[data-testId="ema-preview"]')
-                );
-            });
-
-            it('should have attr', () => {
-                expect(emaPreviewButton.attributes).toEqual({
-                    class: 'p-element',
-                    'data-testId': 'ema-preview',
-                    icon: 'pi pi-desktop',
-                    'ng-reflect-icon': 'pi pi-desktop',
-                    'ng-reflect-style-class': 'p-button-text p-button-sm',
-                    styleClass: 'p-button-text p-button-sm'
-                });
-            });
-
-            it('should call deviceSelector.openMenu', () => {
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                jest.spyOn(deviceSelector.componentInstance, 'openMenu');
-
-                spectator.triggerEventHandler(emaPreviewButton, 'onClick', { hello: 'world' });
-                spectator.detectChanges();
-
-                expect(deviceSelector.componentInstance.openMenu).toHaveBeenCalledWith({
-                    hello: 'world'
-                });
-            });
-        });
-
         describe('dot-ema-bookmarks', () => {
             it('should have attr', () => {
                 const bookmarks = spectator.query(DotEmaBookmarksComponent);
 
-                expect(bookmarks.url).toBe('http://localhost:8080/fav');
+                expect(bookmarks.url).toBe('/test-url?host_id=123-xyz-567-xxl&language_id=1');
             });
         });
 
@@ -242,12 +276,11 @@ describe('EditEmaToolbarComponent', () => {
 
             it('should have attr', () => {
                 expect(button.attributes).toEqual({
-                    class: 'p-element',
                     'data-testId': 'ema-copy-url',
                     icon: 'pi pi-copy',
                     'ng-reflect-icon': 'pi pi-copy',
                     'ng-reflect-style-class': 'p-button-text p-button-sm',
-                    'ng-reflect-text': 'http://localhost:8080/index',
+                    'ng-reflect-text': 'http://localhost:3000/test-url',
                     styleClass: 'p-button-text p-button-sm'
                 });
             });
@@ -267,14 +300,18 @@ describe('EditEmaToolbarComponent', () => {
             it('should have attr', () => {
                 const languageSelector = spectator.query(EditEmaLanguageSelectorComponent);
 
-                expect(languageSelector.language).toEqual({ id: 1 });
+                expect(languageSelector.language).toEqual({
+                    country: 'United States',
+                    countryCode: 'US',
+                    id: 1,
+                    language: 'English',
+                    languageCode: '1'
+                });
             });
 
             it('should set language', () => {
                 spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
                 spectator.detectChanges();
-
-                expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: { language_id: 2 },
@@ -289,7 +326,33 @@ describe('EditEmaToolbarComponent', () => {
 
                 expect(personaSelector.pageId).toBe('123');
                 expect(personaSelector.value).toEqual({
-                    id: '123'
+                    archived: false,
+                    baseType: 'PERSONA',
+                    contentType: 'persona',
+                    folder: 'SYSTEM_FOLDER',
+                    hasLiveVersion: false,
+                    hasTitleImage: false,
+                    host: 'SYSTEM_HOST',
+                    hostFolder: 'SYSTEM_HOST',
+                    hostName: 'System Host',
+                    identifier: 'modes.persona.no.persona',
+                    inode: '',
+                    keyTag: 'dot:persona',
+                    languageId: 1,
+                    live: false,
+                    locked: false,
+                    modDate: '0',
+                    modUser: 'system',
+                    modUserName: 'system user system user',
+                    name: 'Default Visitor',
+                    owner: 'SYSTEM_USER',
+                    personalized: false,
+                    sortOrder: 0,
+                    stInode: 'c938b15f-bcb6-49ef-8651-14d455a97045',
+                    title: 'Default Visitor',
+                    titleImage: 'TITLE_IMAGE_NOT_FOUND',
+                    url: 'demo.dotcms.com',
+                    working: false
                 });
             });
 
@@ -301,8 +364,6 @@ describe('EditEmaToolbarComponent', () => {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any);
                 spectator.detectChanges();
-
-                expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: { 'com.dotmarketing.persona.id': '123' },
@@ -361,8 +422,9 @@ describe('EditEmaToolbarComponent', () => {
             it('should have attr', () => {
                 const workflowActions = spectator.query(DotEditEmaWorkflowActionsComponent);
 
-                expect(workflowActions.inode).toBe('456');
+                expect(workflowActions.inode).toBe('123-i');
             });
+
             it('should update page', () => {
                 spectator.triggerEventHandler(DotEditEmaWorkflowActionsComponent, 'newPage', {
                     pageURI: '/path-and-stuff',
@@ -373,10 +435,14 @@ describe('EditEmaToolbarComponent', () => {
 
                 spectator.detectChanges();
 
-                expect(store.updateEditorState).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
-
                 expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { language_id: '1', url: '/path-and-stuff' },
+                    queryParams: {
+                        clientHost: 'http://localhost:3000',
+                        'com.dotmarketing.persona.id': 'dot:persona',
+                        language_id: '1',
+                        url: '/path-and-stuff',
+                        variantName: 'DEFAULT'
+                    },
                     queryParamsHandling: 'merge'
                 });
             });
@@ -397,355 +463,185 @@ describe('EditEmaToolbarComponent', () => {
         });
     });
 
-    describe('preview', () => {
-        beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: EditEmaStore,
-                        useValue: {
-                            editorToolbarData$: of({
-                                favoritePageURL: 'http://localhost:8080/fav',
-                                iframeURL: 'http://localhost:8080/index',
-                                clientHost: 'http://localhost:3000',
-                                apiURL: 'http://localhost/api/v1/page/json/page-one',
-                                editorData: {
-                                    mode: EDITOR_MODE.DEVICE,
-                                    canEditPage: true,
-                                    page: {
-                                        isLocked: false,
-                                        canLock: true,
-                                        lockedByUser: ''
-                                    }
-                                },
-                                editor: {
-                                    page: {
-                                        identifier: '123',
-                                        inode: '456'
-                                    },
-                                    viewAs: {
-                                        persona: {
-                                            id: '123'
-                                        },
-                                        language: {
-                                            id: 1
-                                        }
-                                    }
-                                },
-                                showWorkflowActions: true,
-                                showInfoDisplay: true
-                            }),
-                            load: jest.fn(),
-                            setDevice: jest.fn(),
-                            setSocialMedia: jest.fn(),
-                            updateEditorState: jest.fn()
-                        }
-                    }
-                ]
-            });
-            store = spectator.inject(EditEmaStore);
-            messageService = spectator.inject(MessageService);
-            router = spectator.inject(Router);
-            confirmationService = spectator.inject(ConfirmationService);
-        });
-
-        describe('dot-ema-running-experiment', () => {
-            it('should be hidden', () => {
-                const experiments = spectator.query(byTestId('ema-running-experiment'));
-                expect(experiments).toBeNull();
-            });
-        });
-
+    describe('constrains', () => {
         describe('dot-ema-info-display', () => {
-            it('should have attr', () => {
-                const infoDisplay = spectator.query(DotEmaInfoDisplayComponent);
-                expect(infoDisplay.editorData).toEqual({
-                    canEditPage: true,
-                    mode: EDITOR_MODE.DEVICE,
-                    page: {
-                        isLocked: false,
-                        canLock: true,
-                        lockedByUser: ''
-                    }
-                });
-
-                expect(infoDisplay.currentExperiment).not.toBeDefined();
-            });
-        });
-    });
-
-    describe('experiments', () => {
-        beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: EditEmaStore,
-                        useValue: {
-                            editorToolbarData$: of({
-                                favoritePageURL: 'http://localhost:8080/fav',
-                                iframeURL: 'http://localhost:8080/index',
-                                clientHost: 'http://localhost:3000',
-                                apiURL: 'http://localhost/api/v1/page/json/page-one',
-                                editorData: {
-                                    mode: EDITOR_MODE.DEVICE,
-                                    canEditPage: true,
-                                    page: {
-                                        isLocked: false,
-                                        canLock: true,
-                                        lockedByUser: ''
-                                    }
-                                },
-                                currentExperiment: {
-                                    status: DotExperimentStatus.RUNNING
-                                },
-                                editor: {
-                                    page: {
-                                        identifier: '123',
-                                        inode: '456'
-                                    },
-                                    viewAs: {
-                                        persona: {
-                                            id: '123'
-                                        },
-                                        language: {
-                                            id: 1
-                                        }
-                                    }
-                                },
-                                showWorkflowActions: true,
-                                showInfoDisplay: true
-                            }),
-                            load: jest.fn(),
-                            setDevice: jest.fn(),
-                            setSocialMedia: jest.fn(),
-                            updateEditorState: jest.fn()
-                        }
-                    }
-                ]
-            });
-            store = spectator.inject(EditEmaStore);
-            messageService = spectator.inject(MessageService);
-            router = spectator.inject(Router);
-            confirmationService = spectator.inject(ConfirmationService);
-        });
-
-        describe('dot-ema-running-experiment', () => {
-            it('should have attr', () => {
-                const experiments = spectator.query(DotEmaRunningExperimentComponent);
-                expect(experiments.runningExperiment).toEqual({
-                    status: DotExperimentStatus.RUNNING
-                });
-            });
-        });
-    });
-
-    describe('urlContentMap', () => {
-        beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: EditEmaStore,
-                        useValue: {
-                            editorToolbarData$: of({
-                                favoritePageURL: 'http://localhost:8080/fav',
-                                iframeURL: 'http://localhost:8080/index',
-                                clientHost: 'http://localhost:3000',
-                                apiURL: 'http://localhost/api/v1/page/json/page-one',
-                                editorData: {
-                                    mode: EDITOR_MODE.EDIT,
-                                    canEditPage: true,
-                                    page: {
-                                        isLocked: false,
-                                        canLock: true,
-                                        lockedByUser: ''
-                                    }
-                                },
-                                editor: {
-                                    urlContentMap: {
-                                        identifier: '123',
-                                        inode: '456',
-                                        title: 'This is the content title'
-                                    },
-                                    page: {
-                                        identifier: '123',
-                                        inode: '456'
-                                    },
-                                    viewAs: {
-                                        persona: {
-                                            id: '123'
-                                        },
-                                        language: {
-                                            id: 1
-                                        }
-                                    }
-                                },
-                                showWorkflowActions: true,
-                                showInfoDisplay: true
-                            }),
-                            load: jest.fn(),
-                            setDevice: jest.fn(),
-                            setSocialMedia: jest.fn(),
-                            updateEditorState: jest.fn()
-                        }
-                    }
-                ]
-            });
-            store = spectator.inject(EditEmaStore);
-            messageService = spectator.inject(MessageService);
-            router = spectator.inject(Router);
-            confirmationService = spectator.inject(ConfirmationService);
-        });
-
-        it('should have attr', () => {
-            const editURLContentButton = spectator.debugElement.query(
-                By.css('[data-testId="edit-url-content-map"]')
-            );
-
-            expect(editURLContentButton.attributes).toEqual({
-                class: 'p-element',
-                'data-testId': 'edit-url-content-map',
-                icon: 'pi pi-pencil',
-                'ng-reflect-icon': 'pi pi-pencil',
-                'ng-reflect-style-class': 'p-button-text p-button-sm',
-                styleClass: 'p-button-text p-button-sm'
-            });
-        });
-        it('should emit', () => {
-            let output;
-            spectator.output('editUrlContentMap').subscribe((result) => (output = result));
-
-            const editURLContentButton = spectator.debugElement.query(
-                By.css('[data-testId="edit-url-content-map"]')
-            );
-
-            spectator.triggerEventHandler(editURLContentButton, 'onClick', {
-                identifier: '123',
-                inode: '456',
-                title: 'This is the content title'
-            });
-
-            expect(output).toEqual({
-                identifier: '123',
-                inode: '456',
-                title: 'This is the content title'
-            });
-        });
-    });
-
-    describe('locked', () => {
-        describe('locked with unlock permission', () => {
             beforeEach(() => {
                 spectator = createComponent({
                     providers: [
-                        {
-                            provide: EditEmaStore,
-                            useValue: {
-                                editorToolbarData$: of({
-                                    favoritePageURL: 'http://localhost:8080/fav',
-                                    iframeURL: 'http://localhost:8080/index',
-                                    clientHost: 'http://localhost:3000',
-                                    apiURL: 'http://localhost/api/v1/page/json/page-one',
-                                    editorData: {
-                                        mode: EDITOR_MODE.EDIT,
-                                        canEditPage: true,
-                                        page: {
-                                            isLocked: true,
-                                            canLock: true,
-                                            lockedByUser: 'user'
-                                        }
-                                    },
-                                    editor: {
-                                        page: {
-                                            identifier: '123',
-                                            inode: '456'
-                                        },
-                                        viewAs: {
-                                            persona: {
-                                                id: '123'
-                                            },
-                                            language: {
-                                                id: 1
-                                            }
-                                        }
-                                    },
-                                    showWorkflowActions: false,
-                                    showInfoDisplay: true
-                                }),
-                                load: jest.fn(),
-                                setDevice: jest.fn(),
-                                setSocialMedia: jest.fn(),
-                                updateEditorState: jest.fn()
-                            }
-                        }
+                        mockProvider(UVEStore, {
+                            $toolbarProps: signal({
+                                bookmarksUrl,
+                                copyUrl: '',
+                                apiUrl: '',
+                                currentLanguage: pageAPIResponse?.viewAs.language,
+                                urlContentMap: null,
+                                runningExperiment: null,
+                                workflowActionsInode: '',
+                                unlockButton: null,
+                                showInfoDisplay: true,
+                                deviceSelector: {
+                                    apiLink: '',
+                                    hideSocialMedia: true
+                                },
+                                personaSelector: {
+                                    pageId: '',
+                                    value: DEFAULT_PERSONA
+                                }
+                            }),
+                            setDevice: jest.fn(),
+                            setSocialMedia: jest.fn(),
+                            params: signal(params)
+                        })
                     ]
                 });
-                store = spectator.inject(EditEmaStore);
+                store = spectator.inject(UVEStore);
                 messageService = spectator.inject(MessageService);
                 router = spectator.inject(Router);
                 confirmationService = spectator.inject(ConfirmationService);
             });
+            it('should show when showInfoDisplay is true in the store', () => {
+                const infoDisplay = spectator.query(DotEmaInfoDisplayComponent);
+                expect(infoDisplay).toBeDefined();
+            });
+        });
+        describe('experiments', () => {
+            const experiment = getRunningExperimentMock();
 
-            it('should render a unlock button', () => {
+            beforeEach(() => {
+                spectator = createComponent({
+                    providers: [
+                        mockProvider(UVEStore, {
+                            $toolbarProps: signal({
+                                bookmarksUrl,
+                                copyUrl: '',
+                                apiUrl: '',
+                                currentLanguage: pageAPIResponse?.viewAs.language,
+                                urlContentMap: null,
+                                runningExperiment: experiment,
+                                workflowActionsInode: '',
+                                unlockButton: null,
+                                showInfoDisplay: true,
+                                deviceSelector: {
+                                    apiLink: '',
+                                    hideSocialMedia: true
+                                },
+                                personaSelector: {
+                                    pageId: '',
+                                    value: DEFAULT_PERSONA
+                                }
+                            }),
+                            setDevice: jest.fn(),
+                            setSocialMedia: jest.fn(),
+                            params: signal(params)
+                        })
+                    ]
+                });
+            });
+
+            describe('dot-ema-running-experiment', () => {
+                it('should have attr', () => {
+                    const experiments = spectator.query(DotEmaRunningExperimentComponent);
+                    expect(experiments.runningExperiment).toEqual(experiment);
+                });
+            });
+        });
+        describe('urlContentMap', () => {
+            beforeEach(() => {
+                spectator = createComponent({
+                    providers: [
+                        mockProvider(UVEStore, {
+                            $toolbarProps: signal({
+                                bookmarksUrl,
+                                copyUrl: '',
+                                apiUrl: '',
+                                currentLanguage: pageAPIResponse?.viewAs.language,
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
+                                runningExperiment: getRunningExperimentMock(),
+                                workflowActionsInode: '',
+                                unlockButton: null,
+                                showInfoDisplay: true,
+                                deviceSelector: {
+                                    apiLink: '',
+                                    hideSocialMedia: true
+                                },
+                                personaSelector: {
+                                    pageId: '',
+                                    value: DEFAULT_PERSONA
+                                }
+                            }),
+                            setDevice: jest.fn(),
+                            setSocialMedia: jest.fn(),
+                            params: signal(params)
+                        })
+                    ]
+                });
+            });
+
+            it('should have attr', () => {
+                const editURLContentButton = spectator.debugElement.query(
+                    By.css('[data-testId="edit-url-content-map"]')
+                );
+
+                expect(editURLContentButton.attributes).toEqual({
+                    'data-testId': 'edit-url-content-map',
+                    icon: 'pi pi-pencil',
+                    'ng-reflect-icon': 'pi pi-pencil',
+                    'ng-reflect-style-class': 'p-button-text p-button-sm',
+                    styleClass: 'p-button-text p-button-sm'
+                });
+            });
+            it('should emit', () => {
+                let output;
+                spectator.output('editUrlContentMap').subscribe((result) => (output = result));
+
+                const editURLContentButton = spectator.debugElement.query(
+                    By.css('[data-testId="edit-url-content-map"]')
+                );
+
+                spectator.triggerEventHandler(editURLContentButton, 'onClick', {});
+
+                expect(output).toEqual(URL_CONTENT_MAP_MOCK);
+            });
+        });
+
+        describe('locked', () => {
+            beforeEach(() => {
+                spectator = createComponent({
+                    providers: [
+                        mockProvider(UVEStore, {
+                            $toolbarProps: signal({
+                                bookmarksUrl,
+                                copyUrl: '',
+                                apiUrl: '',
+                                currentLanguage: pageAPIResponse?.viewAs.language,
+                                urlContentMap: URL_CONTENT_MAP_MOCK,
+                                runningExperiment: getRunningExperimentMock(),
+                                workflowActionsInode: '',
+                                unlockButton: {
+                                    inode: '1234',
+                                    isLoading: false
+                                },
+                                showInfoDisplay: true,
+                                deviceSelector: {
+                                    apiLink: '',
+                                    hideSocialMedia: true
+                                },
+                                personaSelector: {
+                                    pageId: '',
+                                    value: DEFAULT_PERSONA
+                                }
+                            }),
+                            setDevice: jest.fn(),
+                            setSocialMedia: jest.fn(),
+                            params: signal(params)
+                        })
+                    ]
+                });
+            });
+
+            it('should render a unlock button when unlockButton is not null', () => {
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('unlock-button'))).toBeDefined();
-            });
-        });
-
-        describe('locked without unlock permission', () => {
-            beforeEach(() => {
-                spectator = createComponent({
-                    providers: [
-                        {
-                            provide: EditEmaStore,
-                            useValue: {
-                                editorToolbarData$: of({
-                                    favoritePageURL: 'http://localhost:8080/fav',
-                                    iframeURL: 'http://localhost:8080/index',
-                                    clientHost: 'http://localhost:3000',
-                                    apiURL: 'http://localhost/api/v1/page/json/page-one',
-                                    editorData: {
-                                        mode: EDITOR_MODE.EDIT,
-                                        canEditPage: true,
-                                        page: {
-                                            isLocked: true,
-                                            canLock: false,
-                                            lockedByUser: 'user'
-                                        }
-                                    },
-                                    editor: {
-                                        page: {
-                                            identifier: '123',
-                                            inode: '456'
-                                        },
-                                        viewAs: {
-                                            persona: {
-                                                id: '123'
-                                            },
-                                            language: {
-                                                id: 1
-                                            }
-                                        }
-                                    },
-                                    showWorkflowActions: false,
-                                    showInfoDisplay: true
-                                }),
-                                load: jest.fn(),
-                                setDevice: jest.fn(),
-                                setSocialMedia: jest.fn(),
-                                updateEditorState: jest.fn()
-                            }
-                        }
-                    ]
-                });
-                store = spectator.inject(EditEmaStore);
-                messageService = spectator.inject(MessageService);
-                router = spectator.inject(Router);
-                confirmationService = spectator.inject(ConfirmationService);
-            });
-
-            it('should not render a unlock button', () => {
-                spectator.detectChanges();
-                expect(spectator.query(byTestId('unlock-button'))).toBeNull();
             });
         });
     });
