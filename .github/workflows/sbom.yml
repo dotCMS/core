@@ -5,7 +5,7 @@ on:
 
 jobs:
   scan:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest  # Change to use Ubuntu runner
 
     steps:
       - name: Checkout core-test-results repository
@@ -20,9 +20,13 @@ jobs:
           docker pull dotcms/dotcms:latest
           docker run -d -p 8082:8082 dotcms/dotcms:latest
 
+      - name: Install Syft
+        run: |
+          pip install pipx
+          pipx install syft
+
       - name: Scan Docker Image with Syft
         run: |
-          pipx install syft
           syft docker:dotcms/dotcms:latest -o cyclonedx-json > core-test-results/cyclonedx.json
 
       - name: Stop Docker Container
