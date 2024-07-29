@@ -4,7 +4,7 @@ import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.provider.ClientObjectMapper;
-import com.dotcms.common.ContentTypeLayoutUtilTest;
+import com.dotcms.common.ContentTypeTestHelperService;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
@@ -70,7 +70,7 @@ class ContentTypeAPIIT {
     ServiceManager serviceManager;
 
     @Inject
-    ContentTypeLayoutUtilTest contentTypeLayoutUtilTest;
+    ContentTypeTestHelperService contentTypeTestHelperService;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -691,20 +691,20 @@ class ContentTypeAPIIT {
         var rowField1 = ImmutableRowField.builder().name("row-1").build();
         var columnField1 = ImmutableColumnField.builder().name("column-1").build();
         //Four textFields are created
-        var fieldsList1 = this.contentTypeLayoutUtilTest.buildTextFields(columnField1.name(), 4);
+        var fieldsList1 = this.contentTypeTestHelperService.buildTextFields(columnField1.name(), 4);
         //The textFields are added to the column
-        var layoutColumnFieldList1 = this.contentTypeLayoutUtilTest.buildLayoutColumns(List.of(columnField1), fieldsList1);
+        var layoutColumnFieldList1 = this.contentTypeTestHelperService.buildLayoutColumns(List.of(columnField1), fieldsList1);
         //The layout row is created with the row and its columns
-        var fieldLayoutRow1 = this.contentTypeLayoutUtilTest.buildFieldLayoutRow(rowField1, layoutColumnFieldList1);
+        var fieldLayoutRow1 = this.contentTypeTestHelperService.buildFieldLayoutRow(rowField1, layoutColumnFieldList1);
 
         var rowField2 = ImmutableRowField.builder().name("row-2").build();
         var columnField2 = ImmutableColumnField.builder().name("column-1").build();
         //Six fields are created
-        var fieldsList2 = this.contentTypeLayoutUtilTest.buildTextFields(columnField1.name(), 6);
+        var fieldsList2 = this.contentTypeTestHelperService.buildTextFields(columnField1.name(), 6);
         //The textFields are added to the column
-        var layoutColumnFieldList2 = this.contentTypeLayoutUtilTest.buildLayoutColumns(List.of(columnField2), fieldsList2);
+        var layoutColumnFieldList2 = this.contentTypeTestHelperService.buildLayoutColumns(List.of(columnField2), fieldsList2);
         //The layout row is created with the row and its columns
-        var fieldLayoutRow2 = this.contentTypeLayoutUtilTest.buildFieldLayoutRow(rowField2, layoutColumnFieldList2);
+        var fieldLayoutRow2 = this.contentTypeTestHelperService.buildFieldLayoutRow(rowField2, layoutColumnFieldList2);
 
         final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
                 .baseType(BaseContentType.CONTENT)

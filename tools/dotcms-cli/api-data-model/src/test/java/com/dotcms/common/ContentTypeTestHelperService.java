@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Objects;
 
 @ApplicationScoped
-public class ContentTypeLayoutUtilTest {
+public class ContentTypeTestHelperService {
 
     public static final String SYSTEM_WORKFLOW_ID = "d61a59e1-a49c-46f2-a929-db2b4bfa88b2";
     public static final String SYSTEM_WORKFLOW_VARIABLE_NAME = "SystemWorkflow";
