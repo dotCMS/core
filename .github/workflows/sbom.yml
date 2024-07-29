@@ -53,7 +53,7 @@ jobs:
 
       - name: Rename SBOM file with dotCMS version
         run: |
-          mv core-test-results/cyclonedx.json core-test-results/${{ env.DOTCMS_VERSION }}.json
+          mv core-test-results/cyclonedx.json core-test-results/dotcms-${{ env.DOTCMS_VERSION }}.json
 
       - name: Configure Git
         run: |
