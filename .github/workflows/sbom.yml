@@ -20,6 +20,13 @@ jobs:
           docker pull dotcms/dotcms:latest
           docker run -d -p 8082:8082 dotcms/dotcms:latest
 
+      - name: Get dotCMS version
+        id: get_version
+        run: |
+          version=$(docker run --rm dotcms/dotcms:latest --version | grep -oP '(\d+\.\d+\.\d+)')
+          echo "dotcms_version=$version" >> $GITHUB_ENV
+          echo "Version: $version"  # Output version info for debugging
+
       - name: Install pipx
         run: |
           pip install pipx
@@ -36,8 +43,9 @@ jobs:
       - name: Commit and push results to core-test-results repository
         run: |
           cd core-test-results
-          git add cyclonedx.json
-          git commit -m "Add SBOM for dotCMS latest release"
-          git push origin master
+          ls -l  # Debugging: List files in the core-test-results directory
+          git add dotcms_${{ env.dotcms_version }}.json
+          git commit -m "Add SBOM for dotCMS version ${{ env.dotcms_version }}" || echo "No changes to commit"
+          git push origin master  # Update branch name if necessary
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_PENTEST_TOKEN }}
