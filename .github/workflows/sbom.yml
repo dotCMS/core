@@ -2,7 +2,7 @@ name: sbom
 
 on:
   schedule:
-    - cron: '0 0 * * *' 
+    - cron: '0 0 * * *'  # Runs daily at midnight UTC
   workflow_dispatch:  # Allows manual trigger from GitHub UI
 
 jobs:
@@ -53,41 +53,41 @@ jobs:
           if [ "$previous_tag" != "${{ env.DOTCMS_VERSION }}" ]; then
             echo "Tag has changed. Proceeding with the scan."
             echo "${{ env.DOTCMS_VERSION }}" > core-test-results/previous_tag.txt
-            echo "::set-output name=tag_changed::true"
+            echo "tag_changed=true" >> $GITHUB_ENV
           else
             echo "No change in tag. Skipping scan."
-            echo "::set-output name=tag_changed::false"
+            echo "tag_changed=false" >> $GITHUB_ENV
           fi
 
       - name: Pull and run dotCMS Docker image
-        if: steps.check_tag.outputs.tag_changed == 'true'
+        if: env.tag_changed == 'true'
         run: |
           docker pull dotcms/dotcms:${{ env.DOTCMS_VERSION }}
           docker run -d -p 8082:8082 dotcms/dotcms:${{ env.DOTCMS_VERSION }}
 
       - name: Install pipx
-        if: steps.check_tag.outputs.tag_changed == 'true'
+        if: env.tag_changed == 'true'
         run: |
           pip install pipx
 
       - name: Scan Docker Image with Syft
-        if: steps.check_tag.outputs.tag_changed == 'true'
+        if: env.tag_changed == 'true'
         run: |
           pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core-test-results/cyclonedx.json
 
       - name: Rename SBOM file with dotCMS version
-        if: steps.check_tag.outputs.tag_changed == 'true'
+        if: env.tag_changed == 'true'
         run: |
           mv core-test-results/cyclonedx.json core-test-results/dotcms-${{ env.DOTCMS_VERSION }}.json
 
       - name: Configure Git
-        if: steps.check_tag.outputs.tag_changed == 'true'
+        if: env.tag_changed == 'true'
         run: |
           git config --global user.email "rashik1144@github.com"
           git config --global user.name "rashik1144"
 
       - name: Commit and push results to core-test-results repository
-        if: steps.check_tag.outputs.tag_changed == 'true'
+        if: env.tag_changed == 'true'
         run: |
           cd core-test-results
           git add dotcms-${{ env.DOTCMS_VERSION }}.json
