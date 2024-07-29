@@ -84,6 +84,21 @@ public interface ContentTypeFieldLayoutAPI {
     FieldLayout fixLayoutIfNecessary(ContentType contentType, User user)
             throws DotDataException, DotSecurityException;
 
+    /**
+     * If the current field layout of a Content Type is not valid, this method takes care of
+     * updating the required values and structures to fix that. For more information about valid
+     * layouts, please see the Javadoc for the {@link FieldLayout} class.
+     *
+     * @param fieldLayout The {@link FieldLayout} for a given Content Type.
+     * @param user        The {@link User} performing this action.
+     * @return The fixed {@link FieldLayout}.
+     * @throws DotSecurityException The specified user doesn't have the required permissions to
+     *                              perform this action.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     */
+    FieldLayout fixLayout(final FieldLayout fieldLayout, final User user)
+            throws DotDataException, DotSecurityException;
+
     class DeleteFieldResult {
         private FieldLayout layout;
         private Collection<String> fieldDeletedIds;

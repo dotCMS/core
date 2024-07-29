@@ -5,6 +5,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -402,17 +403,19 @@ public class ContentTypeHelper implements Serializable {
         final var contentTypeAPI = APILocator.getContentTypeAPI(user, true);
         final var contentType = contentTypeAPI.find(contentTypeId);
 
-        // Fixing the layout if necessary
-        final var fixedLayout = APILocator.getContentTypeFieldLayoutAPI().fixLayoutIfNecessary(
-                contentType, user
-        );
+        // Verifying if the layout is valid to fix it if necessary
+        final FieldLayout fieldLayout = new FieldLayout(contentType);
+        if (!fieldLayout.isValidate()) {
 
-        if (!contentType.fields().equals(fixedLayout.getFields())) {
+            // Fixing the layout
+            APILocator.getContentTypeFieldLayoutAPI().fixLayout(fieldLayout, user);
+
             // Return an updated content type with the fixed layout fields
-            return setFields(contentType, fixedLayout.getFields());
-        } else {
-            return contentType;
+            final var fixedContentType = contentTypeAPI.find(contentTypeId);
+            return setFields(contentType, fixedContentType.fields());
         }
+
+        return contentType;
     }
 
     /**

@@ -125,12 +125,19 @@ public class ContentTypeResourceTest {
 			);
 
 			// Test INVALID Content Type Update
-			assertResponse_BAD_REQUEST(
+			assertResponse_NOT_FOUND(
 					response = resource.updateType(
-							(String) fieldMap.get("id"),
+							"INVALID_CONTENT_TYPE_ID",
 							contentTypeFormDeserialize.buildForm(jsonContentTypeUpdate
-									.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")),
-							getHttpRequest(),  new EmptyHttpResponse()
+									.replace(
+											"CONTENT_TYPE_ID",
+											"INVALID_CONTENT_TYPE_ID")
+									.replace(
+											"TheContentType1",
+											"INVALID_CONTENT_TYPE_VARIABLE"
+									)
+							),
+							getHttpRequest(), new EmptyHttpResponse()
 					)
 			);
 
@@ -323,7 +330,7 @@ public class ContentTypeResourceTest {
 		assertFalse(contentType.system());
 		assertEquals("SYSTEM_FOLDER", contentType.folder());
 
-		assertEquals(7, contentType.fields().size());
+		assertEquals(9, contentType.fields().size());
 		assertTrue(contentType.fieldMap().get("theField1") instanceof TextField);
 	}
 
