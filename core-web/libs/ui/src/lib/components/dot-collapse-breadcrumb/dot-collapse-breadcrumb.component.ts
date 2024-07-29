@@ -7,7 +7,12 @@ import { ChevronRightIcon } from 'primeng/icons/chevronright';
 import { MenuModule } from 'primeng/menu';
 
 import { MAX_ITEMS } from './dot-collapse-breadcrumb.costants';
-
+/**
+ * Component to display a breadcrumb with a collapse button
+ *
+ * @export
+ * @class DotCollapseBreadcrumbComponent
+ */
 @Component({
     imports: [ChevronRightIcon, ButtonModule, MenuModule, RouterModule],
     standalone: true,
@@ -21,11 +26,23 @@ import { MAX_ITEMS } from './dot-collapse-breadcrumb.costants';
     }
 })
 export class DotCollapseBreadcrumbComponent {
+    /**
+     * Menu items to display
+     *
+     * @memberof DotCollapseBreadcrumbComponent
+     */
     $model = input<MenuItem[]>([], { alias: 'model' });
+    /**
+     * Max items to display
+     *
+     * @memberof DotCollapseBreadcrumbComponent
+     */
     $maxItems = input<number>(MAX_ITEMS, { alias: 'maxItems' });
-
-    onItemClick = output<{ originalEvent: Event; item: MenuItem }>();
-
+    /**
+     * Items to show
+     *
+     * @memberof DotCollapseBreadcrumbComponent
+     */
     $itemsToShow = computed(() => {
         const items = this.$model();
         const size = items.length;
@@ -33,6 +50,11 @@ export class DotCollapseBreadcrumbComponent {
 
         return size > maxItems ? items.slice(size - maxItems) : items;
     });
+    /**
+     * Items to hide
+     *
+     * @memberof DotCollapseBreadcrumbComponent
+     */
     $itemsToHide = computed(() => {
         const items = this.$model();
         const size = items.length;
@@ -40,8 +62,25 @@ export class DotCollapseBreadcrumbComponent {
 
         return size > maxItems ? items.slice(0, size - maxItems) : [];
     });
+    /**
+     * Indicates if the menu is collapsed
+     *
+     * @memberof DotCollapseBreadcrumbComponent
+     */
     $isCollapsed = computed(() => this.$itemsToHide().length > 0);
-
+    /**
+     * Event emitted when a menu item is clicked
+     *
+     * @memberof DotCollapseBreadcrumbComponent
+     */
+    onItemClick = output<{ originalEvent: Event; item: MenuItem }>();
+    /**
+     * Collapse the menu
+     *
+     * @param {Event} event
+     * @param {MenuItem} item
+     * @memberof DotCollapseBreadcrumbComponent
+     */
     itemClick(event: Event, item: MenuItem) {
         if (item.disabled) {
             event.preventDefault();
