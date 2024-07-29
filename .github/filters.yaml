@@ -34,3 +34,4 @@ build:
   - *backend
   - *cli
   - *frontend
+  - *sdkman
