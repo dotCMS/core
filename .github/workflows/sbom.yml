@@ -44,7 +44,7 @@ jobs:
           # Debugging: List files in the core-test-results directory
           echo "Contents of core-test-results directory:"
           ls -l core-test-results
-          
+
           # Create the previous_tag.txt file if it does not exist
           if [ ! -f core-test-results/previous_tag.txt ]; then
             echo "No previous tag file found. Creating it now."
@@ -56,7 +56,7 @@ jobs:
           echo "Previous tag: '$previous_tag'"
           echo "Current tag: '${{ env.DOTCMS_VERSION }}'"
 
-          # Ensure both tags are compared as expected
+          # Check if the current tag is different from the previous tag
           if [ "$previous_tag" != "${{ env.DOTCMS_VERSION }}" ]; then
             echo "Tag has changed. Proceeding with the scan."
             echo "${{ env.DOTCMS_VERSION }}" > core-test-results/previous_tag.txt
