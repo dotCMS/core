@@ -69,5 +69,5 @@ export class DotCollapseBreadcrumbComponent {
      *
      * @memberof DotCollapseBreadcrumbComponent
      */
-    itemClick = output<{ originalEvent: Event; item: MenuItem }>();
+    onItemClick = output<{ originalEvent: Event; item: MenuItem }>();
 }

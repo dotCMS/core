@@ -72,7 +72,7 @@ describe('DotCollapseBreadcrumbComponent', () => {
         ]);
         spectator.detectChanges();
 
-        const itemClickSpy = spyOn(spectator.component.itemClick, 'emit');
+        const itemClickSpy = spyOn(spectator.component.onItemClick, 'emit');
         const firstEl = spectator.query('.p-menuitem-link');
         spectator.click(firstEl);
         spectator.detectChanges();
@@ -91,7 +91,7 @@ describe('DotCollapseBreadcrumbComponent', () => {
         ]);
         spectator.detectChanges();
 
-        const itemClickSpy = spyOn(spectator.component.itemClick, 'emit');
+        const itemClickSpy = spyOn(spectator.component.onItemClick, 'emit');
         const firstEl = spectator.query('.p-menuitem-link');
         spectator.click(firstEl);
         spectator.detectChanges();
