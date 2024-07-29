@@ -38,34 +38,6 @@ jobs:
           echo "Latest tag: $latest_tag"
           echo "DOTCMS_VERSION=$latest_tag" >> $GITHUB_ENV
 
-      - name: Check if latest tag has changed
-        id: check_tag
-        run: |
-          # Debugging: List files in the core-test-results directory
-          echo "Contents of core-test-results directory:"
-          ls -l core-test-results
-          
-          # Create the previous_tag.txt file if it does not exist
-          if [ ! -f core-test-results/previous_tag.txt ]; then
-            echo "No previous tag file found. Creating it now."
-            echo "" > core-test-results/previous_tag.txt
-          fi
-
-          # Retrieve the previous tag from the file
-          previous_tag=$(cat core-test-results/previous_tag.txt || echo "")
-          echo "Previous tag: '$previous_tag'"
-          echo "Current tag: '${{ env.DOTCMS_VERSION }}'"
-
-          # Ensure both tags are compared as expected
-          if [ "$previous_tag" != "${{ env.DOTCMS_VERSION }}" ]; then
-            echo "Tag has changed. Proceeding with the scan."
-            echo "${{ env.DOTCMS_VERSION }}" > core-test-results/previous_tag.txt
-            echo "tag_changed=true" >> $GITHUB_ENV
-          else
-            echo "No change in tag. Skipping scan."
-            echo "tag_changed=false" >> $GITHUB_ENV
-          fi
-
       - name: Pull and run dotCMS Docker image
         if: env.tag_changed == 'true'
         run: |
