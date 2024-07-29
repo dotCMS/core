@@ -12,6 +12,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.Portlet;
@@ -24,9 +25,7 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -62,17 +61,18 @@ public class PortletAPIImplTest {
     private Portlet createCustomPortlet(final String name, final String portletId, final String baseTypes, final String contentTypes, final String dataViewMode)
             throws LanguageException, DotDataException {
 
-        final Map<String, String> initValues = new HashMap<>();
 
-        initValues.put("view-action","/ext/contentlet/view_contentlets");
-        initValues.put("name", name);
-        initValues.put("baseTypes", baseTypes);
-        initValues.put("contentTypes", contentTypes);
-        initValues.put("dataViewMode", dataViewMode);
+        final DotPortlet newPortlet = DotPortlet.builder()
+                .portletId(portletId)
+                .portletClass(StrutsPortlet.class.getName())
+                .putInitParam("view-action", "/ext/contentlet/view_contentlets")
+                .putInitParam("name", name)
+                .putInitParam("baseTypes", baseTypes)
+                .putInitParam("contentTypes", contentTypes)
+                .putInitParam("dataViewMode", dataViewMode)
+                .build();
 
-        final Portlet newPortlet = portletApi.savePortlet(new DotPortlet(portletId, StrutsPortlet.class.getName(), initValues),systemUser);
-
-        return newPortlet;
+        return portletApi.savePortlet(newPortlet.toPortlet(), systemUser);
     }
 
     /**
@@ -107,7 +107,12 @@ public class PortletAPIImplTest {
                         contentType -> returnedContentTypes.contains(contentType.trim())));
             }
         }catch (DotDataException | IllegalArgumentException e){
-            Assert.assertFalse(testCase.createdSuccessfully);
+            if (testCase.createdSuccessfully) {
+                Logger.error(PortletAPIImplTest.class, "Did not expect Exception for test", e);
+            } else {
+                Logger.info(PortletAPIImplTest.class,"Expected Exception found: " + e.getMessage());
+            }
+            Assert.assertFalse(e.getMessage(),testCase.createdSuccessfully);
             return;
         }finally {
             if(portlet!=null){

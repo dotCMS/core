@@ -1,5 +1,7 @@
 @use "variables" as *;
 
+$default-scroll-width: 17px;
+
 .category-field__header {
     align-items: center;
     flex-wrap: wrap;
@@ -41,6 +43,7 @@
     flex: 0 0 25%;
     gap: $spacing-1;
     padding: $spacing-3;
+    padding-right: calc($spacing-3 - $default-scroll-width);
 }
 
 .category-field__categories,
@@ -53,6 +56,7 @@
 
 .category-field__selected-categories-list {
     overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 
 :host ::ng-deep .p-sidebar-content {

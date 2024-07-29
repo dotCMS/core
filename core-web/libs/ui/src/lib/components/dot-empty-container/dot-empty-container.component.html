@@ -1,17 +1,14 @@
 <div class="message__wrapper flex gap-4 flex-column w-30rem">
     <div
         class="message__principal-wrapper flex align-items-center flex-column gap-2"
-        data-Testid="message-principal">
-        @if (configuration?.icon) {
-            <i
-                [ngClass]="[configuration.icon]"
-                class="message__icon pi"
-                data-Testid="message-icon"></i>
+        data-testid="message-principal">
+        @if (configuration.icon) {
+            <i [class]="'message__icon pi ' + configuration.icon" data-testid="message-icon"></i>
         }
-        <h1 class="message__title" data-Testid="message-title">{{ configuration?.title }}</h1>
-        @if (configuration?.subtitle) {
-            <h2 class="message__subtitle" data-Testid="message-subtitle">
-                {{ configuration?.subtitle }}
+        <h1 class="message__title" data-testid="message-title">{{ configuration.title }}</h1>
+        @if (configuration.subtitle) {
+            <h2 class="message__subtitle" data-testid="message-subtitle">
+                {{ configuration.subtitle }}
             </h2>
         }
     </div>
@@ -19,22 +16,23 @@
     @if (!hideContactUsLink || buttonLabel) {
         <div
             class="message__extra-wrapper flex align-items-center flex-column gap-2"
-            data-Testid="message-extra">
+            data-testid="message-extra">
             @if (buttonLabel) {
                 <button
-                    (click)="buttonAction.emit()"
+                    pButton
                     [label]="buttonLabel"
                     [class.p-button-outlined]="secondaryButton"
-                    pButton
-                    data-Testid="message-button"></button>
+                    (click)="buttonAction.emit()"
+                    data-testid="message-button"></button>
             }
+
             @if (!hideContactUsLink) {
-                @if (!hideContactUsLink && buttonLabel) {
+                @if (buttonLabel) {
                     <span>{{ 'dot.common.or.text' | dm }}</span>
                 }
                 <a
                     class="message__external-link"
-                    data-Testid="message-contact-link"
+                    data-testid="message-contact-link"
                     href="https://dotcms.com/contact-us/"
                     target="_blank">
                     {{ 'Contact-Us-for-more-Information' | dm }}

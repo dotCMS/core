@@ -1,6 +1,5 @@
 import { fromEvent } from 'rxjs';
 
-import { NgIf, NgStyle, NgSwitch, NgSwitchCase } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -48,10 +47,6 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
     templateUrl: './dot-ema-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgIf,
-        NgSwitch,
-        NgSwitchCase,
-        NgStyle,
         SafeUrlPipe,
         EmaFormSelectorComponent,
         DialogModule,

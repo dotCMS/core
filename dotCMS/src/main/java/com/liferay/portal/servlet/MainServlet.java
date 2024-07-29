@@ -174,34 +174,6 @@ public class MainServlet extends ActionServlet {
         throw new DotRuntimeException(e);
       }
 
-
-      // Scheduler
-
-      // try {
-      // Iterator itr =
-      // PortletManagerUtil.getPortlets(_companyId).iterator();
-      //
-      // while (itr.hasNext()) {
-      // Portlet portlet = (Portlet)itr.next();
-      //
-      // String className = portlet.getSchedulerClass();
-      //
-      // if (portlet.isActive() && className != null) {
-      // Scheduler scheduler =
-      // (Scheduler)InstancePool.get(className);
-      //
-      // scheduler.schedule();
-      // }
-      // }
-      // }
-      // catch (ObjectAlreadyExistsException oaee) {
-      // }
-      // catch (Exception e) {
-      // Logger.error(this,e.getMessage(),e);
-      // }
-
-      // Message Resources
-
       MultiMessageResources messageResources = (MultiMessageResources) ctx.getAttribute(Globals.MESSAGES_KEY);
 
       messageResources.setServletContext(ctx);

@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -23,12 +23,7 @@ import { DotPaletteStore, PALETTE_TYPES } from './store/edit-ema-palette.store';
     templateUrl: './edit-ema-palette.component.html',
     styleUrls: ['./edit-ema-palette.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [
-        NgIf,
-        AsyncPipe,
-        EditEmaPaletteContentTypeComponent,
-        EditEmaPaletteContentletsComponent
-    ],
+    imports: [AsyncPipe, EditEmaPaletteContentTypeComponent, EditEmaPaletteContentletsComponent],
     providers: [DotESContentService, DotPaletteStore]
 })
 export class EditEmaPaletteComponent implements OnInit, OnDestroy {
