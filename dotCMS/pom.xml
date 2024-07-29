@@ -1332,6 +1332,12 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- explicitly add all the declared logging dependencies -->
         <!-- Logging framework support Log4j2 as base logger
             very specific artifacts are required to support other frameworks.

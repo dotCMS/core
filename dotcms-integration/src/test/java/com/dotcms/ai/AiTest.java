@@ -1,10 +1,11 @@
-package com.dotcms.ai.viewtool;
+package com.dotcms.ai;
 
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.WireMockTestHelper;
+import com.dotmarketing.beans.Host;
 import com.github.tomakehurst.wiremock.WireMockServer;
 
 import java.util.HashMap;
@@ -20,12 +21,12 @@ public interface AiTest {
     String IMAGE_SIZE = "1024x1024";
     int PORT = 50505;
 
-    static AppConfig prepareConfig(final WireMockServer wireMockServer) {
-        return new AppConfig(appConfigMap(wireMockServer));
+    static AppConfig prepareConfig(final Host host, final WireMockServer wireMockServer) {
+        return new AppConfig(host.getHostname(), appConfigMap(wireMockServer));
     }
 
-    static AppConfig prepareCompletionConfig(final WireMockServer wireMockServer) {
-        return new AppConfig(completionAppConfigMap(appConfigMap(wireMockServer)));
+    static AppConfig prepareCompletionConfig(final Host host, final WireMockServer wireMockServer) {
+        return new AppConfig(host.getHostname(), completionAppConfigMap(appConfigMap(wireMockServer)));
     }
 
     static WireMockServer prepareWireMock() {
@@ -49,10 +50,10 @@ public interface AiTest {
                         .withValue(AppKeys.COMPLETION_TEXT_PROMPT.defaultValue.toCharArray())
                         .build(),
 
-                AppKeys.MODEL_NAMES.key,
+                AppKeys.TEXT_MODEL_NAMES.key,
                 Secret.builder()
                         .withType(Type.STRING)
-                        .withValue(AppKeys.MODEL_NAMES.defaultValue.toCharArray())
+                        .withValue(AppKeys.TEXT_MODEL_NAMES.defaultValue.toCharArray())
                         .build()
         );
         final Map<String, Secret> all = new HashMap<>(configMap);
@@ -77,7 +78,7 @@ public interface AiTest {
                 AppKeys.API_KEY.key,
                 Secret.builder().withType(Type.STRING).withValue(API_KEY.toCharArray()).build(),
 
-                AppKeys.MODEL_NAMES.key,
+                AppKeys.TEXT_MODEL_NAMES.key,
                 Secret.builder().withType(Type.STRING).withValue(MODEL.toCharArray()).build(),
 
                 AppKeys.IMAGE_MODEL_NAMES.key,

@@ -1,6 +1,7 @@
 package com.dotcms.ai.service;
 
 import com.dotcms.ai.app.AIModel;
+import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotcms.ai.util.StopWordsUtil;
@@ -217,7 +218,7 @@ public class OpenAIImageServiceImplTest {
     }
 
     private JSONObject prepareJsonObject(final String prompt, final boolean tempFileError) throws Exception {
-        when(config.getImageModel()).thenReturn(AIModel.builder().withNames("some-image-model").build());
+        when(config.getImageModel()).thenReturn(AIModel.builder().withType(AIModelType.IMAGE).withNames("some-image-model").build());
         when(config.getImageSize()).thenReturn("some-image-size");
         final File file = mock(File.class);
         when(file.getName()).thenReturn(UUIDGenerator.shorty());

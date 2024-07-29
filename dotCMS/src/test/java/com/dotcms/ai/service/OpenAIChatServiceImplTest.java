@@ -1,6 +1,7 @@
 package com.dotcms.ai.service;
 
 import com.dotcms.ai.app.AIModel;
+import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotmarketing.util.json.JSONObject;
@@ -60,7 +61,8 @@ public class OpenAIChatServiceImplTest {
     }
 
     private JSONObject prepareJsonObject(final String prompt) {
-        when(config.getModel()).thenReturn(AIModel.builder().withNames("some-model").build());
+        when(config.getModel())
+                .thenReturn(AIModel.builder().withType(AIModelType.TEXT).withNames("some-model").build());
         when(config.getConfigFloat(AppKeys.COMPLETION_TEMPERATURE)).thenReturn(123.321F);
         when(config.getRolePrompt()).thenReturn("some-role-prompt");
 

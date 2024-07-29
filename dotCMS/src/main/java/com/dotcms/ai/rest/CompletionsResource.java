@@ -2,6 +2,7 @@ package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.api.CompletionsAPI;
+import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
@@ -32,8 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * The CompletionsResource class provides REST endpoints for interacting with the AI completions service.
@@ -119,13 +118,7 @@ public class CompletionsResource {
         final String apiKey = UtilMethods.isSet(app.getApiKey()) ? "*****" : "NOT SET";
         map.put(AppKeys.API_KEY.key, apiKey);
 
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-        final List<String> models = Stream
-                .of(appConfig.getModel(), appConfig.getImageModel(), appConfig.getEmbeddingsModel())
-                .flatMap(model -> model.getNames().stream())
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
+        final List<String> models = AIModels.get().getAvailableModels();
         map.put(AiKeys.AVAILABLE_MODELS, models);
 
         return Response.ok(map).build();

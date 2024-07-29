@@ -17,17 +17,21 @@ public class ConfigService {
 
     public static final ConfigService INSTANCE = new ConfigService();
 
+    private ConfigService() {
+    }
+
     /**
      * Gets the secrets from the App - this will check the current host then the SYSTEM_HOST for a valid configuration. This lookup is low overhead and cached
      * by dotCMS.
      */
     public AppConfig config(final Host host) {
+        final Host resolved = resolveHost(host);
         final Optional<AppSecrets> appSecrets = Try.of(() -> APILocator
                         .getAppsAPI()
-                        .getSecrets(AppKeys.APP_KEY, true, resolveHost(host), APILocator.systemUser()))
+                        .getSecrets(AppKeys.APP_KEY, true, resolved, APILocator.systemUser()))
                 .getOrElse(Optional.empty());
 
-        return new AppConfig(host.getHostname(), appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
+        return new AppConfig(resolved.getHostname(), appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
     }
 
     /**

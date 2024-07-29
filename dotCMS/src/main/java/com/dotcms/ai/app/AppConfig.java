@@ -9,7 +9,6 @@ import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -23,9 +22,9 @@ public class AppConfig implements Serializable {
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
     private final String host;
-    private final AIModel model;
-    private final AIModel imageModel;
-    private final AIModel embeddingsModel;
+    private final transient AIModel model;
+    private final transient AIModel imageModel;
+    private final transient AIModel embeddingsModel;
     private final String apiUrl;
     private final String apiImageUrl;
     private final String apiEmbeddingsUrl;
@@ -44,23 +43,23 @@ public class AppConfig implements Serializable {
         AIModels.get().loadModels(
                 this.host,
                 List.of(
-                        aiAppUtil.createModel(secrets, AIModelType.TEXT),
-                        aiAppUtil.createModel(secrets, AIModelType.IMAGE),
-                        aiAppUtil.createModel(secrets, AIModelType.EMBEDDINGS)));
+                        aiAppUtil.createTextModel(secrets),
+                        aiAppUtil.createImageModel(secrets),
+                        aiAppUtil.createEmbeddingsModel(secrets)));
 
         model = resolveModel(AIModelType.TEXT);
-        imageModel = resolveModel(AIModelType.TEXT);
-        embeddingsModel = resolveModel(AIModelType.TEXT);
+        imageModel = resolveModel(AIModelType.IMAGE);
+        embeddingsModel = resolveModel(AIModelType.EMBEDDINGS);
 
-        apiUrl = aiAppUtil.resolveEnvSecret(secrets, AppKeys.API_URL);
-        apiImageUrl = aiAppUtil.resolveEnvSecret(secrets, AppKeys.API_IMAGE_URL);
-        apiEmbeddingsUrl = aiAppUtil.resolveEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL);
-        apiKey = aiAppUtil.resolveEnvSecret(secrets, AppKeys.API_KEY);
-        rolePrompt = aiAppUtil.resolveSecret(secrets, AppKeys.ROLE_PROMPT);
-        textPrompt = aiAppUtil.resolveSecret(secrets, AppKeys.TEXT_PROMPT);
-        imagePrompt = aiAppUtil.resolveSecret(secrets, AppKeys.IMAGE_PROMPT);
-        imageSize = aiAppUtil.resolveSecret(secrets, AppKeys.IMAGE_SIZE);
-        listenerIndexer = aiAppUtil.resolveSecret(secrets, AppKeys.LISTENER_INDEXER);
+        apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL);
+        apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL);
+        apiEmbeddingsUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL);
+        apiKey = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
+        rolePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.ROLE_PROMPT);
+        textPrompt = aiAppUtil.discoverSecret(secrets, AppKeys.TEXT_PROMPT);
+        imagePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.IMAGE_PROMPT);
+        imageSize = aiAppUtil.discoverSecret(secrets, AppKeys.IMAGE_SIZE);
+        listenerIndexer = aiAppUtil.discoverSecret(secrets, AppKeys.LISTENER_INDEXER);
 
         configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 

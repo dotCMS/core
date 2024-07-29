@@ -8,6 +8,14 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Represents an AI model with various attributes such as type, names, tokens per minute,
+ * API calls per minute, maximum tokens, and completion status. This class provides methods
+ * to manage the current model, decommission status, and calculate the minimum interval
+ * between API calls. It also includes a builder for creating instances of AIModel.
+ *
+ * @author vico
+ */
 public class AIModel {
 
     private final AIModelType type;

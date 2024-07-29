@@ -13,11 +13,11 @@ public enum AppKeys {
     TEXT_PROMPT("textPrompt", "Use Descriptive writing style."),
     IMAGE_PROMPT("imagePrompt", "Use 16:9 aspect ratio."),
     IMAGE_SIZE("imageSize", "1024x1024"),
-    MODEL_NAMES("modelNames", "gpt-3.5-turbo-16k"),
-    MODEL_TOKENS_PER_MINUTE("modelTokensPerMinute", "1000"),
-    MODEL_API_PER_MINUTE("modelApiPerMinute", "1000"),
-    MODEL_MAX_TOKENS("modelMaxTokens", "1000"),
-    MODEL_COMPLETION("modelCompletion", "true"),
+    TEXT_MODEL_NAMES("textModelNames", "gpt-3.5-turbo-16k"),
+    TEXT_MODEL_TOKENS_PER_MINUTE("textModelTokensPerMinute", "1000"),
+    TEXT_MODEL_API_PER_MINUTE("textModelApiPerMinute", "1000"),
+    TEXT_MODEL_MAX_TOKENS("textModelMaxTokens", "1000"),
+    TEXT_MODEL_COMPLETION("textModelCompletion", "true"),
     IMAGE_MODEL_NAMES("imageModelNames", "dall-e-3"),
     IMAGE_MODEL_TOKENS_PER_MINUTE("imageModelTokensPerMinute", "1000"),
     IMAGE_MODEL_API_PER_MINUTE("imageModelApiPerMinute", "1000"),
@@ -51,8 +51,7 @@ public enum AppKeys {
     LISTENER_INDEXER("listenerIndexer", "{}"),
     EMBEDDINGS_DB_DELETE_OLD_ON_UPDATE("com.dotcms.ai.embeddings.delete.old.on.update", "true"),
     AI_MODELS_CACHE_TTL("com.dotcms.ai.models.supported.ttl", "28800"),
-    AI_MODELS_CACHE_SIZE("com.dotcms.ai.models.supported.size", "64"),
-    OPEN_AI_MODELS_URL("com.dotcms.ai.models.supported.url", "https://api.openai.com/v1/models");
+    AI_MODELS_CACHE_SIZE("com.dotcms.ai.models.supported.size", "64");
 
     public static final String APP_KEY = "dotAI";
 

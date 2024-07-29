@@ -3,7 +3,9 @@ package com.dotcms.ai.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class OpenAIModel {
+import java.io.Serializable;
+
+public class OpenAIModel implements Serializable {
 
     private final String id;
     private final String object;
@@ -11,11 +13,10 @@ public class OpenAIModel {
     private final String ownedBy;
 
     @JsonCreator
-    public OpenAIModel(final String id,
-                       final String object,
-                       final long created,
-                       @JsonProperty("owned_by")
-                       final String ownedBy) {
+    public OpenAIModel(@JsonProperty("id") final String id,
+                       @JsonProperty("object") final String object,
+                       @JsonProperty("created") final long created,
+                       @JsonProperty("owned_by") final String ownedBy) {
         this.id = id;
         this.object = object;
         this.created = created;
