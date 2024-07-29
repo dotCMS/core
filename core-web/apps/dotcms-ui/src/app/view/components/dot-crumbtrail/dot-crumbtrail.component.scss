@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-::ng-deep .p-breadcrumb {
+::ng-deep dot-crumbtrail .p-breadcrumb {
     ul li {
         .p-menuitem-link[href] {
             .p-menuitem-text {

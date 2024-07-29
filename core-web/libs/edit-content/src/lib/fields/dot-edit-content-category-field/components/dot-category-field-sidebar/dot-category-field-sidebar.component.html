@@ -21,18 +21,17 @@
         </div>
     </ng-template>
 
-    <dot-collapse-breadcrumb
-        [model]="[
-            { label: 'Electronics', url: '' },
-            { label: 'Computer', url: '' },
-            { label: 'Accessories', url: '' },
-            { label: 'Keyboard', url: '' },
-            { label: 'Wireless', url: '' }
-        ]" />
-
     <div class="category-field__content h-full w-full">
         <div class="category-field__left-pane flex flex-column">
             <div class="category-field__search">
+                <dot-collapse-breadcrumb
+                    [model]="[
+                        { label: 'Electronics', url: '' },
+                        { label: 'Computer', url: '' },
+                        { label: 'Accessories', url: '' },
+                        { label: 'Keyboard', url: '' },
+                        { label: 'Wireless', url: '' }
+                    ]" />
                 <dot-category-field-search
                     (changeMode)="store.setMode($event)"
                     (term)="store.search($event)"

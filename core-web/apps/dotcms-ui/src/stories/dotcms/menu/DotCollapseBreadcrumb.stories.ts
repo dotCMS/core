@@ -32,7 +32,7 @@ const meta: Meta<Args> = {
         }),
         componentWrapperDecorator(
             (story) =>
-                `<div class="card flex justify-content-center w-50rem h-25rem relative">${story}</div>`
+                `<div class="card flex justify-content-center w-50rem h-10rem relative">${story}</div>`
         )
     ],
     parameters: {
@@ -52,7 +52,16 @@ const meta: Meta<Args> = {
             { label: 'Keyboard', url: '' },
             { label: 'Wireless', url: '' }
         ],
-        maxItems: 5
+        maxItems: 4
+    },
+    argTypes: {
+        model: {
+            description: 'Menu items to display'
+        },
+        maxItems: {
+            description: 'Max items to display',
+            control: { type: 'number' }
+        }
     },
     render: (args: Args) => {
         return {

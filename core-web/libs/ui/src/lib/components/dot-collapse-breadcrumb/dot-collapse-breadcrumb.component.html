@@ -1,17 +1,20 @@
 <div class="p-breadcrumb p-component">
     <ul>
-        <li>
-            <p-menu #menu [model]="$model()" [popup]="true" />
-            <p-button
-                (click)="toogleMenu($event)"
-                icon="pi pi-ellipsis-h"
-                type="button"
-                styleClass="p-button-rounded p-button-text p-button-sm" />
-        </li>
-        <li class="p-breadcrumb-chevron">
-            <ChevronRightIcon />
-        </li>
-        @for (item of $model(); track $index) {
+        @if ($isCollapsed()) {
+            <li>
+                <p-menu #menu [model]="$itemsToHide()" [popup]="true" appendTo="body" />
+                <p-button
+                    (click)="menu.toggle($event)"
+                    icon="pi pi-ellipsis-h"
+                    type="button"
+                    styleClass="p-button-rounded p-button-text p-button-sm outline-none" />
+            </li>
+            <li class="p-breadcrumb-chevron">
+                <ChevronRightIcon />
+            </li>
+        }
+
+        @for (item of $itemsToShow(); track $index) {
             <li>
                 <a
                     [attr.href]="item.url ? item.url : null"
