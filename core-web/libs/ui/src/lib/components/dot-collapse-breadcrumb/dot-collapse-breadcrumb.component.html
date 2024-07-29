@@ -16,25 +16,55 @@
 
         @for (item of $itemsToShow(); track $index) {
             <li>
-                <a
-                    [attr.href]="item.url ? item.url : null"
-                    class="p-menuitem-link"
-                    (click)="itemClick($event, item)"
-                    [target]="item.target"
-                    [attr.title]="item.title"
-                    [attr.id]="item.id"
-                    [attr.tabindex]="item.disabled ? null : '0'">
-                    @if (item.icon) {
-                        <span
-                            class="p-menuitem-icon"
-                            [ngClass]="item.icon"
-                            [ngStyle]="item.iconStyle"></span>
-                    } @else {
-                        <span class="p-menuitem-text">{{ item.label }}</span>
-                    }
-                </a>
+                @if (!item.routerLink) {
+                    <a
+                        [attr.href]="item.url ? item.url : null"
+                        class="p-menuitem-link"
+                        (click)="itemClick($event, item)"
+                        [target]="item.target"
+                        [attr.title]="item.title"
+                        [attr.id]="item.id"
+                        [attr.tabindex]="item.disabled ? null : '0'">
+                        @if (item.icon) {
+                            <span
+                                class="p-menuitem-icon"
+                                [ngClass]="item.icon"
+                                [ngStyle]="item.iconStyle"></span>
+                        }
+                        @if (item.label) {
+                            <span class="p-menuitem-text">{{ item.label }}</span>
+                        }
+                    </a>
+                } @else {
+                    <a
+                        [routerLink]="item.routerLink"
+                        [queryParams]="item.queryParams"
+                        [routerLinkActive]="'p-menuitem-link-active'"
+                        [routerLinkActiveOptions]="item.routerLinkActiveOptions || { exact: false }"
+                        class="p-menuitem-link"
+                        (click)="itemClick($event, item)"
+                        [target]="item.target"
+                        [attr.title]="item.title"
+                        [attr.id]="item.id"
+                        [attr.tabindex]="item.disabled ? null : '0'"
+                        [fragment]="item.fragment"
+                        [queryParamsHandling]="item.queryParamsHandling"
+                        [preserveFragment]="item.preserveFragment"
+                        [skipLocationChange]="item.skipLocationChange"
+                        [replaceUrl]="item.replaceUrl"
+                        [state]="item.state">
+                        @if (item.icon) {
+                            <span
+                                class="p-menuitem-icon"
+                                [ngClass]="item.icon"
+                                [ngStyle]="item.iconStyle"></span>
+                        }
+                        @if (item.label) {
+                            <span class="p-menuitem-text">{{ item.label }}</span>
+                        }
+                    </a>
+                }
             </li>
-
             @if (!$last) {
                 <li class="p-breadcrumb-chevron">
                     <ChevronRightIcon />
