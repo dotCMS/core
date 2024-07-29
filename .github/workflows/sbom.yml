@@ -12,8 +12,8 @@ jobs:
       - name: Start dotCMS with docker
         id: start-dotcms
         run: |
-          docker-compose down 
-          docker-compose up -d
+          docker pull dotcms/dotcms:latest
+          docker run -d dotcms/dotcms:latest
         
       - name: Pull rashik1144/core-test-results repository
         run: |
