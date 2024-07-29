@@ -129,100 +129,164 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
 
         final List<DiffItem> diffItems = new ArrayList<>();
 
-        if ((null != field1.dataType() && field1.dataType() != field2.dataType()) || null == field1.dataType() && null != field2.dataType()) {
-
-            diffItems.add(new DiffItem.Builder().variable("dataType").message(field1.dataType() + " != " + field2.dataType()).build());
-        }
-
-        if (field1.fixed() != field2.fixed())  {
-
-            diffItems.add(new DiffItem.Builder().variable("fixed").message(field1.fixed() + " != " + field2.fixed()).build());
-        }
-
-        if (field1.indexed() != field2.indexed())  {
-
-            diffItems.add(new DiffItem.Builder().variable("indexed").message(field1.indexed() + " != " + field2.indexed()).build());
-        }
-
-        if (field1.listed() != field2.listed())  {
-
-            diffItems.add(new DiffItem.Builder().variable("listed").message(field1.listed() + " != " + field2.listed()).build());
-        }
-
-        if (field1.readOnly() != field2.readOnly())  {
-
-            diffItems.add(new DiffItem.Builder().variable("readOnly").message(field1.readOnly() + " != " + field2.readOnly()).build());
-        }
-
-        if (field1.legacyField() != field2.legacyField())  {
-
-            diffItems.add(new DiffItem.Builder().variable("legacyField").message(field1.legacyField() + " != " + field2.legacyField()).build());
-        }
-
-        if (field1.required() != field2.required())  {
-
-            diffItems.add(new DiffItem.Builder().variable("required").message(field1.required() + " != " + field2.required()).build());
-        }
-
-        if (field1.searchable() != field2.searchable())  {
-
-            diffItems.add(new DiffItem.Builder().variable("searchable").message(field1.searchable() + " != " + field2.searchable()).build());
-        }
-
-        if (field1.unique() != field2.unique())  {
-
-            diffItems.add(new DiffItem.Builder().variable("unique").message(field1.unique() + " != " + field2.unique()).build());
-        }
-
-        if (this.diff(field1.defaultValue(), field2.defaultValue()))  {
-
-            diffItems.add(new DiffItem.Builder().variable("defaultValue").message(field1.defaultValue() + " != " + field2.defaultValue()).build());
-        }
-
-        if (this.diff(field1.name(), field2.name()))  {
-
-            diffItems.add(new DiffItem.Builder().variable("name").message(field1.name() + " != " + field2.name()).build());
-        }
-
-        if (this.diff(field1.hint(), field2.hint()))  {
-
-            diffItems.add(new DiffItem.Builder().variable("hint").message(field1.hint() + " != " + field2.hint()).build());
-        }
-
-        if (this.diff(field1.owner(), field2.owner()))  {
-
-            diffItems.add(new DiffItem.Builder().variable("owner").message(field1.owner() + " != " + field2.owner()).build());
-        }
-
-        if (this.diff(field1.regexCheck(), field2.regexCheck()))  {
-
-            diffItems.add(new DiffItem.Builder().variable("regexCheck").message(field1.regexCheck() + " != " + field2.regexCheck()).build());
-        }
-
-        if (this.diff(field1.values(), field2.values()))  {
-
-            diffItems.add(new DiffItem.Builder().variable("values").message(field1.values() + " != " + field2.values()).build());
-        }
-
-        if (this.diff(field1.relationType(), field2.relationType()))  {
-
-            diffItems.add(new DiffItem.Builder().variable("relationType").message(field1.relationType() + " != " + field2.relationType()).build());
-        }
-
-        if (field1.sortOrder() != field2.sortOrder()) {
-            diffItems.add(new DiffItem.Builder().variable("sortOrder").
-                    message(field1.sortOrder() + " != " + field2.sortOrder()).build());
-        }
-
-        final Map<String, FieldVariable> fieldVariablesMap1 = UtilMethods.get(this.indexFieldVariables(field1), Collections::emptyMap);
-        final Map<String, FieldVariable> fieldVariablesMap2 = UtilMethods.get(this.indexFieldVariables(field2), Collections::emptyMap);
-        final boolean areFieldVariablesEmpty = fieldVariablesMap1.isEmpty() && fieldVariablesMap2.isEmpty();
-
-        if (!areFieldVariablesEmpty) {
-            diffItems.addAll(this.fieldVariableDifferentiator.diff(fieldVariablesMap1, fieldVariablesMap2));
-        }
+        compareAttributes(field1, field2, diffItems);
+        compareFieldVariables(field1, field2, diffItems);
 
         return diffItems;
+    }
+
+    /**
+     * Compares the attributes of two Field objects and adds any differences to a list of
+     * DiffItems.
+     *
+     * @param field1    the first Field object to compare
+     * @param field2    the second Field object to compare
+     * @param diffItems the list to add any differences as DiffItems
+     */
+    private void compareAttributes(Field field1, Field field2, List<DiffItem> diffItems) {
+
+        if ((null != field1.dataType() && field1.dataType() != field2.dataType())
+                || null == field1.dataType() && null != field2.dataType()) {
+            diffItems.add(new DiffItem.Builder().variable("dataType").
+                    message(field1.dataType() + " != " + field2.dataType()).build());
+        }
+
+        compareBoolAttribute(
+                "fixed", field1.fixed(), field2.fixed(), diffItems
+        );
+        compareBoolAttribute(
+                "indexed", field1.indexed(), field2.indexed(), diffItems
+        );
+        compareBoolAttribute(
+                "listed", field1.listed(), field2.listed(), diffItems
+        );
+        compareBoolAttribute(
+                "readOnly", field1.readOnly(), field2.readOnly(), diffItems
+        );
+        compareBoolAttribute(
+                "legacyField", field1.legacyField(), field2.legacyField(), diffItems
+        );
+        compareBoolAttribute(
+                "required", field1.required(), field2.required(), diffItems
+        );
+        compareBoolAttribute(
+                "searchable", field1.searchable(), field2.searchable(), diffItems
+        );
+        compareBoolAttribute(
+                "unique", field1.unique(), field2.unique(), diffItems
+        );
+        compareIntAttribute(
+                "sortOrder", field1.sortOrder(), field2.sortOrder(), diffItems
+        );
+        compareStringAttribute(
+                "defaultValue", field1.defaultValue(), field2.defaultValue(), diffItems
+        );
+        compareStringAttribute(
+                "name", field1.name(), field2.name(), diffItems
+        );
+        compareStringAttribute(
+                "hint", field1.hint(), field2.hint(), diffItems
+        );
+        compareStringAttribute(
+                "owner", field1.owner(), field2.owner(), diffItems
+        );
+        compareStringAttribute(
+                "regexCheck", field1.regexCheck(), field2.regexCheck(), diffItems
+        );
+        compareStringAttribute(
+                "values", field1.values(), field2.values(), diffItems
+        );
+        compareStringAttribute(
+                "relationType", field1.relationType(), field2.relationType(), diffItems
+        );
+    }
+
+    /**
+     * Compares the field variables of two Field objects and adds any differences to a list of
+     * DiffItems.
+     *
+     * @param field1    the first Field object to compare
+     * @param field2    the second Field object to compare
+     * @param diffItems the list to add any differences as DiffItems
+     */
+    private void compareFieldVariables(Field field1, Field field2, List<DiffItem> diffItems) {
+
+        final Map<String, FieldVariable> fieldVariablesMap1 = UtilMethods.get(
+                this.indexFieldVariables(field1), Collections::emptyMap
+        );
+        final Map<String, FieldVariable> fieldVariablesMap2 = UtilMethods.get(
+                this.indexFieldVariables(field2), Collections::emptyMap
+        );
+        final boolean areFieldVariablesEmpty = fieldVariablesMap1.isEmpty()
+                && fieldVariablesMap2.isEmpty();
+
+        if (!areFieldVariablesEmpty) {
+            diffItems.addAll(
+                    this.fieldVariableDifferentiator.diff(fieldVariablesMap1, fieldVariablesMap2)
+            );
+        }
+    }
+
+    /**
+     * Compares the values of two string attributes and generates a DiffItem if they are different.
+     *
+     * @param attribute the name of the string attribute being compared
+     * @param value1    the first value for comparison
+     * @param value2    the second value for comparison
+     * @param diffItems the list to add any differences as DiffItems
+     */
+    private void compareStringAttribute(String attribute, String value1, String value2,
+            List<DiffItem> diffItems) {
+
+        if (this.diff(value1, value2)) {
+            diffItems.add(
+                    new DiffItem.Builder().
+                            variable(attribute).
+                            message(value1 + " != " + value2).build()
+            );
+        }
+    }
+
+    /**
+     * Compares the values of two integer attributes and generates a DiffItem if they are
+     * different.
+     *
+     * @param attribute the name of the integer attribute being compared
+     * @param value1    the first value for comparison
+     * @param value2    the second value for comparison
+     * @param diffItems the list to add any differences as DiffItems
+     */
+    private void compareIntAttribute(String attribute, int value1, int value2,
+            List<DiffItem> diffItems) {
+
+        if (value1 != value2) {
+            diffItems.add(
+                    new DiffItem.Builder().
+                            variable(attribute).
+                            message(value1 + " != " + value2).build()
+            );
+        }
+    }
+
+    /**
+     * Compares the values of two boolean attributes and generates a DiffItem if they are
+     * different.
+     *
+     * @param attribute the name of the boolean attribute being compared
+     * @param value1    the first value for comparison
+     * @param value2    the second value for comparison
+     * @param diffItems the list to add any differences as DiffItems
+     */
+    private void compareBoolAttribute(String attribute, boolean value1, boolean value2,
+            List<DiffItem> diffItems) {
+
+        if (value1 != value2) {
+            diffItems.add(
+                    new DiffItem.Builder().
+                            variable(attribute).
+                            message(value1 + " != " + value2).build()
+            );
+        }
     }
 
     final Map<String, FieldVariable> indexFieldVariables (final Field field) {
@@ -239,22 +303,24 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
 
         final List<DiffItem> diffItems = new ArrayList<>();
 
+        final var fieldVariablePrefix = "fieldVariable.";
+
         final Collection<DiffItem> fieldsVariablesToDelete = currentFieldVariablesMap.entrySet().stream()
                 .filter(entry ->  !newFieldVariablesMap.containsKey(entry.getKey()))
-                .map(entry -> new DiffItem.Builder().variable("fieldVariable." + entry.getKey())
+                .map(entry -> new DiffItem.Builder().variable(fieldVariablePrefix + entry.getKey())
                         .detail("delete").build())
                 .collect(Collectors.toList());
 
         final Collection<DiffItem>  fieldsVariablesToAdd   = newFieldVariablesMap.entrySet().stream()
                 .filter(entry ->  !currentFieldVariablesMap.containsKey(entry.getKey()))
-                .map(entry -> new DiffItem.Builder().variable("fieldVariable." + entry.getKey())
+                .map(entry -> new DiffItem.Builder().variable(fieldVariablePrefix + entry.getKey())
                         .detail("add").build())
                 .collect(Collectors.toList());
 
         final Collection<DiffItem> fieldsVariablesToUpdate = newFieldVariablesMap.entrySet().stream()
                 .filter(entry ->  currentFieldVariablesMap.containsKey(entry.getKey()))
                 .filter(entry ->  !entry.getValue().value().equals(currentFieldVariablesMap.get(entry.getKey()).value()))
-                .map(entry -> new DiffItem.Builder().variable("fieldVariable." + entry.getKey())
+                .map(entry -> new DiffItem.Builder().variable(fieldVariablePrefix + entry.getKey())
                         .detail("update").message(entry.getValue().value() + " != " + currentFieldVariablesMap.get(entry.getKey()).value()).build())
                 .collect(Collectors.toList());
 
