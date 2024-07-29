@@ -29,10 +29,6 @@ jobs:
         run: |
           pipx run anchore_syft  dotcms/dotcms:latest -o cyclonedx-xml > cyclonedx.json
 
-      - name: Stop Docker Container
-        run: |
-          docker stop $(docker ps -q --filter ancestor=dotcms/dotcms:latest)
-
       - name: Commit and push results to core-test-results repository
         run: |
           cd core-test-results
