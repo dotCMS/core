@@ -1,7 +1,9 @@
 name: sbom
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # Runs every hour
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
 
 jobs:
   scan:
@@ -23,7 +25,6 @@ jobs:
           
           # Extract tag names from the response
           tags=$(echo "$response" | jq -r '.results[].name')
-
           # Get detailed info for each tag
           tags_with_dates=""
           for tag in $tags; do
@@ -31,41 +32,66 @@ jobs:
             last_updated=$(echo "$tag_info" | jq -r '.last_updated')
             tags_with_dates="$tags_with_dates\n$tag $last_updated"
           done
-
           # Find the tag with the most recent update
           latest_tag=$(echo -e "$tags_with_dates" | sort -k2,2 -r | head -n 1 | awk '{print $1}')
           
           echo "Latest tag: $latest_tag"
           echo "DOTCMS_VERSION=$latest_tag" >> $GITHUB_ENV
 
+      - name: Check if latest tag has changed
+        id: check_tag
+        run: |
+          # Retrieve the previous tag from a file or environment
+          if [ -f core-test-results/previous_tag.txt ]; then
+            previous_tag=$(cat core-test-results/previous_tag.txt)
+          else
+            previous_tag=""
+          fi
+          echo "Previous tag: $previous_tag"
+          echo "Current tag: ${{ env.DOTCMS_VERSION }}"
+
+          if [ "$previous_tag" != "${{ env.DOTCMS_VERSION }}" ]; then
+            echo "Tag has changed. Proceeding with the scan."
+            echo "${{ env.DOTCMS_VERSION }}" > core-test-results/previous_tag.txt
+            echo "::set-output name=tag_changed::true"
+          else
+            echo "No change in tag. Skipping scan."
+            echo "::set-output name=tag_changed::false"
+          fi
+
       - name: Pull and run dotCMS Docker image
+        if: steps.check_tag.outputs.tag_changed == 'true'
         run: |
           docker pull dotcms/dotcms:${{ env.DOTCMS_VERSION }}
           docker run -d -p 8082:8082 dotcms/dotcms:${{ env.DOTCMS_VERSION }}
 
       - name: Install pipx
+        if: steps.check_tag.outputs.tag_changed == 'true'
         run: |
           pip install pipx
 
       - name: Scan Docker Image with Syft
+        if: steps.check_tag.outputs.tag_changed == 'true'
         run: |
           pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core-test-results/cyclonedx.json
 
       - name: Rename SBOM file with dotCMS version
+        if: steps.check_tag.outputs.tag_changed == 'true'
         run: |
           mv core-test-results/cyclonedx.json core-test-results/dotcms-${{ env.DOTCMS_VERSION }}.json
 
       - name: Configure Git
+        if: steps.check_tag.outputs.tag_changed == 'true'
         run: |
           git config --global user.email "rashik1144@github.com"
           git config --global user.name "rashik1144"
 
       - name: Commit and push results to core-test-results repository
+        if: steps.check_tag.outputs.tag_changed == 'true'
         run: |
           cd core-test-results
-          ls -l  # Debugging: List files in the core-test-results directory
           git add dotcms-${{ env.DOTCMS_VERSION }}.json
           git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
-          git push origin master  # Update branch name if necessary
+          git push origin master
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_PENTEST_TOKEN }}
