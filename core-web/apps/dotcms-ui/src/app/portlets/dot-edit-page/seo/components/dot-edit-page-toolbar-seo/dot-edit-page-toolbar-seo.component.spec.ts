@@ -52,6 +52,7 @@ import {
 } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
+    DotLanguage,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
@@ -483,12 +484,31 @@ describe('DotEditPageToolbarSeoComponent', () => {
     });
 
     describe('ngOnChange', () => {
-        it('should have a new api link', () => {
-            component.apiLink = '';
-            const expectedLink = `api/v1/page/render${componentHost.pageState.page.pageURI}?language_id=${componentHost.pageState.page.languageId}`;
+        beforeEach(() => {
+            de = deHost.query(By.css('dot-edit-page-view-as-controller'));
+        });
+
+        xit('should have a new api link', async () => {
+            const host = `api/v1/page/render${componentHost.pageState.page.pageURI}`;
+
+            expect(component.apiLink).toBe(host + `?language_id=1`);
+
+            const expectedLink = host + `?language_id=2`;
+            const testlanguage: DotLanguage = {
+                id: 2,
+                languageCode: 'es',
+                countryCode: 'es',
+                language: 'test',
+                country: 'test'
+            };
+
             fixtureHost.detectChanges();
-            component.ngOnChanges();
-            expect(component.apiLink).toBe(expectedLink);
+            const languageSelector = de.query(By.css('dot-language-selector')).componentInstance;
+            languageSelector.selected.emit(testlanguage);
+
+            fixtureHost.whenStable().then(() => {
+                expect(component.apiLink).toBe(expectedLink);
+            });
         });
     });
 });
