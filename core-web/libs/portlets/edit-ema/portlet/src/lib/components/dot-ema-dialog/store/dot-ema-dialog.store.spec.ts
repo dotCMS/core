@@ -8,7 +8,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DialogStatus, DotEmaDialogStore } from './dot-ema-dialog.store';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
-import { LAYOUT_URL, PAYLOAD_MOCK } from '../../../shared/consts';
+import { LAYOUT_URL } from '../../../shared/consts';
+import { PAYLOAD_MOCK } from '../../../shared/mocks';
 import { DotPage } from '../../../shared/models';
 
 describe('DotEmaDialogStoreService', () => {

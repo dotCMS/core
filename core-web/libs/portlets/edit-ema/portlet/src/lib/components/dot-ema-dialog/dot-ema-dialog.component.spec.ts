@@ -38,8 +38,8 @@ import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
-import { PAYLOAD_MOCK } from '../../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
+import { PAYLOAD_MOCK } from '../../shared/mocks';
 import { DotPage } from '../../shared/models';
 
 describe('DotEmaDialogComponent', () => {

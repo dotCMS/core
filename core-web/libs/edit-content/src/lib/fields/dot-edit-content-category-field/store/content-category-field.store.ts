@@ -103,6 +103,13 @@ export const CategoryFieldStore = signalStore(
         ),
 
         /**
+         * Status of the Search Component
+         */
+        searchStatus: computed(() =>
+            store.mode() === 'search' ? store.state() : ComponentStatus.INIT
+        ),
+
+        /**
          * Categories for render with added properties
          */
         searchCategoryList: computed(() =>
@@ -141,13 +148,13 @@ export const CategoryFieldStore = signalStore(
                                     patchState(store, {
                                         field,
                                         selected,
-                                        state: ComponentStatus.IDLE
+                                        state: ComponentStatus.LOADED
                                     });
                                 },
                                 error: (error: HttpErrorResponse) => {
                                     patchState(store, {
                                         field,
-                                        state: ComponentStatus.IDLE
+                                        state: ComponentStatus.ERROR
                                     });
 
                                     dotHttpErrorManagerService.handle(error);
@@ -285,7 +292,7 @@ export const CategoryFieldStore = signalStore(
                                 },
                                 error: () => {
                                     // TODO: Add Error Handler
-                                    patchState(store, { state: ComponentStatus.IDLE });
+                                    patchState(store, { state: ComponentStatus.ERROR });
                                 }
                             })
                         );
@@ -315,8 +322,10 @@ export const CategoryFieldStore = signalStore(
                                         });
                                     },
                                     error: () => {
-                                        // TODO: Add Error Handler
-                                        patchState(store, { state: ComponentStatus.IDLE });
+                                        patchState(store, {
+                                            state: ComponentStatus.ERROR,
+                                            searchCategories: []
+                                        });
                                     }
                                 })
                             );
