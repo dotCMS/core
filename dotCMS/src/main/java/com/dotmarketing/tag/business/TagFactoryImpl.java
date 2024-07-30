@@ -662,20 +662,20 @@ public class TagFactoryImpl implements TagFactory {
         final String selectTopTagsQuery =
                 "select distinct(tagname), count(tinode) from " +
                         "( " +
-                        "   select lower(tagname), tag_inode.inode as tinode " +
+                        "   select lower(tagname) as tagname, tag_inode.inode as tinode " +
                         "   from  " +
                         "   tag, tag_inode  " +
                         "   where  " +
                         "   tag.tag_id=tag_inode.tag_id  " +
                         "   and tag.host_id=? " +
                         "UNION ALL " +
-                        "   select lower(tagname), tag_inode.inode as tinode " +
+                        "   select lower(tagname) as tagname, tag_inode.inode as tinode " +
                         "   from  " +
                         "   tag, tag_inode  " +
                         "   where  " +
                         "   tag.tag_id=tag_inode.tag_id  " +
                         ") as foo  " +
-                        "group by lower(tagname)  " +
+                        "group by tagname  " +
                         "order by count(tinode) desc " +
                         "limit 1000";
 
