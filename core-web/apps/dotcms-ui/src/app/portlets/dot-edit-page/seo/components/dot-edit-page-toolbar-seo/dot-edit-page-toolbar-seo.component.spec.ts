@@ -134,7 +134,7 @@ export class ActivatedRouteListStoreMock {
     }
 }
 
-fdescribe('DotEditPageToolbarSeoComponent', () => {
+describe('DotEditPageToolbarSeoComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
     let component: DotEditPageToolbarSeoComponent;
