@@ -1,5 +1,7 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.ai.app.AIModel;
+import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -21,6 +23,14 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * Integration tests for the \EmbeddingsTool\ class. This test class verifies the functionality
+ * of methods in \EmbeddingsTool\ such as counting tokens, generating embeddings, and
+ * retrieving index counts. It uses mock objects to simulate the \ViewContext\ and
+ * \AppConfig\ dependencies.
+ *
+ * @author vico
+ */
 public class EmbeddingsToolTest {
 
     private Host host;
@@ -107,9 +117,10 @@ public class EmbeddingsToolTest {
     }
 
     private AppConfig prepareAppConfig() {
-        final AppConfig appConfig = mock(AppConfig.class);
-        when(appConfig.getModel()).thenReturn("gpt-3.5-turbo-16k");
-        return appConfig;
+        final AppConfig config = mock(AppConfig.class);
+        final AIModel aiModel = AIModel.builder().withType(AIModelType.TEXT).withNames("gpt-3.5-turbo-16k").build();
+        when(config.getModel()).thenReturn(aiModel);
+        return config;
     }
 
 }

@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.ai.app.AIModelsTest;
 import com.dotcms.ai.listener.EmbeddingContentListenerTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
@@ -299,6 +300,7 @@ import org.junit.runners.Suite.SuiteClasses;
         SearchToolTest.class,
         EmbeddingsToolTest.class,
         CompletionsToolTest.class,
+        AIModelsTest.class,
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
         PruneTimeMachineBackupJobTest.class,
