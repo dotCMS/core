@@ -419,4 +419,21 @@ public interface TemplateAPI {
 	 */
 	List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Save and Update the Layout of a Template
+	 * This method calculate the changes on the current {@link TemplateLayout} of the Template and then update
+	 * the {@link com.dotmarketing.beans.MultiTree} using the {@link com.dotmarketing.factories.MultiTreeAPI#updateMultiTrees(LayoutChanges, Collection)}
+	 *
+	 *
+	 * @param template
+	 * @param newLayout
+	 * @param site
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Template saveAndUpdateLayout(Template template, TemplateLayout newLayout, Host site, User user,
+								 boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 }

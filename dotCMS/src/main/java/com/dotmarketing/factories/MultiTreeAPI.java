@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.templates.design.bean.LayoutChanges;
 import com.google.common.collect.Table;
 
 import java.util.Collection;
@@ -33,7 +34,7 @@ public interface MultiTreeAPI {
 
     /**
      * Saves MultiTrees for a given page
-     * 
+     *
      * @param mTrees
      * @throws DotDataException
      */
@@ -41,7 +42,7 @@ public interface MultiTreeAPI {
 
     /**
      * Saves a specific MultiTree as it comes
-     * 
+     *
      * @param multiTree
      * @throws DotDataException
      */
@@ -55,7 +56,7 @@ public interface MultiTreeAPI {
     void saveMultiTreeAndReorder(final MultiTree mTree) throws DotDataException;
     /**
      * Deletes a specific MultiTree
-     * 
+     *
      * @param multiTree
      * @throws DotDataException
      */
@@ -71,7 +72,7 @@ public interface MultiTreeAPI {
 
     /**
      * Removes any mutlitree that has the identifiers as either a parent or as a child
-     * 
+     *
      * @param identifiers
      * @throws DotDataException
      */
@@ -81,7 +82,7 @@ public interface MultiTreeAPI {
     /**
      * deletes all the multi tress related to the identifier, including parents and child in addition
      * for the pages related refresh the cache and publish relationships
-     * 
+     *
      * @param identifier String
      * @throws DotDataException
      */
@@ -125,7 +126,7 @@ public interface MultiTreeAPI {
 
     /**
      * Saves a list of MultiTrees
-     * 
+     *
      * @param mTrees
      * @throws DotDataException
      */
@@ -133,7 +134,7 @@ public interface MultiTreeAPI {
 
     /**
      * Deletes a list of MultiTrees
-     * 
+     *
      * @param mTree
      * @throws DotDataException
      */
@@ -141,7 +142,7 @@ public interface MultiTreeAPI {
 
     /**
      * Deletes all MultiTrees that have either this page id or container id as a parent
-     * 
+     *
      * @param pageOrContainer
      * @throws DotDataException
      */
@@ -149,7 +150,7 @@ public interface MultiTreeAPI {
 
     /**
      * Deletes all MultiTrees that have contentlet id as a child
-     * 
+     *
      * @param contentIdentifier
      * @throws DotDataException
      */
@@ -159,7 +160,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets them all
-     * 
+     *
      * @return
      */
     List<MultiTree> getAllMultiTrees();
@@ -172,11 +173,11 @@ public interface MultiTreeAPI {
      * @throws DotDataException
      */
     List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId,
-            final String personalization, final String targetVariantName) throws DotDataException;
+                                                    final String personalization, final String targetVariantName) throws DotDataException;
 
     /**
      * Gets a list of all MultiTrees on a page (even if they are bad)
-     * 
+     *
      * @param parentInode
      * @return
      * @throws DotDataException
@@ -185,7 +186,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a list of MultiTrees that belong to the page+container+container instance
-     * 
+     *
      * @param htmlPage
      * @param container
      * @param containerInstance
@@ -206,7 +207,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a list of MultiTrees that belong to the page+container
-     * 
+     *
      * @param htmlPage
      * @param container
      * @return
@@ -215,7 +216,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a list of MultiTrees that belong to the page+container
-     * 
+     *
      * @param htmlPage
      * @param container
      * @return
@@ -224,7 +225,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a list of MultiTrees that belong to the page+container+container instance
-     * 
+     *
      * @param htmlPage
      * @param container
      * @param containerInstance
@@ -234,7 +235,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a list of MultiTrees that belong to the container on any page
-     * 
+     *
      * @param containerIdentifier
      * @return List Multitree
      */
@@ -242,7 +243,7 @@ public interface MultiTreeAPI {
 
     /**
      * gets all MultiTrees that have contentlet id as a child
-     * 
+     *
      * @param contentIdentifier page Or Container
      * @throws DotDataException
      */
@@ -250,7 +251,7 @@ public interface MultiTreeAPI {
 
     /**
      * gets all MultiTrees that in a container of a particular content type
-     * 
+     *
      * @param containerIdentifier
      * @param structureInode
      * @return
@@ -259,7 +260,7 @@ public interface MultiTreeAPI {
 
     /**
      * gets the containers with MultiTree entries on a page (The containers may or may not exist)
-     * 
+     *
      * @param pageId
      * @return
      * @throws DotDataException
@@ -268,7 +269,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a specific MultiTree entry
-     * 
+     *
      * @param htmlPage
      * @param container
      * @param childContent
@@ -281,7 +282,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a specific MultiTree entry
-     * 
+     *
      * @param htmlPage
      * @param container
      * @param childContent
@@ -318,7 +319,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a specific MultiTree entry regardless of containerInstance
-     * 
+     *
      * @param htmlPage
      * @param container
      * @param childContent
@@ -329,7 +330,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a list of MultiTrees that have the Identifier as a Parent
-     * 
+     *
      * @param parent Container or Page
      * @return
      */
@@ -337,7 +338,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a list of MultiTrees that have the Identifiers as a Parent Page+Container
-     * 
+     *
      * @param htmlPage
      * @param container
      * @return
@@ -346,7 +347,7 @@ public interface MultiTreeAPI {
 
     /**
      * Gets a list of MultiTrees that has the parentId as a parent
-     * 
+     *
      * @param parentId page id
      * @return
      */
@@ -409,7 +410,7 @@ public interface MultiTreeAPI {
      * @return List MultiTree
      */
     List<MultiTree> copyPersonalizationForPage (String pageId, String basePersonalization,
-            String newPersonalization, final String targetVariantName ) throws DotDataException;
+                                                String newPersonalization, final String targetVariantName ) throws DotDataException;
 
     /**
      * Take a set of containers with a based personalization (the default one) and set to new personalization, for a page.
@@ -418,8 +419,8 @@ public interface MultiTreeAPI {
      * @return List MultiTree
      */
     default List<MultiTree> copyPersonalizationForPage (final String pageId, final String newPersonalization,
-            final String targetVariantName)
-                throws DotDataException {
+                                                        final String targetVariantName)
+            throws DotDataException {
 
         return this.copyPersonalizationForPage(pageId, MultiTree.DOT_PERSONALIZATION_DEFAULT,
                 newPersonalization, targetVariantName);
@@ -453,9 +454,9 @@ public interface MultiTreeAPI {
      * @throws DotDataException
      */
     void overridesMultitreesByPersonalization(final String pageId,
-            final String personalization,
-            final List<MultiTree> multiTrees,
-            final Optional<Long> languageIdOpt
+                                              final String personalization,
+                                              final List<MultiTree> multiTrees,
+                                              final Optional<Long> languageIdOpt
     ) throws DotDataException;
 
     /**
@@ -472,11 +473,11 @@ public interface MultiTreeAPI {
      * @throws DotDataException
      */
     void overridesMultitreesByPersonalization(final String pageId,
-                                             final String personalization,
-                                             final List<MultiTree> multiTrees,
-                                             final Optional<Long> languageIdOpt,
-                                             final String variantId
-                                        ) throws DotDataException;
+                                              final String personalization,
+                                              final List<MultiTree> multiTrees,
+                                              final Optional<Long> languageIdOpt,
+                                              final String variantId
+    ) throws DotDataException;
 
     /**
      * Copy a collection of {@link MultiTree} but to a different {@link Variant}.
@@ -487,7 +488,7 @@ public interface MultiTreeAPI {
      * @throws DotDataException
      */
     void copyMultiTree(final String pageId, final List<MultiTree> multiTrees,
-            String variantName)
+                       String variantName)
             throws DotDataException;
 
     /**
@@ -512,23 +513,25 @@ public interface MultiTreeAPI {
     int getAllContentletReferencesCount(final String contentletId) throws DotDataException;
 
     /**
-     * Update the UUID of a set of MultiTree to a new UUID value
-     *
-     * @param pagesId Set of page's id to be updated
-     * @param containerId Container's id to be updated
-     * @param oldValue old UUID value to be updated
-     * @param newValue new value to set
-     *
-     * @throws DotDataException
-     */
-    void updateMultiTrees(final Collection<String> pagesId, final String containerId,
-            final String oldValue, final String newValue) throws DotDataException;
-
-    /**
      * Return all the {@link MultiTree} for a {@link Variant}
      *
      * @param variant
      * @return
      */
     List<MultiTree> getMultiTrees(final Variant variant) throws DotDataException;
+
+    /**
+     * After layout changes, this method updates the UUID (relation_type field) of a set of pages in a
+     * MultiTree according to changes in the layout.
+     *
+     * For example, if you have a layout with one instance of a container,
+     * the UUID for this container is initially set to 1. If later you add a second instance on top of the layout,
+     * the UUID of the original instance will change from 1 to 2. Consequently, the MultiTree of the pages using
+     * this layout needs to be updated as well.
+     *
+     * @param layoutChanges
+     * @param pageIds
+     * @throws DotDataException
+     */
+    void updateMultiTrees(final LayoutChanges layoutChanges, final Collection<String> pageIds) throws DotDataException;
 }

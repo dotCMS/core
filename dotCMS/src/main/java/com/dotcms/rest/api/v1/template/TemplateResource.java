@@ -7,8 +7,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
-import com.dotcms.rest.api.v1.template.TemplateLayoutView.ContainerUUIDChanged;
-import com.dotcms.rest.api.v1.template.TemplateLayoutView.ContainerUUIDChanges;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
@@ -24,6 +22,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
@@ -70,6 +69,7 @@ import java.util.stream.Collectors;
 public class TemplateResource {
 
     private static final String ARCHIVE_PARAM = "archive";
+    public static final String USER = "User ";
     private final PaginationUtil paginationUtil;
     private final WebResource    webResource;
     private final TemplateAPI    templateAPI;
@@ -319,8 +319,8 @@ public class TemplateResource {
         final Template newVersionTemplate = new Template();
         newVersionTemplate.setIdentifier(currentTemplate.getIdentifier());
 
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
-                this.fillAndSaveTemplate(templateForm, user, host, pageMode, newVersionTemplate, true), user))).build();
+        return Response.ok(new ResponseEntityView<>(this.templateHelper.toTemplateView(
+                this.fillAndSaveDraftTemplate(templateForm, user, host, pageMode, newVersionTemplate), user))).build();
     }
 
     @WrapInTransaction
@@ -331,7 +331,23 @@ public class TemplateResource {
                                          final Template template) throws DotSecurityException, DotDataException {
 
 
-        return fillAndSaveTemplate(templateForm, user, host, pageMode, template, false);
+        template.setInode(StringPool.BLANK);
+        fillTemplate(templateForm, user, host, pageMode.respectAnonPerms, template);
+
+        if (null != templateForm.getLayout()) {
+            final TemplateLayout templateLayout = this.templateHelper.toTemplateLayout(templateForm.getLayout());
+            template.setDrawedBody(templateLayout);
+            template.setDrawed(true);
+            this.templateAPI.saveAndUpdateLayout(template, templateLayout, host, user, pageMode.respectAnonPerms);
+        } else {
+            template.setDrawedBody(templateForm.getDrawedBody());
+            this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);
+        }
+
+        ActivityLogger.logInfo(this.getClass(), "Saved Template", USER + user.getPrimaryKey()
+                + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
+
+        return template;
     }
 
     /**
@@ -343,20 +359,29 @@ public class TemplateResource {
      * @param pageMode     The {@link PageMode} object used to determine whether anonymous permissions must be respected
      *                     or not.
      * @param template     The {@link Template} object that will hold the incoming data.
-     * @param draft        If the Template is being saved as draft, set this to {@code true}.
      * @return The new Template.
      * @throws DotSecurityException The specified User does not have permission to save this Template.
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
     @WrapInTransaction
-    private Template fillAndSaveTemplate(final TemplateForm templateForm,
+    private Template fillAndSaveDraftTemplate(final TemplateForm templateForm,
             final User user,
             final Host site,
             final PageMode pageMode,
-            final Template template,
-            final boolean draft) throws DotSecurityException, DotDataException {
+                                              final Template template) throws DotSecurityException, DotDataException {
 
-        template.setInode(draft?templateForm.getInode(): StringPool.BLANK);
+        template.setInode(templateForm.getInode());
+        fillTemplate(templateForm, user, site, pageMode.respectAnonPerms, template);
+
+        this.templateAPI.saveDraftTemplate(template, site, user,pageMode.respectAnonPerms);
+
+        ActivityLogger.logInfo(this.getClass(), "Saved Template", USER + user.getPrimaryKey()
+                + "Template: " + template.getTitle(), site.getTitle() != null? site.getTitle():"default");
+
+        return template;
+    }
+
+    private static void fillTemplate(TemplateForm templateForm, User user, Host site, boolean respectAnonPerms, Template template) throws DotSecurityException, DotDataException {
         template.setTheme(UtilMethods.isSet(templateForm.getTheme()) ? templateForm.getTheme() : Theme.SYSTEM_THEME);
         template.setBody(templateForm.getBody());
         template.setCountContainers(templateForm.getCountAddContainer());
@@ -366,15 +391,6 @@ public class TemplateResource {
         template.setModUser(user.getUserId());
         template.setModDate(new Date());
 
-        ContainerUUIDChanges containerUUIDChanges = null;
-
-        if (null != templateForm.getLayout()) {
-            containerUUIDChanges = templateForm.getLayout().updateUUIDOfContainers();
-            template.setDrawedBody(this.templateHelper.toTemplateLayout(templateForm.getLayout()));
-            template.setDrawed(true);
-        } else {
-            template.setDrawedBody(templateForm.getDrawedBody());
-        }
         template.setFooter(templateForm.getFooter());
         template.setFriendlyName(templateForm.getFriendlyName());
         template.setHeadCode(templateForm.getHeadCode());
@@ -383,50 +399,15 @@ public class TemplateResource {
         template.setHeader(templateForm.getHeader());
 
         if (templateForm.isDrawed()) {
-            final String themeHostId = APILocator.getFolderAPI().find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getHostId();
+            final String themeHostId = APILocator.getFolderAPI().find(templateForm.getTheme(), user, respectAnonPerms).getHostId();
             final String themePath   = themeHostId.equals(site.getInode())?
                     Template.THEMES_PATH + template.getThemeName() + "/":
-                    "//" + APILocator.getHostAPI().find(themeHostId, user, pageMode.respectAnonPerms).getHostname()
+                    "//" + APILocator.getHostAPI().find(themeHostId, user, respectAnonPerms).getHostname()
                             + Template.THEMES_PATH + template.getThemeName() + "/";
 
             final StringBuffer endBody = DesignTemplateUtil.getBody(template.getBody(), template.getHeadCode(),
                     themePath, templateForm.isHeaderCheck(), templateForm.isFooterCheck());
             template.setBody(endBody.toString());
-        }
-
-
-        if (draft) {
-            this.templateAPI.saveDraftTemplate(template, site, user, pageMode.respectAnonPerms);
-        } else {
-            this.templateAPI.saveTemplate(template, site, user, pageMode.respectAnonPerms);
-        }
-
-        if (UtilMethods.isSet(containerUUIDChanges) && UtilMethods.isSet(containerUUIDChanges.lostUUIDValues())){
-            updateMultiTree(template, containerUUIDChanges);
-
-        }
-
-        ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
-                + "Template: " + template.getTitle(), site.getTitle() != null? site.getTitle():"default");
-
-        return template;
-    }
-
-    private static void updateMultiTree(final Template template, final ContainerUUIDChanges containerUUIDChanges)
-            throws DotDataException, DotSecurityException {
-        final List<Contentlet> pagesByTemplate = APILocator.getHTMLPageAssetAPI()
-                .findPagesByTemplate(template, APILocator.systemUser(), false);
-
-        final List<String> pagesId = pagesByTemplate.stream()
-                .map(contentlet -> contentlet.getIdentifier())
-                .collect(Collectors.toList());
-
-        if (UtilMethods.isSet(pagesId)) {
-            for (ContainerUUIDChanged lostUUIDValue : containerUUIDChanges.lostUUIDValues()) {
-                APILocator.getMultiTreeAPI().updateMultiTrees(pagesId, lostUUIDValue.containerId,
-                        lostUUIDValue.oldValue,
-                        lostUUIDValue.newValue);
-            }
         }
     }
 

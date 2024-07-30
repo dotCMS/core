@@ -87,8 +87,6 @@ import java.util.Set;
 public class PageResourceHelper implements Serializable {
 
     private static final long serialVersionUID = 296763857542258211L;
-    private static final Lazy<Boolean> DELETE_ORPHANED_CONTENTS_FROM_CONTAINER =
-            Lazy.of(() -> Config.getBooleanProperty("DELETE_ORPHANED_CONTENTS_FROM_CONTAINER", true));
 
     private final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
     private final HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
@@ -359,11 +357,10 @@ public class PageResourceHelper implements Serializable {
             }
 
             template.setDrawed(true);
-            updateMultiTrees(page, pageForm);
 
             template.setModDate(new Date());
             // permissions have been updated above
-            return this.templateAPI.saveTemplate(template, site, APILocator.systemUser(), false);
+            return this.templateAPI.saveAndUpdateLayout(template, pageForm.getLayout(), site, APILocator.systemUser(), false);
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("An error occurred when saving Template '%s' [ %s ]: %s",
                     template.getTitle(), template.getIdentifier(), ExceptionUtil.getErrorMessage(e));
@@ -371,109 +368,8 @@ public class PageResourceHelper implements Serializable {
         }
     }
 
-    @WrapInTransaction
-    protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
-
-        final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
-        final Table<String, String, Set<PersonalizedContentlet>> pageContents = multiTreeAPI
-                .getPageMultiTrees(page, currentVariantId, false);
-
-        final String pageIdentifier = page.getIdentifier();
-        APILocator.getMultiTreeAPI().deleteMultiTree(pageIdentifier, currentVariantId);
-
-        final List<MultiTree> multiTrees = new ArrayList<>();
-        final boolean deleteOrphanedContents = DELETE_ORPHANED_CONTENTS_FROM_CONTAINER.get();
-
-        for (final String containerId : pageContents.rowKeySet()) {
-            int treeOrder = 0;
-
-            for (final String uniqueId : pageContents.row(containerId).keySet()) {
-                final Map<String, Set<PersonalizedContentlet>> row = pageContents.row(containerId);
-                final Set<PersonalizedContentlet> contents         = row.get(uniqueId);
-
-                if (!contents.isEmpty()) {
-                    final String newContainerLayoutID = getNewContainerLayoutID(pageForm, containerId, uniqueId);
-                    // Adding multi-tre records is skipped if (1) deleting orphaned records is enabled
-                    // and (2) the container instance ID equals -1
-                    if (!deleteOrphanedContents || (!ContainerUUID.UUID_DEFAULT_VALUE.equals(newContainerLayoutID))) {
-                        for (final PersonalizedContentlet identifierPersonalization : contents) {
-                            final MultiTree multiTree = MultiTree.personalized(
-                                    new MultiTree().setContainer(containerId)
-                                            .setContentlet(identifierPersonalization.getContentletId())
-                                            .setInstanceId(newContainerLayoutID)
-                                            .setTreeOrder(treeOrder++)
-                                            .setHtmlPage(pageIdentifier)
-                                            .setVariantId(currentVariantId),
-                                    identifierPersonalization.getPersonalization());
-
-                            multiTrees.add(multiTree);
-                        }
-                    }
-                }
-            }
-        }
-
-        multiTreeAPI.saveMultiTrees(pageIdentifier, currentVariantId, multiTrees);
-    }
-
-    /**
-     * Returns the existing instance ID of the specified Container in the HTML Page Layout, or a new
-     * instance ID in case it was changed because one or more Containers before or after it were
-     * added, moved or removed.
-     *
-     * <p>The object {@link ContainerUUIDChanged} in the {@link PageForm} parameter indicates
-     * whether a Container's position was changed, or removed altogether. If that's the case, an
-     * instance ID of -1 will be returned. Containers whose instance ID start with
-     * {@link ParseContainer#PARSE_CONTAINER_UUID_PREFIX} will always keep its ID.</p>
-     *
-     * <p>Additionally, if the Container instance ID cannot be found in the internal Map that holds
-     * the updated position of Containers, it means such a Container doesn't exist anymore, so a -1
-     * will be returned.</p>
-     *
-     * @param pageForm    The {@link PageForm} object containing the Template's new layout
-     *                    information.
-     * @param containerId The ID of the Container being processed.
-     * @param uniqueId    The currently assigned instance ID of the Container
-     *
-     * @return The new instance ID of the Container, or -1 in case it was deleted from the Template.
-     *
-     * @throws DotDataException     An error occurred when persisting the changes.
-     * @throws DotSecurityException A user permission error has occurred.
-     */
-    private String getNewContainerLayoutID(final PageForm pageForm, final String containerId,
-                                           final String uniqueId)
-            throws DotDataException, DotSecurityException {
-
-        String containerPath = null;
-        final Container foundContainer = APILocator.getContainerAPI()
-                .getWorkingContainerById(containerId, userAPI.getSystemUser(), false);
-        if (foundContainer instanceof FileAssetContainer) {
-            // If we have a FileAssetContainer, we may need to search by path instead
-            containerPath = FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) foundContainer);
-        }
-
-        if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
-            String newContainerInstanceID = pageForm.getNewlyContainerUUID(containerId);
-            if (newContainerInstanceID == null && containerPath != null) {
-                // Searching also by Container path -- i.e., Container as File -- if not found
-                newContainerInstanceID = pageForm.getNewlyContainerUUID(containerPath);
-            }
-            return newContainerInstanceID != null ? newContainerInstanceID
-                    : ContainerUUID.UUID_DEFAULT_VALUE;
-        } if (ParseContainer.isParserContainerUUID(uniqueId)) {
-            return uniqueId;
-        } else {
-            ContainerUUIDChanged change = pageForm.getChangeInContainerInstanceIDs(containerId, uniqueId);
-            if (change == null && containerPath != null) {
-                // Searching also by Container path -- i.e., Container as File -- if not found
-                change = pageForm.getChangeInContainerInstanceIDs(containerPath, uniqueId);
-            }
-            return change != null ? change.getNewInfo().getUUID() : ContainerUUID.UUID_DEFAULT_VALUE;
-        }
-    }
-
     public Template saveTemplate(final User user, final PageForm pageForm)
-            throws BadRequestException, DotDataException, DotSecurityException, IOException {
+            throws BadRequestException, DotDataException, DotSecurityException {
         return this.saveTemplate(null, user, pageForm);
     }
 
@@ -495,7 +391,6 @@ public class PageResourceHelper implements Serializable {
 
         saveTemplate.setInode(null);
         saveTemplate.setTheme((form.getThemeId()==null) ? oldTemplate.getTheme() : form.getThemeId());
-        saveTemplate.setDrawedBody(form.getLayout());
         saveTemplate.setDrawed(true);
         
         return saveTemplate;
