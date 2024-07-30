@@ -1,4 +1,4 @@
-import { Node } from 'prosemirror-model';
+import { Node, DOMSerializer } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, TextSelection, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
@@ -103,7 +103,7 @@ export class AIContentPromptView {
                 this.editor
                     .chain()
                     .closeAIPrompt()
-                    .insertAINode(content)
+                    .insertAINode(this.parseTextToParagraphs(content))
                     .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
                     .run();
             });
@@ -177,6 +177,29 @@ export class AIContentPromptView {
 
                 this.componentStore.setDeleteContent(false);
             });
+    }
+
+    /**
+     * This function takes a string of text and converts it into HTML paragraphs.
+     * It splits the input text by line breaks and wraps each line in a <p> tag.
+     * The resulting HTML string is then returned.
+     *
+     * based on clipboardTextParser.
+     * https://github.com/ProseMirror/prosemirror-view/blob/1.33.4/src/clipboard.ts#L43
+     *
+     * @param {string} text - The input text to be converted into HTML paragraphs.
+     * @returns {string} - The resulting HTML string with text wrapped in <p> tags.
+     */
+    parseTextToParagraphs(text: string): string {
+        const { schema } = this.view.state;
+        const serializer = DOMSerializer.fromSchema(schema);
+        const dom = document.createElement('div');
+        text.split(/(?:\r\n?|\n)+/).forEach((block) => {
+            const p = dom?.appendChild(document.createElement('p'));
+            if (block) p.appendChild(serializer.serializeNode(schema.text(block)));
+        });
+
+        return dom.innerHTML;
     }
 
     update(view: EditorView, prevState?: EditorState) {

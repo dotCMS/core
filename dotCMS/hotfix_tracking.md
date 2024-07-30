@@ -130,3 +130,4 @@ This maintenance release includes the following code fixes:
 123. https://github.com/dotCMS/core/issues/29304 : Revert telemetry plugin to 24.05.29 #29304
 124. https://github.com/dotCMS/core/issues/28508 : Add Search Box for Bundle ID #28508
 125. https://github.com/dotCMS/core/issues/28509 : Remove three dots at the end of the Bundle ID #28509
+126. https://github.com/dotCMS/core/issues/28201 : AI Content Block inserts rich content as a single paragraph #28201
