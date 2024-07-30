@@ -7,7 +7,6 @@
     },
     "scripts": {
         "ng": "nx",
-        "postinstall": "node ./decorate-angular-cli.js",
         "nx": "nx",
         "start": "ng serve",
         "build": "ng build",
