@@ -11,7 +11,9 @@ import { DotLargeMessageDisplayComponent } from './dot-large-message-display.com
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-large-message-display></dot-large-message-display> `
+    template: `
+        <dot-large-message-display></dot-large-message-display>
+    `
 })
 class TestHostComponent {}
 

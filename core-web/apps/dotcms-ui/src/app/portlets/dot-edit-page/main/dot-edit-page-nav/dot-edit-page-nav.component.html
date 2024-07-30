@@ -15,8 +15,8 @@
                 class="edit-page-nav__item"
                 pTooltip="{{ item.tooltip }}">
                 <dot-icon [name]="item.icon" size="32"></dot-icon>
-                <span class="edit-page-nav__item-text" data-testId="menuListItemText"
-                    >{{ item.label }}
+                <span class="edit-page-nav__item-text" data-testId="menuListItemText">
+                    {{ item.label }}
                 </span>
             </a>
         </ng-template>
@@ -26,9 +26,9 @@
                 class="edit-page-nav__item edit-page-nav__item--disabled"
                 tooltipPosition="left">
                 <dot-icon [name]="item.icon" size="32"></dot-icon>
-                <span class="edit-page-nav__item-text" data-testId="menuListItemText">{{
-                    item.label
-                }}</span>
+                <span class="edit-page-nav__item-text" data-testId="menuListItemText">
+                    {{ item.label }}
+                </span>
             </span>
         </ng-template>
     </li>

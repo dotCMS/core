@@ -1,4 +1,3 @@
-import { AsyncPipe } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -29,7 +28,7 @@ import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 @Component({
     selector: 'dot-edit-ema-workflow-actions',
     standalone: true,
-    imports: [AsyncPipe, DotWorkflowActionsComponent, ButtonModule, DotMessagePipe],
+    imports: [DotWorkflowActionsComponent, ButtonModule, DotMessagePipe],
     providers: [
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,

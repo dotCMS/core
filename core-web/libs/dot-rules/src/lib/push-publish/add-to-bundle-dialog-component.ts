@@ -14,46 +14,47 @@ import { IBundle } from '../services/bundle-service';
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-add-to-bundle-dialog-component',
-    template: ` <p-dialog
-        [visible]="!hidden"
-        [modal]="true"
-        [dismissableMask]="true"
-        [closable]="false"
-        [focusOnShow]="false"
-        [draggable]="false"
-        width="700"
-        header="Add to Bundle"
-        appendTo="body">
-        <p-message
-            *ngIf="errorMessage"
-            [text]="errorMessage"
-            style="margin-bottom: 16px; display: block;"
-            severity="error"></p-message>
-        <cw-input-dropdown
-            (onDropDownChange)="setSelectedBundle($event)"
-            (keyup.enter)="addToBundle.emit(selectedBundle)"
-            [focus]="!hidden"
-            [options]="options"
-            [value]="bundleStores ? bundleStores[0]?.id : null"
-            flex
-            allowAdditions="true">
-        </cw-input-dropdown>
-        <p-footer>
-            <button
-                (click)="cancel.emit()"
-                type="button"
-                pButton
-                secondary
-                label="Cancel"
-                class="ui-button-secondary"></button>
-            <button
-                (click)="addToBundle.emit(selectedBundle)"
-                [disabled]="!selectedBundle"
-                type="button"
-                pButton
-                label="Add"></button>
-        </p-footer>
-    </p-dialog>`
+    template: `
+        <p-dialog
+            [visible]="!hidden"
+            [modal]="true"
+            [dismissableMask]="true"
+            [closable]="false"
+            [focusOnShow]="false"
+            [draggable]="false"
+            width="700"
+            header="Add to Bundle"
+            appendTo="body">
+            <p-message
+                *ngIf="errorMessage"
+                [text]="errorMessage"
+                style="margin-bottom: 16px; display: block;"
+                severity="error"></p-message>
+            <cw-input-dropdown
+                (onDropDownChange)="setSelectedBundle($event)"
+                (keyup.enter)="addToBundle.emit(selectedBundle)"
+                [focus]="!hidden"
+                [options]="options"
+                [value]="bundleStores ? bundleStores[0]?.id : null"
+                flex
+                allowAdditions="true"></cw-input-dropdown>
+            <p-footer>
+                <button
+                    (click)="cancel.emit()"
+                    type="button"
+                    pButton
+                    secondary
+                    label="Cancel"
+                    class="ui-button-secondary"></button>
+                <button
+                    (click)="addToBundle.emit(selectedBundle)"
+                    [disabled]="!selectedBundle"
+                    type="button"
+                    pButton
+                    label="Add"></button>
+            </p-footer>
+        </p-dialog>
+    `
 })
 export class AddToBundleDialogComponent implements OnChanges {
     @Input() hidden = false;

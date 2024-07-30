@@ -22,7 +22,9 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 @Component({
-    template: ` <dot-persona-selected-item [persona]="persona"></dot-persona-selected-item>`
+    template: `
+        <dot-persona-selected-item [persona]="persona"></dot-persona-selected-item>
+    `
 })
 class TestHostComponent {
     persona = mockDotPersona;
@@ -78,7 +80,7 @@ describe('DotPersonaSelectedItemComponent', () => {
 
     it('should render persona name and label', () => {
         const name = de.query(By.css('.dot-persona-selector__name')).nativeElement;
-        expect(name.innerText).toBe('Global Investor');
+        expect(name.innerText.trim()).toBe('Global Investor');
     });
 
     describe('tooltip properties', () => {

@@ -36,12 +36,6 @@ import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.mod
 })
 export class DotCategoryFieldChipsComponent {
     /**
-     *  Represents the variable 'dotMessageService' which is of type 'DotMessageService'.
-     *
-     * @memberof DotCategoryFieldChipsComponent
-     */
-    readonly #dotMessageService = inject(DotMessageService);
-    /**
      * Represents the variable 'showAll' which is of type 'signal<boolean>'.
      *
      * @memberof DotCategoryFieldChipsComponent
@@ -58,7 +52,7 @@ export class DotCategoryFieldChipsComponent {
      *
      * @memberof DotCategoryFieldChipsComponent
      */
-    $categories = input.required<DotCategoryFieldKeyValueObj[]>({ alias: 'categories' });
+    $categories = input<DotCategoryFieldKeyValueObj[]>([], { alias: 'categories' });
     /**
      * Represents the variable 'label' which is of type 'string'.
      *
@@ -87,6 +81,18 @@ export class DotCategoryFieldChipsComponent {
         return false;
     });
     /**
+     * Represents the output 'remove' which is of type 'EventEmitter<string>'.
+     *
+     * @memberof DotCategoryFieldChipsComponent
+     */
+    @Output() remove = new EventEmitter<string>();
+    /**
+     *  Represents the variable 'dotMessageService' which is of type 'DotMessageService'.
+     *
+     * @memberof DotCategoryFieldChipsComponent
+     */
+    readonly #dotMessageService = inject(DotMessageService);
+    /**
      * Represents the variable 'btnLabel' which is of type 'computed<string>'.
      *
      * @memberof DotCategoryFieldChipsComponent
@@ -108,12 +114,7 @@ export class DotCategoryFieldChipsComponent {
 
         return null;
     });
-    /**
-     * Represents the output 'remove' which is of type 'EventEmitter<string>'.
-     *
-     * @memberof DotCategoryFieldChipsComponent
-     */
-    @Output() remove = new EventEmitter<string>();
+
     /**
      * Method to toogle the show all categories.
      *

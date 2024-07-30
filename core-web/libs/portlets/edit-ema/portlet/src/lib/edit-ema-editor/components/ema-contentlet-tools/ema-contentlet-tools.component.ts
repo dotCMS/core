@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { JsonPipe, NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -33,7 +33,7 @@ const INITIAL_ACTIONS_CONTAINER_WIDTH = 128;
 @Component({
     selector: 'dot-ema-contentlet-tools',
     standalone: true,
-    imports: [CommonModule, ButtonModule, MenuModule],
+    imports: [NgStyle, ButtonModule, MenuModule, JsonPipe],
     templateUrl: './ema-contentlet-tools.component.html',
     styleUrls: ['./ema-contentlet-tools.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

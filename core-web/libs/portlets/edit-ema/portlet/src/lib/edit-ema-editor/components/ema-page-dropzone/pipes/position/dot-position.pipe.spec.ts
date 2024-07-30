@@ -1,6 +1,6 @@
 import { DotPositionPipe } from './dot-position.pipe';
 
-import { PAYLOAD_MOCK } from '../../../../../shared/consts';
+import { PAYLOAD_MOCK } from '../../../../../shared/mocks';
 import { ContentletArea } from '../../types';
 
 describe('DotPositionPipe', () => {

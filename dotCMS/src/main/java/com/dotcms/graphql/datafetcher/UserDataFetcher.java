@@ -31,6 +31,9 @@ public class UserDataFetcher implements DataFetcher<Map<String, String>> {
                 return Collections.emptyMap();
             }
 
+            Logger.debug(this, "Fetching user for userId: " + userId + " field: " +
+                    var + " by user: " + apiUser.getUserId());
+
             final User user = APILocator.getUserAPI().loadUserById(userId, apiUser, true);
 
             final Map<String, String> userMap = new HashMap<>();

@@ -15,9 +15,9 @@
         <p-card styleClass="card-rounded">
             <div class="flex flex-row align-items-center align-content-between gap-2">
                 <div class="title flex flex-grow-1 flex-column">
-                    <span data-testId="scheduling-card-title-row">{{
-                        'experiments.configure.scheduling.start' | dm
-                    }}</span>
+                    <span data-testId="scheduling-card-title-row">
+                        {{ 'experiments.configure.scheduling.start' | dm }}
+                    </span>
                 </div>
 
                 <div
@@ -51,9 +51,9 @@
         </span>
         <span
             *ngIf="vm.scheduling?.startDate && vm.scheduling.endDate"
-            class="scheduling-setup-date-spacing"
-            >-</span
-        >
+            class="scheduling-setup-date-spacing">
+            -
+        </span>
         <span *ngIf="!!vm.scheduling?.endDate">
             {{ 'end' | dm | titlecase }}:
             <span>{{ vm.scheduling.endDate | date: 'EEE, LLL dd, Y, h:mm aa zz' }}</span>

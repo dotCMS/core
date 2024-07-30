@@ -17,6 +17,7 @@ public class FolderFieldDataFetcher implements DataFetcher<Map<String, Object>> 
         try {
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
             final Contentlet contentlet = environment.getSource();
+            Logger.debug(this, ()-> "Fetching folder for contentlet: " + contentlet.getIdentifier());
             final Map<String, Object> folderMap = (Map<String, Object>) new FolderToMapTransformer(contentlet, user)
                 .asMap().get("folderMap");
 
