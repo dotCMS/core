@@ -4,6 +4,8 @@ import com.dotmarketing.util.UtilMethods;
 
 public abstract class CategoryQueryBuilderResolver {
 
+    private CategoryQueryBuilderResolver(){}
+
     public static CategoryQueryBuilder getQueryBuilder(final CategorySearchCriteria searchCriteria) {
         return mustUseRecursiveTemplate(searchCriteria) ? new CategoryRecursiveQueryBuilder(searchCriteria) :
                 new CategorySimpleQueryBuilder(searchCriteria);

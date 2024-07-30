@@ -65,11 +65,11 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
     public PaginatedArrayList<Category> getItems(final User user, final String filter, final int limit, final int offset,
                                                  final String orderby, final OrderDirection direction, final Map<String, Object> extraParams) {
 
-        boolean childrenCategories = extraParams.containsKey("childrenCategories") ? (Boolean)extraParams.get("childrenCategories") : false;
-        boolean searchInAllLevels = extraParams.containsKey("searchInAllLevels") ? (Boolean)extraParams.get("searchInAllLevels") : false;
+        boolean childrenCategories = extraParams.containsKey("childrenCategories") && (Boolean)extraParams.get("childrenCategories");
+        boolean searchInAllLevels = extraParams.containsKey("searchInAllLevels") && (Boolean)extraParams.get("searchInAllLevels");
         String inode = extraParams.containsKey("inode") ? String.valueOf(extraParams.get("inode")) : StringPool.BLANK;
-        boolean showChildrenCount = extraParams.containsKey("showChildrenCount") ? (Boolean) extraParams.get("showChildrenCount") : false;
-        boolean parentList = extraParams.containsKey("parentList") ? (Boolean) extraParams.get("parentList") : false;
+        boolean showChildrenCount = extraParams.containsKey("showChildrenCount") && (Boolean) extraParams.get("showChildrenCount");
+        boolean parentList = extraParams.containsKey("parentList") && (Boolean) extraParams.get("parentList");
 
         try {
 

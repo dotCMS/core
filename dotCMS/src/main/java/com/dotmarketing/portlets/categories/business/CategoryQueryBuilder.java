@@ -1,20 +1,13 @@
 package com.dotmarketing.portlets.categories.business;
 
-import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.JsonUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.categories.model.ShortCategory;
-import com.dotmarketing.util.StringUtils;
+
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This utility class is used to build queries for finding instances of {@link Category} using the {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)} method.
@@ -39,7 +32,7 @@ public abstract class CategoryQueryBuilder {
     protected boolean countChildren;
     protected CategorySearchCriteria searchCriteria;
 
-    public CategoryQueryBuilder(final CategorySearchCriteria searchCriteria) {
+    protected CategoryQueryBuilder(final CategorySearchCriteria searchCriteria) {
         this.rootInode = searchCriteria.rootInode;
         this.level = getLevel(searchCriteria);
         this.searchCriteria = searchCriteria;

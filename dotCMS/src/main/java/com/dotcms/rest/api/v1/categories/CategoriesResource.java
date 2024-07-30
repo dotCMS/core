@@ -92,7 +92,6 @@ public class CategoriesResource {
     private final WebResource webResource;
     private final PaginationUtil paginationUtil;
     private final PaginationUtil extendedPaginationUtil;
-    private final PaginationUtil childrenCategoriesPaginationUtil;
     private final CategoryAPI categoryAPI;
     private final VersionableAPI versionableAPI;
 
@@ -103,25 +102,20 @@ public class CategoriesResource {
     public CategoriesResource() {
         this(new WebResource(), new PaginationUtil(new CategoriesPaginator()),
                 new PaginationUtil(new CategoryListDTOPaginator()),
-                new PaginationUtil(new ChildrenCategoryListDTOPaginator()),
                 APILocator.getCategoryAPI(),
                 APILocator.getVersionableAPI(),
                 WebAPILocator.getHostWebAPI(),
-                APILocator.getPermissionAPI(),
-                new CategoryHelper(APILocator.getCategoryAPI()));
+                APILocator.getPermissionAPI());
     }
 
     @VisibleForTesting
     public CategoriesResource(final WebResource webresource, final PaginationUtil paginationUtil,
             final PaginationUtil extendedPaginationUtil,
-            final PaginationUtil childrenCategoriesPaginationUtil,
             final CategoryAPI categoryAPI, final VersionableAPI versionableAPI,
-            final HostWebAPI hostWebAPI, final PermissionAPI permissionAPI,
-            final CategoryHelper categoryHelper) {
+            final HostWebAPI hostWebAPI, final PermissionAPI permissionAPI) {
         this.webResource = webresource;
         this.paginationUtil = paginationUtil;
         this.extendedPaginationUtil = extendedPaginationUtil;
-        this.childrenCategoriesPaginationUtil = childrenCategoriesPaginationUtil;
         this.categoryAPI = categoryAPI;
         this.versionableAPI = versionableAPI;
         this.hostWebAPI = hostWebAPI;
@@ -258,14 +252,12 @@ public class CategoriesResource {
             @QueryParam("inode") final String inode,
             @QueryParam("showChildrenCount") final boolean showChildrenCount,
             @QueryParam("allLevels") final boolean allLevels,
-            @QueryParam("parentList") final boolean parentList) throws DotDataException, DotSecurityException {
+            @QueryParam("parentList") final boolean parentList) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
 
-        Response response = null;
         final User user = initData.getUser();
-        final PageMode pageMode = PageMode.get(httpRequest);
 
         Logger.debug(this, () -> "Getting the List of children categories. " + String.format(
                 "Request query parameters are : {filter : %s, page : %s, perPage : %s, orderBy : %s, direction : %s, inode : %s}",
@@ -362,7 +354,7 @@ public class CategoriesResource {
     )
     public final HierarchyShortCategoriesResponseView getHierarchy(@Context final HttpServletRequest httpRequest,
                                        @Context final HttpServletResponse httpResponse,
-                                       final CategoryKeysForm form) throws DotDataException, DotSecurityException {
+                                       final CategoryKeysForm form) throws DotDataException {
 
         Logger.debug(this, () -> "Getting the List of Parents for the follow categories: " +
                 String.join(",", form.getKeys()));

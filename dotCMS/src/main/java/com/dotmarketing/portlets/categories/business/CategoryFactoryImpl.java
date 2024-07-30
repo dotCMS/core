@@ -22,7 +22,6 @@ import com.dotmarketing.portlets.categories.model.HierarchedCategory;
 import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.portlets.categories.model.ShortCategory;
 import com.dotmarketing.util.*;
-import com.liferay.util.StringPool;
 
 
 import java.io.IOException;
@@ -635,7 +634,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 						category.setParentList(parentList.subList(0, parentList.size() - 1));
 					}
 
-					category.setChildrenCount(ConversionUtils.toInt(row.get("childrencount"), 0));
+                    assert row != null;
+                    category.setChildrenCount(ConversionUtils.toInt(row.get("childrencount"), 0));
 
 					categories.add(category);
                 } catch ( Exception e) {
@@ -701,8 +701,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			Object sortOrder = sqlResult.get("sort_order");
 
 			category.setInode((String) sqlResult.get(INODE));
-			category.setCategoryName((String) sqlResult.get("category_name"));
-			category.setKey((String) sqlResult.get("category_key"));
+			category.setCategoryName((String) sqlResult.get(CATEGORY_NAME));
+			category.setKey((String) sqlResult.get(CATEGORY_KEY));
 			if ( sortOrder != null ) {
 				category.setSortOrder(Integer.valueOf(sortOrder.toString()));
 			} else {

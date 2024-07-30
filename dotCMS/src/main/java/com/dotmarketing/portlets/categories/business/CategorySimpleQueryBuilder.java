@@ -1,19 +1,12 @@
 package com.dotmarketing.portlets.categories.business;
 
-import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.JsonUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.categories.model.ShortCategory;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,7 +40,7 @@ import java.util.Map;
  */
 public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
 
-    final String queryTemplate = "SELECT * :countChildren  FROM category as c LEFT JOIN tree ON c.inode = tree.child " +
+    private static final String QUERY_TEMPLATE = "SELECT * :countChildren  FROM category as c LEFT JOIN tree ON c.inode = tree.child " +
             ":rootFilter :filterCategories ORDER BY :orderBy :direction";
 
     public CategorySimpleQueryBuilder(final CategorySearchCriteria searchCriteria) {
@@ -59,8 +52,7 @@ public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
 
         final String rootFilter = getRootFilter();
 
-
-        return StringUtils.format(queryTemplate, Map.of(
+        return StringUtils.format(QUERY_TEMPLATE, Map.of(
                 "countChildren", getChildrenCount(),
                 "rootFilter", rootFilter,
                 "filterCategories", getFilterCategories(this.searchCriteria),
@@ -85,7 +77,7 @@ public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
             return "WHERE tree.child IS NULL";
         }
 
-        throw new IllegalArgumentException("If the Level is equals to ALL_LEVELS then The Query must be a recursive query");
+        return StringPool.BLANK;
     }
 
 }

@@ -1,8 +1,9 @@
 package com.dotmarketing.portlets.categories.business;
 
-import com.dotcms.api.APIProvider;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.portlets.categories.model.Category;
+
+import java.util.Objects;
 
 /**
  * Represents Search Criteria for {@link Category} searching, you cans set the follow:
@@ -84,6 +85,19 @@ public class CategorySearchCriteria {
                 ", limit=" + limit +
                 ", offset=" + offset +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CategorySearchCriteria that = (CategorySearchCriteria) o;
+        return searchAllLevels == that.searchAllLevels && limit == that.limit && offset == that.offset && parentList == that.parentList && countChildren == that.countChildren && Objects.equals(rootInode, that.rootInode) && Objects.equals(filter, that.filter) && Objects.equals(orderBy, that.orderBy) && direction == that.direction;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(searchAllLevels, rootInode, filter, orderBy, direction, limit, offset, parentList, countChildren);
     }
 
     public static class Builder {

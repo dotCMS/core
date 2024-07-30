@@ -84,7 +84,7 @@ import java.util.Map;
 public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
     private boolean parentList;
-    final String queryTemplate = "WITH RECURSIVE CategoryHierarchy AS ( " +
+    private final static String QUERY_TEMPLATE = "WITH RECURSIVE CategoryHierarchy AS ( " +
             "SELECT c.*, 1 AS level :parentList_1 " +
             "FROM Category c :levelFilter_1 :rootFilter " +
             "UNION ALL " +
@@ -114,7 +114,7 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
         final String parentList_3 = this.parentList ? ", ch.path" : StringPool.BLANK;
 
-        return StringUtils.format(queryTemplate, Map.of(
+        return StringUtils.format(QUERY_TEMPLATE, Map.of(
                     "rootFilter", rootFilter,
                     "levelFilter_1", levelFilter_1,
                     "levelFilter_2", levelFilter_2,
