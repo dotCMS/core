@@ -184,14 +184,24 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       } else if (ImmutableRelationshipField.class.getName().equals(fieldMap.get("clazz"))) {
         final String cardinality = fieldMap.remove(VALUES).toString();
         final String relationType = fieldMap.remove("relationType").toString();
-        final Relationship relationship = APILocator.getRelationshipAPI()
-                .getRelationshipFromField(field, APILocator.getLoginServiceAPI().getLoggedInUser());
-        if (null != relationship){
-          fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
-                  "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType,
-                  "isParentField", relationship.getParentStructureInode().equals(field.contentTypeId())
-          ));
-        } else{
+
+        // Checking if there is already a content type id, we could be processing a new field
+        if (UtilMethods.isSet(field.contentTypeId())) {
+          final Relationship relationship = APILocator.getRelationshipAPI()
+                  .getRelationshipFromField(field,
+                          APILocator.getLoginServiceAPI().getLoggedInUser());
+          if (null != relationship) {
+            fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
+                    "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType,
+                    "isParentField",
+                    relationship.getParentStructureInode().equals(field.contentTypeId())
+            ));
+          } else {
+            fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
+                    "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
+            ));
+          }
+        } else {
           fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
                   "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
           ));

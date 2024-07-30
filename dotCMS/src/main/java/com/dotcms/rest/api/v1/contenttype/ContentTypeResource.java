@@ -852,12 +852,11 @@ public class ContentTypeResource implements Serializable {
 				);
 
 		if (!diffResult.getToDelete().isEmpty()) {
-			APILocator.getContentTypeFieldLayoutAPI().deleteField(
-					currentContentType,
+			APILocator.getContentTypeFieldAPI().deleteFields(
 					diffResult.getToDelete().values().stream().
 							map(Field::id).
-							collect(Collectors.toList()),
-					user);
+							collect(Collectors.toList()), user
+			);
 		}
 
 		if (!diffResult.getToAdd().isEmpty()) {
