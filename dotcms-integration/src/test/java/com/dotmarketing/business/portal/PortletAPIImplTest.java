@@ -23,13 +23,20 @@ import com.liferay.portlet.StrutsPortlet;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import javax.xml.parsers.ParserConfigurationException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.xml.sax.SAXException;
 
 @RunWith(DataProviderRunner.class)
 public class PortletAPIImplTest {
@@ -73,6 +80,24 @@ public class PortletAPIImplTest {
                 .build();
 
         return portletApi.savePortlet(newPortlet.toPortlet(), systemUser);
+    }
+
+    /**
+     * Test case to ensure no portlets are returned from the mixed-portlets-test.xml file
+     * It should handle without error  but ignore portlet elements within the portlets element
+     * that do not contain a portlet-name and portlet-class
+     */
+    @Test
+    public void test_portletsFromMixedPortletXml() throws Exception {
+        String resourcePath = "/com/dotmarketing/business/portal/mixed-portlets-test.xml";
+        try (InputStream stream = getClass().getResourceAsStream(resourcePath)) {
+            assertNotNull("Resource not found: " + resourcePath, stream);
+            Map<String, Portlet> portlets = new PortletFactoryImpl().xmlToPortlets(stream);
+            assertTrue("Expecting exactly 1 valid portlet",portlets.size() == 1);
+        } catch (IOException | ParserConfigurationException | SAXException e) {
+            Logger.error(this, "Error loading portlets from liferay-portlet.xml", e);
+            Assert.fail("Exception occurred: " + e.getMessage());
+        }
     }
 
     /**
