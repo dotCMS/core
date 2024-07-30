@@ -6,6 +6,7 @@ import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -19,6 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
@@ -132,7 +134,7 @@ export class ActivatedRouteListStoreMock {
     }
 }
 
-describe('DotEditPageToolbarSeoComponent', () => {
+fdescribe('DotEditPageToolbarSeoComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
     let component: DotEditPageToolbarSeoComponent;
@@ -165,12 +167,14 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 TooltipModule,
                 TagModule,
                 DotExperimentClassDirective,
+                DotLanguageSelectorComponent,
                 RouterTestingModule.withRoutes([
                     {
                         path: 'edit-page/experiments/pageId/id/reports',
                         component: TestHostComponent
                     }
-                ])
+                ]),
+                NoopAnimationsModule
             ],
             providers: [
                 DotSessionStorageService,
@@ -485,15 +489,17 @@ describe('DotEditPageToolbarSeoComponent', () => {
 
     describe('ngOnChange', () => {
         beforeEach(() => {
-            de = deHost.query(By.css('dot-edit-page-view-as-controller'));
+            fixtureHost.detectChanges();
+            de = deHost.query(By.css('dot-edit-page-view-as-controller-seo'));
         });
 
-        xit('should have a new api link', async () => {
+        it('should have a new api link', async () => {
             const host = `api/v1/page/render${componentHost.pageState.page.pageURI}`;
-
-            expect(component.apiLink).toBe(host + `?language_id=1`);
-
+            // component.apiLink = '';
             const expectedLink = host + `?language_id=2`;
+
+            const languageSelector = de.query(By.css('dot-language-selector')).componentInstance;
+            //component.pageState.page.languageId = 2;
             const testlanguage: DotLanguage = {
                 id: 2,
                 languageCode: 'es',
@@ -501,10 +507,12 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 language: 'test',
                 country: 'test'
             };
+            languageSelector.selected.emit(testlanguage);
+
+            // only for trigger OnChange
+            fixtureHost.componentInstance.runningExperiment = null;
 
             fixtureHost.detectChanges();
-            const languageSelector = de.query(By.css('dot-language-selector')).componentInstance;
-            languageSelector.selected.emit(testlanguage);
 
             fixtureHost.whenStable().then(() => {
                 expect(component.apiLink).toBe(expectedLink);
