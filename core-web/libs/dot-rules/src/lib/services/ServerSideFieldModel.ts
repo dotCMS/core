@@ -16,7 +16,6 @@ export class ServerSideFieldModel extends CwModel {
         const param = model.parameters[paramName];
         const paramDef = model.parameterDefs[paramName];
         const vFn: Function[] = <ValidatorFn[]>paramDef.inputType.dataType.validators();
-        vFn.push(CustomValidators.noDoubleQuotes());
         const control = new UntypedFormControl(
             model.getParameterValue(param.key),
             Validators.compose(<ValidatorFn[]>vFn)
