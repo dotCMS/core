@@ -426,7 +426,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When: AllLevels is true
-     * Should: must look on all the levels, so it must return the same that te method {@link CategoryFactoryImpl#findAll()}
+     * Should: must search on all the levels, so it must return the same that te method {@link CategoryFactoryImpl#findAll()}
      */
     @Test
     public void getAllCategories() throws DotDataException, DotSecurityException {
@@ -447,8 +447,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When: AllLevels is true and set a filter
-     * Should: must look on all the levels but filtering by the string set,
-     * so it must return the categories that contains the filter in the key, name or variable name
+     * Should: must search in all the levels but filtering by the string set,
+     * so it must return the categories that contains the filter string in the key, name or variable name
      */
     @Test
     public void getAllCategoriesByFilter() throws DotDataException, DotSecurityException {
@@ -468,7 +468,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When: AllLevels is true and set a rootInode
-     * Should: must look on all the levels but since the root level,
+     * Should: must search in all the levels but since the root level,
      * it means return All the categories that are below of the root inode (Children, Grand children, etc)
      */
     @Test
@@ -486,9 +486,10 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When: AllLevels is true and set a rootInode must look on all the levels but since the root level,
-     * also we are going to set a filter
-     * Should: return All the categories that are below of the root inode (Children, Grand children, etc) and meet the filter
+     * When: AllLevels is true, set a rootInode and a filtering
+     * Should: must search in all the levels but since the root level,
+     * it means return All the categories that are below of the root inode (Children, Grand children, etc) and
+     * that contains the filter string in the key, name or variable name
      */
     @Test
     public void getAllCategoriesAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
@@ -510,9 +511,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When: AllLevels is true must look on all the levels, Also parnetList is true too, so it must
-     * calculate the parentList
-     * Should: return the same that te method {@link CategoryFactoryImpl#findAll()} but with the parentList
+     * When: AllLevels is true and parentList is tru too
+     * Should: must search in all the levels, Also calculate the parentList it means that all the path on the tree from
+     * each Category to the Top level is calculated
      */
     @Test
     public void getAllCategoriesWithParentList() throws DotDataException, DotSecurityException {
@@ -532,9 +533,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When: AllLevels is true must look on all the levels, Also parnetList is true and filter is not null, so it must
-     * calculate the parentList nad filter
-     * Should: return the same that te method {@link CategoryFactoryImpl#findAll()} but with the parentList and filtering
+     * When: AllLevels and parentList are set to true, also a filter is set
+     * Should: must search in all the levels, Also calculated the parentList and filter the Category that contains
+     * the filter string in the key, name or variable name
      */
     @Test
     public void getAllCategoriesWithParentListAndFilter() throws DotDataException, DotSecurityException {
@@ -554,9 +555,10 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When: AllLevels is true must look on all the levels, Also parentList is true too, so it must
-     * calculate the parentList and inode is not null so it must look since this Category
-     * Should: return the same that te method {@link CategoryFactoryImpl#findAll()} but with the parentList
+     * When: AllLevels and parebtList are set to  true  also a root inode is set
+     * Should: must search in all the levels, Also calculated the parentList, also
+     * it means return All the categories that are below of the root inode (Children, Grand children, etc) because
+     * a root inode is set
      */
     @Test
     public void getAllCategoriesWithParentListAndInode() throws DotDataException, DotSecurityException {
@@ -575,9 +577,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When: AllLevels is true must look on all the levels, Also parentList is true too, so it must
-     * calculate the parentList and inode is not null, so it must look since this Category also it must filtering
-     * Should: return the children on the root Inode and also filtering
+     * When: AllLevels and parentList are set also a filter is set too
+     * Should: must search in all the levels, Also calculated the parentList, and filter the Category that contains
+     * the filter string in the key, name or variable name
      */
     @Test
     public void getAllCategoriesWithParentListAndInodeAndFilter() throws DotDataException, DotSecurityException {
@@ -599,8 +601,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When: AllLevels is true and countChildren set to true must look on all the levels, Also count the children
-     * Should:
+     * When: AllLevels and countChildren are is true
+     * Should: must search in all the levels, so it must return the same that te method {@link CategoryFactoryImpl#findAll()}
+     * also calculating the count of children
      */
     @Test
     public void getAllCategoriesAndCountingChildren() throws DotDataException, DotSecurityException {
@@ -621,9 +624,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When: AllLevels is true, countChildren set to true and filter set, must look on all the levels, Also count the children
-     * and filtering
-     * Should:
+     * When: AllLevels and countChildren are is true also a filter is set
+     * Should: must search in all the levels and filter the Category that contains
+     * the filter string in the key, name or variable name also calculating the count of children
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndFilter() throws DotDataException, DotSecurityException {
@@ -642,8 +645,10 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When: AllLevels is true, countChildren set to true and root inode set, must look on all the levels
-     * Should:
+     * When: AllLevels and countChildren are set to true also root inode and filter are set too,
+     * Should: must search in all the levels but since the root level,
+     * it means return All the categories that are below of the root inode (Children, Grand children, etc)
+     * filtering the Category that contains the filter string in the key name or variable name also calculating the count of children
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndRootInode() throws DotDataException, DotSecurityException {
@@ -666,8 +671,10 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When: AllLevels is true, countChildren set to true and root inode and filter set, must look on all the levels
-     * Should:
+     * When: AllLevels and countChildren are set to true also root inode is set too
+     * Should: must search in all the levels but since the root level,
+     *  it means return All the categories that are below of the root inode (Children, Grand children, etc) also
+     *  count the children
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
@@ -686,8 +693,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When: AllLevels is true, countChildren set to true and parentList is set to true
-     * Should:
+     * When: AllLevels, parentList and countChildren are set to true
+     * Should: must search on all the levels, so it must return the same that te method {@link CategoryFactoryImpl#findAll()}
+     * also count the children and the parent list
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndListParent() throws DotDataException, DotSecurityException {
@@ -705,8 +713,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels, parentList and countChildren are set to true also set the filter
+     * Should: must search on all the levels but filtering the Category that contains the filter string in the key name or variable name
+     * also count the children
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndListParentAndFilter() throws DotDataException, DotSecurityException {
@@ -726,8 +735,10 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels, parentList and countChildren are set to true also set the root inode
+     * Should: must search in all the levels but since the root level,
+     * it means return All the categories that are below of the root inode (Children, Grand children, etc)
+     * also count of children
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndListParentAndRootInode() throws DotDataException, DotSecurityException {
@@ -747,8 +758,10 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels, parentList and countChildren are set to true also set the root inode and filter too
+     * Should: must search in all the levels but since the root level,
+     * it means return All the categories that are below of the root inode (Children, Grand children, etc)
+     * filtering them by the filter string also count of children
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndListParentAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
@@ -771,8 +784,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels set to false
+     * Should: must return all the top level categories
      */
     @Test
     public void getNotAllLevels() throws DotDataException, DotSecurityException {
@@ -792,8 +805,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels set to false and filter is set too
+     * Should: must return the top levels filtering them
      */
     @Test
     public void getNotAllLevelsAndFilter() throws DotDataException, DotSecurityException {
@@ -814,8 +827,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels set to false and root inode is set too
+     * Should: must return all the children of the Category with the root inode
      */
     @Test
     public void getNotAllLevelsAndRootInode() throws DotDataException, DotSecurityException {
@@ -834,8 +847,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels set to false and root inode and filter are set too
+     * Should: must return all the children of the Category with the root inode
+     * that contains the filter string in the key, name or variable name
      */
     @Test
     public void getNotAllLevelsAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
@@ -856,8 +870,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels is set to false and parentList is set to true
+     * Should: Return all the top levels
      */
     @Test
     public void getNotAllLevelsAndParentList() throws DotDataException, DotSecurityException {
@@ -875,8 +889,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels is set to false and parentList is set to true also filter is set too
+     * Should: must return all the top levels Category that contains the filter string in the key, name or variable name
      */
     @Test
     public void getNotAllLevelsAndParentListAndFilter() throws DotDataException, DotSecurityException {
@@ -897,8 +911,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels is set to false and parentList set to true also the root inode is set too
+     * Should: Return all the Children of the root Inode category also must calculate the parentList
      */
     @Test
     public void getNotAllLevelsAndParentListRootAndInode() throws DotDataException, DotSecurityException {
@@ -917,8 +931,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels is set to false and parentList is set to true also rootInode and filter are set too
+     * Should: Return all the Children of the root Inode category filtering by the filter String also must calculate the parentList
      */
     @Test
     public void getNotAllLevelsAndParentListAndInodeAndFilter() throws DotDataException, DotSecurityException {
@@ -941,8 +955,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels set to false and countChildren is set to true
+     * Should: Must return all the top level categories counting the children
      */
     @Test
     public void getNotAllLevelsAndCountChildren() throws DotDataException, DotSecurityException {
@@ -960,8 +974,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels set to false and countChildren is set to true also the filter is set
+     * Should: Must return the top level categories filtering them and counting the children
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndFilter() throws DotDataException, DotSecurityException {
@@ -982,8 +996,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels set to false and countChildren is set to true also the root inode is set
+     * Should: Must return all the children of the root Category and count the children
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndRootInode() throws DotDataException, DotSecurityException {
@@ -1001,18 +1015,22 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels set to false and countChildren is set to true also the root inode and filter are set
+     * Should: Must filter the top levels categories and count the children
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
 
-        final Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TOP_LEVELS_1_CHILDREN"));
+        final Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TOP_LEVELS_1_CHILDREN"))
+                .stream()
+                .filter(category -> containsFilter(category, filter))
+                .collect(Collectors.toList());
 
         final String topLevel1Id = ((Category) categoriesCreated.get("TO_LEVEL_1")).getInode();
 
         final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
-                new CategorySearchCriteria.Builder().searchAllLevels(false).setCountChildren(true).rootInode(topLevel1Id).build());
+                new CategorySearchCriteria.Builder().searchAllLevels(false).setCountChildren(true).filter(filter)
+                        .rootInode(topLevel1Id).build());
 
         assertTrue(deepEquals(resultCategories, expected));
         checkNullParentList(resultCategories);
@@ -1021,8 +1039,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels set to false and countChildren and parentList are set to true
+     * Should: Must return all the top levels categories calculating the parentList and counting the children
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndListParent() throws DotDataException, DotSecurityException {
@@ -1040,8 +1058,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When: AllLevels set to false and countChildren and parentList are set to true also filter is set too
+     * Should: Return the top levels categories and filter them also calculate the parentList and counting the children
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndListParentAndFilter() throws DotDataException, DotSecurityException {
@@ -1063,8 +1081,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When:  AllLevels set to false and countChildren and parentList are set to true also root inode is set too
+     * Should: Return the children of the root Category also calculated parentList and count the children
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndListParentAndRootInode() throws DotDataException, DotSecurityException {
@@ -1084,8 +1102,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When:  AllLevels set to false and countChildren and parentList are set to true also root inode and filter are set too
+     * Should: Return the children of the root Category and filter them also calculated parentList and count the children
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndListParentAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
@@ -1109,8 +1127,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
-     * When:
-     * Should:
+     * When:  AllLevels set to false and parentList is set to true also root inode are set too
+     * Should: Return the children of the root Category also calculated parentList
      */
     @Test
     public void getParentListButNotFromTopLevel() throws DotDataException, DotSecurityException {
