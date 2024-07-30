@@ -122,10 +122,12 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @CloseDBIfOpened
     public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Host host = hostCache.getHostByAlias(serverName);
-        User systemUser = APILocator.systemUser();
-
-        if(host == null){
-
+        if (host != null && UtilMethods.isSet(host.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(host.getIdentifier())) {
+                return null;
+            }
+        } else if (host == null) {
+            final User systemUser = APILocator.systemUser();
             try {
                 final Optional<Host> optional = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
                 host = optional.isPresent() ? optional.get() : findDefaultHost(systemUser, respectFrontendRoles);
@@ -133,11 +135,12 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                 host = findDefaultHost(systemUser, respectFrontendRoles);
             }
 
-            if(host != null){
+            if (host != null) {
                 hostCache.addHostAlias(serverName, host);
+            } else {
+                hostCache.addHostAlias(serverName, HostCache.cache404Contentlet);
             }
         }
-
         checkSitePermission(user, respectFrontendRoles, host);
         return host;
     }
@@ -147,16 +150,21 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public Optional<Host> resolveHostNameWithoutDefault(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         Host host = hostCache.getHostByAlias(serverName);
-        User systemUser = APILocator.systemUser();
-
-        if(host == null){
+        if (host != null && UtilMethods.isSet(host.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(host.getIdentifier())) {
+                return Optional.empty();
+            }
+        } else if (host == null) {
+            User systemUser = APILocator.systemUser();
             host = findByNameNotDefault(serverName, systemUser, respectFrontendRoles);
 
             if(host == null){
                 host = findByAlias(serverName, systemUser, respectFrontendRoles);
             }
 
-            if(host != null){
+            if (host == null) {
+                hostCache.addHostAlias(serverName, HostCache.cache404Contentlet);
+            } else {
                 hostCache.addHostAlias(serverName, host);
             }
         }
@@ -298,6 +306,11 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
 
         Host site  = hostCache.get(id);
+        if (site != null && UtilMethods.isSet(site.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(site.getIdentifier())) {
+                return null;
+            }
+        }
 
         if (site == null) {
             site = DBSearch(id,user,respectFrontendRoles);
