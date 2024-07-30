@@ -54,7 +54,6 @@ import {
 } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
-    DotLanguage,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
@@ -67,11 +66,16 @@ import {
     dotcmsContentletMock,
     DotFormatDateServiceMock,
     LoginServiceMock,
+    mockDotContainers,
+    mockDotLanguage,
+    mockDotLayout,
     MockDotMessageService,
+    mockDotPage,
     mockDotPersona,
     mockDotRenderedPage,
     mockDotRenderedPageState,
     MockDotRouterService,
+    mockDotTemplate,
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
@@ -487,36 +491,37 @@ describe('DotEditPageToolbarSeoComponent', () => {
         });
     });
 
-    describe('ngOnChange', () => {
-        beforeEach(() => {
-            fixtureHost.detectChanges();
-            de = deHost.query(By.css('dot-edit-page-view-as-controller-seo'));
-        });
+    it('should have a new api link', async () => {
+        const initialLink = component.apiLink;
 
-        it('should have a new api link', async () => {
-            const host = `api/v1/page/render${componentHost.pageState.page.pageURI}`;
-            // component.apiLink = '';
-            const expectedLink = host + `?language_id=2`;
+        const host = `api/v1/page/render${componentHost.pageState.page.pageURI}`;
+        const newLanguageId = 2;
+        const expectedLink = `${host}?language_id=${newLanguageId}`;
 
-            const languageSelector = de.query(By.css('dot-language-selector')).componentInstance;
-            //component.pageState.page.languageId = 2;
-            const testlanguage: DotLanguage = {
-                id: 2,
-                languageCode: 'es',
-                countryCode: 'es',
-                language: 'test',
-                country: 'test'
-            };
-            languageSelector.selected.emit(testlanguage);
+        fixtureHost.componentRef.setInput(
+            'pageState',
+            new DotPageRenderState(
+                mockUser(),
+                new DotPageRender({
+                    containers: mockDotContainers(),
+                    layout: mockDotLayout(),
+                    page: { ...mockDotPage(), languageId: 2 },
+                    template: mockDotTemplate(),
+                    canCreateTemplate: true,
+                    numberContents: 1,
+                    viewAs: {
+                        language: mockDotLanguage,
+                        mode: DotPageMode.PREVIEW
+                    }
+                }),
+                dotcmsContentletMock
+            )
+        );
 
-            // only for trigger OnChange
-            fixtureHost.componentInstance.runningExperiment = null;
+        fixtureHost.detectChanges();
+        await fixtureHost.whenStable();
 
-            fixtureHost.detectChanges();
-
-            fixtureHost.whenStable().then(() => {
-                expect(component.apiLink).toBe(expectedLink);
-            });
-        });
+        expect(component.apiLink).toBe(expectedLink);
+        expect(component.apiLink).not.toBe(initialLink);
     });
 });
