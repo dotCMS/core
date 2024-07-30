@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "1f758faf-3e68-4540-9b04-78cdee785f11",
+		"_postman_id": "e3f7129d-a7cc-4b52-a5a8-8098344aa0d9",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "31066048"
@@ -396,14 +396,15 @@
 									"});",
 									"",
 									"pm.test(\"fields check\", function () {",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(2);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(4);",
 									"});",
 									"",
 									"pm.test(\"description check\", function () {",
 									"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -473,14 +474,15 @@
 									"",
 									"",
 									"pm.test(\"fields check\", function () {",
-									"    pm.expect(jsonData.entity.fields.length).to.eql(2);",
+									"    pm.expect(jsonData.entity.fields.length).to.eql(4);",
 									"});",
 									"",
 									"pm.test(\"description check\", function () {",
 									"    pm.expect(jsonData.entity.description).to.eql('THE DESCRIPTION');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -664,6 +666,28 @@
 						"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
