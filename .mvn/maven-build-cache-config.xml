@@ -22,7 +22,7 @@ https://maven.apache.org/extensions/maven-build-cache-extension/maven-build-cach
     </configuration>
     <input>
         <global>
-            <glob> {*.java,*.groovy,*.yaml,*.properties} </glob>
+            <glob> {*.java,*.yaml,*.properties,*.js,*.ts,*.json,*.xml,*.mjs,*.jsp} </glob>
             <includes>
                 <include>src/</include>
             </includes>
