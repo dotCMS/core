@@ -223,8 +223,13 @@ public class CategoriesResource {
      * - orderby: The field to order by.
      * - direction: Sorting direction, asc for ascending and desc for descending.
      * - showChildrenCount: true to include the count of child categories, false to exclude it.
-     * - allLevels: A Boolean value. If TRUE, the search will include categories at any level, ignoring the childrenCategories parameter. If showChildrenCount is TRUE, this parameter is ignored.
-     *
+     * - allLevels: A Boolean value. If TRUE, the search will include categories at any level.
+     * - inode: This represents a {@link Category}'s inode. The interpretation of this parameter depends on the value of
+     *  the allLevels parameter. If allLevels is true and inode is set, the search will start from this {@link Category}
+     *  and continue recursively through all its offspring. If allLevels is false, the search will be limited to
+     *  the immediate children of this {@link Category}.
+     * - parentList:"If this is true, an additional parameter called parentList is returned.
+     * This list contains {@link Category} objects, starting with the direct parent and going up to the top-level {@link Category}.
      * <p>
      * Url example: v1/categories/children?filter=test&page=0&per_page=5&orderby=category_name
      *

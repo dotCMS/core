@@ -12,6 +12,11 @@ import com.dotmarketing.portlets.categories.model.Category;
  * - orderBy: Field name to order the Category
  * - direction: Order by direction, it can be 'ASC' or 'DESC'
  * - rootInode:  If the root inode is set, the search will be conducted only among the children of this category.
+ * - parentList: If this is true, the parentList is calculated, which means a collection is created containing
+ * the categories from the direct parent and each parent recursively, all the way up to the top-level category.
+ * - countChildren: If set to true, the number of children for each {@link Category} will be counted,
+ * and an additional attribute childrenCount will be returned. If set to false, the childrenCount attribute will always be 0.
+ *
  * Otherwise, the search will include only the top-level categories.
  */
 public class CategorySearchCriteria {

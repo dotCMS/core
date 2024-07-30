@@ -16,6 +16,71 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Build a query using the 'WITH RECURSIVE' SQL clause.
+ * The WITH RECURSIVE clause in SQL is used to define Common Table Expressions (CTEs) that can reference themselves.
+ * This feature is particularly useful for working with hierarchical or recursive data structures,
+ * such as organizational charts or tree structures, where the depth of the hierarchy is not known in advance,
+ * like a categories tree.
+ *
+ * Here is a basic structure of a query using the WITH RECURSIVE clause that is build using this class:
+ *
+ * <code>
+ *  WITH RECURSIVE CategoryHierarchy AS (
+ *       -- Anchor Member
+ *      SELECT c.*, [list parent field] FROM Category c [tree table join] [root filter]
+ *  UNION ALL
+ *      -- Recursive Member
+ *      SELECT c.*, ch.level + 1 AS level, [list parent field]
+ *      FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode
+ * )
+ * -- Result Member
+ * SELECT *, [list parent field], [count children field] FROM CategoryHierarchy ch [level filter] [name, key, variable filter]
+ * ORDER BY [order by field] [direction]
+ * </code>
+ *
+ * <h1>Explanation of the WITH RECURSIVE Clause</h1>
+ * The WITH RECURSIVE clause consists of several parts:
+ * 1. Anchor Member: This is the initial query that forms the base of the recursion. It sets the starting point.
+ * 2. Recursive Member: This part references the CTE itself and defines how to move from one level of recursion to the next.
+ * 3. Result Member: This sets the fields and records returned by the query
+ *
+ * <h1>Dynamic Parts of the Query</h1>
+ * 1. List Parent Field: This field calculates and returns the parent list and is included if CategorySearchCriteria.isParentList() is true.
+ * how the root SQL is changed depends on the member on the RECURSIVE clause:
+ * - Anchor Member: A path field is added to the query. How this field is calculated depends on
+ * whether CategorySearchCriteria.rootInode is set:
+ * If rootInode is set: The json_build_object SQL function is used to create a JSON object for each Category returned by
+ * the Anchor Member query. This JSON object includes the key, name, and variable values of the Category.
+ * If rootInode is not set: The path field is an array of JSON objects representing the categories from the direct parent
+ * up through the tree to the top-level category.
+ *
+ * - Recursive member: A field to concat the previuos value with the current value on the register proceeded.
+ *
+ * - Result member: include the listParent calculate field on the result returned.
+ *
+ * 2. Tree Table Join: This is included if CategorySearchCriteria.rootInode is not set and CategorySearchCriteria.searchAllLevels is false.
+ * It means searching only the TOP LEVEL categories, requiring a join to the tree table and a WHERE clause to filter these categories.
+ *
+ * 3. Root Filter: This defines the starting point if CategorySearchCriteria.rootInode is set, with the WHERE clause 'inode = ?'.
+ *
+ * 4. Count Children Field: This is a subquery that counts the number of children, included if CategorySearchCriteria.isCountChildren() is true.
+ *
+ * 5. Level Filter: The 'Anchor Member' and 'Recursive Member' include a 'level' field calculated through recursion.
+ * If the Category is the starting point (i.e., CategorySearchCriteria.rootInode is set), the level is 1.
+ * If not set, the level for each TOP LEVEL Category is 1. This field is used to filter categories according to the CategorySearchCriteria values:
+ *
+ * If rootInode is not set and allLevels is false, we look only at TOP LEVEL categories, filtering by level = 1.
+ * If rootInode is set and allLevels is false, we filter by level = 2, as we want the children of the root Category.
+ *
+ * 6. Name, Key, Variable Filter: This is added if {@link CategorySearchCriteria#filter} is not null. The filter could be:
+ *
+ * LOWER(category_name) LIKE ?
+ * LOWER(category_key) LIKE ?
+ * LOWER(category_velocity_var_name) LIKE ?
+ *
+ * This structure allows for dynamic and flexible querying of hierarchical data using SQL's recursive capabilities.
+ */
 public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
     private boolean parentList;
@@ -67,13 +132,13 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
     protected String getFilterCategories() {
 
         if (getLevelFilter2().isBlank()) {
-            return "WHERE LOWER(category_name) LIKE ?  OR " +
+            return "WHERE (LOWER(category_name) LIKE ?  OR " +
                     "LOWER(category_key) LIKE ?  OR " +
-                    "LOWER(category_velocity_var_name) LIKE ?";
+                    "LOWER(category_velocity_var_name) LIKE ?)";
         } else {
-            return "LOWER(category_name) LIKE ?  OR " +
+            return "AND (LOWER(category_name) LIKE ?  OR " +
                     "LOWER(category_key) LIKE ?  OR " +
-                    "LOWER(category_velocity_var_name) LIKE ?";
+                    "LOWER(category_velocity_var_name) LIKE ?)";
         }
     }
 

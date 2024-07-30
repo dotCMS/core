@@ -16,9 +16,39 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Build a query to search {@link Category} in the category table using also the tree table.
+ *
+ * Query Syntax:
+ *
+ * <code>
+ *     SELECT *, [count children]
+ *     FROM category as c LEFT JOIN tree ON c.inode = tree.child [root filter] [ Name, Key, Variable Filter]
+ *     ORDER BY :orderBy :direction"
+ * </code>
+ *
+ * Where:
+ *
+ * 1. Count Children: This is a subquery that counts the number of children each Category has.
+ * It is included only if CategorySearchCriteria.isCountChildren() is true.
+ *
+ * 2. Root Filter: This is a WHERE clause that depends on CategorySearchCriteria:
+ *
+ * - If CategorySearchCriteria.rootInode is set and CategorySearchCriteria.searchAllLevels is false,
+ * use: 'tree.parent = ?' to filter categories that are children of the specified root Category.
+ * - If CategorySearchCriteria.rootInode is not set and CategorySearchCriteria.searchAllLevels is false,
+ * use: 'tree.child IS NULL' to filter only the top-level categories.
+ *
+ * 3. Filter Categories: Name, Key, Variable Filter: This is applied if {@link CategorySearchCriteria#filter} is not null. The filters can include:
+ *
+ * LOWER(category_name) LIKE ?
+ * LOWER(category_key) LIKE ?
+ * LOWER(category_velocity_var_name) LIKE ?
+ */
 public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
 
-    final String queryTemplate = "SELECT * :countChildren  FROM category as c :rootFilter :filterCategories ORDER BY :orderBy :direction";
+    final String queryTemplate = "SELECT * :countChildren  FROM category as c LEFT JOIN tree ON c.inode = tree.child " +
+            ":rootFilter :filterCategories ORDER BY :orderBy :direction";
 
     public CategorySimpleQueryBuilder(final CategorySearchCriteria searchCriteria) {
         super(searchCriteria);
@@ -50,9 +80,9 @@ public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
 
     private String getRootFilter() {
         if (this.level == Level.CHILDREN) {
-            return "LEFT JOIN tree ON c.inode = tree.child WHERE tree.parent = ?";
+            return "WHERE tree.parent = ?";
         } else if (this.level == Level.TOP) {
-            return "LEFT JOIN tree ON c.inode = tree.child WHERE tree.child IS NULL";
+            return "WHERE tree.child IS NULL";
         }
 
         throw new IllegalArgumentException("If the Level is equals to ALL_LEVELS then The Query must be a recursive query");

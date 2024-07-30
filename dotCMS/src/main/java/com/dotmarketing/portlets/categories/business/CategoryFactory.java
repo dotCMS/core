@@ -281,12 +281,11 @@ public abstract class CategoryFactory {
     abstract protected List<Category> getAllChildren(Categorizable parent) throws DotDataException;
 
 	/**
-	 * Return a {@link Category} Collection looking through the entire category tree starting from a specified inode.
-	 * This means the search will begin from the specified inode category and then proceed recursively through its children.
+	 * Return a collection of {@link Category} objects, filtered based on the criteria specified in {@link CategorySearchCriteria}
 	 *
 	 * @param searchCriteria Search Criteria
 	 *
-	 * @return List of Category filteredx
+	 * @return List of Category
 	 */
 	public abstract List<HierarchedCategory> findAll(final CategorySearchCriteria searchCriteria) throws DotDataException, DotSecurityException;
 
