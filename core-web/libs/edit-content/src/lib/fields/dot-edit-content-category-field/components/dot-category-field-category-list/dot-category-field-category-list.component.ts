@@ -1,26 +1,25 @@
 import { CommonModule } from '@angular/common';
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
     computed,
-    DestroyRef,
     effect,
     ElementRef,
     EventEmitter,
     inject,
     input,
     Output,
-    QueryList,
-    ViewChildren
+    viewChildren
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TreeModule } from 'primeng/tree';
+
+import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
 import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.models';
 import { DotCategoryFieldListSkeletonComponent } from '../dot-category-field-list-skeleton/dot-category-field-list-skeleton.component';
@@ -43,7 +42,8 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
         CheckboxModule,
         ButtonModule,
         FormsModule,
-        DotCategoryFieldListSkeletonComponent
+        DotCategoryFieldListSkeletonComponent,
+        DotCollapseBreadcrumbComponent
     ],
     templateUrl: './dot-category-field-category-list.component.html',
     styleUrl: './dot-category-field-category-list.component.scss',
@@ -52,11 +52,11 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
         class: 'category-list__wrapper'
     }
 })
-export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
+export class DotCategoryFieldCategoryListComponent {
     /**
      *  Represent the columns of categories
      */
-    @ViewChildren('categoryColumn') categoryColumns: QueryList<ElementRef>;
+    $categoryColumns = viewChildren<ElementRef<HTMLDivElement>>('categoryColumn');
 
     /**
      * Represents the variable 'categories' which is of type 'DotCategoryFieldCategory[][]'.
@@ -86,6 +86,11 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
     $isLoading = input<boolean>(true, { alias: 'isLoading' });
 
     /**
+     * Represents the breadcrumbs to display
+     */
+    $breadcrumbs = input<MenuItem[]>([], { alias: 'breadcrumbs' });
+
+    /**
      * Emit the item clicked to the parent component
      */
     @Output() rowClicked = new EventEmitter<{ index: number; item: DotCategoryFieldKeyValueObj }>();
@@ -103,29 +108,23 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
      */
     itemsSelected: string[];
 
-    #cdr = inject(ChangeDetectorRef);
-    readonly #destroyRef = inject(DestroyRef);
-    readonly #effectRef = effect(() => {
-        // Todo: change itemsSelected to use model when update Angular to >17.3
-        // Initial selected items from the contentlet
-        this.itemsSelected = this.$selected();
-        this.#cdr.markForCheck(); // force refresh
-    });
+    readonly #cdr = inject(ChangeDetectorRef);
 
-    ngAfterViewInit() {
-        // Handle the horizontal scroll to make visible the last column
-        this.categoryColumns.changes.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
+    constructor() {
+        effect(() => {
             this.scrollHandler();
         });
-
-        this.#destroyRef.onDestroy(() => {
-            this.#effectRef.destroy();
+        effect(() => {
+            // Todo: change itemsSelected to use model when update Angular to >17.3
+            // Initial selected items from the contentlet
+            this.itemsSelected = this.$selected();
+            this.#cdr.markForCheck(); // force refresh
         });
     }
 
     private scrollHandler() {
         try {
-            const columnsArray = this.categoryColumns.toArray();
+            const columnsArray = this.$categoryColumns();
 
             if (columnsArray.length === 0) {
                 return;

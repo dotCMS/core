@@ -1,4 +1,6 @@
-<div class="w-full category-list__header">Root</div>
+<div class="w-full category-list__header">
+    <dot-collapse-breadcrumb [model]="$breadcrumbs()" />
+</div>
 <div
     [ngClass]="{ 'no-overflow-x-yet': $emptyColumns().length }"
     class="flex-1 category-list__category-list">

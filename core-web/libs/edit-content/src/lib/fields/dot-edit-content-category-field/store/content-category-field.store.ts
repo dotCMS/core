@@ -27,7 +27,8 @@ import {
     removeItemByKey,
     transformCategories,
     transformToSelectedObject,
-    updateChecked
+    updateChecked,
+    getMenuItemsFromKeyParentPath
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
@@ -116,7 +117,19 @@ export const CategoryFieldStore = signalStore(
             store
                 .searchCategories()
                 .map((column) => transformCategories(column, store.keyParentPath()))
-        )
+        ),
+
+        /**
+         * Transform the selected categories to a breadcrumb menu
+         */
+        breadcrumbMenu: computed(() => {
+            const categories = store.categories();
+            const keyParentPath = store.keyParentPath();
+
+            const currentItems = getMenuItemsFromKeyParentPath(categories, keyParentPath);
+
+            return [{ label: 'Root' }, ...currentItems];
+        })
     })),
     withMethods(
         (

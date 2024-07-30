@@ -1,3 +1,5 @@
+import { MenuItem } from 'primeng/api';
+
 import {
     DotCategory,
     DotCategoryParent,
@@ -212,4 +214,33 @@ export const addSelected = (
     const newItems = itemsArray.filter((item) => !itemSet.has(item.key));
 
     return [...array, ...newItems];
+};
+
+/**
+ * Retrieves the menu items from a key parent path.
+ *
+ * @param {DotCategory[][]} array
+ * @param {string[]} keyParentPath
+ * @return {*}  {MenuItem[]}
+ */
+export const getMenuItemsFromKeyParentPath = (
+    array: DotCategory[][],
+    keyParentPath: string[]
+): MenuItem[] => {
+    const flatArray = array.flat();
+
+    return keyParentPath.reduce((array, key) => {
+        const category = flatArray.find((item) => item.key === key);
+
+        if (category) {
+            return [
+                ...array,
+                {
+                    label: category.categoryName
+                }
+            ];
+        }
+
+        return array;
+    }, []);
 };

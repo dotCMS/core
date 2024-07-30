@@ -38,7 +38,8 @@
                         (rowClicked)="store.getCategories($event)"
                         [categories]="store.categoryList()"
                         [isLoading]="store.isListLoading()"
-                        [selected]="store.selectedCategoriesValues()" />
+                        [selected]="store.selectedCategoriesValues()"
+                        [breadcrumbs]="store.breadcrumbMenu()" />
                 } @else {
                     <dot-category-field-search-list
                         @fadeAnimation

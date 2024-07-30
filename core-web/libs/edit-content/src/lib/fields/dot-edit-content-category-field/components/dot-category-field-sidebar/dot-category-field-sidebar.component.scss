@@ -64,3 +64,15 @@ $default-scroll-width: 17px;
     height: 100%;
     overflow: hidden;
 }
+
+:host ::ng-deep .p-breadcrumb {
+    > ul > li {
+        &:last-child a {
+            pointer-events: none;
+            .p-menuitem-text {
+                color: $black;
+                font-weight: $font-weight-bold;
+            }
+        }
+    }
+}
