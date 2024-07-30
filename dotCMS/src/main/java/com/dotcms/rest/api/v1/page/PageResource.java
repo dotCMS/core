@@ -422,7 +422,7 @@ public class PageResource {
         responses = {
                 @ApiResponse(responseCode = "200", description = "Page template linked to HTML and saved successfully",
                         content = @Content(mediaType = "application/json", 
-                                schema = @Schema(implementation = ResponseEntityPageView.class)
+                                schema = @Schema(implementation = ResponseEntityView.class)
                                 )
                         ),
                 @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
@@ -504,7 +504,7 @@ public class PageResource {
                 responses = {
                         @ApiResponse(responseCode = "200", description = "Page template saved successfully",
                                 content = @Content(mediaType = "application/json", 
-                                        schema = @Schema(implementation = ResponseEntityPageView.class)
+                                        schema = @Schema(implementation = ResponseEntityView.class)
                                         )
                                 ),
                         @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
