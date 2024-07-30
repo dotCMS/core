@@ -5,6 +5,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 
 import java.util.List;
+import java.util.Set;
 
 public interface TagFactory {
 
@@ -190,4 +191,11 @@ public interface TagFactory {
      * @throws DotDataException
      */
     public List<Tag> getTagsByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException;
+
+    /**
+     * Get top tags for a given host
+     * @param hostId String host id
+     * @return Set of top tags
+     */
+    Set<String> getTopTagsByHost(String hostId) throws DotDataException;
 }

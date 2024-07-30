@@ -9,12 +9,15 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import java.sql.Connection;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link TagFactory} interface.
@@ -649,6 +652,40 @@ public class TagFactoryImpl implements TagFactory {
         }
 
         return tags;
+    }
+
+    @Override
+    public Set<String> getTopTagsByHost(final String hostId) throws DotDataException {
+
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(hostId));
+
+        final String selectTopTagsQuery =
+                "select distinct(tagname), count(tinode) from " +
+                        "( " +
+                        "   select lower(tagname), tag_inode.inode as tinode " +
+                        "   from  " +
+                        "   tag, tag_inode  " +
+                        "   where  " +
+                        "   tag.tag_id=tag_inode.tag_id  " +
+                        "   and tag.host_id=? " +
+                        "UNION ALL " +
+                        "   select lower(tagname), tag_inode.inode as tinode " +
+                        "   from  " +
+                        "   tag, tag_inode  " +
+                        "   where  " +
+                        "   tag.tag_id=tag_inode.tag_id  " +
+                        ") as foo  " +
+                        "group by lower(tagname)  " +
+                        "order by count(tinode) desc " +
+                        "limit 1000";
+
+        final List<Map<String, Object>> results = new DotConnect()
+                .setSQL(selectTopTagsQuery)
+                .addParam(hostId)
+                .loadObjectResults();
+
+        // todo: add cache and remove any time a tag is being added.
+        return results.stream().map(row -> row.get("tagname").toString()).collect(Collectors.toSet());
     }
 
     /**
