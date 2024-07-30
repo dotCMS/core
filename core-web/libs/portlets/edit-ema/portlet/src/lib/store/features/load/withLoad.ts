@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/component-store';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, forkJoin, of, EMPTY } from 'rxjs';
+import { pipe, forkJoin, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
@@ -9,10 +9,15 @@ import { Router, ActivatedRoute } from '@angular/router';
 
 import { switchMap, shareReplay, catchError, tap, take, map } from 'rxjs/operators';
 
+import { graphqlToPageEntity } from '@dotcms/client';
 import { DotLanguagesService, DotLicenseService, DotExperimentsService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 
-import { DotPageApiService, DotPageApiParams } from '../../../services/dot-page-api.service';
+import {
+    DotPageApiService,
+    DotPageApiParams,
+    DotPageApiResponse
+} from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
@@ -36,6 +41,20 @@ export function withLoad() {
             const dotExperimentsService = inject(DotExperimentsService);
             const router = inject(Router);
             const activatedRoute = inject(ActivatedRoute);
+
+            const getPage = ({ query }) => {
+                if (!query) {
+                    return dotPageApiService.get(store.params());
+                }
+
+                return dotPageApiService.getPageAssetFromGraphql(query).pipe(
+                    map((data) => {
+                        const page = graphqlToPageEntity(data) as unknown;
+
+                        return page as DotPageApiResponse;
+                    })
+                );
+            };
 
             return {
                 load: rxMethod<DotPageApiParams>(
@@ -141,6 +160,12 @@ export function withLoad() {
                                                     status: UVE_STATUS.LOADED,
                                                     isTraditionalPage: !params.clientHost // If we don't send the clientHost we are using as VTL page
                                                 });
+                                            },
+                                            error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                                patchState(store, {
+                                                    errorCode: errorStatus,
+                                                    status: UVE_STATUS.ERROR
+                                                });
                                             }
                                         })
                                     )
@@ -149,13 +174,16 @@ export function withLoad() {
                         })
                     )
                 ),
-                reload: rxMethod<void>(
+                reload: rxMethod<string | void>(
                     pipe(
-                        tap(() => {
-                            patchState(store, { status: UVE_STATUS.LOADING });
+                        tap((query = null) => {
+                            patchState(store, {
+                                status: UVE_STATUS.LOADING,
+                                graphQL: query || store.graphQL()
+                            });
                         }),
-                        switchMap(() => {
-                            return dotPageApiService.get(store.params()).pipe(
+                        switchMap((query) => {
+                            return getPage({ query: query || store.graphQL() }).pipe(
                                 switchMap((pageAPIResponse) =>
                                     dotLanguagesService
                                         .getLanguagesUsedPage(pageAPIResponse.page.identifier)
@@ -194,8 +222,7 @@ export function withLoad() {
                                             status: UVE_STATUS.ERROR
                                         });
                                     }
-                                }),
-                                catchError(() => EMPTY)
+                                })
                             );
                         })
                     )

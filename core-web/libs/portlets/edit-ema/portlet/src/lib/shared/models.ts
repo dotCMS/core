@@ -111,7 +111,8 @@ export type PostMessagePayload =
     | Container[]
     | ClientContentletArea
     | ReorderPayload
-    | UpdatedContentlet;
+    | UpdatedContentlet
+    | string;
 
 export interface DeletePayload {
     payload: ActionPayload;

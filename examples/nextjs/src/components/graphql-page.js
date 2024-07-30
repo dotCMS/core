@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from 'next/navigation';
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
 import Activity from "./content-types/activity";
@@ -38,9 +39,11 @@ const componentsMap = {
     CustomNoComponent: CustomNoComponent,
 };
 
-export function MyGraphQLPage({ pageAsset, nav }) {
+export function MyGraphQLPage({ pageAsset, nav, query }) {
     const { replace, refresh } = useRouter();
+    const searchParams = useSearchParams()
     const pathname = usePathname();
+    
 
     /**
      * If using experiments, `DotLayoutComponent` is `withExperiments(DotcmsLayout)`.
@@ -64,13 +67,14 @@ export function MyGraphQLPage({ pageAsset, nav }) {
             )}
 
             <main className="container flex flex-col gap-8 m-auto">
-                <DotLayoutComponent
+                <DotcmsLayout
                     pageContext={{
                         components: componentsMap,
                         pageAsset: pageAsset,
                     }}
                     config={{
                         onReload: () => refresh(),
+                        query,
                         pathname,
                     }}
                 />

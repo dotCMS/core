@@ -6,25 +6,29 @@ const API_URL = `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/api/v1/graphql`;
  * @param {*} query
  * @return {*}
  */
-function getGraphQLPageQuery({ path, language_id, mode}) {
+export function getGraphQLPageQuery({ path, language_id, mode}) {
     const params = [];
 
     if (language_id) {
         params.push(`languageId: "${language_id}"`);
     }
 
-    if (mode) {
-        params.push(`pageMode: "${mode}"`);
-    }
+    // if (mode) {
+        // params.push('pageMode: "EDIT_MODE"');
+    // }
 
     const paramsString = params.length ? `, ${params.join(", ")}` : "";
 
     return `
     {
-        page(url: "${path}" ${paramsString}) {
-            title
-            url
-            seodescription
+        page(url: "${path}", pageMode: "EDIT_MODE" ${paramsString}) {
+            _map
+            canEdit
+            canLock
+            canRead
+            template {
+              drawed
+            }
             containers {
                 path
                 identifier
@@ -77,6 +81,10 @@ function getGraphQLPageQuery({ path, language_id, mode}) {
                 }
                 language {
                   id
+                  languageCode
+                  countryCode
+                  language
+                  country
                 }
             }
         }
@@ -97,7 +105,7 @@ export const getGraphQLPageData = async (params) => {
     const res = await fetch(API_URL, {
         method: "POST",
         headers: {
-            "Cookie": `access_token=${process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN}`,
+            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN}`,
             "Content-Type": "application/json",
             "dotcachettl": "0" // Bypasses GraphQL cache
         },

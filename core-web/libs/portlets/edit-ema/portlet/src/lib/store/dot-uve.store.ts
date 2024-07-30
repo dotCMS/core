@@ -21,7 +21,8 @@ const initialState: UVEState = {
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
-    pageIsLocked: true
+    pageIsLocked: true,
+    graphQL: null
 };
 
 export const UVEStore = signalStore(
@@ -55,7 +56,7 @@ export const UVEStore = signalStore(
                         languages: translatedLanguages
                     },
                     seoParams: {
-                        siteId: response?.site.identifier,
+                        siteId: response?.site?.identifier,
                         languageId: response?.viewAs.language.id,
                         currentUrl,
                         requestHostName

@@ -1,6 +1,7 @@
 import { DotCMSPageEditorConfig } from '@dotcms/client';
 
 import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
+import { useDotcmsLayout } from '../../hooks/useDotcmsLayout';
 import { DotCMSPageContext } from '../../models';
 import { PageProvider } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
@@ -39,6 +40,7 @@ export type DotcmsPageProps = {
  */
 export function DotcmsLayout({ pageContext, config }: DotcmsPageProps): JSX.Element {
     const { isInsideEditor } = useDotcmsEditor(config);
+    useDotcmsLayout(pageContext.pageAsset, config?.query);
 
     return (
         <PageProvider pageContext={{ ...pageContext, isInsideEditor }}>

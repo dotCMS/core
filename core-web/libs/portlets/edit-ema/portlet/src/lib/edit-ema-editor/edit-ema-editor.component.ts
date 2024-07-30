@@ -991,6 +991,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.GET_PAGE_DATA]: () => {
                 this.reloadIframeContent();
             },
+            [CUSTOMER_ACTIONS.CLIENT_QUERY]: () => {
+                this.uveStore.reload(data.payload as string);
+            },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }

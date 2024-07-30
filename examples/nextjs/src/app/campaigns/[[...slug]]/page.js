@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { graphqlToPageEntity, getPageRequestParams } from "@dotcms/client";
 import { MyGraphQLPage } from "@/components/graphql-page";
 
-import { getGraphQLPageData } from "@/utils/gql";
+import { getGraphQLPageData, getGraphQLPageQuery } from "@/utils/gql";
 import { client } from "@/utils/dotcmsClient";
 
 const getPath = (params) => {
@@ -56,6 +56,7 @@ export default async function Home({ searchParams, params }) {
 
     const data = await getGraphQLPageData(pageRequestParams);
     const pageAsset = graphqlToPageEntity(data);
+    const query = getGraphQLPageQuery(pageRequestParams);
 
     // GraphQL returns null if the page is not found
     // It does not throw an error
@@ -63,5 +64,5 @@ export default async function Home({ searchParams, params }) {
         notFound();
     }
 
-    return <MyGraphQLPage nav={nav.entity.children} pageAsset={pageAsset} />;
+    return <MyGraphQLPage nav={nav.entity.children} pageAsset={pageAsset} query={ query} />;
 }

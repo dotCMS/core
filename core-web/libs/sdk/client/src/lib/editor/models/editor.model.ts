@@ -10,6 +10,13 @@ export interface DotCMSPageEditorConfig {
      */
     pathname: string;
     /**
+     * The query string to use when fetching the page data.
+     *
+     * @type {string}
+     * @memberof DotCMSPageEditorConfig
+     */
+    query?: string;
+    /**
      * The reload function to call when the page is reloaded.
      *
      * @deprecated In future implementation we will be listening for the changes from the editor to update the page state so reload will not be needed.
