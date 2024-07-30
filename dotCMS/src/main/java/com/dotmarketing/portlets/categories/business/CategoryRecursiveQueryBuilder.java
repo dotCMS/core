@@ -36,7 +36,8 @@ import java.util.Map;
  *      FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode
  * )
  * -- Result Member
- * SELECT *, [list parent field], [count children field] FROM CategoryHierarchy ch [level filter] [name, key, variable filter]
+ * SELECT *, [list parent field], [count children field] FROM CategoryHierarchy ch WHERE level = (SELECT MAX(level) FROM CategoryHierarchy WHERE inode = ch.inode)
+ * [level filter] [name, key, variable filter]
  * ORDER BY [order by field] [direction]
  * </code>
  *
@@ -81,18 +82,21 @@ import java.util.Map;
  * LOWER(category_velocity_var_name) LIKE ?
  *
  * This structure allows for dynamic and flexible querying of hierarchical data using SQL's recursive capabilities.
+ *
+ * Finally this part 'level = (SELECT MAX(level) FROM CategoryHierarchy WHERE inode = ch.inode)' allow remove duplicated
  */
 public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
     private boolean parentList;
     private final static String QUERY_TEMPLATE = "WITH RECURSIVE CategoryHierarchy AS ( " +
-            "SELECT c.* :levelField_1 :parentList_1 " +
+            "SELECT c.*, 1 AS level :parentList_1 " +
             "FROM Category c :levelFilter_1 :rootFilter " +
             "UNION ALL " +
-            "SELECT c.* :levelField_2 " +
+            "SELECT c.*,ch.level + 1 AS level :parentList_2 " +
             "FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode " +
             ") " +
-            "SELECT distinct * :parentList_3 :countChildren FROM CategoryHierarchy ch :levelFilter_2 :filterCategories " +
+            "SELECT distinct * :parentList_3 :countChildren FROM CategoryHierarchy ch " +
+            "WHERE level = (SELECT MAX(level) FROM CategoryHierarchy WHERE inode = ch.inode) :levelFilter_2 :filterCategories " +
             "ORDER BY :orderBy :direction";
 
     public CategoryRecursiveQueryBuilder(final CategorySearchCriteria searchCriteria) {
@@ -105,8 +109,6 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
         final String levelFilter_1 = this.level == Level.TOP ?
                 "LEFT JOIN tree ON c.inode = tree.child WHERE tree.child IS NULL" : StringPool.BLANK;
         final String levelFilter_2 = getLevelFilter2();
-        final String levelField_1 = !levelFilter_2.isBlank() ? ",1 AS level" : StringPool.BLANK;
-        final String levelField_2 = !levelFilter_2.isBlank() ? ",ch.level + 1 AS level" : StringPool.BLANK;
 
         final String rootFilter = getRootFilter();
 
@@ -118,34 +120,24 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
         final String parentList_3 = this.parentList ? ", ch.path" : StringPool.BLANK;
 
-        final Map<String, String> parameters = new HashMap<>();
-        parameters.put("rootFilter", rootFilter);
-        parameters.put("levelFilter_1", levelFilter_1);
-        parameters.put("levelFilter_2", levelFilter_2);
-        parameters.put("countChildren", getChildrenCount());
-        parameters.put("parentList_1", parentList_1);
-        parameters.put("parentList_2", parentList_2);
-        parameters.put("parentList_3", parentList_3);
-        parameters.put("filterCategories", getFilterCategories());
-        parameters.put("levelField_1", levelField_1);
-        parameters.put("levelField_2", levelField_2);
-        parameters.put("orderBy",searchCriteria.orderBy);
-        parameters.put("direction", searchCriteria.direction.toString());
-
-        return StringUtils.format(QUERY_TEMPLATE, parameters);
+        return StringUtils.format(QUERY_TEMPLATE, Map.of(
+            "rootFilter", rootFilter,
+            "levelFilter_1", levelFilter_1,
+            "levelFilter_2", levelFilter_2,
+            "countChildren", getChildrenCount(),
+            "parentList_1", parentList_1,
+            "parentList_2", parentList_2,
+            "parentList_3", parentList_3,
+            "filterCategories", getFilterCategories(),
+            "orderBy",searchCriteria.orderBy,
+            "direction", searchCriteria.direction.toString()
+        ));
     }
 
     protected String getFilterCategories() {
-
-        if (getLevelFilter2().isBlank()) {
-            return "WHERE (LOWER(category_name) LIKE ?  OR " +
+        return "AND (LOWER(category_name) LIKE ?  OR " +
                     "LOWER(category_key) LIKE ?  OR " +
                     "LOWER(category_velocity_var_name) LIKE ?)";
-        } else {
-            return "AND (LOWER(category_name) LIKE ?  OR " +
-                    "LOWER(category_key) LIKE ?  OR " +
-                    "LOWER(category_velocity_var_name) LIKE ?)";
-        }
     }
 
     private String getListParentRootValue(final CategorySearchCriteria searchCriteria) throws DotDataException,
@@ -188,9 +180,9 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
     private String getLevelFilter2() {
         if (this.level == Level.TOP) {
-            return "WHERE level = 1";
+            return "AND level = 1";
         } else if (this.level == Level.CHILDREN) {
-            return "WHERE level = 2";
+            return "AND level = 2";
         } else {
             return StringPool.BLANK;
         }

@@ -40,7 +40,7 @@ import java.util.Map;
  */
 public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
 
-    private static final String QUERY_TEMPLATE = "SELECT * :countChildren  FROM category as c LEFT JOIN tree ON c.inode = tree.child " +
+    private static final String QUERY_TEMPLATE = "SELECT c.* :countChildren  FROM category as c LEFT JOIN tree ON c.inode = tree.child " +
             ":rootFilter :filterCategories ORDER BY :orderBy :direction";
 
     public CategorySimpleQueryBuilder(final CategorySearchCriteria searchCriteria) {
