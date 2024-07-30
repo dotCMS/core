@@ -37,7 +37,7 @@ jobs:
       - name: 'Get zip file'
         id: get-zip-file
         env:
-          URL: ${{ secrets.DOT_STARTER_URL }}
+          URL: ${{ vars.DOT_STARTER_URL }}
           ACCESS_TOKEN: ${{ secrets.DOT_STARTER_ACCESS_TOKEN }}
         run: |
           echo "::group::Getting zip file"
