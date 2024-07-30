@@ -133,3 +133,4 @@ This maintenance release includes the following code fixes:
 126. https://github.com/dotCMS/core/issues/28201 : AI Content Block inserts rich content as a single paragraph #28201
 127. https://github.com/dotCMS/core/issues/26987 : Set Response Headers Rule Action does not allow double quotes in the value #26987
 128. https://github.com/dotCMS/core/issues/26477 : Search filter can't find/filter images #26477
+129. https://github.com/dotCMS/core/issues/27297 : Edit Page: Edit Contentlet Dialog Language Support #27297

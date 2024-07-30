@@ -411,6 +411,7 @@ browse from the page internal links
                 .getActionUrl($event.data.contentType.variable)
                 .pipe(take(1))
                 .subscribe((url) => {
+                    url = this.setCurrentContentLang(url);
                     this.dotContentletEditorService.create({
                         data: { url },
                         events: {
@@ -674,5 +675,19 @@ browse from the page internal links
         this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
             this.pageLanguageId = params['language_id'];
         });
+    }
+
+    /**
+     * Sets the language parameter in the given URL and returns the concatenated pathname and search.
+     * the input URL doesn't include the host, origin is used as the base URL.
+     *
+     * @param {string} url - The input URL ( include pathname and search parameters).
+     * @returns {string} - The concatenated pathname and search parameters with the language parameter set.
+     */
+    private setCurrentContentLang(url: string): string {
+        const newUrl = new URL(url, window.location.origin);
+        newUrl.searchParams.set('_content_lang', this.pageLanguageId);
+
+        return newUrl.pathname + newUrl.search;
     }
 }

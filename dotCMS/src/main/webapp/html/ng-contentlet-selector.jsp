@@ -26,6 +26,7 @@
 
 <%
     String containerIdentifier = request.getParameter("container_id");
+    String language_id = request.getParameter("language_id");
     User user = PortalUtil.getUser(request);
     Container container = null;
     if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerIdentifier)) {
@@ -227,6 +228,7 @@
 <div jsId="contentSelector"
      containerStructures='<%=containerStructures%>'
      onContentSelected="contentSelected"
+     languageId="<%=language_id%>"
      selectButtonLabel='<%= LanguageUtil.get(pageContext, "content.search.select") %>'
      dojoType="dotcms.dijit.form.ContentSelector">
 
