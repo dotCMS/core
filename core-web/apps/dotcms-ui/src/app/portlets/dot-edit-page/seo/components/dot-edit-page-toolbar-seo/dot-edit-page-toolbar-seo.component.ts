@@ -106,12 +106,12 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
             });
 
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
-        this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
+        this.apiLink = this.getApiLink();
     }
 
     ngOnChanges(): void {
         this.pageRenderedHtml = this.updateRenderedHtml();
-
+        this.apiLink = this.getApiLink();
         this.showWhatsChanged =
             this.pageState.state.mode === DotPageMode.PREVIEW &&
             !('persona' in this.pageState.viewAs) &&
@@ -139,5 +139,9 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
         return this.pageState?.params.viewAs.mode === DotPageMode.PREVIEW
             ? this.pageState.params.page.rendered
             : this.pageRenderedHtml;
+    }
+
+    private getApiLink(): string {
+        return `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
     }
 }
