@@ -24,11 +24,14 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
 
@@ -970,6 +973,51 @@ public class TagAPITest extends IntegrationTestBase {
 
 		assertEquals(personaTag.getTagName(), fetchedTags.get(0).getTagName());
 		assertEquals(personaTag.getTagId(), fetchedTags.get(0).getTagId());
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#findTopTags(String)}
+	 * Given scenario: Save 200 times a couple tags to highlight on the top ten
+	 * Expected result: The top tags should be not null, not empty and contain the tags saved
+	 */
+	@Test
+	public void findTopTags_should_be_not_null_not_empty_and_contains_two_popular_tags() throws Exception{
+
+		final String tag1 = "mytesttag1";
+		final String tag2 = "mytesttag2";
+		IntStream.range(0, 100).forEach($ -> Try.run(()->APILocator.getTagAPI().saveTag(tag1, testUser.getUserId(), defaultHostId)));
+		IntStream.range(0, 100).forEach($ -> Try.run(()->APILocator.getTagAPI().saveTag(tag2, testUser.getUserId(), defaultHostId)));
+
+		final Set<String> topTagsSet = APILocator.getTagAPI().findTopTags(defaultHostId);
+
+		assertNotNull("The top tags should be not null",topTagsSet);
+		assertFalse("The top tags should be not empty", topTagsSet.isEmpty());
+		assertTrue("The mytesttag1 should be on the top ten", topTagsSet.contains(tag1));
+		assertTrue("The mytesttag2 should be on the top ten", topTagsSet.contains(tag2));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#findTopTags(String)}
+	 * Given scenario: pass site id as a null
+	 * Expected result: Expecting {@link IllegalArgumentException} to be thrown
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void findTopTags_on_null_throw_exception() throws Exception{
+
+			APILocator.getTagAPI().findTopTags(null);
+			fail("should not reach this section");
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#findTopTags(String)}
+	 * Given scenario: pass site id as an empty string
+	 * Expected result: Expecting {@link IllegalArgumentException} to be thrown
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void findTopTags_on_empty_throw_exception() throws Exception{
+
+		APILocator.getTagAPI().findTopTags("");
+		fail("should not reach this section");
 	}
 
 }
