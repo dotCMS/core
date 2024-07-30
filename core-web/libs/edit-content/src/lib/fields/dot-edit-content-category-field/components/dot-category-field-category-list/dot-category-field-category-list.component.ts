@@ -108,7 +108,7 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
      */
     itemsSelected: string[];
 
-    #messageService = inject(DotMessageService);
+    readonly #messageService = inject(DotMessageService);
     #cdr = inject(ChangeDetectorRef);
     readonly #destroyRef = inject(DestroyRef);
     readonly #effectRef = effect(() => {
