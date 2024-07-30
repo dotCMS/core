@@ -72,6 +72,7 @@ root_dir="$(git rev-parse --show-toplevel)"
 
 # This will ensure that the correct version of node and yarn is installed
 # from core-web/pom.xml and .nvmrc files are updated
+cd "${root_dir}" || exit
 if ! ./mvnw validate -pl :dotcms-core --am -q; then
     echo "Failed to run './mvnw validate -pl :dotcms-core --am'"
     echo "Please run the following command to see the detailed output:"
@@ -81,13 +82,12 @@ else
     echo "Completed Maven init"
 fi
 
-yarn config set registry https://dotcms-npm.b-cdn.net
-
-run_yarn_install_frozen_lockfile
-
 
 core_web_dir="${root_dir}/core-web"
 cd "${core_web_dir}" || exit
+
+yarn config set registry https://dotcms-npm.b-cdn.net
+run_yarn_install_frozen_lockfile
 
 staged_files=$(git diff --cached --name-only)
 modified_files=$(git diff --name-only)
