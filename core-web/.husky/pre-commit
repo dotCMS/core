@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # This script is used as a pre-commit hook for a Git repository.
 # It performs operations such as formatting and linting on staged files.
 
@@ -8,9 +8,9 @@ error_occurred=false
 
 # Perform fix operations on the staged files
 perform_fixes() {
-    local -a files=($1)         # Convert string to array
-    local add_to_index=$2       # Should be 'true' or 'false'
-    local file                  # Declare file variable for use in loop
+    local files="$1"         # Store files as a string
+    local add_to_index="$2"    # Should be 'true' or 'false'
+    local file               # Declare file variable for use in loop
 
     if ! npx nx format:write; then
         error_occurred=true
@@ -20,21 +20,19 @@ perform_fixes() {
             error_occurred=true
     fi
 
+    if [ "$add_to_index" = "true" ]; then
+        # Get a list of modified files in the working tree (excluding untracked/new files)
+        local modified_files=$(git diff --name-only)
 
-
-   if [ "$add_to_index" = "true" ]; then
-       # Get a list of modified files in the working tree (excluding untracked/new files)
-       local modified_files=$(git diff --name-only)
-
-       # Loop through the list of files that were originally considered
-       for file in "${files[@]}"; do
-           if echo "$modified_files" | grep -Fxq "$file"; then
-               if ! git add -- "${root_dir}/${file}"; then
-                   error_occurred=true  # Record that an error occurred
-               fi
-           fi
-       done
-   fi
+        # Loop through the list of files that were originally considered
+        for file in $files; do
+            if echo "$modified_files" | grep -Fxq "$file"; then
+                if ! git add -- "${root_dir}/${file}"; then
+                    error_occurred=true  # Record that an error occurred
+                fi
+            fi
+        done
+    fi
 }
 
 
@@ -71,7 +69,7 @@ fi
 current_subdir=$(basename "$(pwd)")  # Get the current subdirectory
 
 # Convert paths if necessary (adjust this logic based on your exact directory structure)
-for file in ${untracked_files}; do
+for file in $untracked_files; do
     relative_path="${file#${current_subdir}/}"  # Construct the path relative to the current directory
 
     if echo "${staged_files}" | grep -q "^${file}$"; then
@@ -85,7 +83,6 @@ done
 
 echo "Backed up workspace to ${temp_dir}"
 git status
-
 
 # Perform operations on staged files and capture the error count
 if [ -n "${staged_files}" ]; then
