@@ -97,6 +97,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
  * users of this end-point can get the metadata of an HTML Page (i.e., information about the
@@ -317,15 +319,21 @@ public class PageResource {
 
 
     /**
-     * Save a template and link it with a page, If the page already has a anonymous template linked then it is updated,
-     * otherwise a new template is created and the old link template remains unchanged
+     * Saves a Template and links it with an HTML Page. If the page already has an Anonymous
+     * Template linked to it, it will be updated in these new changes. Otherwise, a new Anonymous
+     * Template is created and the previously linked Template will remain unchanged.
      *
-     * @see Template#isAnonymous()
+     * @param request          The current instance of the {@link HttpServletRequest}.
+     * @param response         The current instance of the {@link HttpServletResponse}.
+     * @param pageId           The ID of the page that the Template will be linked to.
+     * @param variantNameParam The name of the Variant associated to the page.
+     * @param form             The {@link PageForm} containing the information of the Template.
      *
-     * @param request The {@link HttpServletRequest} object.
-     * @param pageId page's Id to link the template
-     * @param form The {@link PageForm}
-     * @return
+     * @return The {@link Response} entity containing the updated {@link PageView} object for the
+     * specified page.
+     *
+     * @throws DotSecurityException The currently logged-in user does not have the necessary
+     *                              permissions to perform this action.
      */
     @NoCache
     @POST
@@ -340,17 +348,12 @@ public class PageResource {
         final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
                 VariantAPI.DEFAULT_VARIANT.name();
 
-        Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s variantName -> %s", pageId,
+        Logger.debug(this, () -> String.format("Saving layout: pageId -> %s , layout -> %s , variantName -> %s", pageId,
                 form != null ? form.getLayout() : null, variantName));
-
-        if (form == null) {
-            throw new BadRequestException("Layout is required");
-        }
+        checkNotNull(form, BadRequestException.class, "The 'PageForm' JSON data is required");
 
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
-
-        Response res;
 
         try {
             HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
@@ -367,21 +370,18 @@ public class PageResource {
                     response
             );
 
-            res = Response.ok(new ResponseEntityView(renderedPage)).build();
-
-        } catch(DoesNotExistException e) {
-            final String errorMsg = String.format("DoesNotExistException on PageResource.saveLayout, parameters:  %s, %s %s: ",
+            return Response.ok(new ResponseEntityView<>(renderedPage)).build();
+        } catch (final DoesNotExistException e) {
+            final String errorMsg = String.format("DoesNotExistException on PageResource.saveLayout. Parameters: [ %s ], [ %s ], [ %s ]: ",
                     request, pageId, form);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse("", "Unable to find page with Identifier: " + pageId, Response.Status.NOT_FOUND);
-        } catch (BadRequestException | DotDataException e) {
-            final String errorMsg = String.format("%s on PageResource.saveLayout, parameters:  %s, %s %s: ",
+            return ExceptionMapperUtil.createResponse("", "Unable to find page with Identifier: " + pageId, Response.Status.NOT_FOUND);
+        } catch (final BadRequestException | DotDataException e) {
+            final String errorMsg = String.format("%s on PageResource.saveLayout. Parameters: [ %s ], [ %s ], [ %s ]: ",
                     e.getClass().getCanonicalName(), request, pageId, form);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
         }
-
-        return res;
     }
 
     /**

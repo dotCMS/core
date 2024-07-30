@@ -1,47 +1,49 @@
 package com.dotcms.rest.api.v1.page;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Stream;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.rest.api.Validated;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
 
-import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 /**
- * {@link PageResource}'s form
+ * Represents the layout of a Template in dotCMS.
+ *
+ * <p>All Containers that make up the structure of a Template -- along with its rows and columns --
+ * are organized and transformed into an instance of this class.</p>
+ *
+ * @author Freddy Rodriguez
+ * @since Nov 22nd, 2017
  */
 @JsonDeserialize(builder = PageForm.Builder.class)
 class PageForm {
 
     private final String themeId;
     private final String title;
-    private final String hostId;
+    private final String siteId;
     private final TemplateLayout layout;
     private final Map<String, ContainerUUIDChanged> changes;
     private final Map<String, String> newlyContainersUUID;
 
-    public PageForm(final String themeId, final String title, final String hostId, final TemplateLayout layout,
-                    final Map<String, ContainerUUIDChanged> changes, Map<String, String> newlyContainersUUID) {
+    public PageForm(final String themeId, final String title, final String siteId, final TemplateLayout layout,
+                    final Map<String, ContainerUUIDChanged> changes, final Map<String, String> newlyContainersUUID) {
 
         this.themeId = themeId;
         this.title = title;
-        this.hostId = hostId;
+        this.siteId = siteId;
         this.layout = layout;
         this.changes = ImmutableMap.<String, ContainerUUIDChanged> builder().putAll(changes).build();
         this.newlyContainersUUID = ImmutableMap.copyOf(newlyContainersUUID);
@@ -66,10 +68,10 @@ class PageForm {
 
     /**
      *
-     * @return Layout's host
+     * @return Layout's site
      */
-    public String getHostId() {
-        return hostId;
+    public String getSiteId() {
+        return siteId;
     }
 
     public boolean isAnonymousLayout() {
@@ -84,7 +86,28 @@ class PageForm {
         return layout;
     }
 
-    public ContainerUUIDChanged getChange (String identifier, String uuid) {
+    /**
+     * Allows you to determine whether the instance ID of a given Container has changed or not based
+     * on the modifications that are being persisted. This makes it easier for the API to be able to
+     * update the necessary instance IDs across the page's Template so that contents are displayed
+     * in the appropriate order.
+     *
+     * <p>For instance, if a Template has three instances of the Default Container -- "1", "2", and
+     * "3" -- and instance "2" is deleted, the change list will be:</p>
+     * <ul>
+     *     <li>Old Instance ID = "1" / New Instance ID = "1" -- The value remains.</li>
+     *     <li>Instance ID "2" is NOT present as it is the one that was removed from the Template
+     *     .</li>
+     *     <li>Old Instance ID = "3" / New Instance ID = "2" -- Because the second instance was
+     *     removed, the third Container now takes the second instance's ID.</li>
+     * </ul>
+     *
+     * @param identifier The ID of the Container, or its path in case it's a Container as File.
+     * @param uuid       The current instance ID of the Container.
+     *
+     * @return The {@link ContainerUUIDChanged} instance that contains the old and new instance IDs.
+     */
+    public ContainerUUIDChanged getChangeInContainerInstanceIDs(final String identifier, final String uuid) {
         ContainerUUIDChanged containerUUIDChanged = this.changes.get(getChangeKey(identifier, uuid));
 
         if (containerUUIDChanged == null) {
@@ -96,14 +119,37 @@ class PageForm {
         return containerUUIDChanged;
     }
 
+    /**
+     * Returns the instance ID of a Container that has just been added to the Template. That is, a
+     * Container that didn't exist and was added by this change in particular.
+     *
+     * @param identifier The ID or file path of the recently-added Container
+     *
+     * @return The instance ID of the recently-added Container.
+     */
     public String getNewlyContainerUUID (String identifier) {
         return this.newlyContainersUUID.get(identifier);
     }
 
+    /**
+     * Generates the key that identifies the potential change in a Container instance ID.
+     *
+     * @param containerUUID The {@link ContainerUUID} object whose information may have changed..
+     *
+     * @return The key that identifies the potential change in a Container instance ID.
+     */
     private static String getChangeKey(ContainerUUID containerUUID) {
         return getChangeKey(containerUUID.getIdentifier(), containerUUID.getUUID());
     }
 
+    /**
+     * Generates the key that identifies a potential change in a Container's instance ID.
+     *
+     * @param identifier The ID or file path to a given Container.
+     * @param uuid       The current instance ID of the Container.
+     *
+     * @return The key that identifies the potential change in a Container instance ID.
+     */
     private static String getChangeKey(String identifier, String uuid) {
         return String.format("%s - %s", identifier, uuid);
     }
@@ -154,6 +200,14 @@ class PageForm {
             return this;
         }
 
+        /**
+         * Transforms the Template's layout as a data Map into an instance of
+         * {@link TemplateLayout}.
+         *
+         * @return An instance of {@link TemplateLayout} that represents the Template's layout.
+         *
+         * @throws BadRequestException If the Template's layout is invalid or missing.
+         */
         private TemplateLayout getTemplateLayout() throws BadRequestException {
 
             if (layout == null) {
@@ -164,8 +218,10 @@ class PageForm {
                 this.setContainersUUID();
                 final String layoutString = MAPPER.writeValueAsString(layout);
                 return MAPPER.readValue(layoutString, TemplateLayout.class);
-            } catch (IOException e) {
-                throw new BadRequestException(e, "An error occurred when proccessing the JSON request");
+            } catch (final IOException e) {
+                throw new BadRequestException(e, String.format("An error occurred when processing" +
+                        " the layout for Template '%s'", UtilMethods.isSet(title) ? title : "- " +
+                        "Anonymous Template -"));
             }
         }
 
@@ -190,43 +246,51 @@ class PageForm {
             getAllContainers().forEach(container -> setChange(maxUUIDByContainer, container));
         }
 
-        private void setChange(Map<String, Long> maxUUIDByContainer, Map<String, String> container) {
+        /**
+         * Loads the data Maps of every Container in the Template's layout, with its previous and
+         * updated instance ID.
+         *
+         * @param maxInstanceIDByContainer Keeps track of the maximum instance ID that has been
+         *                                 assigned to a previously added Container of the same
+         *                                 type. It helps increase the instance ID one by one in
+         *                                 order.
+         * @param container                The current Container instance inside the Template.
+         */
+        private void setChange(final Map<String, Long> maxInstanceIDByContainer, final Map<String, String> container) {
             try {
                 final String containerId = container.get("identifier");
-                final long currentUUID = maxUUIDByContainer.get(containerId) != null ?
-                        maxUUIDByContainer.get(containerId) : 0;
-                final long nextUUID = currentUUID + 1;
+                final long currentInstanceID = maxInstanceIDByContainer.get(containerId) != null ?
+                        maxInstanceIDByContainer.get(containerId) : 0;
+                final long nextInstanceID = currentInstanceID + 1;
 
                 if (container.get("uuid") != null) {
-                    final ContainerUUID oldContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
+                    final ContainerUUID oldContainerInstanceID = MAPPER.readValue(MAPPER.writeValueAsString(container),
                             ContainerUUID.class);
-                    container.put("uuid", String.valueOf(nextUUID));
-                    final ContainerUUID newContainerUUID = MAPPER.readValue(MAPPER.writeValueAsString(container),
+                    container.put("uuid", String.valueOf(nextInstanceID));
+                    final ContainerUUID newContainerInstanceID = MAPPER.readValue(MAPPER.writeValueAsString(container),
                             ContainerUUID.class);
-
-                    String changeKey = getChangeKey(oldContainerUUID);
-                    changes.put(changeKey, new ContainerUUIDChanged(oldContainerUUID, newContainerUUID));
+                    changes.put(getChangeKey(oldContainerInstanceID), new ContainerUUIDChanged(oldContainerInstanceID, newContainerInstanceID));
                 } else {
-                    container.put("uuid", String.valueOf(nextUUID));
-                    newlyContainersUUID.put(containerId, String.valueOf(nextUUID));
+                    container.put("uuid", String.valueOf(nextInstanceID));
+                    newlyContainersUUID.put(containerId, String.valueOf(nextInstanceID));
                 }
 
-                maxUUIDByContainer.put(containerId, nextUUID);
-
-            } catch (IOException e) {
-                Logger.error(this.getClass(),"Exception on setContainersUUID exception message: " + e.getMessage(), e);
+                maxInstanceIDByContainer.put(containerId, nextInstanceID);
+            } catch (final IOException e) {
+                Logger.error(this.getClass(),String.format("Failed to map changed Container instance IDs in Template " +
+                                "'%s': %s", UtilMethods.isSet(title) ? title : "- Anonymous Template -",
+                        ExceptionUtil.getErrorMessage(e)), e);
             }
         }
-
 
         private Stream<Map<String, String>> getAllContainers() {
             final Stream<Map<String, String>> bodyContainers =
                     ((List<Map<String, Map>>) ((Map<String, Object>) layout.get("body")).get("rows"))
-                    .stream()
-                    .map(row -> (List<Map<String, Map>>) row.get("columns"))
-                    .flatMap(columns -> columns.stream())
-                    .map(column -> (List<Map<String, String>>) column.get("containers"))
-                    .flatMap(containers -> containers.stream());
+                            .stream()
+                            .map(row -> (List<Map<String, Map>>) row.get("columns"))
+                            .flatMap(columns -> columns.stream())
+                            .map(column -> (List<Map<String, String>>) column.get("containers"))
+                            .flatMap(containers -> containers.stream());
 
             if (layout.get("sidebar") != null){
                 final Stream<Map<String, String>> sidebarContainers =
@@ -242,5 +306,7 @@ class PageForm {
         public PageForm build(){
             return new PageForm(themeId, title, hostId, getTemplateLayout(), changes, newlyContainersUUID);
         }
+
     }
+
 }
