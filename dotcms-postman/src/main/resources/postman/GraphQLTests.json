@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "69f6ea4e-5b29-4a77-b599-47f07dc3eb80",
+		"_postman_id": "1c1bfc18-987b-42c5-98f5-29fb55f6c0e8",
 		"name": "GraphQL",
-		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
+		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-69f6ea4e-5b29-4a77-b599-47f07dc3eb80?action=share&source=collection_link&creator=5403727"
+		"_exporter_id": "3028555"
 	},
 	"item": [
 		{
@@ -10111,14 +10110,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"pm.test(\"Storing content type id\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
 									"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+									"});",
+									"",
+									"// Test to validate that the entity name is equal to \"content type\"",
+									"pm.test(\"Entity name is equal to 'content type'\", function () {",
+									"    pm.response.json().entity.forEach(function(entity) {",
+									"        pm.expect(entity.name).to.equal('Test Content Type');",
+									"    });",
 									"});"
 								],
 								"type": "text/javascript",
@@ -10178,8 +10180,11 @@
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"// Test to validate that the entity name is equal to \"Test Content Type\"",
+									"pm.test(\"Entity name is equal to 'Test Content Type'\", function () {",
+									"    var entityName = pm.response.json().entity.name;",
+									"    pm.expect(entityName).to.equal('Test Content Type');",
+									"    ",
 									"});",
 									"",
 									"// Preparing the data for the next test",
@@ -10220,16 +10225,18 @@
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
 									"var currentCount = pm.collectionVariables.get(\"contentCount\");",
 									"if (currentCount > 1){",
 									"    currentCount = currentCount - 1;",
 									"    pm.collectionVariables.set(\"contentCount\", currentCount);",
-									"    postman.setNextRequest(\"Save test content for pagination\");",
-									"}"
+									"    pm.execution.setNextRequest(\"Save Content\");",
+									"}",
+									"",
+									"// Test to validate if the name is equal to 'Test content 22'",
+									"pm.test(\"Validate we are returning a valid ID'\", function () {",
+									"    var entity = pm.response.json().entity;",
+									"    pm.expect(entity.identifier).to.not.be.null;",
+									"});"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -11166,8 +11173,9 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"pm.test(\"Errors array in the response should be empty\", function () {",
+									"    var responseData = pm.response.json();",
+									"    pm.expect(responseData.errors).to.be.an('array').that.is.empty;",
 									"});"
 								],
 								"type": "text/javascript",
@@ -11195,7 +11203,31 @@
 					"response": []
 				}
 			],
-			"description": "Collection with a number of tests to validate the pagination fields in collection queries"
+			"description": "Collection with a number of tests to validate the pagination fields in collection queries",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			]
 		}
 	],
 	"event": [
