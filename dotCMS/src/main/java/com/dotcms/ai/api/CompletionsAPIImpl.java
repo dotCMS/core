@@ -204,7 +204,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private int countTokens(final String testString) {
-        return EncodingUtil.registry
+        return EncodingUtil.REGISTRY
                 .getEncodingForModel(config.get().getModel().getCurrentModel())
                 .map(enc -> enc.countTokens(testString))
                 .orElseThrow(() -> new DotRuntimeException("Encoder not found"));

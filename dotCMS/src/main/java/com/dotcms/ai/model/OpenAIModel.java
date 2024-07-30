@@ -5,7 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 
-public class OpenAIModel implements Serializable {
+/**
+ * Represents an OpenAI model with details such as ID, object type, creation timestamp, and owner.
+ * This class is immutable and uses Jackson annotations for JSON serialization and deserialization.
+ *
+ * @author vico
+ */
+ public class OpenAIModel implements Serializable {
 
     private final String id;
     private final String object;
