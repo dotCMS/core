@@ -13,6 +13,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -85,13 +86,13 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
     private boolean parentList;
     private final static String QUERY_TEMPLATE = "WITH RECURSIVE CategoryHierarchy AS ( " +
-            "SELECT c.*, 1 AS level :parentList_1 " +
+            "SELECT c.* :levelField_1 :parentList_1 " +
             "FROM Category c :levelFilter_1 :rootFilter " +
             "UNION ALL " +
-            "SELECT c.*, ch.level + 1 AS level :parentList_2 " +
+            "SELECT c.* :levelField_2 " +
             "FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode " +
             ") " +
-            "SELECT * :parentList_3 :countChildren FROM CategoryHierarchy ch :levelFilter_2 :filterCategories " +
+            "SELECT distinct * :parentList_3 :countChildren FROM CategoryHierarchy ch :levelFilter_2 :filterCategories " +
             "ORDER BY :orderBy :direction";
 
     public CategoryRecursiveQueryBuilder(final CategorySearchCriteria searchCriteria) {
@@ -104,6 +105,9 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
         final String levelFilter_1 = this.level == Level.TOP ?
                 "LEFT JOIN tree ON c.inode = tree.child WHERE tree.child IS NULL" : StringPool.BLANK;
         final String levelFilter_2 = getLevelFilter2();
+        final String levelField_1 = !levelFilter_2.isBlank() ? ",1 AS level" : StringPool.BLANK;
+        final String levelField_2 = !levelFilter_2.isBlank() ? ",ch.level + 1 AS level" : StringPool.BLANK;
+
         final String rootFilter = getRootFilter();
 
         final String parentList_1 = getListParentRootValue(this.searchCriteria);
@@ -114,19 +118,21 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
         final String parentList_3 = this.parentList ? ", ch.path" : StringPool.BLANK;
 
-        return StringUtils.format(QUERY_TEMPLATE, Map.of(
-                    "rootFilter", rootFilter,
-                    "levelFilter_1", levelFilter_1,
-                    "levelFilter_2", levelFilter_2,
-                    "countChildren", getChildrenCount(),
-                    "parentList_1", parentList_1,
-                    "parentList_2", parentList_2,
-                    "parentList_3", parentList_3,
-                    "filterCategories", getFilterCategories(),
-                "orderBy",searchCriteria.orderBy,
-                "direction", searchCriteria.direction.toString()
-                )
-        );
+        final Map<String, String> parameters = new HashMap<>();
+        parameters.put("rootFilter", rootFilter);
+        parameters.put("levelFilter_1", levelFilter_1);
+        parameters.put("levelFilter_2", levelFilter_2);
+        parameters.put("countChildren", getChildrenCount());
+        parameters.put("parentList_1", parentList_1);
+        parameters.put("parentList_2", parentList_2);
+        parameters.put("parentList_3", parentList_3);
+        parameters.put("filterCategories", getFilterCategories());
+        parameters.put("levelField_1", levelField_1);
+        parameters.put("levelField_2", levelField_2);
+        parameters.put("orderBy",searchCriteria.orderBy);
+        parameters.put("direction", searchCriteria.direction.toString());
+
+        return StringUtils.format(QUERY_TEMPLATE, parameters);
     }
 
     protected String getFilterCategories() {
