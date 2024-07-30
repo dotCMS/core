@@ -108,6 +108,16 @@ node_modules/
 /core-web/target
 /core-web/~/dotcms/*
 
+# Yarn
+/core-web/.yarn/*
+/core-web/.pnp.*
+/core-web/.pnp**
+!/core-web/.yarn/cache
+!/core-web/.yarn/releases
+!/core-web/.yarn/plugins
+!/core-web/.yarn/sdks
+!/core-web/.yarn/versions
+
 # misc
 /core-web/.nx
 /core-web/.angular/cache
