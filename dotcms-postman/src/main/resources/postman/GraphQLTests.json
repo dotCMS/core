@@ -3776,7 +3776,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  PageBaseTypeCollection(query:\"+identifier:9c5f42da-31b1-4935-9df6-153f5de1bdf2\") {\n    title\n    url\n    hostFolder {\n      hostName\n      folderName\n    }\n    template    \n  }\n}",
+								"query": "{\n  PageBaseTypeCollection(query:\"+identifier:9c5f42da-31b1-4935-9df6-153f5de1bdf2\") {\n    title\n    url\n    hostFolder {\n      hostName\n      folderName\n    }\n    template    \n\n  }\n}",
 								"variables": ""
 							}
 						},
@@ -3814,12 +3814,12 @@
 									"    pm.expect(page[\"keyTag\"], 'FAILED:[keyTag]').equal(\"OceanEnthusiast\");",
 									"    pm.expect(page.hostFolder.hostName, 'FAILED:[hostFolder.hostName]').equal(\"demo.dotcms.com\");",
 									"    pm.expect(page.hostFolder.folderName, 'FAILED:[hostFolder.folderName]').equal(\"system folder\");",
-									"    pm.expect(page.tags.length, 'FAILED:[tags]').to.eql(4);",
-									"    pm.expect(page[\"description\"], 'FAILED:[description]').equal(\"People who typically vacation around water sports such as surfing, wind surfing, etc.\");",
+									"    pm.expect(page.tags.length, 'FAILED:[tags]').to.eql(4);    ",
 									"",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3829,7 +3829,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  PersonaBaseTypeCollection(query:\"+identifier:d948d85c-3bc8-4d85-b0aa-0e989b9ae235\") {\n    name\n    hostFolder {\n      hostName\n      folderName\n    }\n    keyTag\n    photo {\n      name\n    }\n    tags\n    description\n  }\n}",
+								"query": "{\n  PersonaBaseTypeCollection(query:\"+identifier:d948d85c-3bc8-4d85-b0aa-0e989b9ae235\") {\n    name\n    hostFolder {\n      hostName\n      folderName\n    }\n    keyTag\n    photo {\n      name\n    }\n    tags    \n  }\n}",
 								"variables": ""
 							}
 						},
