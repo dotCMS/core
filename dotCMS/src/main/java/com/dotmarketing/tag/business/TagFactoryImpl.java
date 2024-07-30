@@ -655,9 +655,9 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     @Override
-    public Set<String> getTopTagsByHost(final String hostId) throws DotDataException {
+    public Set<String> getTopTagsBySiteId(final String siteId) throws DotDataException {
 
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(hostId));
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(siteId));
 
         final String selectTopTagsQuery =
                 "select distinct(tagname), count(tinode) from " +
@@ -681,7 +681,7 @@ public class TagFactoryImpl implements TagFactory {
 
         final List<Map<String, Object>> results = new DotConnect()
                 .setSQL(selectTopTagsQuery)
-                .addParam(hostId)
+                .addParam(siteId)
                 .loadObjectResults();
 
         // todo: add cache and remove any time a tag is being added.

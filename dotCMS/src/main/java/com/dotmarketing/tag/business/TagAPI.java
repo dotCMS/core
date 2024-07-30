@@ -21,9 +21,10 @@ public interface TagAPI {
 
 	/**
 	 * Get a list of top the tags for a given contentlet
+	 * @param siteId
 	 * @return list of tags
 	 */
-	Set<String> findTopTags(final Contentlet contentlet) throws DotDataException;
+	Set<String> findTopTags(final String siteId) throws DotDataException;
 	/**
 	 * Get a list of all the tags created
 	 * @return list of all tags created

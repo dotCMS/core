@@ -193,9 +193,9 @@ public interface TagFactory {
     public List<Tag> getTagsByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException;
 
     /**
-     * Get top tags for a given host
-     * @param hostId String host id
+     * Get top tags for a given site id
+     * @param hostId String site id
      * @return Set of top tags
      */
-    Set<String> getTopTagsByHost(String hostId) throws DotDataException;
+    Set<String> getTopTagsBySiteId(String siteId) throws DotDataException;
 }

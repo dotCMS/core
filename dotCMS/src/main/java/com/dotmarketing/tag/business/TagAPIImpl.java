@@ -3,16 +3,11 @@ package com.dotmarketing.tag.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
@@ -20,9 +15,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import io.vavr.control.Try;
 
-import java.sql.Connection;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link TagAPI} interface.
@@ -41,9 +34,9 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @CloseDBIfOpened
-    public Set<String> findTopTags(final Contentlet contentlet) throws DotDataException {
+    public Set<String> findTopTags(final String siteId) throws DotDataException {
 
-        return this.tagFactory.getTopTagsByHost(contentlet.getHost());
+        return this.tagFactory.getTopTagsBySiteId(siteId);
     }
 
     @CloseDBIfOpened

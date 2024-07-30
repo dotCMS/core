@@ -112,7 +112,7 @@ public class OpenAIAutoTagRunner implements Runnable {
             final JSONArray tryArray = parseJsonResponse(response);
 
             if (this.limitTags) {
-                final Set<String> constrainTags = APILocator.getTagAPI().findTopTags(workingContentlet);
+                final Set<String> constrainTags = APILocator.getTagAPI().findTopTags(workingContentlet.getHost());
                 tryArray.removeIf(t -> !constrainTags.contains(t.toString().toLowerCase()));
             }
 
@@ -143,7 +143,7 @@ public class OpenAIAutoTagRunner implements Runnable {
     private String openAIRequest(final Contentlet workingContentlet, final String contentToTag) throws Exception {
         final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
         final String systemPrompt = this.limitTags ? SYSTEM_PROMPT_TAGGING_CONSTRAIN : SYSTEM_PROMPT_TAGGING_FREEFORM;
-        final Set<String> constrainTags = this.limitTags ? APILocator.getTagAPI().findTopTags(workingContentlet) : Set.of();
+        final Set<String> constrainTags = this.limitTags ? APILocator.getTagAPI().findTopTags(workingContentlet.getHost()) : Set.of();
         ctx.put("constrainTags", String.join("\n", constrainTags));
 
         final String parsedSystemPrompt = VelocityUtil.eval(systemPrompt, ctx);
