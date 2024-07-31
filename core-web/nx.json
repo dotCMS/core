@@ -166,5 +166,6 @@
             }
         }
     ],
-    "defaultBase": "master"
+    "defaultBase": "master",
+    "ignorePatterns": ["**/node_modules"]
 }
