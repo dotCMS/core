@@ -10,39 +10,43 @@ import {
 import { DotCMSPageContext } from '../models';
 
 export const useDotcmsLayout = (
-    currentPageAsset: DotCMSPageContext['pageAsset'],
+    pageAsset: DotCMSPageContext['pageAsset'] | null,
     query?: string
 ) => {
     const [state, setState] = useState({
-        query,
-        pageAsset: null,
+        pageAsset,
         isLoading: false
     });
 
     useEffect(() => {
-        if (!query || !isInsideEditor()) {
-            return;
-        }
-
-        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_QUERY, payload: query });
-        setState((prevState) => ({ ...prevState, isLoading: true }));
-    }, [query]);
-
-    useEffect(() => {
-        const client = DotCmsClient.instance;
-
         if (!isInsideEditor()) {
             return;
         }
 
-        client.editor.on('changes', (_data) => {
-            // console.log('CHANGES', data);
+        if (query) {
+            postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_QUERY, payload: query });
+        }
+
+        setState((prevState) => ({
+            ...prevState,
+            isLoading: true
+        }));
+    }, [query]);
+
+    useEffect(() => {
+        if (!isInsideEditor()) {
+            return;
+        }
+
+        const client = DotCmsClient.instance;
+
+        client.editor.on('changes', (data) => {
+            const pageAsset = data as DotCMSPageContext['pageAsset'];
+            setState({ isLoading: false, pageAsset });
         });
 
-        return () => {
-            client.editor.off('changes');
-        };
-    });
+        return () => client.editor.off('changes');
+    }, []);
 
     return state;
 };

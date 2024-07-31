@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-function extractLocationsAndActivities(contentlet) {
+function extractLocationsAndActivities(contentlet = []) {
     return contentlet.reduce(
         (acc, { activities, ...location }) => {
             acc.activities = acc.activities.concat(activities);

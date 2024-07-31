@@ -5,7 +5,9 @@ import { EMPTY, pipe } from 'rxjs';
 
 import { inject } from '@angular/core';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
+
+import { graphqlToPageEntity } from '@dotcms/client';
 
 import { DotPageApiResponse, DotPageApiService } from '../../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../../shared/enums';
@@ -26,6 +28,20 @@ export function withSave() {
         withMethods((store) => {
             const dotPageApiService = inject(DotPageApiService);
 
+            const getPage = () => {
+                if (!store.graphQL()) {
+                    return dotPageApiService.get(store.params());
+                }
+
+                return dotPageApiService.getPageAssetFromGraphql(store.graphQL()).pipe(
+                    map((data) => {
+                        const page = graphqlToPageEntity(data) as unknown;
+
+                        return page as DotPageApiResponse;
+                    })
+                );
+            };
+
             return {
                 savePage: rxMethod<PageContainer[]>(
                     pipe(
@@ -43,7 +59,7 @@ export function withSave() {
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() =>
-                                    dotPageApiService.get(payload.params).pipe(
+                                    getPage().pipe(
                                         tapResponse(
                                             (pageAPIResponse: DotPageApiResponse) => {
                                                 patchState(store, {

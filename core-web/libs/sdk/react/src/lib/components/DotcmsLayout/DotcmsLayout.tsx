@@ -40,13 +40,20 @@ export type DotcmsPageProps = {
  */
 export function DotcmsLayout({ pageContext, config }: DotcmsPageProps): JSX.Element {
     const { isInsideEditor } = useDotcmsEditor(config);
-    useDotcmsLayout(pageContext.pageAsset, config?.query);
+    const { pageAsset, isLoading } = useDotcmsLayout(pageContext.pageAsset, config?.query);
 
-    return (
-        <PageProvider pageContext={{ ...pageContext, isInsideEditor }}>
-            {pageContext.pageAsset.layout?.body.rows.map((row, index) => (
-                <Row key={index} row={row} />
-            ))}
+    return isLoading ? (
+        <span>Loading...</span>
+    ) : (
+        <PageProvider
+            pageContext={{
+                ...{
+                    ...pageContext,
+                    pageAsset
+                },
+                isInsideEditor
+            }}>
+            {pageAsset?.layout?.body.rows.map((row, index) => <Row key={index} row={row} />)}
         </PageProvider>
     );
 }

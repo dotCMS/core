@@ -42,12 +42,12 @@ export function withLoad() {
             const router = inject(Router);
             const activatedRoute = inject(ActivatedRoute);
 
-            const getPage = ({ query }) => {
-                if (!query) {
+            const getPage = () => {
+                if (!store.graphQL()) {
                     return dotPageApiService.get(store.params());
                 }
 
-                return dotPageApiService.getPageAssetFromGraphql(query).pipe(
+                return dotPageApiService.getPageAssetFromGraphql(store.graphQL()).pipe(
                     map((data) => {
                         const page = graphqlToPageEntity(data) as unknown;
 
@@ -60,7 +60,7 @@ export function withLoad() {
                 load: rxMethod<DotPageApiParams>(
                     pipe(
                         tap(() => {
-                            patchState(store, { status: UVE_STATUS.LOADING });
+                            patchState(store, { status: UVE_STATUS.LOADING, graphQL: null });
                         }),
                         switchMap((params) => {
                             return forkJoin({
@@ -182,8 +182,8 @@ export function withLoad() {
                                 graphQL: query || store.graphQL()
                             });
                         }),
-                        switchMap((query) => {
-                            return getPage({ query: query || store.graphQL() }).pipe(
+                        switchMap(() => {
+                            return getPage().pipe(
                                 switchMap((pageAPIResponse) =>
                                     dotLanguagesService
                                         .getLanguagesUsedPage(pageAPIResponse.page.identifier)
