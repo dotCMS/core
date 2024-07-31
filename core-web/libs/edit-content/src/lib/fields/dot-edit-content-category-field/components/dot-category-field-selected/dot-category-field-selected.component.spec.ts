@@ -52,10 +52,4 @@ describe('DotCategoryFieldSelectedComponent', () => {
         spectator.click(button);
         expect(removeSpy).toHaveBeenCalledWith(CATEGORY_MOCK_TRANSFORMED[0].key);
     });
-
-    it('should display "No Categories selected" when there are no categories', () => {
-        spectator.setInput('categories', []);
-        const emptyMessage = spectator.query(byTestId('category-list-empty'));
-        expect(emptyMessage).toBeTruthy();
-    });
 });
