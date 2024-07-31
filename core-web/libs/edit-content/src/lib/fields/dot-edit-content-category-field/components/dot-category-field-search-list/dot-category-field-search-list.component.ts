@@ -202,7 +202,7 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
      */
     private getMessageConfig(): PrincipalConfiguration | null {
         const configKey =
-            this.$status() === ComponentStatus.ERROR ? ComponentStatus.ERROR : 'empty';
+            this.$status() === ComponentStatus.ERROR ? ComponentStatus.ERROR : 'noResults';
         const { title, icon, subtitle } = CATEGORY_FIELD_EMPTY_MESSAGES[configKey];
 
         return {

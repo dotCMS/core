@@ -1,7 +1,5 @@
 @use "variables" as *;
 
-$default-scroll-width: 17px;
-
 .category-field__header {
     align-items: center;
     flex-wrap: wrap;
@@ -43,7 +41,10 @@ $default-scroll-width: 17px;
     flex: 0 0 25%;
     gap: $spacing-1;
     padding: $spacing-3;
-    padding-right: calc($spacing-3 - $default-scroll-width);
+    padding-right: 0;
+    &.empty {
+        padding-left: 0;
+    }
 }
 
 .category-field__categories,
@@ -63,4 +64,18 @@ $default-scroll-width: 17px;
     padding: 0;
     height: 100%;
     overflow: hidden;
+}
+
+.category-field__empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: $spacing-3;
+
+    p {
+        text-align: center;
+        font-size: $font-size-smd;
+    }
 }
