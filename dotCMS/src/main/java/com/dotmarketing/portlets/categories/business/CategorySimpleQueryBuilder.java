@@ -63,11 +63,19 @@ public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
     }
 
     protected String getFilterCategories(final CategorySearchCriteria searchCriteria) {
+        if (!UtilMethods.isSet(searchCriteria.filter)) {
+            return StringPool.BLANK;
+        }
 
-        return UtilMethods.isSet(searchCriteria.filter) ?
-                "AND (LOWER(category_name) LIKE ?  OR " +
-                        "LOWER(category_key) LIKE ?  OR " +
-                        "LOWER(category_velocity_var_name) LIKE ?)" : StringPool.BLANK;
+        final String filterCategories = "(LOWER(category_name) LIKE ?  OR " +
+                "LOWER(category_key) LIKE ?  OR " +
+                "LOWER(category_velocity_var_name) LIKE ?)";
+
+        if (this.level == Level.ALL_LEVELS) {
+            return "WHERE " + filterCategories;
+        }
+
+        return " AND " + filterCategories;
     }
 
     private String getRootFilter() {
