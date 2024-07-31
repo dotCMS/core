@@ -1,20 +1,37 @@
 package com.dotcms.enterprise.publishing.remote.handler;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.util.xstream.XStreamHandler.TrustedListMatcher;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.UUIDGenerator;
 import com.thoughtworks.xstream.XStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -67,5 +84,50 @@ public class ContentHandlerTest {
         assertFalse(TrustedListMatcher.matches(disallowedClass1));
         assertFalse(TrustedListMatcher.matches(disallowedClass2));
     }
+
+    @Test
+    public void TEST_SAVING_TAGS_ON_NON_EXISTING_HOST() throws Exception{
+        // Given
+        final String nonExistantHost = "non-existing-host" + UUIDGenerator.shorty();
+        final String[] tags = {"tag1_" + UUIDGenerator.shorty(),"tag2_" + UUIDGenerator.shorty()};
+        final String nonExistantUser = UUIDGenerator.shorty();
+
+        Contentlet contentlet = TestDataUtils.getDotAssetLikeContentlet();
+
+        List<Tag> tagList = new ArrayList<>();
+
+        Arrays.stream(tags).forEach(tag -> {
+            Tag t = new Tag();
+            t.setTagName(tag);
+            t.setHostId(nonExistantHost);
+            t.setModDate(new Date());
+            t.setUserId(nonExistantUser);
+            tagList.add(t);
+        });
+
+        Field field = contentlet.getContentType().fields(TagField.class).get(0);
+
+        Map<String,List<Tag>> fieldTags = Map.of(field.variable(), tagList);
+
+        // Should not throw an error
+        new ContentHandler(new PublisherConfig()).relateTagsToContent(contentlet,fieldTags);
+
+
+        assertEquals(APILocator.getTagAPI().getTagsByName(tags[0]).size(), 1);
+
+        Tag savedTag = APILocator.getTagAPI().getTagsByName(tags[0]).get(0);
+        assertTrue(savedTag!=null);
+        assertEquals(savedTag.getTagName(), tags[0]);
+        assertEquals(savedTag.getHostId(), Host.SYSTEM_HOST);
+
+        savedTag = APILocator.getTagAPI().getTagsByName(tags[1]).get(0);
+        assertTrue(savedTag!=null);
+        assertEquals(savedTag.getTagName(), tags[1]);
+        assertEquals(savedTag.getHostId(), Host.SYSTEM_HOST);
+    }
+
+
+
+
 
 }
