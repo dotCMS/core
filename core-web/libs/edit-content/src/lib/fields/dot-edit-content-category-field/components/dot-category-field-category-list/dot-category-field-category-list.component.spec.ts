@@ -134,7 +134,7 @@ describe('DotCategoryFieldCategoryListComponent', () => {
             expect(breadcrumbs.length).toBe(1);
         });
 
-        it('should emit the correct item when breadcrumb clicked', () => {
+        it('should emit the correct item when root breadcrumb clicked', () => {
             spectator.setInput('breadcrumbs', []);
             spectator.detectChanges();
 
