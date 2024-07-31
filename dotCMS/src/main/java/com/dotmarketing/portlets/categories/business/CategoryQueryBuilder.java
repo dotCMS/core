@@ -27,10 +27,10 @@ import com.liferay.util.StringPool;
  */
 public abstract class CategoryQueryBuilder {
 
-    protected String rootInode;
-    protected Level level;
-    protected boolean countChildren;
-    protected CategorySearchCriteria searchCriteria;
+    protected final String rootInode;
+    protected final Level level;
+    protected final boolean countChildren;
+    protected final CategorySearchCriteria searchCriteria;
 
     protected CategoryQueryBuilder(final CategorySearchCriteria searchCriteria) {
         this.rootInode = searchCriteria.rootInode;

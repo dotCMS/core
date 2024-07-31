@@ -274,7 +274,7 @@ public class CategoriesResource {
 
         try {
             return  this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
-                    direction.equals("ASC") == true ? OrderDirection.ASC : OrderDirection.DESC, extraParams);
+                    direction.equals("ASC") ? OrderDirection.ASC : OrderDirection.DESC, extraParams);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {

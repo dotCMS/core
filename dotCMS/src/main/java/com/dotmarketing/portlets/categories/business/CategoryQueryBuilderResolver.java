@@ -2,6 +2,9 @@ package com.dotmarketing.portlets.categories.business;
 
 import com.dotmarketing.util.UtilMethods;
 
+/**
+ * Allow the selection of which {@link CategoryQueryBuilder} to use based on the {@link CategorySearchCriteria}.
+ */
 public abstract class CategoryQueryBuilderResolver {
 
     private CategoryQueryBuilderResolver(){}
