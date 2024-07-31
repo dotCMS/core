@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -107,7 +108,7 @@ public class ContentHandlerTest {
 
         Field field = contentlet.getContentType().fields(TagField.class).get(0);
 
-        Map<String,List<Tag>> fieldTags = Map.of(field.variable(), tagList);
+        Map<String,List<Tag>> fieldTags = Map.of(Objects.requireNonNull(field.variable()), tagList);
 
         // Should not throw an error
         new ContentHandler(new PublisherConfig()).relateTagsToContent(contentlet,fieldTags);
@@ -116,14 +117,14 @@ public class ContentHandlerTest {
         assertEquals(APILocator.getTagAPI().getTagsByName(tags[0]).size(), 1);
 
         Tag savedTag = APILocator.getTagAPI().getTagsByName(tags[0]).get(0);
-        assertTrue(savedTag!=null);
+        assertNotNull(savedTag);
         assertEquals(savedTag.getTagName(), tags[0]);
-        assertEquals(savedTag.getHostId(), Host.SYSTEM_HOST);
+        assertEquals(Host.SYSTEM_HOST, savedTag.getHostId());
 
         savedTag = APILocator.getTagAPI().getTagsByName(tags[1]).get(0);
-        assertTrue(savedTag!=null);
+        assertNotNull(savedTag);
         assertEquals(savedTag.getTagName(), tags[1]);
-        assertEquals(savedTag.getHostId(), Host.SYSTEM_HOST);
+        assertEquals(Host.SYSTEM_HOST, savedTag.getHostId());
     }
 
 
