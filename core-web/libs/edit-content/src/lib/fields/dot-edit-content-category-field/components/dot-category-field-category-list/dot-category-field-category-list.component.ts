@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     computed,
     effect,
     ElementRef,
     inject,
     input,
+    model,
     output,
     viewChildren
 } from '@angular/core';
@@ -72,7 +72,7 @@ export class DotCategoryFieldCategoryListComponent {
     /**
      * Represent the selected item saved in the contentlet
      */
-    $selected = input<string[]>([], { alias: 'selected' });
+    $selected = model<string[]>([], { alias: 'selected' });
 
     /**
      * Generate the empty columns
@@ -95,6 +95,7 @@ export class DotCategoryFieldCategoryListComponent {
      * Represents the breadcrumbs to display
      */
     $breadcrumbs = input<DotCategoryFieldKeyValueObj[]>([], { alias: 'breadcrumbs' });
+
     /**
      * Represents the breadcrumbs menu to display
      *
@@ -136,29 +137,15 @@ export class DotCategoryFieldCategoryListComponent {
         item: DotCategoryFieldKeyValueObj;
     }>();
 
-    /**
-     * Model of the items selected
-     */
-    itemsSelected: string[];
-
-    readonly #cdr = inject(ChangeDetectorRef);
-
     constructor() {
         effect(() => {
-            this.scrollHandler();
-        });
-        effect(() => {
-            // Todo: change itemsSelected to use model when update Angular to >17.3
-            // Initial selected items from the contentlet
-            this.itemsSelected = this.$selected();
-            this.#cdr.markForCheck(); // force refresh
+            const columnsArray = this.$categoryColumns();
+            this.scrollHandler(columnsArray);
         });
     }
 
-    private scrollHandler() {
+    private scrollHandler(columnsArray: readonly ElementRef<HTMLDivElement>[]) {
         try {
-            const columnsArray = this.$categoryColumns();
-
             if (columnsArray.length === 0) {
                 return;
             }

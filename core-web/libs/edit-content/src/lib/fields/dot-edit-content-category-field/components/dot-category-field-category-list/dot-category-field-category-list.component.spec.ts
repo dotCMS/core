@@ -29,6 +29,7 @@ describe('DotCategoryFieldCategoryListComponent', () => {
         spectator.setInput('categories', CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX);
         spectator.setInput('selected', SELECTED_LIST_MOCK);
         spectator.setInput('isLoading', false);
+        spectator.setInput('breadcrumbs', []);
 
         spectator.detectChanges();
     });
@@ -77,8 +78,6 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     });
 
     it('should apply selected class to the correct item', () => {
-        // spectator = createComponent();
-
         spectator.setInput('categories', [CATEGORY_MOCK_TRANSFORMED]);
         spectator.setInput('selected', SELECTED_LIST_MOCK);
         spectator.setInput('isLoading', false);
@@ -114,5 +113,46 @@ describe('DotCategoryFieldCategoryListComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.query(DotCategoryFieldListSkeletonComponent)).not.toBeNull();
+    });
+
+    describe('with breadcrumbs', () => {
+        it('should render the breadcrumbs menu', () => {
+            spectator.setInput('breadcrumbs', []);
+            spectator.detectChanges();
+
+            const breadcrumbs = spectator.queryAll('dot-collapse-breadcrumb .p-menuitem-link');
+
+            expect(breadcrumbs.length).toBe(1);
+        });
+
+        it('should emit the correct item when breadcrumb clicked', () => {
+            spectator.setInput('breadcrumbs', []);
+            spectator.detectChanges();
+
+            const emitSpy = jest.spyOn(spectator.component.rowClicked, 'emit');
+            const breadcrumbs = spectator.queryAll('dot-collapse-breadcrumb .p-menuitem-link');
+            spectator.click(breadcrumbs[0]);
+
+            expect(emitSpy).toHaveBeenCalledWith({ index: 0 });
+        });
+
+        it('should render the correct number of breadcrumbs', () => {
+            spectator.setInput('breadcrumbs', CATEGORY_MOCK_TRANSFORMED);
+            spectator.detectChanges();
+            const breadcrumbs = spectator.queryAll('dot-collapse-breadcrumb .p-menuitem-link');
+
+            expect(breadcrumbs.length).toBe(CATEGORY_MOCK_TRANSFORMED.length + 1);
+        });
+
+        it('should emit the correct item when breadcrumb clicked', () => {
+            spectator.setInput('breadcrumbs', CATEGORY_MOCK_TRANSFORMED);
+            spectator.detectChanges();
+
+            const emitSpy = jest.spyOn(spectator.component.rowClicked, 'emit');
+            const breadcrumbs = spectator.queryAll('dot-collapse-breadcrumb .p-menuitem-link');
+            spectator.click(breadcrumbs[1]);
+
+            expect(emitSpy).toHaveBeenCalledWith({ index: 0, item: CATEGORY_MOCK_TRANSFORMED[0] });
+        });
     });
 });

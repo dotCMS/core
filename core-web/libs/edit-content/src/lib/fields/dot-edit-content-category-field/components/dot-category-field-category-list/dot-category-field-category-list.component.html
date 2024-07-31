@@ -1,5 +1,5 @@
 <div class="w-full category-list__header">
-    <dot-collapse-breadcrumb [model]="$breadcrumbsMenu()" />
+    <dot-collapse-breadcrumb data-testId="breadcrumb-menu" [model]="$breadcrumbsMenu()" />
 </div>
 <div
     [ngClass]="{ 'no-overflow-x-yet': $emptyColumns().length }"
@@ -14,7 +14,7 @@
                     [ngClass]="{ 'category-list__item--selected': item.clicked }"
                     (click)="rowClicked.emit({ index, item })">
                     <p-checkbox
-                        [(ngModel)]="itemsSelected"
+                        [(ngModel)]="$selected"
                         [value]="item.key"
                         (onChange)="itemChecked.emit({ selected: $event.checked, item })" />
 

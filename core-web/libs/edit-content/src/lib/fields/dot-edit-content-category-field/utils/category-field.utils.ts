@@ -50,6 +50,13 @@ export const transformToSelectedObject = (
     });
 };
 
+/**
+ * Transforms a DotCategory object into a DotCategoryFieldKeyValueObj object.
+ *
+ * @param {DotCategory} category
+ * @param {string[]} [keyParentPath=[]]
+ * @return {*}  {DotCategoryFieldKeyValueObj}
+ */
 const transformCategory = (
     category: DotCategory,
     keyParentPath: string[] = []
@@ -82,7 +89,7 @@ export const transformCategories = (
     if (Array.isArray(categories)) {
         return categories.map((category) => transformCategory(category, keyParentPath));
     } else {
-        return transformCategory(categories);
+        return transformCategory(categories, keyParentPath);
     }
 };
 
