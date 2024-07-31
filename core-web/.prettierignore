@@ -5,6 +5,7 @@
 /target
 /tmp
 /tools
+/.yarn
 
 package.json
 package-lock.json

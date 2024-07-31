@@ -1,5 +1,6 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
@@ -39,16 +40,17 @@ public class CompletionsToolTest {
 
     private static AppConfig config;
     private static WireMockServer wireMockServer;
+    private static Host host;
 
-    private Host host;
     private CompletionsTool completionsTool;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
         IPUtils.disabledIpPrivateSubnet(true);
+        host = new SiteDataGen().nextPersisted();
         wireMockServer = AiTest.prepareWireMock();
-        config = AiTest.prepareCompletionConfig(wireMockServer);
+        config = AiTest.prepareCompletionConfig(host, wireMockServer);
     }
 
     @AfterClass
@@ -61,7 +63,7 @@ public class CompletionsToolTest {
     public void before() {
         final ViewContext viewContext = mock(ViewContext.class);
         when(viewContext.getRequest()).thenReturn(mock(HttpServletRequest.class));
-        host = new SiteDataGen().nextPersisted();
+
         completionsTool = prepareCompletionsTool(viewContext);
     }
 
@@ -80,7 +82,7 @@ public class CompletionsToolTest {
         assertNotNull(config);
         assertEquals(AppKeys.COMPLETION_ROLE_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_ROLE_PROMPT.key));
         assertEquals(AppKeys.COMPLETION_TEXT_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_TEXT_PROMPT.key));
-        assertEquals(AppKeys.MODEL.defaultValue, config.get(AppKeys.MODEL.key));
+        assertEquals(AppKeys.TEXT_MODEL_NAMES.defaultValue, config.get(AppKeys.TEXT_MODEL_NAMES.key));
     }
 
     /**
