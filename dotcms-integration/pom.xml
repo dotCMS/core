@@ -411,7 +411,9 @@
                                 <DOT_VELOCITY_ROOT>${test.webapp.root}/WEB-INF/velocity</DOT_VELOCITY_ROOT>
                                 <DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>${test.webapp.root}/WEB-INF/geoip2/GeoLite2-City.mmdb</DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>
                                 <DOT_DARTSASS_COMPILER_LOCATION>${test.webapp.root}/WEB-INF/bin</DOT_DARTSASS_COMPILER_LOCATION>
+                                <DOT_APP_AI_PARAM_API_EMBEDDINGS_URL>http://localhost:50505/e</DOT_APP_AI_PARAM_API_EMBEDDINGS_URL>
                                 <DOT_OPEN_AI_EMBEDDINGS_URL>http://localhost:50505/e</DOT_OPEN_AI_EMBEDDINGS_URL>
+                                <DOT_OPEN_AI_MODELS_URL>http://localhost:50505/m</DOT_OPEN_AI_MODELS_URL>
                                 <!--suppress UnresolvedMavenProperty -->
                                 <java.io.tmpdir>${it.test.fork-folder}${surefire.forkNumber}/${test.temp.folder}</java.io.tmpdir>
                                 <!--suppress UnresolvedMavenProperty -->
