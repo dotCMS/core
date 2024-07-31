@@ -49,16 +49,10 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     private static CategoryFactory categoryFactory;
 
-    private static Map<String, Object> categoriesCreated;
-    private static String filter;
-
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         categoryFactory = FactoryLocator.getCategoryFactory();
-
-        filter = new RandomString().nextString();
-        categoriesCreated = createCategories(filter);
     }
 
     /**
@@ -433,15 +427,15 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         new CategoryDataGen().nextPersisted();
         new CategoryDataGen().nextPersisted();
 
-        final List<HierarchedCategory> allCategories = FactoryLocator.getCategoryFactory().findAll(
+        final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(true).build());
 
-        final Collection<Category> categories = APILocator.getCategoryAPI().findAll(APILocator.systemUser(),
+        final Collection<Category> expected = APILocator.getCategoryAPI().findAll(APILocator.systemUser(),
                 false);
 
-        assertTrue(deepEquals(allCategories, categories));
-        checkNullParentList(allCategories);
-        checkNoChildrenCount(allCategories);
+        assertTrue(deepEquals(resultCategories, expected));
+        checkNullParentList(resultCategories);
+        checkNoChildrenCount(resultCategories);
     }
 
     /**
@@ -452,6 +446,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesByFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<Category> expected = ((List<Category>) categoriesCreated.get("ALL")).stream()
                 .filter(category -> containsFilter(category, filter))
@@ -473,6 +469,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesAndRootInode() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
+
         Collection<Category> expected = (Collection<Category>) categoriesCreated.get("TO_LEVEL_1_offspring");
         final String topLevel1Id = ((Category) categoriesCreated.get("TO_LEVEL_1")).getInode();
 
@@ -493,6 +492,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
+
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TO_LEVEL_1_offspring"))
                 .stream()
                 .filter(category -> containsFilter(category, filter))
@@ -517,8 +519,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesWithParentList() throws DotDataException, DotSecurityException {
-        new CategoryDataGen().nextPersisted();
-        new CategoryDataGen().nextPersisted();
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<HierarchedCategory> allCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(true).parentList(true).build());
@@ -527,7 +529,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 false);
 
         assertTrue(deepEquals(allCategories, categories));
-        checkParentList(allCategories);
+        checkParentList(allCategories, categoriesCreated);
         checkNoChildrenCount(allCategories);
     }
 
@@ -539,6 +541,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesWithParentListAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(true).parentList(true).filter(filter).build());
@@ -549,7 +553,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .collect(Collectors.toList());
 
         assertTrue(deepEquals(expected, resultCategories));
-        checkParentList(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
         checkNoChildrenCount(resultCategories);
     }
 
@@ -562,6 +566,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesWithParentListAndInode() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
+
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TO_LEVEL_1_offspring"));
 
         final String topLevel1Id = ((Category) categoriesCreated.get("TO_LEVEL_1")).getInode();
@@ -571,7 +578,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                         .build());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
         checkNoChildrenCount(resultCategories);
     }
 
@@ -583,6 +590,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesWithParentListAndInodeAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
+
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TO_LEVEL_1_offspring"))
                 .stream()
                 .filter(category -> containsFilter(category, filter))
@@ -595,7 +605,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                         .rootInode(topLevel1Id).build());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
         checkNoChildrenCount(resultCategories);
     }
 
@@ -608,8 +618,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     @Test
     public void getAllCategoriesAndCountingChildren() throws DotDataException, DotSecurityException {
 
-        new CategoryDataGen().nextPersisted();
-        new CategoryDataGen().nextPersisted();
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(true).setCountChildren(true).build());
@@ -619,7 +629,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
         assertTrue(deepEquals(resultCategories, categories));
         checkNullParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -630,6 +640,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<Category> expected = ((List<Category>) categoriesCreated.get("ALL")).stream()
                 .filter(category -> containsFilter(category, filter))
@@ -640,7 +652,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
         assertTrue(deepEquals(resultCategories, expected));
         checkNullParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -652,6 +664,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndRootInode() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TO_LEVEL_1_offspring"))
                 .stream()
@@ -666,7 +680,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
         assertTrue(deepEquals(resultCategories, expected));
         checkNullParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -678,6 +692,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TO_LEVEL_1_offspring"));
 
@@ -688,7 +704,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
         assertTrue(deepEquals(resultCategories, expected));
         checkNullParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -700,6 +716,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     @Test
     public void getAllCategoriesAndCountingChildrenAndListParent() throws DotDataException, DotSecurityException {
 
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
+
         final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(true).setCountChildren(true).parentList(true).build());
 
@@ -707,8 +726,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 false);
 
         assertTrue(deepEquals(resultCategories, allCategories));
-        checkParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -719,6 +738,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndListParentAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<Category> expected = ((List<Category>) categoriesCreated.get("ALL")).stream()
                 .filter(category -> containsFilter(category, filter))
@@ -729,8 +750,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                         .filter(filter).build());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -742,6 +763,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndListParentAndRootInode() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TO_LEVEL_1_offspring"));
 
@@ -752,8 +775,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                         .rootInode(topLevel1Id).build());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -765,6 +788,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getAllCategoriesAndCountingChildrenAndListParentAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TO_LEVEL_1_offspring"))
                 .stream()
@@ -778,8 +803,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                         .rootInode(topLevel1Id).filter(filter).build());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -789,8 +814,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevels() throws DotDataException, DotSecurityException {
-        new CategoryDataGen().nextPersisted();
-        new CategoryDataGen().nextPersisted();
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<HierarchedCategory> allCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(false).build());
@@ -810,6 +835,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<HierarchedCategory> allCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(false).filter(filter).build());
@@ -832,6 +859,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndRootInode() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TOP_LEVELS_1_CHILDREN"));
 
@@ -853,6 +882,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TOP_LEVELS_1_CHILDREN")).stream()
                 .filter(category -> containsFilter(category, filter))
@@ -875,6 +906,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndParentList() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(false).parentList(true).build());
@@ -883,7 +916,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 APILocator.systemUser(), false);
 
         assertTrue(deepEquals(resultCategories, allTopLevelsCategories));
-        checkParentList(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
         checkNoChildrenCount(resultCategories);
     }
 
@@ -894,6 +927,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndParentListAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(false).parentList(true).filter(filter).build());
@@ -905,7 +940,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .collect(Collectors.toList());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
         checkNoChildrenCount(resultCategories);
     }
 
@@ -917,6 +952,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     @Test
     public void getNotAllLevelsAndParentListRootAndInode() throws DotDataException, DotSecurityException {
 
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
+
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TOP_LEVELS_1_CHILDREN"));
 
         final String topLevel1Id = ((Category) categoriesCreated.get("TO_LEVEL_1")).getInode();
@@ -925,7 +963,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 new CategorySearchCriteria.Builder().searchAllLevels(false).parentList(true).rootInode(topLevel1Id).build());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
         checkNoChildrenCount(resultCategories);
     }
 
@@ -936,6 +974,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndParentListAndInodeAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TOP_LEVELS_1_CHILDREN"))
                 .stream()
@@ -949,7 +989,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                         .filter(filter).build());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
         checkNoChildrenCount(resultCategories);
     }
 
@@ -961,6 +1001,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     @Test
     public void getNotAllLevelsAndCountChildren() throws DotDataException, DotSecurityException {
 
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
+
         final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(false).setCountChildren(true).build());
 
@@ -969,7 +1012,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
         assertTrue(deepEquals(resultCategories, expected));
         checkNullParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -979,6 +1022,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndFilter() throws DotDataException, DotSecurityException {
+
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(false).setCountChildren(true).filter(filter).build());
@@ -991,7 +1037,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
         assertTrue(deepEquals(resultCategories, expected));
         checkNullParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -1002,6 +1048,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     @Test
     public void getNotAllLevelsAndCountChildrenAndRootInode() throws DotDataException, DotSecurityException {
 
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
+
         final Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TOP_LEVELS_1_CHILDREN"));
         final String topLevel1Id = ((Category) categoriesCreated.get("TO_LEVEL_1")).getInode();
 
@@ -1010,7 +1059,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
         assertTrue(deepEquals(resultCategories, expected));
         checkNullParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -1020,6 +1069,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TOP_LEVELS_1_CHILDREN"))
                 .stream()
@@ -1034,7 +1085,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
         assertTrue(deepEquals(resultCategories, expected));
         checkNullParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -1044,6 +1095,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndListParent() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(false).setCountChildren(true).parentList(true).build());
@@ -1052,8 +1105,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 APILocator.systemUser(), false);
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -1063,6 +1116,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndListParentAndFilter() throws DotDataException, DotSecurityException {
+
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
                 new CategorySearchCriteria.Builder().searchAllLevels(false).setCountChildren(true).parentList(true)
@@ -1075,8 +1131,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 .collect(Collectors.toList());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -1087,6 +1143,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     @Test
     public void getNotAllLevelsAndCountChildrenAndListParentAndRootInode() throws DotDataException, DotSecurityException {
 
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
+
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TOP_LEVELS_1_CHILDREN"));
         final String topLevel1Id = ((Category) categoriesCreated.get("TO_LEVEL_1")).getInode();
 
@@ -1096,8 +1155,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                         .rootInode(topLevel1Id).build());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -1107,6 +1166,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void getNotAllLevelsAndCountChildrenAndListParentAndRootInodeAndFilter() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
 
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("TOP_LEVELS_1_CHILDREN"))
                 .stream()
@@ -1121,8 +1182,8 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                         .rootInode(topLevel1Id).filter(filter).build());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
-        checkChildrenCount(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
+        checkChildrenCount(resultCategories, categoriesCreated);
     }
 
     /**
@@ -1133,6 +1194,9 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     @Test
     public void getParentListButNotFromTopLevel() throws DotDataException, DotSecurityException {
 
+        final  String  filter = new RandomString().nextString();
+        final  Map<String, Object>  categoriesCreated = createCategories(filter);
+
         Collection<Category> expected = ((Collection<Category>) categoriesCreated.get("CHILD_4_CHILDREN"));
 
         final String child4Inode = ((Category) categoriesCreated.get("CHILD_4")).getInode();
@@ -1142,11 +1206,11 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                         .rootInode(child4Inode).build());
 
         assertTrue(deepEquals(resultCategories, expected));
-        checkParentList(resultCategories);
+        checkParentList(resultCategories, categoriesCreated);
         checkNoChildrenCount(resultCategories);
     }
 
-    private void checkChildrenCount(final List<HierarchedCategory> categories) {
+    private void checkChildrenCount(final List<HierarchedCategory> categories, final  Map<String, Object>  categoriesCreated) {
 
         final Map<String, Integer> childrenCountMap = (Map<String, Integer>) categoriesCreated.get("childrenCount");
 
@@ -1170,7 +1234,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         }
     }
 
-    private void checkParentList(final List<HierarchedCategory> categories) {
+    private void checkParentList(final List<HierarchedCategory> categories, final  Map<String, Object>  categoriesCreated) {
 
         boolean anyMatch = categories.stream()
                 .anyMatch(category -> Objects.isNull(category.getParentList()));

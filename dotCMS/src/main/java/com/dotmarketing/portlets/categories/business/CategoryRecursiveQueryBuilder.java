@@ -83,7 +83,7 @@ import java.util.Map;
  *
  * This structure allows for dynamic and flexible querying of hierarchical data using SQL's recursive capabilities.
  *
- * Finally this part 'level = (SELECT MAX(level) FROM CategoryHierarchy WHERE inode = ch.inode)' allow remove duplicated
+ * Finally this part 'level = (SELECT MAX(level) FROM CategoryHierarchy WHERE inode = ch.inode  by inode)' allow remove duplicated
  */
 public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
@@ -96,7 +96,7 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
             "FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode " +
             ") " +
             "SELECT distinct * :parentList_3 :countChildren FROM CategoryHierarchy ch " +
-            "WHERE level = (SELECT MAX(level) FROM CategoryHierarchy WHERE inode = ch.inode) :levelFilter_2 :filterCategories " +
+            "WHERE level = (SELECT MAX(level) FROM CategoryHierarchy WHERE inode = ch.inode group by inode) :levelFilter_2 :filterCategories " +
             "ORDER BY :orderBy :direction";
 
     public CategoryRecursiveQueryBuilder(final CategorySearchCriteria searchCriteria) {

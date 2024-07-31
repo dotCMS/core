@@ -40,7 +40,7 @@ import java.util.Map;
  */
 public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
 
-    private static final String QUERY_TEMPLATE = "SELECT c.* :countChildren  FROM category as c LEFT JOIN tree ON c.inode = tree.child " +
+    private static final String QUERY_TEMPLATE = "SELECT c.* :countChildren  FROM category as c :treeJoin " +
             ":rootFilter :filterCategories ORDER BY :orderBy :direction";
 
     public CategorySimpleQueryBuilder(final CategorySearchCriteria searchCriteria) {
@@ -51,13 +51,15 @@ public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
     public String build() throws DotDataException, DotSecurityException {
 
         final String rootFilter = getRootFilter();
+        final String treeJoin = level != Level.ALL_LEVELS ? "LEFT JOIN tree ON c.inode = tree.child" : StringPool.BLANK;
 
         return StringUtils.format(QUERY_TEMPLATE, Map.of(
                 "countChildren", getChildrenCount(),
                 "rootFilter", rootFilter,
                 "filterCategories", getFilterCategories(this.searchCriteria),
                 "orderBy",searchCriteria.orderBy,
-                "direction", searchCriteria.direction.toString()
+                "direction", searchCriteria.direction.toString(),
+                "treeJoin", treeJoin
                 )
         );
     }
