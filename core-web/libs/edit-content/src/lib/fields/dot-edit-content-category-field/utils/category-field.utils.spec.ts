@@ -6,6 +6,7 @@ import {
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
     getSelectedFromContentlet,
+    removeEmptyArrays,
     removeItemByKey,
     transformCategories,
     updateChecked
@@ -582,6 +583,21 @@ describe('CategoryFieldUtils', () => {
                 CATEGORY_FIELD_MOCK,
                 contentletWithEmptyCategories
             );
+            expect(result).toEqual([]);
+        });
+
+        it('should return the same array if there are no empty arrays', () => {
+            const array: DotCategory[][] = [
+                [{ key: '1', categoryName: 'Category 1' } as DotCategory],
+                [{ key: '2', categoryName: 'Category 2' } as DotCategory]
+            ];
+            const result = removeEmptyArrays(array);
+            expect(result).toEqual(array);
+        });
+
+        it('should return an empty array if all arrays are empty', () => {
+            const array: DotCategory[][] = [[], [], []];
+            const result = removeEmptyArrays(array);
             expect(result).toEqual([]);
         });
     });
