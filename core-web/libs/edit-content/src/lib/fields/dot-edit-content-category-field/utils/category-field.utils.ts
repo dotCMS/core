@@ -213,3 +213,11 @@ export const addSelected = (
 
     return [...array, ...newItems];
 };
+
+/***
+ * Remove all the empty arrays from the matrix
+ * @param {DotCategory[][]} array
+ */
+export const removeEmptyArrays = (array: DotCategory[][]): DotCategory[][] => {
+    return array.filter((item) => item.length > 0);
+};

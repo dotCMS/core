@@ -137,7 +137,9 @@
                                     <DOT_APP_AI_PARAM_API_URL>http://wm:8080/c</DOT_APP_AI_PARAM_API_URL>
                                     <DOT_APP_AI_PARAM_API_IMAGE_URL>http://wm:8080/i</DOT_APP_AI_PARAM_API_IMAGE_URL>
                                     <DOT_APP_AI_PARAM_API_KEY>${wiremock.api.key}</DOT_APP_AI_PARAM_API_KEY>
+                                    <DOT_APP_AI_PARAM_API_EMBEDDINGS_URL>http://wm:8080/e</DOT_APP_AI_PARAM_API_EMBEDDINGS_URL>
                                     <DOT_OPEN_AI_EMBEDDINGS_URL>http://wm:8080/e</DOT_OPEN_AI_EMBEDDINGS_URL>
+                                    <DOT_OPEN_AI_MODELS_URL>http://wm:8080/m</DOT_OPEN_AI_MODELS_URL>
                                     <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
                                 </env>
                                 <links combine.children="append">

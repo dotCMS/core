@@ -22,7 +22,7 @@ public class OpenAIChatServiceImpl implements OpenAIChatService {
 
     @Override
     public JSONObject sendRawRequest(final JSONObject prompt) {
-        prompt.putIfAbsent(AiKeys.MODEL, config.getModel());
+        prompt.putIfAbsent(AiKeys.MODEL, config.getModel().getCurrentModel());
         prompt.putIfAbsent(AiKeys.TEMPERATURE, config.getConfigFloat(AppKeys.COMPLETION_TEMPERATURE));
 
         if (UtilMethods.isEmpty(prompt.optString(AiKeys.MESSAGES))) {
@@ -36,7 +36,7 @@ public class OpenAIChatServiceImpl implements OpenAIChatService {
 
         prompt.remove(AiKeys.PROMPT);
 
-        return new JSONObject(doRequest(config.getApiUrl(), config.getApiKey(), prompt));
+        return new JSONObject(doRequest(config.getApiUrl(), prompt));
     }
 
     @Override
@@ -47,8 +47,8 @@ public class OpenAIChatServiceImpl implements OpenAIChatService {
     }
 
     @VisibleForTesting
-    String doRequest(final String urlIn, final String openAiAPIKey, final JSONObject json) {
-        return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, openAiAPIKey, json);
+    String doRequest(final String urlIn, final JSONObject json) {
+        return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, config, json);
     }
 
 }
