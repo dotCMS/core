@@ -2,6 +2,7 @@ package com.dotcms.util.pagination;
 
 import com.dotmarketing.portlets.categories.business.CategoryFactory;
 import com.dotmarketing.portlets.categories.business.CategorySearchCriteria;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.util.Collection;
 import java.util.List;
@@ -77,7 +78,7 @@ public class CategoriesPaginator implements PaginatorOrdered<Category> {
                     .filter(filter)
                     .limit(limit)
                     .offset(offset)
-                    .orderBy(orderby != null ? orderby : "category_name")
+                    .orderBy(UtilMethods.isSet(orderby) ? orderby : "category_name")
                     .direction(direction != null ? direction : OrderDirection.ASC )
                     .rootInode(inode)
                     .setCountChildren(showChildrenCount)
