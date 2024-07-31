@@ -1,5 +1,7 @@
 package com.dotcms.ai.app;
 
+import com.dotcms.ai.model.AIModel;
+import com.dotcms.ai.util.AIAppUtil;
 import com.dotcms.security.apps.Secret;
 import org.junit.Before;
 import org.junit.Test;

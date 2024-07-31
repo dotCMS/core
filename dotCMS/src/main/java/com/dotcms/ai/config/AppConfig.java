@@ -1,5 +1,11 @@
-package com.dotcms.ai.app;
+package com.dotcms.ai.config;
 
+import com.dotcms.ai.api.AIModels;
+import com.dotcms.ai.app.AIModelType;
+import com.dotcms.ai.app.AppKeys;
+import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.model.AIModel;
+import com.dotcms.ai.util.AIAppUtil;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;

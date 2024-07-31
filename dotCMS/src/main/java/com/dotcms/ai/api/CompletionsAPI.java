@@ -1,6 +1,6 @@
 package com.dotcms.ai.api;
 
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.config.AppConfig;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.Lazy;

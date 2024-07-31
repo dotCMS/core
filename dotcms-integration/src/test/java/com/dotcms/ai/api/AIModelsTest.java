@@ -1,6 +1,8 @@
-package com.dotcms.ai.app;
+package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiTest;
+import com.dotcms.ai.app.AIModelType;
+import com.dotcms.ai.model.AIModel;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;

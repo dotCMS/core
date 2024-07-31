@@ -1,8 +1,8 @@
 package com.dotcms.ai.service;
 
-import com.dotcms.ai.app.AIModel;
+import com.dotcms.ai.model.AIModel;
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.config.AppConfig;
 import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotcms.ai.util.StopWordsUtil;
 import com.dotcms.rest.api.v1.temp.DotTempFile;

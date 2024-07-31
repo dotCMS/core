@@ -1,5 +1,6 @@
-package com.dotcms.ai.app;
+package com.dotcms.ai.model;
 
+import com.dotcms.ai.app.AIModelType;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.util.Logger;
 

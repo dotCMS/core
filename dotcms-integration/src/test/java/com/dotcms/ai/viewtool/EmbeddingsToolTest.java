@@ -1,8 +1,8 @@
 package com.dotcms.ai.viewtool;
 
-import com.dotcms.ai.app.AIModel;
+import com.dotcms.ai.model.AIModel;
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.config.AppConfig;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;

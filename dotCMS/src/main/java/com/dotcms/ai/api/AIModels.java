@@ -1,5 +1,9 @@
-package com.dotcms.ai.app;
+package com.dotcms.ai.api;
 
+import com.dotcms.ai.app.AIModelType;
+import com.dotcms.ai.config.AppConfig;
+import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.model.AIModel;
 import com.dotcms.ai.model.OpenAIModel;
 import com.dotcms.ai.model.OpenAIModels;
 import com.dotcms.http.CircuitBreakerUrl;

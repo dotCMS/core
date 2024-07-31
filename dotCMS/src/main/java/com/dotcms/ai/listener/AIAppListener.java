@@ -1,6 +1,6 @@
 package com.dotcms.ai.listener;
 
-import com.dotcms.ai.app.AIModels;
+import com.dotcms.ai.api.AIModels;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.system.event.local.model.EventSubscriber;

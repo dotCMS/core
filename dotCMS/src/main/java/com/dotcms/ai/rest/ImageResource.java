@@ -2,7 +2,7 @@ package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.Marshaller;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.config.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotcms.ai.service.OpenAIImageService;

@@ -16,7 +16,7 @@ import java.text.BreakIterator;
 import java.util.List;
 import java.util.Locale;
 
-import static com.dotcms.ai.app.AppConfig.debugLogger;
+import static com.dotcms.ai.config.AppConfig.debugLogger;
 import static com.liferay.util.StringPool.SPACE;
 
 /**

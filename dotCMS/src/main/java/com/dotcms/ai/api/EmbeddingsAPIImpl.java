@@ -1,7 +1,7 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.config.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
@@ -54,7 +54,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.dotcms.ai.app.AppConfig.debugLogger;
+import static com.dotcms.ai.config.AppConfig.debugLogger;
 import static com.liferay.util.StringPool.BLANK;
 
 /**

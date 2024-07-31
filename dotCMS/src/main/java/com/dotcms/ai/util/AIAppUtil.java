@@ -1,5 +1,8 @@
-package com.dotcms.ai.app;
+package com.dotcms.ai.util;
 
+import com.dotcms.ai.app.AIModelType;
+import com.dotcms.ai.app.AppKeys;
+import com.dotcms.ai.model.AIModel;
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.util.UtilMethods;

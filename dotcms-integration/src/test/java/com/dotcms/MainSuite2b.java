@@ -1,6 +1,6 @@
 package com.dotcms;
 
-import com.dotcms.ai.app.AIModelsTest;
+import com.dotcms.ai.api.AIModelsTest;
 import com.dotcms.ai.listener.EmbeddingContentListenerTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
