@@ -213,6 +213,7 @@ export function withLoad() {
                                             canEditPage,
                                             pageIsLocked,
                                             status: UVE_STATUS.LOADED,
+                                            isClientReady: true,
                                             isTraditionalPage: !store.params().clientHost // If we don't send the clientHost we are using as VTL page
                                         });
                                     },

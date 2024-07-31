@@ -23,10 +23,7 @@ export const useDotcmsLayout = (
             return;
         }
 
-        if (query) {
-            postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_QUERY, payload: query });
-        }
-
+        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: query });
         setState((prevState) => ({
             ...prevState,
             isLoading: true

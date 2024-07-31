@@ -22,7 +22,8 @@ const initialState: UVEState = {
     isTraditionalPage: true,
     canEditPage: false,
     pageIsLocked: true,
-    graphQL: null
+    graphQL: null,
+    isClientReady: false
 };
 
 export const UVEStore = signalStore(

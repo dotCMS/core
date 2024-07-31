@@ -19,6 +19,7 @@ export interface UVEState {
     canEditPage: boolean;
     pageIsLocked: boolean;
     graphQL?: string;
+    isClientReady?: boolean;
 }
 
 export interface ShellProps {

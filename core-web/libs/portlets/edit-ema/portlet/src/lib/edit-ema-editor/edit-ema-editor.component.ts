@@ -161,35 +161,35 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly $handleReloadContentEffect = effect(
         () => {
-            const { code, isTraditionalPage, isEditState, isEnterprise } =
+            const { code, isTraditionalPage, enableInlineEdit, isClientReady } =
                 this.uveStore.$reloadEditorContent();
 
             this.uveStore.resetEditorProperties();
-
             this.dialog?.resetDialog();
 
-            if (isTraditionalPage) {
-                this.setIframeContent(code);
+            if (!isTraditionalPage) {
+                if (isClientReady) {
+                    return this.reloadIframeContent();
+                }
 
-                requestAnimationFrame(() => {
-                    const win = this.contentWindow;
-
-                    const canHaveInlineEditing = isEnterprise && isEditState;
-
-                    if (canHaveInlineEditing) {
-                        this.inlineEditingService.injectInlineEdit(this.iframe);
-                    } else {
-                        this.inlineEditingService.removeInlineEdit(this.iframe);
-                    }
-
-                    fromEvent(win, 'click').subscribe((e: MouseEvent) => {
-                        this.handleInternalNav(e);
-                        this.handleInlineEditing(e); // If inline editing is not active this will do nothing
-                    });
-                });
-            } else {
-                this.reloadIframeContent();
+                return;
             }
+
+            this.setIframeContent(code);
+
+            requestAnimationFrame(() => {
+                const win = this.contentWindow;
+                if (enableInlineEdit) {
+                    this.inlineEditingService.injectInlineEdit(this.iframe);
+                } else {
+                    this.inlineEditingService.removeInlineEdit(this.iframe);
+                }
+
+                fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+                    this.handleInternalNav(e);
+                    this.handleInlineEditing(e); // If inline editing is not active this will do nothing
+                });
+            });
         },
         {
             allowSignalWrites: true
@@ -243,6 +243,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 return;
             }
 
+            // console.log(url);
             this.updateQueryParams({
                 url: url.pathname
             });
@@ -839,7 +840,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
-                const isSameUrl = this.uveStore.params()?.url === payload.url;
+                // We remove the `/` here: https://github.com/dotCMS/core/blob/225dc5e42585317c51551364c8c02ccbb7ffb925/core-web/libs/sdk/client/src/lib/editor/sdk-editor.ts#L17
+                // So it's not a fair compare
+                const isSameUrl = this.uveStore.params()?.url === `/` + payload.url;
 
                 if (isSameUrl) {
                     this.uveStore.setEditorState(EDITOR_STATE.IDLE);
@@ -988,10 +991,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
-            [CUSTOMER_ACTIONS.GET_PAGE_DATA]: () => {
-                this.reloadIframeContent();
-            },
-            [CUSTOMER_ACTIONS.CLIENT_QUERY]: () => {
+            // [CUSTOMER_ACTIONS.GET_PAGE_DATA]: () => {
+            //     this.reloadIframeContent();
+            // },
+            [CUSTOMER_ACTIONS.CLIENT_READY]: () => {
+                if (!data.payload) {
+                    this.uveStore.setIsClientReady(true);
+
+                    return;
+                }
+
                 this.uveStore.reload(data.payload as string);
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {

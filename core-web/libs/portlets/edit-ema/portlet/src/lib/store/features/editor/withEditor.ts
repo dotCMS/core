@@ -7,7 +7,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, untracked } from '@angular/core';
 
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
 
@@ -85,9 +85,11 @@ export function withEditor() {
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
                         code: store.pageAPIResponse()?.page?.rendered,
-                        isTraditionalPage: store.isTraditionalPage(),
-                        isEditState: store.isEditState(),
-                        isEnterprise: store.isEnterprise()
+                        isClientReady: store.isClientReady(),
+                        isTraditionalPage: untracked(() => store.isTraditionalPage()),
+                        enableInlineEdit: untracked(
+                            () => store.isEditState() && store.isEnterprise()
+                        )
                     };
                 }),
                 $editorIsInDraggingState: computed<boolean>(
@@ -176,6 +178,11 @@ export function withEditor() {
         }),
         withMethods((store) => {
             return {
+                setIsClientReady(value: boolean) {
+                    patchState(store, {
+                        isClientReady: value
+                    });
+                },
                 updateEditorScrollState() {
                     // We dont want to change the state if the editor is out of bounds
                     // The scroll event is triggered after the user leaves the window

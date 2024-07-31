@@ -53,7 +53,7 @@ export enum CUSTOMER_ACTIONS {
     /**
      * Tell the editor an user send a graphql query
      */
-    CLIENT_QUERY = 'client-query',
+    CLIENT_READY = 'client-ready',
     /**
      * Tell the editor to do nothing
      */
