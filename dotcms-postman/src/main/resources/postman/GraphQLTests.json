@@ -5119,9 +5119,10 @@
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentTypeVariable\", jsonData.entity[0].variable);",
-									"pm.collectionVariables.set(\"relFieldVariable\", jsonData.entity[0].fields[1].variable);"
+									"pm.collectionVariables.set(\"relFieldVariable\", jsonData.entity[0].fields[3].variable);"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
