@@ -24,6 +24,7 @@ import {
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
     getSelectedFromContentlet,
+    removeEmptyArrays,
     removeItemByKey,
     transformCategories,
     transformToSelectedObject,
@@ -287,7 +288,10 @@ export const CategoryFieldStore = signalStore(
                                 next: (newCategories) => {
                                     if (event) {
                                         patchState(store, {
-                                            categories: [...store.categories(), newCategories],
+                                            categories: removeEmptyArrays([
+                                                ...store.categories(),
+                                                newCategories
+                                            ]),
                                             state: ComponentStatus.LOADED,
                                             keyParentPath: [
                                                 ...store.keyParentPath(),
@@ -296,7 +300,10 @@ export const CategoryFieldStore = signalStore(
                                         });
                                     } else {
                                         patchState(store, {
-                                            categories: [...store.categories(), newCategories],
+                                            categories: removeEmptyArrays([
+                                                ...store.categories(),
+                                                newCategories
+                                            ]),
                                             state: ComponentStatus.LOADED
                                         });
                                     }

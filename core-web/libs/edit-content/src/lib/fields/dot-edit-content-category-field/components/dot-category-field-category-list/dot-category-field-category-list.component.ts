@@ -9,6 +9,7 @@ import {
     input,
     model,
     output,
+    signal,
     viewChildren
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -18,8 +19,13 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TreeModule } from 'primeng/tree';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
+import {
+    DotEmptyContainerComponent,
+    PrincipalConfiguration,
+    DotCollapseBreadcrumbComponent
+} from '@dotcms/ui';
 
+import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
 import {
     DotCategoryFieldItem,
     DotCategoryFieldKeyValueObj
@@ -33,7 +39,6 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 /**
  * Represents the Dot Category Field Category List component.
  * @class
- * @implements {AfterViewInit}
  */
 @Component({
     selector: 'dot-category-field-category-list',
@@ -45,7 +50,8 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
         ButtonModule,
         FormsModule,
         DotCategoryFieldListSkeletonComponent,
-        DotCollapseBreadcrumbComponent
+        DotCollapseBreadcrumbComponent,
+        DotEmptyContainerComponent
     ],
     templateUrl: './dot-category-field-category-list.component.html',
     styleUrl: './dot-category-field-category-list.component.scss',
@@ -136,6 +142,12 @@ export class DotCategoryFieldCategoryListComponent {
         selected: string[];
         item: DotCategoryFieldKeyValueObj;
     }>();
+
+    $emptyState = signal<PrincipalConfiguration>({
+        title: this.#dotMessageService.get(CATEGORY_FIELD_EMPTY_MESSAGES.empty.title),
+        icon: CATEGORY_FIELD_EMPTY_MESSAGES.empty.icon,
+        subtitle: this.#dotMessageService.get(CATEGORY_FIELD_EMPTY_MESSAGES.empty.subtitle)
+    });
 
     constructor() {
         effect(() => {

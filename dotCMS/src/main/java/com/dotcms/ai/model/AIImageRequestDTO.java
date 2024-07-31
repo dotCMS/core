@@ -27,16 +27,17 @@ public class AIImageRequestDTO {
         return size;
     }
 
-
     public int getNumberOfImages() {
         return numberOfImages;
     }
-
 
     public String getPrompt() {
         return prompt;
     }
 
+    public String getModel() {
+        return model;
+    }
 
     public static class Builder {
         @JsonSetter(nulls = Nulls.SKIP)
@@ -46,7 +47,7 @@ public class AIImageRequestDTO {
         @JsonSetter(nulls = Nulls.SKIP)
         private String size = ConfigService.INSTANCE.config().getImageSize();
         @JsonSetter(nulls = Nulls.SKIP)
-        private String model = ConfigService.INSTANCE.config().getImageModel();
+        private String model = ConfigService.INSTANCE.config().getImageModel().getCurrentModel();
 
         public AIImageRequestDTO build() {
             return new AIImageRequestDTO(this);
@@ -72,4 +73,5 @@ public class AIImageRequestDTO {
             return this;
         }
     }
+
 }

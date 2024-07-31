@@ -1,4 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -44,7 +45,8 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
         InputTextModule,
         DotCategoryFieldSearchComponent,
         DotCategoryFieldSearchListComponent,
-        DotCategoryFieldSelectedComponent
+        DotCategoryFieldSelectedComponent,
+        NgClass
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',

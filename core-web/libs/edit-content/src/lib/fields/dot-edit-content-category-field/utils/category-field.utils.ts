@@ -246,3 +246,11 @@ export const getMenuItemsFromKeyParentPath = (
         return array;
     }, []);
 };
+
+/***
+ * Remove all the empty arrays from the matrix
+ * @param {DotCategory[][]} array
+ */
+export const removeEmptyArrays = (array: DotCategory[][]): DotCategory[][] => {
+    return array.filter((item) => item.length > 0);
+};
