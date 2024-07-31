@@ -1,6 +1,5 @@
 package com.dotcms.ai.listener;
 
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.viewtool.AiTest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -19,10 +18,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.liferay.portal.model.User;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -32,6 +27,10 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.dotmarketing.util.ThreadUtils.sleep;
 import static org.junit.Assert.assertFalse;
@@ -115,7 +114,7 @@ public class EmbeddingContentListenerTest {
         boolean embeddingsExist = waitForEmbeddings(blogContent, text, true);
 
         assertTrue(embeddingsExist);
-        final Map<String, Map<String, Object>> embeddingsByIndex = EmbeddingsAPI.impl().countEmbeddingsByIndex();
+        final Map<String, Map<String, Object>> embeddingsByIndex = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().countEmbeddingsByIndex();
         assertFalse(embeddingsByIndex.isEmpty());
         assertTrue(embeddingsByIndex.containsKey("default"));
         final Map<String, Object> embeddings = embeddingsByIndex.get("default");
@@ -184,14 +183,14 @@ public class EmbeddingContentListenerTest {
 
     private static boolean waitForEmbeddings(final Contentlet blogContent, final String text, final boolean expected) {
         int count = 0;
-        boolean embeddingsExist = EmbeddingsAPI.impl().embeddingExists(blogContent.getInode(), "default", text);
+        boolean embeddingsExist = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
         while (embeddingsExist != expected) {
             if (count++ > MAX_ATTEMPTS) {
                 break;
             }
 
             sleep(1000);
-            embeddingsExist = EmbeddingsAPI.impl().embeddingExists(blogContent.getInode(), "default", text);
+            embeddingsExist = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
         }
         return embeddingsExist;
     }

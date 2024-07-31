@@ -1,6 +1,5 @@
 package com.dotcms.ai.listener;
 
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
@@ -122,11 +121,11 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
         for(final Entry<String, Object> entry : (Set<Entry<String, Object>>) config.entrySet()) {
             final String indexName = entry.getKey();
             final Map<String, List<Field>> typesAndFields =
-                    EmbeddingsAPI.impl().parseTypesAndFields((String) entry.getValue());
+                    APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().parseTypesAndFields((String) entry.getValue());
             typesAndFields.entrySet()
                     .stream()
                     .filter(typeFields -> contentType.equalsIgnoreCase(typeFields.getKey()))
-                    .forEach(e -> EmbeddingsAPI.impl()
+                    .forEach(e -> APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI()
                             .generateEmbeddingsForContent(
                                     contentlet,
                                     e.getValue(),
@@ -146,7 +145,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
                 .withLanguage(contentlet.getLanguageId())
                 .withIndexName(ALL_INDICES)
                 .build();
-        EmbeddingsAPI.impl().deleteEmbedding(dto);
+        APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().deleteEmbedding(dto);
     }
 
     /**

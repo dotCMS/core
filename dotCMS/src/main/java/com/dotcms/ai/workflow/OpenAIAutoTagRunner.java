@@ -1,6 +1,5 @@
 package com.dotcms.ai.workflow;
 
-import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
@@ -149,9 +148,7 @@ public class OpenAIAutoTagRunner implements Runnable {
         final String parsedSystemPrompt = VelocityUtil.eval(systemPrompt, ctx);
         final String parsedContentPrompt = VelocityUtil.eval(contentToTag, ctx);
 
-        // todo: this should be an api by api provider
-        final JSONObject openAIResponse = CompletionsAPI
-                .impl()
+        final JSONObject openAIResponse = APILocator.getArtificialIntelligenceAPI().getCompletionsAPI()
                 .prompt(parsedSystemPrompt, parsedContentPrompt, model, temperature, 2000);
 
         return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");

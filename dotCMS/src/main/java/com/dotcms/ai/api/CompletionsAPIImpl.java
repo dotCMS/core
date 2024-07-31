@@ -78,7 +78,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     @Override
     public JSONObject summarize(final CompletionsForm summaryRequest) {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(summaryRequest).build();
-        final List<EmbeddingsDTO> localResults = EmbeddingsAPI.impl().getEmbeddingResults(searcher);
+        final List<EmbeddingsDTO> localResults = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().getEmbeddingResults(searcher);
 
         // send all this as a json blob to OpenAI
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
@@ -94,7 +94,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                         config.get().getApiKey(),
                         json))
                 .getOrElseThrow(DotRuntimeException::new);
-        final JSONObject dotCMSResponse = EmbeddingsAPI.impl().reduceChunksToContent(searcher, localResults);
+        final JSONObject dotCMSResponse = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().reduceChunksToContent(searcher, localResults);
         dotCMSResponse.put(AiKeys.OPEN_AI_RESPONSE, new JSONObject(openAiResponse));
 
         return dotCMSResponse;
@@ -103,7 +103,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     @Override
     public void summarizeStream(final CompletionsForm summaryRequest, final OutputStream out) {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(summaryRequest).build();
-        final List<EmbeddingsDTO> localResults = EmbeddingsAPI.impl().getEmbeddingResults(searcher);
+        final List<EmbeddingsDTO> localResults = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().getEmbeddingResults(searcher);
 
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
         json.put(AiKeys.STREAM, true);

@@ -1,6 +1,5 @@
 package com.dotcms.util;
 
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -13,13 +12,12 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
+import org.awaitility.Awaitility;
+import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.awaitility.Awaitility;
-import org.mockito.Mockito;
 
 /**
  * Sets up the web environment needed to execute integration tests without a server application
@@ -71,7 +69,7 @@ public class IntegrationTestInitService {
                 // Init other dotCMS services.
                 DotInitializationService.getInstance().initialize();
 
-                EmbeddingsAPI.impl().initEmbeddingsTable();
+                APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().initEmbeddingsTable();
             }
         } catch (Exception e) {
             Logger.error(this, "Error initializing Integration Test Init Service", e);

@@ -36,6 +36,7 @@ public class TagAPIImpl implements TagAPI {
     @CloseDBIfOpened
     public Set<String> findTopTags(final String siteId) throws DotDataException {
 
+        Logger.debug(this, ()-> "Finding top tags for siteId: " + siteId);
         return this.tagFactory.getTopTagsBySiteId(siteId);
     }
 

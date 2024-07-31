@@ -78,12 +78,12 @@ public class DotEmbeddingsActionlet extends WorkFlowActionlet {
                 UtilMethods.isSet(params.get(OpenAIParams.DOT_EMBEDDING_INDEX.key).getValue()) ? params.get(
                         OpenAIParams.DOT_EMBEDDING_INDEX.key).getValue() : "default";
 
-        final Map<String, List<Field>> typesAndfields = EmbeddingsAPI.impl().parseTypesAndFields(
+        final Map<String, List<Field>> typesAndfields = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().parseTypesAndFields(
                 params.get(OpenAIParams.DOT_EMBEDDING_TYPES_FIELDS.key).getValue());
 
         List<Field> fields = typesAndfields.getOrDefault(type.variable(), List.of());
 
-        EmbeddingsAPI.impl().generateEmbeddingsForContent(contentlet, fields, indexName);
+        APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().generateEmbeddingsForContent(contentlet, fields, indexName);
 
     }
 

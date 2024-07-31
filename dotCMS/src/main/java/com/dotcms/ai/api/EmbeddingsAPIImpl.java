@@ -259,7 +259,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             reducedResults.putIfAbsent(result.inode,contentObject);
         }
 
-        final long count = EmbeddingsAPI.impl().countEmbeddings(searcher);
+        final long count = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().countEmbeddings(searcher);
         final JSONObject map = new JSONObject();
         map.put(AiKeys.TIME_TO_EMBEDDINGS, System.currentTimeMillis() - startTime + "ms");
         map.put(AiKeys.TOTAL, searchResults.size());

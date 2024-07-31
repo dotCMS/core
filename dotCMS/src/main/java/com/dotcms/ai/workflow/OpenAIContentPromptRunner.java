@@ -1,6 +1,5 @@
 package com.dotcms.ai.workflow;
 
-import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
@@ -158,7 +157,7 @@ public class OpenAIContentPromptRunner implements AsyncWorkflowRunner {
     private String openAIRequest(final Contentlet workingContentlet) throws Exception {
         final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
         final String parsedPrompt = VelocityUtil.eval(prompt, ctx);
-        final JSONObject openAIResponse = CompletionsAPI.impl().raw(buildRequest(parsedPrompt, model, temperature));
+        final JSONObject openAIResponse = APILocator.getArtificialIntelligenceAPI().getCompletionsAPI().raw(buildRequest(parsedPrompt, model, temperature));
 
         try {
             return openAIResponse

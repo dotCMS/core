@@ -1,8 +1,8 @@
 package com.dotcms.datagen;
 
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.business.WrapInTransaction;
+import com.dotmarketing.business.APILocator;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomUtils;
 
@@ -112,7 +112,7 @@ public class EmbeddingsDTODataGen extends AbstractDataGen<EmbeddingsDTO> {
     @Override
     @WrapInTransaction
     public EmbeddingsDTO persist(final EmbeddingsDTO embeddings) {
-        EmbeddingsAPI.impl().saveEmbeddings(embeddings);
+        APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().saveEmbeddings(embeddings);
         return embeddings;
     }
 
