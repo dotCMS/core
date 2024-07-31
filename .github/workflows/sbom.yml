@@ -1,9 +1,9 @@
 name: sbom
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight UTC
-  workflow_dispatch:  # Allows manual trigger from GitHub UI
+  release:
+    types: [published]  # Trigger the workflow on new releases
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
 
 jobs:
   scan:
@@ -17,17 +17,22 @@ jobs:
           token: ${{ secrets.SECRET_PENTEST_TOKEN }}
           path: core-test-results
 
-      - name: Get latest dotCMS release version
+      - name: Get dotCMS release version
         id: get_version
         run: |
-          # Fetch the latest release from GitHub API
-          response=$(curl -s https://api.github.com/repos/dotCMS/core/releases/latest)
+          if [ "${{ github.event_name }}" == "release" ]; then
+            # Extract the tag name from the release event context
+            latest_tag=${{ github.event.release.tag_name }}
+          else
+            # For manual runs, ask the user to provide the tag as an input
+            read -p "Enter the dotCMS version tag (e.g., v24.07.30): " latest_tag
+          fi
           
-          # Extract the tag name from the response and format it
-          latest_tag=$(echo "$response" | jq -r '.tag_name' | sed -e 's/^dotcms-cli-//' -e 's/^v//')
+          # Format the tag name if necessary
+          formatted_tag=$(echo "$latest_tag" | sed -e 's/^dotcms-cli-//' -e 's/^v//')
           
-          echo "Latest tag: $latest_tag"
-          echo "DOTCMS_VERSION=$latest_tag" >> $GITHUB_ENV
+          echo "Latest tag: $formatted_tag"
+          echo "DOTCMS_VERSION=$formatted_tag" >> $GITHUB_ENV
 
       - name: Pull and run dotCMS Docker image
         run: |
