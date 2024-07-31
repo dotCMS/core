@@ -5,6 +5,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -31,6 +32,7 @@ import static org.junit.Assert.assertTrue;
 public class AIModelsTest {
 
     private static WireMockServer wireMockServer;
+    private static AppConfig config;
 
     private final AIModels aiModels = AIModels.get();
     private Host host;
@@ -41,6 +43,7 @@ public class AIModelsTest {
         IntegrationTestInitService.getInstance().init();
         IPUtils.disabledIpPrivateSubnet(true);
         wireMockServer = AiTest.prepareWireMock();
+        config = AiTest.prepareConfig(APILocator.systemHost(), wireMockServer);
     }
 
     @AfterClass
@@ -122,9 +125,18 @@ public class AIModelsTest {
      */
     @Test
     public void test_getOrPullSupportedModules() {
-        final List<String> supported = aiModels.getOrPullSupportedModels();
+        AIModels.get().cleanSupportedModelsCache();
+        AIModels.get().setAppConfigSupplier(() -> config);
+
+        List<String> supported = aiModels.getOrPullSupportedModels();
         assertNotNull(supported);
         assertEquals(32, supported.size());
+
+        supported = aiModels.getOrPullSupportedModels();
+        assertNotNull(supported);
+        assertEquals(32, supported.size());
+
+        AIModels.get().setAppConfigSupplier(ConfigService.INSTANCE::config);
     }
 
     /**
@@ -134,6 +146,8 @@ public class AIModelsTest {
      */
     @Test
     public void test_getOrPullSupportedModules_invalidEndpoint() {
+        AIModels.get().cleanSupportedModelsCache();
+        AIModels.get().setAppConfigSupplier(() -> config);
         IPUtils.disabledIpPrivateSubnet(false);
 
         final List<String> supported = aiModels.getOrPullSupportedModels();
@@ -141,6 +155,20 @@ public class AIModelsTest {
         assertTrue(supported.isEmpty());
 
         IPUtils.disabledIpPrivateSubnet(true);
+        AIModels.get().setAppConfigSupplier(ConfigService.INSTANCE::config);
+    }
+
+    /**
+     * Given no API key
+     * When the getOrPullSupportedModules method is called
+     * Then an empty list of supported models should be returned.
+     */
+    @Test
+    public void test_getOrPullSupportedModules_noApiKey() {
+        AIModels.get().cleanSupportedModelsCache();
+        final List<String> supported = aiModels.getOrPullSupportedModels();
+        assertNotNull(supported);
+        assertTrue(supported.isEmpty());
     }
 
     private void loadModels() {

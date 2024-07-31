@@ -42,7 +42,7 @@ public class AIAppUtil {
     public AIModel createTextModel(final Map<String, Secret> secrets) {
         return AIModel.builder()
                 .withType(AIModelType.TEXT)
-                .withNames(discoverSecret(secrets, AppKeys.TEXT_MODEL_NAMES))
+                .withNames(splitDiscoveredSecret(secrets, AppKeys.TEXT_MODEL_NAMES))
                 .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_TOKENS_PER_MINUTE))
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_MAX_TOKENS))
@@ -59,7 +59,7 @@ public class AIAppUtil {
     public AIModel createImageModel(final Map<String, Secret> secrets) {
         return AIModel.builder()
                 .withType(AIModelType.IMAGE)
-                .withNames(discoverSecret(secrets, AppKeys.IMAGE_MODEL_NAMES))
+                .withNames(splitDiscoveredSecret(secrets, AppKeys.IMAGE_MODEL_NAMES))
                 .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_TOKENS_PER_MINUTE))
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_MAX_TOKENS))

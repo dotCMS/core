@@ -79,10 +79,10 @@ public interface AiTest {
                 Secret.builder().withType(Type.STRING).withValue(API_KEY.toCharArray()).build(),
 
                 AppKeys.TEXT_MODEL_NAMES.key,
-                Secret.builder().withType(Type.STRING).withValue(MODEL.toCharArray()).build(),
+                Secret.builder().withType(Type.STRING).withValue(AppKeys.TEXT_MODEL_NAMES.defaultValue.toCharArray()).build(),
 
                 AppKeys.IMAGE_MODEL_NAMES.key,
-                Secret.builder().withType(Type.STRING).withValue(IMAGE_MODEL.toCharArray()).build(),
+                Secret.builder().withType(Type.STRING).withValue(AppKeys.IMAGE_MODEL_NAMES.defaultValue.toCharArray()).build(),
 
                 AppKeys.IMAGE_SIZE.key,
                 Secret.builder().withType(Type.SELECT).withValue(IMAGE_SIZE.toCharArray()).build(),

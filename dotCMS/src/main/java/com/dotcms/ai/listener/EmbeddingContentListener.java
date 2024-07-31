@@ -100,7 +100,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
      */
     private JSONObject getConfigJson(final String hostId) {
         return Try
-                .of(() -> new JSONObject(getAppConfig(hostId).getConfig(AppKeys.LISTENER_INDEXER)))
+                .of(() -> new JSONObject(getAppConfig(hostId).getListenerIndexer()))
                 .onFailure(e -> Logger.debug(getClass(), "error in json config from app: " + e.getMessage()))
                 .getOrElse(new JSONObject());
     }

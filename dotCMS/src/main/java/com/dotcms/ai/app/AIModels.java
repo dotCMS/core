@@ -8,6 +8,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -44,11 +46,6 @@ public class AIModels {
     private static final int AI_MODELS_CACHE_TTL = 28800;  // 8 hours
     private static final int AI_MODELS_CACHE_SIZE = 128;
 
-    public static final AIModel NOOP_MODEL = AIModel.builder()
-            .withType(AIModelType.UNKNOWN)
-            .withNames(List.of())
-            .build();
-
     private final ConcurrentMap<String, List<Tuple2<AIModelType, AIModel>>> internalModels = new ConcurrentHashMap<>();
     private final ConcurrentMap<Tuple2<String, String>, AIModel> modelsByName = new ConcurrentHashMap<>();
     private final Cache<String, List<String>> supportedModelsCache =
@@ -56,6 +53,7 @@ public class AIModels {
                     .expireAfterWrite(Duration.ofSeconds(AI_MODELS_CACHE_TTL))
                     .maximumSize(AI_MODELS_CACHE_SIZE)
                     .build();
+    private Supplier<AppConfig> appConfigSupplier = ConfigService.INSTANCE::config;
 
     public static AIModels get() {
         return INSTANCE.get();
@@ -154,24 +152,31 @@ public class AIModels {
      * @return a list of supported model names
      */
     public List<String> getOrPullSupportedModels() {
-        final List<String> cached = supportedModelsCache.getIfPresent(SUPPORTED_MODELS_KEY);
-        if (CollectionUtils.isNotEmpty(cached)) {
-            return cached;
+        synchronized (supportedModelsCache) {
+            final List<String> cached = supportedModelsCache.getIfPresent(SUPPORTED_MODELS_KEY);
+            if (CollectionUtils.isNotEmpty(cached)) {
+                return cached;
+            }
+
+            final AppConfig appConfig = appConfigSupplier.get();
+            if (!appConfig.isEnabled()) {
+                Logger.debug(this, "OpenAI is not enabled, returning empty list of supported models");
+                return List.of();
+            }
+
+            final List<String> supported = Try.of(() ->
+                            fetchOpenAIModels(appConfig)
+                                    .getResponse()
+                                    .getData()
+                                    .stream()
+                                    .map(OpenAIModel::getId)
+                                    .map(String::toLowerCase)
+                                    .collect(Collectors.toList()))
+                    .getOrElse(Optional.ofNullable(cached).orElse(List.of()));
+            supportedModelsCache.put(SUPPORTED_MODELS_KEY, supported);
+
+            return supported;
         }
-
-        final AppConfig appConfig = ConfigService.INSTANCE.config();
-        final List<String> supported = Try.of(() ->
-                        fetchOpenAIModels(appConfig)
-                                .getResponse()
-                                .getData()
-                                .stream()
-                                .map(OpenAIModel::getId)
-                                .map(String::toLowerCase)
-                                .collect(Collectors.toList()))
-                .getOrElse(Optional.ofNullable(cached).orElse(List.of()));
-        supportedModelsCache.put(SUPPORTED_MODELS_KEY, supported);
-
-        return supported;
     }
 
     /**
@@ -212,4 +217,15 @@ public class AIModels {
 
         return response;
     }
+
+    @VisibleForTesting
+    void setAppConfigSupplier(final Supplier<AppConfig> appConfigSupplier) {
+        this.appConfigSupplier = appConfigSupplier;
+    }
+
+    @VisibleForTesting
+    void cleanSupportedModelsCache() {
+        supportedModelsCache.invalidateAll();
+    }
+
 }
