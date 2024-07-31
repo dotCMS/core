@@ -2,8 +2,13 @@ name: sbom
 
 on:
   release:
-    types: [published]  # Trigger the workflow on new releases
-  workflow_dispatch:  # Allow manual trigger from GitHub UI
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dotcms_version:
+        description: 'The dotCMS version tag (e.g., v24.07.30)'
+        required: true
+        default: 'v24.07.30'
 
 jobs:
   scan:
@@ -24,13 +29,13 @@ jobs:
             # Extract the tag name from the release event context
             latest_tag=${{ github.event.release.tag_name }}
           else
-            # For manual runs, ask the user to provide the tag as an input
-            read -p "Enter the dotCMS version tag (e.g., v24.07.30): " latest_tag
+            # Use the input provided in manual run
+            latest_tag=${{ github.event.inputs.dotcms_version }}
           fi
-          
+
           # Format the tag name if necessary
           formatted_tag=$(echo "$latest_tag" | sed -e 's/^dotcms-cli-//' -e 's/^v//')
-          
+
           echo "Latest tag: $formatted_tag"
           echo "DOTCMS_VERSION=$formatted_tag" >> $GITHUB_ENV
 
