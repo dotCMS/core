@@ -31,17 +31,6 @@ jobs:
           echo "Latest release version: $formatted_version"
           echo "release_version=$formatted_version" >> $GITHUB_ENV
 
-      - name: Check server status
-        id: check-server-status
-        run: |
-          # Check if the dotCMS server is running
-          server_status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8082/dotAdmin)
-          if [ "$server_status" -eq 200 ]; then
-            echo "Web server is running"
-          else
-            echo "Web server is not running"
-            exit 1
-          fi
 
       - name: Scan Docker Image with Syft
         run: |
