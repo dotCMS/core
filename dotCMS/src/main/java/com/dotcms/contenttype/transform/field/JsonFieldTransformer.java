@@ -31,6 +31,8 @@ import java.util.Map;
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
   private static final String CATEGORIES_PROPERTY_NAME = "categories";
+  private static final String CARDINALITY_PROPERTY_NAME = "cardinality";
+  private static final String VELOCITY_VARIABLE_PROPERTY_NAME = "velocityVar";
   private static final String VALUES = "values";
 
   final List<Field> list;
@@ -110,8 +112,8 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
           jo.put(VALUES, categories.get("inode"));
       } else if (jo.has(ContentTypeFieldProperties.RELATIONSHIPS.getName())) {
           final JSONObject relationship = (JSONObject) jo.get(ContentTypeFieldProperties.RELATIONSHIPS.getName());
-          jo.put(VALUES, relationship.get("cardinality"));
-          jo.put("relationType", relationship.get("velocityVar"));
+          jo.put(VALUES, relationship.get(CARDINALITY_PROPERTY_NAME));
+          jo.put("relationType", relationship.get(VELOCITY_VARIABLE_PROPERTY_NAME));
       }
 
       return (Field) mapper.readValue(jo.toString(), Field.class);
@@ -192,18 +194,21 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
                           APILocator.getLoginServiceAPI().getLoggedInUser());
           if (null != relationship) {
             fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
-                    "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType,
+                    CARDINALITY_PROPERTY_NAME, Integer.parseInt(cardinality),
+                    VELOCITY_VARIABLE_PROPERTY_NAME, relationType,
                     "isParentField",
                     relationship.getParentStructureInode().equals(field.contentTypeId())
             ));
           } else {
             fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
-                    "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
+                    CARDINALITY_PROPERTY_NAME, Integer.parseInt(cardinality),
+                    VELOCITY_VARIABLE_PROPERTY_NAME, relationType
             ));
           }
         } else {
           fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
-                  "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
+                  CARDINALITY_PROPERTY_NAME, Integer.parseInt(cardinality),
+                  VELOCITY_VARIABLE_PROPERTY_NAME, relationType
           ));
         }
       }

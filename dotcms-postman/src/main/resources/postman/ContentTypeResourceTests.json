@@ -20,7 +20,7 @@
 									"",
 									"pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
 									"pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
-									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[0].id);",
+									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[2].id);",
 									"",
 									"pm.test(\"Status code should be ok 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -34,7 +34,8 @@
 									"    pm.expect(jsonData.entity[0].sortOrder).to.eql(3);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -7712,8 +7713,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -7781,7 +7782,7 @@
 							"description": "This test creates the Content Type with a field with a not existing field id in the body."
 						},
 						{
-							"name": "Multiple update permutations Copy",
+							"name": "Multiple update permutations",
 							"item": [
 								{
 									"name": "Create ContentType",
@@ -7853,8 +7854,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -7899,8 +7900,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -7955,9 +7956,9 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
-													"    pm.expect(jsonData.entity.fields[0].contentTypeId).to.eql(contentTypeId);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].contentTypeId).to.eql(contentTypeId);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -8011,8 +8012,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -8066,8 +8067,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -8121,8 +8122,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
@@ -8176,8 +8177,8 @@
 													"    var contentTypeField1Variable = pm.collectionVariables.get(\"contentTypeField1Variable\");",
 													"",
 													"    var jsonData = pm.response.json();",
-													"    pm.expect(jsonData.entity.fields[0].id).to.eql(contentTypeField1Id);",
-													"    pm.expect(jsonData.entity.fields[0].variable).to.eql(contentTypeField1Variable);",
+													"    pm.expect(jsonData.entity.fields[2].id).to.eql(contentTypeField1Id);",
+													"    pm.expect(jsonData.entity.fields[2].variable).to.eql(contentTypeField1Variable);",
 													"});"
 												],
 												"type": "text/javascript",
