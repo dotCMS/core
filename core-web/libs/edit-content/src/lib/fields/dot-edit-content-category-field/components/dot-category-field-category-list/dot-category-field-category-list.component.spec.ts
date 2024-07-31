@@ -116,6 +116,15 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     });
 
     describe('with breadcrumbs', () => {
+        it('should generate the breadcrumb menu according to the breadcrumb input', () => {
+            spectator.setInput('breadcrumbs', CATEGORY_MOCK_TRANSFORMED);
+            spectator.detectChanges();
+
+            expect(spectator.component.$breadcrumbsMenu().length).toBe(
+                CATEGORY_MOCK_TRANSFORMED.length + 1
+            );
+        });
+
         it('should render the breadcrumbs menu', () => {
             spectator.setInput('breadcrumbs', []);
             spectator.detectChanges();
