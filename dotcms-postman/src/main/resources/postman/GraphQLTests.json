@@ -10229,7 +10229,7 @@
 									"if (currentCount > 1){",
 									"    currentCount = currentCount - 1;",
 									"    pm.collectionVariables.set(\"contentCount\", currentCount);",
-									"    pm.execution.setNextRequest(\"Save Content\");",
+									"    pm.execution.setNextRequest(\"Save test content for pagination\");",
 									"}",
 									"",
 									"// Test to validate if the name is equal to 'Test content 22'",
