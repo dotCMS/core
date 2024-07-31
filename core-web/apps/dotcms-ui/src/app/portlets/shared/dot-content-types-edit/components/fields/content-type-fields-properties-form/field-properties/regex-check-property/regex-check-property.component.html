@@ -1,7 +1,7 @@
 <div [formGroup]="group" class="field">
-    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>{{
-        'contenttypes.field.properties.validation_regex.label' | dm
-    }}</label>
+    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
+        {{ 'contenttypes.field.properties.validation_regex.label' | dm }}
+    </label>
     <div class="form__validation-input-container">
         <input [id]="property.name" [formControlName]="property.name" pInputText type="text" />
         <p-dropdown
@@ -9,7 +9,6 @@
             [style]="{ width: '125px' }"
             [options]="regexCheckTemplates"
             [formControlName]="property.name"
-            appendTo="body">
-        </p-dropdown>
+            appendTo="body"></p-dropdown>
     </div>
 </div>

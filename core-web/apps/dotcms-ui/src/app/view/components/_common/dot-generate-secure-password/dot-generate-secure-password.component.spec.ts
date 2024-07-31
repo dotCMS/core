@@ -100,10 +100,10 @@ describe('DotGenerateSecurePasswordComponent', () => {
                 By.css('.dot-generate-secure-password__reveal-link')
             );
             revealButton.nativeElement.click();
-            expect(revealButton.nativeElement.text).toBe('Reveal');
+            expect(revealButton.nativeElement.text).toContain('Reveal');
             fixture.detectChanges();
             expect(comp.typeInput).toBe('text');
-            expect(revealButton.nativeElement.text).toBe('hide');
+            expect(revealButton.nativeElement.text).toContain('hide');
         });
 
         it('should reset on close', () => {
@@ -115,7 +115,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
             expect(comp.typeInput).toBe('password');
             expect(comp.value).toBe('');
             expect(comp.dialogShow).toBe(false);
-            expect(revealButton.nativeElement.text).toBe('Reveal');
+            expect(revealButton.nativeElement.text.trim()).toBe('Reveal');
         });
     });
 

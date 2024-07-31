@@ -1,6 +1,10 @@
 package com.dotcms.cli.common;
 
 import com.dotcms.model.language.Language;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -59,6 +63,18 @@ public class FilesUtils {
             }
         }
         return cleanName.toString();
+    }
+
+    /**
+     * Checks if the specified directory is not empty.
+     * @param path the directory to check
+     * @return true if the directory is not empty, false otherwise
+     * @throws IOException if an I/O error occurs
+     */
+    public static boolean isDirectoryNotEmpty(Path path) throws IOException {
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(path)) {
+            return directoryStream.iterator().hasNext();
+        }
     }
 
 }

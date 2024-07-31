@@ -1,0 +1,31 @@
+@use "variables" as *;
+
+.category-field__search-list {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+:host {
+    ::ng-deep {
+        .dotTable.p-datatable > .p-datatable-wrapper {
+            border-radius: 0;
+            border: none;
+        }
+    }
+
+    &.category-field__search-list--empty ::ng-deep {
+        p-table,
+        .dotTable.p-datatable,
+        .p-datatable-wrapper,
+        table {
+            height: 100%;
+
+            tr:not(.p-highlight):hover {
+                background: $white;
+                cursor: auto;
+            }
+        }
+    }
+}

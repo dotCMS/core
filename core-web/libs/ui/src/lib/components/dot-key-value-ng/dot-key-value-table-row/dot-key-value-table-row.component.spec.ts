@@ -57,8 +57,9 @@ const triggerEditableColumnClick = (spectator: Spectator<TestHostComponent>) => 
     template: `
         <p-table [value]="variablesList" #table>
             <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
-                <dot-key-value-table-row [showHiddenField]="showHiddenField" [variable]="variable">
-                </dot-key-value-table-row>
+                <dot-key-value-table-row
+                    [showHiddenField]="showHiddenField"
+                    [variable]="variable"></dot-key-value-table-row>
             </ng-template>
         </p-table>
     `

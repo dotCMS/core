@@ -1,18 +1,20 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-
 import {
-    DotCategoryFieldCategory,
-    DotCategoryFieldKeyValueObj
-} from '../models/dot-category-field.models';
+    DotCategory,
+    DotCategoryParent,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
+
+import { DotCategoryFieldKeyValueObj, HierarchyParent } from '../models/dot-category-field.models';
 
 /**
- * Retrieves selected categories from a contentlet.
+ * Retrieves and convert selected categories from a contentlet.
  *
  * @param {string} variableName - The name of the variable containing the selected categories.
  * @param {DotCMSContentlet} contentlet - The contentlet from which to retrieve the selected categories.
  * @returns {DotCategoryFieldKeyValueObj[]} - An array of objects representing the selected categories.
  */
-export const getSelectedCategories = (
+export const getSelectedFromContentlet = (
     { variable }: DotCMSContentTypeField,
     contentlet: DotCMSContentlet
 ): DotCategoryFieldKeyValueObj[] => {
@@ -30,20 +32,56 @@ export const getSelectedCategories = (
 };
 
 /**
- * Add calculated properties to the categories
- * @param categories
- * @param parentPath
+ * Transforms an array of selected HierarchyParent objects into an array of DotCategoryFieldKeyValueObj objects.
+ *
+ * @param {HierarchyParent[]} selected - The array of selected HierarchyParent objects.
+ * @returns {DotCategoryFieldKeyValueObj[]} - The transformed array of DotCategoryFieldKeyValueObj objects.
  */
-export const addMetadata = (
-    categories: DotCategoryFieldCategory[],
-    parentPath: string[]
-): DotCategoryFieldCategory[] => {
-    return categories.map((category) => {
+export const transformToSelectedObject = (
+    selected: HierarchyParent[]
+): DotCategoryFieldKeyValueObj[] => {
+    return selected.map((obj: HierarchyParent) => {
         return {
-            ...category,
-            checked: parentPath.includes(category.inode) && category.childrenCount > 0
+            key: obj.key,
+            value: obj.name,
+            inode: obj.inode,
+            path: getParentPath(obj.parentList)
         };
     });
+};
+
+/**
+ * Add calculated properties to the categories
+ * @param categories - Single category or array of categories to transform
+ * @param keyParentPath - Path of keys to determine clicked state
+ * @returns Transformed category or array of transformed categories with additional properties
+ */
+
+export const transformCategories = (
+    categories: DotCategory | DotCategory[],
+    keyParentPath: string[] = []
+): DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[] => {
+    const transformCategory = (category: DotCategory): DotCategoryFieldKeyValueObj => {
+        const { key, inode, categoryName, childrenCount } = category;
+        const hasChildren = childrenCount > 0;
+
+        const path = category.parentList ? getParentPath(category.parentList) : '';
+
+        return {
+            key,
+            inode,
+            value: categoryName || category?.name,
+            hasChildren,
+            clicked: hasChildren && keyParentPath.includes(key),
+            path
+        };
+    };
+
+    if (Array.isArray(categories)) {
+        return categories.map(transformCategory);
+    } else {
+        return transformCategory(categories);
+    }
 };
 
 /**
@@ -62,10 +100,10 @@ export const categoryDeepCopy = <T>(array: T[][]): T[][] => {
  * @param index
  */
 export const clearCategoriesAfterIndex = (
-    array: DotCategoryFieldCategory[][],
+    array: DotCategory[][],
     index: number
-): DotCategoryFieldCategory[][] => {
-    const newArray = categoryDeepCopy<DotCategoryFieldCategory>(array);
+): DotCategory[][] => {
+    const newArray = categoryDeepCopy<DotCategory>(array);
     newArray.splice(index + 1);
 
     return newArray;
@@ -85,10 +123,7 @@ export const clearParentPathAfterIndex = (parentPath: string[], index: number): 
  * @param index
  * @param categories
  */
-export const checkIfClickedIsLastItem = (
-    index: number,
-    categories: DotCategoryFieldCategory[][]
-) => {
+export const checkIfClickedIsLastItem = (index: number, categories: DotCategory[][]) => {
     return index + 1 === categories.length;
 };
 
@@ -103,17 +138,86 @@ export const checkIfClickedIsLastItem = (
 export const updateChecked = (
     storedSelected: DotCategoryFieldKeyValueObj[],
     selected: string[],
-    item: DotCategoryFieldCategory
+    item: DotCategoryFieldKeyValueObj
 ): DotCategoryFieldKeyValueObj[] => {
     let currentChecked = [...storedSelected];
 
+    // If the item is included in the array of selected
     if (selected.includes(item.key)) {
         if (!currentChecked.some((entry) => entry.key === item.key)) {
-            currentChecked = [...currentChecked, { key: item.key, value: item.categoryName }];
+            currentChecked = [
+                ...currentChecked,
+                { key: item.key, value: item.value, inode: item.inode }
+            ];
         }
     } else {
+        // get only the
         currentChecked = currentChecked.filter((entry) => entry.key !== item.key);
     }
 
     return currentChecked;
+};
+
+/**
+ * Retrieves the parent path of a given category item.
+ *
+ * @returns {string} - The parent path of the category item.
+ * @param parentList
+ */
+export const getParentPath = (parentList: DotCategoryParent[]): string => {
+    if (parentList) {
+        return parentList
+            .slice(1)
+            .map((parent) => parent.name)
+            .join(' / ');
+    }
+
+    return '';
+};
+
+/**
+ * Removes items from an array of objects based on a specified key or an array of keys.
+ *
+ * @param {DotCategoryFieldKeyValueObj[]} array - The array of objects to remove items from.
+ * @param {string | string[]} key - The key (or keys if an array) used to identify the items to remove.
+ * @returns {DotCategoryFieldKeyValueObj[]} The updated array without the removed items.
+ */
+export const removeItemByKey = (
+    array: DotCategoryFieldKeyValueObj[],
+    key: string | string[]
+): DotCategoryFieldKeyValueObj[] => {
+    if (Array.isArray(key)) {
+        const keysSet = new Set(key);
+
+        return array.filter((item) => !keysSet.has(item.key));
+    } else {
+        return array.filter((item) => item.key !== key);
+    }
+};
+
+/**
+ * Adds selected items to the existing array of DotCategoryFieldKeyValueObj.
+ *
+ * @param {DotCategoryFieldKeyValueObj[]} array - The original array.
+ * @param {DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]} items - The item(s) to be added to the array.
+ * @returns {DotCategoryFieldKeyValueObj[]} - The updated array with the selected items added.
+ */
+export const addSelected = (
+    array: DotCategoryFieldKeyValueObj[],
+    items: DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[]
+): DotCategoryFieldKeyValueObj[] => {
+    const itemsArray = Array.isArray(items) ? items : [items];
+    const itemSet = new Set(array.map((item) => item.key));
+
+    const newItems = itemsArray.filter((item) => !itemSet.has(item.key));
+
+    return [...array, ...newItems];
+};
+
+/***
+ * Remove all the empty arrays from the matrix
+ * @param {DotCategory[][]} array
+ */
+export const removeEmptyArrays = (array: DotCategory[][]): DotCategory[][] => {
+    return array.filter((item) => item.length > 0);
 };

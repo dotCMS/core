@@ -6,9 +6,9 @@
     @if (languageId?.value) {
         <!--Edit language-->
         <div class="field">
-            <label class="p-label-input-required" for="langEdit">{{
-                'locale.display.name' | dm
-            }}</label>
+            <label class="p-label-input-required" for="langEdit">
+                {{ 'locale.display.name' | dm }}
+            </label>
             <input
                 [maxlength]="50"
                 id="langEdit"
@@ -60,16 +60,15 @@
                 id="localeType"
                 #localeTypeDropdown
                 data-testId="localeType"
-                appendTo="body">
-            </p-dropdown>
+                appendTo="body"></p-dropdown>
         </div>
 
         @if (localeTypeDropdown.value == 1) {
             <!--Standard Locale-->
             <div class="field">
-                <label class="p-label-input-required" for="languageDropdown">{{
-                    'locales.language' | dm
-                }}</label>
+                <label class="p-label-input-required" for="languageDropdown">
+                    {{ 'locales.language' | dm }}
+                </label>
                 <p-dropdown
                     [filter]="true"
                     [options]="data.languages"
@@ -130,9 +129,9 @@
         } @else {
             <!--Custom Locale-->
             <div class="field">
-                <label class="p-label-input-required" for="language">{{
-                    'locale.display.name' | dm
-                }}</label>
+                <label class="p-label-input-required" for="language">
+                    {{ 'locale.display.name' | dm }}
+                </label>
                 <input
                     [maxlength]="50"
                     id="language"
@@ -143,9 +142,9 @@
                 <span class="p-field-hint">{{ 'locale.display.name.hint' | dm }}</span>
             </div>
             <div class="field">
-                <label class="p-label-input-required" for="languageCode">{{
-                    'locale.id' | dm
-                }}</label>
+                <label class="p-label-input-required" for="languageCode">
+                    {{ 'locale.id' | dm }}
+                </label>
                 <input
                     [maxlength]="5"
                     id="languageCode"
@@ -158,9 +157,9 @@
         }
     }
     @if (showError | async) {
-        <span class="locale-add__error-message" data-testId="error-message">{{
-            'locale.error.message' | dm
-        }}</span>
+        <span class="locale-add__error-message" data-testId="error-message">
+            {{ 'locale.error.message' | dm }}
+        </span>
     }
 
     <div class="locale-add__buttons">

@@ -95,6 +95,33 @@
                             <arguments>${yarn.install.cmd}</arguments>
                         </configuration>
                     </execution>
+
+                    <execution>
+                        <id>lint-test</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <skip>${skip.validate}</skip>
+                            <arguments>nx affected -t lint --exclude='tag:skip:lint'</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>format-test</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <skip>${skip.validate}</skip>
+                            <arguments>nx format:check</arguments>
+                        </configuration>
+                    </execution>
+
                     <execution>
                         <id>build dotcms-ui</id>
                         <goals>
@@ -105,7 +132,7 @@
                         <phase>compile</phase>
 
                         <configuration>
-                            <arguments>run nx build dotcms-ui -- ${nx.build.options}</arguments>
+                            <arguments>run nx build dotcms-ui ${nx.build.options}</arguments>
                         </configuration>
                     </execution>
 
@@ -250,39 +277,16 @@
             </activation>
             <properties>
                 <nx.build.options>--prod</nx.build.options>
-                <yarn.install.cmd>--frozen-lockfile --silent</yarn.install.cmd>
+                <yarn.install.cmd>--frozen-lockfile</yarn.install.cmd>
             </properties>
             <build/>
         </profile>
 
         <profile>
             <id>validate</id>
-            <build>
-                <defaultGoal>generate-resources</defaultGoal>
-                <plugins>
-                    <plugin>
-                        <groupId>com.github.eirslett</groupId>
-                        <artifactId>frontend-maven-plugin</artifactId>
-                        <configuration>
-                            <!-- Base config defined in dotcms-core-web-parent -->
-                            <skip>${skip.validate}</skip>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>lint-test</id>
-                                <goals>
-                                    <goal>yarn</goal>
-                                </goals>
-                                <!-- optional: the default phase is "generate-resources" -->
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <arguments>nx affected -t lint --exclude='tag:skip:lint'</arguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <skip.validate>false</skip.validate>
+            </properties>
         </profile>
 
         <profile>

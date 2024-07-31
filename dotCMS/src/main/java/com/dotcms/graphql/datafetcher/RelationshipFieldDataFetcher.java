@@ -27,6 +27,8 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
         try {
             final Contentlet nonCachedContentlet = environment.getSource();
 
+            Logger.debug(this, ()-> "Fetching relationship field for contentlet: " + nonCachedContentlet.getIdentifier());
+
             // let's use the cache content so relationships are also cached
             final Contentlet contentlet = APILocator.getContentletAPI()
                 .findContentletByIdentifier(nonCachedContentlet.getIdentifier(), nonCachedContentlet.isLive(),

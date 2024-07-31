@@ -26,10 +26,10 @@ import {
     SEO_LIMITS
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { ellipsizeText } from '@dotcms/utils';
 
 import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo-tool.component';
 import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-image-preview.component';
-
 @Component({
     selector: 'dot-results-seo-tool',
     standalone: true,
@@ -70,13 +70,14 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     noFavicon = false;
 
     ngOnInit(): void {
-        const title =
-            this.seoOGTags?.['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
-            this.seoOGTags?.title?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
+        const title = this.seoOGTags?.['og:title'] || this.seoOGTags?.title;
+        const ellipsizedTitle = ellipsizeText(title, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
 
-        const description =
-            this.seoOGTags?.['og:description']?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) ||
-            this.seoOGTags?.description?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
+        const description = this.seoOGTags?.['og:description'] || this.seoOGTags?.description;
+        const ellipsizedDescription = ellipsizeText(
+            description,
+            SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
+        );
 
         const twitterDescriptionProperties = [
             'twitter:description',
@@ -87,21 +88,21 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
 
         const twitterDescription = twitterDescriptionProperties
             .map((property) =>
-                this.seoOGTags?.[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
+                ellipsizeText(this.seoOGTags?.[property], SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
             )
-            .find((value) => value !== undefined);
+            .find((value) => value !== undefined && value.length > 0);
 
         const twitterTitle = twitterTitleProperties
             .map((property) =>
-                this.seoOGTags?.[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
+                ellipsizeText(this.seoOGTags?.[property], SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
             )
-            .find((value) => value !== undefined);
+            .find((value) => value !== undefined && value.length > 0);
 
         this.allPreview = [
             {
                 hostName: this.hostName,
-                title,
-                description,
+                title: ellipsizedTitle,
+                description: ellipsizedDescription,
                 type: 'Desktop',
                 isMobile: false,
                 image: this.seoOGTags?.['og:image'],
@@ -112,8 +113,8 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
             },
             {
                 hostName: this.hostName,
-                title,
-                description,
+                title: ellipsizedTitle,
+                description: ellipsizedDescription,
                 type: 'Mobile',
                 isMobile: true
             }

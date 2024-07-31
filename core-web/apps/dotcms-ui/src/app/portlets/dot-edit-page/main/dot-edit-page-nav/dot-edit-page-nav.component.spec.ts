@@ -59,6 +59,7 @@ export class MockDotPropertiesService {
     getKey(): Observable<true> {
         return observableOf(true);
     }
+
     getFeatureFlag(): Observable<boolean> {
         return observableOf(true);
     }
@@ -66,7 +67,9 @@ export class MockDotPropertiesService {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav> `
+    template: `
+        <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav>
+    `
 })
 class TestHostComponent {
     @Input()
@@ -284,7 +287,7 @@ describe('DotEditPageNavComponent', () => {
                 const labels = ['Layout', 'Rules', 'Experiments'];
                 menuListItems.forEach((item, index) => {
                     const label = item.query(By.css('.edit-page-nav__item-text'));
-                    expect(label.nativeElement.textContent).toBe(labels[index]);
+                    expect(label.nativeElement.textContent.trim()).toBe(labels[index]);
 
                     expect(item.nativeElement.getAttribute('ng-reflect-text')).toBe(
                         'Enterprise only'
@@ -382,7 +385,7 @@ describe('DotEditPageNavComponent', () => {
             const label = menuListItems[4].query(By.css('[data-testId="menuListItemText"]'))
                 .nativeElement.innerHTML;
             expect(MATERIAL_ICON_NAME).toEqual(iconClass);
-            expect('Experiments').toEqual(label);
+            expect('Experiments').toEqual(label.trim());
         });
     });
     describe('experiments feature flag false', () => {

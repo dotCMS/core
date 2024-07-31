@@ -95,9 +95,9 @@ export const TREESELECT_VALUE_ACCESSOR = {
                             <div *ngFor="let node of value" class="p-treeselect-token">
                                 <span class="p-treeselect-token-label">{{ node.label }}</span>
                             </div>
-                            <ng-container *ngIf="emptyValue">{{
-                                placeholder || 'empty'
-                            }}</ng-container>
+                            <ng-container *ngIf="emptyValue">
+                                {{ placeholder || 'empty' }}
+                            </ng-container>
                         </ng-template>
                     </ng-template>
                 </div>

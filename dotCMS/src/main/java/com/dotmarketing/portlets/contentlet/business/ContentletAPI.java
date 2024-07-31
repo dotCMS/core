@@ -25,10 +25,11 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -64,6 +65,18 @@ public interface ContentletAPI {
 			"M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
 			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
 	};
+
+	/**
+	 * Returns the {@link Contentlet} date formats
+	 * @return String array of formats
+	 */
+	default String [] getContentletDateFormats () {
+
+		final String[] dateFormats = Config.getStringArrayProperty("dotcontentlet_dateformats",
+				ContentletAPI.DEFAULT_DATE_FORMATS);
+
+		return dateFormats;
+	}
 
 	String dnsRegEx = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 
@@ -542,6 +555,42 @@ public interface ContentletAPI {
 							  final Host site, final Folder folder, final User user, final String copySuffix,
 							  final boolean respectFrontendRoles) throws DotDataException, DotSecurityException,
 			DotContentletStateException;
+
+	/**
+	 * Searches for content using the given Lucene query, and the returned result includes
+	 * pagination information.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param contentsPerPage      The maximum number of items to return per page.
+	 * @param page                 The page number to retrieve.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @return A PaginatedContentList object containing the paginated search results.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	PaginatedContentList<Contentlet> searchPaginatedByPage(String luceneQuery, int contentsPerPage,
+			int page, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Searches for content using the given Lucene query, and the returned result includes
+	 * pagination information.
+	 *
+	 * @param luceneQuery          The Lucene query string.
+	 * @param limit                The maximum number of items to return per page.
+	 * @param offset               The offset to start retrieving items from.
+	 * @param sortBy               The field to sort the results by.
+	 * @param user                 The user performing the search.
+	 * @param respectFrontendRoles Determines whether to respect frontend roles during the search.
+	 * @return A PaginatedContentList object containing the paginated search results.
+	 * @throws DotDataException     If an error occurs while accessing the data layer.
+	 * @throws DotSecurityException If the user does not have permission to perform the search.
+	 */
+	PaginatedContentList<Contentlet> searchPaginated(String luceneQuery, int limit,
+			int offset, String sortBy, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 

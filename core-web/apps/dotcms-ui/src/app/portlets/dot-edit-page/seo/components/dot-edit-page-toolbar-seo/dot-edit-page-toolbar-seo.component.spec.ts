@@ -6,6 +6,7 @@ import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -19,6 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
@@ -64,11 +66,16 @@ import {
     dotcmsContentletMock,
     DotFormatDateServiceMock,
     LoginServiceMock,
+    mockDotContainers,
+    mockDotLanguage,
+    mockDotLayout,
     MockDotMessageService,
+    mockDotPage,
     mockDotPersona,
     mockDotRenderedPage,
     mockDotRenderedPageState,
     MockDotRouterService,
+    mockDotTemplate,
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
@@ -164,12 +171,14 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 TooltipModule,
                 TagModule,
                 DotExperimentClassDirective,
+                DotLanguageSelectorComponent,
                 RouterTestingModule.withRoutes([
                     {
                         path: 'edit-page/experiments/pageId/id/reports',
                         component: TestHostComponent
                     }
-                ])
+                ]),
+                NoopAnimationsModule
             ],
             providers: [
                 DotSessionStorageService,
@@ -480,5 +489,39 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 expect(component.whatschange.emit).not.toHaveBeenCalled();
             });
         });
+    });
+
+    it('should have a new api link', async () => {
+        const initialLink = component.apiLink;
+
+        const host = `api/v1/page/render${componentHost.pageState.page.pageURI}`;
+        const newLanguageId = 2;
+        const expectedLink = `${host}?language_id=${newLanguageId}`;
+
+        fixtureHost.componentRef.setInput(
+            'pageState',
+            new DotPageRenderState(
+                mockUser(),
+                new DotPageRender({
+                    containers: mockDotContainers(),
+                    layout: mockDotLayout(),
+                    page: { ...mockDotPage(), languageId: 2 },
+                    template: mockDotTemplate(),
+                    canCreateTemplate: true,
+                    numberContents: 1,
+                    viewAs: {
+                        language: mockDotLanguage,
+                        mode: DotPageMode.PREVIEW
+                    }
+                }),
+                dotcmsContentletMock
+            )
+        );
+
+        fixtureHost.detectChanges();
+        await fixtureHost.whenStable();
+
+        expect(component.apiLink).toBe(expectedLink);
+        expect(component.apiLink).not.toBe(initialLink);
     });
 });

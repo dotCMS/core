@@ -7,6 +7,7 @@ import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.google.common.collect.ImmutableList;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Actionlet(onlyBatch = true)
 public class OpenAIContentPromptActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID = 1L;
@@ -38,7 +40,7 @@ public class OpenAIContentPromptActionlet extends WorkFlowActionlet {
                 overwriteParameter,
                 new WorkflowActionletParameter(OpenAIParams.OPEN_AI_PROMPT.key, "The prompt that will be sent to the AI", "We need an attractive search result in Google. Return a json object that includes the fields \"pageTitle\" for a meta title of less than 55 characters and \"metaDescription\" for the meta description of less than 300 characters using this content:\\n\\n${fieldContent}\\n\\n", true),
                 new WorkflowActionletParameter(OpenAIParams.RUN_DELAY.key, "Update the content asynchronously, after X seconds. O means run in-process", "5", true),
-                new WorkflowActionletParameter(OpenAIParams.MODEL.key, "The AI model to use, defaults to " + ConfigService.INSTANCE.config().getConfig(AppKeys.MODEL), ConfigService.INSTANCE.config().getConfig(AppKeys.MODEL), false),
+                new WorkflowActionletParameter(OpenAIParams.MODEL.key, "The AI model to use, defaults to " + ConfigService.INSTANCE.config().getConfig(AppKeys.TEXT_MODEL_NAMES), ConfigService.INSTANCE.config().getConfig(AppKeys.TEXT_MODEL_NAMES), false),
                 new WorkflowActionletParameter(OpenAIParams.TEMPERATURE.key, "The AI temperature for the response.  Between .1 and 2.0.  Defaults to " + ConfigService.INSTANCE.config().getConfig(AppKeys.COMPLETION_TEMPERATURE), ConfigService.INSTANCE.config().getConfig(AppKeys.COMPLETION_TEMPERATURE), false)
         );
     }

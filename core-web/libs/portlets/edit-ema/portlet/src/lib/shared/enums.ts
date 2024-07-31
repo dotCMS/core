@@ -3,7 +3,8 @@ export enum NOTIFY_CUSTOMER {
     EMA_REQUEST_BOUNDS = 'ema-request-bounds',
     EMA_EDITOR_PONG = 'ema-editor-pong',
     EMA_SCROLL_INSIDE_IFRAME = 'scroll-inside-iframe',
-    SET_PAGE_DATA = 'SET_PAGE_DATA'
+    SET_PAGE_DATA = 'SET_PAGE_DATA',
+    COPY_CONTENTLET_INLINE_EDITING_SUCCESS = 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS'
 }
 
 // All the custom events that come from the JSP Iframe
@@ -22,28 +23,30 @@ export enum NG_CUSTOM_EVENTS {
     EDIT_CONTENTLET_UPDATED = 'edit-contentlet-data-updated'
 }
 
-// The current state of the editor
-export enum EDITOR_STATE {
+// Status of the whole UVE
+export enum UVE_STATUS {
     LOADING = 'loading',
-    IDLE = 'idle',
-    DRAGGING = 'dragging',
-    ERROR = 'error',
-    OUT_OF_BOUNDS = 'out-of-bounds',
-    SCROLL_DRAG = 'scroll-drag'
+    LOADED = 'loaded',
+    ERROR = 'error'
 }
 
-export enum EDITOR_MODE {
-    EDIT = 'edit',
-    EDIT_VARIANT = 'edit-variant',
-    PREVIEW_VARIANT = 'preview-variant',
-    DEVICE = 'device',
-    SOCIAL_MEDIA = 'social-media',
-    INLINE_EDITING = 'inline-editing',
-    LOCKED = 'locked'
+export enum EDITOR_STATE {
+    ERROR = 'error',
+    IDLE = 'idle',
+    DRAGGING = 'dragging',
+    OUT_OF_BOUNDS = 'out-of-bounds',
+    SCROLL_DRAG = 'scroll-drag',
+    SCROLLING = 'scrolling',
+    INLINE_EDITING = 'inline-editing'
 }
 
 export enum PAGE_MODE {
     EDIT = 'EDIT_MODE',
     PREVIEW = 'PREVIEW_MODE',
     LIVE = 'LIVE'
+}
+
+export enum CommonErrors {
+    'NOT_FOUND' = '404',
+    'ACCESS_DENIED' = '403'
 }

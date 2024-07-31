@@ -12,9 +12,9 @@
         <div
             *ngIf="(options && options.secondary) || selectedItems.length"
             class="action-header__group-actions">
-            <span class="action-header__selected-items-counter"
-                >{{ selectedItems.length }} {{ 'selected' | dm }}</span
-            >
+            <span class="action-header__selected-items-counter">
+                {{ selectedItems.length }} {{ 'selected' | dm }}
+            </span>
             <ng-container *ngIf="options && options.secondary">
                 <p-splitButton
                     *ngFor="let action of options.secondary"

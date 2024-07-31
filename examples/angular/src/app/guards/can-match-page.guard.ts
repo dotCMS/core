@@ -1,17 +1,16 @@
-import { inject } from '@angular/core';
+import { inject, InjectionToken } from '@angular/core';
 import { CanMatchFn, Route, Router, UrlSegment } from '@angular/router';
 
-import { getPageRequestParams } from '@dotcms/client';
+import { DotCmsClient, getPageRequestParams } from '@dotcms/client';
 import { DotCMSPageAsset } from '@dotcms/angular';
-
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 
 export const canMatchPage: CanMatchFn = async (
   route: Route,
-  segments: UrlSegment[],
+  segments: UrlSegment[]
 ) => {
   const router = inject(Router);
-  const client = inject(DOTCMS_CLIENT_TOKEN);
+  const client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
 
   try {
     const { queryParams } = router.getCurrentNavigation()?.initialUrl || {};
@@ -21,11 +20,8 @@ export const canMatchPage: CanMatchFn = async (
       params: queryParams,
     });
 
-    const { entity } = (await client.page.get(pageProps)) as {
-      entity: DotCMSPageAsset;
-    };
-
-    const { vanityUrl } = entity;
+    const pageAsset = (await client.page.get(pageProps)) as DotCMSPageAsset;
+    const { vanityUrl } = pageAsset;
 
     if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
       return router.createUrlTree([vanityUrl.forwardTo]);
@@ -33,7 +29,7 @@ export const canMatchPage: CanMatchFn = async (
 
     // Add the page asset to the route data
     // so it can be used by the DotCMSPageResolver and avoid fetching it again.
-    route.data = { ...route.data, pageAsset: entity };
+    route.data = { ...route.data, pageAsset };
 
     if (vanityUrl) {
       const vanityPagePros = { ...pageProps, path: vanityUrl.forwardTo };
@@ -45,7 +41,7 @@ export const canMatchPage: CanMatchFn = async (
       route.data = { ...route.data, pageAsset: pageResponse.entity };
     }
 
-    return !!entity;
+    return !!pageAsset;
   } catch (error: any) {
     console.error(error); // Log the error
     route.data = { ...route.data, pageAsset: { layout: {} } }; // Add the page asset to the route data

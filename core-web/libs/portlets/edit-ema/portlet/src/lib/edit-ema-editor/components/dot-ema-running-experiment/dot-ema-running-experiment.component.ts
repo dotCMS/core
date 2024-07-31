@@ -1,4 +1,4 @@
-import { AsyncPipe, DatePipe, NgIf, TitleCasePipe } from '@angular/common';
+import { DatePipe, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink, RouterModule } from '@angular/router';
 
@@ -10,16 +10,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'dot-ema-running-experiment',
     standalone: true,
-    imports: [
-        TagModule,
-        RouterModule,
-        RouterLink,
-        DotMessagePipe,
-        TitleCasePipe,
-        DatePipe,
-        NgIf,
-        AsyncPipe
-    ],
+    imports: [TagModule, RouterModule, RouterLink, DotMessagePipe, TitleCasePipe, DatePipe],
     templateUrl: './dot-ema-running-experiment.component.html',
     styleUrl: './dot-ema-running-experiment.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

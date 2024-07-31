@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { ConfirmationService } from 'primeng/api';
+import { Paginator } from 'primeng/paginator';
 
 import { DotPersona } from '@dotcms/dotcms-models';
 
@@ -125,6 +126,30 @@ describe('EditEmaPersonaSelectorComponent', () => {
 
             expect(chip).not.toBeNull();
         });
+
+        it('should show a paginator when there are more than 10 personas', () => {
+            component.$personas.set({
+                items: Array(11).fill(CUSTOM_PERSONA),
+                totalRecords: 11,
+                itemsPerPage: 10
+            });
+
+            spectator.click(button);
+
+            expect(spectator.query(byTestId('persona-paginator'))).not.toBeNull();
+        });
+
+        it('should not show a paginator when there are less than 10 personas', () => {
+            component.$personas.set({
+                items: Array(9).fill(CUSTOM_PERSONA),
+                totalRecords: 9,
+                itemsPerPage: 10
+            });
+
+            spectator.click(button);
+
+            expect(spectator.query(byTestId('persona-paginator'))).toBeNull();
+        });
     });
 
     describe('events', () => {
@@ -188,6 +213,32 @@ describe('EditEmaPersonaSelectorComponent', () => {
                 },
                 true
             );
+        });
+
+        it('should call fetchPersonas with incremented page when clicked in paginator', () => {
+            const fetchPersonasSpy = jest.spyOn(component, 'fetchPersonas');
+
+            component.$personas.set({
+                items: Array(11).fill(CUSTOM_PERSONA),
+                totalRecords: 11,
+                itemsPerPage: 10
+            });
+
+            spectator.click(button);
+            // PrimeNG paginator starts at 0, so the second page is 1
+            spectator.triggerEventHandler(Paginator, 'onPageChange', { page: 1 });
+
+            // but the API starts at 1, so we need to add 1
+            expect(fetchPersonasSpy).toHaveBeenCalledWith(2);
+        });
+
+        it('should call fetchPersonas when pageId changes', () => {
+            const fetchPersonasSpy = jest.spyOn(component, 'fetchPersonas');
+
+            spectator.setInput('pageId', '456');
+            spectator.detectChanges();
+
+            expect(fetchPersonasSpy).toHaveBeenCalled();
         });
     });
 });

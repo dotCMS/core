@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { graphqlToPageEntity, getPageRequestParams } from "@dotcms/client";
-import { MyPage } from "@/components/my-page";
+import { MyGraphQLPage } from "@/components/graphql-page";
 
 import { getGraphQLPageData } from "@/utils/gql";
 import { client } from "@/utils/dotcmsClient";
@@ -63,5 +63,5 @@ export default async function Home({ searchParams, params }) {
         notFound();
     }
 
-    return <MyPage nav={nav.entity.children} pageAsset={pageAsset}></MyPage>;
+    return <MyGraphQLPage nav={nav.entity.children} pageAsset={pageAsset} />;
 }

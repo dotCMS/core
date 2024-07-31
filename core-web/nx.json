@@ -1,7 +1,4 @@
 {
-    "affected": {
-        "defaultBase": "master"
-    },
     "npmScope": "dotcms",
     "tasksRunnerOptions": {
         "default": {
@@ -168,5 +165,7 @@
                 "serveStaticTargetName": "serve-static"
             }
         }
-    ]
+    ],
+    "defaultBase": "master",
+    "ignorePatterns": ["**/node_modules"]
 }
