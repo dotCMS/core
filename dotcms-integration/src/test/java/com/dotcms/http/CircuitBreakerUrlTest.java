@@ -17,7 +17,9 @@ import java.util.concurrent.TimeUnit;
 
 import com.dotmarketing.util.DateUtil;
 import org.apache.commons.io.output.NullOutputStream;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -28,6 +30,13 @@ import com.google.common.collect.ImmutableMap;
 
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.CircuitBreakerOpenException;
+
+import javax.ws.rs.core.Response;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 public class CircuitBreakerUrlTest {
@@ -42,6 +51,14 @@ public class CircuitBreakerUrlTest {
     final static String HEADER_VALUE="SEEMS TO BE WORKING";
     final static String PARAM="X-MY-PARAM";
     final static String PARAM_VALUE="PARAM SEEMS TO BE WORKING";
+
+    private CircuitBreakerUrl.Response response;
+
+    @Before
+    public void setup() {
+        response = mock(CircuitBreakerUrl.Response.class);
+        when(response.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+    }
 
     @Test()
     public void test_circuitBreakerConnectionControl() {
@@ -421,6 +438,36 @@ public class CircuitBreakerUrlTest {
         cburl.doOut(nos);
 
         assert (cburl.response() >= 400 && cburl.response() <= 499);
+    }
+
+    /**
+     * Given an int status code
+     * Then evaluate it does have a SUCCESS http status
+     */
+    @Test
+    public void test_isSuccessStatusCode() {
+        assertTrue(CircuitBreakerUrl.isSuccessResponse(HttpStatus.SC_ACCEPTED));
+        assertTrue(CircuitBreakerUrl.isSuccessResponse(HttpStatus.SC_OK));
+        assertFalse(CircuitBreakerUrl.isSuccessResponse(HttpStatus.SC_BAD_REQUEST));
+        assertFalse(CircuitBreakerUrl.isSuccessResponse(HttpStatus.SC_FORBIDDEN));
+        assertFalse(CircuitBreakerUrl.isSuccessResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR));
+    }
+
+    /**
+     * Given a {@link Response}
+     * Then evaluate it does have a SUCCESS http status
+     */
+    @Test
+    public void test_isSuccessResponse() {
+        assertTrue(CircuitBreakerUrl.isSuccessResponse(response));
+        when(response.getStatusCode()).thenReturn(HttpStatus.SC_ACCEPTED);
+        assertTrue(CircuitBreakerUrl.isSuccessResponse(response));
+        when(response.getStatusCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
+        assertFalse(CircuitBreakerUrl.isSuccessResponse(response));
+        when(response.getStatusCode()).thenReturn(HttpStatus.SC_FORBIDDEN);
+        assertFalse(CircuitBreakerUrl.isSuccessResponse(response));
+        when(response.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        assertFalse(CircuitBreakerUrl.isSuccessResponse(response));
     }
 
 }
