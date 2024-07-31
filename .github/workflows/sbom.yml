@@ -1,76 +1,71 @@
 name: sbom
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
 
 jobs:
-  scanner:
+  scan:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout core-test-results repository
         uses: actions/checkout@v3
         with:
+          repository: rashik1144/core-test-results
+          token: ${{ secrets.SECRET_PENTEST_TOKEN }}
           path: core-test-results
 
-      - name: Start dotCMS with Docker
-        id: start-dotcms
+      - name: Get latest dotCMS Docker image tag based on last update
+        id: get_version
         run: |
-          # Download the dotCMS Docker image
-          docker pull dotcms/dotcms:latest
-          # Run the Docker container
-          docker run -d -p 8082:8082 dotcms/dotcms:latest
+          # Fetch the list of tags from Docker Hub
+          response=$(curl -s https://hub.docker.com/v2/repositories/dotcms/dotcms/tags/)
+          
+          # Extract tag names from the response
+          tags=$(echo "$response" | jq -r '.results[].name')
+          # Get detailed info for each tag
+          tags_with_dates=""
+          for tag in $tags; do
+            tag_info=$(curl -s "https://hub.docker.com/v2/repositories/dotcms/dotcms/tags/${tag}/")
+            last_updated=$(echo "$tag_info" | jq -r '.last_updated')
+            tags_with_dates="$tags_with_dates\n$tag $last_updated"
+          done
+          # Find the tag with the most recent update
+          latest_tag=$(echo -e "$tags_with_dates" | sort -k2,2 -r | head -n 1 | awk '{print $1}')
+          
+          echo "Latest tag: $latest_tag"
+          echo "DOTCMS_VERSION=$latest_tag" >> $GITHUB_ENV
 
-      - name: Get latest release version
-        id: get-release-version
+      - name: Pull and run dotCMS Docker image
         run: |
-          # Fetch the latest release version from GitHub
-          releases=$(curl -s https://api.github.com/repos/dotCMS/core/releases)
-          release_version=$(echo "$releases" | jq -r '.[0].tag_name' | sed 's/^v//')
-          formatted_version="release-$release_version"
-          echo "Latest release version: $formatted_version"
-          echo "release_version=$formatted_version" >> $GITHUB_ENV
+          docker pull dotcms/dotcms:${{ env.DOTCMS_VERSION }}
+          docker run -d -p 8082:8082 dotcms/dotcms:${{ env.DOTCMS_VERSION }}
 
+      - name: Install pipx
+        run: |
+          pip install pipx
 
       - name: Scan Docker Image with Syft
         run: |
-          # Ensure pipx is installed and then install Syft
-          pipx install syft
-          syft dotcms/dotcms:latest -o cyclonedx-xml > core-test-results/cyclonedx.json
+          pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core-test-results/cyclonedx.json
 
-      - name: Stop dotCMS
+      - name: Rename SBOM file with dotCMS version
         run: |
-          # Stop and remove the Docker container
-          docker ps -q --filter "ancestor=dotcms/dotcms:latest" | xargs docker stop
-          docker system prune -f
+          mv core-test-results/cyclonedx.json core-test-results/dotcms-${{ env.DOTCMS_VERSION }}.json
 
-      - name: Switch to release branch
+      - name: Configure Git
         run: |
-          cd core-test-results
-          branch_name="${{ env.release_version }}"
-          git fetch origin $branch_name
-          if ! git checkout $branch_name; then
-            git checkout -b $branch_name origin/$branch_name
-          fi
+          git config --global user.email "rashik1144@github.com"
+          git config --global user.name "rashik1144"
 
-      - name: Add files and commit changes
+      - name: Commit and push results to core-test-results repository
         run: |
           cd core-test-results
-          git add .
-          git commit -m "Add test results for release ${{ env.release_version }}"
+          git add dotcms-${{ env.DOTCMS_VERSION }}.json
+          git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
+          git push origin master
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRET_PENTEST_TOKEN }}
 
-      - name: Push changes to rashik1144/core-test-results repository
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.SECRET_PENTEST_TOKEN }}
-          branch: ${{ env.release_version }}
-          force: true
-          directory: core-test-results
-          repository: rashik1144/core-test-results
-          
-  maintenance:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Connect to self-hosted runner
-        run: echo "This job is run on an Ubuntu runner. No specific connection required."
