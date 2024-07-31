@@ -14,11 +14,11 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TreeModule } from 'primeng/tree';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
 import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.models';
@@ -54,6 +54,10 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 })
 export class DotCategoryFieldCategoryListComponent {
     /**
+     * Represents the DotMessageService instance.
+     */
+    readonly #dotMessageService = inject(DotMessageService);
+    /**
      *  Represent the columns of categories
      */
     $categoryColumns = viewChildren<ElementRef<HTMLDivElement>>('categoryColumn');
@@ -88,12 +92,42 @@ export class DotCategoryFieldCategoryListComponent {
     /**
      * Represents the breadcrumbs to display
      */
-    $breadcrumbs = input<MenuItem[]>([], { alias: 'breadcrumbs' });
+    $breadcrumbs = input<DotCategoryFieldKeyValueObj[]>([], { alias: 'breadcrumbs' });
+    /**
+     * Represents the breadcrumbs menu to display
+     *
+     * @memberof DotCategoryFieldCategoryListComponent
+     */
+    $breadcrumbsMenu = computed(() => {
+        const currentItems = this.$breadcrumbs().map((item, index) => {
+            return {
+                label: item.value,
+                command: () => {
+                    this.rowClicked.emit({ index, item });
+                }
+            };
+        });
+
+        return [
+            {
+                label: this.#dotMessageService.get(
+                    'edit.content.category-field.category.root-name'
+                ),
+                command: () => {
+                    this.rowClicked.emit({ index: 0 });
+                }
+            },
+            ...currentItems
+        ];
+    });
 
     /**
      * Emit the item clicked to the parent component
      */
-    @Output() rowClicked = new EventEmitter<{ index: number; item: DotCategoryFieldKeyValueObj }>();
+    @Output() rowClicked = new EventEmitter<{
+        index: number;
+        item?: DotCategoryFieldKeyValueObj;
+    }>();
 
     /**
      * Emit the item checked or selected to the parent component

@@ -1,5 +1,3 @@
-import { MenuItem } from 'primeng/api';
-
 import {
     DotCategory,
     DotCategoryParent,
@@ -52,35 +50,37 @@ export const transformToSelectedObject = (
     });
 };
 
+const transformCategory = (
+    category: DotCategory,
+    keyParentPath: string[] = []
+): DotCategoryFieldKeyValueObj => {
+    const { key, inode, categoryName, childrenCount } = category;
+    const hasChildren = childrenCount > 0;
+
+    const path = category.parentList ? getParentPath(category.parentList) : '';
+
+    return {
+        key,
+        inode,
+        value: categoryName || category?.name,
+        hasChildren,
+        clicked: hasChildren && keyParentPath.includes(key),
+        path
+    };
+};
+
 /**
  * Add calculated properties to the categories
  * @param categories - Single category or array of categories to transform
  * @param keyParentPath - Path of keys to determine clicked state
  * @returns Transformed category or array of transformed categories with additional properties
  */
-
 export const transformCategories = (
     categories: DotCategory | DotCategory[],
     keyParentPath: string[] = []
 ): DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[] => {
-    const transformCategory = (category: DotCategory): DotCategoryFieldKeyValueObj => {
-        const { key, inode, categoryName, childrenCount } = category;
-        const hasChildren = childrenCount > 0;
-
-        const path = category.parentList ? getParentPath(category.parentList) : '';
-
-        return {
-            key,
-            inode,
-            value: categoryName || category?.name,
-            hasChildren,
-            clicked: hasChildren && keyParentPath.includes(key),
-            path
-        };
-    };
-
     if (Array.isArray(categories)) {
-        return categories.map(transformCategory);
+        return categories.map((category) => transformCategory(category, keyParentPath));
     } else {
         return transformCategory(categories);
     }
@@ -226,19 +226,14 @@ export const addSelected = (
 export const getMenuItemsFromKeyParentPath = (
     array: DotCategory[][],
     keyParentPath: string[]
-): MenuItem[] => {
+): DotCategoryFieldKeyValueObj[] => {
     const flatArray = array.flat();
 
     return keyParentPath.reduce((array, key) => {
         const category = flatArray.find((item) => item.key === key);
 
         if (category) {
-            return [
-                ...array,
-                {
-                    label: category.categoryName
-                }
-            ];
+            return [...array, transformCategory(category, keyParentPath)];
         }
 
         return array;

@@ -126,9 +126,7 @@ export const CategoryFieldStore = signalStore(
             const categories = store.categories();
             const keyParentPath = store.keyParentPath();
 
-            const currentItems = getMenuItemsFromKeyParentPath(categories, keyParentPath);
-
-            return [{ label: 'Root' }, ...currentItems];
+            return getMenuItemsFromKeyParentPath(categories, keyParentPath);
         })
     })),
     withMethods(
@@ -275,13 +273,13 @@ export const CategoryFieldStore = signalStore(
                     filter(
                         (event) =>
                             !event ||
-                            (event.item.hasChildren &&
-                                !store.keyParentPath().includes(event.item.key))
+                            (event?.item?.hasChildren &&
+                                !store.keyParentPath().includes(event?.item?.key))
                     ),
                     tap(() => patchState(store, { state: ComponentStatus.LOADING })),
                     switchMap((event) => {
                         const categoryInode: string = event
-                            ? event.item.inode
+                            ? event?.item.inode
                             : store.rootCategoryInode();
 
                         return categoryService.getChildren(categoryInode).pipe(
