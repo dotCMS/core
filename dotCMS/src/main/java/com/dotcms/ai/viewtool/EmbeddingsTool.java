@@ -2,10 +2,8 @@ package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.app.AppConfig;
-import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.EncodingUtil;
-import com.dotcms.ai.util.OpenAIModel;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
@@ -53,8 +51,8 @@ public class EmbeddingsTool implements ViewTool {
      * @return The number of tokens in the prompt, or -1 if no encoding is found for the model.
      */
     public int countTokens(final String prompt) {
-        return EncodingUtil.registry
-                .getEncodingForModel(appConfig.getModel())
+        return EncodingUtil.REGISTRY
+                .getEncodingForModel(appConfig.getModel().getCurrentModel())
                 .map(encoding -> encoding.countTokens(prompt))
                 .orElse(-1);
     }
@@ -69,9 +67,7 @@ public class EmbeddingsTool implements ViewTool {
      */
     public List<Float> generateEmbeddings(final String prompt) {
         int tokens = countTokens(prompt);
-        int maxTokens = OpenAIModel
-                .resolveModel(ConfigService.INSTANCE.config(host).getConfig(AppKeys.EMBEDDINGS_MODEL))
-                .maxTokens;
+        int maxTokens = ConfigService.INSTANCE.config(host).getEmbeddingsModel().getMaxTokens();
         if (tokens > maxTokens) {
             Logger.warn(
                     EmbeddingsTool.class,
