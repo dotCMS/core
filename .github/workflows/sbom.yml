@@ -23,8 +23,8 @@ jobs:
           # Fetch the latest release from GitHub API
           response=$(curl -s https://api.github.com/repos/dotCMS/core/releases/latest)
           
-          # Extract the tag name from the response
-          latest_tag=$(echo "$response" | jq -r '.tag_name')
+          # Extract the tag name from the response and format it
+          latest_tag=$(echo "$response" | jq -r '.tag_name' | sed 's/^v//')
           
           echo "Latest tag: $latest_tag"
           echo "DOTCMS_VERSION=$latest_tag" >> $GITHUB_ENV
