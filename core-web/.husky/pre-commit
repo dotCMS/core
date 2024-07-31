@@ -8,51 +8,91 @@ error_occurred=false
 
 # Perform fix operations on the staged files
 perform_fixes() {
-    local files="$1"         # Store files as a string
-    local add_to_index="$2"    # Should be 'true' or 'false'
-    local file               # Declare file variable for use in loop
+    local files="$1"
+    local add_to_index="$2"
+    local file
 
-    if ! npx nx format:write; then
+    YARN_EXEC="${root_dir}/installs/node/yarn/dist/bin/yarn"
+    NODE_EXEC="${root_dir}/installs/node/node"
+
+    echo "Yarn version: $($YARN_EXEC --version 2>/dev/null)"
+    echo "Node version: $($NODE_EXEC --version)"
+
+    if ! $YARN_EXEC nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
         error_occurred=true
     fi
 
-    if ! npx nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
-            error_occurred=true
+    if ! $YARN_EXEC nx format:write; then
+        error_occurred=true
     fi
 
     if [ "$add_to_index" = "true" ]; then
-        # Get a list of modified files in the working tree (excluding untracked/new files)
-        local modified_files=$(git diff --name-only)
+        local modified_files
+        modified_files=$( (git diff --name-only && git diff --name-only --cached) | sort | uniq)
 
-        # Loop through the list of files that were originally considered
+        local unmatched_files=()
+
         for file in $files; do
             if echo "$modified_files" | grep -Fxq "$file"; then
                 if ! git add -- "${root_dir}/${file}"; then
-                    error_occurred=true  # Record that an error occurred
+                    error_occurred=true
                 fi
+            else
+                unmatched_files+=("$file")
             fi
         done
+
+        if [ ${#unmatched_files[@]} -ne 0 ]; then
+            echo "==================================="
+            echo "Warning: The following unrelated files in the affected modules should be linted and/or formatted"
+            echo ""
+            for file in "${unmatched_files[@]}"; do
+                echo "    ${file}"
+                git restore "${file}"
+            done
+            echo ""
+            echo "You can fix these files by running the following commands:"
+            echo "nx affected -t lint --exclude='tag:skip:lint' --fix=true"
+            echo "nx format:write;"
+        fi
     fi
 }
 
+# Function to run yarn install with --frozen-lockfile and handle failure
+run_yarn_install_frozen_lockfile() {
+    if ! yarn install --frozen-lockfile; then
+        echo "Failed to install dependencies with --frozen-lockfile."
+        echo "Please run 'yarn install' to update the lockfile and make sure you commit this with any package.json changes."
+        exit 1
+    fi
+}
 
-# Backup current working directory
 original_pwd=${PWD}
+root_dir="$(git rev-parse --show-toplevel)"
 
-# Ensure we're in the correct directory
-root_dir="$(git rev-parse --show-toplevel)"  # Get the root directory of the Git repository
+# This will ensure that the correct version of node and yarn is installed
+# from core-web/pom.xml and .nvmrc files are updated
+cd "${root_dir}" || exit
+echo "Initializing maven, node and yarn versions"
+if ! ./mvnw validate -pl :dotcms-core --am -q; then
+    echo "Failed to run './mvnw validate -pl :dotcms-core --am'"
+    echo "Please run the following command to see the detailed output:"
+    echo "./mvnw validate -pl :dotcms-core --am"
+    exit 1
+else
+    echo "Completed Maven init"
+fi
 
-# Define core-web directory relative to the Git root
+
 core_web_dir="${root_dir}/core-web"
+cd "${core_web_dir}" || exit
 
-# Moving to the core-web directory
-cd "${core_web_dir}" || exit  # Exit if the directory does not exist
+yarn config set registry https://dotcms-npm.b-cdn.net
+run_yarn_install_frozen_lockfile
 
-# Find untracked files in core-web
-staged_files=$(git diff --cached --name-only)  # Get a list of staged files
-modified_files=$(git diff --name-only)  # Get a list of modified but unstaged files
+staged_files=$(git diff --cached --name-only)
+modified_files=$(git diff --name-only)
 
-# Find common files which are both staged and modified but not staged
 untracked_files=$(printf "%s\n%s" "$staged_files" "$modified_files" | sort | uniq -d)
 
 
@@ -82,7 +122,6 @@ for file in $untracked_files; do
 done
 
 echo "Backed up workspace to ${temp_dir}"
-git status
 
 # Perform operations on staged files and capture the error count
 if [ -n "${staged_files}" ]; then
@@ -122,7 +161,9 @@ cd "${original_pwd}" || exit  # Exit if the directory does not exist
 
 # Final check before exiting
 if [ "$error_occurred" = true ]; then
+    echo "Checks failed.  force commit with --no-verify option if bypass required"
     exit 1  # Change the exit code to reflect that an error occurred
 else
+    echo "Commit checks completed OK"
     exit 0  # No errors, exit normally
 fi
