@@ -30,10 +30,11 @@ import java.util.Map;
 
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
-  private static final String CATEGORIES_PROPERTY_NAME = "categories";
-  private static final String CARDINALITY_PROPERTY_NAME = "cardinality";
-  private static final String VELOCITY_VARIABLE_PROPERTY_NAME = "velocityVar";
-  private static final String VALUES = "values";
+    private static final String CATEGORIES_PROPERTY_NAME = "categories";
+    private static final String CARDINALITY_PROPERTY_NAME = "cardinality";
+    private static final String VELOCITY_VARIABLE_PROPERTY_NAME = "velocityVar";
+    private static final String FIELDS_VARIABLES_PROPERTY_NAME = "fieldVariables";
+    private static final String VALUES = "values";
 
   final List<Field> list;
 
@@ -88,8 +89,8 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       JSONObject fieldJsonObject = jarr.getJSONObject(i);
       fieldJsonObject.remove("acceptedDataTypes");
       Field f = fromJsonStr(fieldJsonObject.toString());
-      if (fieldJsonObject.has("fieldVariables")) {
-        String varStr = fieldJsonObject.getJSONArray("fieldVariables").toString();
+        if (fieldJsonObject.has(FIELDS_VARIABLES_PROPERTY_NAME)) {
+            String varStr = fieldJsonObject.getJSONArray(FIELDS_VARIABLES_PROPERTY_NAME).toString();
         List<FieldVariable> vars = mapper.readValue(varStr,
             mapper.getTypeFactory().constructCollectionType(List.class, ImmutableFieldVariable.class));
         f.constructFieldVariables(vars);
@@ -190,7 +191,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     private Map<String, Object> createBaseFieldMap(Field field) {
 
         Map<String, Object> fieldMap = mapper.convertValue(field, HashMap.class);
-        fieldMap.put("fieldVariables",
+        fieldMap.put(FIELDS_VARIABLES_PROPERTY_NAME,
                 new JsonFieldVariableTransformer(field.fieldVariables()).mapList());
         fieldMap.remove("acceptedDataTypes");
         fieldMap.remove("dbColumn");
