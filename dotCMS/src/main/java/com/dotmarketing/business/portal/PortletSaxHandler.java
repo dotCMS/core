@@ -10,14 +10,14 @@ import org.xml.sax.helpers.DefaultHandler;
 public class PortletSaxHandler<T> extends DefaultHandler {
 
     private final StringBuilder currentValue = new StringBuilder();
-    private final Function<String,Optional<T>> valueMapper;
+    private final Function<String, Optional<T>> valueMapper;
     private final Map<String, T> valueMap;
     private String portletName;
     private String portletClass;
     private final StringBuilder portletElement = new StringBuilder();
     private boolean isPortlet = false;
 
-    PortletSaxHandler(Function<String,Optional<T>>  valueMapper) {
+    PortletSaxHandler(Function<String, Optional<T>> valueMapper) {
         this.valueMap = new HashMap<>();
         this.valueMapper = valueMapper;
     }
@@ -48,6 +48,9 @@ public class PortletSaxHandler<T> extends DefaultHandler {
 
     @Override
     public void endElement(String uri, String localName, String qName) {
+        if (isPortlet) {
+            portletElement.append("</").append(qName).append(">");
+        }
         handleEndElement(qName);
     }
 
@@ -67,9 +70,6 @@ public class PortletSaxHandler<T> extends DefaultHandler {
         } else if (qName.equalsIgnoreCase("portlet")) {
             processPortletEndElement();
         }
-        if (isPortlet) {
-            portletElement.append("</").append(qName).append(">");
-        }
     }
 
     private void processPortletEndElement() {
@@ -81,6 +81,4 @@ public class PortletSaxHandler<T> extends DefaultHandler {
         portletClass = null;
         isPortlet = false;
     }
-
-
 }
