@@ -132,7 +132,7 @@
                         <phase>compile</phase>
 
                         <configuration>
-                            <arguments>run nx build dotcms-ui -- ${nx.build.options}</arguments>
+                            <arguments>run nx build dotcms-ui ${nx.build.options}</arguments>
                         </configuration>
                     </execution>
 
@@ -277,7 +277,7 @@
             </activation>
             <properties>
                 <nx.build.options>--prod</nx.build.options>
-                <yarn.install.cmd>--frozen-lockfile --silent</yarn.install.cmd>
+                <yarn.install.cmd>--frozen-lockfile</yarn.install.cmd>
             </properties>
             <build/>
         </profile>
