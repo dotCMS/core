@@ -93,7 +93,7 @@ public class PortletAPIImplTest {
         try (InputStream stream = getClass().getResourceAsStream(resourcePath)) {
             assertNotNull("Resource not found: " + resourcePath, stream);
             Map<String, Portlet> portlets = new PortletFactoryImpl().xmlToPortlets(stream);
-            assertTrue("Expecting exactly 1 valid portlet",portlets.size() == 1);
+            assertEquals("Expecting exactly 1 valid portlet", 1, portlets.size());
         } catch (IOException | ParserConfigurationException | SAXException e) {
             Logger.error(this, "Error loading portlets from liferay-portlet.xml", e);
             Assert.fail("Exception occurred: " + e.getMessage());

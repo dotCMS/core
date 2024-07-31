@@ -46,6 +46,9 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
   private final String[] systemXmlFiles;
 
+
+
+
   /**
    * Creates an instance of this Factory using the specified XML files as sources of Portlet
    * definitions.
@@ -94,73 +97,29 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
    *
    * @throws JAXBException An error occurred while mapping the XML file into Java objects.
    */
+  /**
+   * Takes the Input Stream of an XML file and extracts the Portlet definitions from it into
+   * Portlet objects.
+   *
+   * @param fileStream The {@link InputStream} of the XML file to read.
+   *
+   * @return A map with the {@link Portlet} definitions.
+   *
+   * @throws JAXBException An error occurred while mapping the XML file into Java objects.
+   */
   public Map<String, Portlet> xmlToPortlets(InputStream fileStream) throws IOException, ParserConfigurationException, SAXException {
     final Map<String, Portlet> portlets = new HashMap<>();
 
     if (fileStream == null) {
       return portlets;
     }
-    SAXParserFactory factory = SAXParserFactory.newInstance();
-    SAXParser saxParser = factory.newSAXParser();
 
-    DefaultHandler handler = new DefaultHandler() {
-      private final StringBuilder currentValue = new StringBuilder();
-      private String portletName;
-      private String portletClass;
-      private final StringBuilder portletElement = new StringBuilder();
-      private boolean isPortlet = false;
-
-      @Override
-      public void startElement(String uri, String localName, String qName, Attributes attributes) {
-        currentValue.setLength(0); // Clear the current value
-        if (qName.equalsIgnoreCase("portlet")) {
-          portletElement.setLength(0); // Clear the portlet element content
-          isPortlet = true;
-        }
-        if (isPortlet) {
-          portletElement.append("<").append(qName);
-          for (int i = 0; i < attributes.getLength(); i++) {
-            portletElement.append(" ").append(attributes.getQName(i)).append("=\"").append(attributes.getValue(i)).append("\"");
-          }
-          portletElement.append(">");
-        }
-      }
-
-      @Override
-      public void characters(char[] ch, int start, int length) {
-        currentValue.append(ch, start, length);
-        if (isPortlet) {
-          portletElement.append(ch, start, length);
-        }
-      }
-
-      @Override
-      public void endElement(String uri, String localName, String qName) {
-        if (qName.equalsIgnoreCase("portlet-name")) {
-          portletName = currentValue.toString().trim();
-          portletElement.append("</").append(qName).append(">");
-        } else if (qName.equalsIgnoreCase("portlet-class")) {
-          portletClass = currentValue.toString().trim();
-          portletElement.append("</").append(qName).append(">");
-        } else if (qName.equalsIgnoreCase("portlet")) {
-          if (portletName != null && !portletName.isEmpty() && portletClass != null && !portletClass.isEmpty()) {
-            portletElement.append("</").append(qName).append(">");
-            String portletXML = portletElement.toString();
-            xmlToPortlet(portletXML).ifPresent(value -> portlets.put(value.getPortletId(), value));
-          }
-          portletName = null;
-          portletClass = null;
-          isPortlet = false;
-        } else if (isPortlet) {
-          portletElement.append("</").append(qName).append(">");
-        }
-      }
-    };
-
-
+    SAXParser saxParser = ThreadLocalSaxParserFactory.getSaxParser();
+    PortletSaxHandler<Portlet> handler = new PortletSaxHandler<>(this::xmlToPortlet);
     saxParser.parse(fileStream, handler);
-    return portlets;
+    return handler.getValueMap();
   }
+
 
 
   @Override

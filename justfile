@@ -59,7 +59,7 @@ build-select-module-deps module=":dotcms-core":
 
 # Starts the dotCMS application in a Docker container on a dynamic port, running in the foreground
 dev-run:
-    ./mvnw -pl :dotcms-core -Pdocker-start
+    ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend
 
 # Maps paths in the docker container to local paths, useful for development
 dev-run-map-dev-paths:
