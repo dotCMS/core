@@ -9,9 +9,9 @@ import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -20,8 +20,8 @@ import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -158,70 +158,149 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     return list;
   }
 
-  public Map<String, Object>  mapObject() {
-    try {
-      final Field field = from();
-      final Map<String, Object> fieldMap = mapper.convertValue(field, HashMap.class);
-      fieldMap.put("fieldVariables", new JsonFieldVariableTransformer(field.fieldVariables()).mapList());
-      fieldMap.remove("acceptedDataTypes");
-      fieldMap.remove("dbColumn");
+    /**
+     * Transforms a Field object into a Map representation. This method handles the conversion of
+     * various field types, including special processing for category and relationship fields.
+     *
+     * @return A Map containing the field's properties and additional processed information.
+     * @throws DotStateException if an error occurs during the transformation process.
+     */
+    public Map<String, Object> mapObject() {
 
-      if (ImmutableCategoryField.class.getName().equals(fieldMap.get("clazz"))) {
         try {
-          final Object values = fieldMap.get(VALUES);
-          if (UtilMethods.isSet(values)) {
-            final Category category = APILocator.getCategoryAPI()
-                    .find(values.toString(), APILocator.getLoginServiceAPI().getLoggedInUser(),
-                            false);
-            if (null == category) {
-              Logger.warn(JsonFieldTransformer.class, () -> String
-                      .format("Unable to find category with id '%s' for field named %s. ", values.toString(), field.name()));
-            } else {
-              fieldMap.put(CATEGORIES_PROPERTY_NAME, category.getMap());
-            }
-          }
-        } catch (final DotSecurityException e) {
-          Logger.error(JsonFieldTransformer.class, e.getMessage());
+            final Field field = from();
+            final Map<String, Object> fieldMap = createBaseFieldMap(field);
+
+            processSpecialFieldTypes(field, fieldMap);
+
+            addFieldTypeLabels(field, fieldMap);
+
+            return fieldMap;
+        } catch (Exception e) {
+            throw new DotStateException(e);
         }
-      } else if (ImmutableRelationshipField.class.getName().equals(fieldMap.get("clazz"))) {
-        final String cardinality = fieldMap.remove(VALUES).toString();
-        final String relationType = fieldMap.remove("relationType").toString();
-
-        // Checking if there is already a content type id, we could be processing a new field
-        if (UtilMethods.isSet(field.contentTypeId())) {
-          final Relationship relationship = APILocator.getRelationshipAPI()
-                  .getRelationshipFromField(field,
-                          APILocator.getLoginServiceAPI().getLoggedInUser());
-          if (null != relationship) {
-            fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
-                    CARDINALITY_PROPERTY_NAME, Integer.parseInt(cardinality),
-                    VELOCITY_VARIABLE_PROPERTY_NAME, relationType,
-                    "isParentField",
-                    relationship.getParentStructureInode().equals(field.contentTypeId())
-            ));
-          } else {
-            fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
-                    CARDINALITY_PROPERTY_NAME, Integer.parseInt(cardinality),
-                    VELOCITY_VARIABLE_PROPERTY_NAME, relationType
-            ));
-          }
-        } else {
-          fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), Map.of(
-                  CARDINALITY_PROPERTY_NAME, Integer.parseInt(cardinality),
-                  VELOCITY_VARIABLE_PROPERTY_NAME, relationType
-          ));
-        }
-      }
-
-
-      fieldMap.put("fieldTypeLabel",
-              LanguageUtil.get( APILocator.getLoginServiceAPI().getLoggedInUser(), field.getContentTypeFieldLabelKey() ));
-      fieldMap.put("fieldType", field.getContentTypeFieldLabelKey());
-
-      return fieldMap;
-    } catch (Exception e) {
-      throw new DotStateException(e);
     }
-  }
-}
 
+    /**
+     * Creates a base map of field properties.
+     *
+     * @param field The Field object to convert.
+     * @return A Map containing the basic field properties.
+     */
+    private Map<String, Object> createBaseFieldMap(Field field) {
+
+        Map<String, Object> fieldMap = mapper.convertValue(field, HashMap.class);
+        fieldMap.put("fieldVariables",
+                new JsonFieldVariableTransformer(field.fieldVariables()).mapList());
+        fieldMap.remove("acceptedDataTypes");
+        fieldMap.remove("dbColumn");
+        return fieldMap;
+    }
+
+    /**
+     * Processes special field types (Category and Relationship fields).
+     *
+     * @param field    The Field object to process.
+     * @param fieldMap The map to update with processed information.
+     */
+    private void processSpecialFieldTypes(Field field, Map<String, Object> fieldMap)
+            throws DotDataException, DotSecurityException {
+
+        String className = (String) fieldMap.get("clazz");
+        if (ImmutableCategoryField.class.getName().equals(className)) {
+            processCategoryField(field, fieldMap);
+        } else if (ImmutableRelationshipField.class.getName().equals(className)) {
+            processRelationshipField(field, fieldMap);
+        }
+    }
+
+    /**
+     * Processes a Category field, adding category information to the field map.
+     *
+     * @param field    The Category Field object.
+     * @param fieldMap The map to update with category information.
+     */
+    private void processCategoryField(Field field, Map<String, Object> fieldMap)
+            throws DotDataException {
+
+        try {
+
+            Object values = fieldMap.get(VALUES);
+            if (UtilMethods.isSet(values)) {
+                Category category = APILocator.getCategoryAPI().find(
+                        values.toString(),
+                        APILocator.getLoginServiceAPI().getLoggedInUser(),
+                        false
+                );
+                if (null == category) {
+                    Logger.warn(JsonFieldTransformer.class, () -> String.format(
+                            "Unable to find category with id '%s' for field named %s. ",
+                            values.toString(), field.name())
+                    );
+                } else {
+                    fieldMap.put(CATEGORIES_PROPERTY_NAME, category.getMap());
+                }
+            }
+        } catch (final DotSecurityException e) {
+            Logger.error(JsonFieldTransformer.class, e.getMessage());
+        }
+    }
+
+    /**
+     * Processes a Relationship field, adding relationship information to the field map.
+     *
+     * @param field    The Relationship Field object.
+     * @param fieldMap The map to update with relationship information.
+     */
+    private void processRelationshipField(Field field, Map<String, Object> fieldMap)
+            throws DotDataException, DotSecurityException {
+
+        String cardinality = fieldMap.remove(VALUES).toString();
+        String relationType = fieldMap.remove("relationType").toString();
+
+        Map<String, Object> relationshipMap = new HashMap<>();
+        relationshipMap.put(CARDINALITY_PROPERTY_NAME, Integer.parseInt(cardinality));
+        relationshipMap.put(VELOCITY_VARIABLE_PROPERTY_NAME, relationType);
+
+        if (UtilMethods.isSet(field.contentTypeId())) {
+            addRelationshipInfo(field, relationshipMap);
+        }
+
+        fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), relationshipMap);
+    }
+
+    /**
+     * Adds additional relationship information to the relationship map.
+     *
+     * @param field           The Relationship Field object.
+     * @param relationshipMap The map to update with additional relationship information.
+     */
+    private void addRelationshipInfo(Field field, Map<String, Object> relationshipMap)
+            throws DotDataException, DotSecurityException {
+
+        final var relationship = APILocator.getRelationshipAPI().getRelationshipFromField(
+                field, APILocator.getLoginServiceAPI().getLoggedInUser()
+        );
+        if (null != relationship) {
+            relationshipMap.put("isParentField",
+                    relationship.getParentStructureInode().equals(field.contentTypeId()));
+        }
+    }
+
+    /**
+     * Adds field type labels to the field map.
+     *
+     * @param field    The Field object.
+     * @param fieldMap The map to update with field type labels.
+     */
+    private void addFieldTypeLabels(Field field, Map<String, Object> fieldMap)
+            throws LanguageException {
+
+        fieldMap.put("fieldTypeLabel", LanguageUtil.get(
+                APILocator.getLoginServiceAPI().getLoggedInUser(),
+                field.getContentTypeFieldLabelKey())
+        );
+        fieldMap.put("fieldType", field.getContentTypeFieldLabelKey());
+    }
+
+}
