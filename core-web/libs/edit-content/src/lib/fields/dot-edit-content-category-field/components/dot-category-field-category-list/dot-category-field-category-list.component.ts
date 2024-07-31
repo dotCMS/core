@@ -6,10 +6,9 @@ import {
     computed,
     effect,
     ElementRef,
-    EventEmitter,
     inject,
     input,
-    Output,
+    output,
     viewChildren
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -21,7 +20,10 @@ import { TreeModule } from 'primeng/tree';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
-import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.models';
+import {
+    DotCategoryFieldItem,
+    DotCategoryFieldKeyValueObj
+} from '../../models/dot-category-field.models';
 import { DotCategoryFieldListSkeletonComponent } from '../dot-category-field-list-skeleton/dot-category-field-list-skeleton.component';
 
 export const MINIMUM_CATEGORY_COLUMNS = 4;
@@ -124,15 +126,12 @@ export class DotCategoryFieldCategoryListComponent {
     /**
      * Emit the item clicked to the parent component
      */
-    @Output() rowClicked = new EventEmitter<{
-        index: number;
-        item?: DotCategoryFieldKeyValueObj;
-    }>();
+    rowClicked = output<DotCategoryFieldItem>();
 
     /**
      * Emit the item checked or selected to the parent component
      */
-    @Output() itemChecked = new EventEmitter<{
+    itemChecked = output<{
         selected: string[];
         item: DotCategoryFieldKeyValueObj;
     }>();
