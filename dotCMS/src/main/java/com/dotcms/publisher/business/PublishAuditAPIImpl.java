@@ -6,6 +6,7 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishAuditStatusMapper;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -51,6 +52,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private static final String OR_STATUS_CLAUSE = " or publishing_queue_audit.status = ? ";
 	private static final String SELECT_BUNDLEID_BY_STATUS_AND_OWNER = "SELECT bundle_id from publishing_queue_audit join publishing_bundle on publishing_queue_audit.bundle_id = publishing_bundle.id "
 			+ "WHERE publishing_bundle.owner= ? and (publishing_queue_audit.status = ? ";
+	private static final String SELECT_ALL_BY_BUNDLE_ID_QUERY = "SELECT * FROM publishing_queue_audit WHERE LOWER(bundle_id) LIKE ? ORDER BY status_updated DESC";
+	private static final String SELECT_COUNT_BY_BUNDLE_ID_QUERY = "SELECT COUNT(*) as count FROM publishing_queue_audit WHERE LOWER(bundle_id) LIKE ?";
 
 
 	/**
@@ -290,23 +293,40 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	 */
 	public List<PublishAuditStatus> getAllPublishAuditStatus(final int limit,
 			final int offset, final int limitAssets) throws DotPublisherException {
+		return getPublishAuditStatus(limit, offset, limitAssets, null);
+	}
+
+	/**
+	 * Get the {@link PublishAuditStatus} that meet the given filter,
+	 * limiting the number of assets of each one.
+	 * @param limit limit of rows for retrieved page
+	 * @param offset offset of rows for retrieved page
+	 * @param limitAssets max limit of assets to retrieve for each {@link PublishAuditStatus}
+	 * @param filter filter to apply to the query or null if no filter
+	 * @return List of {@link PublishAuditStatus}
+	 * @throws DotPublisherException if any error occurs
+	 */
+	@CloseDBIfOpened
+	@Override
+	public List<PublishAuditStatus> getPublishAuditStatus(final int limit, final int offset, final int limitAssets, final String filter)
+			throws DotPublisherException {
 		try{
-			DotConnect dc = new DotConnect();
-			dc.setSQL(SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC);
+			final DotConnect dc = getPublishAuditFilterQuery(filter,
+					SELECT_ALL_BY_BUNDLE_ID_QUERY, SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC);
 
 			dc.setStartRow(offset);
 			dc.setMaxRows(limit);
 
 			return mapper.mapRows(
-				dc.loadObjectResults().stream()
-						.map(publishAuditStatusMap -> {
-							final LimitedAssetResult limitedAssetResult = limitAssets(
-									publishAuditStatusMap.get("status_pojo").toString(), limitAssets);
-							putStatusPojoAndNumberOfAssets(publishAuditStatusMap,
-									limitedAssetResult.newStatusPojo, limitedAssetResult.numberTotalOfAssets);
-							return publishAuditStatusMap;
-						})
-						.collect(Collectors.toList())
+					dc.loadObjectResults().stream()
+							.map(publishAuditStatusMap -> {
+								final LimitedAssetResult limitedAssetResult = limitAssets(
+										publishAuditStatusMap.get("status_pojo").toString(), limitAssets);
+								putStatusPojoAndNumberOfAssets(publishAuditStatusMap,
+										limitedAssetResult.newStatusPojo, limitedAssetResult.numberTotalOfAssets);
+								return publishAuditStatusMap;
+							})
+							.collect(Collectors.toList())
 			);
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
@@ -423,14 +443,46 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 
 	@Override
 	public Integer countAllPublishAuditStatus() throws DotPublisherException {
+		return countPublishAuditStatus(null);
+	}
+
+	/**
+	 * Count filtered {@link PublishAuditStatus}
+	 * @param filter filter to apply to the query or null if no filter
+	 * @return number of rows that match the filter
+	 * @throws DotPublisherException if any error occurs
+	 */
+	@CloseDBIfOpened
+	@Override
+	public Integer countPublishAuditStatus(String filter) throws DotPublisherException {
 		try{
-			DotConnect dc = new DotConnect();
-			dc.setSQL(SELECT_COUNT);
+			final DotConnect dc = getPublishAuditFilterQuery(filter,
+					SELECT_COUNT_BY_BUNDLE_ID_QUERY, SELECT_COUNT);
 			return Integer.parseInt(dc.loadObjectResults().get(0).get("count").toString());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
+	}
+
+	/**
+	 * Get the query to filter the {@link PublishAuditStatus} by the given filter.
+	 * @param filter filter to apply to the query or null if no filter
+	 * @param selectWithFilterByBundleId query to filter by bundle id
+	 * @param selectWithoutFilter 		query to retrieve all the elements
+	 * @return the query to filter the {@link PublishAuditStatus} by the given filter
+	 */
+	private DotConnect getPublishAuditFilterQuery(final String filter,
+												  final String selectWithFilterByBundleId, final String selectWithoutFilter) {
+		final String sanitizedFilter = SQLUtil.sanitizeParameter(filter);
+		DotConnect dc = new DotConnect();
+		if (UtilMethods.isSet(sanitizedFilter)) {
+			dc.setSQL(selectWithFilterByBundleId);
+			dc.addParam("%" + sanitizedFilter.toLowerCase() + "%");
+		} else {
+			dc.setSQL(selectWithoutFilter);
+		}
+		return dc;
 	}
 
 	@Override

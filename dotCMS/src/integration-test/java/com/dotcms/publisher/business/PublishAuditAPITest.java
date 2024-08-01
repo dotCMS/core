@@ -385,4 +385,27 @@ public class PublishAuditAPITest {
                     }
                 });
     }
+
+    @Test
+    public void test_getPublishAuditStatusByFilter()
+            throws DotPublisherException, DotDataException {
+
+        final List<String> bundleIds = new ArrayList<>();
+        try {
+            final String bundleID = UUIDGenerator.generateUuid();
+            for (int i = 0; i < 10; i++) {
+                final String testBundleId = insertPublishAuditStatus(Status.SUCCESS,
+                        "test-" + bundleID + "-" + i);
+                bundleIds.add(testBundleId);
+            }
+
+            final List<PublishAuditStatus> allPublishAuditStatus = publishAuditAPI
+                    .getPublishAuditStatus(10, 0, 3, "test");
+            assertNotNull(allPublishAuditStatus);
+            assertTrue(allPublishAuditStatus.size() >= 10);
+        } finally {
+            deletePublishingBundle(bundleIds);
+        }
+
+    }
 }
