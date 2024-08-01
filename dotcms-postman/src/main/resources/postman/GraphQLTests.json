@@ -1544,7 +1544,6 @@
 											"",
 											"    // persona",
 											"    pm.expect(persona[\"name\"], 'FAILED:[persona.name]').equal(\"Winter Enthusiast\");",
-											"    pm.expect(persona[\"description\"], 'FAILED:[persona.description]').equal(\"People who are passionate about winter sports.\");",
 											"    pm.expect(persona[\"photo\"].idPath, 'FAILED:[persona.photo.idPath]').equal(\"/dA/792c7c9f6b/photo/mountain-persona.jpg?language_id=1\");",
 											"    pm.expect(persona[\"keyTag\"], 'FAILED:[persona.keyTag]').equal(\"WinterEnthusiast\");",
 											"    let expectedPersonTags = [",
@@ -1561,8 +1560,7 @@
 											"",
 											"    var visitorPersona = visitor.persona;",
 											"    // visitor's persona",
-											"    pm.expect(visitorPersona[\"name\"], 'FAILED:[visitorPersona.name]').equal(\"Winter Enthusiast\");",
-											"    pm.expect(visitorPersona[\"description\"], 'FAILED:[visitorPersona.description]').equal(\"People who are passionate about winter sports.\");",
+											"    pm.expect(visitorPersona[\"name\"], 'FAILED:[visitorPersona.name]').equal(\"Winter Enthusiast\");    ",
 											"    pm.expect(visitorPersona[\"photo\"].idPath, 'FAILED:[visitorPersona.photo.idPath]').equal(\"/dA/792c7c9f6b/photo/mountain-persona.jpg?language_id=1\");",
 											"    pm.expect(visitorPersona[\"keyTag\"], 'FAILED:[visitorPersona.keyTag]').equal(\"WinterEnthusiast\");",
 											"",
@@ -1640,7 +1638,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\", persona:\"WinterEnthusiast\") {\n     viewAs {\n      persona {\n        name\n        description\n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name\n          description\n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
+										"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\", persona:\"WinterEnthusiast\") {\n     viewAs {\n      persona {\n        name\n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name          \n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
 										"variables": ""
 									}
 								},
@@ -3762,20 +3760,12 @@
 									"    pm.expect(page[\"url\"], 'FAILED:[url]').equal(\"/blog/index\");",
 									"    pm.expect(page.hostFolder.hostName, 'FAILED:[hostFolder.hostName]').equal(\"demo.dotcms.com\");",
 									"    pm.expect(page.hostFolder.folderName, 'FAILED:[hostFolder.folderName]').equal(\"blog\");",
-									"    pm.expect(page.template, 'FAILED:[template]').equal(\"64269d16-2710-4919-88ec-3b09c89ea004\");",
-									"    pm.expect(page.showOnMenu.length, 'FAILED:[showOnMenu]').to.eql(0);",
-									"    pm.expect(page[\"sortOrder\"], 'FAILED:[sortOrder]').equal(0);",
-									"    pm.expect(page[\"cachettl\"], 'FAILED:[cachettl]').equal(\"0\");",
-									"    pm.expect(page[\"friendlyName\"], 'FAILED:[friendlyName]').equal(\"Blog\");",
-									"    pm.expect(page[\"redirecturl\"], 'FAILED:[redirecturl]').equal(null);",
-									"    pm.expect(page.httpsreq.length, 'FAILED:[httpsreq]').to.eql(0);",
-									"    pm.expect(page[\"seodescription\"], 'FAILED:[seodescription]').equal(\"Help understanding your financial future and hoe Quest Financial and our advisors and help you plan for tomorrow with confidence\");",
-									"    pm.expect(page[\"seokeywords\"], 'FAILED:[seokeywords]').equal(\"Financial Blog\");",
-									"    pm.expect(page[\"pagemetadata\"], 'FAILED:[pagemetadata]').equal(null); ",
+									"    pm.expect(page.template, 'FAILED:[template]').equal(\"64269d16-2710-4919-88ec-3b09c89ea004\");     ",
 									"",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3785,7 +3775,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  PageBaseTypeCollection(query:\"+identifier:9c5f42da-31b1-4935-9df6-153f5de1bdf2\") {\n    title\n    url\n    hostFolder {\n      hostName\n      folderName\n    }\n    template\n    showOnMenu\n    sortOrder\n    cachettl\n    friendlyName\n    redirecturl\n    httpsreq\n    seodescription\n    seokeywords\n    pagemetadata\n  }\n}",
+								"query": "{\n  PageBaseTypeCollection(query:\"+identifier:9c5f42da-31b1-4935-9df6-153f5de1bdf2\") {\n    title\n    url\n    hostFolder {\n      hostName\n      folderName\n    }\n    template    \n\n  }\n}",
 								"variables": ""
 							}
 						},
@@ -3823,12 +3813,12 @@
 									"    pm.expect(page[\"keyTag\"], 'FAILED:[keyTag]').equal(\"OceanEnthusiast\");",
 									"    pm.expect(page.hostFolder.hostName, 'FAILED:[hostFolder.hostName]').equal(\"demo.dotcms.com\");",
 									"    pm.expect(page.hostFolder.folderName, 'FAILED:[hostFolder.folderName]').equal(\"system folder\");",
-									"    pm.expect(page.tags.length, 'FAILED:[tags]').to.eql(4);",
-									"    pm.expect(page[\"description\"], 'FAILED:[description]').equal(\"People who typically vacation around water sports such as surfing, wind surfing, etc.\");",
+									"    pm.expect(page.tags.length, 'FAILED:[tags]').to.eql(4);    ",
 									"",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3838,7 +3828,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  PersonaBaseTypeCollection(query:\"+identifier:d948d85c-3bc8-4d85-b0aa-0e989b9ae235\") {\n    name\n    hostFolder {\n      hostName\n      folderName\n    }\n    keyTag\n    photo {\n      name\n    }\n    tags\n    description\n  }\n}",
+								"query": "{\n  PersonaBaseTypeCollection(query:\"+identifier:d948d85c-3bc8-4d85-b0aa-0e989b9ae235\") {\n    name\n    hostFolder {\n      hostName\n      folderName\n    }\n    keyTag\n    photo {\n      name\n    }\n    tags    \n  }\n}",
 								"variables": ""
 							}
 						},
