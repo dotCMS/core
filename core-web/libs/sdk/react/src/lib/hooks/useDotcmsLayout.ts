@@ -13,10 +13,7 @@ export const useDotcmsLayout = (
     pageAsset: DotCMSPageContext['pageAsset'] | null,
     query?: string
 ) => {
-    const [state, setState] = useState({
-        pageAsset,
-        isLoading: false
-    });
+    const [state, setState] = useState({ pageAsset });
 
     useEffect(() => {
         if (!isInsideEditor()) {
@@ -24,10 +21,6 @@ export const useDotcmsLayout = (
         }
 
         postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: query });
-        setState((prevState) => ({
-            ...prevState,
-            isLoading: true
-        }));
     }, [query]);
 
     useEffect(() => {
@@ -39,7 +32,7 @@ export const useDotcmsLayout = (
 
         client.editor.on('changes', (data) => {
             const pageAsset = data as DotCMSPageContext['pageAsset'];
-            setState({ isLoading: false, pageAsset });
+            setState({ pageAsset });
         });
 
         return () => client.editor.off('changes');

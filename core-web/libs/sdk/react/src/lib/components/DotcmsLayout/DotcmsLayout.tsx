@@ -40,11 +40,9 @@ export type DotcmsPageProps = {
  */
 export function DotcmsLayout({ pageContext, config }: DotcmsPageProps): JSX.Element {
     const { isInsideEditor } = useDotcmsEditor(config);
-    const { pageAsset, isLoading } = useDotcmsLayout(pageContext.pageAsset, config?.query);
+    const { pageAsset } = useDotcmsLayout(pageContext.pageAsset, config?.query);
 
-    return isLoading ? (
-        <span>Loading...</span>
-    ) : (
+    return (
         <PageProvider
             pageContext={{
                 ...{

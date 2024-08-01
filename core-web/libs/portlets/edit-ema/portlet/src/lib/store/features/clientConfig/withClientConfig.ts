@@ -31,6 +31,9 @@ export function withClientConfig() {
                 },
                 setClientConfiguration: (graphQL: string) => {
                     patchState(store, { graphQL });
+                },
+                resetClientConfiguration: () => {
+                    patchState(store, { ...initialState });
                 }
             };
         })

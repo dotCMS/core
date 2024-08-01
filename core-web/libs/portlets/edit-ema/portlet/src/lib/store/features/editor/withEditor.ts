@@ -43,6 +43,7 @@ import {
     getEditorStates
 } from '../../../utils';
 import { UVEState } from '../../models';
+import { withClientConfig } from '../clientConfig/withClientConfig';
 const initialState: EditorState = {
     bounds: [],
     state: EDITOR_STATE.IDLE,
@@ -65,6 +66,7 @@ export function withEditor() {
         withState<EditorState>(initialState),
         withEditorToolbar(),
         withSave(),
+        withClientConfig(),
         withComputed((store) => {
             return {
                 $pageData: computed<PageData>(() => {
@@ -105,11 +107,13 @@ export function withEditor() {
                     const state = store.state();
                     const params = store.params();
                     const isTraditionalPage = store.isTraditionalPage();
+                    const isClientReady = store.isClientReady();
                     const contentletArea = store.contentletArea();
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
                     const isLoading = store.status() === UVE_STATUS.LOADING;
+                    const isPageReady = isTraditionalPage || isClientReady;
 
                     const { dragIsActive, isScrolling, isDragging } = getEditorStates(state);
 
@@ -128,11 +132,13 @@ export function withEditor() {
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
+                    const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
+
                     return {
                         showDialogs: showDialogs,
                         showEditorContent: !socialMedia,
                         iframe: {
-                            opacity: isLoading ? '0.5' : '1',
+                            opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
                             src: !isTraditionalPage
                                 ? `${params.clientHost}/${pageAPIQueryParams}`

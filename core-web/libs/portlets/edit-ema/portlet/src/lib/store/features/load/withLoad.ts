@@ -61,8 +61,9 @@ export function withLoad() {
             return {
                 load: rxMethod<DotPageApiParams>(
                     pipe(
+                        tap(() => store.resetClientConfiguration()),
                         tap(() => {
-                            patchState(store, { status: UVE_STATUS.LOADING, graphQL: null });
+                            patchState(store, { status: UVE_STATUS.LOADING });
                         }),
                         switchMap((params) => {
                             return forkJoin({
@@ -160,7 +161,6 @@ export function withLoad() {
                                                     canEditPage,
                                                     pageIsLocked,
                                                     status: UVE_STATUS.LOADED,
-                                                    isClientReady: false,
                                                     isTraditionalPage: !params.clientHost // If we don't send the clientHost we are using as VTL page
                                                 });
                                             },

@@ -88,17 +88,10 @@ import {
 import { UVEStore } from '../store/dot-uve.store';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
+    compareUrlPaths,
     deleteContentletFromContainer,
     insertContentletInContainer
 } from '../utils';
-
-const compareUrlPaths = (urlPath: string, urlPath2: string): boolean => {
-    // Host doesn't matter here, we just need the pathname
-    const { pathname: pathname1 } = new URL(urlPath, window.origin);
-    const { pathname: pathname2 } = new URL(urlPath2, window.origin);
-
-    return pathname1 === pathname2;
-};
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -848,8 +841,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
-                // We remove the `/` here: https://github.com/dotCMS/core/blob/225dc5e42585317c51551364c8c02ccbb7ffb925/core-web/libs/sdk/client/src/lib/editor/sdk-editor.ts#L17
-                // So it's not a fair compare
                 const isSameUrl = compareUrlPaths(this.uveStore.params()?.url, payload.url);
 
                 if (isSameUrl) {
