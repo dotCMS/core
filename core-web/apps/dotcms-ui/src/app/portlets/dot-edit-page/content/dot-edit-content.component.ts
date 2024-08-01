@@ -74,6 +74,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     isEditMode = false;
     paletteCollapsed = false;
     isEnterpriseLicense = false;
+    pageLanguageId: string;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -167,6 +168,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.subscribePageModelChange();
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
+        this.subscribeToLanguageChange();
     }
 
     ngOnDestroy(): void {
@@ -375,6 +377,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 .getActionUrl($event.data.contentType.variable)
                 .pipe(take(1))
                 .subscribe((url) => {
+                    url = this.setCurrentContentLang(url);
                     this.dotContentletEditorService.create({
                         data: { url },
                         events: {
@@ -389,6 +392,30 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         } else {
             this.addFormContentType();
         }
+    }
+
+    /**
+     * Subscribe to language change, because pageState.page.languageId is not being updated
+     * as should be between dev environments.
+     */
+    private subscribeToLanguageChange(): void {
+        this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+            this.pageLanguageId = params['language_id'];
+        });
+    }
+
+    /**
+     * Sets the language parameter in the given URL and returns the concatenated pathname and search.
+     * the input URL doesn't include the host, origin is used as the base URL.
+     *
+     * @param {string} url - The input URL ( include pathname and search parameters).
+     * @returns {string} - The concatenated pathname and search parameters with the language parameter set.
+     */
+    private setCurrentContentLang(url: string): string {
+        const newUrl = new URL(url, window.location.origin);
+        newUrl.searchParams.set('_content_lang', this.pageLanguageId);
+
+        return newUrl.pathname + newUrl.search;
     }
 
     private searchContentlet($event: DotIframeEditEvent): void {

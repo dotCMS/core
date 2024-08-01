@@ -278,3 +278,4 @@ This maintenance release includes the following code fixes:
 
 213. https://github.com/dotCMS/core/issues/26477 : Search filter can't find/filter images #26477
 214. https://github.com/dotCMS/core/issues/26987 : Set Response Headers Rule Action does not allow double quotes in the value #26987
+215. https://github.com/dotCMS/core/issues/27297 : Edit Page: Edit Contentlet Dialog Language Support #27297

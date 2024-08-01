@@ -258,14 +258,26 @@ dojo.declare(
             if (dijit.byId('langcombo+' + this.dialogCounter)) {
                 dijit.byId('langcombo+' + this.dialogCounter).destroy();
             }
+            let selectedLang = null;
+            let options = ''
             this.availableLanguages = data;
+
+            for (var i = 0; i < data.length; i++) {
+                options += "<option  value='" + data[i].id + "'";
+                if (this.contentletLanguageId == data[i].id || this.languageId == data[i].id ) {
+                    options += " selected='true' ";
+                    selectedLang = data[i];
+                }
+                options +=
+                    '>' + this._getCountryLabel(data[i]) + '</option>';
+            }
             this.search_languages_table.innerHTML = '';
             var htmlstr = "<dl class='vertical'>";
             htmlstr +=
                 "<dt><label for='langcombo+" +
                 this.dialogCounter +
                 "'>" +
-                data[0].title +
+                selectedLang ? selectedLang.title : data[0].title +
                 '</label></dt>';
             htmlstr += '<dd>';
             dojo.require('dijit.form.FilteringSelect');
@@ -276,23 +288,19 @@ dojo.declare(
                 this.dialogCounter +
                 "'>";
 
-            for (var i = 0; i < data.length; i++) {
-                htmlstr += "<option  value='" + data[i].id + "'";
-                if (this.contentletLanguageId == data[i].id) {
-                    htmlstr += " selected='true' ";
-                }
-                htmlstr +=
-                    '>' +
-                    data[i].language +
-                    (data[i].country == '' ? '' : ' - ' + data[i].country) +
-                    '</option>';
-            }
-
+            htmlstr += options;
             htmlstr += '</select>';
             htmlstr += '</dd>';
             htmlstr += '</dl>';
             dojo.place(htmlstr, this.search_languages_table);
             dojo.parser.parse(this.search_languages_table);
+
+            let obj = dijit.byId('langcombo+' + this.dialogCounter);
+
+            // Set the displayed value
+            if (selectedLang) {
+                obj.set('displayedValue', this._getCountryLabel(selectedLang));
+            }
         },
 
         _fillFields: function (data) {
@@ -1528,6 +1536,10 @@ dojo.declare(
             var startIndex = iconCode.indexOf('<span class') + 13;
             var endIndex = iconCode.indexOf('</span>') - 2;
             return iconCode.substring(startIndex, endIndex);
+        },
+
+        _getCountryLabel: function (data) {
+            return  data.language + (data.country === '' ? '' : ' - ' + data.country)
         },
 
         _replaceWithIcon: function (parentElement, iconName) {
