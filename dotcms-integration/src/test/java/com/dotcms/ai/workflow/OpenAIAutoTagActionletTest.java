@@ -191,6 +191,7 @@ public class OpenAIAutoTagActionletTest {
         // 2) create an instance with non integer
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentType(contentType);
+        contentlet.setIdentifier(UUIDGenerator.generateUuid());
 
         final WorkflowProcessor processor = new WorkflowProcessor(contentlet, APILocator.systemUser());
         final Map<String, WorkflowActionClassParameter> params = Map.of(
@@ -225,10 +226,14 @@ public class OpenAIAutoTagActionletTest {
         final ContentType contentType = dataGen.nextPersisted();
         // 2) create an instance with some text and publish it
         final Contentlet contentlet = new Contentlet();
-        contentlet.setProperty("title", "This is a title");
-        contentlet.setProperty("body", "This is a body");
-        contentlet.setIdentifier(UUIDGenerator.generateUuid());
         contentlet.setContentType(contentType);
+
+        contentlet.setProperty("title", "This is a title");
+        contentlet.setProperty("body", "This is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a body" +
+                "This is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a body" +
+                "This is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a body" +
+                "This is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a bodyThis is a body");
+        contentlet.setIdentifier(UUIDGenerator.generateUuid());
         contentlet.setHost(host.getIdentifier());
 
         // 3) Run the actionlet with the content
