@@ -1,7 +1,7 @@
 package com.dotcms.ai.listener;
 
 import com.dotcms.ai.app.AppKeys;
-import com.dotcms.ai.viewtool.AiTest;
+import com.dotcms.ai.AiTest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
