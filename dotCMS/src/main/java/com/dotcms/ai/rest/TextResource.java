@@ -82,7 +82,7 @@ public class TextResource {
 
         final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
 
-        return Response.ok(APILocator.getArtificialIntelligenceAPI().getCompletionsAPI().raw(generateRequest(formIn, config)).toString()).build();
+        return Response.ok(APILocator.getDotAIAPI().getCompletionsAPI().raw(generateRequest(formIn, config)).toString()).build();
     }
 
     /**

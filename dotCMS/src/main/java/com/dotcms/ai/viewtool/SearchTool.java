@@ -64,7 +64,7 @@ public class SearchTool implements ViewTool {
                 .build();
 
         try {
-            return APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI(host).searchForContent(searcher);
+            return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
             return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
         }
@@ -82,7 +82,7 @@ public class SearchTool implements ViewTool {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(mapIn).withUser(user).build();
 
         try {
-            return APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI(host).searchForContent(searcher);
+            return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
             return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
         }
@@ -137,7 +137,7 @@ public class SearchTool implements ViewTool {
                     .withLimit(50)
                     .withThreshold(.25f)
                     .build();
-            return APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI(host).searchForContent(searcher);
+            return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
             return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
         }

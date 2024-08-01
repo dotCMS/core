@@ -112,7 +112,7 @@ public class EmbeddingsDTODataGen extends AbstractDataGen<EmbeddingsDTO> {
     @Override
     @WrapInTransaction
     public EmbeddingsDTO persist(final EmbeddingsDTO embeddings) {
-        APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().saveEmbeddings(embeddings);
+        APILocator.getDotAIAPI().getEmbeddingsAPI().saveEmbeddings(embeddings);
         return embeddings;
     }
 

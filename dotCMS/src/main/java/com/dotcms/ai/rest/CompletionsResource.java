@@ -59,8 +59,8 @@ public class CompletionsResource {
                 request,
                 response,
                 formIn,
-                () -> APILocator.getArtificialIntelligenceAPI().getCompletionsAPI().summarize(formIn),
-                out -> APILocator.getArtificialIntelligenceAPI().getCompletionsAPI().summarizeStream(formIn, new LineReadingOutputStream(out)));
+                () -> APILocator.getDotAIAPI().getCompletionsAPI().summarize(formIn),
+                out -> APILocator.getDotAIAPI().getCompletionsAPI().summarizeStream(formIn, new LineReadingOutputStream(out)));
     }
 
     /**
@@ -82,8 +82,8 @@ public class CompletionsResource {
                 request,
                 response,
                 formIn,
-                () -> APILocator.getArtificialIntelligenceAPI().getCompletionsAPI().raw(formIn),
-                out -> APILocator.getArtificialIntelligenceAPI().getCompletionsAPI().rawStream(formIn, new LineReadingOutputStream(out)));
+                () -> APILocator.getDotAIAPI().getCompletionsAPI().raw(formIn),
+                out -> APILocator.getDotAIAPI().getCompletionsAPI().rawStream(formIn, new LineReadingOutputStream(out)));
     }
 
     /**

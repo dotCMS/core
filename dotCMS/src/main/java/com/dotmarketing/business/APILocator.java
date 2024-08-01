@@ -276,7 +276,7 @@ public class APILocator extends Locator<APIIndex> {
 	 *
 	 * @return The {@link DotAIAPI} class.
 	 */
-	public static DotAIAPI getArtificialIntelligenceAPI() {
+	public static DotAIAPI getDotAIAPI() {
 
 		return  (DotAIAPI)getInstance(APIIndex.ARTIFICIAL_INTELLIGENCE_API);
 	}

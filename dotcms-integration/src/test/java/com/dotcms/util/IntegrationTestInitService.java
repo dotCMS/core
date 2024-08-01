@@ -69,7 +69,7 @@ public class IntegrationTestInitService {
                 // Init other dotCMS services.
                 DotInitializationService.getInstance().initialize();
 
-                APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().initEmbeddingsTable();
+                APILocator.getDotAIAPI().getEmbeddingsAPI().initEmbeddingsTable();
             }
         } catch (Exception e) {
             Logger.error(this, "Error initializing Integration Test Init Service", e);

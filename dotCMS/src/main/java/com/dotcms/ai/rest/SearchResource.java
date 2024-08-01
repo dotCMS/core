@@ -127,7 +127,7 @@ public class SearchResource {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(form).withUser(user).build();
 
         return Response.ok(
-                APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().searchForContent(searcher).toString(),
+                APILocator.getDotAIAPI().getEmbeddingsAPI().searchForContent(searcher).toString(),
                 MediaType.APPLICATION_JSON).build();
     }
 
@@ -236,7 +236,7 @@ public class SearchResource {
                 .build();
 
         return Response
-                .ok(APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI(host).searchForContent(searcher).toString(), MediaType.APPLICATION_JSON)
+                .ok(APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher).toString(), MediaType.APPLICATION_JSON)
                 .build();
     }
 

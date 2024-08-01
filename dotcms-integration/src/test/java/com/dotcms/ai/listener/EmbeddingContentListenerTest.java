@@ -114,7 +114,7 @@ public class EmbeddingContentListenerTest {
         boolean embeddingsExist = waitForEmbeddings(blogContent, text, true);
 
         assertTrue(embeddingsExist);
-        final Map<String, Map<String, Object>> embeddingsByIndex = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().countEmbeddingsByIndex();
+        final Map<String, Map<String, Object>> embeddingsByIndex = APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddingsByIndex();
         assertFalse(embeddingsByIndex.isEmpty());
         assertTrue(embeddingsByIndex.containsKey("default"));
         final Map<String, Object> embeddings = embeddingsByIndex.get("default");
@@ -183,14 +183,14 @@ public class EmbeddingContentListenerTest {
 
     private static boolean waitForEmbeddings(final Contentlet blogContent, final String text, final boolean expected) {
         int count = 0;
-        boolean embeddingsExist = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
+        boolean embeddingsExist = APILocator.getDotAIAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
         while (embeddingsExist != expected) {
             if (count++ > MAX_ATTEMPTS) {
                 break;
             }
 
             sleep(1000);
-            embeddingsExist = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
+            embeddingsExist = APILocator.getDotAIAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
         }
         return embeddingsExist;
     }

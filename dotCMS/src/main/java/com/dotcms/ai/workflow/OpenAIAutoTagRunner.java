@@ -68,7 +68,7 @@ public class OpenAIAutoTagRunner implements Runnable {
                         final float temperature) {
 
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
-            throw new DotRuntimeException("Content must be saved and have an identifier before running AI Content Prompt");
+            throw new IllegalArgumentException("Content must be saved and have an identifier before running AI Content Prompt");
         }
         this.contentlet = contentlet;
         this.overwriteField = overwriteField;
@@ -83,10 +83,6 @@ public class OpenAIAutoTagRunner implements Runnable {
     public void run() {
 
         final Contentlet workingContentlet = this.contentlet;
-        if (UtilMethods.isEmpty(workingContentlet::getIdentifier)) {
-            Logger.debug(this.getClass(), "Invalid content found, does not has identifier :" + workingContentlet.getTitle());
-            return;
-        }
 
         Logger.debug(this.getClass(), "Running OpenAI Auto Tag Content for : " + workingContentlet.getTitle());
 
@@ -123,6 +119,7 @@ public class OpenAIAutoTagRunner implements Runnable {
             tryArray.add(DOT_AI_TAGGED);
             tryArray.forEach(t -> tags.add((String) t));
 
+            contentlet.setProperty(fieldToTry.get().variable(), tags);
         } catch (Exception e) {
             this.handleError(e, user);
         }
@@ -148,7 +145,7 @@ public class OpenAIAutoTagRunner implements Runnable {
         final String parsedSystemPrompt = VelocityUtil.eval(systemPrompt, ctx);
         final String parsedContentPrompt = VelocityUtil.eval(contentToTag, ctx);
 
-        final JSONObject openAIResponse = APILocator.getArtificialIntelligenceAPI().getCompletionsAPI()
+        final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI()
                 .prompt(parsedSystemPrompt, parsedContentPrompt, model, temperature, 2000);
 
         return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");

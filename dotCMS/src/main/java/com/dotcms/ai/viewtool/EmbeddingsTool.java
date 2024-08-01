@@ -74,7 +74,7 @@ public class EmbeddingsTool implements ViewTool {
                     "Prompt is too long.  Maximum prompt size is " + maxTokens + " tokens (roughly ~" + maxTokens * .75 + " words).  Your prompt was " + tokens + " tokens ");
         }
 
-        return APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().pullOrGenerateEmbeddings(prompt)._2;
+        return APILocator.getDotAIAPI().getEmbeddingsAPI().pullOrGenerateEmbeddings(prompt)._2;
     }
 
     /**
@@ -83,7 +83,7 @@ public class EmbeddingsTool implements ViewTool {
      * @return A map where the keys are index names and the values are maps of index properties.
      */
     public Map<String, Map<String, Object>> getIndexCount() {
-        return APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().countEmbeddingsByIndex();
+        return APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddingsByIndex();
     }
 
     @VisibleForTesting

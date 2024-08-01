@@ -145,7 +145,7 @@ public class EmbeddingsResource {
 
         if (UtilMethods.isSet(() -> json.optString(AiKeys.DELETE_QUERY))){
             final int numberDeleted =
-                    APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().deleteByQuery(
+                    APILocator.getDotAIAPI().getEmbeddingsAPI().deleteByQuery(
                             json.optString(AiKeys.DELETE_QUERY),
                             Optional.ofNullable(json.optString(AiKeys.INDEX_NAME)),
                             user);
@@ -160,7 +160,7 @@ public class EmbeddingsResource {
                 .withContentType(json.optString(AiKeys.CONTENT_TYPE))
                 .withHost(json.optString(AiKeys.SITE))
                 .build();
-        int deleted = APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().deleteEmbedding(dto);
+        int deleted = APILocator.getDotAIAPI().getEmbeddingsAPI().deleteEmbedding(dto);
 
         return Response.ok(Map.of(AiKeys.DELETED, deleted)).build();
     }
@@ -188,8 +188,8 @@ public class EmbeddingsResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().dropEmbeddingsTable();
-        APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().initEmbeddingsTable();
+        APILocator.getDotAIAPI().getEmbeddingsAPI().dropEmbeddingsTable();
+        APILocator.getDotAIAPI().getEmbeddingsAPI().initEmbeddingsTable();
         return Response.ok(Map.of(AiKeys.CREATED, true)).build();
     }
 
@@ -255,7 +255,7 @@ public class EmbeddingsResource {
                         .ofNullable(form)
                         .orElse(new CompletionsForm.Builder().prompt("NOT USED").build()))
                 .build();
-        return Response.ok(Map.of(AiKeys.EMBEDDINGS_COUNT, APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().countEmbeddings(dto))).build();
+        return Response.ok(Map.of(AiKeys.EMBEDDINGS_COUNT, APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddings(dto))).build();
     }
 
     /**
@@ -278,7 +278,7 @@ public class EmbeddingsResource {
                 .rejectWhenNoUser(true)
                 .init();
         new WebResource.InitBuilder(request, response).requiredBackendUser(true).init().getUser();
-        return Response.ok(Map.of(AiKeys.INDEX_COUNT, APILocator.getArtificialIntelligenceAPI().getEmbeddingsAPI().countEmbeddingsByIndex())).build();
+        return Response.ok(Map.of(AiKeys.INDEX_COUNT, APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddingsByIndex())).build();
     }
 
 }

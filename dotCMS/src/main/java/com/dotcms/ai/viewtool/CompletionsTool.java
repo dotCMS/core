@@ -71,7 +71,7 @@ public class CompletionsTool implements ViewTool {
     public Object summarize(final String prompt, final String indexName) {
         final CompletionsForm form = new CompletionsForm.Builder().indexName(indexName).prompt(prompt).build();
         try {
-            return APILocator.getArtificialIntelligenceAPI().getCompletionsAPI(config).summarize(form);
+            return APILocator.getDotAIAPI().getCompletionsAPI(config).summarize(form);
         } catch (Exception e) {
             return handleException(e);
         }
@@ -112,7 +112,7 @@ public class CompletionsTool implements ViewTool {
      */
     public Object raw(final JSONObject prompt) {
         try {
-            return APILocator.getArtificialIntelligenceAPI().getCompletionsAPI(config).raw(prompt);
+            return APILocator.getDotAIAPI().getCompletionsAPI(config).raw(prompt);
         } catch (Exception e) {
             return handleException(e);
         }
