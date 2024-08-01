@@ -18,8 +18,6 @@ export interface UVEState {
     isTraditionalPage: boolean;
     canEditPage: boolean;
     pageIsLocked: boolean;
-    graphQL?: string;
-    isClientReady?: boolean;
 }
 
 export interface ShellProps {

@@ -21,6 +21,7 @@ import {
 import { UVE_STATUS } from '../../../shared/enums';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
+import { withClientConfig } from '../clientConfig/withClientConfig';
 
 /**
  * Add load and reload method to the store
@@ -33,6 +34,7 @@ export function withLoad() {
         {
             state: type<UVEState>()
         },
+        withClientConfig(),
         withMethods((store) => {
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
@@ -158,6 +160,7 @@ export function withLoad() {
                                                     canEditPage,
                                                     pageIsLocked,
                                                     status: UVE_STATUS.LOADED,
+                                                    isClientReady: false,
                                                     isTraditionalPage: !params.clientHost // If we don't send the clientHost we are using as VTL page
                                                 });
                                             },
@@ -174,12 +177,11 @@ export function withLoad() {
                         })
                     )
                 ),
-                reload: rxMethod<string | void>(
+                reload: rxMethod<void>(
                     pipe(
-                        tap((query = null) => {
+                        tap(() => {
                             patchState(store, {
-                                status: UVE_STATUS.LOADING,
-                                graphQL: query || store.graphQL()
+                                status: UVE_STATUS.LOADING
                             });
                         }),
                         switchMap(() => {

@@ -92,6 +92,14 @@ import {
     insertContentletInContainer
 } from '../utils';
 
+const compareUrlPaths = (urlPath: string, urlPath2: string): boolean => {
+    // Host doesn't matter here, we just need the pathname
+    const { pathname: pathname1 } = new URL(urlPath, window.origin);
+    const { pathname: pathname2 } = new URL(urlPath2, window.origin);
+
+    return pathname1 === pathname2;
+};
+
 @Component({
     selector: 'dot-edit-ema-editor',
     standalone: true,
@@ -167,29 +175,29 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.uveStore.resetEditorProperties();
             this.dialog?.resetDialog();
 
-            if (!isTraditionalPage) {
-                if (isClientReady) {
-                    return this.reloadIframeContent();
-                }
+            if (isTraditionalPage) {
+                this.setIframeContent(code);
+
+                requestAnimationFrame(() => {
+                    const win = this.contentWindow;
+                    if (enableInlineEdit) {
+                        this.inlineEditingService.injectInlineEdit(this.iframe);
+                    } else {
+                        this.inlineEditingService.removeInlineEdit(this.iframe);
+                    }
+
+                    fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+                        this.handleInternalNav(e);
+                        this.handleInlineEditing(e); // If inline editing is not active this will do nothing
+                    });
+                });
 
                 return;
             }
 
-            this.setIframeContent(code);
-
-            requestAnimationFrame(() => {
-                const win = this.contentWindow;
-                if (enableInlineEdit) {
-                    this.inlineEditingService.injectInlineEdit(this.iframe);
-                } else {
-                    this.inlineEditingService.removeInlineEdit(this.iframe);
-                }
-
-                fromEvent(win, 'click').subscribe((e: MouseEvent) => {
-                    this.handleInternalNav(e);
-                    this.handleInlineEditing(e); // If inline editing is not active this will do nothing
-                });
-            });
+            if (isClientReady) {
+                return this.reloadIframeContent();
+            }
         },
         {
             allowSignalWrites: true
@@ -842,7 +850,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
                 // We remove the `/` here: https://github.com/dotCMS/core/blob/225dc5e42585317c51551364c8c02ccbb7ffb925/core-web/libs/sdk/client/src/lib/editor/sdk-editor.ts#L17
                 // So it's not a fair compare
-                const isSameUrl = this.uveStore.params()?.url === `/` + payload.url;
+                const isSameUrl = compareUrlPaths(this.uveStore.params()?.url, payload.url);
 
                 if (isSameUrl) {
                     this.uveStore.setEditorState(EDITOR_STATE.IDLE);
@@ -1001,7 +1009,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                this.uveStore.reload(data.payload as string);
+                this.uveStore.setClientConfiguration(data.payload as string);
+                this.uveStore.reload();
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */

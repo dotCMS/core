@@ -21,9 +21,7 @@ const initialState: UVEState = {
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
-    pageIsLocked: true,
-    graphQL: null,
-    isClientReady: false
+    pageIsLocked: true
 };
 
 export const UVEStore = signalStore(
