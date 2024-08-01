@@ -655,16 +655,17 @@ public class ESMappingAPITest {
     public void testLoadRelationshipFields_whenUsingLegacyRelationships_shouldSuccess()
             throws DotDataException, DotSecurityException {
 
-        final ContentType news = getNewsLikeContentType("News");
-        final ContentType comments = getCommentsLikeContentType("Comments");
+        //When not passing a CT name we're forcing a brand new ContentType to be created
+        //Therefore we're creating a new ContentType with a new relationship
+        final ContentType news = getNewsLikeContentType();
+        final ContentType comments = getCommentsLikeContentType();
         relateContentTypes(news, comments);
-
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
         final Map<String, Object> esMap = new HashMap<>();
 
-        final ContentType newsContentType = contentTypeAPI.find("News");
-        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+        final ContentType newsContentType = contentTypeAPI.find(news.variable());
+        final ContentType commentsContentType = contentTypeAPI.find(comments.variable());
 
         Contentlet newsContentlet = null;
         Contentlet commentsContentlet = null;
@@ -684,7 +685,10 @@ public class ESMappingAPITest {
                     .setProperty("email", "testing@dotcms.com")
                     .setProperty("comment", "Comment for News").nextPersisted();
 
-            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+            final String relationShipName = String.format("%s-%s", news.variable(), comments.variable());
+            Logger.debug(this, "RelationShipName: " + relationShipName);
+
+            final Relationship relationship = relationshipAPI.byTypeValue(relationShipName);
 
             newsContentlet = contentletAPI.checkin(newsContentlet,
                     Map.of(relationship, list(commentsContentlet)),
@@ -694,7 +698,7 @@ public class ESMappingAPITest {
 
             assertNotNull(esMap);
             assertEquals(commentsContentlet.getIdentifier(),
-                    ((List)esMap.get("News-Comments")).get(0));
+                    ((List)esMap.get(relationShipName)).get(0));
 
         } finally {
             if (newsContentlet != null && UtilMethods.isSet(newsContentlet.getIdentifier())) {
