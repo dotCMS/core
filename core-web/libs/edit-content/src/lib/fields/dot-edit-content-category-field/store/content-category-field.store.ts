@@ -256,9 +256,13 @@ export const CategoryFieldStore = signalStore(
                     tap((event) => {
                         const index = event ? event.index : 0;
                         const currentCategories = store.categories();
+                        const keyParentPath = store.keyParentPath();
 
-                        if (event) {
-                            if (!checkIfClickedIsLastItem(index, currentCategories)) {
+                        if (event && event.item) {
+                            const categoryKey = event.item.key;
+                            const lastCategoryKey = keyParentPath[keyParentPath.length - 1];
+
+                            if (!checkIfClickedIsLastItem(index, currentCategories) && categoryKey !== lastCategoryKey) {
                                 patchState(store, {
                                     categories: [
                                         ...clearCategoriesAfterIndex(currentCategories, index)

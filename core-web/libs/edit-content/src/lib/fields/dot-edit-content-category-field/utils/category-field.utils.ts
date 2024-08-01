@@ -113,9 +113,8 @@ export const clearCategoriesAfterIndex = (
     index: number
 ): DotCategory[][] => {
     const newArray = categoryDeepCopy<DotCategory>(array);
-    newArray.splice(index + 1);
 
-    return newArray;
+    return newArray.slice(0, index + 1);
 };
 
 /**

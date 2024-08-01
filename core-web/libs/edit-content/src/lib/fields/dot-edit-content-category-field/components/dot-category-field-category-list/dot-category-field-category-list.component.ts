@@ -161,18 +161,15 @@ export class DotCategoryFieldCategoryListComponent {
             if (columnsArray.length === 0) {
                 return;
             }
+            
+            const columnToScroll = columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1];
 
-            const lastColumnIndex = columnsArray.length - 1;
-
-            if (
-                columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1] &&
-                columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1].nativeElement.children.length >
-                    0
-            ) {
+            if ( columnToScroll?.nativeElement?.childElementCount > 0) {
+                const lastColumnIndex = columnsArray.length - 1;
                 columnsArray[lastColumnIndex].nativeElement.scrollIntoView({
                     behavior: 'smooth',
                     block: 'end',
-                    inline: 'end'
+                    inline: 'nearest'
                 });
             } else {
                 // scroll to the first column
