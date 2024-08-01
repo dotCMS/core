@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.categories.business;
 
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.portlets.categories.model.Category;
 
 import java.util.Objects;
@@ -148,6 +149,14 @@ public class CategorySearchCriteria {
         }
 
         public CategorySearchCriteria build() {
+            if (this.orderBy != null) {
+                final String categoriesSort = SQLUtil.sanitizeSortBy(this.direction == OrderDirection.DESC
+                        ? "-" + this.orderBy : this.orderBy);
+
+                this.direction = categoriesSort.startsWith("-") ? OrderDirection.DESC : OrderDirection.ASC;
+                this.orderBy = categoriesSort.startsWith("-") ? categoriesSort.substring(1) : categoriesSort;
+            }
+
             return new CategorySearchCriteria(this);
         }
 

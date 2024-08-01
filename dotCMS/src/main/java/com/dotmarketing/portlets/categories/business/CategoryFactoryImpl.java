@@ -627,15 +627,20 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			for ( Map<String, Object> row : sqlResults ) {
 				HierarchedCategory category = (HierarchedCategory) convertForCategory(row, HierarchedCategory.class);
 
+				if (row == null) {
+					continue;
+				}
+
                 try {
-					if (row !=null && row.get("path") != null ) {
+					if (row.get("path") != null ) {
 						final String parentsASJsonArray = "[" + row.get("path") + "]";
 						final List<ShortCategory> parentList = getShortCategories(parentsASJsonArray);
 						category.setParentList(parentList.subList(0, parentList.size() - 1));
 					}
 
-                    assert row != null;
-                    category.setChildrenCount(ConversionUtils.toInt(row.get("childrencount"), 0));
+					if (row.containsKey("childrencount")) {
+						category.setChildrenCount(ConversionUtils.toInt(row.get("childrencount"), 0));
+					}
 
 					categories.add(category);
                 } catch ( Exception e) {
@@ -911,6 +916,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	public List<HierarchedCategory>   findAll(final CategorySearchCriteria searchCriteria)
 			throws DotDataException, DotSecurityException {
 
+		final String filter = SQLUtil.sanitizeParameter(searchCriteria.filter);
+
 		final String query = CategoryQueryBuilderResolver.getQueryBuilder(searchCriteria).build();
 
 		final DotConnect dc = new DotConnect().setSQL(query);
@@ -919,10 +926,10 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			dc.addParam(searchCriteria.rootInode);
 		}
 
-		if (UtilMethods.isSet(searchCriteria.filter) ) {
-			dc.addParam("%" + searchCriteria.filter.toLowerCase() + "%");
-			dc.addParam("%" + searchCriteria.filter.toLowerCase() + "%");
-			dc.addParam("%" + searchCriteria.filter.toLowerCase() + "%");
+		if (UtilMethods.isSet(filter) ) {
+			dc.addParam("%" + filter.toLowerCase() + "%");
+			dc.addParam("%" + filter.toLowerCase() + "%");
+			dc.addParam("%" + filter.toLowerCase() + "%");
 		} else if (CategoryQueryBuilderResolver.mustUseRecursiveTemplate(searchCriteria)){
 			dc.addParam("%%");
 			dc.addParam("%%");

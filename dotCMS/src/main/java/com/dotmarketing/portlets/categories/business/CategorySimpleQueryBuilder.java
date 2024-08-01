@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.categories.business;
 
 
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -57,7 +58,7 @@ public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
                 "countChildren", getChildrenCount(),
                 "rootFilter", rootFilter,
                 "filterCategories", getFilterCategories(this.searchCriteria),
-                "orderBy",searchCriteria.orderBy,
+                "orderBy", searchCriteria.orderBy,
                 "direction", searchCriteria.direction.toString(),
                 "treeJoin", treeJoin
                 )

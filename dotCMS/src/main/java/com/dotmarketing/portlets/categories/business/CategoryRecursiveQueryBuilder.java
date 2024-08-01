@@ -4,6 +4,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -129,7 +130,7 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
             "parentList_2", parentList_2,
             "parentList_3", parentList_3,
             "filterCategories", getFilterCategories(),
-            "orderBy",searchCriteria.orderBy,
+            "orderBy", searchCriteria.orderBy,
             "direction", searchCriteria.direction.toString()
         ));
     }

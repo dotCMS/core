@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.categories.model;
 
-import java.util.List;
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.util.*;
 
 /**
  * Represents a {@link Category} with its hierarchy calculated.
@@ -18,23 +20,32 @@ import java.util.Objects;
  */
 public class HierarchedCategory extends Category{
 
-    private List<ShortCategory> parentList;
-    private int childrenCount;
+    private final String PARENT_LIST_EXTRA_PARAMETER = "parentList";
+    private final String CHILDREN_COUNT_EXTRA_PARAMETER = "childrenCount";
+
+    @JsonAnyGetter
+    final Map<String, Object> extraParameters = new HashMap<>();
 
     public void setParentList(final List<ShortCategory> parentList) {
-        this.parentList = parentList;
+        extraParameters.put(PARENT_LIST_EXTRA_PARAMETER, parentList);
     }
 
+    @JsonIgnore
     public List<ShortCategory> getParentList() {
-        return parentList;
+
+        return extraParameters.containsKey(PARENT_LIST_EXTRA_PARAMETER) ? Collections.emptyList() :
+                (List<ShortCategory>) extraParameters.get(PARENT_LIST_EXTRA_PARAMETER);
     }
 
     public void setChildrenCount(int childrenCount) {
-        this.childrenCount = childrenCount;
+        extraParameters.put(CHILDREN_COUNT_EXTRA_PARAMETER, childrenCount);
     }
 
+    @JsonIgnore
     public int getChildrenCount() {
-        return childrenCount;
+
+        return extraParameters.containsKey(CHILDREN_COUNT_EXTRA_PARAMETER) ? 0 :
+                (int) extraParameters.get(CHILDREN_COUNT_EXTRA_PARAMETER);
     }
 
     @Override
@@ -43,11 +54,11 @@ public class HierarchedCategory extends Category{
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         HierarchedCategory that = (HierarchedCategory) o;
-        return Objects.equals(parentList, that.parentList);
+        return Objects.equals(getParentList(), that.getParentList());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), parentList);
+        return Objects.hash(super.hashCode(), getParentList());
     }
 }
