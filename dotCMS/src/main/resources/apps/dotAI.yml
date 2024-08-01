@@ -61,19 +61,82 @@ params:
         value: "1920x1080"
       - label: "256x256 (Small Square 1:1)"
         value: "256x256"
-  model:
-    value: "gpt-3.5-turbo-16k"
+  textModelNames:
+    value: ""
     hidden: false
     type: "STRING"
-    label: "Model"
-    hint: "Model used to generate ChatGPT API response."
+    label: "Model Names"
+    hint: "Comma delimited list of models used to generate OpenAI API response."
     required: true
-  imageModel:
-    value: "dall-e-3"
+  textModelTokensPerMinute:
+    value: "180000"
     hidden: false
     type: "STRING"
-    label: "Image Model"
-    hint: "Image Model used to generate AI Images"
+    label: "Tokens per Minute"
+    hint: "Tokens per minute used to generate OpenAI API response."
+    required: false
+  textModelApiPerMinute:
+    value: "3500"
+    hidden: false
+    type: "STRING"
+    label: "API per Minute"
+    hint: "API per minute used to generate OpenAI API response."
+    required: false
+  textModelMaxTokens:
+    value: "16384"
+    hidden: false
+    type: "STRING"
+    label: "Max Tokens"
+    hint: "Maximum number of tokens used to generate OpenAI API response."
+    required: false
+  textModelCompletion:
+    value: "false"
+    hidden: false
+    type: "BOOL"
+    label: "Completion model enabled"
+    hint: "Enable completion model used to generate OpenAI API response."
+    required: false
+  imageModelNames:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Image Model Names"
+    hint: "Comma delimited list of image models used to generate OpenAI API response."
+    required: true
+  imageModelTokensPerMinute:
+    value: "0"
+    hidden: false
+    type: "STRING"
+    label: "Image Tokens per Minute"
+    hint: "Tokens per minute used to generate OpenAI API response."
+    required: false
+  imageModelApiPerMinute:
+    value: "50"
+    hidden: false
+    type: "STRING"
+    label: "Image API per Minute"
+    hint: "API per minute used to generate OpenAI API response."
+    required: false
+  imageModelMaxTokens:
+    value: "0"
+    hidden: false
+    type: "STRING"
+    label: "Image Max Tokens"
+    hint: "Maximum number of tokens used to generate OpenAI API response."
+    required: false
+  imageModelCompletion:
+    value: "false"
+    hidden: false
+    type: "BOOL"
+    label: "Image Completion model enabled"
+    hint: "Enable completion model used to generate OpenAI API response."
+    required: false
+  embeddingsModelNames:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Embeddings Model Names"
+    hint: "Comma delimited list of embeddings models used to generate OpenAI API response."
     required: true
   listenerIndexer:
     value: ""
