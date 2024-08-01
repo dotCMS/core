@@ -585,5 +585,48 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals(childFolder2.getIdentifier(),results.get(1).get("identifier"));
 
     }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Searching for a DotAsset content must return a valid result and expected result
+     *     .</li>
+     *     <li><b>Expected Result:</b> The {@code test.jpg} DotAsset must be returned.</li>
+     * </ul>
+     */
+    @Test
+    public void getContentUnderParentFromDB_searchDotAssetWithFilter_shouldReturnTheAsset() {
+        final String filterText = "test.jpg";
+        final User user = APILocator.systemUser();
+        final List<String> mimeTypes = List.of("image");
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(user)
+                .withHostOrFolderId(testFolder.getIdentifier())
+                .offset(0)
+                .maxResults(20)
+                .withFilter(filterText)
+                .showMimeTypes(mimeTypes)
+                .showExtensions(List.of())
+                .showWorking(true)
+                .showArchived(false)
+                .showFolders(false)
+                .showFiles(true)
+                .showShorties(false)
+                .showContent(true)
+                .sortBy("modDate")
+                .sortByDesc(true)
+                .showLinks(false)
+                .withLanguageId(1)
+                .showDotAssets(true)
+                .build();
+
+        final List<Contentlet> contentletList = this.browserAPI.getContentUnderParentFromDB(browserQuery);
+
+        assertTrue("No contents found",contentletList.size() > 0);
+        for (final Contentlet contentlet : contentletList) {
+            assertEquals(contentlet.getIdentifier(), testDotAsset.getIdentifier());
+        }
+    }
     
 }

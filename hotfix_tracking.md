@@ -275,3 +275,5 @@ This maintenance release includes the following code fixes:
 212. SI-72
 
 **Release-23.01.21**
+
+213. https://github.com/dotCMS/core/issues/26477 : Search filter can't find/filter images #26477

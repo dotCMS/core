@@ -63,6 +63,9 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
 
+    private static final StringBuilder POSTGRES_BINARY_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
+            .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' ->> 'value' ");
+
     private final String OR = " OR ";
 
     /**
@@ -312,8 +315,11 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             sqlQuery.append(OR);
             sqlQuery.append(getAssetNameColumn(ASSET_NAME_LIKE.toString()));
+            sqlQuery.append(" OR ");
+            sqlQuery.append(getBinaryAssetNameColumn(ASSET_NAME_LIKE.toString()));
             sqlQuery.append(" ) ");
 
+            parameters.add("%" + filterText + "%");
             parameters.add("%" + filterText + "%");
         }
 
@@ -344,6 +350,22 @@ public class BrowserAPIImpl implements BrowserAPI {
             } else {
                 sql = String.format(sql, MSSQL_ASSETNAME_COLUMN);
             }
+        }
+        return sql;
+    }
+
+    /**
+     * Retrieve the column that corresponds to the {@code Asset Name} of a binary field.
+     * The value that is inside the "Content as JSON" column called "asset".
+     *
+     * @param baseQuery The base SQL query whose column name will be replaced.
+     *
+     * @return The appropriate database column for the Asset Name field.
+     */
+    private String getBinaryAssetNameColumn(final String baseQuery){
+        String sql = baseQuery;
+        if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
+            sql = String.format(sql, POSTGRES_BINARY_ASSETNAME_COLUMN);
         }
         return sql;
     }
