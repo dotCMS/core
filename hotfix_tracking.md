@@ -273,3 +273,5 @@ This maintenance release includes the following code fixes:
 
 211. https://github.com/dotCMS/core/issues/29304 : Revert telemetry plugin to 24.05.29 #29304
 212. SI-72
+
+**Release-23.01.21**
