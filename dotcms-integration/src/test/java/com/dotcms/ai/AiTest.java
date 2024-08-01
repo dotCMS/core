@@ -1,6 +1,6 @@
 package com.dotcms.ai;
 
-import com.dotcms.ai.config.AppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.security.apps.Type;

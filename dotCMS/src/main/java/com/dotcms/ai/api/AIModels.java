@@ -1,7 +1,7 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.config.AppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.model.AIModel;
 import com.dotcms.ai.model.OpenAIModel;

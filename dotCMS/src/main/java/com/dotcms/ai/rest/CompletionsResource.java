@@ -3,7 +3,7 @@ package com.dotcms.ai.rest;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.api.AIModels;
-import com.dotcms.ai.config.AppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.rest.forms.CompletionsForm;

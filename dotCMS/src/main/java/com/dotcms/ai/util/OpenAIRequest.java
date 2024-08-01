@@ -2,7 +2,7 @@ package com.dotcms.ai.util;
 
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.model.AIModel;
-import com.dotcms.ai.config.AppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.exception.DotRuntimeException;

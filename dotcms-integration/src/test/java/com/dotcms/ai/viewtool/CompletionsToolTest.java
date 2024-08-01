@@ -1,7 +1,7 @@
 package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.AiTest;
-import com.dotcms.ai.config.AppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;

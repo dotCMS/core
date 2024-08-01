@@ -1,6 +1,6 @@
 package com.dotcms.ai.rest.forms;
 
-import com.dotcms.ai.config.AppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;

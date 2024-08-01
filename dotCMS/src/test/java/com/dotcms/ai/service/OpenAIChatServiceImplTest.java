@@ -2,7 +2,7 @@ package com.dotcms.ai.service;
 
 import com.dotcms.ai.model.AIModel;
 import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.config.AppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotmarketing.util.json.JSONObject;
 import org.junit.Before;

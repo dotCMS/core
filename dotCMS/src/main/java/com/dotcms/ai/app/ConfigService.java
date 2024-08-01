@@ -1,6 +1,5 @@
 package com.dotcms.ai.app;
 
-import com.dotcms.ai.config.AppConfig;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotmarketing.beans.Host;

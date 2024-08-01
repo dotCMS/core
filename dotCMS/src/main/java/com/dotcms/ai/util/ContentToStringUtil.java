@@ -40,7 +40,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.dotcms.ai.config.AppConfig.debugLogger;
+import static com.dotcms.ai.app.AppConfig.debugLogger;
 import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.SPACE;
 

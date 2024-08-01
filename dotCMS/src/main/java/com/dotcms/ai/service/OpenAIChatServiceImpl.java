@@ -1,7 +1,7 @@
 package com.dotcms.ai.service;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.config.AppConfig;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.util.OpenAIRequest;
 import com.dotmarketing.util.UtilMethods;

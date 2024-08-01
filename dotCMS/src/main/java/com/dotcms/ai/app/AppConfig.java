@@ -1,9 +1,6 @@
-package com.dotcms.ai.config;
+package com.dotcms.ai.app;
 
 import com.dotcms.ai.api.AIModels;
-import com.dotcms.ai.app.AIModelType;
-import com.dotcms.ai.app.AppKeys;
-import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.model.AIModel;
 import com.dotcms.ai.util.AIAppUtil;
 import com.dotcms.security.apps.Secret;
