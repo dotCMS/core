@@ -119,6 +119,7 @@ runs:
 
     - name: Get yarn cache directory path
       id: yarn-info
+      if: ${{ inputs.requires-node == 'true' }}
       shell: bash
       run: |
         echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
