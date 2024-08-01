@@ -33,8 +33,8 @@ public class HierarchedCategory extends Category{
     @JsonIgnore
     public List<ShortCategory> getParentList() {
 
-        return extraParameters.containsKey(PARENT_LIST_EXTRA_PARAMETER) ? Collections.emptyList() :
-                (List<ShortCategory>) extraParameters.get(PARENT_LIST_EXTRA_PARAMETER);
+        return extraParameters.containsKey(PARENT_LIST_EXTRA_PARAMETER) ?
+                (List<ShortCategory>) extraParameters.get(PARENT_LIST_EXTRA_PARAMETER) : null;
     }
 
     public void setChildrenCount(int childrenCount) {
@@ -44,8 +44,8 @@ public class HierarchedCategory extends Category{
     @JsonIgnore
     public int getChildrenCount() {
 
-        return extraParameters.containsKey(CHILDREN_COUNT_EXTRA_PARAMETER) ? 0 :
-                (int) extraParameters.get(CHILDREN_COUNT_EXTRA_PARAMETER);
+        return extraParameters.containsKey(CHILDREN_COUNT_EXTRA_PARAMETER) ?
+                (int) extraParameters.get(CHILDREN_COUNT_EXTRA_PARAMETER) : 0;
     }
 
     @Override
