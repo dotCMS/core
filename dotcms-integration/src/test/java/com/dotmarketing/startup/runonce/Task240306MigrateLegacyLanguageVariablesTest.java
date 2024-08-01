@@ -45,7 +45,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
         "en", 38,
         "en-us",0,
         "fr-fr",23,
-        "es-es",37
+        "es-es",34
     );
 
     @BeforeClass
@@ -80,10 +80,11 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
             // Verify the languages we were not able to find
             assertTrue(locales.contains(Locale.SIMPLIFIED_CHINESE));
 
-            summary.success().forEach((language, inodes) -> {
+            summary.success().forEach((language, addedKeys) -> {
                 final String isoCode = language.getIsoCode();
-                assertTrue("Missing isoCode: " + isoCode, expectedResults.containsKey(isoCode));
-                assertEquals("Number of ingested lines is not the same as the expected", expectedResults.get(isoCode).intValue(), inodes.size());
+                assertTrue("ISO Code not expected: " + isoCode, expectedResults.containsKey(isoCode));
+                assertEquals("Number of ingested lines is not the same as the expected",
+                        expectedResults.get(isoCode).intValue(), addedKeys.size());
             });
         } finally {
             final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
@@ -111,12 +112,57 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
           assertTrue("There must be a migration summary after the task execution",
                   dataTask.getMigrationSummary().isPresent());
           final ImmutableMigrationSummary summary = dataTask.getMigrationSummary().get();
-          assertEquals("There must be 4 successfully processed Locales", 4, summary.success().size());
+          assertEquals("There must be 4 successfully processed Locales", 5, summary.success().size());
           assertEquals("There must be no errors", 0, summary.fails().size());
         } finally {
           final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
           migrationSummary.ifPresent(this::cleanup);
       }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link Task240306MigrateLegacyLanguageVariables#executeUpgrade()}</li>
+     *     <li><b>Given Scenario: </b>Run the Data Task twice.</li>
+     *     <li><b>Expected Result: </b>Running the Data Task more than once should not cause any
+     *     issue.</li>
+     * </ul>
+     *
+     * @throws DotDataException An error occurred when interacting with the database
+     */
+    @Test
+    public void testDataTaskIdempotency() throws DotDataException {
+        final Task240306MigrateLegacyLanguageVariables dataTaskFirstInstance = new Task240306MigrateLegacyLanguageVariables();
+        final Task240306MigrateLegacyLanguageVariables dataTaskSecondInstance = new Task240306MigrateLegacyLanguageVariables();
+        try {
+            assertTrue("The first migration summary object should not exist before running the task",
+                    dataTaskFirstInstance.getMigrationSummary().isEmpty());
+            dataTaskFirstInstance.executeUpgrade();
+            assertTrue("There must be a first migration summary after the task execution",
+                    dataTaskFirstInstance.getMigrationSummary().isPresent());
+            final ImmutableMigrationSummary firstTaskSummary = dataTaskFirstInstance.getMigrationSummary().get();
+            assertEquals("There must be 4 successfully processed Locales in the first run", 4, firstTaskSummary.success().size());
+            assertEquals("There must be no errors in the first run", 0, firstTaskSummary.fails().size());
+
+            assertTrue("The second migration summary object should not exist before running the task",
+                    dataTaskSecondInstance.getMigrationSummary().isEmpty());
+            dataTaskSecondInstance.executeUpgrade();
+            assertTrue("There must be a second migration summary after the task execution",
+                    dataTaskSecondInstance.getMigrationSummary().isPresent());
+            final ImmutableMigrationSummary secondTaskSummary = dataTaskSecondInstance.getMigrationSummary().get();
+            assertEquals("There must be 4 successfully processed Locales in the second run", 4,
+                    secondTaskSummary.success().size());
+            assertEquals("There must be no errors in the second run", 0, secondTaskSummary.fails().size());
+            secondTaskSummary.success().forEach((language, addedKeys) -> {
+                final String isoCode = language.getIsoCode();
+                assertTrue("ISO Code not expected: " + isoCode, expectedResults.containsKey(isoCode));
+                assertEquals("No entries should've been updated", 0, addedKeys.size());
+            });
+        } finally {
+            final Optional<ImmutableMigrationSummary> migrationSummary = dataTaskFirstInstance.getMigrationSummary();
+            migrationSummary.ifPresent(this::cleanup);
+        }
     }
 
     /**
