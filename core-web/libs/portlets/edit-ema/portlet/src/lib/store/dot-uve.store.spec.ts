@@ -18,7 +18,7 @@ import {
     DotLicenseService,
     DotMessageService
 } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
+import { CurrentUser, LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
@@ -69,7 +69,22 @@ const buildPageAPIResponseFromMock =
                 pageURI: url
             }
         });
-
+const mockCurrentUser: CurrentUser = {
+    email: 'admin@dotcms.com',
+    givenName: 'Admin',
+    loginAs: true,
+    roleId: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+    surname: 'User',
+    userId: 'dotcms.org.1'
+};
+const mockOtherUser: CurrentUser = {
+    email: 'admin2@dotcms.com',
+    givenName: 'Admin2',
+    loginAs: true,
+    roleId: '73ec980e-d74f-4cec-a4d0-e319061e20b9',
+    surname: 'User',
+    userId: 'dotcms.org.2808'
+};
 describe('UVEStore', () => {
     let spectator: SpectatorService<InstanceType<typeof UVEStore>>;
     let store: InstanceType<typeof UVEStore>;
@@ -644,22 +659,73 @@ describe('UVEStore', () => {
                     });
 
                     describe('unlockButton', () => {
-                        it('should have unlockButton if the page is locked and the user can lock the page', () => {
+                        it('should display unlockButton if the page is locked by another user and the current user can lock the page', () => {
                             patchState(store, {
                                 pageAPIResponse: {
                                     ...MOCK_RESPONSE_HEADLESS,
                                     page: {
                                         ...MOCK_RESPONSE_HEADLESS.page,
                                         locked: true,
+                                        lockedBy: mockOtherUser.userId,
                                         canLock: true
                                     }
-                                }
+                                },
+                                currentUser: mockCurrentUser
                             });
 
                             expect(store.$toolbarProps().unlockButton).toEqual({
                                 inode: '123-i',
                                 loading: false
                             });
+                        });
+
+                        it('should not display unlockButton if the page is locked by the current user', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: mockCurrentUser.userId,
+                                        canLock: true
+                                    }
+                                },
+                                currentUser: mockCurrentUser
+                            });
+
+                            expect(store.$toolbarProps().unlockButton).toBeNull();
+                        });
+
+                        it('should not display unlockButton if the page is not locked', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: false,
+                                        canLock: true
+                                    }
+                                },
+                                currentUser: mockCurrentUser
+                            });
+
+                            expect(store.$toolbarProps().unlockButton).toBeNull();
+                        });
+
+                        it('should not display unlockButton if the user cannot lock the page', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        canLock: false
+                                    }
+                                },
+                                currentUser: mockCurrentUser
+                            });
+
+                            expect(store.$toolbarProps().unlockButton).toBeNull();
                         });
                     });
 
@@ -694,6 +760,40 @@ describe('UVEStore', () => {
                             });
 
                             expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                        });
+                        it('should have shouldShowInfoDisplay as true if the page is locked by another user', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: mockOtherUser.userId
+                                    }
+                                },
+                                currentUser: mockCurrentUser
+                            });
+
+                            expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                        });
+
+                        it('should have shouldShowInfoDisplay as false if the page is locked by the current user and other conditions are not met', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: mockCurrentUser.userId
+                                    }
+                                },
+                                currentUser: mockCurrentUser,
+                                canEditPage: true,
+                                device: null,
+                                socialMedia: null
+                            });
+
+                            expect(store.$toolbarProps().showInfoDisplay).toBe(false);
                         });
                     });
                 });
