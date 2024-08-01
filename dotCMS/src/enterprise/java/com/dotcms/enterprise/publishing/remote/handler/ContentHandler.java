@@ -1091,7 +1091,7 @@ public class ContentHandler implements IHandler {
 				TagInode localTagInode = tagAPI.getTagInode(localTag.getTagId(), content.getInode(), fieldVarName);
 
 				// avoid relating tags twice
-				if(localTagInode==null || !Strings.isNullOrEmpty(localTagInode.getTagId())) {
+				if(UtilMethods.isEmpty(()->localTagInode.getTagId())) {
 					tagAPI.addContentletTagInode(localTag, content.getInode(), fieldVarName);
 				}
 			}
