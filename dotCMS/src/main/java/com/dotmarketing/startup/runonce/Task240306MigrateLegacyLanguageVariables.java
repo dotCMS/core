@@ -82,14 +82,13 @@ public class Task240306MigrateLegacyLanguageVariables implements StartupTask {
      * @param langVarContentTypeID The inode of the {@code Language Variable} Content Type.
      *
      * @throws DotDataException     An error occurred when interacting with the database.
-     * @throws DotSecurityException A permission error has occurred.
      */
     private void assignSystemWorkflow(final String langVarContentTypeID) throws DotDataException {
         final ContentType languageVariableContentType;
         try {
             languageVariableContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(langVarContentTypeID);
         } catch (final DotSecurityException e) {
-            throw new RuntimeException(e);
+            throw new DotRuntimeException(e);
         }
         APILocator.getWorkflowAPI().saveSchemeIdsForContentType(languageVariableContentType,
                 Set.of(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID));
