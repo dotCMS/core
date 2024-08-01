@@ -1,14 +1,10 @@
 package com.dotmarketing.startup.runonce;
 
-import static com.dotmarketing.util.FileUtil.copyDir;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.languagevariable.business.ImmutableMigrationSummary;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotcms.languagevariable.business.LegacyLangVarMigrationHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -21,29 +17,35 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
+import static com.liferay.util.StringPool.BLANK;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * Verifies that the {@link Task240306MigrateLegacyLanguageVariables} data task runs as expected.
+ *
+ * @author Fabrizzio Araya, Jose Castro
+ * @since Mar 15th, 2024
+ */
 public class Task240306MigrateLegacyLanguageVariablesTest {
 
     final Map<String,Integer> expectedResults = Map.of(
-        "en", 32,
-        "en-us",37,
-        "fr-fr",50,
-        "es-es",23,
-        "en-ca", 37
+        "en", 38,
+        "en-us",0,
+        "fr-fr",23,
+        "es-es",37
     );
 
     @BeforeClass
@@ -51,7 +53,6 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
         seedLanguages();
-        copyMessageBundle(LegacyLangVarMigrationHelper.messagesDir());
     }
 
     /**
@@ -63,33 +64,29 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
      */
     @Test
     public void testExecuteUpgrade() throws DotDataException, IOException, URISyntaxException {
-        final Task240306MigrateLegacyLanguageVariables upgradeTask = new Task240306MigrateLegacyLanguageVariables();
+        final Task240306MigrateLegacyLanguageVariables dataTask = new Task240306MigrateLegacyLanguageVariables();
+        assertTrue("This Data Task must always run", dataTask.forceRun());
+        assertTrue("The migration summary object should not exist before running the task",
+                dataTask.getMigrationSummary().isEmpty());
         try {
-            assertTrue(upgradeTask.forceRun());
-            Assert.assertTrue(upgradeTask.getMigrationSummary().isEmpty());
-            upgradeTask.executeUpgrade();
-            Assert.assertTrue(upgradeTask.getMigrationSummary().isPresent());
-            final Optional<ImmutableMigrationSummary> migrationSummary = upgradeTask.getMigrationSummary();
-            Assert.assertTrue(migrationSummary.isPresent());
-            ImmutableMigrationSummary summary = migrationSummary.get();
-            Assert.assertFalse(summary.success().isEmpty());
+            dataTask.executeUpgrade();
+            final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
+            assertTrue("There must be a migration summary after the task execution",
+                    dataTask.getMigrationSummary().isPresent());
+            final ImmutableMigrationSummary summary = migrationSummary.get();
+            assertFalse("There must be migrated Language Variables", summary.success().isEmpty());
 
             final ImmutableList<Locale> locales = summary.nonExistingLanguages();
-            //Verify the languages we were not able to find
-            Assert.assertTrue(locales.contains(Locale.JAPANESE));
-            Assert.assertTrue(locales.contains(new Locale("eo", "")));
-            Assert.assertTrue(locales.contains(new Locale("fr", "")));
-            Assert.assertTrue(locales.contains(new Locale("es", "")));
-            //Now verify the languages we were able to find
-            Assert.assertTrue(summary.success().size() > 0);
+            // Verify the languages we were not able to find
+            assertTrue(locales.contains(Locale.SIMPLIFIED_CHINESE));
+
             summary.success().forEach((language, inodes) -> {
                 final String isoCode = language.getIsoCode();
-                Assert.assertTrue("missing isoCode:"+isoCode, expectedResults.containsKey(isoCode));
-                Assert.assertEquals("Number of ingested lines is not the same as the expected", expectedResults.get(isoCode).intValue(), inodes.size());
+                assertTrue("Missing isoCode: " + isoCode, expectedResults.containsKey(isoCode));
+                assertEquals("Number of ingested lines is not the same as the expected", expectedResults.get(isoCode).intValue(), inodes.size());
             });
-
         } finally {
-            final Optional<ImmutableMigrationSummary> migrationSummary = upgradeTask.getMigrationSummary();
+            final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
             migrationSummary.ifPresent(this::cleanup);
         }
     }
@@ -102,20 +99,22 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
      */
     @Test
     public void testDropThenRecreateLanguageVariableContentType() throws DotDataException, DotSecurityException {
-        final Task240306MigrateLegacyLanguageVariables upgradeTask = new Task240306MigrateLegacyLanguageVariables();
+        final Task240306MigrateLegacyLanguageVariables dataTask = new Task240306MigrateLegacyLanguageVariables();
+        assertTrue("This Data Task must always run", dataTask.forceRun());
         try {
-          assertTrue(upgradeTask.forceRun());
           removeLanguageVariableContentType();
-          final Optional<String> optional = upgradeTask.checkContentType();
-          Assert.assertTrue(optional.isPresent());
-          Assert.assertTrue(upgradeTask.getMigrationSummary().isEmpty());
-          upgradeTask.executeUpgrade();
-          Assert.assertTrue(upgradeTask.getMigrationSummary().isPresent());
-          final ImmutableMigrationSummary summary = upgradeTask.getMigrationSummary().get();
-          Assert.assertEquals(5, summary.success().size());
-          Assert.assertEquals(0, summary.fails().size());
+          final Optional<String> optional = dataTask.checkContentType();
+          assertTrue("The Language Variable Content Type must always be present", optional.isPresent());
+          assertTrue("The migration summary object should not exist before running the task",
+                  dataTask.getMigrationSummary().isEmpty());
+          dataTask.executeUpgrade();
+          assertTrue("There must be a migration summary after the task execution",
+                  dataTask.getMigrationSummary().isPresent());
+          final ImmutableMigrationSummary summary = dataTask.getMigrationSummary().get();
+          assertEquals("There must be 4 successfully processed Locales", 4, summary.success().size());
+          assertEquals("There must be no errors", 0, summary.fails().size());
         } finally {
-          final Optional<ImmutableMigrationSummary> migrationSummary = upgradeTask.getMigrationSummary();
+          final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
           migrationSummary.ifPresent(this::cleanup);
       }
     }
@@ -125,15 +124,15 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
      * @throws DotSecurityException if a security violation occurs
      * @throws DotDataException if an error occurs
      */
-    private static void removeLanguageVariableContentType() throws DotSecurityException, DotDataException {
+    private void removeLanguageVariableContentType() throws DotSecurityException, DotDataException {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(
                 APILocator.systemUser());
-        final ContentType contentType = contentTypeAPI.find(
+        final ContentType languageVariableCt = contentTypeAPI.find(
                 LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
         final boolean asyncDelete = Config.getBooleanProperty(
                 ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, true);
         Config.setProperty(ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, false);
-        contentTypeAPI.delete(contentType);
+        contentTypeAPI.delete(languageVariableCt);
         Config.setProperty(ContentTypeAPIImpl.DELETE_CONTENT_TYPE_ASYNC, asyncDelete);
     }
 
@@ -141,7 +140,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
      * Cleanup the contentlets created during the test
      * @param summary the migration summary
      */
-    private void cleanup(ImmutableMigrationSummary summary) {
+    private void cleanup(final ImmutableMigrationSummary summary) {
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         //Clean up required to avoid side effects
         summary.success().forEach((language, inodes) -> {
@@ -163,16 +162,13 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
     static void seedLanguages() throws DotDataException {
         final LanguageAPI languageAPI = APILocator.getLanguageAPI();
         //Making sure Esperanto is not present
-        final Optional<Language> eo = Optional.ofNullable(languageAPI.getLanguage("eo", ""));
+        final Optional<Language> eo = Optional.ofNullable(languageAPI.getLanguage("eo", BLANK));
         eo.ifPresent(languageAPI::deleteLanguage);
-
-        // Create languages English variants
-        createLangVariantInNotExists("en", null, "English", null);
+        // Create English variants
+        createLangVariantInNotExists("en", BLANK, "English", BLANK);
         createLangVariantInNotExists("en", "ca", "English", "Canada");
-        // Create languages French and Spanish variants
+        // Create French variant
         createLangVariantInNotExists("fr", "fr", "French", "French");
-        createLangVariantInNotExists("es", "es", "Spanish", "Spain");
-
     }
 
     /**
@@ -186,30 +182,10 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
     static void createLangVariantInNotExists(final String languageCode, final String countryCode, final String languageName, final String countryName) throws DotDataException {
         final LanguageAPI languageAPI = APILocator.getLanguageAPI();
         final List<Language> languages = languageAPI.getLanguages();
-        final boolean exists = languages.stream().anyMatch(l -> l.getLanguageCode().equals(languageCode) && (StringUtils.isNotEmpty(l.getCountryCode()) && l.getCountryCode().equals(countryCode)));
+        final boolean exists = languages.stream().anyMatch(l -> l.getLanguageCode().equalsIgnoreCase(languageCode) && l.getCountryCode().equalsIgnoreCase(countryCode));
         if (!exists) {
             new LanguageDataGen().persist(new Language(new Random().nextLong(), languageCode, countryCode, languageName, countryName));
         }
     }
-
-    /**
-     * Copy the message bundle to the expected location
-     * @param messagesDir
-     * @throws URISyntaxException
-     * @throws IOException
-     */
-    private static void copyMessageBundle(final Path messagesDir)
-            throws URISyntaxException, IOException {
-        final URL resource = Thread.currentThread().getContextClassLoader().getResource("lang-vars");
-        if(resource == null){
-            throw new RuntimeException("lang-vars directory not found");
-        }
-        final Path resourcesPath = Path.of(resource.toURI());
-        if (!Files.exists(messagesDir)){
-            Files.createDirectories(messagesDir);
-        }
-        copyDir(resourcesPath, messagesDir);
-    }
-
 
 }
