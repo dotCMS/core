@@ -277,3 +277,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.21**
 
 213. https://github.com/dotCMS/core/issues/26477 : Search filter can't find/filter images #26477
+214. https://github.com/dotCMS/core/issues/26987 : Set Response Headers Rule Action does not allow double quotes in the value #26987
