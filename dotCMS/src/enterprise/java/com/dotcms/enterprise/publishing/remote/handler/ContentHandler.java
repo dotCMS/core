@@ -118,7 +118,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
-import io.vavr.API;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.tuple.Pair;
@@ -366,10 +365,6 @@ public class ContentHandler implements IHandler {
 					}
 				} catch (final FileAssetValidationException e1){
                     Logger.error(ContentHandler.class, "Content id ["+content.getIdentifier()+"] could not be processed because of missing binary file. Error: "+e1.getMessage(),e1);
-				}
-				catch (Exception e){
-					Logger.error(this, "Error processing content in file " + workingOn, e);
-					throw new DotPublishingException("Error processing content in file " + workingOn + " : " + e.getMessage(), e);
 				}
             }
 			workingOn = null;
@@ -1056,46 +1051,48 @@ public class ContentHandler implements IHandler {
                 matchedContent.getInode(), fieldsInfo.toString());
     }
 
-    /**
-     * Associates a list of tags coming from the bundle to the specified local content.
-     * 
-     * @param content - The {@link Contentlet} that will have the updated tags from the bundle.
-     * @param tagsFromSender - The list of {@link Tag} objects coming from the sender,
-     * @throws DotDataException Tags could not be read or saved to the data source.
-     */
-	 @VisibleForTesting
-	 void relateTagsToContent(Contentlet content, Map<String, List<Tag>> tagsFromSender) throws DotDataException {
-		if(tagsFromSender!=null) {
-			for (Map.Entry<String, List<Tag>> fieldTags : tagsFromSender.entrySet()) {
-				String fieldVarName = fieldTags.getKey();
+	/**
+	 * Associates a list of tags coming from the bundle to the specified local content.
+	 *
+	 * @param content - The {@link Contentlet} that will have the updated tags from the bundle.
+	 * @param tagsFromSender - The list of {@link Tag} objects coming from the sender,
+	 * @throws DotDataException Tags could not be read or saved to the data source.
+	 */
+	@VisibleForTesting
+	void relateTagsToContent(Contentlet content, Map<String, List<Tag>> tagsFromSender) throws DotDataException {
+		if(tagsFromSender==null || tagsFromSender.isEmpty()) {
+			return;
+		}
 
-				for (Tag remoteTag : fieldTags.getValue()) {
-					Tag localTag = tagAPI.getTagByNameAndHost(remoteTag.getTagName(), remoteTag.getHostId());
+		for (Map.Entry<String, List<Tag>> fieldTags : tagsFromSender.entrySet()) {
+			String fieldVarName = fieldTags.getKey();
 
-					String localUserId = Try.of(()->APILocator.getUserAPI().loadUserById(remoteTag.getUserId()).getUserId()).getOrElse(APILocator.systemUser().getUserId());
+			for (Tag remoteTag : fieldTags.getValue()) {
+				Tag localTag = tagAPI.getTagByNameAndHost(remoteTag.getTagName(), remoteTag.getHostId());
 
-					Host tagSite = Try.of(()->APILocator.getHostAPI().find(remoteTag.getHostId(), APILocator.systemUser(), false)).getOrNull();
-					Host contentSite = Try.of(()->APILocator.getHostAPI().find(content.getIdentifier(), APILocator.systemUser(), false)).getOrNull();
+				String localUserId = Try.of(()->APILocator.getUserAPI().loadUserById(remoteTag.getUserId()).getUserId()).getOrElse(APILocator.systemUser().getUserId());
 
-					final String localSiteId = UtilMethods.isSet(()->tagSite.getTagStorage())
-							? tagSite.getTagStorage()
-							: UtilMethods.isSet(()->contentSite.getTagStorage())
+				Host tagSite = Try.of(()->APILocator.getHostAPI().find(remoteTag.getHostId(), APILocator.systemUser(), false)).getOrNull();
+				Host contentSite = Try.of(()->APILocator.getHostAPI().find(content.getIdentifier(), APILocator.systemUser(), false)).getOrNull();
+
+				final String localSiteId = UtilMethods.isSet(()->tagSite.getTagStorage())
+						? tagSite.getTagStorage()
+						: UtilMethods.isSet(()->contentSite.getTagStorage())
 								? contentSite.getTagStorage()
-									: Host.SYSTEM_HOST;
+								: Host.SYSTEM_HOST;
 
 
 
-					// if there is NO local tag, save the one coming from remote, otherwise use local
-					if (localTag == null || Strings.isNullOrEmpty(localTag.getTagId())) {
-						localTag = tagAPI.saveTag(remoteTag.getTagName(), localUserId, localSiteId);
-					}
+				// if there is NO local tag, save the one coming from remote, otherwise use local
+				if (localTag == null || Strings.isNullOrEmpty(localTag.getTagId())) {
+					localTag = tagAPI.saveTag(remoteTag.getTagName(), localUserId, localSiteId);
+				}
 
-					TagInode localTagInode = tagAPI.getTagInode(localTag.getTagId(), content.getInode(), fieldVarName);
+				TagInode localTagInode = tagAPI.getTagInode(localTag.getTagId(), content.getInode(), fieldVarName);
 
-					// avoid relating tags twice
-					if(localTagInode==null || !Strings.isNullOrEmpty(localTagInode.getTagId())) {
-						tagAPI.addContentletTagInode(localTag, content.getInode(), fieldVarName);
-					}
+				// avoid relating tags twice
+				if(localTagInode==null || !Strings.isNullOrEmpty(localTagInode.getTagId())) {
+					tagAPI.addContentletTagInode(localTag, content.getInode(), fieldVarName);
 				}
 			}
 		}
