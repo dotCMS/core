@@ -19,7 +19,8 @@ import {
     createPageApiUrlWithQueryParams,
     createPureURL,
     getIsDefaultVariant,
-    sanitizeURL
+    sanitizeURL,
+    computePageIsLocked
 } from '../../../../utils';
 import { UVEState } from '../../../models';
 import { EditorToolbarState, ToolbarProps } from '../models';
@@ -56,8 +57,11 @@ export function withEditorToolbar() {
                 }/${pageAPIQueryParams}`;
 
                 const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
-                const shouldShowUnlock =
-                    pageAPIResponse?.page.locked && pageAPIResponse?.page.canLock;
+                const isPageLocked = computePageIsLocked(
+                    pageAPIResponse?.page,
+                    store.currentUser()
+                );
+                const shouldShowUnlock = isPageLocked && pageAPIResponse?.page.canLock;
 
                 const unlockButton = {
                     inode: pageAPIResponse?.page.inode,
@@ -67,7 +71,7 @@ export function withEditorToolbar() {
                 const shouldShowInfoDisplay =
                     !getIsDefaultVariant(pageAPIResponse?.viewAs.variantId) ||
                     !store.canEditPage() ||
-                    pageAPIResponse?.page.locked ||
+                    isPageLocked ||
                     !!store.device() ||
                     !!store.socialMedia();
 
