@@ -99,43 +99,48 @@ runs:
         echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
         echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
-    - id: get-maven-month-key
-      name: Get Maven Month Cache Key
-      shell: bash
-      run: |
-        echo "month-key=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
-
     - id: restore-cache-maven
       name: Restore Maven Repository Cache
       if: ${{ inputs.artifacts-from == '' }}
       uses: actions/cache/restore@v4
       with:
         path: ~/.m2/repository
-        key: ${{ runner.os }}-mavencore-${{ steps.get-maven-month-key.outputs.month-key }}
+        key: ${{ runner.os }}-mavencore-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-mavencore-
 
     - id: restore-cache-node
       name: Restore Node Binary Cache
       if: ${{ inputs.requires-node == 'true' }}
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: installs
         key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+
+    - name: Get yarn cache directory path
+      id: yarn-info
+      shell: bash
+      run: |
+        echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+        echo "version=$(yarn -v)" >> $GITHUB_OUTPUT
+      
 
     - id: restore-cache-yarn
       name: Restore Yarn Cache
       if: ${{ inputs.requires-node == 'true' }}
       uses: actions/cache/restore@v4
       with:
-        path: ~/.cache/yarn
-        key: yarn-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: yarn-
+        path: ${{ steps.yarn-info.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}
+          ${{ runner.os }}-yarn-
+          
 
     - id: cache-sonar
       name: Cache SonarQube Packages
       if: ${{ inputs.cache-sonar == 'true' }}
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: ~/.sonar/cache
         key: ${{ runner.os }}-sonar
@@ -177,7 +182,7 @@ runs:
       name: Run Maven Build
       shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
       run: |
-        DEFAULT_ARGS="-e -B --no-transfer-progress --show-version -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Pprod"
+        DEFAULT_ARGS="-e -B --no-transfer-progress --show-version -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dprod=true"
         MAVEN_ARGS="${{ inputs.maven-args }}"
         if [[ "${{ inputs.generate-docker }}" == "true" ]]; then
           DEFAULT_ARGS="$DEFAULT_ARGS -Ddocker.buildArchiveOnly=dotCMS/target"
@@ -250,7 +255,7 @@ runs:
       uses: actions/cache/save@v4
       with:
         path: ~/.m2/repository
-        key: ${{ runner.os }}-mavencore-${{ steps.get-maven-month-key.outputs.month-key }}
+        key: ${{ steps.restore-cache-maven.outputs.cache-primary-key }}
 
     - id: save-cache-node
       name: Save Node Binary Cache
@@ -258,15 +263,15 @@ runs:
       uses: actions/cache/save@v4
       with:
         path: installs
-        key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+        key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
 
     - id: save-cache-yarn
       name: Save Yarn Cache
       if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-yarn.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v4
       with:
-        path: ~/.cache/yarn
-        key: yarn-${{ hashFiles('**/yarn.lock') }}
+        path: ${{ steps.yarn-info.outputs.dir }}
+        key: ${{ steps.restore-cache-yarn.outputs.cache-primary-key }}
 
     - id: save-cache-sonar
       name: Save SonarQube Cache
@@ -274,7 +279,7 @@ runs:
       uses: actions/cache/save@v4
       with:
         path: ~/.sonar/cache
-        key: ${{ runner.os }}-sonar
+        key: ${{ steps.cache-sonar.outputs.cache-primary-key }}
 
     # ---------------------------- Generate Reports Artifacts ----------------------------
     - id: generate-build-reports-artifact
