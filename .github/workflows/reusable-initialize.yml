@@ -33,6 +33,8 @@ on:
         value: ${{ jobs.changes.outputs.jvm_unit_test }}
       cli:
         value: ${{ jobs.changes.outputs.cli }}
+      sdk_libs:
+        value: ${{ jobs.changes.outputs.sdk_libs }}
 jobs:
   initialize: # This is used as a required check to indicate that the workflow has started and is running
     name: Initialize

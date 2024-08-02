@@ -18,9 +18,12 @@ on:
       reuse-previous-build:
         default: false
         type: boolean
-      publish-npm-package:
+      publish-npm-cli:
         default: false
         type: boolean
+      publish-npm-sdk-libs:
+        default: false
+        type: boolean        
     secrets:
         DOCKER_USERNAME:
           required: false
@@ -101,16 +104,22 @@ jobs:
           artifactory-password: ${{ secrets.EE_REPO_PASSWORD }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-
       - name: CLI Publish
         id: cli_publish
-        if: inputs.publish-npm-package
+        if: inputs.publish-npm-cli
         uses: ./.github/actions/publish-npm-cli
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           cli-artifact-run-id: ${{ github.run_id }} # currently cli artifacts are never from build queue
 
+      - name: SDKs Publish
+        id: sdks_publish
+        if: inputs.publish-npm-sdk-libs
+        uses: ./.github/actions/publish-npm-sdk-libs
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
 
       # A Slack notification is sent using the 'slackapi/slack-github-action' action if the repository is 'dotcms/core'.
       - name: Slack Notification (Docker image announcement)
@@ -134,7 +143,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Slack Notification (dotCLI announcement)
-        if: inputs.publish-npm-package
+        if: inputs.publish-npm-cli
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: "log-dotcli"
@@ -152,3 +161,23 @@ jobs:
             }
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Slack Notification (SDK libs announcement)
+        if: inputs.publish-npm-sdk-libs
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            {
+              "blocks": [              
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "> :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) published!\n \n>This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}          

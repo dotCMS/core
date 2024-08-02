@@ -12,7 +12,7 @@ on:
         type: boolean
         description: 'Indicates if the workflow should build on missing artifacts'
         default: true
-      publish-npm-package:
+      publish-npm-cli:
         type: boolean
         description: 'Indicates if the workflow should publish the NPM package on the registry'
         default: false
@@ -65,7 +65,7 @@ jobs:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       environment: nightly
       deploy-dev-image: true
-      publish-npm-package: ${{ ( github.event_name == 'workflow_dispatch' && inputs.publish-npm-package == true ) || github.event_name == 'schedule' }}
+      publish-npm-cli: ${{ ( github.event_name == 'workflow_dispatch' && inputs.publish-npm-cli == true ) || github.event_name == 'schedule' }}
       reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
