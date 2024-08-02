@@ -32,7 +32,8 @@ const TINYMCE_EDITOR_MOCK: unknown = {
     focus: jest.fn(),
     getContent: (_data: unknown) => '',
     isDirty: () => false,
-    hasFocus: () => false
+    hasFocus: () => false,
+    setContent: jest.fn()
 };
 
 const TINYMCE_EDITOR_PROPERTY_MOCK = {
@@ -132,6 +133,21 @@ describe('DotEditableTextComponent', () => {
     describe('Inside Editor', () => {
         beforeEach(() => {
             jest.spyOn(mockedDotcmsClient, 'isInsideEditor').mockReturnValue(true);
+        });
+
+        it('should set content with the right format when the contentlet changes', () => {
+            spectator.detectChanges();
+            mockEditorFn(spectator);
+
+            const editorComponent = spectator.query(EditorComponent) as EditorComponent;
+            const spySetContent = jest.spyOn(editorComponent.editor, 'setContent');
+
+            spectator.setInput('contentlet', {
+                ...dotcmsContentletMock,
+                title: 'New title'
+            });
+            spectator.detectChanges();
+            expect(spySetContent).toHaveBeenCalledWith('New title', { format: 'text' });
         });
 
         describe('Configuration', () => {
