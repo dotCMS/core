@@ -316,7 +316,7 @@ public class ShortyServlet extends HttpServlet {
     final boolean  jpeg    = lowerUri.contains(JPEG);
     final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
     final boolean  webp    = lowerUri.contains(WEBP);
-    final boolean  isImage = webp || jpeg || width+height+maxWidth+maxHeight +minHeight+minWidth> 0 || quality>0 || cropHeight>0 || cropWidth>0;
+    final boolean  isImage = (webp || jpeg) && (width+height+maxWidth+maxHeight +minHeight+minWidth> 0 || quality>0 || cropHeight>0 || cropWidth>0);
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
