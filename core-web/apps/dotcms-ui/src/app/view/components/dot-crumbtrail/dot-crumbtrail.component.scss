@@ -2,16 +2,19 @@
 
 ::ng-deep dot-crumbtrail .p-breadcrumb {
     ul li {
+        &:first-child {
+            font-size: $font-size-lg;
+            a span.p-menuitem-text {
+                color: $black;
+                font-size: $font-size-lg;
+                font-weight: $font-weight-regular-bold;
+            }
+        }
+
         .p-menuitem-link[href] {
             .p-menuitem-text {
                 font-size: $font-size-lg;
             }
-        }
-
-        &:first-child a span.p-menuitem-text {
-            color: $black;
-            font-size: $font-size-lg;
-            font-weight: $font-weight-regular-bold;
         }
 
         &:last-child a {

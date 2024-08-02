@@ -51,7 +51,8 @@ import org.immutables.value.Value.Default;
     "sortOrder",
     "versionable",
     "multilingualable",
-    "pagination"
+    "pagination",
+    "layout"
 })
 @JsonInclude(Include.NON_DEFAULT)
 @Value.Style(passAnnotations = {JsonInclude.class})

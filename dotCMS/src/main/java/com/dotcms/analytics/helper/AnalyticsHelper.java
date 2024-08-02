@@ -25,8 +25,6 @@ import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,26 +48,6 @@ public class AnalyticsHelper {
     }
 
     private  AnalyticsHelper() {}
-
-    /**
-     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
-     *
-     * @param statusCode http status code
-     * @return true if the response http status is considered tobe successful, otherwise false
-     */
-    public boolean isSuccessResponse(final int statusCode) {
-        return Response.Status.Family.familyOf(statusCode) == Response.Status.Family.SUCCESSFUL;
-    }
-
-    /**
-     * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
-     *
-     * @param response http response representation
-     * @return true if the response http status is considered tobe successful, otherwise false
-     */
-    public boolean isSuccessResponse(@NotNull final CircuitBreakerUrl.Response<?> response) {
-        return isSuccessResponse(response.getStatusCode());
-    }
 
     /**
      * Given a {@link CircuitBreakerUrl.Response<AccessToken>} instance, extracts JSON representing the token and
@@ -251,7 +229,7 @@ public class AnalyticsHelper {
      */
     public void throwFromResponse(final CircuitBreakerUrl.Response<AccessToken> response,
                                          final String message) throws AnalyticsException {
-        if (isSuccessResponse(response)) {
+        if (CircuitBreakerUrl.isSuccessResponse(response)) {
             return;
         }
 
