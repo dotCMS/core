@@ -29,6 +29,7 @@ frontend: &frontend
 cli: &cli
   - 'tools/dotcms-cli/**'
   - *full_build_test
+  - *backend
 
 jvm_unit_test:
   - *backend
