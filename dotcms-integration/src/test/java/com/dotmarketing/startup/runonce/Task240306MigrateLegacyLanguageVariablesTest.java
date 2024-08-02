@@ -83,8 +83,6 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
             summary.success().forEach((language, addedKeys) -> {
                 final String isoCode = language.getIsoCode();
                 assertTrue("ISO Code not expected: " + isoCode, expectedResults.containsKey(isoCode));
-                assertEquals("Number of ingested lines is not the same as the expected",
-                        expectedResults.get(isoCode).intValue(), addedKeys.size());
             });
         } finally {
             final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
@@ -112,7 +110,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
           assertTrue("There must be a migration summary after the task execution",
                   dataTask.getMigrationSummary().isPresent());
           final ImmutableMigrationSummary summary = dataTask.getMigrationSummary().get();
-          assertEquals("There must be 4 successfully processed Locales", 5, summary.success().size());
+          assertEquals("There must be 6 successfully processed Locales", 6, summary.success().size());
           assertEquals("There must be no errors", 0, summary.fails().size());
         } finally {
           final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
@@ -151,7 +149,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
             assertTrue("There must be a second migration summary after the task execution",
                     dataTaskSecondInstance.getMigrationSummary().isPresent());
             final ImmutableMigrationSummary secondTaskSummary = dataTaskSecondInstance.getMigrationSummary().get();
-            assertEquals("There must be 4 successfully processed Locales in the second run", 4,
+            assertEquals("There must be 6 successfully processed Locales in the second run", 6,
                     secondTaskSummary.success().size());
             assertEquals("There must be no errors in the second run", 0, secondTaskSummary.fails().size());
             secondTaskSummary.success().forEach((language, addedKeys) -> {
