@@ -22,10 +22,9 @@ package com.liferay.portal.ejb;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.portal.PortletFactory;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Portlet;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -40,7 +39,17 @@ public class PortletManagerUtil {
     @WrapInTransaction
     public static Map<String,Portlet> addPortlets(final InputStream[] xmls) throws com.liferay.portal.SystemException {
         try {
-            return PortletManagerFactory.getManager().xmlToPortlets(xmls);
+            final PortletFactory portletFactory = PortletManagerFactory.getManager();
+
+            final Map<String,Portlet> foundPortlets = portletFactory.xmlToPortlets(xmls);
+            for(Portlet portlet : foundPortlets.values()) {
+               try {
+                   portletFactory.insertPortlet(portlet);
+               } catch (final Exception e) {
+                   Logger.error(PortletManagerUtil.class, "Failed to insert portlet to DB "+portlet.getPortletId(), e);
+               }
+            }
+            return foundPortlets;
         } catch (final Exception e) {
             throw new com.liferay.portal.SystemException(e);
         }
