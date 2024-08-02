@@ -6,7 +6,11 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { ROOT_CATEGORY_KEY } from '../dot-edit-content-category-field.const';
-import { DotCategoryFieldItem, DotCategoryFieldKeyValueObj, HierarchyParent } from '../models/dot-category-field.models';
+import {
+    DotCategoryFieldItem,
+    DotCategoryFieldKeyValueObj,
+    HierarchyParent
+} from '../models/dot-category-field.models';
 
 /**
  * Retrieves and convert selected categories from a contentlet.
@@ -144,7 +148,7 @@ export const checkIfClickedIsLoaded = (event: DotCategoryFieldItem, keyParentPat
         return true;
     }
 
-    return categoryKey !== lastCategoryKey
+    return categoryKey !== lastCategoryKey;
 };
 
 /**

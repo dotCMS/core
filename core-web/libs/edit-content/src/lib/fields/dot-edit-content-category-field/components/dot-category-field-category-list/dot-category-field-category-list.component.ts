@@ -124,7 +124,10 @@ export class DotCategoryFieldCategoryListComponent {
                     'edit.content.category-field.category.root-name'
                 ),
                 command: () => {
-                    this.rowClicked.emit({ index: 0, item: {  key: ROOT_CATEGORY_KEY, value: ROOT_CATEGORY_KEY } });
+                    this.rowClicked.emit({
+                        index: 0,
+                        item: { key: ROOT_CATEGORY_KEY, value: ROOT_CATEGORY_KEY }
+                    });
                 }
             },
             ...currentItems
@@ -162,10 +165,10 @@ export class DotCategoryFieldCategoryListComponent {
             if (columnsArray.length === 0) {
                 return;
             }
-            
+
             const columnToScroll = columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1];
 
-            if ( columnToScroll?.nativeElement?.childElementCount > 0) {
+            if (columnToScroll?.nativeElement?.childElementCount > 0) {
                 const lastColumnIndex = columnsArray.length - 1;
                 columnsArray[lastColumnIndex].nativeElement.scrollIntoView({
                     behavior: 'smooth',
