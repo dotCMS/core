@@ -30,7 +30,7 @@ export type HierarchyParent = Pick<DotCategory, 'inode' | 'parentList' | 'key'> 
 /**
  * Represents an clicked item in a DotCategoryField.
  */
-export type DotCategoryFieldItem = { index: number; item?: DotCategoryFieldKeyValueObj };
+export type DotCategoryFieldItem = { index: number; item: DotCategoryFieldKeyValueObj };
 
 /**
  * Represents an event when a row is selected in a table.

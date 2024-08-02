@@ -29,7 +29,8 @@ import {
     transformCategories,
     transformToSelectedObject,
     updateChecked,
-    getMenuItemsFromKeyParentPath
+    getMenuItemsFromKeyParentPath,
+    checkIfClickedIsLoaded
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
@@ -259,10 +260,8 @@ export const CategoryFieldStore = signalStore(
                         const keyParentPath = store.keyParentPath();
 
                         if (event && event.item) {
-                            const categoryKey = event.item.key;
-                            const lastCategoryKey = keyParentPath[keyParentPath.length - 1];
 
-                            if (!checkIfClickedIsLastItem(index, currentCategories) && categoryKey !== lastCategoryKey) {
+                            if (!checkIfClickedIsLastItem(index, currentCategories) && checkIfClickedIsLoaded(event, keyParentPath)) {
                                 patchState(store, {
                                     categories: [
                                         ...clearCategoriesAfterIndex(currentCategories, index)

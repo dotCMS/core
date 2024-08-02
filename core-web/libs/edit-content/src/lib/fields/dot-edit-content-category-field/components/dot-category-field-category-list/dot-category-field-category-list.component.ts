@@ -26,6 +26,7 @@ import {
 } from '@dotcms/ui';
 
 import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
+import { ROOT_CATEGORY_KEY } from '../../dot-edit-content-category-field.const';
 import {
     DotCategoryFieldItem,
     DotCategoryFieldKeyValueObj
@@ -123,7 +124,7 @@ export class DotCategoryFieldCategoryListComponent {
                     'edit.content.category-field.category.root-name'
                 ),
                 command: () => {
-                    this.rowClicked.emit({ index: 0 });
+                    this.rowClicked.emit({ index: 0, item: {  key: ROOT_CATEGORY_KEY, value: ROOT_CATEGORY_KEY } });
                 }
             },
             ...currentItems
