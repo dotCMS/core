@@ -140,7 +140,14 @@ export const checkIfClickedIsLastItem = (index: number, categories: DotCategory[
     return index + 1 === categories.length;
 };
 
-export const checkIfClickedIsLoaded = (event: DotCategoryFieldItem, keyParentPath: string[]) => {
+/**
+ * Check if the clicked item is already loaded
+ *
+ * @param {DotCategoryFieldItem} event
+ * @param {string[]} keyParentPath
+ * @return {*} 
+ */
+export const checkIfClickedIsLoaded = (event: DotCategoryFieldItem, keyParentPath: string[]): boolean => {
     const categoryKey = event.item.key;
     const lastCategoryKey = keyParentPath[keyParentPath.length - 1];
 
