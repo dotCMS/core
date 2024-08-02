@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "8c53a096-125d-4e0a-b25c-11be5c6ac929",
+		"_postman_id": "3e3539fd-4915-4514-a0d0-dc1d142a6f7f",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "31066048"
 	},
 	"item": [
 		{
@@ -8073,14 +8073,15 @@
 											"});",
 											"",
 											"pm.test(\"fields check\", function () {",
-											"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+											"    pm.expect(jsonData.entity[0].fields.length).to.eql(3);",
 											"});",
 											"",
 											"pm.test(\"description check\", function () {",
 											"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -15965,14 +15966,15 @@
 									"});",
 									"",
 									"pm.test(\"fields check\", function () {",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(3);",
 									"});",
 									"",
 									"pm.test(\"description check\", function () {",
 									"    pm.expect(jsonData.entity[0].description).to.eql('Region');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -16045,14 +16047,15 @@
 									"});",
 									"",
 									"pm.test(\"fields check\", function () {",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(3);",
 									"});",
 									"",
 									"pm.test(\"description check\", function () {",
 									"    pm.expect(jsonData.entity[0].description).to.eql('Movies');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -16510,14 +16513,15 @@
 											"});",
 											"",
 											"pm.test(\"fields check\", function () {",
-											"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+											"    pm.expect(jsonData.entity[0].fields.length).to.eql(3);",
 											"});",
 											"",
 											"pm.test(\"description check\", function () {",
 											"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
 											"});"
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -16698,13 +16702,14 @@
 									"",
 									"pm.test(\"Check that the test Content Type has the expected information\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(3);",
 									"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
 									"    pm.collectionVariables.set(\"contentTypeVar\", jsonData.entity[0].variable);",
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
