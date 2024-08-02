@@ -2,10 +2,14 @@ name: Reusable Initialize
 on:
   workflow_call:
     inputs:
-      incremental:
-        description: 'Indicates if the workflow is incremental or not'
-        type: boolean
-        default: false
+      validation-level:
+        default: 'none'
+        type: string
+        description: 'Levels of validation: none, full, or custom'
+      custom-modules:
+        default: ''
+        type: string
+        description: 'Comma-separated list of custom modules to validate'          
       reuse-previous-build:
         description: 'Indicates if the workflow should reuse the previous build'
         type: boolean
@@ -95,11 +99,12 @@ jobs:
       frontend: ${{ steps.filter-rewrite.outputs.frontend }}
       jvm_unit_test: ${{ steps.filter-rewrite.outputs.jvm_unit_test }}
       cli: ${{ steps.filter-rewrite.outputs.cli }}
+      sdk_libs: ${{ steps.filter-rewrite.outputs.sdk_libs }}
     steps:
       - uses: actions/checkout@v4
-        if: ${{ inputs.incremental }}
+        if: ${{ inputs.validation-level != 'none' }}
       - uses: dorny/paths-filter@v3.0.1
-        if: ${{ inputs.incremental }}
+        if: ${{ inputs.validation-level != 'none' }}
         id: filter
         with:
           filters: .github/filters.yaml
@@ -115,6 +120,7 @@ jobs:
           backend=${{ steps.filter.outputs.backend || 'true' }}
           build=${{ steps.filter.outputs.build || 'true' }}
           jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test || 'true' }}
+          sdk_libs=${{ steps.filter.outputs.sdk_libs || 'false' }}
 
           # Check if the commit is to the master branch
           skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
@@ -127,12 +133,39 @@ jobs:
             backend=false
             jvm_unit_test=false
           fi
+
+          # Adjust outputs based on validation_level
+          if [ "${{ inputs.validation-level }}" == "custom" ]; then
+            frontend=false
+            cli=false
+            backend=false
+            build=false
+            jvm_unit_test=false
+            sdk_libs=false
+            IFS=',' read -r -a custom_modules_list <<< "${{ inputs.custom-modules }}"
+            for module in "${custom_modules_list[@]}"; do
+              if [ "${module}" == "frontend" ]; then
+                frontend=${{ steps.filter.outputs.frontend }}
+              elif [ "${module}" == "cli" ]; then
+                cli=${{ steps.filter.outputs.cli }}
+              elif [ "${module}" == "backend" ]; then
+                backend=${{ steps.filter.outputs.backend }}
+              elif [ "${module}" == "build" ]; then
+                build=${{ steps.filter.outputs.build }}
+              elif [ "${module}" == "jvm_unit_test" ]; then
+                jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}
+              elif [ "${module}" == "sdk_libs" ]; then
+                sdk=${{ steps.filter.outputs.sdk_libs }}
+              fi
+            done
+          fi          
           
           echo "build=${build}"
           echo "frontend=${frontend}"
           echo "cli=${cli}"
           echo "backend=${backend}"
           echo "jvm_unit_test=${jvm_unit_test}"
+          echo "sdk_libs=${sdk_libs}"
 
           # Export the outcomes as GitHub Actions outputs
           echo "frontend=${frontend}" >> $GITHUB_OUTPUT
@@ -140,3 +173,4 @@ jobs:
           echo "backend=${backend}" >> $GITHUB_OUTPUT
           echo "build=${build}" >> $GITHUB_OUTPUT
           echo "jvm_unit_test=${jvm_unit_test}" >> $GITHUB_OUTPUT
+          echo "sdk_libs=${sdk_libs}" >> $GITHUB_OUTPUT
