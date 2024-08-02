@@ -117,7 +117,7 @@ public class AIAppUtil {
      * @return the list of split secret values
      */
     public List<String> splitDiscoveredSecret(final Map<String, Secret> secrets, final AppKeys key) {
-        return Arrays.stream(discoverSecret(secrets, key).split(","))
+        return Arrays.stream(Optional.ofNullable(discoverSecret(secrets, key)).orElse(StringPool.BLANK).split(","))
                 .map(String::trim)
                 .map(String::toLowerCase)
                 .collect(Collectors.toList());

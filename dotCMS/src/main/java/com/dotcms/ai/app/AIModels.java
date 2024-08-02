@@ -131,18 +131,16 @@ public class AIModels {
      */
     public void resetModels(final Host host) {
         final String hostKey = host.getHostname();
-        synchronized (AIModels.class) {
-            Optional.ofNullable(internalModels.get(hostKey)).ifPresent(models -> {
-                models.clear();
-                internalModels.remove(hostKey);
-            });
-            modelsByName.keySet()
-                    .stream()
-                    .filter(key -> key._1.equals(hostKey))
-                    .collect(Collectors.toSet())
-                    .forEach(modelsByName::remove);
-            ConfigService.INSTANCE.config(host);
-        }
+        Optional.ofNullable(internalModels.get(hostKey)).ifPresent(models -> {
+            models.clear();
+            internalModels.remove(hostKey);
+        });
+        modelsByName.keySet()
+                .stream()
+                .filter(key -> key._1.equals(hostKey))
+                .collect(Collectors.toSet())
+                .forEach(modelsByName::remove);
+        ConfigService.INSTANCE.config(host);
     }
 
     /**
@@ -152,31 +150,29 @@ public class AIModels {
      * @return a list of supported model names
      */
     public List<String> getOrPullSupportedModels() {
-        synchronized (supportedModelsCache) {
-            final List<String> cached = supportedModelsCache.getIfPresent(SUPPORTED_MODELS_KEY);
-            if (CollectionUtils.isNotEmpty(cached)) {
-                return cached;
-            }
-
-            final AppConfig appConfig = appConfigSupplier.get();
-            if (!appConfig.isEnabled()) {
-                Logger.debug(this, "OpenAI is not enabled, returning empty list of supported models");
-                return List.of();
-            }
-
-            final List<String> supported = Try.of(() ->
-                            fetchOpenAIModels(appConfig)
-                                    .getResponse()
-                                    .getData()
-                                    .stream()
-                                    .map(OpenAIModel::getId)
-                                    .map(String::toLowerCase)
-                                    .collect(Collectors.toList()))
-                    .getOrElse(Optional.ofNullable(cached).orElse(List.of()));
-            supportedModelsCache.put(SUPPORTED_MODELS_KEY, supported);
-
-            return supported;
+        final List<String> cached = supportedModelsCache.getIfPresent(SUPPORTED_MODELS_KEY);
+        if (CollectionUtils.isNotEmpty(cached)) {
+            return cached;
         }
+
+        final AppConfig appConfig = appConfigSupplier.get();
+        if (!appConfig.isEnabled()) {
+            Logger.debug(this, "OpenAI is not enabled, returning empty list of supported models");
+            return List.of();
+        }
+
+        final List<String> supported = Try.of(() ->
+                        fetchOpenAIModels(appConfig)
+                                .getResponse()
+                                .getData()
+                                .stream()
+                                .map(OpenAIModel::getId)
+                                .map(String::toLowerCase)
+                                .collect(Collectors.toList()))
+                .getOrElse(Optional.ofNullable(cached).orElse(List.of()));
+        supportedModelsCache.put(SUPPORTED_MODELS_KEY, supported);
+
+        return supported;
     }
 
     /**

@@ -2,7 +2,6 @@ package com.dotcms.ai.listener;
 
 import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.app.AppConfig;
-import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
@@ -18,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -85,7 +83,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
                 .getOrElse(APILocator.systemHost());
 
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-        if (StringUtils.isBlank(appConfig.getApiKey())) {
+        if (!appConfig.isEnabled()) {
             throw new DotRuntimeException("No API key found in app config");
         }
 
@@ -127,10 +125,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
                     .stream()
                     .filter(typeFields -> contentType.equalsIgnoreCase(typeFields.getKey()))
                     .forEach(e -> EmbeddingsAPI.impl()
-                            .generateEmbeddingsForContent(
-                                    contentlet,
-                                    e.getValue(),
-                                    indexName));
+                            .generateEmbeddingsForContent(contentlet, e.getValue(), indexName));
         }
     }
 

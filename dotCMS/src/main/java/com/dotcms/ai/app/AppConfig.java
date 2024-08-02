@@ -1,6 +1,5 @@
 package com.dotcms.ai.app;
 
-import com.dotcms.ai.util.OpenAIRequest;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -44,7 +43,6 @@ public class AppConfig implements Serializable {
         this.host = host;
 
         final AIAppUtil aiAppUtil = AIAppUtil.get();
-        apiKey = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
 
         AIModels.get().loadModels(
                 this.host,
@@ -53,13 +51,14 @@ public class AppConfig implements Serializable {
                         aiAppUtil.createImageModel(secrets),
                         aiAppUtil.createEmbeddingsModel(secrets)));
 
-        model = resolveModel(AIModelType.TEXT);
-        imageModel = resolveModel(AIModelType.IMAGE);
-        embeddingsModel = resolveModel(AIModelType.EMBEDDINGS);
-
         apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL);
         apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL);
         apiEmbeddingsUrl = discoverEmbeddingsApiUrl(secrets);
+        apiKey = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
+
+        model = resolveModel(AIModelType.TEXT);
+        imageModel = resolveModel(AIModelType.IMAGE);
+        embeddingsModel = resolveModel(AIModelType.EMBEDDINGS);
 
         rolePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.ROLE_PROMPT);
         textPrompt = aiAppUtil.discoverSecret(secrets, AppKeys.TEXT_PROMPT);
@@ -73,13 +72,13 @@ public class AppConfig implements Serializable {
         Logger.debug(getClass(), () -> "apiUrl: " + apiUrl);
         Logger.debug(getClass(), () -> "apiImageUrl: " + apiImageUrl);
         Logger.debug(getClass(), () -> "embeddingsUrl: " + apiEmbeddingsUrl);
-        Logger.debug(getClass(), () -> "model: " + model);
-        Logger.debug(getClass(), () -> "imageModel: " + imageModel);
-        Logger.debug(getClass(), () -> "embeddingsModel: " + embeddingsModel);
         Logger.debug(getClass(), () -> "rolePrompt: " + rolePrompt);
         Logger.debug(getClass(), () -> "textPrompt: " + textPrompt);
+        Logger.debug(getClass(), () -> "model: " + model);
         Logger.debug(getClass(), () -> "imagePrompt: " + imagePrompt);
+        Logger.debug(getClass(), () -> "imageModel: " + imageModel);
         Logger.debug(getClass(), () -> "imageSize: " + imageSize);
+        Logger.debug(getClass(), () -> "embeddingsModel: " + embeddingsModel);
         Logger.debug(getClass(), () -> "listerIndexer: " + listenerIndexer);
     }
 
@@ -263,7 +262,7 @@ public class AppConfig implements Serializable {
      * @param modelName the name of the model to find
      */
     public AIModel resolveModelOrThrow(final String modelName) {
-        final AIModel model = AIModels.get()
+        final AIModel aiModel = AIModels.get()
                 .findModel(host, modelName)
                 .orElseThrow(() -> {
                     final String supported = String.join(", ", AIModels.get().getOrPullSupportedModels());
@@ -271,16 +270,16 @@ public class AppConfig implements Serializable {
                             "Unable to find model: [" + modelName + "]. Only [" + supported + "] are supported ");
                 });
 
-        if (!model.isOperational()) {
-            Logger.debug(
-                    OpenAIRequest.class,
-                    String.format(
+        if (!aiModel.isOperational()) {
+            debugLogger(
+                    AppConfig.class,
+                    () -> String.format(
                             "Resolved model [%s] is not operational, avoiding its usage",
-                            model.getCurrentModel()));
-            throw new DotRuntimeException(String.format("Model [%s] is not operational", model.getCurrentModel()));
+                            aiModel.getCurrentModel()));
+            throw new DotRuntimeException(String.format("Model [%s] is not operational", aiModel.getCurrentModel()));
         }
 
-        return model;
+        return aiModel;
     }
 
     /**
