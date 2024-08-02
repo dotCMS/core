@@ -1,15 +1,20 @@
-<div *ngIf="items.length; else loading ? loadingBlock : emptyBlock">
-    <dot-suggestion-list #list>
-        <dot-suggestions-list-item
-            *ngFor="let item of items; let i = index"
-            [command]="item.command"
-            [index]="i"
-            [label]="item.label"
-            [url]="item.icon"
-            [data]="item.data"
-            [page]="true"></dot-suggestions-list-item>
-    </dot-suggestion-list>
-</div>
+@if (items.length) {
+    <div>
+        <dot-suggestion-list #list>
+            @for (item of items; track item; let i = $index) {
+                <dot-suggestions-list-item
+                    [command]="item.command"
+                    [index]="i"
+                    [label]="item.label"
+                    [url]="item.icon"
+                    [data]="item.data"
+                    [page]="true"></dot-suggestions-list-item>
+            }
+        </dot-suggestion-list>
+    </div>
+} @else {
+    <ng-template [ngTemplateOutlet]="loading ? loadingBlock : emptyBlock"></ng-template>
+}
 
 <ng-template #loadingBlock>
     <dot-suggestion-loading-list></dot-suggestion-loading-list>
