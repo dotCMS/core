@@ -25,8 +25,8 @@ import {
     DotCollapseBreadcrumbComponent
 } from '@dotcms/ui';
 
-import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
-import { ROOT_CATEGORY_KEY } from '../../dot-edit-content-category-field.const';
+import { CATEGORY_FIELD_EMPTY_MESSAGES, ROOT_CATEGORY_KEY } from '../../../../models/dot-edit-content-field.constant';
+
 import {
     DotCategoryFieldItem,
     DotCategoryFieldKeyValueObj
