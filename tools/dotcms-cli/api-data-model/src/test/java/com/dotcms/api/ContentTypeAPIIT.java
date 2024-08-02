@@ -348,7 +348,7 @@ class ContentTypeAPIIT {
         final ContentType updatedContentType = entityView.entity();
         Assertions.assertNotNull(updatedContentType.systemActionMappings());
         Assertions.assertEquals("Modified!",updatedContentType.description());
-        Assertions.assertEquals(2, updatedContentType.fields().size());
+        Assertions.assertEquals(4, updatedContentType.fields().size());
 
     }
 
@@ -829,7 +829,7 @@ class ContentTypeAPIIT {
             Assertions.assertNotNull(savedContentType1.id());
 
             final RelationshipField parentRel1 = (RelationshipField) savedContentType1.fields()
-                    .get(0);
+                    .get(2);
             final Relationships relationships1 = parentRel1.relationships();
             Assertions.assertNotNull(relationships1);
             Assertions.assertEquals(0, relationships1.cardinality());
@@ -848,7 +848,7 @@ class ContentTypeAPIIT {
             savedContentType2 = contentTypes2.get(0);
             Assertions.assertNotNull(savedContentType2.id());
             final RelationshipField parentRel2 = (RelationshipField) savedContentType2.fields()
-                    .get(0);
+                    .get(2);
             final Relationships relationships2 = parentRel2.relationships();
             Assertions.assertNotNull(relationships2);
 
