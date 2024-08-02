@@ -1,0 +1,143 @@
+name: 'SDK Publish NPM Packages'
+description: 'Publish the dotCMS SDK libs on NPM registry.'
+inputs:
+  ref:
+    description: 'Branch to build from'
+    required: false
+    default: 'master'
+  npm-token:
+    description: 'NPM token'
+    required: true
+  npm-package-tag:
+    description: 'Package tag'
+    required: false
+    default: 'alpha'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '19'
+  github-token:
+    description: 'GitHub Token'
+    required: true
+outputs:
+  npm-package-version:
+    description: 'SDK libs - NPM package version'
+    value: ${{ steps.next_version.outputs.next_version }}
+runs:
+  using: "composite"
+  steps:
+    - name: 'Checkout'
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: 'Set up Node.js'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: 'Get current version from NPM'
+      id: current_version
+      run: |
+       echo "::group::Get current version"
+       CURRENT_VERSION=$(npm view @dotcms/client dist-tags --json | jq -r '.alpha')
+       echo "Current version: $CURRENT_VERSION"
+       echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+       echo "::endgroup::"
+      shell: bash
+
+    - name: Calculate next version
+      id: next_version
+      env:
+       CURRENT_VERSION: ${{ steps.current_version.outputs.current_version }}
+      run: |
+       echo "::group::Calculate next version"
+       VERSION_PARTS=(${CURRENT_VERSION//./ })
+       BASE_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${VERSION_PARTS[2]}"
+       ALPHA_PART=${VERSION_PARTS[3]#*-}
+       ALPHA_NUMBER=${ALPHA_PART#*.}
+       NEW_ALPHA_NUMBER=$((ALPHA_NUMBER + 1))
+       NEXT_VERSION="${BASE_VERSION}.${NEW_ALPHA_NUMBER}"
+       echo "Next version: $NEXT_VERSION"
+       echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+       echo "::endgroup::"
+      shell: bash
+
+    - name: 'Printing versions'
+      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      env:
+       NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
+       CURRENT_VERSION: ${{ steps.current_version.outputs.current_version }}
+      run: |
+        echo "::group::Update versions"
+        echo "Current version: $CURRENT_VERSION"
+        echo "Next version: $NEXT_VERSION"
+        echo "::endgroup::"
+      shell: bash
+
+    - name: Update versions and dependencies
+      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      env:
+        NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
+      run: |
+        echo "Updating version to $NEXT_VERSION"
+        sdks=$(ls -ls | awk '{ print$10 }' | grep -v '^$')
+        
+        for pkg in $sdks; do   
+          if [ -d "$pkg" ]; then
+            echo "sdk-$pkg"
+            cat ${pkg}/package.json | jq --arg new_version "$NEXT_VERSION" '.version = $new_version' > tmp.$$.json && mv tmp.$$.json $pkg/package.json          
+          fi
+        done
+
+        # Find all package.json files that contain @dotcms/client
+        grep -ri "\"@dotcms/client\":" . | grep 'package.json' | awk '{ print $1 }' | sed -E 's/://g; s|^\./||; s|/package.json||; s|/| |g' |
+        while read -r dir; do
+            package_json="$dir/package.json"
+            
+            # Check that the package.json file exists before proceeding
+            if [ -f "$package_json" ]; then
+                # Update the version of @dotcms/client in the package.json file using jq
+                tmp_file="tmp$.{dir}.$$.json"
+                jq --arg new_version "$NEXT_VERSION" '.peerDependencies["@dotcms/client"] = $new_version' "$package_json" > "$tmp_file"
+                
+                # Replace the original file with the temporary file
+                mv "$tmp_file" "$package_json"
+                
+                echo "Updated $package_json"
+            else
+                echo "The file $package_json does not exist"
+            fi
+        done
+      shell: bash
+
+    - name: Printing SDK packages
+      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      run: |
+        echo "::group::Printing SDK packages"
+        ls -ls | awk '{ print$10 }' | grep -v '^$' | while read a; do echo -e "sdk-${a}:\n" && cat ./${a}/package.json && echo -e "\n"; done
+        echo "::endgroup::"
+      shell: bash
+
+    - name: 'Publishing sdk into NPM registry'
+      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      env:
+        NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
+        NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
+        NPM_TAG: ${{ inputs.npm-package-tag }}
+      run: |
+        echo "::group::Publishing SDK packages"
+        
+        sdks=$(ls)
+        for sdk in $sdks; do
+          echo "Publishing SDK lib [${sdk}]"
+          cd $sdk && echo "$(pwd)"
+          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+          npm publish --access public --tag $NPM_TAG
+          npm dist-tag $NEXT_VERSION latest
+          cd ..
+        done
+        echo "::endgroup::"
+      shell: bash      
+        
