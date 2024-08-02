@@ -31,6 +31,7 @@ const BLOCK_EDITOR_FIELD = {
     ],
     type: 'doc'
 };
+
 /**
  * TODO: Remove it and use `FormGroupMockDirective` when movving this component to `libs/edit-content` if needed.
  *

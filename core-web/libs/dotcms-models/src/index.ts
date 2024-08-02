@@ -75,5 +75,6 @@ export * from './lib/dot-message-type.model';
 export * from './lib/dot-dialog.model';
 export * from './lib/dot-content-compare.model';
 export * from './lib/dot-action-menu-item.model';
+export * from './lib/dot-vanity-url.model';
 export * from './lib/dot-categories.model';
 export * from './lib/dot-ai.model';

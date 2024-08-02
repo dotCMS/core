@@ -1,8 +1,25 @@
 import { renderHook } from '@testing-library/react-hooks';
 
-import * as dotcmsClient from '@dotcms/client';
+import * as sdkClient from '@dotcms/client';
 
 import { useDotcmsEditor } from './useDotcmsEditor';
+
+jest.mock('@dotcms/client', () => ({
+    ...jest.requireActual('@dotcms/client'),
+    isInsideEditor: () => true,
+    postMessageToEditor: jest.fn(),
+    DotCmsClient: {
+        instance: {
+            editor: {
+                on: jest.fn(),
+                off: jest.fn(),
+                callbacks: {}
+            }
+        }
+    }
+}));
+
+const { DotCmsClient } = sdkClient as jest.Mocked<typeof sdkClient>;
 
 describe('useDotcmsEditor', () => {
     let isInsideEditorSpy: jest.SpyInstance<boolean>;
@@ -10,47 +27,81 @@ describe('useDotcmsEditor', () => {
     let destroyEditorSpy: jest.SpyInstance<void>;
 
     beforeEach(() => {
-        isInsideEditorSpy = jest.spyOn(dotcmsClient, 'isInsideEditor');
-        initEditorSpy = jest.spyOn(dotcmsClient, 'initEditor');
-        destroyEditorSpy = jest.spyOn(dotcmsClient, 'destroyEditor');
+        isInsideEditorSpy = jest.spyOn(sdkClient, 'isInsideEditor');
+        initEditorSpy = jest.spyOn(sdkClient, 'initEditor');
+        destroyEditorSpy = jest.spyOn(sdkClient, 'destroyEditor');
     });
 
     afterEach(() => {
         jest.clearAllMocks();
     });
 
-    it('should call initEditor when inside editor', () => {
-        isInsideEditorSpy.mockReturnValueOnce(true);
+    describe('when outside editor', () => {
+        it('should not call initEditor or destroyEditor when outside editor', () => {
+            isInsideEditorSpy.mockReturnValueOnce(false);
 
-        renderHook(() => useDotcmsEditor());
+            renderHook(() => useDotcmsEditor({ pathname: '' }));
 
-        expect(initEditorSpy).toHaveBeenCalled();
+            expect(initEditorSpy).not.toHaveBeenCalled();
+            expect(destroyEditorSpy).not.toHaveBeenCalled();
+        });
     });
 
-    it('should call destroyEditor on unmount when inside editor', () => {
-        isInsideEditorSpy.mockReturnValueOnce(true);
+    describe('when inside editor', () => {
+        it('should call initEditor when inside editor', () => {
+            isInsideEditorSpy.mockReturnValueOnce(true);
 
-        const { unmount } = renderHook(() => useDotcmsEditor());
+            renderHook(() => useDotcmsEditor({ pathname: '' }));
 
-        unmount();
+            expect(initEditorSpy).toHaveBeenCalled();
+        });
 
-        expect(destroyEditorSpy).toHaveBeenCalled();
-    });
+        it('should call destroyEditor on unmount when inside editor', () => {
+            isInsideEditorSpy.mockReturnValueOnce(true);
 
-    it('should not call initEditor or destroyEditor when outside editor', () => {
-        isInsideEditorSpy.mockReturnValueOnce(false);
+            const { unmount } = renderHook(() => useDotcmsEditor({ pathname: '' }));
 
-        renderHook(() => useDotcmsEditor());
+            unmount();
 
-        expect(initEditorSpy).not.toHaveBeenCalled();
-        expect(destroyEditorSpy).not.toHaveBeenCalled();
-    });
+            expect(destroyEditorSpy).toHaveBeenCalled();
+        });
 
-    it('should call initEditor with options', () => {
-        isInsideEditorSpy.mockReturnValueOnce(true);
+        describe('onReload', () => {
+            beforeEach(() => {
+                isInsideEditorSpy.mockReturnValueOnce(true);
+            });
 
-        renderHook(() => useDotcmsEditor({ onReload: jest.fn() }));
+            it('should subscribe to the `CHANGE` event', () => {
+                const client = DotCmsClient.instance;
 
-        expect(initEditorSpy).toHaveBeenCalledWith({ onReload: expect.any(Function) });
+                renderHook(() =>
+                    useDotcmsEditor({
+                        pathname: '',
+                        onReload: () => {
+                            /* do nothing */
+                        }
+                    })
+                );
+
+                expect(client.editor.on).toHaveBeenCalledWith('changes', expect.any(Function));
+            });
+
+            it('should remove listener on unmount', () => {
+                const client = DotCmsClient.instance;
+
+                const { unmount } = renderHook(() =>
+                    useDotcmsEditor({
+                        pathname: '',
+                        onReload: () => {
+                            /* do nothing */
+                        }
+                    })
+                );
+
+                unmount();
+
+                expect(client.editor.off).toHaveBeenCalledWith('changes');
+            });
+        });
     });
 });

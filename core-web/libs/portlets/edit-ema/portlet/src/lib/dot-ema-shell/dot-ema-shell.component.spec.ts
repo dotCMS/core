@@ -1,15 +1,22 @@
-import { describe, expect, it } from '@jest/globals';
-import { ActivatedRouteStub } from '@ngneat/spectator';
-import { SpectatorRouting, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
+import { describe, expect } from '@jest/globals';
+import { ActivatedRouteStub, createMouseEvent } from '@ngneat/spectator';
+import {
+    SpectatorRouting,
+    byTestId,
+    createRoutingFactory,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, ActivatedRouteSnapshot, Router, UrlSegment } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
@@ -41,24 +48,28 @@ import {
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';
-import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
+import { PAGE_RESPONSE_BY_LANGUAGE_ID, PAYLOAD_MOCK } from '../shared/mocks';
+import { UVEStore } from '../store/dot-uve.store';
 
 describe('DotEmaShellComponent', () => {
     let spectator: SpectatorRouting<DotEmaShellComponent>;
-    let store: EditEmaStore;
+    let store: SpyObject<InstanceType<typeof UVEStore>>;
+
     let siteService: SiteServiceMock;
+    let confirmationService: SpyObject<ConfirmationService>;
+    let confirmationServiceSpy: jest.SpyInstance;
     let router: Router;
     let route: ActivatedRoute;
 
     const createComponent = createRoutingFactory({
         component: DotEmaShellComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule],
+        imports: [RouterTestingModule, HttpClientTestingModule, ConfirmDialogModule],
         detectChanges: false,
         firstChild: new ActivatedRouteStub({
             url: [new UrlSegment('content', {})]
@@ -81,13 +92,12 @@ describe('DotEmaShellComponent', () => {
         declarations: [MockComponent(DotEmaDialogComponent)],
         componentProviders: [
             MessageService,
-            EditEmaStore,
+            UVEStore,
             ConfirmationService,
             DotActionUrlService,
             DotMessageService,
             DialogService,
             DotWorkflowActionsFireService,
-
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
@@ -124,31 +134,8 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get() {
-                        return of({
-                            page: {
-                                title: 'hello world',
-                                identifier: '123',
-                                inode: '123',
-                                canEdit: true,
-                                canRead: true,
-                                pageURI: 'index'
-                            },
-                            viewAs: {
-                                language: {
-                                    id: 1,
-                                    language: 'English',
-                                    countryCode: 'US',
-                                    languageCode: 'EN',
-                                    country: 'United States'
-                                },
-                                persona: DEFAULT_PERSONA
-                            },
-                            site: mockSites[0],
-                            template: {
-                                drawed: true
-                            }
-                        });
+                    get({ language_id }) {
+                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
                     },
                     save() {
                         return of({});
@@ -186,9 +173,11 @@ describe('DotEmaShellComponent', () => {
                 ]
             });
             siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
-            store = spectator.inject(EditEmaStore, true);
+            store = spectator.inject(UVEStore, true);
             router = spectator.inject(Router, true);
+            confirmationService = spectator.inject(ConfirmationService, true);
             jest.spyOn(store, 'load');
+            confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
 
             spectator.triggerNavigation({
                 url: [],
@@ -218,38 +207,67 @@ describe('DotEmaShellComponent', () => {
                     {
                         icon: 'pi-file',
                         label: 'editema.editor.navbar.content',
-                        href: 'content'
+                        href: 'content',
+                        id: 'content'
                     },
                     {
                         icon: 'pi-table',
                         label: 'editema.editor.navbar.layout',
                         href: 'layout',
                         isDisabled: false,
-                        tooltip: null
+                        tooltip: null,
+                        id: 'layout'
                     },
                     {
                         icon: 'pi-sliders-h',
                         label: 'editema.editor.navbar.rules',
                         href: `rules/123`,
-                        isDisabled: false
+                        isDisabled: false,
+                        id: 'rules'
                     },
                     {
                         iconURL: 'experiments',
                         label: 'editema.editor.navbar.experiments',
                         href: 'experiments/123',
-                        isDisabled: false
+                        isDisabled: false,
+                        id: 'experiments'
                     },
                     {
                         icon: 'pi-th-large',
                         label: 'editema.editor.navbar.page-tools',
-                        action: expect.any(Function)
+                        id: 'page-tools'
                     },
                     {
                         icon: 'pi-ellipsis-v',
                         label: 'editema.editor.navbar.properties',
-                        action: expect.any(Function)
+                        id: 'properties'
                     }
                 ]);
+            });
+
+            it('should trigger action when the page-tool item is clicked', () => {
+                const pageToolsSpy = jest.spyOn(spectator.component.pageTools, 'toggleDialog');
+
+                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+
+                spectator.triggerEventHandler(navBar, 'action', 'page-tools');
+
+                expect(pageToolsSpy).toHaveBeenCalled();
+            });
+
+            it('should trigger action when the properties item is clicked', () => {
+                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+
+                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+
+                spectator.triggerEventHandler(navBar, 'action', 'properties');
+
+                expect(dialogSpy).toHaveBeenCalledWith({
+                    contentType: undefined,
+                    identifier: '123',
+                    inode: '123',
+                    title: 'hello world'
+                });
             });
         });
 
@@ -284,7 +302,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a load when changing the clientHost and it is on the devURLWhitelist', () => {
+            it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -296,7 +314,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: ['http://localhost:1111']
+                                allowedDevURLs: ['http://localhost:1111']
                             }
                         }
                     }
@@ -311,7 +329,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a load when changing the clientHost and it is on the devURLWhitelist with a slash at the end', () => {
+            it('should trigger a load when changing the clientHost and it is on the allowedDevURLs with a slash at the end', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -323,7 +341,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: ['http://localhost:1111/']
+                                allowedDevURLs: ['http://localhost:1111/']
                             }
                         }
                     }
@@ -338,7 +356,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a load when changing the clientHost has an slash at the and it is on the devURLWhitelist without the slash at the end', () => {
+            it('should trigger a load when changing the clientHost has an slash at the and it is on the allowedDevURLs without the slash at the end', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -350,7 +368,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: ['http://localhost:1111']
+                                allowedDevURLs: ['http://localhost:1111']
                             }
                         }
                     }
@@ -365,7 +383,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a load when changing the clientHost has an slash at the and it is on the devURLWhitelist with the slash at the end', () => {
+            it('should trigger a load when changing the clientHost has an slash at the and it is on the allowedDevURLs with the slash at the end', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -377,7 +395,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: ['http://localhost:1111/']
+                                allowedDevURLs: ['http://localhost:1111/']
                             }
                         }
                     }
@@ -392,7 +410,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a navigate without the clientHost queryParam when the url is not in the devURLWhitelist', () => {
+            it('should trigger a navigate without the clientHost queryParam when the url is not in the allowedDevURLs', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -404,7 +422,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: ['http://localhost:4200']
+                                allowedDevURLs: ['http://localhost:4200']
                             }
                         }
                     }
@@ -430,7 +448,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a navigate without the clientHost queryParam when the devURLWhitelistis empty', () => {
+            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -442,7 +460,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: []
+                                allowedDevURLs: []
                             }
                         }
                     }
@@ -467,7 +485,7 @@ describe('DotEmaShellComponent', () => {
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
             });
-            it('should trigger a navigate without the clientHost queryParam when the devURLWhitelistis has a wrong data type', () => {
+            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is has a wrong data type', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -479,7 +497,7 @@ describe('DotEmaShellComponent', () => {
                     data: {
                         data: {
                             options: {
-                                devURLWhitelist: "I'm not an array"
+                                allowedDevURLs: "I'm not an array"
                             }
                         }
                     }
@@ -505,7 +523,7 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('should trigger a navigate without the clientHost queryParam when the devURLWhitelistis is not present', () => {
+            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is is not present', () => {
                 spectator.triggerNavigation({
                     url: [],
                     queryParams: {
@@ -643,6 +661,244 @@ describe('DotEmaShellComponent', () => {
             });
         });
 
+        describe('language checking', () => {
+            it('should not trigger the confirmation service if the page is translated to the current language', () => {
+                spectator.detectChanges();
+
+                expect(confirmationServiceSpy).not.toHaveBeenCalled();
+            });
+
+            it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                tick();
+
+                expect(confirmationServiceSpy).toHaveBeenCalledWith({
+                    accept: expect.any(Function),
+                    acceptEvent: expect.any(Object),
+                    reject: expect.any(Function),
+                    rejectEvent: expect.any(Object),
+                    rejectIcon: 'hidden',
+                    acceptIcon: 'hidden',
+                    key: 'shell-confirm-dialog',
+                    header: 'editpage.language-change-missing-lang-populate.confirm.header',
+                    message: 'editpage.language-change-missing-lang-populate.confirm.message'
+                });
+            }));
+
+            it('should trigger a navigation to default language when the user rejects the creation', fakeAsync(() => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                tick(1000);
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                const clickEvent = createMouseEvent('click');
+
+                confirmDialog.querySelector('.p-confirm-dialog-reject').dispatchEvent(clickEvent);
+
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { language_id: 1 },
+                    queryParamsHandling: 'merge'
+                });
+            }));
+
+            it('should open a dialog to create the page in the new language when the user accepts the creation', fakeAsync(() => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+                const dialog = spectator.component.dialog;
+                const translatePageSpy = jest.spyOn(dialog, 'translatePage');
+
+                tick(1000);
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-accept')
+                    .dispatchEvent(new MouseEvent('click'));
+
+                expect(translatePageSpy).toHaveBeenCalledWith({
+                    newLanguage: 2,
+                    page: {
+                        canEdit: true,
+                        canRead: true,
+                        identifier: '123',
+                        inode: '123',
+                        live: true,
+                        liveInode: '1234',
+                        pageURI: 'index',
+                        stInode: '12345',
+                        title: 'hello world'
+                    }
+                });
+            }));
+
+            it('should open a dialog to create the page and navigate to default language if the user closes the dialog', fakeAsync(() => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                tick(1000);
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                const clickEvent = createMouseEvent('click');
+
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK
+                });
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { language_id: 1 },
+                    queryParamsHandling: 'merge'
+                });
+            }));
+
+            it('should open a dialog to create the page and do nothing when the user creates the page correctly', fakeAsync(() => {
+                const reloadSpy = jest.spyOn(store, 'reload');
+
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                tick(1000);
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                const clickEvent = createMouseEvent('click');
+
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK
+                });
+
+                spectator.detectChanges();
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK
+                });
+
+                spectator.detectChanges();
+
+                expect(router.navigate).not.toHaveBeenCalled();
+
+                expect(reloadSpy).toHaveBeenCalled();
+            }));
+
+            it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE', fakeAsync(() => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                tick(1000);
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                const clickEvent = createMouseEvent('click');
+
+                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.SAVE_PAGE
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK
+                });
+
+                spectator.detectChanges();
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
+                    event: new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                        }
+                    }),
+                    payload: PAYLOAD_MOCK
+                });
+                spectator.detectChanges();
+
+                expect(router.navigate).not.toHaveBeenCalled();
+            }));
+        });
+
         describe('Site Changes', () => {
             it('should trigger a navigate to /pages when site changes', async () => {
                 const navigate = jest.spyOn(router, 'navigate');
@@ -714,103 +970,10 @@ describe('DotEmaShellComponent', () => {
 
             it('should reload content from dialog', () => {
                 const reloadSpy = jest.spyOn(store, 'reload');
-                const queryParams = {
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                    language_id: 1,
-                    url: 'index',
-                    variantName: undefined
-                };
 
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
 
-                expect(reloadSpy).toHaveBeenCalledWith({
-                    params: queryParams
-                });
-            });
-        });
-    });
-
-    describe('with advance template', () => {
-        beforeEach(() => {
-            spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotPageApiService,
-                        useValue: {
-                            get() {
-                                return of({
-                                    page: {
-                                        title: 'hello world',
-                                        identifier: '123',
-                                        inode: '123',
-                                        canEdit: true,
-                                        canRead: true
-                                    },
-                                    viewAs: {
-                                        language: {
-                                            id: 1,
-                                            language: 'English',
-                                            countryCode: 'US',
-                                            languageCode: 'EN',
-                                            country: 'United States'
-                                        },
-                                        persona: DEFAULT_PERSONA
-                                    },
-                                    site: mockSites[0],
-                                    template: { drawed: false }
-                                });
-                            },
-                            save() {
-                                return of({});
-                            },
-                            getPersonas() {
-                                return of({
-                                    entity: [DEFAULT_PERSONA],
-                                    pagination: {
-                                        totalEntries: 1,
-                                        perPage: 10,
-                                        page: 1
-                                    }
-                                });
-                            }
-                        }
-                    },
-                    {
-                        provide: DotLicenseService,
-                        useValue: {
-                            isEnterprise: () => of(true),
-                            canAccessEnterprisePortlet: () => of(true)
-                        }
-                    }
-                ]
-            });
-
-            spectator.triggerNavigation({
-                url: [],
-                queryParams: {
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                },
-                data: {
-                    data: {
-                        url: 'http://localhost:3000'
-                    }
-                }
-            });
-        });
-
-        describe('DOM', () => {
-            it('should have nav bar with layout disabled and tooltip', () => {
-                const navBarComponent = spectator.query(EditEmaNavigationBarComponent);
-
-                expect(navBarComponent.items).toContainEqual({
-                    icon: 'pi-table',
-                    label: 'editema.editor.navbar.layout',
-                    href: 'layout',
-                    isDisabled: true,
-                    tooltip: 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
-                });
+                expect(reloadSpy).toHaveBeenCalled();
             });
         });
     });

@@ -11,14 +11,21 @@ import { DotClipboardUtil, DotCopyButtonComponent, DotMessagePipe } from '@dotcm
 
 import { AiImagePromptFormComponent } from './ai-image-prompt-form.component';
 
+const MOCK_FORM_VALUE = {
+    text: 'Test',
+    type: PromptType.INPUT,
+    size: DotAIImageOrientation.HORIZONTAL
+};
+
+const MOCK_AI_VALUE = {
+    request: { ...MOCK_FORM_VALUE },
+    response: { revised_prompt: 'New Prompt' }
+} as DotGeneratedAIImage;
+
 describe('DotAiImagePromptFormComponent', () => {
     let spectator: Spectator<AiImagePromptFormComponent>;
     let generateButton;
-    const formValue = {
-        text: 'Test',
-        type: PromptType.INPUT,
-        size: DotAIImageOrientation.HORIZONTAL
-    };
+
     const createComponent = createComponentFactory({
         component: AiImagePromptFormComponent,
         imports: [
@@ -32,11 +39,23 @@ describe('DotAiImagePromptFormComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            props: {
+                isLoading: true,
+                hasEditorContent: true,
+                value: { ...MOCK_AI_VALUE }
+            }
+        });
         generateButton = spectator.query('button');
     });
 
+    it('should create the component', () => {
+        spectator.detectChanges();
+        expect(spectator.component).toBeTruthy();
+    });
+
     it('should initialize the form properly', () => {
+        spectator.detectChanges();
         expect(spectator.component.form.get('text').value).toEqual('');
         expect(spectator.component.form.get('type').value).toEqual(PromptType.INPUT);
         expect(spectator.component.form.get('size').value).toEqual(
@@ -46,11 +65,11 @@ describe('DotAiImagePromptFormComponent', () => {
 
     it('should emit value when form value change', () => {
         const emitSpy = spyOn(spectator.component.valueChange, 'emit');
-        spectator.component.form.setValue(formValue);
+        spectator.component.form.setValue(MOCK_FORM_VALUE);
 
         spectator.detectChanges();
 
-        expect(emitSpy).toHaveBeenCalledWith(formValue);
+        expect(emitSpy).toHaveBeenCalledWith(MOCK_FORM_VALUE);
     });
 
     it('should clear validators for text control when type is auto', () => {
@@ -60,16 +79,18 @@ describe('DotAiImagePromptFormComponent', () => {
 
     it('should disable form controls when isLoading is true', () => {
         spectator.setInput('isLoading', true);
+        spectator.detectChanges();
         expect(spectator.query('form').getAttribute('disabled')).toBeDefined();
     });
 
     it('should enable form controls when isLoading is false', () => {
-        spectator.setInput('isLoading', false);
+        spectator.setInput('$isLoading', false);
+        spectator.detectChanges();
         expect(spectator.query('form').getAttribute('disabled')).toBeNull();
     });
 
     it('should disable button when form is invalid or isLoading is true', () => {
-        spectator.setInput('isLoading', false);
+        spectator.setInput('$isLoading', false);
         spectator.component.form.setErrors({ invalid: true });
         spectator.detectChanges();
 
@@ -77,8 +98,8 @@ describe('DotAiImagePromptFormComponent', () => {
     });
 
     it('should enable button when form is valid and isLoading is false', () => {
-        spectator.setInput({ isLoading: false });
-        spectator.component.form.setValue(formValue);
+        spectator.setInput('isLoading', false);
+        spectator.component.form.setValue(MOCK_FORM_VALUE);
         spectator.detectChanges();
 
         expect(generateButton.disabled).toEqual(false);
@@ -86,8 +107,8 @@ describe('DotAiImagePromptFormComponent', () => {
 
     it('should emit generate when the form is submitted', () => {
         const valueSpy = spyOn(spectator.component.generate, 'emit');
-        spectator.setInput({ isLoading: false });
-        spectator.component.form.setValue(formValue);
+        spectator.setInput('isLoading', false);
+        spectator.component.form.setValue(MOCK_FORM_VALUE);
         spectator.detectChanges();
 
         spectator.click(generateButton);
@@ -96,19 +117,36 @@ describe('DotAiImagePromptFormComponent', () => {
 
     it('should make the prompt label as required in the UI', () => {
         const REQUIRED_CLASS = 'p-label-input-required';
-        spectator.setInput('value', {
-            request: formValue,
-            response: { revised_prompt: 'New Prompt' }
-        } as DotGeneratedAIImage);
+        spectator.setInput('value', { ...MOCK_AI_VALUE });
         spectator.setInput('isLoading', false);
+        spectator.detectChanges();
 
         expect(spectator.query(byTestId('prompt-label')).classList).toContain(REQUIRED_CLASS);
 
         spectator.setInput('value', {
-            request: { ...formValue, type: PromptType.AUTO },
+            request: { ...MOCK_FORM_VALUE, type: PromptType.AUTO },
             response: { revised_prompt: 'New Prompt' }
         } as DotGeneratedAIImage);
+        spectator.detectChanges();
 
         expect(spectator.query(byTestId('prompt-label')).classList).not.toContain(REQUIRED_CLASS);
+    });
+
+    it('should not show the AI option when hasEditorContent is false', () => {
+        spectator.setInput('hasEditorContent', false);
+        spectator.detectChanges();
+
+        const aiOption = spectator.query(byTestId('ai-existing-content'));
+
+        expect(aiOption).toBeFalsy();
+    });
+
+    it('should show the AI option when hasEditorContent is true', () => {
+        spectator.setInput('hasEditorContent', true);
+        spectator.detectChanges();
+
+        const aiOption = spectator.query(byTestId('ai-existing-content'));
+
+        expect(aiOption).toBeTruthy();
     });
 });

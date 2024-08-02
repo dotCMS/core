@@ -1,41 +1,39 @@
-import { deepCopy } from '@angular-devkit/core';
+import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import {
-    addMetadata,
+    addSelected,
+    categoryDeepCopy,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
-    getSelectedCategories
+    getSelectedFromContentlet,
+    removeEmptyArrays,
+    removeItemByKey,
+    transformCategories,
+    updateChecked
 } from './category-field.utils';
 
 import {
     CATEGORY_FIELD_CONTENTLET_MOCK,
+    CATEGORY_FIELD_MOCK,
     CATEGORY_FIELD_VARIABLE_NAME,
     CATEGORY_LEVEL_1
 } from '../mocks/category-field.mocks';
-import { DotCategoryFieldCategory, DotKeyValueObj } from '../models/dot-category-field.models';
+import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models';
 
 describe('CategoryFieldUtils', () => {
     describe('getSelectedCategories', () => {
         it('should return an empty array if contentlet is null', () => {
-            const result = getSelectedCategories(CATEGORY_FIELD_VARIABLE_NAME, null);
-            expect(result).toEqual([]);
-        });
-        it('should return an empty array if variable is null', () => {
-            const result = getSelectedCategories(null, CATEGORY_FIELD_CONTENTLET_MOCK);
-            expect(result).toEqual([]);
-        });
-        it("should return an empty array if variable is ''", () => {
-            const result = getSelectedCategories('', CATEGORY_FIELD_CONTENTLET_MOCK);
+            const result = getSelectedFromContentlet(CATEGORY_FIELD_MOCK, null);
             expect(result).toEqual([]);
         });
 
         it('should return parsed the values', () => {
-            const expected: DotKeyValueObj[] = [
-                { key: '33333', value: 'Electrical' },
-                { key: '22222', value: 'Doors & Windows' }
+            const expected: DotCategoryFieldKeyValueObj[] = [
+                { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Electrical' },
+                { key: 'cb83dc32c0a198fd0ca427b3b587f4ce', value: 'Doors & Windows' }
             ];
-            const result = getSelectedCategories(
-                CATEGORY_FIELD_VARIABLE_NAME,
+            const result = getSelectedFromContentlet(
+                CATEGORY_FIELD_MOCK,
                 CATEGORY_FIELD_CONTENTLET_MOCK
             );
 
@@ -43,44 +41,13 @@ describe('CategoryFieldUtils', () => {
         });
     });
 
-    describe('addMetadata', () => {
-        it('should `checked: true` when category has children and exist in the parentPath', () => {
-            const PARENT_PATH_MOCK = [CATEGORY_LEVEL_1[0].inode];
-            const expected = CATEGORY_LEVEL_1.map((item, index) =>
-                index === 0 ? { ...item, checked: true } : { ...item, checked: false }
-            );
-
-            const result = addMetadata(CATEGORY_LEVEL_1, PARENT_PATH_MOCK);
-            expect(result).toEqual(expected);
-        });
-        it('should `checked: false` when category has children and do not exist in the parentPath', () => {
-            const PATH_MOCK = [];
-            const expected = CATEGORY_LEVEL_1.map((item) => {
-                return { ...item, checked: false };
-            });
-
-            const result = addMetadata(CATEGORY_LEVEL_1, PATH_MOCK);
-            expect(result).toEqual(expected);
-        });
-
-        it('should `checked: false` when category do not has children and do not exist in the parentPath', () => {
-            const PATH_MOCK = [];
-            const expected = CATEGORY_LEVEL_1.map((item) => {
-                return { ...item, checked: false };
-            });
-
-            const result = addMetadata(CATEGORY_LEVEL_1, PATH_MOCK);
-            expect(result).toEqual(expected);
-        });
-    });
-
-    describe('deepCopy', () => {
+    describe('categoryDeepCopy', () => {
         it('should create a deep copy of a two-dimensional array of DotCategoryFieldCategory', () => {
-            const array: DotCategoryFieldCategory[][] = [
+            const array: DotCategory[][] = [
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }]
             ];
-            const copy = deepCopy(array);
+            const copy = categoryDeepCopy(array);
 
             // The copy should be equal to the original
             expect(copy).toEqual(array);
@@ -91,19 +58,19 @@ describe('CategoryFieldUtils', () => {
         });
 
         it('should create a deep copy of an empty array', () => {
-            const array: DotCategoryFieldCategory[][] = [];
-            const copy = deepCopy(array);
+            const array: DotCategory[][] = [];
+            const copy = categoryDeepCopy(array);
 
             // The copy should be equal to the original
             expect(copy).toEqual(array);
         });
 
         it('should handle mixed content arrays correctly', () => {
-            const array: DotCategoryFieldCategory[][] = [
+            const array: DotCategory[][] = [
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }]
             ];
-            const copy = deepCopy(array);
+            const copy = categoryDeepCopy(array);
 
             // The copy should be equal to the original
             expect(copy).toEqual(array);
@@ -116,7 +83,7 @@ describe('CategoryFieldUtils', () => {
 
     describe('clearCategoriesAfterIndex', () => {
         it('should remove all items after the specified index + 1', () => {
-            const array: DotCategoryFieldCategory[][] = [
+            const array: DotCategory[][] = [
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }],
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'Another Category' }]
@@ -133,7 +100,7 @@ describe('CategoryFieldUtils', () => {
         });
 
         it('should handle an empty array', () => {
-            const array: DotCategoryFieldCategory[][] = [];
+            const array: DotCategory[][] = [];
             const index = 0;
             const result = clearCategoriesAfterIndex(array, index);
 
@@ -143,7 +110,7 @@ describe('CategoryFieldUtils', () => {
         });
 
         it('should handle index greater than array length', () => {
-            const array: DotCategoryFieldCategory[][] = [
+            const array: DotCategory[][] = [
                 CATEGORY_LEVEL_1,
                 [{ ...CATEGORY_LEVEL_1[0], categoryName: 'New Category' }]
             ];
@@ -194,6 +161,443 @@ describe('CategoryFieldUtils', () => {
 
             // The resulting array should be empty
             expect(result.length).toBe(0);
+            expect(result).toEqual([]);
+        });
+    });
+
+    describe('updateChecked', () => {
+        it('should add a new item if it is selected and not already in storedSelected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName,
+                    inode: CATEGORY_LEVEL_1[0].inode
+                }
+            ];
+            const selected = [storedSelected[0].key, CATEGORY_LEVEL_1[1].key];
+            const item: DotCategoryFieldKeyValueObj = {
+                key: CATEGORY_LEVEL_1[1].key,
+                value: CATEGORY_LEVEL_1[1].categoryName,
+                inode: CATEGORY_LEVEL_1[1].inode
+            };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected, item];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should not add a duplicate item if it is already in storedSelected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName,
+                    inode: CATEGORY_LEVEL_1[1].inode
+                }
+            ];
+            const selected = [storedSelected[0].key];
+            const item: DotCategoryFieldKeyValueObj = {
+                key: CATEGORY_LEVEL_1[0].key,
+                value: CATEGORY_LEVEL_1[0].categoryName,
+                inode: CATEGORY_LEVEL_1[1].inode
+            };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should remove an item if it is not selected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName,
+                    inode: CATEGORY_LEVEL_1[0].inode
+                },
+                {
+                    key: CATEGORY_LEVEL_1[1].key,
+                    value: CATEGORY_LEVEL_1[1].categoryName,
+                    inode: CATEGORY_LEVEL_1[1].inode
+                }
+            ];
+            const selected = [storedSelected[0].key];
+            const item: DotCategoryFieldKeyValueObj = {
+                key: CATEGORY_LEVEL_1[1].key,
+                value: CATEGORY_LEVEL_1[1].categoryName,
+                inode: CATEGORY_LEVEL_1[1].inode
+            };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName,
+                    inode: CATEGORY_LEVEL_1[0].inode
+                }
+            ];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should not remove an item that is not in storedSelected', () => {
+            const storedSelected: DotCategoryFieldKeyValueObj[] = [
+                {
+                    key: CATEGORY_LEVEL_1[0].key,
+                    value: CATEGORY_LEVEL_1[0].categoryName,
+                    inode: CATEGORY_LEVEL_1[0].inode
+                }
+            ];
+            const selected = [storedSelected[0].key];
+            const item: DotCategoryFieldKeyValueObj = {
+                key: CATEGORY_LEVEL_1[1].key,
+                value: CATEGORY_LEVEL_1[1].categoryName,
+                inode: CATEGORY_LEVEL_1[1].inode
+            };
+
+            const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected];
+
+            const result = updateChecked(storedSelected, selected, item);
+
+            expect(result).toEqual(expected);
+        });
+    });
+
+    describe('removeItemByKey', () => {
+        let array: DotCategoryFieldKeyValueObj[];
+
+        beforeEach(() => {
+            array = [
+                { key: '1', value: 'Category 1', inode: 'inode1', path: 'path1' },
+                { key: '2', value: 'Category 2', inode: 'inode2', path: 'path2' },
+                { key: '3', value: 'Category 3', inode: 'inode3', path: 'path3' }
+            ];
+        });
+
+        it('should remove item with a single key', () => {
+            const key = '2';
+            const result = removeItemByKey(array, key);
+            expect(result).toEqual([
+                { key: '1', value: 'Category 1', inode: 'inode1', path: 'path1' },
+                { key: '3', value: 'Category 3', inode: 'inode3', path: 'path3' }
+            ]);
+        });
+
+        it('should remove items with an array of keys', () => {
+            const keys = ['1', '3'];
+            const result = removeItemByKey(array, keys);
+            expect(result).toEqual([
+                { key: '2', value: 'Category 2', inode: 'inode2', path: 'path2' }
+            ]);
+        });
+
+        it('should return the same array if key is not found', () => {
+            const key = '4';
+            const result = removeItemByKey(array, key);
+            expect(result).toEqual(array);
+        });
+
+        it('should return the same array if keys array is empty', () => {
+            const keys: string[] = [];
+            const result = removeItemByKey(array, keys);
+            expect(result).toEqual(array);
+        });
+
+        it('should handle an empty array input', () => {
+            const emptyArray: DotCategoryFieldKeyValueObj[] = [];
+            const key = '1';
+            const result = removeItemByKey(emptyArray, key);
+            expect(result).toEqual([]);
+        });
+
+        it('should handle an empty array input with keys array', () => {
+            const emptyArray: DotCategoryFieldKeyValueObj[] = [];
+            const keys = ['1', '2'];
+            const result = removeItemByKey(emptyArray, keys);
+            expect(result).toEqual([]);
+        });
+    });
+    describe('addSelected', () => {
+        let array: DotCategoryFieldKeyValueObj[];
+
+        beforeEach(() => {
+            array = [
+                { key: '1', value: 'Category 1', inode: 'inode1', path: 'path1' },
+                { key: '2', value: 'Category 2', inode: 'inode2', path: 'path2' }
+            ];
+        });
+
+        it('should add a single item to the array', () => {
+            const newItem = { key: '3', value: 'Category 3', inode: 'inode3', path: 'path3' };
+            const result = addSelected(array, newItem);
+            expect(result).toEqual([
+                { key: '1', value: 'Category 1', inode: 'inode1', path: 'path1' },
+                { key: '2', value: 'Category 2', inode: 'inode2', path: 'path2' },
+                { key: '3', value: 'Category 3', inode: 'inode3', path: 'path3' }
+            ]);
+        });
+
+        it('should add multiple items to the array', () => {
+            const newItems = [
+                { key: '3', value: 'Category 3', inode: 'inode3', path: 'path3' },
+                { key: '4', value: 'Category 4', inode: 'inode4', path: 'path4' }
+            ];
+            const result = addSelected(array, newItems);
+            expect(result).toEqual([
+                { key: '1', value: 'Category 1', inode: 'inode1', path: 'path1' },
+                { key: '2', value: 'Category 2', inode: 'inode2', path: 'path2' },
+                { key: '3', value: 'Category 3', inode: 'inode3', path: 'path3' },
+                { key: '4', value: 'Category 4', inode: 'inode4', path: 'path4' }
+            ]);
+        });
+
+        it('should not add duplicate items to the array', () => {
+            const newItem = { key: '2', value: 'Category 2', inode: 'inode2', path: 'path2' };
+            const result = addSelected(array, newItem);
+            expect(result).toEqual([
+                { key: '1', value: 'Category 1', inode: 'inode1', path: 'path1' },
+                { key: '2', value: 'Category 2', inode: 'inode2', path: 'path2' }
+            ]);
+        });
+
+        it('should handle adding items to an empty array', () => {
+            const emptyArray: DotCategoryFieldKeyValueObj[] = [];
+            const newItem = { key: '1', value: 'Category 1', inode: 'inode1', path: 'path1' };
+            const result = addSelected(emptyArray, newItem);
+            expect(result).toEqual([
+                { key: '1', value: 'Category 1', inode: 'inode1', path: 'path1' }
+            ]);
+        });
+
+        it('should handle adding an empty array of items', () => {
+            const newItems: DotCategoryFieldKeyValueObj[] = [];
+            const result = addSelected(array, newItems);
+            expect(result).toEqual(array);
+        });
+
+        it('should add items correctly when array is empty', () => {
+            const emptyArray: DotCategoryFieldKeyValueObj[] = [];
+            const newItems = [
+                { key: '1', value: 'Category 1', inode: 'inode1', path: 'path1' },
+                { key: '2', value: 'Category 2', inode: 'inode2', path: 'path2' }
+            ];
+            const result = addSelected(emptyArray, newItems);
+            expect(result).toEqual(newItems);
+        });
+    });
+
+    describe('transformCategories', () => {
+        const keyParentPath = ['1']; // make true clicked
+
+        it('should transform a single category', () => {
+            const category: DotCategory = {
+                key: '1',
+                inode: 'inode1',
+                categoryName: 'Category 1',
+                childrenCount: 2,
+                active: true,
+                categoryVelocityVarName: '',
+                description: null,
+                iDate: 0,
+                identifier: null,
+                keywords: null,
+                modDate: 0,
+                owner: '',
+                sortOrder: 0,
+                type: '',
+                parentList: [
+                    { key: 'root', name: 'Root Parent', inode: 'rootInode' },
+                    {
+                        key: 'parent1',
+                        name: 'Parent 1',
+                        inode: 'parentInode1'
+                    }
+                ]
+            };
+
+            const result = transformCategories(category, keyParentPath);
+
+            expect(result).toEqual({
+                key: '1',
+                inode: 'inode1',
+                value: 'Category 1',
+                hasChildren: true,
+                clicked: true, // from keyParentPath
+                path: 'Parent 1'
+            });
+        });
+
+        it('should transform an array of categories', () => {
+            const categories: DotCategory[] = [
+                {
+                    key: '1',
+                    inode: 'inode1',
+                    categoryName: 'Category 1',
+                    childrenCount: 2,
+                    active: true,
+                    categoryVelocityVarName: '',
+                    description: null,
+                    iDate: 0,
+                    identifier: null,
+                    keywords: null,
+                    modDate: 0,
+                    owner: '',
+                    sortOrder: 0,
+                    type: '',
+                    parentList: [
+                        { key: 'root', name: 'Root Parent', inode: 'rootInode' },
+                        {
+                            key: 'parent1',
+                            name: 'Parent 1',
+                            inode: 'parentInode1'
+                        }
+                    ]
+                },
+                {
+                    key: '2',
+                    inode: 'inode2',
+                    categoryName: 'Category 2',
+                    childrenCount: 0,
+                    active: true,
+                    categoryVelocityVarName: '',
+                    description: null,
+                    iDate: 0,
+                    identifier: null,
+                    keywords: null,
+                    modDate: 0,
+                    owner: '',
+                    sortOrder: 0,
+                    type: '',
+                    parentList: [
+                        { key: 'root', name: 'Root Parent', inode: 'rootInode' },
+                        {
+                            key: 'parent1',
+                            name: 'Parent 1',
+                            inode: 'parentInode1'
+                        }
+                    ]
+                }
+            ];
+
+            const result = transformCategories(categories, keyParentPath);
+
+            expect(result).toEqual([
+                {
+                    key: '1',
+                    inode: 'inode1',
+                    value: 'Category 1',
+                    hasChildren: true,
+                    clicked: true,
+                    path: 'Parent 1'
+                },
+                {
+                    key: '2',
+                    inode: 'inode2',
+                    value: 'Category 2',
+                    hasChildren: false,
+                    clicked: false,
+                    path: 'Parent 1'
+                }
+            ]);
+        });
+
+        it('should handle category with no parentList', () => {
+            const category: DotCategory = {
+                key: '1',
+                inode: 'inode1',
+                categoryName: 'Category 1',
+                childrenCount: 0,
+                active: true,
+                categoryVelocityVarName: '',
+                description: null,
+                iDate: 0,
+                identifier: null,
+                keywords: null,
+                modDate: 0,
+                owner: '',
+                sortOrder: 0,
+                type: ''
+            };
+
+            const result = transformCategories(category, keyParentPath);
+
+            expect(result).toEqual({
+                key: '1',
+                inode: 'inode1',
+                value: 'Category 1',
+                hasChildren: false,
+                clicked: false,
+                path: ''
+            });
+        });
+
+        it('should handle empty array of categories', () => {
+            const categories: DotCategory[] = [];
+
+            const result = transformCategories(categories, keyParentPath);
+
+            expect(result).toEqual([]);
+        });
+    });
+    describe('transformSelectedCategories', () => {
+        it('should return an empty array if contentlet is not provided', () => {
+            const result = getSelectedFromContentlet(CATEGORY_FIELD_MOCK, null as never);
+            expect(result).toEqual([]);
+        });
+
+        it('should return an empty array if variable is not provided', () => {
+            const variableField: DotCMSContentTypeField = { ...CATEGORY_FIELD_MOCK, variable: '' };
+            const result = getSelectedFromContentlet(variableField, CATEGORY_FIELD_CONTENTLET_MOCK);
+            expect(result).toEqual([]);
+        });
+
+        it('should return an empty array if selected categories are not present in contentlet', () => {
+            const variableField: DotCMSContentTypeField = {
+                ...CATEGORY_FIELD_MOCK,
+                variable: 'nonexistentField'
+            };
+            const result = getSelectedFromContentlet(variableField, CATEGORY_FIELD_CONTENTLET_MOCK);
+            expect(result).toEqual([]);
+        });
+
+        it('should transform selected categories correctly', () => {
+            const result = getSelectedFromContentlet(
+                CATEGORY_FIELD_MOCK,
+                CATEGORY_FIELD_CONTENTLET_MOCK
+            );
+            expect(result).toEqual([
+                { key: '1f208488057007cedda0e0b5d52ee3b3', value: 'Electrical' },
+                { key: 'cb83dc32c0a198fd0ca427b3b587f4ce', value: 'Doors & Windows' }
+            ]);
+        });
+
+        it('should handle empty selected categories in contentlet', () => {
+            const contentletWithEmptyCategories: DotCMSContentlet = {
+                ...CATEGORY_FIELD_CONTENTLET_MOCK,
+                [CATEGORY_FIELD_VARIABLE_NAME]: []
+            };
+            const result = getSelectedFromContentlet(
+                CATEGORY_FIELD_MOCK,
+                contentletWithEmptyCategories
+            );
+            expect(result).toEqual([]);
+        });
+
+        it('should return the same array if there are no empty arrays', () => {
+            const array: DotCategory[][] = [
+                [{ key: '1', categoryName: 'Category 1' } as DotCategory],
+                [{ key: '2', categoryName: 'Category 2' } as DotCategory]
+            ];
+            const result = removeEmptyArrays(array);
+            expect(result).toEqual(array);
+        });
+
+        it('should return an empty array if all arrays are empty', () => {
+            const array: DotCategory[][] = [[], [], []];
+            const result = removeEmptyArrays(array);
             expect(result).toEqual([]);
         });
     });

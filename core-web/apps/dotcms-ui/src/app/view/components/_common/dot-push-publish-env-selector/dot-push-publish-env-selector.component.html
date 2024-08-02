@@ -9,8 +9,7 @@
     [options]="pushEnvironments"
     [defaultLabel]="'contenttypes.content.push_publish.select_environment' | dm"
     appendTo="body"
-    optionLabel="name">
-</p-multiSelect>
+    optionLabel="name"></p-multiSelect>
 
 <ul *ngIf="showList" class="environment-selector__list">
     <li *ngFor="let environment of selectedEnvironments" class="environment-selector__list-item">

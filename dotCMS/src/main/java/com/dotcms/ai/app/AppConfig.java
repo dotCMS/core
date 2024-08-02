@@ -1,15 +1,17 @@
 package com.dotcms.ai.app;
 
-import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -19,12 +21,16 @@ import java.util.stream.Collectors;
  */
 public class AppConfig implements Serializable {
 
-    public static final Pattern SPLITTER= Pattern.compile("\\s?,\\s?");
+    private static final String OPEN_AI_EMBEDDINGS_URL_KEY = "OPEN_AI_EMBEDDINGS_URL";
+    public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
-    public final String model;
-    public final String imageModel;
+    private final String host;
+    private final transient AIModel model;
+    private final transient AIModel imageModel;
+    private final transient AIModel embeddingsModel;
     private final String apiUrl;
     private final String apiImageUrl;
+    private final String apiEmbeddingsUrl;
     private final String apiKey;
     private final String rolePrompt;
     private final String textPrompt;
@@ -33,47 +39,45 @@ public class AppConfig implements Serializable {
     private final String listenerIndexer;
     private final Map<String, Secret> configValues;
 
-    public AppConfig(final Map<String, Secret> secrets) {
-        this.configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        apiUrl = resolveEnvSecret(secrets, AppKeys.API_URL);
-        apiImageUrl = resolveEnvSecret(secrets, AppKeys.API_IMAGE_URL);
-        apiKey = resolveEnvSecret(secrets, AppKeys.API_KEY);
-        rolePrompt = resolveSecretOrBlank(secrets, AppKeys.ROLE_PROMPT);
-        textPrompt = resolveSecretOrBlank(secrets, AppKeys.TEXT_PROMPT);
-        imagePrompt = resolveSecretOrBlank(secrets, AppKeys.IMAGE_PROMPT);
-        imageSize = resolveSecret(secrets, AppKeys.IMAGE_SIZE, AppKeys.IMAGE_SIZE.defaultValue);
-        model = resolveSecretOrBlank(secrets, AppKeys.MODEL);
-        imageModel = resolveSecret(secrets, AppKeys.IMAGE_MODEL, "dall-e-3");
-        listenerIndexer = resolveSecretOrBlank(secrets, AppKeys.LISTENER_INDEXER);
-        Logger.debug(this.getClass().getName(), () -> "apiUrl: " + apiUrl);
-        Logger.debug(this.getClass().getName(), () -> "apiImageUrl: " + apiImageUrl);
-        Logger.debug(this.getClass().getName(), () -> "apiKey: " + apiKey);
-        Logger.debug(this.getClass().getName(), () -> "rolePrompt: " + rolePrompt);
-        Logger.debug(this.getClass().getName(), () -> "textPrompt: " + textPrompt);
-        Logger.debug(this.getClass().getName(), () -> "imagePrompt: " + imagePrompt);
-        Logger.debug(this.getClass().getName(), () -> "imageModel: " + imageModel);
-        Logger.debug(this.getClass().getName(), () -> "imageSize: " + imageSize);
-        Logger.debug(this.getClass().getName(), () -> "model: " + model);
-        Logger.debug(this.getClass().getName(), () -> "listerIndexer: " + listenerIndexer);
-    }
+    public AppConfig(final String host, final Map<String, Secret> secrets) {
+        this.host = host;
 
-    private String resolveSecret(final Map<String, Secret> secrets, final AppKeys key, final String defaultValue) {
-        return Try.of(() -> secrets.get(key.key).getString()).getOrElse(defaultValue);
-    }
+        final AIAppUtil aiAppUtil = AIAppUtil.get();
+        AIModels.get().loadModels(
+                this.host,
+                List.of(
+                        aiAppUtil.createTextModel(secrets),
+                        aiAppUtil.createImageModel(secrets),
+                        aiAppUtil.createEmbeddingsModel(secrets)));
 
-    private String resolveSecretOrBlank(final Map<String, Secret> secrets, final AppKeys key) {
-        return resolveSecret(secrets, key, StringPool.BLANK);
-    }
+        model = resolveModel(AIModelType.TEXT);
+        imageModel = resolveModel(AIModelType.IMAGE);
+        embeddingsModel = resolveModel(AIModelType.EMBEDDINGS);
 
-    private String resolveEnvSecret(final Map<String, Secret> secrets, final AppKeys key) {
-        final String secret = resolveSecretOrBlank(secrets, key);
-        if (UtilMethods.isSet(secret)) {
-            return secret;
-        }
+        apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL);
+        apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL);
+        apiEmbeddingsUrl = discoverEmbeddingsApiUrl(secrets);
+        apiKey = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
+        rolePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.ROLE_PROMPT);
+        textPrompt = aiAppUtil.discoverSecret(secrets, AppKeys.TEXT_PROMPT);
+        imagePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.IMAGE_PROMPT);
+        imageSize = aiAppUtil.discoverSecret(secrets, AppKeys.IMAGE_SIZE);
+        listenerIndexer = aiAppUtil.discoverSecret(secrets, AppKeys.LISTENER_INDEXER);
 
-        return Optional
-                .ofNullable(AppsUtil.discoverEnvVarValue(AppKeys.APP_KEY, key.key, null))
-                .orElse(StringPool.BLANK);
+        configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Logger.debug(getClass(), () -> "apiUrl: " + apiUrl);
+        Logger.debug(getClass(), () -> "apiImageUrl: " + apiImageUrl);
+        Logger.debug(getClass(), () -> "embeddingsUrl: " + apiEmbeddingsUrl);
+        Logger.debug(getClass(), () -> "apiKey: " + apiKey);
+        Logger.debug(getClass(), () -> "model: " + model);
+        Logger.debug(getClass(), () -> "imageModel: " + imageModel);
+        Logger.debug(getClass(), () -> "embeddingsModel: " + embeddingsModel);
+        Logger.debug(getClass(), () -> "rolePrompt: " + rolePrompt);
+        Logger.debug(getClass(), () -> "textPrompt: " + textPrompt);
+        Logger.debug(getClass(), () -> "imagePrompt: " + imagePrompt);
+        Logger.debug(getClass(), () -> "imageSize: " + imageSize);
+        Logger.debug(getClass(), () -> "listerIndexer: " + listenerIndexer);
     }
 
     /**
@@ -82,7 +86,7 @@ public class AppConfig implements Serializable {
      * @return the API URL
      */
     public String getApiUrl() {
-        return UtilMethods.isEmpty(apiUrl) ? "https://api.openai.com/v1/chat/completions" : apiUrl;
+        return UtilMethods.isEmpty(apiUrl) ? AppKeys.API_URL.defaultValue : apiUrl;
     }
 
     /**
@@ -91,7 +95,16 @@ public class AppConfig implements Serializable {
      * @return the API Image URL
      */
     public String getApiImageUrl() {
-        return UtilMethods.isEmpty(apiImageUrl)? "https://api.openai.com/v1/images/generations" : apiImageUrl;
+        return UtilMethods.isEmpty(apiImageUrl) ? AppKeys.API_IMAGE_URL.defaultValue : apiImageUrl;
+    }
+
+    /**
+     * Retrieves the API Embeddings URL.
+     *
+     * @return
+     */
+    public String getApiEmbeddingsUrl() {
+        return UtilMethods.isEmpty(apiEmbeddingsUrl) ? AppKeys.API_EMBEDDINGS_URL.defaultValue : apiEmbeddingsUrl;
     }
 
     /**
@@ -104,12 +117,12 @@ public class AppConfig implements Serializable {
     }
 
     /**
-     * Retrieves the Role Prompt.
+     * Retrieves the Model.
      *
-     * @return the Role Prompt
+     * @return the Model
      */
-    public String getRolePrompt() {
-        return rolePrompt;
+    public AIModel getModel() {
+        return model;
     }
 
     /**
@@ -117,7 +130,27 @@ public class AppConfig implements Serializable {
      *
      * @return the Image Model
      */
-    public String getImageModel() {return imageModel;}
+    public AIModel getImageModel() {
+        return imageModel;
+    }
+
+    /**
+     * Retrieves the Embeddings Model.
+     *
+     * @return the Embeddings Model
+     */
+    public AIModel getEmbeddingsModel() {
+        return embeddingsModel;
+    }
+
+    /**
+     * Retrieves the Role Prompt.
+     *
+     * @return the Role Prompt
+     */
+    public String getRolePrompt() {
+        return rolePrompt;
+    }
 
     /**
      * Retrieves the Text Prompt.
@@ -147,15 +180,6 @@ public class AppConfig implements Serializable {
     }
 
     /**
-     * Retrieves the Model.
-     *
-     * @return the Model
-     */
-    public String getModel() {
-        return model;
-    }
-
-    /**
      * Retrieves the Listener Indexer.
      *
      * @return the Listener Indexer
@@ -170,9 +194,9 @@ public class AppConfig implements Serializable {
      * @param appKey the key to retrieve the configuration value for
      * @return the integer configuration value
      */
-    public int getConfigInteger(AppKeys appKey) {
-        String value =  Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
-        return Try.of(()->Integer.parseInt(value)).getOrElse(0);
+    public int getConfigInteger(final AppKeys appKey) {
+        String value = Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
+        return Try.of(() -> Integer.parseInt(value)).getOrElse(0);
     }
 
     /**
@@ -181,9 +205,9 @@ public class AppConfig implements Serializable {
      * @param appKey the key to retrieve the configuration value for
      * @return the float configuration value
      */
-    public float getConfigFloat(AppKeys appKey) {
-        String value =  Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
-        return Try.of(()->Float.parseFloat(value)).getOrElse(0f);
+    public float getConfigFloat(final AppKeys appKey) {
+        String value = Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
+        return Try.of(() -> Float.parseFloat(value)).getOrElse(0f);
     }
 
     /**
@@ -192,9 +216,9 @@ public class AppConfig implements Serializable {
      * @param appKey the key to retrieve the configuration value for
      * @return the boolean configuration value
      */
-    public boolean getConfigBoolean(AppKeys appKey) {
-        String value =  Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
-        return Try.of(()->Boolean.parseBoolean(value)).getOrElse(false);
+    public boolean getConfigBoolean(final AppKeys appKey) {
+        final String value = Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
+        return Try.of(() -> Boolean.parseBoolean(value)).getOrElse(false);
     }
 
     /**
@@ -203,9 +227,8 @@ public class AppConfig implements Serializable {
      * @param appKey the key to retrieve the configuration value for
      * @return the array configuration value
      */
-    public String[] getConfigArray(AppKeys appKey) {
-        String returnValue = getConfig(appKey);
-
+    public String[] getConfigArray(final AppKeys appKey) {
+        final String returnValue = getConfig(appKey);
         return returnValue != null ? SPLITTER.split(returnValue) : new String[0];
     }
 
@@ -215,11 +238,55 @@ public class AppConfig implements Serializable {
      * @param appKey the key to retrieve the configuration value for
      * @return the configuration value
      */
-    public String getConfig(AppKeys appKey) {
+    public String getConfig(final AppKeys appKey) {
         if (configValues.containsKey(appKey.key)) {
             return Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
         }
         return appKey.defaultValue;
+    }
+
+    /**
+     * Resolves a model-specific secret value from the provided secrets map using the specified key and model type.
+     *
+     * @param type the type of the model to find
+     */
+    public AIModel resolveModel(final AIModelType type) {
+        return AIModels.get().findModel(host, type).orElse(AIModels.NOOP_MODEL);
+    }
+
+    /**
+     * Resolves a model-specific secret value from the provided secrets map using the specified key and model type.
+     *
+     * @param modelName the name of the model to find
+     */
+    public AIModel resolveModelOrThrow(final String modelName) {
+        return AIModels.get()
+                .findModel(host, modelName)
+                .orElseThrow(() -> {
+                    final String supported = String.join(", ", AIModels.get().getOrPullSupportedModels());
+                    return new DotRuntimeException(
+                            "Unable to find model: [" + modelName + "]. Only [" + supported + "] are supported ");
+                });
+    }
+
+    /**
+     * Prints a specific error message to the log, based on the {@link AppKeys#DEBUG_LOGGING}
+     * property instead of the usual Log4j configuration.
+     *
+     * @param clazz   The {@link Class} to log the message for.
+     * @param message The {@link Supplier} with the message to log.
+     */
+    public static void debugLogger(final Class<?> clazz, final Supplier<String> message) {
+        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+            Logger.info(clazz, message.get());
+        }
+    }
+
+    private String discoverEmbeddingsApiUrl(final Map<String, Secret> secrets) {
+        final String url = AIAppUtil.get().discoverEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL);
+        return StringUtils.isBlank(url)
+                ? Config.getStringProperty(OPEN_AI_EMBEDDINGS_URL_KEY, "https://api.openai.com/v1/embeddings")
+                : url;
     }
 
 }

@@ -38,11 +38,15 @@
 }
 
 .category-field__right-pane {
-    flex: 0 0 25%; // Ajusta según sea necesario
+    flex: 0 0 25%;
     gap: $spacing-1;
+    padding: $spacing-3;
+    padding-right: 0;
+    &.empty {
+        padding-left: 0;
+    }
 }
 
-.category-field__search,
 .category-field__categories,
 .category-field__right-pane {
     border: $field-border-size solid $color-palette-gray-400;
@@ -51,8 +55,27 @@
     overflow: hidden;
 }
 
+.category-field__selected-categories-list {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
 :host ::ng-deep .p-sidebar-content {
     padding: 0;
     height: 100%;
     overflow: hidden;
+}
+
+.category-field__empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: $spacing-3;
+
+    p {
+        text-align: center;
+        font-size: $font-size-smd;
+    }
 }

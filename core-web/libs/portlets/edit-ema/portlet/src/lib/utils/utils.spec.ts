@@ -1,11 +1,32 @@
+import { CurrentUser } from '@dotcms/dotcms-js';
+import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+
 import {
     deleteContentletFromContainer,
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
     createPageApiUrlWithQueryParams,
-    SDK_EDITOR_SCRIPT_SOURCE
+    SDK_EDITOR_SCRIPT_SOURCE,
+    computePageIsLocked,
+    computeCanEditPage,
+    mapContainerStructureToArrayOfContainers,
+    mapContainerStructureToDotContainerMap,
+    areContainersEquals
 } from '.';
+
+import { dotPageContainerStructureMock } from '../shared/mocks';
+import { DotPage } from '../shared/models';
+
+const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
+    page: {
+        locked,
+        lockedBy
+    } as DotPage,
+    currentUser: {
+        userId
+    } as CurrentUser
+});
 
 describe('utils functions', () => {
     describe('SDK Editor Script Source', () => {
@@ -329,7 +350,7 @@ describe('utils functions', () => {
             const queryParams = {};
             const result = createPageApiUrlWithQueryParams('test', queryParams);
             expect(result).toBe(
-                'test?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE'
+                'test?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
             );
         });
 
@@ -340,8 +361,218 @@ describe('utils functions', () => {
             };
             const result = createPageApiUrlWithQueryParams('test', queryParams);
             expect(result).toBe(
-                'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE'
+                'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
             );
+        });
+    });
+
+    describe('computePageIsLocked', () => {
+        it('should return false when the page is unlocked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computePageIsLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page is locked and is the same user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computePageIsLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return true when the page is locked and is not the same user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
+            });
+
+            const result = computePageIsLocked(page, currentUser);
+
+            expect(result).toBe(true);
+        });
+    });
+
+    describe('computeCanEditPage', () => {
+        it('should return true when the page can be edited, is not locked and does not have experiment', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser);
+
+            expect(result).toBe(true);
+        });
+
+        it('should return true when the page can be edited and does have an experiment that is not running or scheduled', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const experiment = {
+                status: DotExperimentStatus.DRAFT
+            } as DotExperiment;
+
+            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser, experiment);
+
+            expect(result).toBe(true);
+        });
+
+        it('should return false when the page can be edited and does have an experiment that is running', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const experiment = {
+                status: DotExperimentStatus.RUNNING
+            } as DotExperiment;
+
+            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser, experiment);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page can be edited and does have an experiment that is scheduled', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const experiment = {
+                status: DotExperimentStatus.SCHEDULED
+            } as DotExperiment;
+
+            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser, experiment);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page can be edited but is locked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
+            });
+
+            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page cannot be edited', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
+            });
+
+            const result = computeCanEditPage({ ...page, canEdit: false }, currentUser);
+
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('mapContainerStructureToArrayOfContainers', () => {
+        it('should map container structure to array', () => {
+            const result = mapContainerStructureToArrayOfContainers(dotPageContainerStructureMock);
+
+            expect(result).toEqual([
+                {
+                    identifier: '123',
+                    uuid: '123',
+                    contentletsId: ['123', '456']
+                },
+                {
+                    identifier: '123',
+                    uuid: '456',
+                    contentletsId: ['123']
+                }
+            ]);
+        });
+    });
+
+    describe('mapContainerStructureToDotContainerMap', () => {
+        it('should map container structure to dotContainerMap', () => {
+            const result = mapContainerStructureToDotContainerMap(dotPageContainerStructureMock);
+
+            expect(result).toEqual({
+                '123': dotPageContainerStructureMock['123'].container
+            });
+        });
+    });
+
+    describe('areContainersEquals', () => {
+        it('should return true when the containers are equal', () => {
+            expect(
+                areContainersEquals(
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123', '456']
+                    },
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        acceptTypes: 'test',
+                        variantId: 'Default',
+                        maxContentlets: 1
+                    }
+                )
+            ).toBe(true);
+        });
+        it('should return false when the containers dont have the same identifier', () => {
+            expect(
+                areContainersEquals(
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123', '456']
+                    },
+                    {
+                        identifier: '456',
+                        uuid: '123',
+                        acceptTypes: 'test',
+                        variantId: 'Default',
+                        maxContentlets: 1
+                    }
+                )
+            ).toBe(false);
+        });
+        it('should return false when the containers dont have the same uuid', () => {
+            expect(
+                areContainersEquals(
+                    {
+                        identifier: '123',
+                        uuid: '123',
+                        contentletsId: ['123', '456']
+                    },
+                    {
+                        identifier: '123',
+                        uuid: '456',
+                        acceptTypes: 'test',
+                        variantId: 'Default',
+                        maxContentlets: 1
+                    }
+                )
+            ).toBe(false);
         });
     });
 });

@@ -17,7 +17,7 @@ import { RippleModule } from 'primeng/ripple';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 export default {
-    title: 'DotCMS/Forms    ',
+    title: 'DotCMS/Forms',
 
     parameters: {
         docs: {

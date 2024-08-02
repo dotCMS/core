@@ -2,6 +2,6 @@
     <i [ngClass]="uiMessage.icon" data-testId="ui-message-icon" class="icon"></i>
 </div>
 <div class="text">
-    <span [innerHTML]="uiMessage.message | dm: uiMessage.args" data-testId="ui-message-span"></span
-    ><ng-content></ng-content>
+    <span [innerHTML]="uiMessage.message | dm: uiMessage.args" data-testId="ui-message-span"></span>
+    <ng-content></ng-content>
 </div>

@@ -1,11 +1,11 @@
 import {
+    ChangeDetectionStrategy,
     Component,
     DestroyRef,
     EventEmitter,
     inject,
     Input,
     OnChanges,
-    OnInit,
     Output,
     SimpleChange,
     SimpleChanges
@@ -59,9 +59,10 @@ import { DotValidators } from './../../../../validators/dotValidators';
         DotMessagePipe,
         DotCopyButtonComponent
     ],
-    styleUrls: ['./ai-image-prompt-form.component.scss']
+    styleUrls: ['./ai-image-prompt-form.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AiImagePromptFormComponent implements OnChanges, OnInit {
+export class AiImagePromptFormComponent implements OnChanges {
     /**
      * The value of the generated AI image.
      */
@@ -70,6 +71,9 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
 
     @Input()
     isLoading = false;
+
+    @Input()
+    hasEditorContent = true;
 
     /**
      * An event that is emitted when the value of form change.
@@ -112,7 +116,7 @@ export class AiImagePromptFormComponent implements OnChanges, OnInit {
     private isUpdatingValidators = false;
     private destroyRef = inject(DestroyRef);
 
-    ngOnInit(): void {
+    constructor() {
         this.initForm();
     }
 

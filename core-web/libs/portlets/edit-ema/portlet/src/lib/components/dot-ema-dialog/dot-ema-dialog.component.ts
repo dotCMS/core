@@ -1,6 +1,5 @@
 import { fromEvent } from 'rxjs';
 
-import { NgIf, NgStyle, NgSwitch, NgSwitchCase } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -39,7 +38,7 @@ import {
 
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { ActionPayload, VTLFile } from '../../shared/models';
+import { ActionPayload, DotPage, VTLFile } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
 @Component({
@@ -48,10 +47,6 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
     templateUrl: './dot-ema-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgIf,
-        NgSwitch,
-        NgSwitchCase,
-        NgStyle,
         SafeUrlPipe,
         EmaFormSelectorComponent,
         DialogModule,
@@ -154,6 +149,16 @@ export class DotEmaDialogComponent {
             inode: vtlFile.inode,
             title: vtlFile.name
         });
+    }
+
+    /**
+     * Translate page
+     *
+     * @param {({ page: DotPage; newLanguage: number | string })} { page, newLanguage }
+     * @memberof DotEmaDialogComponent
+     */
+    translatePage({ page, newLanguage }: { page: DotPage; newLanguage: number | string }) {
+        this.store.translatePage({ page, newLanguage });
     }
 
     /**
@@ -275,6 +280,17 @@ export class DotEmaDialogComponent {
      */
     openDialogOnUrl(url: string, title: string) {
         this.store.openDialogOnURL({ url, title });
+    }
+
+    protected onHide() {
+        this.action.emit({
+            event: new CustomEvent('ng-event', {
+                detail: {
+                    name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                }
+            }),
+            payload: this.dialogState().payload
+        });
     }
 
     /**

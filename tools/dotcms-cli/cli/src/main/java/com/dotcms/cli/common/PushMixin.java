@@ -16,6 +16,16 @@ public class PushMixin {
             description = "local directory or file to push")
     public File pushPath;
 
+    // Workspace is hidden because it is not used in the push command.
+    // We already have a pushPath parameter to specify the path to push.
+    // This is here for testing purposes.
+    // We're not using here our WorkspaceMixin because this param is meant to be hidden.
+    @CommandLine.Option(names = {"--workspace"},
+            hidden = true,
+            description = {"The workspace directory.",
+                    "Current directory is used if not specified"})
+    public File workspace;
+
     @CommandLine.Option(names = {"--dry-run"}, defaultValue = "false",
             description = {
                 "When this option is enabled, the push process displays information about the changes that would be made on ",
@@ -69,12 +79,25 @@ public class PushMixin {
      * @return The path of the file.
      */
     public Path path() {
+        final Path workingDir = (this.workspace != null ? this.workspace.toPath() : Path.of("")).normalize().toAbsolutePath();
         if (null == pushPath) {
-            return Path.of("").toAbsolutePath();
+            return workingDir;
         }
-        return pushPath.toPath().normalize().toAbsolutePath();
+        return workingDir.resolve(pushPath.toPath()).normalize().toAbsolutePath();
     }
 
+    /**
+     * Returns whether a path is provided.
+     * @return true if a path is provided; false otherwise.
+     */
+    public boolean isUserProvidedPath(){
+        return null != pushPath;
+    }
+
+    /**
+     * Returns whether the watch mode is enabled.
+     * @return true if the watch mode is enabled; false otherwise.
+     */
     public boolean isWatchMode(){
         return null != interval;
     }

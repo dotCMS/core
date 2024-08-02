@@ -51,14 +51,12 @@
         [items]="items"
         [loading]="loading"
         [title]="noResultsTitle"
-        #suggestions>
-    </dot-suggestion-page>
+        #suggestions></dot-suggestion-page>
 
     <!-- Form Actions -->
     <dot-form-actions
         *ngIf="!showSuggestions && currentLink"
         (hide)="hide.emit($event)"
         (remove)="removeLink.emit($event)"
-        [link]="currentLink">
-    </dot-form-actions>
+        [link]="currentLink"></dot-form-actions>
 </div>

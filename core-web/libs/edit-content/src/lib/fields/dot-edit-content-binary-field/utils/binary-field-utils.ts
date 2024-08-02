@@ -39,7 +39,14 @@ export const getUiMessage = (messageKey: string, ...args: string[]): UiMessageI 
 
 export const getFileMetadata = (contentlet: DotCMSContentlet) => {
     const { metaData, fieldVariable } = contentlet;
+
     const metadata = metaData || contentlet[`${fieldVariable}MetaData`];
 
     return metadata || {};
+};
+
+export const getFieldVersion = (contentlet: DotCMSContentlet) => {
+    const { fileAssetVersion, fieldVariable } = contentlet;
+
+    return fileAssetVersion || contentlet[`${fieldVariable}Version`];
 };

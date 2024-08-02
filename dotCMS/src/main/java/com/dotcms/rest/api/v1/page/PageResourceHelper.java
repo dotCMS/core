@@ -7,7 +7,9 @@ import com.dotcms.mock.request.CachedParameterDecorator;
 import com.dotcms.mock.request.HttpServletRequestParameterDecoratorWrapper;
 import com.dotcms.mock.request.LanguageIdParameterDecorator;
 import com.dotcms.mock.request.ParameterDecorator;
+import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
@@ -46,6 +48,9 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -71,6 +76,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -166,7 +173,7 @@ public class PageResourceHelper implements Serializable {
                     CollectionsUtils.computeSubValueIfAbsent(
                             multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
                             CollectionsUtils::add,
-                            (String key, MultiTree multitree) -> CollectionsUtils.list(multitree));
+                            (String key, MultiTree multitree) -> list(multitree));
 
                     HibernateUtil.addCommitListener(new FlushCacheRunnable() {
 
@@ -374,7 +381,18 @@ public class PageResourceHelper implements Serializable {
 
             template.setModDate(new Date());
             // permissions have been updated above
-            return this.templateAPI.saveAndUpdateLayout(template, pageForm.getLayout(), site, APILocator.systemUser(), false);
+            final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+            final TemplateLayout oldTemplateLayout = DotTemplateTool.getTemplateLayout(oldTemplate.getDrawedBody());
+
+            final TemplateSaveParameters templateSaveParameters = new TemplateSaveParameters.Builder()
+                    .setNewTemplate(template)
+                    .setOldTemplateLayout(oldTemplateLayout)
+                    .setPageIds(list(page.getIdentifier()))
+                    .setNewLayout(pageForm.getLayout())
+                    .setSite(site)
+                    .build();
+
+            return this.templateAPI.saveAndUpdateLayout(templateSaveParameters, APILocator.systemUser(), false);
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("An error occurred when saving Template '%s' [ %s ]: %s",
                     template.getTitle(), template.getIdentifier(), ExceptionUtil.getErrorMessage(e));
@@ -456,8 +474,7 @@ public class PageResourceHelper implements Serializable {
         }
 
         Logger.debug(this, ()-> "Deleting current contentlet multi tree: " + copyContentletForm);
-        final MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
-                null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
+        final MultiTree currentMultitree = getMultiTree(htmlPage, container, contentId, instanceId, personalization, variant);
 
         if (null == currentMultitree) {
 
@@ -480,6 +497,19 @@ public class PageResourceHelper implements Serializable {
 
 
         return copiedContentlet;
+    }
+
+    private static MultiTree getMultiTree(String htmlPage, String container, String contentId, String instanceId, String personalization, String variant) throws DotDataException {
+        MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
+                null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant ? VariantAPI.DEFAULT_VARIANT.name(): variant);
+
+        if (null == currentMultitree &&
+                (ContainerUUID.UUID_START_VALUE.equals(instanceId) ||
+                        (ParseContainer.PARSE_CONTAINER_UUID_PREFIX + ContainerUUID.UUID_START_VALUE).equals(instanceId))) {
+            currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, ContainerUUID.UUID_LEGACY_VALUE,
+                    null == personalization ? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant ? VariantAPI.DEFAULT_VARIANT.name(): variant);
+        }
+        return currentMultitree;
     }
 
     /**

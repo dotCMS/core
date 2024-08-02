@@ -1,9 +1,8 @@
 import {
+    fetchPageDataFromInsideUVE,
     listenEditorMessages,
     listenHoveredContentlet,
-    pingEditor,
     scrollHandler,
-    setPageEditorConfig,
     subscriptions
 } from './listeners/listeners';
 import { CUSTOMER_ACTIONS, postMessageToEditor } from './models/client.model';
@@ -41,12 +40,8 @@ export function isInsideEditor() {
  *
  * @param conf - Optional configuration for the editor.
  */
-export function initEditor(config?: DotCMSPageEditorConfig) {
-    if (config) {
-        setPageEditorConfig(config);
-    }
-
-    pingEditor();
+export function initEditor(config: DotCMSPageEditorConfig) {
+    fetchPageDataFromInsideUVE(config.pathname);
     listenEditorMessages();
     listenHoveredContentlet();
     scrollHandler();

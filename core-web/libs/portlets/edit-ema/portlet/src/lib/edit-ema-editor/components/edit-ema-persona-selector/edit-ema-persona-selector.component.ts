@@ -1,16 +1,17 @@
 import { of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
     AfterViewInit,
     Component,
     EventEmitter,
     Input,
     OnChanges,
-    OnInit,
     Output,
+    SimpleChanges,
     ViewChild,
-    inject
+    inject,
+    signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -20,19 +21,26 @@ import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Listbox, ListboxModule } from 'primeng/listbox';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PaginatorModule } from 'primeng/paginator';
 
-import { catchError, map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
 import { DotPersona } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 
+interface PersonaSelector {
+    items: DotPersona[];
+    totalRecords: number;
+    itemsPerPage: number;
+}
+
 @Component({
     selector: 'dot-edit-ema-persona-selector',
     standalone: true,
     imports: [
-        CommonModule,
+        NgClass,
         ButtonModule,
         AvatarModule,
         OverlayPanelModule,
@@ -41,16 +49,24 @@ import { DotPageApiService } from '../../../services/dot-page-api.service';
         ListboxModule,
         ConfirmDialogModule,
         FormsModule,
-        ChipModule
+        ChipModule,
+        PaginatorModule
     ],
     templateUrl: './edit-ema-persona-selector.component.html',
     styleUrls: ['./edit-ema-persona-selector.component.scss']
 })
-export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, OnChanges {
+export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges {
     @ViewChild('listbox') listbox: Listbox;
 
     private readonly pageApiService = inject(DotPageApiService);
-    personas: DotPersona[];
+
+    readonly MAX_PERSONAS_PER_PAGE = 10;
+
+    $personas = signal<PersonaSelector>({
+        items: [],
+        totalRecords: 0,
+        itemsPerPage: 0
+    });
 
     @Input() pageId: string;
     @Input() value: DotPersona;
@@ -59,11 +75,11 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, O
     @Output() despersonalize: EventEmitter<DotPersona & { pageId: string; selected: boolean }> =
         new EventEmitter();
 
-    ngOnInit(): void {
-        this.fetchPersonas();
-    }
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes.pageId) {
+            this.fetchPersonas();
+        }
 
-    ngOnChanges(): void {
         // To select the correct persona when the page is reloaded with no queryParams
         if (this.listbox) {
             this.resetValue();
@@ -121,16 +137,36 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, O
      *
      * @memberof EditEmaPersonaSelectorComponent
      */
-    fetchPersonas() {
+    fetchPersonas(page = 0) {
         this.pageApiService
             .getPersonas({
                 pageId: this.pageId,
-                perPage: 5000
+                perPage: 5000,
+                page
             })
             .pipe(
-                map((res) => res.data),
-                catchError(() => of([]))
+                catchError(() =>
+                    of({
+                        data: [],
+                        pagination: {
+                            currentPage: 0,
+                            perPage: 0,
+                            totalEntries: 0
+                        }
+                    })
+                )
             )
-            .subscribe((personas) => (this.personas = personas));
+            .subscribe((res) =>
+                this.$personas.set({
+                    items: res.data,
+                    totalRecords: res.pagination.totalEntries,
+                    itemsPerPage: res.pagination.perPage
+                })
+            );
+    }
+
+    onPaginate(event) {
+        // PrimeNG paginator starts at 0, but the API starts at 1
+        this.fetchPersonas(event.page + 1);
     }
 }

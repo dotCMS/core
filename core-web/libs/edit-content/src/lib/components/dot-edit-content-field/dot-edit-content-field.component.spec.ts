@@ -11,6 +11,7 @@ import { By } from '@angular/platform-browser';
 
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
+    DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService
@@ -169,7 +170,7 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                 useValue: createFormGroupDirectiveMock()
             }
         ],
-        providers: [FormGroupDirective]
+        providers: [FormGroupDirective, mockProvider(DotHttpErrorManagerService)]
     });
 
     beforeEach(async () => {

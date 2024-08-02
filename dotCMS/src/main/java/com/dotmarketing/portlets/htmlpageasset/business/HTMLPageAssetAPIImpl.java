@@ -8,6 +8,7 @@ import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -71,6 +72,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Implementation class for the {@link HTMLPageAssetAPI} interface.
+ *
+ * @author Jorge Urdaneta
+ * @since Aug 28th, 2014
+ */
 public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     public static final Lazy<String> CMS_INDEX_PAGE = Lazy.of(() -> Config.getStringProperty(
@@ -245,19 +252,21 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @CloseDBIfOpened
     @Override
-    public IHTMLPage getPageByPath(String uri, Host host, Long languageId, Boolean live) throws DotDataException, DotSecurityException {
+    public IHTMLPage getPageByPath(final String uri, final Host site, final Long languageId, final Boolean live) {
         Identifier id;
         if(!UtilMethods.isSet(uri)){
             return null;
         }
-
-        if (CMSUrlUtil.getInstance().isFolder(uri, host)) {
-            id = this.getIndexPageIdentifier(uri, host);
+        final String errorMsg = "Unable to find '%s' HTML Page with URI '%s' in language '%s' in Site '%s' [%s]: %s";
+        if (CMSUrlUtil.getInstance().isFolder(uri, site)) {
+            id = this.getIndexPageIdentifier(uri, site);
         } else {
             try {
-                id = identifierAPI.find(host, uri);
-            } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find URI: " + uri);
+                id = this.identifierAPI.find(site, uri);
+            } catch (final Exception e) {
+                Logger.error(this, String.format(errorMsg, live ? "live" : "working",
+                        uri, languageId, site, site.getIdentifier(),
+                        ExceptionUtil.getErrorMessage(e)), e);
                 return null;
             }
         }
@@ -266,30 +275,31 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             return null;
         }
 
-        if ("contentlet".equals(id.getAssetType())) {
+        if (Identifier.ASSET_TYPE_CONTENTLET.equals(id.getAssetType())) {
             try {
                 final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
                 Optional<ContentletVersionInfo> cinfo = versionableAPI
                         .getContentletVersionInfo( id.getId(), languageId, currentVariantId);
 
-                if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
+                if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(CMSUrlUtil.NOT_FOUND)) {
 
                     cinfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId);
 
-                    if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
+                    if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(CMSUrlUtil.NOT_FOUND)) {
                         return null;
                     }
                 }
 
-                Contentlet contentlet = contentletAPI.find(live ? cinfo.get().getLiveInode()
-                        : cinfo.get().getWorkingInode(), userAPI.getSystemUser(), false);
+                final Contentlet contentlet = this.contentletAPI.find(live ? cinfo.get().getLiveInode()
+                        : cinfo.get().getWorkingInode(), this.userAPI.getSystemUser(), false);
 
-                if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                if (BaseContentType.HTMLPAGE.getType() == contentlet.getContentType().baseType().getType()) {
                     return fromContentlet(contentlet);
                 }
-
-            } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find URI: " + uri);
+            } catch (final Exception e) {
+                Logger.error(this, String.format(errorMsg, live ? "live" : "working",
+                        uri, languageId, site, site.getIdentifier(),
+                        ExceptionUtil.getErrorMessage(e)));
                 return null;
             }
         }

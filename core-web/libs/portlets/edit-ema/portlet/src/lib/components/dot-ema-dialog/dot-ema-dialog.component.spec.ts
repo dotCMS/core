@@ -13,6 +13,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 
 import {
     DotAlertConfirmService,
@@ -37,8 +38,9 @@ import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
-import { PAYLOAD_MOCK } from '../../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../../shared/enums';
+import { PAYLOAD_MOCK } from '../../shared/mocks';
+import { DotPage } from '../../shared/models';
 
 describe('DotEmaDialogComponent', () => {
     let spectator: Spectator<DotEmaDialogComponent>;
@@ -179,6 +181,24 @@ describe('DotEmaDialogComponent', () => {
                 payload: PAYLOAD_MOCK
             });
         });
+
+        it('should dispatch onHide when p-dialog hide', () => {
+            const actionSpy = jest.spyOn(component.action, 'emit');
+
+            component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler(Dialog, 'onHide', {});
+
+            expect(actionSpy).toHaveBeenCalledWith({
+                event: new CustomEvent('ng-event', {
+                    detail: {
+                        name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
+                    }
+                }),
+                payload: PAYLOAD_MOCK
+            });
+        });
     });
 
     describe('component methods', () => {
@@ -248,6 +268,24 @@ describe('DotEmaDialogComponent', () => {
                 acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
                 language_id: PAYLOAD_MOCK.language_id,
                 payload: PAYLOAD_MOCK
+            });
+        });
+
+        it('should trigger translatePage from the store', () => {
+            const translatePageSpy = jest.spyOn(storeSpy, 'translatePage');
+
+            component.translatePage({
+                page: {
+                    title: 'test'
+                } as DotPage,
+                newLanguage: '1'
+            });
+
+            expect(translatePageSpy).toHaveBeenCalledWith({
+                page: {
+                    title: 'test'
+                },
+                newLanguage: '1'
             });
         });
 

@@ -19,6 +19,7 @@ public class SiteOrFolderFieldDataFetcher implements DataFetcher<Map<String, Obj
         try {
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
             final Contentlet contentlet = environment.getSource();
+            Logger.debug(this, ()-> "Fetching site or folder for contentlet: " + contentlet.getIdentifier());
             final Map<String, Object>
                 siteOrFolderMap =
                 (Map<String, Object>) new FolderToMapTransformer(contentlet, user)

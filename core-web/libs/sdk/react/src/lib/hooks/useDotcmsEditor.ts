@@ -2,28 +2,42 @@ import { useEffect, useState } from 'react';
 
 import {
     DotCMSPageEditorConfig,
+    DotCmsClient,
     destroyEditor,
     initEditor,
-    isInsideEditor,
+    isInsideEditor as isInsideEditorFn,
     updateNavigation
 } from '@dotcms/client';
-export const useDotcmsEditor = (config?: DotCMSPageEditorConfig) => {
-    const [isInsideEditorPage, setIsInsideEditorPage] = useState(false);
+
+export const useDotcmsEditor = ({ pathname, onReload }: DotCMSPageEditorConfig) => {
+    const [isInsideEditor, setIsInsideEditor] = useState(false);
+
     useEffect(() => {
-        const insideEditor = isInsideEditor();
-        if (insideEditor) {
-            initEditor(config);
-            updateNavigation(config?.pathname || '/');
+        const insideEditor = isInsideEditorFn();
+
+        if (!insideEditor) {
+            return;
         }
 
-        setIsInsideEditorPage(insideEditor);
+        initEditor({ pathname });
+        updateNavigation(pathname || '/');
+        setIsInsideEditor(insideEditor);
 
-        return () => {
-            if (insideEditor) {
-                destroyEditor();
-            }
-        };
-    }, [config]);
+        return () => destroyEditor();
+    }, [pathname]);
 
-    return isInsideEditorPage;
+    useEffect(() => {
+        const insideEditor = isInsideEditorFn();
+        const client = DotCmsClient.instance;
+
+        if (!insideEditor || !onReload) {
+            return;
+        }
+
+        client.editor.on('changes', () => onReload?.());
+
+        return () => client.editor.off('changes');
+    }, [onReload]);
+
+    return { isInsideEditor };
 };

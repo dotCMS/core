@@ -1,4 +1,4 @@
-name: Reusable CI Build Test
+name: Reusable CI Test
 on:
   workflow_call:
     inputs:
@@ -32,13 +32,7 @@ on:
       DOTCMS_LICENSE:
         required: true
 env:
-  JVM_TEST_MAVEN_OPTS: "-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-  DOCKER_PLATFORMS: "linux/amd64,linux/arm64"
-  REGISTRY: ghcr.io
-  DOCKER_IMAGE: dotcms/dotcms_test
-  DOCKER_TAG: run-${{ inputs.artifact-run-id || github.run_id }}
   ARTIFACT_RUN_ID: ${{ inputs.artifact-run-id || github.run_id }}
-
 jobs:
   #
   # Run all JVM Unit Tests in parallel with other tests
@@ -50,125 +44,41 @@ jobs:
     timeout-minutes: 240
     env:
       MAVEN_OPTS: -Xmx2048m
-    strategy:
-      fail-fast: false
-      matrix:
-        java: [ { name: "11", java-version: 11, distribution: 'temurin', maven_args: "" } ]
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ matrix.java.name }}
-        uses: actions/setup-java@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          java-version: ${{ matrix.java.java-version }}
-          distribution: ${{ matrix.java.distribution }}
-      - name: Get Date
-        id: get-date
-        run: |
-          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Download Maven Repo
-        uses: actions/download-artifact@v4
+          fetch-depth: 0
+      - uses: ./.github/actions/maven-job
         with:
-          run-id: ${{ env.ARTIFACT_RUN_ID }}
+          stage-name: "JVM Tests"
+          maven-args: "-Pcoverage -Dprod test -pl :dotcms-core"
+          cleanup-runner: true
+          generates-test-results: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: maven-repo
-          path: ~/.m2/repository
-      - name: Build
-        # exclude core web we aare testing that separately
-        run: eval ./mvnw -Pcoverage -Dprod $JVM_TEST_MAVEN_OPTS test -pl \!:dotcms-core-web ${{ matrix.java.maven_args}}
-      - name: Prepare reports archive (if maven failed)
-        if: failure()
-        shell: bash
-        run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
-      - name: Upload reports Archive (if maven failed)
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: test-reports-linux-jvm${{matrix.java.name}}
-          path: 'test-reports.tgz'
-      - name: core-maven-unit-tests
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: "build-reports-test-JVM Tests - JDK ${{matrix.java.name}}"
-          path: |
-            dotCMS/target/*-reports/TEST-*.xml
-            dotCMS/target/jacoco-report/*.exec
-            target/build-report.json
-            LICENSE
-          retention-days: 2
-
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
   linux-cli-tests:
-    name: CLI Tests - JDK ${{matrix.java.name}}
+    name: CLI Tests
     runs-on: ubuntu-20.04
     if: inputs.cli || inputs.run-all-tests
     timeout-minutes: 240
     env:
       MAVEN_OPTS: -Xmx2048m
-    strategy:
-      fail-fast: true
-      matrix:
-        java: [ { name: "11", java-version: 11, distribution: 'temurin', maven_args: "" } ]
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ matrix.java.name }}
-        uses: actions/setup-java@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          java-version: ${{ matrix.java.java-version }}
-          distribution: ${{ matrix.java.distribution }}
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v4
+          fetch-depth: 0
+      - uses: ./.github/actions/maven-job
         with:
-          run-id: ${{ env.ARTIFACT_RUN_ID }}
+          stage-name: "CLI Tests"
+          maven-args: "-pl :dotcms-api-data-model,:dotcms-cli verify"
+          generates-test-results: true
+          cleanup-runner: true
+          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+          needs-docker-image: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: docker-image
-          path: /tmp/docker-image
-      - name: Load Docker image from tar file
-        run: docker load < /tmp/docker-image/image.tar
-      - name: Get Date
-        id: get-date
-        run: |
-          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Download Maven Repo
-        uses: actions/download-artifact@v4
-        with:
-          run-id: ${{ env.ARTIFACT_RUN_ID }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: maven-repo
-          path: ~/.m2/repository
-      - id: prepare-license
-        name: Prepare license
-        env:
-          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        run: |
-          DOTCMS_LICENSE_PATH=~/.dotcms/license
-          mkdir -p ${DOTCMS_LICENSE_PATH}
-          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
-          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
-      - name: Build
-        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -Dtestcontainers.docker.image=${DOCKER_IMAGE}:${DOCKER_TAG} -pl :dotcms-api-data-model,:dotcms-cli verify ${{ matrix.java.maven_args}}
-      - name: Prepare reports archive (if maven failed)
-        if: failure()
-        shell: bash
-        run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
-      - name: Upload reports Archive (if maven failed)
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: test-reports-cli-jvm${{matrix.java.name}}
-          path: 'test-reports.tgz'
-      - name: cli-tests
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: "build-reports-test-cli - JDK ${{matrix.java.name}}"
-          path: |
-            tools/dotcms-cli/**/target/failsafe-reports/*.xml
-            tools/dotcms-cli/**/target/jacoco-report/*.exec
-            target/build-report.json
-            LICENSE
-          retention-days: 2
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
 
   #
   # Run Frontend Tests
@@ -181,69 +91,24 @@ jobs:
     env:
       MAVEN_OPTS: -Xmx2048m
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 11
-        uses: actions/setup-java@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          java-version: 11
-          distribution: 'temurin'
-      - name: Get Date
-        id: get-date
-        run: |
-          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Download Maven Repo
-        uses: actions/download-artifact@v4
+          fetch-depth: 0
+      - uses: ./.github/actions/maven-job
         with:
-          run-id: ${{ env.ARTIFACT_RUN_ID }}
+          stage-name: "Frontend Tests"
+          maven-args: "-pl :dotcms-core-web test"
+          generates-test-results: true
+          cleanup-runner: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: maven-repo
-          path: ~/.m2/repository
-        continue-on-error: true
-      - name: Restore Node Binary
-        id: cache-node-binary
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            installs
-          key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
-      - name: Cache yarn
-        id: cache-yarn
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/yarn
-          # if specific cache does not exist then can base upon latest version
-          key: yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: yarn-
-      - name: Build # expect node cache to exist from
-        shell: bash
-        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
-      - name: Prepare failure archive (if maven failed)
-        if: failure()
-        shell: bash
-        run: find . -name 'surefire-reports' -type d | tar -czf test-reports.tgz -T -
-      - name: Upload failure Archive (if maven failed)
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: test-reports-frontend
-          path: 'test-reports.tgz'
-      - name: frontend-unit-tests
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: "build-reports-test-Frontend unit tests"
-          path: |
-            core-web/target/*-reports/**/TEST-*.xml
-            target/build-report.json
-            LICENSE
-          retention-days: 2
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+
   #
   # Run Legacy Integration test suite batches
   #
   linux-integration-tests:
-    name: JVM IT Tests - JDK ${{matrix.java.name}} ${{matrix.suites.name}}
+    name: JVM IT Tests ${{matrix.suites.name}}
     runs-on: ubuntu-20.04
     # Skip master in forks
     if: inputs.integration || inputs.run-all-tests
@@ -253,56 +118,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ { name: "11", java-version: 11, distribution: 'temurin', maven_args: "" } ]
         suites:
-          - { name: "MainSuite 1a", pathName: "mainsuite1a", maven_args: '-Dit.test=MainSuite1a -Dit.test.forkcount=1' }
-          - { name: "MainSuite 1b", pathName: "mainsuite1b", maven_args: '-Dit.test=MainSuite1b -Dit.test.forkcount=1' }
-          - { name: "MainSuite 2a", pathName: "mainsuite2a", maven_args: '-Dit.test=MainSuite2a -Dit.test.forkcount=1' }
-          - { name: "MainSuite 2b", pathName: "mainsuite2b", maven_args: '-Dit.test=MainSuite2b -Dit.test.forkcount=1' }
+          - { name: "MainSuite 1a", pathName: "mainsuite1a", maven_args: '-Dit.test=MainSuite1a' }
+          - { name: "MainSuite 1b", pathName: "mainsuite1b", maven_args: '-Dit.test=MainSuite1b' }
+          - { name: "MainSuite 2a", pathName: "mainsuite2a", maven_args: '-Dit.test=MainSuite2a' }
+          - { name: "MainSuite 2b", pathName: "mainsuite2b", maven_args: '-Dit.test=MainSuite2b' }
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up IT Tests ${{ matrix.java.name }} ${{ matrix.suites.name }}
-        uses: actions/setup-java@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          java-version: ${{ matrix.java.java-version }}
-          distribution: ${{ matrix.java.distribution }}
-      - name: Get Date
-        id: get-date
-        run: |
-          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Download Maven Repo
-        uses: actions/download-artifact@v4
+          fetch-depth: 0
+      - uses: ./.github/actions/maven-job
         with:
-          run-id: ${{ env.ARTIFACT_RUN_ID }}
+          stage-name: "IT Tests ${{ matrix.suites.name }}"
+          maven-args: "-Dit.test.forkcount=1 -Pcoverage verify -pl :dotcms-integration -Dcoreit.test.skip=false ${{ matrix.suites.maven_args}}"
+          generates-test-results: true
+          cleanup-runner: true
+          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+          requires-node: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: maven-repo
-          path: ~/.m2/repository
-      - name: Build
-        env:
-          DOT_DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
-        run: eval ./mvnw -Pcoverage -Dprod $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-integration -Dcoreit.test.skip=false ${{ matrix.suites.maven_args}} ${{ matrix.java.maven_args}}
-      - name: Prepare reports archive (if maven failed)
-        if: failure()
-        shell: bash
-        run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
-      - name: Upload failure Archive (if maven failed)
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: test-reports-linux-jvm${{matrix.java.name}}-${{matrix.suites.pathName}}
-          path: 'test-reports.tgz'
-      - name: failsafe-it-tests  # Uploads will be merged with same name
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: "build-reports-test-IT Tests - JDK ${{matrix.java.name}} - ${{matrix.suites.name}}"
-          path: |
-            dotcms-integration/target/failsafe-reports/*.xml
-            dotcms-integration/target/jacoco-report/*.exec
-            target/build-report.json
-            LICENSE
-          retention-days: 2
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+
 
   linux-postman-tests:
     name: Run Postman Tests - ${{matrix.collection_group}}
@@ -313,79 +149,17 @@ jobs:
       matrix:
         collection_group: [ 'category-content', 'container', 'experiment', 'graphql', 'page', 'pp', 'template', 'workflow', 'default-split', 'default' ]
     steps:
-      - id: fetch-core
-        name: Fetch Core Repo
+      - name: Checkout code
         uses: actions/checkout@v4
-      - uses: ./.github/actions/cleanup-runner
-      - name: Download Maven Repo
-        uses: actions/download-artifact@v4
         with:
-          run-id: ${{ env.ARTIFACT_RUN_ID }}
+          fetch-depth: 0
+      - uses: ./.github/actions/maven-job
+        with:
+          stage-name: "Postman ${{ matrix.collection_group }}"
+          maven-args: "-Pcoverage verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=${{ matrix.collection_group }}"
+          generates-test-results: true
+          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+          requires-node: true
+          needs-docker-image: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: maven-repo
-          path: ~/.m2/repository
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v4
-        with:
-          run-id: ${{ env.ARTIFACT_RUN_ID }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: docker-image
-          path: /tmp/docker-image
-      - name: Load Docker image from tar file
-        run: docker load < /tmp/docker-image/image.tar
-
-      - name: Cache Node Binary
-        id: cache-node-binary
-        uses: actions/cache@v4
-        with:
-          path: |
-            installs
-          key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
-      - name: Cache yarn
-        id: cache-yarn
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/yarn
-          # if specific cache does not exist then can base upon latest version
-          key: yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: yarn-
-      - name: Prepare license
-        run: |
-          mkdir -p ~/.dotcms/license/
-          touch ~/.dotcms/license/license.dat
-          echo "${{ secrets.DOTCMS_LICENSE }}" > ~/.dotcms/license/license.dat
-      - id: run-postman-tests
-        name: Run Postman Tests
-        timeout-minutes: 90
-        run: |
-          ./mvnw -Pcoverage $JVM_TEST_MAVEN_OPTS verify \
-            -pl :dotcms-postman -Dpostman.test.skip=false \
-            -Dpostman.collections=${{ matrix.collection_group }} \
-            -Ddotcms.image.name=${DOCKER_IMAGE}:${DOCKER_TAG}
-          pec=$?
-          [[ pec -eq 0 ]] || exit pec
-      - name: Prepare reports archive (if maven failed)
-        if: failure()
-        shell: bash
-        run: |
-          find . -name '*-reports' -type d
-          tree ./dotcms-postman
-          find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
-      - name: Upload failure Archive (if maven failed)
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: test-reports-postman-${{ matrix.collection_group }}
-          path: 'test-reports.tgz'
-      - name: failsafe-postman-tests  # Uploads will be merged with same name
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: "build-reports-test-postman - ${{ matrix.collection_group }}"
-          path: |
-            dotcms-postman/target/failsafe-reports/*.xml
-            dotcms-postman/target/jacoco-report/*.exec
-            target/build-report.json
-            LICENSE
-          retention-days: 2
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}

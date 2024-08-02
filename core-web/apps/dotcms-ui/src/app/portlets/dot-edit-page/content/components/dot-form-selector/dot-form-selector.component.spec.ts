@@ -36,7 +36,9 @@ const mockContentType: DotCMSContentType = {
 };
 
 @Component({
-    template: ` <dot-form-selector [show]="show"></dot-form-selector> `
+    template: `
+        <dot-form-selector [show]="show"></dot-form-selector>
+    `
 })
 class TestHostComponent {
     show = false;

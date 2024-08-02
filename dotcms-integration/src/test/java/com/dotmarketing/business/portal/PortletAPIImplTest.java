@@ -12,6 +12,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.Portlet;
@@ -22,15 +23,20 @@ import com.liferay.portlet.StrutsPortlet;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.xml.parsers.ParserConfigurationException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.xml.sax.SAXException;
 
 @RunWith(DataProviderRunner.class)
 public class PortletAPIImplTest {
@@ -62,17 +68,36 @@ public class PortletAPIImplTest {
     private Portlet createCustomPortlet(final String name, final String portletId, final String baseTypes, final String contentTypes, final String dataViewMode)
             throws LanguageException, DotDataException {
 
-        final Map<String, String> initValues = new HashMap<>();
 
-        initValues.put("view-action","/ext/contentlet/view_contentlets");
-        initValues.put("name", name);
-        initValues.put("baseTypes", baseTypes);
-        initValues.put("contentTypes", contentTypes);
-        initValues.put("dataViewMode", dataViewMode);
+        final DotPortlet newPortlet = DotPortlet.builder()
+                .portletId(portletId)
+                .portletClass(StrutsPortlet.class.getName())
+                .putInitParam("view-action", "/ext/contentlet/view_contentlets")
+                .putInitParam("name", name)
+                .putInitParam("baseTypes", baseTypes)
+                .putInitParam("contentTypes", contentTypes)
+                .putInitParam("dataViewMode", dataViewMode)
+                .build();
 
-        final Portlet newPortlet = portletApi.savePortlet(new DotPortlet(portletId, StrutsPortlet.class.getName(), initValues),systemUser);
+        return portletApi.savePortlet(newPortlet.toPortlet(), systemUser);
+    }
 
-        return newPortlet;
+    /**
+     * Test case to ensure no portlets are returned from the mixed-portlets-test.xml file
+     * It should handle without error  but ignore portlet elements within the portlets element
+     * that do not contain a portlet-name and portlet-class
+     */
+    @Test
+    public void test_portletsFromMixedPortletXml() throws Exception {
+        String resourcePath = "/com/dotmarketing/business/portal/mixed-portlets-test.xml";
+        try (InputStream stream = getClass().getResourceAsStream(resourcePath)) {
+            assertNotNull("Resource not found: " + resourcePath, stream);
+            Map<String, Portlet> portlets = new PortletFactoryImpl().xmlToPortlets(stream);
+            assertEquals("Expecting exactly 1 valid portlet", 1, portlets.size());
+        } catch (IOException | ParserConfigurationException | SAXException e) {
+            Logger.error(this, "Error loading portlets from liferay-portlet.xml", e);
+            Assert.fail("Exception occurred: " + e.getMessage());
+        }
     }
 
     /**
@@ -107,7 +132,12 @@ public class PortletAPIImplTest {
                         contentType -> returnedContentTypes.contains(contentType.trim())));
             }
         }catch (DotDataException | IllegalArgumentException e){
-            Assert.assertFalse(testCase.createdSuccessfully);
+            if (testCase.createdSuccessfully) {
+                Logger.error(PortletAPIImplTest.class, "Did not expect Exception for test", e);
+            } else {
+                Logger.info(PortletAPIImplTest.class,"Expected Exception found: " + e.getMessage());
+            }
+            Assert.assertFalse(e.getMessage(),testCase.createdSuccessfully);
             return;
         }finally {
             if(portlet!=null){

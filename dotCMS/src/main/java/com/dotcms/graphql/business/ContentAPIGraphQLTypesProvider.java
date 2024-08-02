@@ -149,6 +149,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     private Set<GraphQLType> getContentAPITypes() throws DotDataException {
 
+        Logger.debug(this, ()-> "Getting all Content Types for GraphQL Schema");
         final Set<GraphQLType> contentAPITypes = new HashSet<>(InterfaceType.valuesAsSet());
 
         contentAPITypes.addAll(CustomFieldType.getCustomFieldTypes());
@@ -167,6 +168,8 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         allTypes.forEach((type) -> {
             try {
+
+                Logger.debug(this, ()-> "Generating GraphQL Type for type: " + type.variable());
                 contentAPITypes.add(createType(type));
             }catch (IllegalArgumentException e) {
                 Logger.error(this, "Unable to generate GraphQL Type for type: " + type.variable());
@@ -208,6 +211,9 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
             if (!(field instanceof RowField) && !(field instanceof ColumnField)) {
                 try {
+
+                    Logger.debug(this, ()-> "Generating GraphQL Field for field: " + field.variable()
+                            + " of type: " + contentType.variable());
                     fieldDefinitions.add(fieldGeneratorFactory.getGenerator(field).generateField(field));
                 } catch(FieldGenerationException e) {
                     Logger.error(this, "Unable to generate GraphQL Field for field: " + field.variable(), e);
@@ -220,7 +226,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 .argument(GraphQLArgument.newArgument()
                         .name("render")
                         .type(GraphQLBoolean)
-                        .defaultValue(null)
+                        .defaultValueProgrammatic(null)
                         .build())
                 .type(ExtendedScalars.Json)
                 .dataFetcher(new DotJSONDataFetcher()).build());

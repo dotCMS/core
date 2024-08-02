@@ -13,8 +13,29 @@ describe('CategoriesService', () => {
         const inode = 'inode-identifier';
         spectator.service.getChildren(inode).subscribe();
         spectator.expectOne(
-            `${API_URL}/children?per_page=${ITEMS_PER_PAGE}&direction=ASC&inode=${inode}&showChildrenCount=true`,
+            `${API_URL}/children?inode=${inode}&per_page=${ITEMS_PER_PAGE}&direction=ASC&showChildrenCount=true`,
             HttpMethod.GET
+        );
+    });
+
+    it('can getChildren with inode & filter', () => {
+        const inode = 'inode-identifier';
+        const filter = 'query';
+        spectator.service.getChildren(inode, { filter }).subscribe();
+        spectator.expectOne(
+            `${API_URL}/children?inode=${inode}&per_page=${ITEMS_PER_PAGE}&direction=ASC&filter=${filter}&allLevels=true`,
+
+            HttpMethod.GET
+        );
+    });
+
+    it('can getSelectedHierarchy of selected categories', () => {
+        const keys = ['key1', 'key2', 'key3'];
+        spectator.service.getSelectedHierarchy(keys).subscribe();
+        spectator.expectOne(
+            `${API_URL}/hierarchy`,
+
+            HttpMethod.POST
         );
     });
 });

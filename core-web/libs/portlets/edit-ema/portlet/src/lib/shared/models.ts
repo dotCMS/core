@@ -1,15 +1,24 @@
-import { DotDevice, DotExperiment } from '@dotcms/dotcms-models';
+import { DotDevice } from '@dotcms/dotcms-models';
+import { InfoPage } from '@dotcms/ui';
 
-import { EDITOR_MODE, EDITOR_STATE } from './enums';
+import { CommonErrors } from './enums';
 
 import {
     ClientContentletArea,
     Container,
-    ContentletArea,
-    EmaDragItem,
     UpdatedContentlet
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api.service';
+
+export interface InfoOptions {
+    icon: string;
+    info: {
+        message: string;
+        args: string[];
+    };
+    id: string;
+    actionIcon?: string;
+}
 
 export interface VTLFile {
     inode: string;
@@ -75,46 +84,14 @@ export interface SavePagePayload {
     whenSaved?: () => void;
 }
 
-export interface ReloadPagePayload {
-    params: DotPageApiParams;
-    whenReloaded?: () => void;
-}
-
 export interface NavigationBarItem {
     icon?: string;
     iconURL?: string;
     label: string;
     href?: string;
-    action?: () => void;
+    id: string;
     isDisabled?: boolean;
-}
-
-export interface EditorData {
-    mode: EDITOR_MODE;
-    device?: DotDevice & { icon?: string };
-    socialMedia?: string;
-    canEditVariant?: boolean;
-    canEditPage?: boolean;
-    variantId?: string;
-    page?: {
-        isLocked: boolean;
-        canLock: boolean;
-        lockedByUser: string;
-    };
-}
-
-export interface EditEmaState {
-    clientHost: string;
-    error?: number;
-    editor: DotPageApiResponse;
-    isEnterpriseLicense: boolean;
-    editorState: EDITOR_STATE;
-    bounds: Container[];
-    contentletArea: ContentletArea;
-    editorData: EditorData;
-    currentExperiment?: DotExperiment;
-    dragItem?: EmaDragItem;
-    shouldReload: boolean;
+    tooltip?: string;
 }
 
 export interface MessageInfo {
@@ -198,3 +175,27 @@ export interface SaveInlineEditing {
     contentlet: { [fieldName: string]: string; inode: string };
     params: DotPageApiParams;
 }
+
+export interface DotPage {
+    title: string;
+    identifier: string;
+    inode: string;
+    canEdit: boolean;
+    canRead: boolean;
+    canLock?: boolean;
+    locked?: boolean;
+    lockedBy?: string;
+    lockedByName?: string;
+    pageURI: string;
+    rendered?: string;
+    contentType: string;
+    live: boolean;
+    liveInode?: string;
+    stInode?: string;
+}
+
+export interface DotDeviceWithIcon extends DotDevice {
+    icon?: string;
+}
+
+export type CommonErrorsInfo = Record<CommonErrors, InfoPage>;

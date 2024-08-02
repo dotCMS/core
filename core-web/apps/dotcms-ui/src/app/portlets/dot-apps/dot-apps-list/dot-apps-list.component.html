@@ -1,7 +1,7 @@
 <dot-portlet-base>
     <dot-not-license *ngIf="!canAccessPortlet; else licensed" />
-    <ng-template #licensed
-        ><div class="dot-apps__container">
+    <ng-template #licensed>
+        <div class="dot-apps__container">
             <div class="dot-apps__header">
                 <input
                     [placeholder]="('apps.search.placeholder' | dm) || ''"
@@ -11,11 +11,9 @@
                 <div class="dot-apps__header-actions">
                     <div class="dot-apps__header-info">
                         <dot-icon name="help" size="18"></dot-icon>
-                        <a
-                            href="https://dotcms.com/docs/latest/apps-integrations"
-                            target="_blank"
-                            >{{ 'apps.link.info' | dm }}</a
-                        >
+                        <a href="https://dotcms.com/docs/latest/apps-integrations" target="_blank">
+                            {{ 'apps.link.info' | dm }}
+                        </a>
                     </div>
                     <button
                         (click)="confirmImportExport('Import')"

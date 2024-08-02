@@ -9,33 +9,34 @@
     [modal]="true"
     appendTo="body"
     data-testId="dialog"
-    styleClass="edit-ema-dialog">
-    <ng-container [ngSwitch]="ds.type">
-        <dot-ema-form-selector
-            *ngSwitchCase="'form'"
-            (selected)="onFormSelected($event)"
-            data-testId="form-selector" />
-
-        <ng-container *ngSwitchCase="'content'">
-            <iframe
-                *ngIf="ds.url"
-                (load)="onIframeLoad()"
-                [style]="{
-                    border: 'none',
-                    height: ds.status !== dialogStatus.INIT ? '0' : null
-                }"
-                [src]="ds.url | safeUrl"
-                #iframe
-                title="dialog"
-                data-testId="dialog-iframe"
-                width="100%"
-                height="100%"></iframe>
-            <dot-spinner
-                *ngIf="ds.status === dialogStatus.LOADING"
-                [ngStyle]="{ position: 'absolute', top: '50%' }"
-                data-testId="spinner"></dot-spinner>
-        </ng-container>
-    </ng-container>
+    styleClass="edit-ema-dialog"
+    (onHide)="onHide()">
+    @switch (ds.type) {
+        @case ('form') {
+            <dot-ema-form-selector
+                (selected)="onFormSelected($event)"
+                data-testId="form-selector" />
+        }
+        @case ('content') {
+            @if (ds.url) {
+                <iframe
+                    (load)="onIframeLoad()"
+                    [style]="{
+                        border: 'none',
+                        height: ds.status !== dialogStatus.INIT ? '0' : null
+                    }"
+                    [src]="ds.url | safeUrl"
+                    #iframe
+                    title="dialog"
+                    data-testId="dialog-iframe"
+                    width="100%"
+                    height="100%"></iframe>
+            }
+            @if (ds.status === dialogStatus.LOADING) {
+                <dot-spinner class="absolute top-50" data-testId="spinner"></dot-spinner>
+            }
+        }
+    }
 
     <p-dialog
         (visibleChange)="closeCompareDialog()"
