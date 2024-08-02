@@ -1,5 +1,7 @@
 @if ($categories().length) {
-    <div class="w-full category-list__header">Root</div>
+    <div class="w-full category-list__header">
+        <dot-collapse-breadcrumb data-testId="breadcrumb-menu" [model]="$breadcrumbsMenu()" />
+    </div>
     <div
         [ngClass]="{ 'no-overflow-x-yet': $emptyColumns().length }"
         class="flex-1 category-list__category-list">
@@ -16,7 +18,7 @@
                         [ngClass]="{ 'category-list__item--selected': item.clicked }"
                         (click)="rowClicked.emit({ index, item })">
                         <p-checkbox
-                            [(ngModel)]="itemsSelected"
+                            [(ngModel)]="$selected"
                             [value]="item.key"
                             (onChange)="itemChecked.emit({ selected: $event.checked, item })" />
 
@@ -50,5 +52,5 @@
         }
     </div>
 } @else {
-    <dot-empty-container [configuration]="emptyState" [hideContactUsLink]="true" />
+    <dot-empty-container [configuration]="$emptyState()" [hideContactUsLink]="true" />
 }
