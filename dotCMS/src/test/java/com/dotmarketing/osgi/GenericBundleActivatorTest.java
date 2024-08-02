@@ -29,7 +29,7 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class GenericBundleActivatorTest {
+class GenericBundleActivatorTest {
 
     private static final String COM_LIFERAY_PORTLET_JSPPORTLET = "com.liferay.portlet.JSPPortlet";
     private static final String COM_LIFERAY_PORTLET_VELOCITY_PORTLET = "com.liferay.portlet.VelocityPortlet";
@@ -59,7 +59,7 @@ public class GenericBundleActivatorTest {
     }
 
     @Test
-    public void testRegisterPortlets() throws Exception {
+    void testRegisterPortlets() throws Exception {
         // Arrange
         String[] xmls = {"conf/portlet.xml", "conf/liferay-portlet.xml"};
         Portlet jspPortlet = mockPortlet(COM_LIFERAY_PORTLET_JSPPORTLET, "ext/hello.jsp");

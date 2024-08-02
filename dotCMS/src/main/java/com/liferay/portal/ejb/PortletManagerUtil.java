@@ -43,17 +43,22 @@ public class PortletManagerUtil {
 
             final Map<String,Portlet> foundPortlets = portletFactory.xmlToPortlets(xmls);
             for(Portlet portlet : foundPortlets.values()) {
-               try {
-                   portletFactory.insertPortlet(portlet);
-               } catch (final Exception e) {
-                   Logger.error(PortletManagerUtil.class, "Failed to insert portlet to DB "+portlet.getPortletId(), e);
-               }
+                tryToInsertPortlet(portlet, portletFactory);
             }
             return foundPortlets;
         } catch (final Exception e) {
             throw new com.liferay.portal.SystemException(e);
         }
     }
+
+    private static void tryToInsertPortlet(Portlet portlet, PortletFactory portletFactory) {
+        try {
+            portletFactory.insertPortlet(portlet);
+        } catch (final Exception e) {
+            Logger.error(PortletManagerUtil.class, "Failed to insert portlet to DB "+ portlet.getPortletId(), e);
+        }
+    }
+
     @CloseDBIfOpened
     public static com.liferay.portal.model.Portlet getPortletById(final java.lang.String companyId, final java.lang.String portletId)
             throws com.liferay.portal.SystemException {
