@@ -50,6 +50,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -57,7 +58,6 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -777,7 +777,7 @@ public class ContentTypeResource implements Serializable {
 																								   final boolean isNew) throws DotSecurityException, DotDataException {
 
 		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = new ArrayList<>();
-		final ContentType contentTypeSaved = contentTypeAPI.save(contentType);
+		ContentType contentTypeSaved = contentTypeAPI.save(contentType);
 		this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
 
 		if (!isNew) {
@@ -785,6 +785,11 @@ public class ContentTypeResource implements Serializable {
 					this.contentTypeHelper::generateFieldKey
 			), user, contentTypeAPI);
 		}
+
+		// Make sure we have the correct layout for the content type
+		contentTypeSaved = this.contentTypeHelper.fixLayoutIfNecessary(
+				contentTypeSaved.id(), user
+		);
 
 		if (UtilMethods.isSet(systemActionMappings)) {
 
@@ -847,12 +852,11 @@ public class ContentTypeResource implements Serializable {
 				);
 
 		if (!diffResult.getToDelete().isEmpty()) {
-			APILocator.getContentTypeFieldLayoutAPI().deleteField(
-					currentContentType,
+			APILocator.getContentTypeFieldAPI().deleteFields(
 					diffResult.getToDelete().values().stream().
 							map(Field::id).
-							collect(Collectors.toList()),
-					user);
+							collect(Collectors.toList()), user
+			);
 		}
 
 		if (!diffResult.getToAdd().isEmpty()) {
