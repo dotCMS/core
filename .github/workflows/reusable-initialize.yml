@@ -157,7 +157,7 @@ jobs:
               elif [ "${module}" == "jvm_unit_test" ]; then
                 jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}
               elif [ "${module}" == "sdk_libs" ]; then
-                sdk=${{ steps.filter.outputs.sdk_libs }}
+                sdk_libs=${{ steps.filter.outputs.sdk_libs }}
               fi
             done
           fi          
