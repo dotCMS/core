@@ -17,6 +17,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 
 //This interface should have default package access
@@ -270,6 +271,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	protected List<WorkflowAction> addActions(WorkflowStep step, List<WorkflowAction> actions) {
 		if(step == null || actions==null)return null;
 		cache.put(step.getId(), actions, ACTION_GROUP);
+		actions.forEach(action -> addAction(action));
 		return actions;
 		
 	}
@@ -280,6 +282,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		if(scheme == null || actions==null)return null;
 
 		cache.put(scheme.getId(), actions, ACTION_GROUP);
+		actions.forEach(action -> addAction(action));
 		return actions;
 	}
 
@@ -293,6 +296,39 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		}
 		return null;
 	}
+
+	@Override
+	protected Optional<WorkflowAction> getAction(String actionId) {
+		if(actionId == null ) {
+			return Optional.empty();
+		}
+		try {
+			return Optional.ofNullable((WorkflowAction)cache.getNoThrow("action:" +actionId, ACTION_GROUP));
+		} catch (Exception e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(),e);
+		}
+		return Optional.empty();
+	}
+
+	@Override
+	public void addAction(WorkflowAction action)  {
+		if(UtilMethods.isEmpty(()->action.getId())){
+			return;
+		}
+
+		cache.put("action:" +action.getId(), action, ACTION_GROUP);
+	}
+
+	@Override
+	public void removeAction(WorkflowAction action) {
+		if(UtilMethods.isEmpty(()->action.getId())){
+			return;
+		}
+		cache.remove("action:" +action.getId(), ACTION_GROUP);
+	}
+
+
+
 
 	@Override
 	protected List<WorkflowActionClass> getActionClasses(final WorkflowAction action) {

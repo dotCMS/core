@@ -713,15 +713,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
     @Override
     public WorkflowAction findAction(String id) throws DotDataException {
+        Optional<WorkflowAction> action = cache.getAction(id);
+        if(action.isPresent()) {
+            return action.get();
+        }
         final DotConnect db = new DotConnect();
         db.setSQL(WorkflowSQL.SELECT_ACTION);
         db.addParam(id);
         try {
-            return (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
+            WorkflowAction thisAction = (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
                     WorkflowAction.class).get(0);
+            cache.addAction(thisAction);
+            return thisAction;
         } catch (IndexOutOfBoundsException ioob) {
             return null;
         }
+
     }
 
     @Override
@@ -1752,6 +1759,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                     .loadResult();
         }
 
+        cache.removeAction(workflowAction);
+
         final WorkflowStep proxyStep = new WorkflowStep();
         proxyStep.setId(workflowStep.getId());
         cache.removeActions(proxyStep);
@@ -1853,7 +1862,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final WorkflowScheme proxyScheme = new WorkflowScheme();
         proxyScheme.setId(action.getSchemeId());
         cache.removeActions(proxyScheme);
-
+        cache.removeAction(action);
         // update workflowScheme mod date
         final WorkflowScheme scheme = findScheme(action.getSchemeId());
         saveScheme(scheme);
