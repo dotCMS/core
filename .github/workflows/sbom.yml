@@ -56,8 +56,8 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config --global user.email "rashik1144@github.com"
-          git config --global user.name "rashik1144"
+          git config --global user.email "action@github.com"
+          git config --global user.name "Github Actions"
 
       - name: Commit and push results to core-test-results repository
         run: |
