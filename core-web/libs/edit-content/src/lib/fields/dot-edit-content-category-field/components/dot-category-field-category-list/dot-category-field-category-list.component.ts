@@ -1,28 +1,35 @@
 import { CommonModule } from '@angular/common';
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     computed,
-    DestroyRef,
     effect,
     ElementRef,
-    EventEmitter,
     inject,
     input,
-    Output,
-    QueryList,
-    ViewChildren
+    model,
+    output,
+    signal,
+    viewChildren
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TreeModule } from 'primeng/tree';
 
-import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.models';
+import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotEmptyContainerComponent,
+    PrincipalConfiguration,
+    DotCollapseBreadcrumbComponent
+} from '@dotcms/ui';
+
+import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
+import {
+    DotCategoryFieldItem,
+    DotCategoryFieldKeyValueObj
+} from '../../models/dot-category-field.models';
 import { DotCategoryFieldListSkeletonComponent } from '../dot-category-field-list-skeleton/dot-category-field-list-skeleton.component';
 
 export const MINIMUM_CATEGORY_COLUMNS = 4;
@@ -32,7 +39,6 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 /**
  * Represents the Dot Category Field Category List component.
  * @class
- * @implements {AfterViewInit}
  */
 @Component({
     selector: 'dot-category-field-category-list',
@@ -43,7 +49,9 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
         CheckboxModule,
         ButtonModule,
         FormsModule,
-        DotCategoryFieldListSkeletonComponent
+        DotCategoryFieldListSkeletonComponent,
+        DotCollapseBreadcrumbComponent,
+        DotEmptyContainerComponent
     ],
     templateUrl: './dot-category-field-category-list.component.html',
     styleUrl: './dot-category-field-category-list.component.scss',
@@ -52,11 +60,15 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
         class: 'category-list__wrapper'
     }
 })
-export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
+export class DotCategoryFieldCategoryListComponent {
+    /**
+     * Represents the DotMessageService instance.
+     */
+    readonly #dotMessageService = inject(DotMessageService);
     /**
      *  Represent the columns of categories
      */
-    @ViewChildren('categoryColumn') categoryColumns: QueryList<ElementRef>;
+    $categoryColumns = viewChildren<ElementRef<HTMLDivElement>>('categoryColumn');
 
     /**
      * Represents the variable 'categories' which is of type 'DotCategoryFieldCategory[][]'.
@@ -66,7 +78,7 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
     /**
      * Represent the selected item saved in the contentlet
      */
-    $selected = input<string[]>([], { alias: 'selected' });
+    $selected = model<string[]>([], { alias: 'selected' });
 
     /**
      * Generate the empty columns
@@ -86,47 +98,66 @@ export class DotCategoryFieldCategoryListComponent implements AfterViewInit {
     $isLoading = input<boolean>(true, { alias: 'isLoading' });
 
     /**
+     * Represents the breadcrumbs to display
+     */
+    $breadcrumbs = input<DotCategoryFieldKeyValueObj[]>([], { alias: 'breadcrumbs' });
+
+    /**
+     * Represents the breadcrumbs menu to display
+     *
+     * @memberof DotCategoryFieldCategoryListComponent
+     */
+    $breadcrumbsMenu = computed(() => {
+        const currentItems = this.$breadcrumbs().map((item, index) => {
+            return {
+                label: item.value,
+                command: () => {
+                    this.rowClicked.emit({ index, item });
+                }
+            };
+        });
+
+        return [
+            {
+                label: this.#dotMessageService.get(
+                    'edit.content.category-field.category.root-name'
+                ),
+                command: () => {
+                    this.rowClicked.emit({ index: 0 });
+                }
+            },
+            ...currentItems
+        ];
+    });
+
+    /**
      * Emit the item clicked to the parent component
      */
-    @Output() rowClicked = new EventEmitter<{ index: number; item: DotCategoryFieldKeyValueObj }>();
+    rowClicked = output<DotCategoryFieldItem>();
 
     /**
      * Emit the item checked or selected to the parent component
      */
-    @Output() itemChecked = new EventEmitter<{
+    itemChecked = output<{
         selected: string[];
         item: DotCategoryFieldKeyValueObj;
     }>();
 
-    /**
-     * Model of the items selected
-     */
-    itemsSelected: string[];
-
-    #cdr = inject(ChangeDetectorRef);
-    readonly #destroyRef = inject(DestroyRef);
-    readonly #effectRef = effect(() => {
-        // Todo: change itemsSelected to use model when update Angular to >17.3
-        // Initial selected items from the contentlet
-        this.itemsSelected = this.$selected();
-        this.#cdr.markForCheck(); // force refresh
+    $emptyState = signal<PrincipalConfiguration>({
+        title: this.#dotMessageService.get(CATEGORY_FIELD_EMPTY_MESSAGES.empty.title),
+        icon: CATEGORY_FIELD_EMPTY_MESSAGES.empty.icon,
+        subtitle: this.#dotMessageService.get(CATEGORY_FIELD_EMPTY_MESSAGES.empty.subtitle)
     });
 
-    ngAfterViewInit() {
-        // Handle the horizontal scroll to make visible the last column
-        this.categoryColumns.changes.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
-            this.scrollHandler();
-        });
-
-        this.#destroyRef.onDestroy(() => {
-            this.#effectRef.destroy();
+    constructor() {
+        effect(() => {
+            const columnsArray = this.$categoryColumns();
+            this.scrollHandler(columnsArray);
         });
     }
 
-    private scrollHandler() {
+    private scrollHandler(columnsArray: readonly ElementRef<HTMLDivElement>[]) {
         try {
-            const columnsArray = this.categoryColumns.toArray();
-
             if (columnsArray.length === 0) {
                 return;
             }

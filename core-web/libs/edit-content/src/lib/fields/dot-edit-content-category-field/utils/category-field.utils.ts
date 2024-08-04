@@ -51,36 +51,45 @@ export const transformToSelectedObject = (
 };
 
 /**
+ * Transforms a DotCategory object into a DotCategoryFieldKeyValueObj object.
+ *
+ * @param {DotCategory} category
+ * @param {string[]} [keyParentPath=[]]
+ * @return {*}  {DotCategoryFieldKeyValueObj}
+ */
+const transformCategory = (
+    category: DotCategory,
+    keyParentPath: string[] = []
+): DotCategoryFieldKeyValueObj => {
+    const { key, inode, categoryName, childrenCount } = category;
+    const hasChildren = childrenCount > 0;
+
+    const path = category.parentList ? getParentPath(category.parentList) : '';
+
+    return {
+        key,
+        inode,
+        value: categoryName || category?.name,
+        hasChildren,
+        clicked: hasChildren && keyParentPath.includes(key),
+        path
+    };
+};
+
+/**
  * Add calculated properties to the categories
  * @param categories - Single category or array of categories to transform
  * @param keyParentPath - Path of keys to determine clicked state
  * @returns Transformed category or array of transformed categories with additional properties
  */
-
 export const transformCategories = (
     categories: DotCategory | DotCategory[],
     keyParentPath: string[] = []
 ): DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[] => {
-    const transformCategory = (category: DotCategory): DotCategoryFieldKeyValueObj => {
-        const { key, inode, categoryName, childrenCount } = category;
-        const hasChildren = childrenCount > 0;
-
-        const path = category.parentList ? getParentPath(category.parentList) : '';
-
-        return {
-            key,
-            inode,
-            value: categoryName || category?.name,
-            hasChildren,
-            clicked: hasChildren && keyParentPath.includes(key),
-            path
-        };
-    };
-
     if (Array.isArray(categories)) {
-        return categories.map(transformCategory);
+        return categories.map((category) => transformCategory(category, keyParentPath));
     } else {
-        return transformCategory(categories);
+        return transformCategory(categories, keyParentPath);
     }
 };
 
@@ -212,4 +221,36 @@ export const addSelected = (
     const newItems = itemsArray.filter((item) => !itemSet.has(item.key));
 
     return [...array, ...newItems];
+};
+
+/**
+ * Retrieves the menu items from a key parent path.
+ *
+ * @param {DotCategory[][]} array
+ * @param {string[]} keyParentPath
+ * @return {*}  {MenuItem[]}
+ */
+export const getMenuItemsFromKeyParentPath = (
+    array: DotCategory[][],
+    keyParentPath: string[]
+): DotCategoryFieldKeyValueObj[] => {
+    const flatArray = array.flat();
+
+    return keyParentPath.reduce((array, key) => {
+        const category = flatArray.find((item) => item.key === key);
+
+        if (category) {
+            return [...array, transformCategory(category, keyParentPath)];
+        }
+
+        return array;
+    }, []);
+};
+
+/***
+ * Remove all the empty arrays from the matrix
+ * @param {DotCategory[][]} array
+ */
+export const removeEmptyArrays = (array: DotCategory[][]): DotCategory[][] => {
+    return array.filter((item) => item.length > 0);
 };
