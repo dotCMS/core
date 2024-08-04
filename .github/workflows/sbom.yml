@@ -18,7 +18,7 @@ jobs:
       - name: Checkout core-test-results repository
         uses: actions/checkout@v3
         with:
-          repository: rashik1144/core-test-results
+          repository: dotCMS/core-test-results
           token: ${{ secrets.GITHUB_TOKEN }}
           path: core-test-results
 
