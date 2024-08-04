@@ -1,5 +1,3 @@
-name: sbom
-
 on:
   release:
     types: [published]
@@ -56,6 +54,11 @@ jobs:
         run: |
           mv core-test-results/cyclonedx.json core-test-results/dotcms-${{ env.DOTCMS_VERSION }}.json
 
+      - name: Configure Git
+        run: |
+          git config --global user.email "rashik1144@github.com"
+          git config --global user.name "rashik1144"
+
       - name: Commit and push results to core-test-results repository
         run: |
           cd core-test-results
@@ -63,4 +66,4 @@ jobs:
           git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
           git push origin master
         env:
-          GITHUB_TOKEN: ${{ secrets.SECRET_PENTEST_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.SECRET_PENTEST_TOKEN }} 
