@@ -11,6 +11,8 @@ on:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Ensure write access to contents
 
     steps:
       - name: Checkout core-test-results repository
