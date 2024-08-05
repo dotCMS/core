@@ -123,6 +123,8 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
  * @since Oct 6, 2017
  */
 
+
+@Path("/v1/page")
 public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;
