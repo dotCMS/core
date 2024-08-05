@@ -14,7 +14,7 @@ function Product({ image, title, salePrice, retailPrice, urlTitle }) {
             <div className="p-4">
                 {image && (
                     <Image
-                        className="w-full"
+                        className="object-contain w-full max-h-60"
                         src={image?.idPath ?? image}
                         width={100}
                         height={100}
