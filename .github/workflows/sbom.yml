@@ -1,3 +1,4 @@
+# Generate SBOM for latest version of dotCMS and put into core-test-repo
 on:
   release:
     types: [published]
