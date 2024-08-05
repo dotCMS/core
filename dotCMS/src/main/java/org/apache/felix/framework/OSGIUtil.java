@@ -149,6 +149,14 @@ public class OSGIUtil {
         this.pubsub.subscribe(this.osgiRestartTopic);
     }
 
+    public List<String> getPortletIDsStopped() {
+        return portletIDsStopped;
+    }
+
+    public List<String> getActionletsStopped() {
+        return actionletsStopped;
+    }
+
     /**
      * Loads the default properties
      *

@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+
+<portlet-app>
+
+    <portlet>
+        <portlet-name>EXT_HELLO_WORLD</portlet-name>
+        <display-name>HELLO WORLD</display-name>
+        <portlet-class>com.liferay.portlet.VelocityPortlet</portlet-class>
+        <init-param>
+            <name>view-template</name>
+            <value>/ext/view.vtl</value>
+        </init-param>
+        <expiration-cache>0</expiration-cache>
+        <supports>
+            <mime-type>text/html</mime-type>
+        </supports>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+        <security-role-ref>
+            <role-name>CMS User</role-name>
+        </security-role-ref>
+    </portlet>
+
+    <portlet>
+        <portlet-name>EXT_STRUTS_HELLO_WORLD</portlet-name>
+        <display-name>STRUTS HELLO WORLD</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/strutshello/view_hello</value>
+        </init-param>
+        <expiration-cache>0</expiration-cache>
+        <supports>
+            <mime-type>text/html</mime-type>
+        </supports>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+        <security-role-ref>
+            <role-name>CMS Administrator</role-name>
+        </security-role-ref>
+        <security-role-ref>
+            <role-name>CMS User</role-name>
+        </security-role-ref>
+    </portlet>
+
+    <portlet>
+        <portlet-name>EXT_JSP_HELLO_WORLD</portlet-name>
+        <display-name>JSP HELLO WORLD</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/ext/hello.jsp</value>
+        </init-param>
+        <expiration-cache>0</expiration-cache>
+        <supports>
+            <mime-type>text/html</mime-type>
+        </supports>
+        <security-role-ref>
+            <role-name>CMS Administrator</role-name>
+        </security-role-ref>
+    </portlet>
+
+</portlet-app>
