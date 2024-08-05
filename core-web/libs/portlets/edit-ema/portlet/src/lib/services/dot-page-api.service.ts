@@ -5,6 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
+import { graphqlToPageEntity } from '@dotcms/client';
 import { Site } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -44,6 +45,7 @@ export interface DotPageApiParams {
     experimentId?: string;
     mode?: string;
     clientHost?: string;
+    depth?: string;
 }
 
 export interface GetPersonasParams {
@@ -62,6 +64,11 @@ export interface PaginationData {
     currentPage: number;
     perPage: number;
     totalEntries: number;
+}
+
+export interface clientPagePayload {
+    query: string;
+    params: DotPageApiParams;
 }
 
 @Injectable()
@@ -87,6 +94,7 @@ export class DotPageApiService {
             'com.dotmarketing.persona.id': params['com.dotmarketing.persona.id'],
             variantName: params.variantName,
             experimentId: params.experimentId,
+            depth: params['depth'] || '0',
             mode
         });
 
@@ -181,12 +189,26 @@ export class DotPageApiService {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getPageAssetFromGraphql(query: string): Observable<any> {
+    getGraphQLPage(query: string): Observable<any> {
         const headers = {
             'Content-Type': 'application/json',
             dotcachettl: '0' // Bypasses GraphQL cache
         };
 
         return this.http.post('/api/v1/graphql', { query }, { headers }).pipe(pluck('data'));
+    }
+
+    getClientPage({ query, params }: clientPagePayload): Observable<DotPageApiResponse> {
+        if (!query) {
+            return this.get(params);
+        }
+
+        return this.getGraphQLPage(query).pipe(
+            map((data) => {
+                const page = graphqlToPageEntity(data) as unknown;
+
+                return page as DotPageApiResponse;
+            })
+        );
     }
 }

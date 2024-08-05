@@ -133,6 +133,8 @@ export function withEditor() {
                     const shouldShowSeoResults = socialMedia && ogTags;
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
+                    const origin = params.clientHost || window.location.origin;
+                    const iframeURL = new URL(pageAPIQueryParams, origin);
 
                     return {
                         showDialogs: showDialogs,
@@ -140,9 +142,7 @@ export function withEditor() {
                         iframe: {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
-                            src: !isTraditionalPage
-                                ? `${params.clientHost}/${pageAPIQueryParams}`
-                                : '',
+                            src: !isTraditionalPage ? iframeURL.href : '',
                             wrapper: device
                                 ? {
                                       width: `${device.cssWidth}${BASE_IFRAME_MEASURE_UNIT}`,

@@ -82,7 +82,6 @@ import {
     DragDataset,
     DragDatasetItem,
     ContentTypeDragPayload,
-    PostMessagePayload,
     ReorderPayload
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -210,8 +209,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
-            .subscribe((event: MessageEvent) => {
-                this.handlePostMessage(event)?.();
+            .subscribe(({ data }: MessageEvent) => {
+                this.handlePostMessage(data);
             });
     }
 
@@ -824,20 +823,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof DotEmaComponent
      */
-    private handlePostMessage({
-        origin: _origin = this.host,
-        data
-    }: {
-        origin: string;
-        data: {
-            action: CUSTOMER_ACTIONS;
-            payload: PostMessagePayload;
-        };
-    }): () => void {
-        return (<Record<CUSTOMER_ACTIONS, () => void>>{
-            [CUSTOMER_ACTIONS.NAVIGATION_UPDATE]: () => {
-                const payload = <SetUrlPayload>data.payload;
-
+    private handlePostMessage({ action, payload }: { action: string; payload: unknown }): void {
+        const CUSTOMER_ACTIONS_FUNC_MAP = {
+            [CUSTOMER_ACTIONS.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
@@ -852,12 +840,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     });
                 }
             },
-            [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
-                this.uveStore.setEditorBounds(<Container[]>data.payload);
+            [CUSTOMER_ACTIONS.SET_BOUNDS]: (payload: Container[]) => {
+                this.uveStore.setEditorBounds(payload);
             },
-            [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
-                const contentletArea = <ClientContentletArea>data.payload;
-
+            [CUSTOMER_ACTIONS.SET_CONTENTLET]: (contentletArea: ClientContentletArea) => {
                 const payload = this.uveStore.getPageSavePayload(contentletArea.payload);
 
                 this.uveStore.setEditorContentletArea({
@@ -877,15 +863,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.inlineEditingService.initEditor();
                 this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
             },
-            [CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: () => {
+            [CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
+                dataset: InlineEditingContentletDataset;
+            }) => {
                 // The iframe say the contentlet that the content is queue to be inline edited is in multiple pages
                 // So the editor should open the dialog to ask if the edit is in ALL contentlets or only in this page.
 
                 if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
                     return;
                 }
-
-                const payload = <{ dataset: InlineEditingContentletDataset }>data.payload;
 
                 const { contentlet, container } = this.uveStore.contentletArea().payload;
 
@@ -936,9 +922,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         }
                     });
             },
-            [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
-                const payload = <UpdatedContentlet>data.payload;
-
+            [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: (payload: UpdatedContentlet) => {
                 this.uveStore.setEditorState(EDITOR_STATE.IDLE);
 
                 // If there is no payload, we don't need to do anything
@@ -982,31 +966,45 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     )
                     .subscribe(() => this.uveStore.reload());
             },
-            [CUSTOMER_ACTIONS.REORDER_MENU]: () => {
-                const { reorderUrl } = <ReorderPayload>data.payload;
-
+            [CUSTOMER_ACTIONS.REORDER_MENU]: ({ reorderUrl }: ReorderPayload) => {
                 this.dialog.openDialogOnUrl(
                     reorderUrl,
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
-            // [CUSTOMER_ACTIONS.GET_PAGE_DATA]: () => {
-            //     this.reloadIframeContent();
-            // },
-            [CUSTOMER_ACTIONS.CLIENT_READY]: () => {
-                if (!data.payload) {
+            [CUSTOMER_ACTIONS.CLIENT_READY]: (payload: {
+                type: 'PAGEAPI' | 'GHAPQL';
+                data: string | Record<string, string>;
+            }) => {
+                const { type, data } = payload || {};
+
+                if (!data) {
                     this.uveStore.setIsClientReady(true);
 
                     return;
                 }
 
-                this.uveStore.setClientConfiguration(data.payload as string);
+                // Empty the configuration
+                const config = {
+                    query: '',
+                    params: {}
+                };
+
+                if (type === 'PAGEAPI') {
+                    config.params = data as Record<string, string>;
+                } else if (type === 'GHAPQL') {
+                    config.query = data as string;
+                }
+
+                this.uveStore.setClientConfiguration(config);
                 this.uveStore.reload();
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
-        })[data.action];
+        };
+        const actionToExecute = CUSTOMER_ACTIONS_FUNC_MAP[action];
+        actionToExecute?.(payload);
     }
 
     /**

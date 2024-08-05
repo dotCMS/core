@@ -1,15 +1,33 @@
-import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withComputed,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 
+import { computed } from '@angular/core';
+
+import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { UVEState } from '../../models';
+
+export interface ClientCustomPayload {
+    params: Partial<DotPageApiParams>;
+    query: string;
+}
 
 export interface ClientConfigState {
     isClientReady: boolean;
-    graphQL: string;
+    clientCustomPayload: ClientCustomPayload;
 }
 
 const initialState: ClientConfigState = {
     isClientReady: false,
-    graphQL: ''
+    clientCustomPayload: {
+        params: {},
+        query: ''
+    }
 };
 
 /**
@@ -24,13 +42,33 @@ export function withClientConfig() {
             state: type<UVEState>()
         },
         withState<ClientConfigState>(initialState),
+        withComputed((store) => {
+            return {
+                $clientPayload: computed(() => {
+                    const { query, params } = store.clientCustomPayload();
+
+                    return {
+                        query,
+                        params: {
+                            ...store.params(),
+                            ...params
+                        }
+                    };
+                })
+            };
+        }),
         withMethods((store) => {
             return {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
-                setClientConfiguration: (graphQL: string) => {
-                    patchState(store, { graphQL });
+                setClientConfiguration: (customPayload: Partial<ClientCustomPayload>) => {
+                    patchState(store, {
+                        clientCustomPayload: {
+                            ...store.clientCustomPayload(),
+                            ...customPayload
+                        }
+                    });
                 },
                 resetClientConfiguration: () => {
                     patchState(store, { ...initialState });

@@ -9,15 +9,10 @@ import { Router, ActivatedRoute } from '@angular/router';
 
 import { switchMap, shareReplay, catchError, tap, take, map } from 'rxjs/operators';
 
-import { graphqlToPageEntity } from '@dotcms/client';
 import { DotLanguagesService, DotLicenseService, DotExperimentsService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 
-import {
-    DotPageApiService,
-    DotPageApiParams,
-    DotPageApiResponse
-} from '../../../services/dot-page-api.service';
+import { DotPageApiService, DotPageApiParams } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
@@ -43,20 +38,6 @@ export function withLoad() {
             const dotExperimentsService = inject(DotExperimentsService);
             const router = inject(Router);
             const activatedRoute = inject(ActivatedRoute);
-
-            const getPage = () => {
-                if (!store.graphQL()) {
-                    return dotPageApiService.get(store.params());
-                }
-
-                return dotPageApiService.getPageAssetFromGraphql(store.graphQL()).pipe(
-                    map((data) => {
-                        const page = graphqlToPageEntity(data) as unknown;
-
-                        return page as DotPageApiResponse;
-                    })
-                );
-            };
 
             return {
                 load: rxMethod<DotPageApiParams>(
@@ -185,7 +166,9 @@ export function withLoad() {
                             });
                         }),
                         switchMap(() => {
-                            return getPage().pipe(
+                            const pagePayload = store.$clientPayload();
+
+                            return dotPageApiService.getClientPage(pagePayload).pipe(
                                 switchMap((pageAPIResponse) =>
                                     dotLanguagesService
                                         .getLanguagesUsedPage(pageAPIResponse.page.identifier)

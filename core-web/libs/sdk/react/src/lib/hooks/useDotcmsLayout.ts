@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import {
     CUSTOMER_ACTIONS,
     DotCmsClient,
+    DotCMSPageEditorConfig,
     isInsideEditor,
     postMessageToEditor
 } from '@dotcms/client';
@@ -11,7 +12,7 @@ import { DotCMSPageContext } from '../models';
 
 export const useDotcmsLayout = (
     pageAsset: DotCMSPageContext['pageAsset'] | null,
-    query?: string
+    config: DotCMSPageEditorConfig
 ) => {
     const [state, setState] = useState({ pageAsset });
 
@@ -20,8 +21,8 @@ export const useDotcmsLayout = (
             return;
         }
 
-        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: query });
-    }, [query]);
+        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: config?.fetch });
+    }, []);
 
     useEffect(() => {
         if (!isInsideEditor()) {

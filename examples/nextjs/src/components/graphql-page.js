@@ -40,11 +40,9 @@ const componentsMap = {
 };
 
 export function MyGraphQLPage({ pageAsset, nav, query }) {
-    const { replace, refresh } = useRouter();
-    const searchParams = useSearchParams()
+    const { replace } = useRouter();
     const pathname = usePathname();
     
-
     /**
      * If using experiments, `DotLayoutComponent` is `withExperiments(DotcmsLayout)`.
      * If not using experiments:
@@ -67,15 +65,17 @@ export function MyGraphQLPage({ pageAsset, nav, query }) {
             )}
 
             <main className="container flex flex-col gap-8 m-auto">
-                <DotcmsLayout
+                <DotLayoutComponent
                     pageContext={{
                         components: componentsMap,
                         pageAsset: pageAsset,
                     }}
                     config={{
-                        onReload: () => refresh(),
-                        query,
                         pathname,
+                        fetch: {
+                            type: "GHAPQL",
+                            data: query
+                        }
                     }}
                 />
             </main>
