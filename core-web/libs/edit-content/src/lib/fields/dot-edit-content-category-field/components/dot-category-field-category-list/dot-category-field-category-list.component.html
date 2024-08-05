@@ -23,6 +23,7 @@
                             (onChange)="itemChecked.emit({ selected: $event.checked, item })" />
 
                         <div
+                            data-testId="category-item-wrapper"
                             class="flex w-full h-full align-items-stretch align-content-center category-list__item-wrapper"
                             (click)="rowClicked.emit({ index, item })"
                             [class.cursor-pointer]="item.hasChildren">
