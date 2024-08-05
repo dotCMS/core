@@ -259,7 +259,7 @@ export const CategoryFieldStore = signalStore(
                         const currentCategories = store.categories();
                         const keyParentPath = store.keyParentPath();
 
-                        if (event && event.item) {
+                        if (event && event?.item) {
                             if (
                                 !checkIfClickedIsLastItem(index, currentCategories) &&
                                 checkIfClickedIsLoaded(event, keyParentPath)
