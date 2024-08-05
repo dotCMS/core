@@ -29,7 +29,7 @@ export async function generateMetadata({ params, searchParams }) {
 
     try {
         const data = await client.page.get(pageRequestParams);
-        const page = data.entity?.page;
+        const page = data?.page;
         const title = page?.friendlyName || page?.title;
 
         return {

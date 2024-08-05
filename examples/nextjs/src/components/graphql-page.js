@@ -1,6 +1,6 @@
 "use client";
 
-import WebPageContent from "./content-types/webPageContent";
+import GqlWebPageContent from "./content-types/gqlWebPageContent";
 import Banner from "./content-types/banner";
 import Activity from "./content-types/activity";
 import CallToAction from "./content-types/callToAction";
@@ -28,7 +28,7 @@ const experimentConfig = {
 
 // Mapping of components to DotCMS content types
 const componentsMap = {
-    webPageContent: WebPageContent,
+    webPageContent: GqlWebPageContent,
     Banner: Banner,
     Activity: Activity,
     Product: Product,

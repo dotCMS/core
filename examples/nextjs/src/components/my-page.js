@@ -13,7 +13,6 @@ import Footer from "./layout/footer/footer";
 import Navigation from "./layout/navigation";
 import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
-import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
 
 import { usePageAsset } from "../hooks/usePageAsset";
@@ -44,19 +43,6 @@ export function MyPage({ pageAsset, nav }) {
     const { replace } = useRouter();
     const pathname = usePathname();
 
-    /**
-     * If using experiments, `DotLayoutComponent` is `withExperiments(DotcmsLayout)`.
-     * If not using experiments:
-     * - Replace the below line with `const DotLayoutComponent = DotcmsLayout;`
-     * - Remove DotExperimentsProvider from the return statement.
-     */
-    const DotLayoutComponent = experimentConfig.apiKey
-        ? withExperiments(DotcmsLayout, {
-              ...experimentConfig,
-              redirectFn: replace,
-          })
-        : DotcmsLayout;
-
     pageAsset = usePageAsset(pageAsset);
 
     return (
@@ -68,7 +54,7 @@ export function MyPage({ pageAsset, nav }) {
             )}
 
             <main className="container flex flex-col gap-8 m-auto">
-                <DotLayoutComponent
+                <DotcmsLayout
                     pageContext={{
                         components: componentsMap,
                         pageAsset: pageAsset,
