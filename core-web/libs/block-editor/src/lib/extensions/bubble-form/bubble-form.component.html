@@ -21,17 +21,15 @@
                             [for]="control.key">
                             {{ control.label | titlecase }}
                         </label>
-                        @default {
-                            <input
-                                [formControlName]="control.key"
-                                [id]="control.key"
-                                [type]="control.type"
-                                [min]="control.min"
-                                [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
-                                #group
-                                pInputText
-                                type="control.type" />
-                        }
+                        <input
+                            [formControlName]="control.key"
+                            [id]="control.key"
+                            [type]="control.type"
+                            [min]="control.min"
+                            [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
+                            #group
+                            pInputText
+                            type="control.type" />
                     }
                 }
                 @if (form.controls[control.key].invalid && form.controls[control.key].dirty) {
