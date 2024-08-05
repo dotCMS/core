@@ -13,16 +13,9 @@
         </dot-suggestion-list>
     </div>
 } @else {
-    <ng-template [ngTemplateOutlet]="loading ? loadingBlock : emptyBlock"></ng-template>
+    @if (loading) {
+        <dot-suggestion-loading-list />
+    } @else {
+        <dot-empty-message (back)="handleBackButton()" [title]="title" [showBackBtn]="true" />
+    }
 }
-
-<ng-template #loadingBlock>
-    <dot-suggestion-loading-list></dot-suggestion-loading-list>
-</ng-template>
-
-<ng-template #emptyBlock>
-    <dot-empty-message
-        (back)="handleBackButton()"
-        [title]="title"
-        [showBackBtn]="true"></dot-empty-message>
-</ng-template>
