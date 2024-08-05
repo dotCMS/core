@@ -9,14 +9,20 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.Lazy;
 
-import java.sql.Connection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +33,7 @@ import java.util.stream.Collectors;
  */
 public class TagFactoryImpl implements TagFactory {
 
+    private static final Lazy<Integer> MAX_TOP_TAGS = Lazy.of(() -> Config.getIntProperty("MAX_TOP_TAGS", 1000));
     private static final String TAG_COLUMN_TAG_ID = "tag_id";
     private static final String TAG_COLUMN_TAGNAME = "tagname";
     private static final String TAG_COLUMN_HOST_ID = "host_id";
@@ -677,15 +684,14 @@ public class TagFactoryImpl implements TagFactory {
                         ") as foo  " +
                         "group by tagname  " +
                         "order by count(tinode) desc " +
-                        "limit 1000";
+                        "limit " + MAX_TOP_TAGS.get();
 
         final List<Map<String, Object>> results = new DotConnect()
                 .setSQL(selectTopTagsQuery)
                 .addParam(siteId)
                 .loadObjectResults();
 
-        // todo: add cache and remove any time a tag is being added.
-        return results.stream().map(row -> row.get("tagname").toString()).collect(Collectors.toSet());
+        return results.stream().map(row -> row.get(TAG_COLUMN_TAGNAME).toString()).collect(Collectors.toSet());
     }
 
     /**
