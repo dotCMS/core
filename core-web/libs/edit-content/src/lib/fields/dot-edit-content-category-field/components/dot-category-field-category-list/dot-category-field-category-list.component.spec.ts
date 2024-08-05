@@ -143,7 +143,10 @@ describe('DotCategoryFieldCategoryListComponent', () => {
             const breadcrumbs = spectator.queryAll('dot-collapse-breadcrumb .p-menuitem-link');
             spectator.click(breadcrumbs[0]);
 
-            expect(emitSpy).toHaveBeenCalledWith({ index: 0, item: { key:ROOT_CATEGORY_KEY, value: ROOT_CATEGORY_KEY }});
+            expect(emitSpy).toHaveBeenCalledWith({
+                index: 0,
+                item: { key: ROOT_CATEGORY_KEY, value: ROOT_CATEGORY_KEY }
+            });
         });
 
         it('should render the correct number of breadcrumbs', () => {
