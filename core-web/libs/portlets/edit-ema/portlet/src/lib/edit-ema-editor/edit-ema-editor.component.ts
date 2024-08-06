@@ -167,29 +167,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.uveStore.resetEditorProperties();
             this.dialog?.resetDialog();
 
-            if (isTraditionalPage) {
-                this.setIframeContent(code);
-
-                requestAnimationFrame(() => {
-                    const win = this.contentWindow;
-                    if (enableInlineEdit) {
-                        this.inlineEditingService.injectInlineEdit(this.iframe);
-                    } else {
-                        this.inlineEditingService.removeInlineEdit(this.iframe);
-                    }
-
-                    fromEvent(win, 'click').subscribe((e: MouseEvent) => {
-                        this.handleInternalNav(e);
-                        this.handleInlineEditing(e); // If inline editing is not active this will do nothing
-                    });
-                });
+            if (!isTraditionalPage) {
+                if (isClientReady) {
+                    return this.reloadIframeContent();
+                }
 
                 return;
             }
 
-            if (isClientReady) {
-                return this.reloadIframeContent();
-            }
+            this.setIframeContent(code);
+
+            requestAnimationFrame(() => {
+                const win = this.contentWindow;
+                if (enableInlineEdit) {
+                    this.inlineEditingService.injectInlineEdit(this.iframe);
+                } else {
+                    this.inlineEditingService.removeInlineEdit(this.iframe);
+                }
+
+                fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+                    this.handleInternalNav(e);
+                    this.handleInlineEditing(e); // If inline editing is not active this will do nothing
+                });
+            });
+
+            return;
         },
         {
             allowSignalWrites: true
@@ -243,7 +245,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            // console.log(url);
             this.updateQueryParams({
                 url: url.pathname
             });
@@ -973,7 +974,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 );
             },
             [CUSTOMER_ACTIONS.CLIENT_READY]: (payload: {
-                type: 'PAGEAPI' | 'GHAPQL';
+                type: 'PAGEAPI' | 'GRAPHQL';
                 data: string | Record<string, string>;
             }) => {
                 const { type, data } = payload || {};
@@ -984,17 +985,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                // Empty the configuration
                 const config = {
-                    query: '',
-                    params: {}
+                    query: type === 'GRAPHQL' ? (data as string) : '',
+                    params: type === 'PAGEAPI' ? (data as Record<string, string>) : {}
                 };
-
-                if (type === 'PAGEAPI') {
-                    config.params = data as Record<string, string>;
-                } else if (type === 'GHAPQL') {
-                    config.query = data as string;
-                }
 
                 this.uveStore.setClientConfiguration(config);
                 this.uveStore.reload();

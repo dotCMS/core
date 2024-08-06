@@ -42,11 +42,11 @@ export function withSave() {
                                 pageId: store.pageAPIResponse().page.identifier,
                                 params: store.params()
                             };
-                            const pagePayload = store.$clientRequestProps();
+                            const clientProps = store.$clientRequestProps();
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() =>
-                                    dotPageApiService.getClientPage(pagePayload).pipe(
+                                    dotPageApiService.getClientPage(clientProps).pipe(
                                         tapResponse(
                                             (pageAPIResponse: DotPageApiResponse) => {
                                                 patchState(store, {

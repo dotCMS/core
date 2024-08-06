@@ -181,6 +181,13 @@ export class DotPageApiService {
         return apiUrl + queryParams.toString();
     }
 
+    /**
+     *
+     * @description Save a contentlet in a page
+     * @param {{ contentlet: { [fieldName: string]: string; inode: string } }} { contentlet }
+     * @return {*}
+     * @memberof DotPageApiService
+     */
     saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
         return this.http.put(
             `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
@@ -188,27 +195,42 @@ export class DotPageApiService {
         );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getGraphQLPage(query: string): Observable<any> {
+    /**
+     *
+     * @description Get a page from GraphQL
+     * @template T
+     * @param {string} query
+     * @return {*}  {Observable<T>}
+     * @memberof DotPageApiService
+     */
+    getGraphQLPage(query: string): Observable<DotPageApiResponse> {
         const headers = {
             'Content-Type': 'application/json',
             dotcachettl: '0' // Bypasses GraphQL cache
         };
 
-        return this.http.post('/api/v1/graphql', { query }, { headers }).pipe(pluck('data'));
+        return this.http
+            .post<{
+                data: { page: Record<string, unknown> };
+            }>('/api/v1/graphql', { query }, { headers })
+            .pipe(
+                pluck('data'),
+                map((data) => graphqlToPageEntity(data) as DotPageApiResponse)
+            );
     }
 
+    /**
+     *
+     * @description Get Client Page from the Page API or GraphQL
+     * @param {clientPagePayload} { query, params }
+     * @return {*}  {Observable<DotPageApiResponse>}
+     * @memberof DotPageApiService
+     */
     getClientPage({ query, params }: clientPagePayload): Observable<DotPageApiResponse> {
         if (!query) {
             return this.get(params);
         }
 
-        return this.getGraphQLPage(query).pipe(
-            map((data) => {
-                const page = graphqlToPageEntity(data) as unknown;
-
-                return page as DotPageApiResponse;
-            })
-        );
+        return this.getGraphQLPage(query);
     }
 }

@@ -13,15 +13,15 @@ export function getGraphQLPageQuery({ path, language_id, mode}) {
         params.push(`languageId: "${language_id}"`);
     }
 
-    // if (mode) {
-        // params.push('pageMode: "EDIT_MODE"');
-    // }
+    if (mode) {
+        params.push('pageMode: "EDIT_MODE"');
+    }
 
     const paramsString = params.length ? `, ${params.join(", ")}` : "";
 
     return `
     {
-        page(url: "${path}", pageMode: "EDIT_MODE" ${paramsString}) {
+        page(url: "${path}"${paramsString}) {
             _map
             canEdit
             canLock
@@ -99,9 +99,7 @@ export function getGraphQLPageQuery({ path, language_id, mode}) {
  * @param {*} query
  * @return {*}
  */
-export const getGraphQLPageData = async (params) => {
-    const query = getGraphQLPageQuery(params);
-
+export const getGraphQLPageData = async (query) => {
     const res = await fetch(API_URL, {
         method: "POST",
         headers: {

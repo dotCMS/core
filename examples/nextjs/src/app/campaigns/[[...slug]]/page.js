@@ -54,9 +54,9 @@ export default async function Home({ searchParams, params }) {
         languageId: searchParams.language_id,
     });
 
-    const data = await getGraphQLPageData(pageRequestParams);
-    const pageAsset = graphqlToPageEntity(data);
     const query = getGraphQLPageQuery(pageRequestParams);
+    const data = await getGraphQLPageData(query);
+    const pageAsset = graphqlToPageEntity(data);
 
     // GraphQL returns null if the page is not found
     // It does not throw an error
@@ -64,5 +64,5 @@ export default async function Home({ searchParams, params }) {
         notFound();
     }
 
-    return <MyGraphQLPage nav={nav.entity.children} pageAsset={pageAsset} query={ query} />;
+    return <MyGraphQLPage nav={nav.entity.children} pageAsset={pageAsset} query={query} />;
 }

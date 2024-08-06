@@ -132,6 +132,8 @@ export function withLoad() {
                                                     currentUser
                                                 );
 
+                                                const isTraditionalPage = !params.clientHost; // If we don't send the clientHost we are using as VTL page
+
                                                 patchState(store, {
                                                     pageAPIResponse,
                                                     isEnterprise,
@@ -141,8 +143,8 @@ export function withLoad() {
                                                     params,
                                                     canEditPage,
                                                     pageIsLocked,
-                                                    status: UVE_STATUS.LOADED,
-                                                    isTraditionalPage: !params.clientHost // If we don't send the clientHost we are using as VTL page
+                                                    isTraditionalPage,
+                                                    status: UVE_STATUS.LOADED
                                                 });
                                             },
                                             error: ({ status: errorStatus }: HttpErrorResponse) => {
@@ -166,9 +168,9 @@ export function withLoad() {
                             });
                         }),
                         switchMap(() => {
-                            const pagePayload = store.$clientRequestProps();
+                            const clientProps = store.$clientRequestProps();
 
-                            return dotPageApiService.getClientPage(pagePayload).pipe(
+                            return dotPageApiService.getClientPage(clientProps).pipe(
                                 switchMap((pageAPIResponse) =>
                                     dotLanguagesService
                                         .getLanguagesUsedPage(pageAPIResponse.page.identifier)

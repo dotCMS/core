@@ -1,23 +1,23 @@
 /**
  * @description Configuration for fetching data using GraphQL.
  * @typedef {Object} GraphQLFetchConfig
- * @property {"GHAPQL"} type - The type of fetch to perform. It can be either 'GHAPQL' or 'PAGEAPI'.
- * @property {string} data - The query to be sent to the GHAPQL endpoint.
+ * @property {"GRAPHQL"} type - The type of fetch to perform. It can be either 'GRAPHQL' or 'PAGEAPI'.
+ * @property {string} data - The query to be sent to the GRAPHQL endpoint.
  * @example
  * {
- *   type: 'GHAPQL',
+ *   type: 'GRAPHQL',
  *   data: 'query { ... }'
  * }
  */
 export type GraphQLFetchConfig = {
-    type: 'GHAPQL';
+    type: 'GRAPHQL';
     data: string;
 };
 
 /**
  * @description Configuration for fetching data using Page API.
  * @typedef {Object} PageAPIFetchConfig
- * @property {"PAGEAPI"} type - The type of fetch to perform. It can be either 'GHAPQL' or 'PAGEAPI'.
+ * @property {"PAGEAPI"} type - The type of fetch to perform. It can be either 'GRAPHQL' or 'PAGEAPI'.
  * @property {{ [key: string]: string }} data - Parameters to be sent to the PAGEAPI endpoint.
  * @example
  * {
@@ -60,7 +60,7 @@ export interface DotCMSPageEditorConfig {
      * @description The fetch configuration can be either a GraphQLFetchConfig or a PageAPIFetchConfig.
      * @example
      * {
-     *  type: 'GHAPQL',
+     *  type: 'GRAPHQL',
      *  data: 'query { ... }'
      * }
      * @example
