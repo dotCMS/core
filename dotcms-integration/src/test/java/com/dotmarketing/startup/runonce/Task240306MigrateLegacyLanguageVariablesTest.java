@@ -20,12 +20,13 @@ import com.google.common.collect.ImmutableList;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 import static com.liferay.util.StringPool.BLANK;
 import static org.junit.Assert.assertEquals;
@@ -85,7 +86,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
 
             // There are other ITs that create random languages. So let's check ONLY for our
             // expected languages
-            final List<String> expectedLanguages = new ArrayList<>();
+            final Set<String> expectedLanguages = new HashSet<>();
             summary.success().forEach((language, addedKeys) -> {
                 final String isoCode = language.getIsoCode();
                 if (expectedResults.containsKey(isoCode)) {
@@ -164,7 +165,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
 
             // There are other ITs that create random languages. So let's check ONLY for our
             // expected languages
-            final List<String> expectedLanguages = new ArrayList<>();
+            final Set<String> expectedLanguages = new HashSet<>();
             secondTaskSummary.success().forEach((language, addedKeys) -> {
                 final String isoCode = language.getIsoCode();
                 if (expectedResults.containsKey(isoCode)) {
