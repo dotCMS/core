@@ -1,12 +1,28 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import {
+    Meta,
+    StoryObj,
+    moduleMetadata,
+    componentWrapperDecorator,
+    argsToTemplate
+} from '@storybook/angular';
 
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { Breadcrumb, BreadcrumbModule } from 'primeng/breadcrumb';
 
-import { BreadcrumbModule } from 'primeng/breadcrumb';
+type Args = Breadcrumb;
 
-export default {
+const meta: Meta<Args> = {
     title: 'PrimeNG/Menu/Breadcrumbs',
+    component: Breadcrumb,
+    decorators: [
+        moduleMetadata({
+            imports: [BreadcrumbModule]
+        }),
+        componentWrapperDecorator(
+            (story) => `<div class="card flex justify-content-center">${story}</div>`
+        )
+    ],
     parameters: {
+        layout: 'centered',
         docs: {
             description: {
                 component:
@@ -14,37 +30,31 @@ export default {
             }
         }
     },
-    decorators: [
-        moduleMetadata({
-            imports: [BreadcrumbModule, BrowserAnimationsModule]
-        })
-    ],
     args: {
-        items: [
-            { label: 'Content Model', url: '#' },
-            { label: 'Content Types' },
-            { label: 'Store Product List', url: '#' }
-        ]
-    }
-} as Meta;
-
-const BreadcrumbTemplate = `<p-breadcrumb [model]="items"></p-breadcrumb>`;
-
-const Template: Story<{ label: string; url: string }> = (props: { label: string; url: string }) => {
-    const template = BreadcrumbTemplate;
-
-    return {
-        props,
-        template
-    };
-};
-
-export const Basic: Story = Template.bind({});
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: BreadcrumbTemplate
-        }
+        model: [
+            { label: 'Electronics', url: '/' },
+            { label: 'Computer', url: '/' },
+            { label: 'Accessories', url: '/' },
+            { label: 'Keyboard', url: '/' },
+            { label: 'Wireless', url: '/' }
+        ],
+        home: { icon: 'pi pi-home' }
+    },
+    argTypes: {
+        model: { description: 'Defines the data' }
+    },
+    render: (args: Args) => {
+        return {
+            props: {
+                ...args
+            },
+            template: `<p-breadcrumb class="max-w-full" ${argsToTemplate(args)} />`
+        };
     }
 };
+
+export default meta;
+
+type Story = StoryObj<Args>;
+
+export const Default: Story = {};
