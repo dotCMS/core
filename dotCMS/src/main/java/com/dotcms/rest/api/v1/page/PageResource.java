@@ -125,6 +125,11 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 
 @Path("/v1/page")
+@Tag(name = "Page", 
+        description = "Endpoints that operate on pages",
+        externalDocs = @ExternalDocumentation(description = "Additional Page API information", 
+                                                url = "https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas"))
+
 public class PageResource {
 
     private final PageResourceHelper pageResourceHelper;
@@ -415,7 +420,7 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes({MediaType.APPLICATION_JSON})
     @Operation(operationId = "postPageLayoutHTMLLink",
-        summary = "Links template and HTML",
+        summary = "Links template and page",
         description = "Takes a saved template and links it to an HTML page.\n\n" +
                     "Any pages with a template already linked will update with the new link.\n\n" +
                     "Otherwise a new template will be created without making any changes to previous templates.\n\n" +
