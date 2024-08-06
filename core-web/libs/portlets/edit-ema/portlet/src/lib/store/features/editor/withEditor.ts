@@ -43,7 +43,8 @@ import {
     getEditorStates
 } from '../../../utils';
 import { UVEState } from '../../models';
-import { withClientConfig } from '../clientConfig/withClientConfig';
+import { withClient } from '../client/withClient';
+
 const initialState: EditorState = {
     bounds: [],
     state: EDITOR_STATE.IDLE,
@@ -66,7 +67,7 @@ export function withEditor() {
         withState<EditorState>(initialState),
         withEditorToolbar(),
         withSave(),
-        withClientConfig(),
+        withClient(),
         withComputed((store) => {
             return {
                 $pageData: computed<PageData>(() => {

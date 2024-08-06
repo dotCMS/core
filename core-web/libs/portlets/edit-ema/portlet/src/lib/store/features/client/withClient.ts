@@ -12,31 +12,32 @@ import { computed } from '@angular/core';
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { UVEState } from '../../models';
 
-export interface ClientCustomPayload {
+export interface clientRequestProps {
     params: Partial<DotPageApiParams>;
     query: string;
 }
 
 export interface ClientConfigState {
     isClientReady: boolean;
-    clientCustomPayload: ClientCustomPayload;
+    clientRequestProps: clientRequestProps;
 }
 
 const initialState: ClientConfigState = {
     isClientReady: false,
-    clientCustomPayload: {
+    clientRequestProps: {
         params: {},
         query: ''
     }
 };
 
 /**
- * Add computed properties and methods to the store to handle the Editor Toolbar UI
+ * Add methods to handle client configuration
  *
+ * @description This feature is used to handle the client configuration
  * @export
  * @return {*}
  */
-export function withClientConfig() {
+export function withClient() {
     return signalStoreFeature(
         {
             state: type<UVEState>()
@@ -44,8 +45,8 @@ export function withClientConfig() {
         withState<ClientConfigState>(initialState),
         withComputed((store) => {
             return {
-                $clientPayload: computed(() => {
-                    const { query, params } = store.clientCustomPayload();
+                $clientRequestProps: computed(() => {
+                    const { query, params } = store.clientRequestProps();
 
                     return {
                         query,
@@ -62,11 +63,11 @@ export function withClientConfig() {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
-                setClientConfiguration: (customPayload: Partial<ClientCustomPayload>) => {
+                setClientConfiguration: (clientRequestProps: Partial<clientRequestProps>) => {
                     patchState(store, {
-                        clientCustomPayload: {
-                            ...store.clientCustomPayload(),
-                            ...customPayload
+                        clientRequestProps: {
+                            ...store.clientRequestProps(),
+                            ...clientRequestProps
                         }
                     });
                 },

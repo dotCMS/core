@@ -16,7 +16,7 @@ import { DotPageApiService, DotPageApiParams } from '../../../services/dot-page-
 import { UVE_STATUS } from '../../../shared/enums';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
-import { withClientConfig } from '../clientConfig/withClientConfig';
+import { withClient } from '../client/withClient';
 
 /**
  * Add load and reload method to the store
@@ -29,7 +29,7 @@ export function withLoad() {
         {
             state: type<UVEState>()
         },
-        withClientConfig(),
+        withClient(),
         withMethods((store) => {
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
@@ -166,7 +166,7 @@ export function withLoad() {
                             });
                         }),
                         switchMap(() => {
-                            const pagePayload = store.$clientPayload();
+                            const pagePayload = store.$clientRequestProps();
 
                             return dotPageApiService.getClientPage(pagePayload).pipe(
                                 switchMap((pageAPIResponse) =>
