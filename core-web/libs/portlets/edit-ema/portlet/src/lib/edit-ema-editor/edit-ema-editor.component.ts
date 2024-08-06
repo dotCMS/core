@@ -978,6 +978,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 data: string | Record<string, string>;
             }) => {
                 const { type, data } = payload || {};
+                const isClientReady = this.uveStore.isClientReady();
+
+                // Frameworks  Navigation triggers the client ready event, so we need to prevent it
+                // Until we manually trigger the reload
+                if (isClientReady) {
+                    return;
+                }
 
                 if (!data) {
                     this.uveStore.setIsClientReady(true);

@@ -22,7 +22,7 @@ export const useDotcmsLayout = (
         }
 
         postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: config?.fetch });
-    }, []);
+    }, [config.pathname]);
 
     useEffect(() => {
         if (!isInsideEditor()) {

@@ -44,7 +44,7 @@ export function withLoad() {
                     pipe(
                         tap(() => store.resetClientConfiguration()),
                         tap(() => {
-                            patchState(store, { status: UVE_STATUS.LOADING });
+                            patchState(store, { status: UVE_STATUS.LOADING, isClientReady: false });
                         }),
                         switchMap((params) => {
                             return forkJoin({
@@ -144,6 +144,7 @@ export function withLoad() {
                                                     canEditPage,
                                                     pageIsLocked,
                                                     isTraditionalPage,
+                                                    isClientReady: false,
                                                     status: UVE_STATUS.LOADED
                                                 });
                                             },
