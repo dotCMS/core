@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-::ng-deep dot-crumbtrail .p-breadcrumb {
+:host ::ng-deep .p-breadcrumb {
     ul li {
         &:first-child {
             font-size: $font-size-lg;

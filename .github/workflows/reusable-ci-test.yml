@@ -159,7 +159,7 @@ jobs:
           maven-args: "-Pcoverage verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=${{ matrix.collection_group }}"
           generates-test-results: true
           dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
-          requires-node: false
+          requires-node: true
           needs-docker-image: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
