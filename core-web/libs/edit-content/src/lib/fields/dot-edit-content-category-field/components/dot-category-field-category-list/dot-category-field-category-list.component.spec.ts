@@ -8,6 +8,7 @@ import {
     MINIMUM_CATEGORY_COLUMNS
 } from './dot-category-field-category-list.component';
 
+import { ROOT_CATEGORY_KEY } from '../../dot-edit-content-category-field.const';
 import {
     CATEGORY_LIST_MOCK,
     CATEGORY_LIST_MOCK_TRANSFORMED_MATRIX,
@@ -68,7 +69,7 @@ describe('DotCategoryFieldCategoryListComponent', () => {
 
     it('should emit the correct item when clicked', () => {
         const emitSpy = jest.spyOn(spectator.component.rowClicked, 'emit');
-        const items = spectator.queryAll(byTestId('category-item'));
+        const items = spectator.queryAll(byTestId('category-item-wrapper'));
         spectator.click(items[0]);
 
         expect(emitSpy).toHaveBeenCalledWith({
@@ -142,7 +143,10 @@ describe('DotCategoryFieldCategoryListComponent', () => {
             const breadcrumbs = spectator.queryAll('dot-collapse-breadcrumb .p-menuitem-link');
             spectator.click(breadcrumbs[0]);
 
-            expect(emitSpy).toHaveBeenCalledWith({ index: 0 });
+            expect(emitSpy).toHaveBeenCalledWith({
+                index: 0,
+                item: { key: ROOT_CATEGORY_KEY, value: ROOT_CATEGORY_KEY }
+            });
         });
 
         it('should render the correct number of breadcrumbs', () => {
