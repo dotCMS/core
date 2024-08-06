@@ -596,6 +596,18 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{pageId}/content")
+    @Operation(operationId = "postPageContent",
+                summary = "Updates changes made to page content",
+                description = "This method updates changes that occur when adding or removing " + 
+                                "contentlets from containers. It takes a JSON object that returns " +
+                                "variables associated with the contentlets and their modifications.",
+                tags = {"Page"},
+                responses = {
+                        @ApiResponse(responseCode = "200", description = "Content updated successfully",
+                                content = @Content(mediaType = "application/json",
+                                        schema = @Schema()
+                                ))
+                })
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("pageId") final String pageId,
