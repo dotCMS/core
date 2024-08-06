@@ -38,15 +38,12 @@
     overflow-y: auto;
     height: 100%;
     padding: $spacing-1;
-
     &:last-child {
         border-right: none;
     }
 }
 
 .category-list__item {
-    gap: $spacing-3;
-    padding: 0 $spacing-1 0 $spacing-1;
     transition: background-color $basic-speed;
     height: 40px;
     flex-wrap: nowrap;
@@ -56,6 +53,15 @@
     &:hover {
         background-color: $color-palette-primary-100;
     }
+}
+
+.category-list__item-wrapper {
+    padding-left: $spacing-3;
+    padding-right: $spacing-1;
+}
+
+.category-list__item-checkbox {
+    padding-left: $spacing-1;
 }
 
 .category-list__item--selected {
