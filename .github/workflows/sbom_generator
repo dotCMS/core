@@ -64,7 +64,7 @@ jobs:
 
       - name: Commit and push results to core-test-results repository
         run: |
-          cd core-test-results
+          cd core-test-results/sbom
           git add dotcms-${{ env.DOTCMS_VERSION }}.json
           git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
           git push origin master
