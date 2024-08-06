@@ -1,4 +1,4 @@
-import { createDirectiveFactory, SpectatorDirective } from '@ngneat/spectator';
+import { createDirectiveFactory, SpectatorDirective, mockProvider } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -27,7 +27,9 @@ describe('DotSiteSelectorDirective', () => {
             { provide: SiteService, useClass: SiteServiceMock },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
             DotEventsService,
-            DotSiteService
+            mockProvider(DotSiteService, {
+                getSites: jasmine.createSpy().and.returnValue(of(mockSites))
+            }),
         ]
     });
 
@@ -46,41 +48,36 @@ describe('DotSiteSelectorDirective', () => {
     });
 
     describe('Get Sites', () => {
-        let getSitesSpy;
 
-        beforeEach(() => {
-            getSitesSpy = spyOn(dotSiteService, 'getSites').and.returnValue(of(mockSites));
-        });
 
         it('should get sites list', () => {
             spectator.detectChanges();
 
             spectator.directive.ngOnInit();
 
-            expect(getSitesSpy).toHaveBeenCalled();
+            expect(dotSiteService.getSites).toHaveBeenCalled();
         });
 
         it('should get sites list with filter', fakeAsync(() => {
-            const filter: DropdownFilterEvent = {
+            const event: DropdownFilterEvent = {
                 filter: 'demo',
                 originalEvent: new MouseEvent('test')
             };
-            dropdown.onFilter.emit(filter);
+            dropdown.onFilter.emit(event);
 
             spectator.tick(500);
-            expect(getSitesSpy).toHaveBeenCalledWith(filter, 10);
+            expect(dotSiteService.getSites).toHaveBeenCalledWith(event.filter, 10);
         }));
     });
 
     describe('Listen login-as/logout-as events', () => {
         it('should send notification when login-as/logout-as', fakeAsync(() => {
-            const getSitesSpy = spyOn(dotSiteService, 'getSites').and.returnValue(of(mockSites));
             spectator.detectChanges();
             dotEventsService.notify('login-as');
             spectator.tick(0);
             dotEventsService.notify('logout-as');
             spectator.tick(0);
-            expect(getSitesSpy).toHaveBeenCalledTimes(2);
+            expect(dotSiteService.getSites).toHaveBeenCalledTimes(2);
         }));
     });
 });
