@@ -2739,10 +2739,7 @@ describe('EditEmaEditorComponent', () => {
                                 origin: HOST,
                                 data: {
                                     action: CUSTOMER_ACTIONS.CLIENT_READY,
-                                    payload: {
-                                        type: 'GRAPHQL',
-                                        data: config.query
-                                    }
+                                    payload: config
                                 }
                             })
                         );
@@ -2770,10 +2767,7 @@ describe('EditEmaEditorComponent', () => {
                                 origin: HOST,
                                 data: {
                                     action: CUSTOMER_ACTIONS.CLIENT_READY,
-                                    payload: {
-                                        type: 'PAGEAPI',
-                                        data: config.params
-                                    }
+                                    payload: config
                                 }
                             })
                         );

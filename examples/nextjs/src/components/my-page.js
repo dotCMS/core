@@ -57,8 +57,6 @@ export function MyPage({ pageAsset, nav }) {
           })
         : DotcmsLayout;
 
-    pageAsset = usePageAsset(pageAsset);
-
     return (
         <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
             {pageAsset.layout.header && (
@@ -73,7 +71,9 @@ export function MyPage({ pageAsset, nav }) {
                         components: componentsMap,
                         pageAsset: pageAsset,
                     }}
-                    config={{ pathname }}
+                    config={{
+                        pathname
+                    }}
                 />
             </main>
 

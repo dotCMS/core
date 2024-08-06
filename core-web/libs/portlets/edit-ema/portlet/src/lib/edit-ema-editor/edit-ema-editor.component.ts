@@ -85,6 +85,7 @@ import {
     ReorderPayload
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { clientRequestProps } from '../store/features/client/withClient';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     compareUrlPaths,
@@ -973,11 +974,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
-            [CUSTOMER_ACTIONS.CLIENT_READY]: (payload: {
-                type: 'PAGEAPI' | 'GRAPHQL';
-                data: string | Record<string, string>;
-            }) => {
-                const { type, data } = payload || {};
+            [CUSTOMER_ACTIONS.CLIENT_READY]: (clientConfig: clientRequestProps) => {
+                const { query, params } = clientConfig || {};
                 const isClientReady = this.uveStore.isClientReady();
 
                 // Frameworks  Navigation triggers the client ready event, so we need to prevent it
@@ -986,18 +984,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                if (!data) {
+                // If there is no client configuration, we just set the client as ready
+                if (!clientConfig) {
                     this.uveStore.setIsClientReady(true);
 
                     return;
                 }
 
-                const config = {
-                    query: type === 'GRAPHQL' ? (data as string) : '',
-                    params: type === 'PAGEAPI' ? (data as Record<string, string>) : {}
-                };
-
-                this.uveStore.setClientConfiguration(config);
+                this.uveStore.setClientConfiguration({ query, params });
                 this.uveStore.reload();
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {

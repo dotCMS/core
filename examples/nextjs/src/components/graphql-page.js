@@ -72,10 +72,7 @@ export function MyGraphQLPage({ pageAsset, nav, query }) {
                     }}
                     config={{
                         pathname,
-                        fetch: {
-                            type: "GHAPQL",
-                            data: query
-                        }
+                        editor: { query }
                     }}
                 />
             </main>

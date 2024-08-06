@@ -89,6 +89,9 @@ describe('UVEStore', () => {
                     get() {
                         return of({});
                     },
+                    getClientPage() {
+                        return of({});
+                    },
                     save: jest.fn()
                 }
             },
@@ -899,8 +902,8 @@ describe('UVEStore', () => {
 
                         // It's impossible to get a VTL when we are in Headless
                         // but I just want to check the state is being patched
-                        const getSpy = jest
-                            .spyOn(dotPageApiService, 'get')
+                        const getClientPageSpy = jest
+                            .spyOn(dotPageApiService, 'getClientPage')
                             .mockImplementation(() => of(MOCK_RESPONSE_VTL));
 
                         const payload = {
@@ -913,7 +916,7 @@ describe('UVEStore', () => {
 
                         expect(saveSpy).toHaveBeenCalledWith(payload);
 
-                        expect(getSpy).toHaveBeenCalledWith(store.params());
+                        expect(getClientPageSpy).toHaveBeenCalledWith(store.$clientRequestProps());
 
                         expect(store.status()).toBe(UVE_STATUS.LOADED);
                         expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
@@ -942,8 +945,8 @@ describe('UVEStore', () => {
                     expect(store.$reloadEditorContent()).toEqual({
                         code: MOCK_RESPONSE_HEADLESS.page.rendered,
                         isTraditionalPage: false,
-                        isEditState: true,
-                        isEnterprise: true
+                        enableInlineEdit: true,
+                        isClientReady: false
                     });
                 });
                 it('should return the expected data for VTL', () => {
@@ -956,8 +959,8 @@ describe('UVEStore', () => {
                     expect(store.$reloadEditorContent()).toEqual({
                         code: MOCK_RESPONSE_VTL.page.rendered,
                         isTraditionalPage: true,
-                        isEditState: true,
-                        isEnterprise: true
+                        enableInlineEdit: true,
+                        isClientReady: false
                     });
                 });
             });
@@ -981,7 +984,7 @@ describe('UVEStore', () => {
                         showDialogs: true,
                         showEditorContent: true,
                         iframe: {
-                            opacity: '1',
+                            opacity: '0.5',
                             pointerEvents: 'auto',
                             src: 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
                             wrapper: null
@@ -996,6 +999,12 @@ describe('UVEStore', () => {
                         },
                         seoResults: null
                     });
+                });
+
+                it('should set iframe opacity to 1 when client is Ready', () => {
+                    store.setIsClientReady(true);
+
+                    expect(store.$editorProps().iframe.opacity).toBe('1');
                 });
 
                 describe('showDialogs', () => {

@@ -14,11 +14,11 @@ import { DotcmsPageProps } from '../components/DotcmsLayout/DotcmsLayout';
 import { DotCMSPageContext } from '../models';
 
 export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
+    const { pathname, onReload, editor } = config;
     const [state, setState] = useState<DotCMSPageContext>({
         ...pageContext,
         isInsideEditor: false
     });
-    const { pathname, onReload, fetch } = config;
 
     /**
      * Initializes the DotCMS editor.
@@ -61,7 +61,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
             return;
         }
 
-        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: fetch });
+        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: editor });
     }, [pathname]);
 
     /**

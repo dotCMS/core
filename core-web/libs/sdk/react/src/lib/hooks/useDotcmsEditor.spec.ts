@@ -130,21 +130,21 @@ describe('useDotcmsEditor', () => {
             };
 
             it('should send a message to the editor when the client is ready', () => {
-                const fetch: sdkClient.DotCMSFetchConfig = { type: 'PAGEAPI', data: {} };
+                const editor: sdkClient.EditorConfig = { params: {} };
 
                 renderHook(() =>
                     useDotcmsEditor({
                         ...dotCMSPagePropsMock,
                         config: {
                             pathname: '',
-                            fetch
+                            editor
                         }
                     })
                 );
 
                 expect(sdkClient.postMessageToEditor).toHaveBeenCalledWith({
                     action: sdkClient.CUSTOMER_ACTIONS.CLIENT_READY,
-                    payload: fetch
+                    payload: editor
                 });
             });
         });
@@ -154,7 +154,9 @@ describe('useDotcmsEditor', () => {
                 pageContext: mockPageContext,
                 config: {
                     pathname: '',
-                    fetch: { type: 'PAGEAPI', data: {} }
+                    editor: {
+                        query: '{query { asset { identifier } }}'
+                    }
                 }
             };
 
