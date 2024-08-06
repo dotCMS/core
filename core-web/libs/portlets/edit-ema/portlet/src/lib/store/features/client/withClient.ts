@@ -32,6 +32,7 @@ const initialState: ClientConfigState = {
 
 /**
  * Add methods to handle client configuration
+ * The Client represents the page host. In the context of self-hosted pages, dotCMS acts as the client.
  *
  * @description This feature is used to handle the client configuration
  * @export
