@@ -34,7 +34,7 @@ export type PageAPIFetchConfig = {
  * @description Union type for fetch configurations.
  * @typedef {GraphQLFetchConfig | PageAPIFetchConfig} DotCMSFetchConfig
  */
-type DotCMSFetchConfig = GraphQLFetchConfig | PageAPIFetchConfig;
+export type DotCMSFetchConfig = GraphQLFetchConfig | PageAPIFetchConfig;
 
 /**
  * Represents the configuration options for the DotCMS page editor.

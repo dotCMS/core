@@ -4,6 +4,9 @@ import * as sdkClient from '@dotcms/client';
 
 import { useDotcmsEditor } from './useDotcmsEditor';
 
+import { DotcmsPageProps } from '../components/DotcmsLayout/DotcmsLayout';
+import { mockPageContext } from '../mocks/mockPageContext';
+
 jest.mock('@dotcms/client', () => ({
     ...jest.requireActual('@dotcms/client'),
     isInsideEditor: () => true,
@@ -40,7 +43,12 @@ describe('useDotcmsEditor', () => {
         it('should not call initEditor or destroyEditor when outside editor', () => {
             isInsideEditorSpy.mockReturnValueOnce(false);
 
-            renderHook(() => useDotcmsEditor({ pathname: '' }));
+            renderHook(() =>
+                useDotcmsEditor({
+                    pageContext: mockPageContext,
+                    config: { pathname: '' }
+                })
+            );
 
             expect(initEditorSpy).not.toHaveBeenCalled();
             expect(destroyEditorSpy).not.toHaveBeenCalled();
@@ -51,7 +59,12 @@ describe('useDotcmsEditor', () => {
         it('should call initEditor when inside editor', () => {
             isInsideEditorSpy.mockReturnValueOnce(true);
 
-            renderHook(() => useDotcmsEditor({ pathname: '' }));
+            renderHook(() =>
+                useDotcmsEditor({
+                    pageContext: mockPageContext,
+                    config: { pathname: '' }
+                })
+            );
 
             expect(initEditorSpy).toHaveBeenCalled();
         });
@@ -59,7 +72,12 @@ describe('useDotcmsEditor', () => {
         it('should call destroyEditor on unmount when inside editor', () => {
             isInsideEditorSpy.mockReturnValueOnce(true);
 
-            const { unmount } = renderHook(() => useDotcmsEditor({ pathname: '' }));
+            const { unmount } = renderHook(() =>
+                useDotcmsEditor({
+                    pageContext: mockPageContext,
+                    config: { pathname: '' }
+                })
+            );
 
             unmount();
 
@@ -67,6 +85,16 @@ describe('useDotcmsEditor', () => {
         });
 
         describe('onReload', () => {
+            const dotCMSPagePropsMock = {
+                pageContext: mockPageContext,
+                config: {
+                    pathname: '',
+                    onReload: () => {
+                        /* do nothing */
+                    }
+                }
+            };
+
             beforeEach(() => {
                 isInsideEditorSpy.mockReturnValueOnce(true);
             });
@@ -74,14 +102,7 @@ describe('useDotcmsEditor', () => {
             it('should subscribe to the `CHANGE` event', () => {
                 const client = DotCmsClient.instance;
 
-                renderHook(() =>
-                    useDotcmsEditor({
-                        pathname: '',
-                        onReload: () => {
-                            /* do nothing */
-                        }
-                    })
-                );
+                renderHook(() => useDotcmsEditor(dotCMSPagePropsMock));
 
                 expect(client.editor.on).toHaveBeenCalledWith('changes', expect.any(Function));
             });
@@ -89,18 +110,60 @@ describe('useDotcmsEditor', () => {
             it('should remove listener on unmount', () => {
                 const client = DotCmsClient.instance;
 
-                const { unmount } = renderHook(() =>
-                    useDotcmsEditor({
-                        pathname: '',
-                        onReload: () => {
-                            /* do nothing */
-                        }
-                    })
-                );
+                const { unmount } = renderHook(() => useDotcmsEditor(dotCMSPagePropsMock));
 
                 unmount();
 
                 expect(client.editor.off).toHaveBeenCalledWith('changes');
+            });
+        });
+
+        describe('Client is ready', () => {
+            const dotCMSPagePropsMock = {
+                pageContext: mockPageContext,
+                config: {
+                    pathname: '',
+                    onReload: () => {
+                        /* do nothing */
+                    }
+                }
+            };
+
+            it('should send a message to the editor when the client is ready', () => {
+                const fetch: sdkClient.DotCMSFetchConfig = { type: 'PAGEAPI', data: {} };
+
+                renderHook(() =>
+                    useDotcmsEditor({
+                        ...dotCMSPagePropsMock,
+                        config: {
+                            pathname: '',
+                            fetch
+                        }
+                    })
+                );
+
+                expect(sdkClient.postMessageToEditor).toHaveBeenCalledWith({
+                    action: sdkClient.CUSTOMER_ACTIONS.CLIENT_READY,
+                    payload: fetch
+                });
+            });
+        });
+
+        describe('onChange', () => {
+            const dotCMSPagePropsMock = {
+                pageContext: mockPageContext,
+                config: {
+                    pathname: '',
+                    fetch: { type: 'PAGEAPI', data: {} }
+                }
+            };
+
+            it('should update the page asset when changes are made in the editor', () => {
+                const client = DotCmsClient.instance;
+
+                renderHook(() => useDotcmsEditor(dotCMSPagePropsMock as DotcmsPageProps));
+
+                expect(client.editor.on).toHaveBeenCalledWith('changes', expect.any(Function));
             });
         });
     });

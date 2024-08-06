@@ -1,7 +1,6 @@
 import { DotCMSPageEditorConfig } from '@dotcms/client';
 
 import { useDotcmsEditor } from '../../hooks/useDotcmsEditor';
-import { useDotcmsLayout } from '../../hooks/useDotcmsLayout';
 import { DotCMSPageContext } from '../../models';
 import { PageProvider } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
@@ -38,20 +37,14 @@ export type DotcmsPageProps = {
  * @param {DotcmsPageProps} props - The properties for the DotCMS page.
  * @returns {JSX.Element} - A JSX element that represents the layout for a DotCMS page.
  */
-export function DotcmsLayout({ pageContext, config }: DotcmsPageProps): JSX.Element {
-    const { isInsideEditor } = useDotcmsEditor(config);
-    const { pageAsset } = useDotcmsLayout(pageContext.pageAsset, config);
+export function DotcmsLayout(dotPageProps: DotcmsPageProps): JSX.Element {
+    const pageContext = useDotcmsEditor(dotPageProps);
 
     return (
-        <PageProvider
-            pageContext={{
-                ...{
-                    ...pageContext,
-                    pageAsset
-                },
-                isInsideEditor
-            }}>
-            {pageAsset?.layout?.body.rows.map((row, index) => <Row key={index} row={row} />)}
+        <PageProvider pageContext={pageContext}>
+            {pageContext.pageAsset?.layout?.body.rows.map((row, index) => (
+                <Row key={index} row={row} />
+            ))}
         </PageProvider>
     );
 }
