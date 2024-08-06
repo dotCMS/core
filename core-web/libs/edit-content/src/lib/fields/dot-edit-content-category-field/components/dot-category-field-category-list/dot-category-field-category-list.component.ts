@@ -26,6 +26,7 @@ import {
 } from '@dotcms/ui';
 
 import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
+import { ROOT_CATEGORY_KEY } from '../../dot-edit-content-category-field.const';
 import {
     DotCategoryFieldItem,
     DotCategoryFieldKeyValueObj
@@ -123,7 +124,10 @@ export class DotCategoryFieldCategoryListComponent {
                     'edit.content.category-field.category.root-name'
                 ),
                 command: () => {
-                    this.rowClicked.emit({ index: 0 });
+                    this.rowClicked.emit({
+                        index: 0,
+                        item: { key: ROOT_CATEGORY_KEY, value: ROOT_CATEGORY_KEY }
+                    });
                 }
             },
             ...currentItems
@@ -162,17 +166,14 @@ export class DotCategoryFieldCategoryListComponent {
                 return;
             }
 
-            const lastColumnIndex = columnsArray.length - 1;
+            const columnToScroll = columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1];
 
-            if (
-                columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1] &&
-                columnsArray[MINIMUM_CATEGORY_WITHOUT_SCROLLING - 1].nativeElement.children.length >
-                    0
-            ) {
+            if (columnToScroll?.nativeElement?.childElementCount > 0) {
+                const lastColumnIndex = columnsArray.length - 1;
                 columnsArray[lastColumnIndex].nativeElement.scrollIntoView({
                     behavior: 'smooth',
                     block: 'end',
-                    inline: 'end'
+                    inline: 'nearest'
                 });
             } else {
                 // scroll to the first column
