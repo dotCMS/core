@@ -90,9 +90,8 @@ export function withEditor() {
                         code: store.pageAPIResponse()?.page?.rendered,
                         isClientReady: store.isClientReady(),
                         isTraditionalPage: untracked(() => store.isTraditionalPage()),
-                        enableInlineEdit: untracked(
-                            () => store.isEditState() && store.isEnterprise()
-                        )
+                        enableInlineEdit:
+                            store.isEditState() && untracked(() => store.isEnterprise())
                     };
                 }),
                 $editorIsInDraggingState: computed<boolean>(
