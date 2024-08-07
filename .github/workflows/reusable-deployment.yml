@@ -21,7 +21,7 @@ on:
       publish-npm-cli:
         default: false
         type: boolean
-      publish-npm-sdk-libs:
+      increment-sdk-libs:
         default: false
         type: boolean        
     secrets:
@@ -113,10 +113,10 @@ jobs:
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           cli-artifact-run-id: ${{ github.run_id }} # currently cli artifacts are never from build queue
 
-      - name: SDKs Publish
-        id: sdks_publish
-        if: inputs.publish-npm-sdk-libs
-        uses: ./.github/actions/publish-npm-sdk-libs
+      - name: SDKs increment version
+        id: sdks_incremental
+        if: inputs.increment-sdk-libs
+        uses: ./.github/actions/increment-sdk-libs
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
@@ -160,10 +160,10 @@ jobs:
               ]
             }
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}    
 
       - name: Slack Notification (SDK libs announcement)
-        if: inputs.publish-npm-sdk-libs
+        if: inputs.increment-sdk-libs
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: "log-sdk-libs"
@@ -174,7 +174,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "> :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) published!\n \n>This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!"
+                    "text": "> :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) update version requested!\n \n>This automated script announce that a new *_SDK libs_* version is going to be published *tagged as:* [ `${{ steps.sdks_incremental.outputs.npm-package-version }}` ] on the `NPM` registry :package:!"
                   }
                 }
               ]

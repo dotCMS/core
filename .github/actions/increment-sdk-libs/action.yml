@@ -1,25 +1,17 @@
-name: 'SDK Publish NPM Packages'
-description: 'Publish the dotCMS SDK libs on NPM registry.'
+name: 'Update SDK Versions and Create PR'
+description: 'Automatically update the dotCMS SDK libs versions and create a pull request.'
 inputs:
   ref:
     description: 'Branch to build from'
     required: false
     default: 'master'
-  npm-token:
-    description: 'NPM token'
-    required: true
-  npm-package-tag:
-    description: 'Package tag'
-    required: false
-    default: 'alpha'
-  node-version:
-    description: 'Node.js version'
-    required: false
-    default: '19'
   github-token:
     description: 'GitHub Token'
     required: true
 outputs:
+  pr-number:
+    description: 'Pull Request number'
+    value: ${{ steps.create-pull-request.outputs.pull-request-number }}
   npm-package-version:
     description: 'SDK libs - NPM package version'
     value: ${{ steps.next_version.outputs.next_version }}
@@ -81,6 +73,11 @@ runs:
       env:
         NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
       run: |
+        echo "::group::Update versions and dependencies"
+
+        # Create an auxiliary branch for versioning updates
+        AUXILIARY_BRANCH=sdk-libs-version-update-${NEXT_VERSION}-${{ github.run_id }}
+
         echo "Updating version to $NEXT_VERSION"
         sdks=$(ls -ls | awk '{ print$10 }' | grep -v '^$')
         
@@ -110,6 +107,12 @@ runs:
                 echo "The file $package_json does not exist"
             fi
         done
+
+        git add .
+        git status
+        git commit --allow-empty -a -m "📦 Publishing SDK libs version [${NEXT_VERSION}]"
+        
+        echo "::endgroup::"
       shell: bash
 
     - name: Printing SDK packages
@@ -120,24 +123,15 @@ runs:
         echo "::endgroup::"
       shell: bash
 
-    - name: 'Publishing sdk into NPM registry'
-      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
-      env:
-        NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
-        NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
-        NPM_TAG: ${{ inputs.npm-package-tag }}
-      run: |
-        echo "::group::Publishing SDK packages"
-        
-        sdks=$(ls)
-        for sdk in $sdks; do
-          echo "Publishing SDK lib [${sdk}]"
-          cd $sdk && echo "$(pwd)"
-          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
-          npm publish --access public --tag $NPM_TAG
-          npm dist-tag $NEXT_VERSION latest
-          cd ..
-        done
-        echo "::endgroup::"
-      shell: bash      
-        
+    - name: 'Create Pull Request'
+      id: create-pull-request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ inputs.github-token }}
+        branch: ${{ steps.update-versions.outputs.auxiliary-branch }}
+        base: ${{ inputs.ref }}
+        title: 'Auto-generated PR: incremental version update for SDK libs to [${{ steps.next_version.outputs.next_version }}]'
+        body: 'This PR was created automatically to update the SDK libs version to [${{ steps.next_version.outputs.next_version }}].'
+        labels: |
+          sdk-libs
+          automated pr                 

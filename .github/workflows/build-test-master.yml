@@ -17,8 +17,8 @@ on:
         description: 'Run all tests'
         type: boolean
         default: false
-      publish-npm-sdk-libs:
-        description: 'Publish NPM SDKs'
+      increment-sdk-libs:
+        description: 'Increment SDK libs version'
         type: boolean
         default: false        
 jobs:
@@ -79,7 +79,7 @@ jobs:
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       environment: trunk
-      publish-npm-sdk-libs: ${{ (needs.initialize.outputs.sdk_libs == 'true' && github.event_name != 'workflow_dispatch') || (inputs.publish-npm-sdks && github.event_name == 'workflow_dispatch') }}
+      increment-sdk-libs: ${{ (needs.initialize.outputs.sdk_libs == 'true' && github.event_name != 'workflow_dispatch') || (inputs.increment-sdk-libs && github.event_name == 'workflow_dispatch') }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
