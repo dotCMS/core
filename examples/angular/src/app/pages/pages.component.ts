@@ -50,6 +50,11 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
       .subscribe((data) => {
         this.context.set(data['context']);
       });
+
+
+    this.client.editor.on('changes', (pageAsset) => {
+      this.context.update((context) => ({ ...context, pageAsset }));
+    });
   }
 
   ngOnDestroy() {
