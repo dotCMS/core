@@ -698,7 +698,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     protected handleNgEvent({ event, payload }: { event: CustomEvent; payload: ActionPayload }) {
         const { detail } = event;
-        console.log(detail)
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
             [NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED]: () => {

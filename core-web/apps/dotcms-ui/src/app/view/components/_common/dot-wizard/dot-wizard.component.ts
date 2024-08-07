@@ -101,25 +101,16 @@ export class DotWizardComponent implements OnDestroy {
         const [form]: HTMLFieldSetElement[] = event
             .composedPath()
             .filter((x: Node) => x.nodeName === 'FORM') as HTMLFieldSetElement[];
+
         if (form) {
             if (form.elements.item(form.elements.length - 1) === event.target) {
+                event.preventDefault();
+                event.stopPropagation();
                 const acceptButton = document.getElementsByClassName(
                     'dialog__button-accept'
                 )[0] as HTMLButtonElement;
                 acceptButton.focus();
-                event.preventDefault();
             }
-        }
-    }
-
-    /**
-     * handle the enter event, if the form is valid move to the next step
-     * @memberof DotWizardComponent
-     */
-    handleEnter(event: KeyboardEvent): void {
-        event.stopImmediatePropagation();
-        if (this.stepsValidation[this.currentStep]) {
-            this.dialog.acceptAction();
         }
     }
 
@@ -159,7 +150,7 @@ export class DotWizardComponent implements OnDestroy {
     }
 
     private setDialogActions(): void {
-        this.$dialogActions.set ({
+        this.$dialogActions.set({
             accept: {
                 action: () => {
                     this.getAcceptAction();
@@ -170,7 +161,7 @@ export class DotWizardComponent implements OnDestroy {
                 disabled: true
             },
             cancel: this.setCancelButton()
-        })
+        });
     }
 
     private loadNextStep(next: number): void {
