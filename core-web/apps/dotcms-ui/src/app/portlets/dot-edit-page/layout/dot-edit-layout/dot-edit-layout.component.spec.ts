@@ -215,8 +215,29 @@ describe('DotEditLayoutComponent', () => {
                 fixture.detectChanges();
             });
 
+            it('should change pageState', () => {
+                const res: DotPageRender = new DotPageRender({
+                    ...mockDotRenderedPage(),
+                    layout: fakeLayout
+                });
+
+                spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
+
+                layoutDesignerDe.triggerEventHandler('save', {
+                    themeId: '123',
+                    layout: fakeLayout,
+                    title: null
+                });
+
+                // The initial value
+                expect(component.pageState).not.toEqual(PAGE_STATE);
+            });
+
             it('should save the layout', () => {
-                const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
+                const res: DotPageRender = new DotPageRender({
+                    ...mockDotRenderedPage(),
+                    layout: fakeLayout
+                });
                 spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
 
                 layoutDesignerDe.triggerEventHandler('save', {
@@ -238,11 +259,15 @@ describe('DotEditLayoutComponent', () => {
                     '/default/': processedContainers[0].container,
                     '/banner/': processedContainers[1].container
                 });
-                expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
+
+                expect(component.pageState).toEqual(res);
             });
 
             it(`should save the layout after ${DEBOUNCE_TIME}`, fakeAsync(() => {
-                const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
+                const res: DotPageRender = new DotPageRender({
+                    ...mockDotRenderedPage(),
+                    layout: fakeLayout
+                });
                 spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
 
                 layoutDesignerDe.triggerEventHandler('updateTemplate', {
@@ -265,11 +290,14 @@ describe('DotEditLayoutComponent', () => {
                     '/default/': processedContainers[0].container,
                     '/banner/': processedContainers[1].container
                 });
-                expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
+                expect(component.pageState).toEqual(res);
             }));
 
             it('should save the layout instantly when closeEditLayout is true', () => {
-                const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
+                const res: DotPageRender = new DotPageRender({
+                    ...mockDotRenderedPage(),
+                    layout: fakeLayout
+                });
                 spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
 
                 layoutDesignerDe.triggerEventHandler('updateTemplate', {
@@ -293,11 +321,14 @@ describe('DotEditLayoutComponent', () => {
                     '/default/': processedContainers[0].container,
                     '/banner/': processedContainers[1].container
                 });
-                expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
+                expect(component.pageState).toEqual(res);
             });
 
             it('should not save the layout when observable is destroy', fakeAsync(() => {
-                const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
+                const res: DotPageRender = new DotPageRender({
+                    ...mockDotRenderedPage(),
+                    layout: fakeLayout
+                });
                 spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
 
                 // Destroy should be true.
