@@ -917,8 +917,8 @@ describe('UVEStore', () => {
                         expect(saveSpy).toHaveBeenCalledWith(payload);
 
                         expect(getClientPageSpy).toHaveBeenCalledWith(
-                            store.clientRequestProps(),
-                            store.params()
+                            store.params(),
+                            store.clientRequestProps()
                         );
 
                         expect(store.status()).toBe(UVE_STATUS.LOADED);

@@ -1,6 +1,7 @@
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
+import { CustomClientParams } from '@dotcms/client';
+
 import { UVEState } from '../../models';
 
 /**
@@ -10,7 +11,7 @@ import { UVEState } from '../../models';
  * @interface ClientRequestProps
  */
 export interface ClientRequestProps {
-    params?: Partial<DotPageApiParams>;
+    params?: CustomClientParams;
     query?: string;
 }
 

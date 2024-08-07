@@ -117,7 +117,7 @@ describe('DotPageApiService', () => {
 
         it('should get the page using graphql if the client send a query', () => {
             const query = 'query { ... }';
-            spectator.service.getClientPage({ query }, baseParams).subscribe();
+            spectator.service.getClientPage(baseParams, { query }).subscribe();
 
             const { request } = spectator.expectOne('/api/v1/graphql', HttpMethod.POST);
             const requestHeaders = request.headers;
@@ -129,14 +129,11 @@ describe('DotPageApiService', () => {
 
         it('should get the page using the page api if the client does not send a query', () => {
             spectator.service
-                .getClientPage(
-                    {
-                        params: {
-                            depth: '1'
-                        }
-                    },
-                    baseParams
-                )
+                .getClientPage(baseParams, {
+                    params: {
+                        depth: '1'
+                    }
+                })
                 .subscribe();
 
             spectator.expectOne(

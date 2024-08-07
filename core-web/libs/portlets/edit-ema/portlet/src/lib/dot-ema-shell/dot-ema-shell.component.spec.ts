@@ -137,7 +137,7 @@ describe('DotEmaShellComponent', () => {
                     get({ language_id }) {
                         return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
                     },
-                    getClientPage(_clientConfig, { language_id }) {
+                    getClientPage({ language_id }, _clientConfig) {
                         return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
                     },
                     save() {

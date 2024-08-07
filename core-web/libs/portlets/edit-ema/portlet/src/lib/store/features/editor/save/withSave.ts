@@ -46,7 +46,7 @@ export function withSave() {
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() =>
                                     dotPageApiService
-                                        .getClientPage(store.clientRequestProps(), store.params())
+                                        .getClientPage(store.params(), store.clientRequestProps())
                                         .pipe(
                                             tapResponse(
                                                 (pageAPIResponse: DotPageApiResponse) => {

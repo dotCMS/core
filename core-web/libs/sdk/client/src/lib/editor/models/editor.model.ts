@@ -1,10 +1,17 @@
 /**
+ * @description Custom client parameters for fetching data.
+ */
+export type CustomClientParams = {
+    depth: string;
+};
+
+/**
  * @description Union type for fetch configurations.
  * @typedef {GraphQLFetchConfig | PageAPIFetchConfig} DotCMSFetchConfig
  */
 export type EditorConfig =
     | {
-          params: Record<string, string>;
+          params: CustomClientParams;
       }
     | {
           query: string;

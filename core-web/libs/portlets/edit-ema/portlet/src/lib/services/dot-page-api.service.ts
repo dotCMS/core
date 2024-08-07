@@ -222,8 +222,8 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     getClientPage(
-        clientProps: ClientRequestProps,
-        params: DotPageApiParams
+        params: DotPageApiParams,
+        clientProps: ClientRequestProps
     ): Observable<DotPageApiResponse> {
         const { query, params: clientParams } = clientProps;
 

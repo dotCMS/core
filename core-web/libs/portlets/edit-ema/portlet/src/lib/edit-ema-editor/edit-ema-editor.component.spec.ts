@@ -261,7 +261,7 @@ const createRouting = () =>
                         // We use the language_id to determine the response, use this to test different behaviors
                         return UVE_PAGE_RESPONSE_MAP[language_id];
                     },
-                    getClientPage(_clientConfig, { language_id }) {
+                    getClientPage({ language_id }, _clientConfig) {
                         // We use the language_id to determine the response, use this to test different behaviors
                         return UVE_PAGE_RESPONSE_MAP[language_id];
                     },

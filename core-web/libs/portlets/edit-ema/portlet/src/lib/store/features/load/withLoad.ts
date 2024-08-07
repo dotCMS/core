@@ -170,7 +170,7 @@ export function withLoad() {
                         }),
                         switchMap(() => {
                             return dotPageApiService
-                                .getClientPage(store.clientRequestProps(), store.params())
+                                .getClientPage(store.params(), store.clientRequestProps())
                                 .pipe(
                                     switchMap((pageAPIResponse) =>
                                         dotLanguagesService
