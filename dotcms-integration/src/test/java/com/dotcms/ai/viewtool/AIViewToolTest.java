@@ -2,6 +2,7 @@ package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
@@ -45,7 +46,8 @@ public class AIViewToolTest {
         IntegrationTestInitService.getInstance().init();
         IPUtils.disabledIpPrivateSubnet(true);
         wireMockServer = AiTest.prepareWireMock();
-        config = AiTest.prepareConfig(APILocator.systemHost(), wireMockServer);
+        AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
+        config = ConfigService.INSTANCE.config();
     }
 
     @AfterClass

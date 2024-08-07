@@ -24,39 +24,44 @@
             </div>
         </div>
 
-        <hr *ngIf="showSuggestions || currentLink" class="divider" />
+        @if (showSuggestions || currentLink) {
+            <hr class="divider" />
+        }
 
-        <div *ngIf="currentLink && !showSuggestions" class="info-container">
-            <a [href]="currentLink" class="url-container" target="_blank">
-                <span [style]="{ fontSize: '32px' }" class="material-icons">language</span>
-                <span class="truncate">{{ currentLink }}</span>
-            </a>
-
-            <div class="field-checkbox">
-                <div class="checkbox-container">
-                    <p-checkbox
-                        [binary]="true"
-                        id="editor-input-checkbox"
-                        formControlName="blank"></p-checkbox>
+        @if (currentLink && !showSuggestions) {
+            <div class="info-container">
+                <a [href]="currentLink" class="url-container" target="_blank">
+                    <span [style]="{ fontSize: '32px' }" class="material-icons">language</span>
+                    <span class="truncate">{{ currentLink }}</span>
+                </a>
+                <div class="field-checkbox">
+                    <div class="checkbox-container">
+                        <p-checkbox
+                            [binary]="true"
+                            id="editor-input-checkbox"
+                            formControlName="blank"></p-checkbox>
+                    </div>
+                    <label for="editor-input-checkbox">Open link in new window</label>
                 </div>
-                <label for="editor-input-checkbox">Open link in new window</label>
             </div>
-        </div>
+        }
     </form>
 
     <!-- Suggestions -->
-    <dot-suggestion-page
-        *ngIf="showSuggestions"
-        (back)="resetForm()"
-        [items]="items"
-        [loading]="loading"
-        [title]="noResultsTitle"
-        #suggestions></dot-suggestion-page>
+    @if (showSuggestions) {
+        <dot-suggestion-page
+            (back)="resetForm()"
+            [items]="items"
+            [loading]="loading"
+            [title]="noResultsTitle"
+            #suggestions></dot-suggestion-page>
+    }
 
     <!-- Form Actions -->
-    <dot-form-actions
-        *ngIf="!showSuggestions && currentLink"
-        (hide)="hide.emit($event)"
-        (remove)="removeLink.emit($event)"
-        [link]="currentLink"></dot-form-actions>
+    @if (!showSuggestions && currentLink) {
+        <dot-form-actions
+            (hide)="hide.emit($event)"
+            (remove)="removeLink.emit($event)"
+            [link]="currentLink"></dot-form-actions>
+    }
 </div>
