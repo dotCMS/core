@@ -1,7 +1,7 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.rest.forms.EmbeddingsForm;
-import com.dotcms.ai.util.OpenAIThreadPool;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import java.util.List;
@@ -15,7 +15,7 @@ public class AsyncEmbeddingsCallStrategy implements EmbeddingsCallStrategy {
 
     @Override
     public void bulkEmbed(final List<String> inodes, final EmbeddingsForm embeddingsForm) {
-        OpenAIThreadPool.submit(new BulkEmbeddingsRunner(inodes, embeddingsForm));
+        DotConcurrentFactory.getInstance().getSubmitter(OPEN_AI_THREAD_POOL_KEY).submit(new BulkEmbeddingsRunner(inodes, embeddingsForm));
     }
 
     @Override
@@ -23,7 +23,7 @@ public class AsyncEmbeddingsCallStrategy implements EmbeddingsCallStrategy {
                       final Contentlet contentlet,
                       final String content,
                       final String indexName) {
-        OpenAIThreadPool.submit(new EmbeddingsRunner(embeddingsAPI, contentlet, content, indexName));
+        DotConcurrentFactory.getInstance().getSubmitter(OPEN_AI_THREAD_POOL_KEY).submit(new EmbeddingsRunner(embeddingsAPI, contentlet, content, indexName));
     }
 
 }

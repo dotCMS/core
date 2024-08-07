@@ -81,6 +81,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -173,12 +174,12 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         Language spanishLanguage = TestDataUtils.getSpanishLanguage();
 
-        final ContentType news = getNewsLikeContentType("News");
-        final ContentType comments = getCommentsLikeContentType("Comments");
+        final ContentType news = getNewsLikeContentType();
+        final ContentType comments = getCommentsLikeContentType();
         relateContentTypes(news, comments);
 
-        final ContentType newsContentType = contentTypeAPI.find("News");
-        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+        final ContentType newsContentType = contentTypeAPI.find(news.variable());
+        final ContentType commentsContentType = contentTypeAPI.find(comments.variable());
 
         Contentlet newsContentlet = null;
         Contentlet newsContentletInSpanish = null;
@@ -204,8 +205,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                     .setProperty("comment", "Comment for News")
                     .setPolicy(IndexPolicy.FORCE).nextPersisted();
 
+            final String relationShipName = String.format("%s-%s", news.variable(), comments.variable());
+            Logger.debug(this, "RelationShipName: " + relationShipName);
             //Saving relationship
-            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+            final Relationship relationship = relationshipAPI.byTypeValue(relationShipName);
 
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
@@ -600,12 +603,12 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void testGetRelatedContentWhenIndexIsMessedUp()
             throws DotDataException, DotSecurityException {
 
-        final ContentType news = getNewsLikeContentType("News");
-        final ContentType comments = getCommentsLikeContentType("Comments");
+        final ContentType news = getNewsLikeContentType();
+        final ContentType comments = getCommentsLikeContentType();
         relateContentTypes(news, comments);
 
-        final ContentType newsContentType = contentTypeAPI.find("News");
-        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+        final ContentType newsContentType = contentTypeAPI.find(news.variable());
+        final ContentType commentsContentType = contentTypeAPI.find(comments.variable());
 
         Contentlet newsContentlet = null;
         Contentlet commentsContentlet = null;
@@ -630,8 +633,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                     .setProperty("comment", "Comment for News")
                     .setPolicy(IndexPolicy.FORCE).nextPersisted();
 
+
+            final String relationShipName = String.format("%s-%s", news.variable(), comments.variable());
+            Logger.debug(this, "RelationShipName: " + relationShipName);
             //Saving relationship
-            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+            final Relationship relationship = relationshipAPI.byTypeValue(relationShipName);
 
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
@@ -689,12 +695,12 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void testGetArchivedRelatedParent()
             throws DotDataException, DotSecurityException {
 
-        final ContentType news = getNewsLikeContentType("News");
-        final ContentType comments = getCommentsLikeContentType("Comments");
+        final ContentType news = getNewsLikeContentType();
+        final ContentType comments = getCommentsLikeContentType();
         relateContentTypes(news, comments);
 
-        final ContentType newsContentType = contentTypeAPI.find("News");
-        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+        final ContentType newsContentType = contentTypeAPI.find(news.variable());
+        final ContentType commentsContentType = contentTypeAPI.find(comments.variable());
 
         Contentlet newsContentlet = null;
         Contentlet commentsContentlet = null;
@@ -719,8 +725,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                     .setProperty("comment", "Comment for News")
                     .setPolicy(IndexPolicy.FORCE).nextPersisted();
 
+            final String relationShipName = String.format("%s-%s", news.variable(), comments.variable());
+            Logger.debug(this, "RelationShipName: " + relationShipName);
             //Saving relationship
-            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+            final Relationship relationship = relationshipAPI.byTypeValue(relationShipName);
 
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
@@ -765,12 +773,12 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void testGetArchivedRelatedChild()
             throws DotDataException, DotSecurityException {
 
-        final ContentType news = getNewsLikeContentType("News");
-        final ContentType comments = getCommentsLikeContentType("Comments");
+        final ContentType news = getNewsLikeContentType();
+        final ContentType comments = getCommentsLikeContentType();
         relateContentTypes(news, comments);
 
-        final ContentType newsContentType = contentTypeAPI.find("News");
-        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+        final ContentType newsContentType = contentTypeAPI.find(news.variable());
+        final ContentType commentsContentType = contentTypeAPI.find(comments.variable());
 
         Contentlet newsContentlet = null;
         Contentlet commentsContentlet = null;
@@ -795,8 +803,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                     .setProperty("comment", "Comment for News")
                     .setPolicy(IndexPolicy.FORCE).nextPersisted();
 
+            final String relationShipName = String.format("%s-%s", news.variable(), comments.variable());
+            Logger.debug(this, "RelationShipName: " + relationShipName);
             //Saving relationship
-            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+            final Relationship relationship = relationshipAPI.byTypeValue(relationShipName);
 
             newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
@@ -919,7 +929,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
         Contentlet contentlet = null;
-        final ContentType news = getNewsLikeContentType("News");
+        final ContentType news = getNewsLikeContentType();
 
         final ContentletDataGen dataGen = new ContentletDataGen(news.id());
 

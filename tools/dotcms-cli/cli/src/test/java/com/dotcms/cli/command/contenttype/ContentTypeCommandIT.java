@@ -1904,7 +1904,7 @@ class ContentTypeCommandIT extends CommandTest {
             var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
             Assertions.assertTrue(byVarName.isPresent());
             Assertions.assertNotNull(byVarName.get().fields());
-            Assertions.assertEquals(2, byVarName.get().fields().size());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
 
             // ---
             // Now validating the auto update updated the content type descriptor
@@ -1913,7 +1913,7 @@ class ContentTypeCommandIT extends CommandTest {
                     ContentType.class
             );
             Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
-            Assertions.assertEquals(2, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
 
             // ╔══════════════════════════════════╗
             // ║  Removing the ids on the fields  ║
@@ -1953,9 +1953,9 @@ class ContentTypeCommandIT extends CommandTest {
             byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
             Assertions.assertTrue(byVarName.isPresent());
             Assertions.assertNotNull(byVarName.get().fields());
-            Assertions.assertEquals(2, byVarName.get().fields().size());
-            Assertions.assertEquals(descriptorField1Id, byVarName.get().fields().get(0).id());
-            Assertions.assertEquals(descriptorField2Id, byVarName.get().fields().get(1).id());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
+            Assertions.assertEquals(descriptorField1Id, byVarName.get().fields().get(2).id());
+            Assertions.assertEquals(descriptorField2Id, byVarName.get().fields().get(3).id());
 
             // ---
             // Now validating the auto update updated the content type descriptor
@@ -1964,11 +1964,11 @@ class ContentTypeCommandIT extends CommandTest {
                     ContentType.class
             );
             Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
-            Assertions.assertEquals(2, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
             Assertions.assertEquals(
-                    descriptorField1Id, updatedContentTypeDescriptor.fields().get(0).id());
+                    descriptorField1Id, updatedContentTypeDescriptor.fields().get(2).id());
             Assertions.assertEquals(
-                    descriptorField2Id, updatedContentTypeDescriptor.fields().get(1).id());
+                    descriptorField2Id, updatedContentTypeDescriptor.fields().get(3).id());
 
         } finally {
             deleteTempDirectory(tempFolder);
@@ -2017,7 +2017,7 @@ class ContentTypeCommandIT extends CommandTest {
             var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
             Assertions.assertTrue(byVarName.isPresent());
             Assertions.assertNotNull(byVarName.get().fields());
-            Assertions.assertEquals(2, byVarName.get().fields().size());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
 
             // ---
             // Now validating the auto update updated the content type descriptor
@@ -2026,7 +2026,7 @@ class ContentTypeCommandIT extends CommandTest {
                     ContentType.class
             );
             Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
-            Assertions.assertEquals(2, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
 
             // ╔══════════════════════════════════╗
             // ║  Changing the ids on the fields  ║
@@ -2066,9 +2066,9 @@ class ContentTypeCommandIT extends CommandTest {
             byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
             Assertions.assertTrue(byVarName.isPresent());
             Assertions.assertNotNull(byVarName.get().fields());
-            Assertions.assertEquals(2, byVarName.get().fields().size());
-            Assertions.assertEquals(descriptorField1Id, byVarName.get().fields().get(0).id());
-            Assertions.assertEquals(descriptorField2Id, byVarName.get().fields().get(1).id());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
+            Assertions.assertEquals(descriptorField1Id, byVarName.get().fields().get(2).id());
+            Assertions.assertEquals(descriptorField2Id, byVarName.get().fields().get(3).id());
 
             // ---
             // Now validating the auto update updated the content type descriptor
@@ -2077,11 +2077,11 @@ class ContentTypeCommandIT extends CommandTest {
                     ContentType.class
             );
             Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
-            Assertions.assertEquals(2, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
             Assertions.assertEquals(
-                    descriptorField1Id, updatedContentTypeDescriptor.fields().get(0).id());
+                    descriptorField1Id, updatedContentTypeDescriptor.fields().get(2).id());
             Assertions.assertEquals(
-                    descriptorField2Id, updatedContentTypeDescriptor.fields().get(1).id());
+                    descriptorField2Id, updatedContentTypeDescriptor.fields().get(3).id());
 
         } finally {
             deleteTempDirectory(tempFolder);
@@ -2130,7 +2130,7 @@ class ContentTypeCommandIT extends CommandTest {
             var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
             Assertions.assertTrue(byVarName.isPresent());
             Assertions.assertNotNull(byVarName.get().fields());
-            Assertions.assertEquals(2, byVarName.get().fields().size());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
 
             // ---
             // Now validating the auto update updated the content type descriptor
@@ -2139,19 +2139,19 @@ class ContentTypeCommandIT extends CommandTest {
                     ContentType.class
             );
             Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
-            Assertions.assertEquals(2, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
 
             // ╔════════════════════════════════════════════════════════════════╗
             // ║  Adding new field and removing the ids on the existing fields  ║
             // ╚════════════════════════════════════════════════════════════════╝
             final var descriptorFields = updatedContentTypeDescriptor.fields();
-            var descriptorField1 = descriptorFields.get(0);
+            var descriptorField1 = descriptorFields.get(2);
             final var descriptorField1Id = descriptorField1.id();
             descriptorField1 = ImmutableBinaryField.builder()
                     .from(descriptorField1)
                     .id(null).build();
 
-            var descriptorField2 = descriptorFields.get(1);
+            var descriptorField2 = descriptorFields.get(3);
             final var descriptorField2Id = descriptorField2.id();
             descriptorField2 = ImmutableTextField.builder()
                     .from(descriptorField2)
@@ -2194,9 +2194,9 @@ class ContentTypeCommandIT extends CommandTest {
             byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
             Assertions.assertTrue(byVarName.isPresent());
             Assertions.assertNotNull(byVarName.get().fields());
-            Assertions.assertEquals(3, byVarName.get().fields().size());
-            Assertions.assertEquals(descriptorField1Id, byVarName.get().fields().get(0).id());
-            Assertions.assertEquals(descriptorField2Id, byVarName.get().fields().get(1).id());
+            Assertions.assertEquals(5, byVarName.get().fields().size());
+            Assertions.assertEquals(descriptorField1Id, byVarName.get().fields().get(2).id());
+            Assertions.assertEquals(descriptorField2Id, byVarName.get().fields().get(3).id());
 
             // ---
             // Now validating the auto update updated the content type descriptor
@@ -2205,11 +2205,11 @@ class ContentTypeCommandIT extends CommandTest {
                     ContentType.class
             );
             Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
-            Assertions.assertEquals(3, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(5, updatedContentTypeDescriptor.fields().size());
             Assertions.assertEquals(
-                    descriptorField1Id, updatedContentTypeDescriptor.fields().get(0).id());
+                    descriptorField1Id, updatedContentTypeDescriptor.fields().get(2).id());
             Assertions.assertEquals(
-                    descriptorField2Id, updatedContentTypeDescriptor.fields().get(1).id());
+                    descriptorField2Id, updatedContentTypeDescriptor.fields().get(3).id());
 
         } finally {
             deleteTempDirectory(tempFolder);
@@ -2258,7 +2258,7 @@ class ContentTypeCommandIT extends CommandTest {
             var byVarName = contentTypesTestHelper.findContentType(newContentTypeResult.variable());
             Assertions.assertTrue(byVarName.isPresent());
             Assertions.assertNotNull(byVarName.get().fields());
-            Assertions.assertEquals(2, byVarName.get().fields().size());
+            Assertions.assertEquals(4, byVarName.get().fields().size());
 
             // ---
             // Now validating the auto update updated the content type descriptor
@@ -2267,7 +2267,7 @@ class ContentTypeCommandIT extends CommandTest {
                     ContentType.class
             );
             Assertions.assertNotNull(updatedContentTypeDescriptor.fields());
-            Assertions.assertEquals(2, updatedContentTypeDescriptor.fields().size());
+            Assertions.assertEquals(4, updatedContentTypeDescriptor.fields().size());
 
             // ╔═════════════════╗
             // ║  Removing field ║
