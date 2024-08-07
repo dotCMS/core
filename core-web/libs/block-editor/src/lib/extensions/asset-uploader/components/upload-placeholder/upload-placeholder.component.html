@@ -1,20 +1,23 @@
-<ng-container [ngSwitch]="type">
-    <div *ngSwitchCase="'video'" class="placeholder-container">
-        <div class="preview-container__video">
-            <video class="video" src="" controls></video>
-        </div>
-
-        <div class="preview-container__loading">
-            <div>
-                <dot-spinner size="30px"></dot-spinner>
-                Uploading video, wait until finished.
+@switch (type) {
+    @case ('video') {
+        <div class="placeholder-container">
+            <div class="preview-container__video">
+                <video class="video" src="" controls></video>
             </div>
-            <button
-                (click)="cancel.emit(true)"
-                class="p-button-md p-button-outlined"
-                pButton
-                label="Cancel"></button>
+            <div class="preview-container__loading">
+                <div>
+                    <dot-spinner size="30px"></dot-spinner>
+                    Uploading video, wait until finished.
+                </div>
+                <button
+                    (click)="cancel.emit(true)"
+                    class="p-button-md p-button-outlined"
+                    pButton
+                    label="Cancel"></button>
+            </div>
         </div>
-    </div>
-    <span *ngSwitchDefault class="default-message">Uploading...</span>
-</ng-container>
+    }
+    @default {
+        <span class="default-message">Uploading...</span>
+    }
+}

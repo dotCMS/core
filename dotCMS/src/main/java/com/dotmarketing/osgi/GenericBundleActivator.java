@@ -12,6 +12,7 @@ import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
 
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.business.portal.DotPortlet;
+import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -107,6 +108,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private final Collection<String> preHooks = new ArrayList<>();
     private final Collection<String> postHooks = new ArrayList<>();
     private final Collection<String> overriddenClasses = new HashSet<>();
+
 
     protected ClassLoader getBundleClassloader () {
         return this.getClass().getClassLoader();
@@ -367,7 +369,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
 
             Logger.info(this, "Added Portlet: " + portlet.getPortletId());
-            OSGIUtil.getInstance().portletIDsStopped.remove(portlet.getPortletId());
+            OSGIUtil.getInstance().getPortletIDsStopped().remove(portlet.getPortletId());
         }
 
         // Forcing a refresh of the portlets cache
@@ -408,7 +410,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 .build();
 
         Portlet updatedPortlet = updatedDotPortlet.toPortlet();
-        portlets.put(updatedPortlet.getPortletId(), APILocator.getPortletAPI().updatePortlet(updatedPortlet));
+        PortletAPI api = APILocator.getPortletAPI();
+        api.updatePortlet(updatedPortlet);
+        portlets.put(updatedPortlet.getPortletId(), updatedPortlet);
     }
 
     /**
