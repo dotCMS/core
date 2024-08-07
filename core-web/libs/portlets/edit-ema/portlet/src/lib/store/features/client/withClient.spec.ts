@@ -1,6 +1,6 @@
 import { describe } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { patchState, signalStore, withState } from '@ngrx/signals';
+import { signalStore, withState } from '@ngrx/signals';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -10,6 +10,8 @@ import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { UVEState } from '../../models';
 
+const emptyParams = {} as DotPageApiParams;
+
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
@@ -17,14 +19,12 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
-    params: null,
+    params: emptyParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
     pageIsLocked: true
 };
-
-const emptyParams = {} as DotPageApiParams;
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withClient());
 
@@ -42,74 +42,11 @@ describe('UVEStore', () => {
         store = spectator.service;
     });
 
-    describe('withComputed', () => {
-        it('should return initial configuration', () => {
-            expect(store.$clientRequestProps()).toEqual({
-                query: '',
-                params: emptyParams
-            });
-        });
-
-        it('should return the configuration from the main store', () => {
-            const baseParams = {
-                language_id: '1',
-                url: 'http://example.com',
-                'com.dotmarketing.persona.id': '2'
-            };
-
-            patchState(store, {
-                params: baseParams
-            });
-
-            expect(store.$clientRequestProps()).toEqual({
-                query: '',
-                params: baseParams
-            });
-        });
-
-        it('should return the configuration from the main store and the client', () => {
-            const baseParams = {
-                language_id: '1',
-                url: 'http://example.com',
-                'com.dotmarketing.persona.id': '2'
-            };
-
-            const clientParams = {
-                'com.dotmarketing.persona.id': '3',
-                depth: '2'
-            };
-
-            patchState(store, {
-                params: baseParams,
-                clientRequestProps: {
-                    query: 'test',
-                    params: clientParams
-                }
-            });
-
-            expect(store.$clientRequestProps()).toEqual({
-                query: 'test',
-                params: {
-                    ...baseParams,
-                    ...clientParams
-                }
-            });
-        });
-
-        it('should return the query from the client', () => {
-            const clientProps = {
-                query: 'test',
-                params: {}
-            };
-
-            patchState(store, {
-                clientRequestProps: clientProps
-            });
-
-            expect(store.$clientRequestProps()).toEqual({
-                query: 'test',
-                params: emptyParams
-            });
+    it('should have initial state', () => {
+        expect(store.isClientReady()).toBeFalsy();
+        expect(store.clientRequestProps()).toEqual({
+            params: null,
+            query: ''
         });
     });
 
@@ -120,21 +57,25 @@ describe('UVEStore', () => {
             expect(store.isClientReady()).toBe(true);
         });
 
-        it('should set the client configuration', () => {
-            const clientProps = {
-                query: 'test',
-                params: {}
-            };
+        describe('setClientConfiguration', () => {
+            it('should set the client configuration', () => {
+                const clientProps = {
+                    query: 'test',
+                    params: {
+                        depth: '1'
+                    }
+                };
 
-            store.setClientConfiguration(clientProps);
+                store.setClientConfiguration(clientProps);
 
-            expect(store.clientRequestProps()).toEqual(clientProps);
+                expect(store.clientRequestProps()).toEqual(clientProps);
+            });
         });
 
         it('should reset the client configuration', () => {
             const clientProps = {
                 query: 'test',
-                params: {}
+                params: null
             };
 
             store.setClientConfiguration(clientProps);
@@ -142,7 +83,7 @@ describe('UVEStore', () => {
 
             expect(store.clientRequestProps()).toEqual({
                 query: '',
-                params: {}
+                params: null
             });
         });
     });

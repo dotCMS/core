@@ -916,7 +916,10 @@ describe('UVEStore', () => {
 
                         expect(saveSpy).toHaveBeenCalledWith(payload);
 
-                        expect(getClientPageSpy).toHaveBeenCalledWith(store.$clientRequestProps());
+                        expect(getClientPageSpy).toHaveBeenCalledWith(
+                            store.clientRequestProps(),
+                            store.params()
+                        );
 
                         expect(store.status()).toBe(UVE_STATUS.LOADED);
                         expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);

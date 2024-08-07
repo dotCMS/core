@@ -42,27 +42,28 @@ export function withSave() {
                                 pageId: store.pageAPIResponse().page.identifier,
                                 params: store.params()
                             };
-                            const clientProps = store.$clientRequestProps();
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() =>
-                                    dotPageApiService.getClientPage(clientProps).pipe(
-                                        tapResponse(
-                                            (pageAPIResponse: DotPageApiResponse) => {
-                                                patchState(store, {
-                                                    status: UVE_STATUS.LOADED,
-                                                    pageAPIResponse: pageAPIResponse
-                                                });
-                                            },
-                                            (e) => {
-                                                console.error(e);
+                                    dotPageApiService
+                                        .getClientPage(store.clientRequestProps(), store.params())
+                                        .pipe(
+                                            tapResponse(
+                                                (pageAPIResponse: DotPageApiResponse) => {
+                                                    patchState(store, {
+                                                        status: UVE_STATUS.LOADED,
+                                                        pageAPIResponse: pageAPIResponse
+                                                    });
+                                                },
+                                                (e) => {
+                                                    console.error(e);
 
-                                                patchState(store, {
-                                                    status: UVE_STATUS.ERROR
-                                                });
-                                            }
+                                                    patchState(store, {
+                                                        status: UVE_STATUS.ERROR
+                                                    });
+                                                }
+                                            )
                                         )
-                                    )
                                 ),
                                 catchError((e) => {
                                     console.error(e);

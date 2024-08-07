@@ -1,31 +1,34 @@
-import {
-    patchState,
-    signalStoreFeature,
-    type,
-    withComputed,
-    withMethods,
-    withState
-} from '@ngrx/signals';
-
-import { computed } from '@angular/core';
+import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { UVEState } from '../../models';
 
-export interface clientRequestProps {
-    params: Partial<DotPageApiParams>;
-    query: string;
+/**
+ * Client request properties
+ *
+ * @export
+ * @interface ClientRequestProps
+ */
+export interface ClientRequestProps {
+    params?: Partial<DotPageApiParams>;
+    query?: string;
 }
 
+/**
+ * Client configuration state
+ *
+ * @export
+ * @interface ClientConfigState
+ */
 export interface ClientConfigState {
     isClientReady: boolean;
-    clientRequestProps: clientRequestProps;
+    clientRequestProps: ClientRequestProps;
 }
 
 const initialState: ClientConfigState = {
     isClientReady: false,
     clientRequestProps: {
-        params: {},
+        params: null,
         query: ''
     }
 };
@@ -44,35 +47,16 @@ export function withClient() {
             state: type<UVEState>()
         },
         withState<ClientConfigState>(initialState),
-        withComputed((store) => {
-            return {
-                $clientRequestProps: computed<{
-                    params: DotPageApiParams;
-                    query: string;
-                }>(() => {
-                    const { query, params } = store.clientRequestProps();
-                    const baseParams = (store.params() || {}) as DotPageApiParams;
-
-                    return {
-                        query,
-                        params: {
-                            ...baseParams,
-                            ...params
-                        }
-                    };
-                })
-            };
-        }),
         withMethods((store) => {
             return {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
-                setClientConfiguration: (clientRequestProps: Partial<clientRequestProps>) => {
+                setClientConfiguration: ({ query, params }: ClientRequestProps) => {
                     patchState(store, {
                         clientRequestProps: {
-                            ...store.clientRequestProps(),
-                            ...clientRequestProps
+                            query,
+                            params
                         }
                     });
                 },

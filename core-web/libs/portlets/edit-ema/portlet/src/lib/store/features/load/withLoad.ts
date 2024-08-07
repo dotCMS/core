@@ -169,50 +169,50 @@ export function withLoad() {
                             });
                         }),
                         switchMap(() => {
-                            const clientProps = store.$clientRequestProps();
+                            return dotPageApiService
+                                .getClientPage(store.clientRequestProps(), store.params())
+                                .pipe(
+                                    switchMap((pageAPIResponse) =>
+                                        dotLanguagesService
+                                            .getLanguagesUsedPage(pageAPIResponse.page.identifier)
+                                            .pipe(
+                                                map((languages) => ({
+                                                    pageAPIResponse,
+                                                    languages
+                                                }))
+                                            )
+                                    ),
+                                    tapResponse({
+                                        next: ({ pageAPIResponse, languages }) => {
+                                            const canEditPage = computeCanEditPage(
+                                                pageAPIResponse?.page,
+                                                store.currentUser(),
+                                                store.experiment()
+                                            );
 
-                            return dotPageApiService.getClientPage(clientProps).pipe(
-                                switchMap((pageAPIResponse) =>
-                                    dotLanguagesService
-                                        .getLanguagesUsedPage(pageAPIResponse.page.identifier)
-                                        .pipe(
-                                            map((languages) => ({
+                                            const pageIsLocked = computePageIsLocked(
+                                                pageAPIResponse?.page,
+                                                store.currentUser()
+                                            );
+
+                                            patchState(store, {
                                                 pageAPIResponse,
-                                                languages
-                                            }))
-                                        )
-                                ),
-                                tapResponse({
-                                    next: ({ pageAPIResponse, languages }) => {
-                                        const canEditPage = computeCanEditPage(
-                                            pageAPIResponse?.page,
-                                            store.currentUser(),
-                                            store.experiment()
-                                        );
-
-                                        const pageIsLocked = computePageIsLocked(
-                                            pageAPIResponse?.page,
-                                            store.currentUser()
-                                        );
-
-                                        patchState(store, {
-                                            pageAPIResponse,
-                                            languages,
-                                            canEditPage,
-                                            pageIsLocked,
-                                            status: UVE_STATUS.LOADED,
-                                            isClientReady: true,
-                                            isTraditionalPage: !store.params().clientHost // If we don't send the clientHost we are using as VTL page
-                                        });
-                                    },
-                                    error: ({ status: errorStatus }: HttpErrorResponse) => {
-                                        patchState(store, {
-                                            errorCode: errorStatus,
-                                            status: UVE_STATUS.ERROR
-                                        });
-                                    }
-                                })
-                            );
+                                                languages,
+                                                canEditPage,
+                                                pageIsLocked,
+                                                status: UVE_STATUS.LOADED,
+                                                isClientReady: true,
+                                                isTraditionalPage: !store.params().clientHost // If we don't send the clientHost we are using as VTL page
+                                            });
+                                        },
+                                        error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                            patchState(store, {
+                                                errorCode: errorStatus,
+                                                status: UVE_STATUS.ERROR
+                                            });
+                                        }
+                                    })
+                                );
                         })
                     )
                 )

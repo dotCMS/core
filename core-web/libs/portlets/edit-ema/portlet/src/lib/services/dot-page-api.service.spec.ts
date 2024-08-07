@@ -107,4 +107,42 @@ describe('DotPageApiService', () => {
         expect(requestHeaders.get('dotcachettl')).toBe('0');
         expect(requestHeaders.get('Content-Type')).toEqual('application/json');
     });
+
+    describe('getClientPage', () => {
+        const baseParams = {
+            url: '///test-url///',
+            language_id: 'en',
+            'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+        };
+
+        it('should get the page using graphql if the client send a query', () => {
+            const query = 'query { ... }';
+            spectator.service.getClientPage({ query }, baseParams).subscribe();
+
+            const { request } = spectator.expectOne('/api/v1/graphql', HttpMethod.POST);
+            const requestHeaders = request.headers;
+
+            expect(request.body).toEqual({ query });
+            expect(requestHeaders.get('dotcachettl')).toBe('0');
+            expect(requestHeaders.get('Content-Type')).toEqual('application/json');
+        });
+
+        it('should get the page using the page api if the client does not send a query', () => {
+            spectator.service
+                .getClientPage(
+                    {
+                        params: {
+                            depth: '1'
+                        }
+                    },
+                    baseParams
+                )
+                .subscribe();
+
+            spectator.expectOne(
+                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=1&mode=EDIT_MODE',
+                HttpMethod.GET
+            );
+        });
+    });
 });

@@ -20,6 +20,7 @@ import {
 
 import { PAGE_MODE } from '../shared/enums';
 import { DotPage, SavePagePayload } from '../shared/models';
+import { ClientRequestProps } from '../store/features/client/withClient';
 import { createPageApiUrlWithQueryParams } from '../utils';
 
 export interface DotPageApiResponse {
@@ -64,11 +65,6 @@ export interface PaginationData {
     currentPage: number;
     perPage: number;
     totalEntries: number;
-}
-
-export interface clientPagePayload {
-    query: string;
-    params: DotPageApiParams;
 }
 
 @Injectable()
@@ -222,13 +218,20 @@ export class DotPageApiService {
     /**
      *
      * @description Get Client Page from the Page API or GraphQL
-     * @param {clientPagePayload} { query, params }
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    getClientPage({ query, params }: clientPagePayload): Observable<DotPageApiResponse> {
+    getClientPage(
+        clientProps: ClientRequestProps,
+        params: DotPageApiParams
+    ): Observable<DotPageApiResponse> {
+        const { query, params: clientParams } = clientProps;
+
         if (!query) {
-            return this.get(params);
+            return this.get({
+                ...(clientParams || {}),
+                ...params
+            });
         }
 
         return this.getGraphQLPage(query);

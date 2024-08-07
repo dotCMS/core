@@ -85,7 +85,7 @@ import {
     ReorderPayload
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { clientRequestProps } from '../store/features/client/withClient';
+import { ClientRequestProps } from '../store/features/client/withClient';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     compareUrlPaths,
@@ -974,7 +974,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
-            [CUSTOMER_ACTIONS.CLIENT_READY]: (clientConfig: clientRequestProps) => {
+            [CUSTOMER_ACTIONS.CLIENT_READY]: (clientConfig: ClientRequestProps) => {
                 const { query, params } = clientConfig || {};
                 const isClientReady = this.uveStore.isClientReady();
 
