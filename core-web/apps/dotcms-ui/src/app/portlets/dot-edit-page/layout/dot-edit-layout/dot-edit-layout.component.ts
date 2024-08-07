@@ -205,6 +205,9 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
         );
         this.templateIdentifier.set(updatedPage.template.identifier);
         this.containerMap = updatedPage.containerMap; // containerMap from pageState is a get property, which causes to trigger a function everytime the Angular change detection runs.
+
+        // We need to pass the new layout to the template builder to sync the value with the backend
+        this.pageState = updatedPage;
     }
 
     /**
