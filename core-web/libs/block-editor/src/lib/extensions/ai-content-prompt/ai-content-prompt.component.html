@@ -31,10 +31,11 @@
                         formControlName="generatedText"
                         pInputTextarea></textarea>
 
-                    <dot-copy-button
-                        *ngIf="generatedText.value"
-                        [copy]="generatedText.value"
-                        customClass="p-button-rounded" />
+                    @if (generatedText.value) {
+                        <dot-copy-button
+                            [copy]="generatedText.value"
+                            customClass="p-button-rounded" />
+                    }
                 </div>
             }
             @if (vm.status === ComponentStatus.LOADING) {

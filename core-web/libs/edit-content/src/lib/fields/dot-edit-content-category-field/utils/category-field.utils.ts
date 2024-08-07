@@ -5,7 +5,12 @@ import {
     DotCMSContentTypeField
 } from '@dotcms/dotcms-models';
 
-import { DotCategoryFieldKeyValueObj, HierarchyParent } from '../models/dot-category-field.models';
+import { ROOT_CATEGORY_KEY } from '../dot-edit-content-category-field.const';
+import {
+    DotCategoryFieldItem,
+    DotCategoryFieldKeyValueObj,
+    HierarchyParent
+} from '../models/dot-category-field.models';
 
 /**
  * Retrieves and convert selected categories from a contentlet.
@@ -113,9 +118,8 @@ export const clearCategoriesAfterIndex = (
     index: number
 ): DotCategory[][] => {
     const newArray = categoryDeepCopy<DotCategory>(array);
-    newArray.splice(index + 1);
 
-    return newArray;
+    return newArray.slice(0, index + 1);
 };
 
 /**
@@ -134,6 +138,27 @@ export const clearParentPathAfterIndex = (parentPath: string[], index: number): 
  */
 export const checkIfClickedIsLastItem = (index: number, categories: DotCategory[][]) => {
     return index + 1 === categories.length;
+};
+
+/**
+ * Check if the clicked item is already loaded
+ *
+ * @param {DotCategoryFieldItem} event
+ * @param {string[]} keyParentPath
+ * @return {*}
+ */
+export const checkIfClickedIsLoaded = (
+    event: DotCategoryFieldItem,
+    keyParentPath: string[]
+): boolean => {
+    const categoryKey = event.item.key;
+    const lastCategoryKey = keyParentPath[keyParentPath.length - 1];
+
+    if (categoryKey === ROOT_CATEGORY_KEY) {
+        return true;
+    }
+
+    return categoryKey !== lastCategoryKey;
 };
 
 /**
