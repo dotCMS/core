@@ -230,6 +230,8 @@ export class DotEmaWorkflowActionsService {
             this.dotMessageService.get('Workflow-Action')
         );
 
+        console.log("openWizarddd", wizardInput);
+
         return this.dotWizardService.open<DotWorkflowPayload>(wizardInput).pipe(
             filter(() => !!wizardInput),
             take(1)

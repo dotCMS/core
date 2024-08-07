@@ -191,8 +191,8 @@ describe('DotWizardComponent', () => {
         });
 
         it('should set cancel button correctly', () => {
-            expect(component.dialogActions.cancel.label).toEqual('Previous');
-            expect(component.dialogActions.cancel.disabled).toEqual(true);
+            expect(component.$dialogActions.cancel.label).toEqual('Previous');
+            expect(component.$dialogActions.cancel.disabled).toEqual(true);
         });
 
         it('should load steps and focus fist form element', () => {
@@ -285,11 +285,11 @@ describe('DotWizardComponent', () => {
         });
 
         it('should NOT change step on enter if form is invalid', () => {
-            spyOn(component.dialogActions.accept, 'action');
+            spyOn(component.$dialogActions.accept, 'action');
             form1.valid.emit(false);
             formsContainer.triggerEventHandler('keydown.enter', enterEvent);
 
-            expect(component.dialogActions.accept.action).not.toHaveBeenCalled();
+            expect(component.$dialogActions.accept.action).not.toHaveBeenCalled();
         });
 
         it('should update transform property on next', () => {
@@ -331,9 +331,9 @@ describe('DotWizardComponent', () => {
             ).componentInstance;
             spyOn(component, 'close');
             dotDialog.actions.cancel.action();
-            expect(component.dialogActions.cancel.label).toEqual('cancel');
+            expect(component.$dialogActions.cancel.label).toEqual('cancel');
             expect(component.close).toHaveBeenCalled();
-            expect(component.dialogActions.cancel.disabled).toEqual(false);
+            expect(component.$dialogActions.cancel.disabled).toEqual(false);
         });
     });
 });

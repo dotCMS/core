@@ -213,6 +213,7 @@ export class DotWorkflowEventHandlerService {
     }
 
     private openWizard(event: DotCMSWorkflowActionEvent): void {
+        console.log('openWizard', event);
         const wizardInput = this.setWizardInput(
             event.workflow,
             this.dotMessageService.get('Workflow-Action')
