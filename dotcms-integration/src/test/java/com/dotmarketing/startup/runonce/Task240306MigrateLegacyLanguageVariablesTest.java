@@ -20,13 +20,13 @@ import com.google.common.collect.ImmutableList;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 import static com.liferay.util.StringPool.BLANK;
 import static org.junit.Assert.assertEquals;
@@ -56,14 +56,18 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
     }
 
     /**
-     * Given scenario: we copy the messages directory to the expected location and run the upgrade task
-     * Expected result: the upgrade task should run without errors and the expected results should be ingested into the system
-     * @throws DotDataException
-     * @throws IOException
-     * @throws URISyntaxException
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link Task240306MigrateLegacyLanguageVariables#executeUpgrade()}</li>
+     *     <li><b>Given Scenario: </b>Run the Data Task as it would when dotCMS is being updated
+     *     .</li>
+     *     <li><b>Expected Result: </b>Running the Data Task should not cause any errors.</li>
+     * </ul>
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @Test
-    public void testExecuteUpgrade() throws DotDataException, IOException, URISyntaxException {
+    public void testExecuteUpgrade() throws DotDataException {
         final Task240306MigrateLegacyLanguageVariables dataTask = new Task240306MigrateLegacyLanguageVariables();
         assertTrue("This Data Task must always run", dataTask.forceRun());
         assertTrue("The migration summary object should not exist before running the task",
@@ -80,10 +84,16 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
             // Verify the languages we were not able to find
             assertTrue(locales.contains(Locale.SIMPLIFIED_CHINESE));
 
+            // There are other ITs that create random languages. So let's check ONLY for our
+            // expected languages
+            final Set<String> expectedLanguages = new HashSet<>();
             summary.success().forEach((language, addedKeys) -> {
                 final String isoCode = language.getIsoCode();
-                assertTrue("ISO Code not expected: " + isoCode, expectedResults.containsKey(isoCode));
+                if (expectedResults.containsKey(isoCode)) {
+                    expectedLanguages.add(isoCode);
+                }
             });
+            assertEquals("The expected languages must be present", expectedResults.size(), expectedLanguages.size());
         } finally {
             final Optional<ImmutableMigrationSummary> migrationSummary = dataTask.getMigrationSummary();
             migrationSummary.ifPresent(this::cleanup);
@@ -152,11 +162,18 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
             assertTrue("There must be at least 5 successfully processed Locales in the second run",
                     secondTaskSummary.success().size() >= 5);
             assertEquals("There must be no errors in the second run", 0, secondTaskSummary.fails().size());
+
+            // There are other ITs that create random languages. So let's check ONLY for our
+            // expected languages
+            final Set<String> expectedLanguages = new HashSet<>();
             secondTaskSummary.success().forEach((language, addedKeys) -> {
                 final String isoCode = language.getIsoCode();
-                assertTrue("ISO Code not expected: " + isoCode, expectedResults.containsKey(isoCode));
+                if (expectedResults.containsKey(isoCode)) {
+                    expectedLanguages.add(isoCode);
+                }
                 assertEquals("No entries should've been updated", 0, addedKeys.size());
             });
+            assertEquals("The expected languages must be present", expectedResults.size(), expectedLanguages.size());
         } finally {
             final Optional<ImmutableMigrationSummary> migrationSummary = dataTaskFirstInstance.getMigrationSummary();
             migrationSummary.ifPresent(this::cleanup);
