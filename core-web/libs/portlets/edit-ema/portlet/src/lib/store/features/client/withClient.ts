@@ -46,7 +46,7 @@ export function withClient() {
         withState<ClientConfigState>(initialState),
         withComputed((store) => {
             return {
-                $clientRequestProps: computed(() => {
+                $clientRequestProps: computed<clientRequestProps>(() => {
                     const { query, params } = store.clientRequestProps();
 
                     return {
