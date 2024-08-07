@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/component-store';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, forkJoin, of, EMPTY } from 'rxjs';
+import { pipe, forkJoin, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
@@ -16,6 +16,7 @@ import { DotPageApiService, DotPageApiParams } from '../../../services/dot-page-
 import { UVE_STATUS } from '../../../shared/enums';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
+import { withClient } from '../client/withClient';
 
 /**
  * Add load and reload method to the store
@@ -28,6 +29,7 @@ export function withLoad() {
         {
             state: type<UVEState>()
         },
+        withClient(),
         withMethods((store) => {
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
@@ -40,8 +42,9 @@ export function withLoad() {
             return {
                 load: rxMethod<DotPageApiParams>(
                     pipe(
+                        tap(() => store.resetClientConfiguration()),
                         tap(() => {
-                            patchState(store, { status: UVE_STATUS.LOADING });
+                            patchState(store, { status: UVE_STATUS.LOADING, isClientReady: false });
                         }),
                         switchMap((params) => {
                             return forkJoin({
@@ -129,6 +132,8 @@ export function withLoad() {
                                                     currentUser
                                                 );
 
+                                                const isTraditionalPage = !params.clientHost; // If we don't send the clientHost we are using as VTL page
+
                                                 patchState(store, {
                                                     pageAPIResponse,
                                                     isEnterprise,
@@ -138,8 +143,15 @@ export function withLoad() {
                                                     params,
                                                     canEditPage,
                                                     pageIsLocked,
-                                                    status: UVE_STATUS.LOADED,
-                                                    isTraditionalPage: !params.clientHost // If we don't send the clientHost we are using as VTL page
+                                                    isTraditionalPage,
+                                                    isClientReady: false,
+                                                    status: UVE_STATUS.LOADED
+                                                });
+                                            },
+                                            error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                                patchState(store, {
+                                                    errorCode: errorStatus,
+                                                    status: UVE_STATUS.ERROR
                                                 });
                                             }
                                         })
@@ -152,51 +164,55 @@ export function withLoad() {
                 reload: rxMethod<void>(
                     pipe(
                         tap(() => {
-                            patchState(store, { status: UVE_STATUS.LOADING });
+                            patchState(store, {
+                                status: UVE_STATUS.LOADING
+                            });
                         }),
                         switchMap(() => {
-                            return dotPageApiService.get(store.params()).pipe(
-                                switchMap((pageAPIResponse) =>
-                                    dotLanguagesService
-                                        .getLanguagesUsedPage(pageAPIResponse.page.identifier)
-                                        .pipe(
-                                            map((languages) => ({
+                            return dotPageApiService
+                                .getClientPage(store.params(), store.clientRequestProps())
+                                .pipe(
+                                    switchMap((pageAPIResponse) =>
+                                        dotLanguagesService
+                                            .getLanguagesUsedPage(pageAPIResponse.page.identifier)
+                                            .pipe(
+                                                map((languages) => ({
+                                                    pageAPIResponse,
+                                                    languages
+                                                }))
+                                            )
+                                    ),
+                                    tapResponse({
+                                        next: ({ pageAPIResponse, languages }) => {
+                                            const canEditPage = computeCanEditPage(
+                                                pageAPIResponse?.page,
+                                                store.currentUser(),
+                                                store.experiment()
+                                            );
+
+                                            const pageIsLocked = computePageIsLocked(
+                                                pageAPIResponse?.page,
+                                                store.currentUser()
+                                            );
+
+                                            patchState(store, {
                                                 pageAPIResponse,
-                                                languages
-                                            }))
-                                        )
-                                ),
-                                tapResponse({
-                                    next: ({ pageAPIResponse, languages }) => {
-                                        const canEditPage = computeCanEditPage(
-                                            pageAPIResponse?.page,
-                                            store.currentUser(),
-                                            store.experiment()
-                                        );
-
-                                        const pageIsLocked = computePageIsLocked(
-                                            pageAPIResponse?.page,
-                                            store.currentUser()
-                                        );
-
-                                        patchState(store, {
-                                            pageAPIResponse,
-                                            languages,
-                                            canEditPage,
-                                            pageIsLocked,
-                                            status: UVE_STATUS.LOADED,
-                                            isTraditionalPage: !store.params().clientHost // If we don't send the clientHost we are using as VTL page
-                                        });
-                                    },
-                                    error: ({ status: errorStatus }: HttpErrorResponse) => {
-                                        patchState(store, {
-                                            errorCode: errorStatus,
-                                            status: UVE_STATUS.ERROR
-                                        });
-                                    }
-                                }),
-                                catchError(() => EMPTY)
-                            );
+                                                languages,
+                                                canEditPage,
+                                                pageIsLocked,
+                                                status: UVE_STATUS.LOADED,
+                                                isClientReady: true,
+                                                isTraditionalPage: !store.params().clientHost // If we don't send the clientHost we are using as VTL page
+                                            });
+                                        },
+                                        error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                            patchState(store, {
+                                                errorCode: errorStatus,
+                                                status: UVE_STATUS.ERROR
+                                            });
+                                        }
+                                    })
+                                );
                         })
                     )
                 )
