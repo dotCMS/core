@@ -50,12 +50,8 @@ public final class AIAppListener implements EventSubscriber<AppSecretSavedEvent>
         final String hostId = event.getHostIdentifier();
         final Host host = Try.of(() -> hostAPI.find(hostId, APILocator.systemUser(), false)).getOrNull();
 
-<<<<<<< HEAD
         Optional.ofNullable(host).ifPresent(found -> AIModels.get().resetModels(found.getHostname()));
         ConfigService.INSTANCE.config(host);
-=======
-        Optional.ofNullable(host).ifPresent(found -> AIModels.get().resetModels(found));
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
     }
 
     @Override

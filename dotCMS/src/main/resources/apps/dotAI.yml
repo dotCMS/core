@@ -35,16 +35,6 @@ params:
     label: "Text Prompt"
     hint: "A prompt describing writing style."
     required: false
-<<<<<<< HEAD
-=======
-  textModelNames:
-    value: "gpt-3.5-turbo-16k"
-    hidden: false
-    type: "STRING"
-    label: "Model Names"
-    hint: "Comma delimited list of models used to generate OpenAI API response."
-    required: true
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
   textModelTokensPerMinute:
     value: "180000"
     hidden: false
@@ -73,7 +63,6 @@ params:
     label: "Completion model enabled"
     hint: "Enable completion model used to generate OpenAI API response."
     required: false
-<<<<<<< HEAD
   imageModelNames:
     value: "dall-e-3"
     hidden: false
@@ -81,8 +70,6 @@ params:
     label: "Image Model Names"
     hint: "Comma delimited list of image models used to generate OpenAI API response(e.g. dall-e-3)."
     required: true
-=======
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
   imagePrompt:
     value: "Use 16:9 aspect ratio."
     hidden: false
@@ -116,16 +103,6 @@ params:
         value: "1920x1080"
       - label: "256x256 (Small Square 1:1)"
         value: "256x256"
-<<<<<<< HEAD
-=======
-  imageModelNames:
-    value: "dall-e-3"
-    hidden: false
-    type: "STRING"
-    label: "Image Model Names"
-    hint: "Comma delimited list of image models used to generate OpenAI API response."
-    required: true
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
   imageModelTokensPerMinute:
     value: "0"
     hidden: false

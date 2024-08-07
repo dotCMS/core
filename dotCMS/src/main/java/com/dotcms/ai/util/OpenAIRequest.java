@@ -64,21 +64,11 @@ public class OpenAIRequest {
                         json.toString(2)));
 
         if (!appConfig.isEnabled()) {
-<<<<<<< HEAD
             AppConfig.debugLogger(OpenAIRequest.class, () -> "App dotAI is not enabled and will not send request.");
             throw new DotRuntimeException("App dotAI config without API urls or API key");
-=======
-            Logger.debug(OpenAIRequest.class, "OpenAI is not enabled and will not send request.");
-            return;
         }
 
         final AIModel model = appConfig.resolveModelOrThrow(json.optString(AiKeys.MODEL));
-
-        if (appConfig.getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-            Logger.debug(OpenAIRequest.class, "posting: " + json);
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
-        }
-
         final long sleep = lastRestCall.computeIfAbsent(model, m -> 0L)
                 + model.minIntervalBetweenCalls()
                 - System.currentTimeMillis();

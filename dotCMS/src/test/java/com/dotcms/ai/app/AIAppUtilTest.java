@@ -87,37 +87,6 @@ public class AIAppUtilTest {
     }
 
     /**
-<<<<<<< HEAD
-=======
-     * Given a map of secrets containing a key with an environment secret value
-     * When the discoverEnvSecret method is called with the key
-     * Then the environment secret value should be returned.
-     */
-    @Test
-    public void testDiscoverEnvSecret() {
-        when(secrets.get("apiKey")).thenReturn(secret);
-        when(secret.getString()).thenReturn("envSecretValue");
-
-        String result = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
-        assertEquals("envSecretValue", result);
-    }
-
-    /**
-     * Given a map of secrets containing a key with an environment secret value
-     * When the discoverEnvSecret method is called with the key
-     * Then the environment secret value should be returned.
-     */
-    @Test
-    public void testDiscoverNotFoundEnvSecret() {
-        when(secrets.get("something-else")).thenReturn(secret);
-        when(secret.getString()).thenReturn("envSecretValue");
-
-        String result = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
-        assertEquals("", result);
-    }
-
-    /**
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
      * Given a map of secrets containing a key with an integer secret value
      * When the discoverIntSecret method is called with the key
      * Then the integer secret value should be returned.

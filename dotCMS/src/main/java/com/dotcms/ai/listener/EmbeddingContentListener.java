@@ -83,14 +83,10 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
 
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
         if (!appConfig.isEnabled()) {
-<<<<<<< HEAD
             AppConfig.debugLogger(
                     getClass(),
                     () -> "dotAI is not enabled since no API urls or API key found in app config");
             throw new DotRuntimeException("App dotAI config without API urls or API key");
-=======
-            throw new DotRuntimeException("No API key found in app config");
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
         }
 
         return appConfig;
@@ -130,16 +126,11 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
             typesAndFields.entrySet()
                     .stream()
                     .filter(typeFields -> contentType.equalsIgnoreCase(typeFields.getKey()))
-<<<<<<< HEAD
                     .forEach(e -> APILocator.getDotAIAPI().getEmbeddingsAPI()
                             .generateEmbeddingsForContent(
                                     contentlet,
                                     e.getValue(),
                                     indexName));
-=======
-                    .forEach(e -> EmbeddingsAPI.impl()
-                            .generateEmbeddingsForContent(contentlet, e.getValue(), indexName));
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
         }
     }
 
