@@ -21,7 +21,6 @@ import javax.ws.rs.core.MediaType;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -45,22 +44,26 @@ public class OpenAIRequest {
      * @param urlIn the URL to send the request to
      * @param method the HTTP method to use for the request
      * @param appConfig the AppConfig object containing the OpenAI API key and models
-     * @param payload the JSON payload to send with the request
+     * @param json the JSON payload to send with the request
      * @param out the OutputStream to write the response to
      */
     public static void doRequest(final String urlIn,
                                  final String method,
                                  final AppConfig appConfig,
-                                 final JSONObject payload,
+                                 final JSONObject json,
                                  final OutputStream out) {
 
-        final JSONObject json = Optional.ofNullable(payload).orElse(new JSONObject());
+        if (!appConfig.isEnabled()) {
+            Logger.debug(OpenAIRequest.class, "OpenAI is not enabled and will not send request.");
+            return;
+        }
+
+        final AIModel model = appConfig.resolveModelOrThrow(json.optString(AiKeys.MODEL));
 
         if (appConfig.getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.debug(OpenAIRequest.class, "posting: " + json);
         }
 
-        final AIModel model = appConfig.resolveModelOrThrow(json.optString(AiKeys.MODEL));
         final long sleep = lastRestCall.computeIfAbsent(model, m -> 0L)
                 + model.minIntervalBetweenCalls()
                 - System.currentTimeMillis();
@@ -117,15 +120,15 @@ public class OpenAIRequest {
      * @param url the URL to send the request to
      * @param method the HTTP method to use for the request
      * @param appConfig the AppConfig object containing the OpenAI API key and models
-     * @param payload the JSON payload to send with the request
+     * @param json the JSON payload to send with the request
      * @return the response from the request as a string
      */
     public static String doRequest(final String url,
                                    final String method,
                                    final AppConfig appConfig,
-                                   final JSONObject payload)  {
+                                   final JSONObject json)  {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        doRequest(url, method, appConfig, payload, out);
+        doRequest(url, method, appConfig, json, out);
 
         return out.toString();
     }
@@ -136,14 +139,14 @@ public class OpenAIRequest {
      *
      * @param urlIn the URL to send the request to
      * @param appConfig the AppConfig object containing the OpenAI API key and models
-     * @param payload the JSON payload to send with the request
+     * @param json the JSON payload to send with the request
      * @param out the OutputStream to write the response to
      */
     public static void doPost(final String urlIn,
                               final AppConfig appConfig,
-                              final JSONObject payload,
+                              final JSONObject json,
                               final OutputStream out) {
-       doRequest(urlIn, HttpMethod.POST, appConfig, payload, out);
+       doRequest(urlIn, HttpMethod.POST, appConfig, json, out);
     }
 
     /**
@@ -152,14 +155,14 @@ public class OpenAIRequest {
      *
      * @param urlIn the URL to send the request to
      * @param appConfig the AppConfig object containing the OpenAI API key and models
-     * @param payload the JSON payload to send with the request
+     * @param json the JSON payload to send with the request
      * @param out the OutputStream to write the response to
      */
     public static void doGet(final String urlIn,
                              final AppConfig appConfig,
-                             final JSONObject payload,
+                             final JSONObject json,
                              final OutputStream out) {
-        doRequest(urlIn, HttpMethod.GET, appConfig, payload, out);
+        doRequest(urlIn, HttpMethod.GET, appConfig, json, out);
     }
 
     private static HttpUriRequest resolveMethod(final String method, final String urlIn) {
