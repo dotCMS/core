@@ -3,11 +3,13 @@ package com.dotcms.ai.viewtool;
 import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -38,7 +40,7 @@ import static org.mockito.Mockito.when;
  */
 public class CompletionsToolTest {
 
-    private static AppConfig config;
+    private static AppConfig appConfig;
     private static WireMockServer wireMockServer;
     private static Host host;
 
@@ -50,7 +52,9 @@ public class CompletionsToolTest {
         IPUtils.disabledIpPrivateSubnet(true);
         host = new SiteDataGen().nextPersisted();
         wireMockServer = AiTest.prepareWireMock();
-        config = AiTest.prepareCompletionConfig(host, wireMockServer);
+        AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
+        AiTest.aiAppSecrets(wireMockServer, host);
+        appConfig = ConfigService.INSTANCE.config(host);
     }
 
     @AfterClass
@@ -82,7 +86,7 @@ public class CompletionsToolTest {
         assertNotNull(config);
         assertEquals(AppKeys.COMPLETION_ROLE_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_ROLE_PROMPT.key));
         assertEquals(AppKeys.COMPLETION_TEXT_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_TEXT_PROMPT.key));
-        assertEquals(AppKeys.TEXT_MODEL_NAMES.defaultValue, config.get(AppKeys.TEXT_MODEL_NAMES.key));
+        assertEquals("gpt-3.5-turbo-16k", config.get(AppKeys.TEXT_MODEL_NAMES.key));
     }
 
     /**
@@ -173,7 +177,7 @@ public class CompletionsToolTest {
 
             @Override
             AppConfig config() {
-                return config;
+                return appConfig;
             }
         };
     }
