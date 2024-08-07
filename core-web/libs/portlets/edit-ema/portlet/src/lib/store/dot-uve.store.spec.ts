@@ -1368,6 +1368,13 @@ describe('UVEStore', () => {
 
                     expect(store.state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
                 });
+                it('should set the contentletArea to null when we are scrolling', () => {
+                    store.setEditorState(EDITOR_STATE.SCROLLING);
+
+                    store.updateEditorScrollState();
+
+                    expect(store.contentletArea()).toBe(null);
+                });
             });
 
             describe('updateEditorOnScrollEnd', () => {

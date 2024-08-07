@@ -51,7 +51,7 @@ public class EmbeddingsTool implements ViewTool {
      * @return The number of tokens in the prompt, or -1 if no encoding is found for the model.
      */
     public int countTokens(final String prompt) {
-        return EncodingUtil.REGISTRY
+        return EncodingUtil.get().registry
                 .getEncodingForModel(appConfig.getModel().getCurrentModel())
                 .map(encoding -> encoding.countTokens(prompt))
                 .orElse(-1);

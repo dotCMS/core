@@ -93,8 +93,7 @@ public class ConfigTestHelper extends Config {
     }
 
 
-    private static Path getTestFilePath(String contextPath,String[] contextRoots)
-            throws MalformedURLException {
+    private static Path getTestFilePath(String contextPath,String[] contextRoots){
         if (!contextPath.startsWith("/"))
             throw new IllegalArgumentException("Resource path must start with a / and is relative to context root");
         else

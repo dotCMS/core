@@ -200,7 +200,8 @@ export function withEditor() {
                     }
 
                     patchState(store, {
-                        state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
+                        state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING,
+                        contentletArea: null
                     });
                 },
                 updateEditorOnScrollEnd() {
