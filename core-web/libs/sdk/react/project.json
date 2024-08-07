@@ -6,7 +6,7 @@
     "tags": [],
     "targets": {
         "lint": {
-            "executor": "@nrwl/linter:eslint",
+            "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"],
             "options": {
                 "lintFilePatterns": ["libs/sdk/react/**/*.{ts,tsx,js,jsx}"]

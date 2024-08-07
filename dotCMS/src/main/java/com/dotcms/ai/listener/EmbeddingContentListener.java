@@ -1,7 +1,6 @@
 package com.dotcms.ai.listener;
 
 import com.dotcms.ai.app.AppConfig;
-import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
@@ -17,7 +16,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -84,7 +82,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
                 .getOrElse(APILocator.systemHost());
 
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-        if (StringUtils.isBlank(appConfig.getApiKey())) {
+        if (!appConfig.isEnabled()) {
             throw new DotRuntimeException("No API key found in app config");
         }
 
@@ -99,7 +97,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
      */
     private JSONObject getConfigJson(final String hostId) {
         return Try
-                .of(() -> new JSONObject(getAppConfig(hostId).getConfig(AppKeys.LISTENER_INDEXER)))
+                .of(() -> new JSONObject(getAppConfig(hostId).getListenerIndexer()))
                 .onFailure(e -> Logger.debug(getClass(), "error in json config from app: " + e.getMessage()))
                 .getOrElse(new JSONObject());
     }

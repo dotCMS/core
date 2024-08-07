@@ -6,6 +6,8 @@ import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingRegistry;
 import io.vavr.Lazy;
 
+import java.util.Optional;
+
 /**
  * Utility class for handling encoding operations related to AI models.
  * It provides a registry for encoding and a lazy-loaded encoding instance based on the current model.
@@ -13,11 +15,21 @@ import io.vavr.Lazy;
  */
 public class EncodingUtil {
 
-    public static final EncodingRegistry REGISTRY = Encodings.newDefaultEncodingRegistry();
-    public static final String MODEL = ConfigService.INSTANCE.config().getEmbeddingsModel().getCurrentModel();
-    public static final Lazy<Encoding> ENCODING = Lazy.of(() -> REGISTRY.getEncodingForModel(MODEL).get());
+    private static final Lazy<EncodingUtil> INSTANCE = Lazy.of(EncodingUtil::new);
+
+    public final EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();
 
     private EncodingUtil() {
+    }
+
+    public static EncodingUtil get() {
+        return INSTANCE.get();
+    }
+
+    public Optional<Encoding> getEncoding() {
+        return Optional
+                .ofNullable(ConfigService.INSTANCE.config().getEmbeddingsModel().getCurrentModel())
+                .flatMap(registry::getEncodingForModel);
     }
 
 }

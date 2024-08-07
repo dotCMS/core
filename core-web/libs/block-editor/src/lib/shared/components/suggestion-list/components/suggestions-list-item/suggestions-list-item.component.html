@@ -1,24 +1,27 @@
 <div [class.dot-contentlet]="data?.contentlet" [class.page]="page" class="icon-wrapper">
-    <i *ngIf="icon; else thumbnail" class="material-icons">{{ url }}</i>
-
-    <ng-template #thumbnail>
-        <dot-contentlet-thumbnail
-            *ngIf="data?.contentlet; else image"
-            [contentlet]="data.contentlet"
-            [width]="42"
-            [height]="42"
-            [iconSize]="'42px'"></dot-contentlet-thumbnail>
-    </ng-template>
+    @if (icon) {
+        <i class="material-icons">{{ url }}</i>
+    } @else {
+        @if (data?.contentlet) {
+            <dot-contentlet-thumbnail
+                [contentlet]="data.contentlet"
+                [width]="42"
+                [height]="42"
+                [iconSize]="'42px'"></dot-contentlet-thumbnail>
+        } @else {
+            <img [src]="url" alt="" />
+        }
+    }
 </div>
 <div class="data-wrapper">
     <span>{{ label }}</span>
-    <span *ngIf="page" class="url">{{ data.contentlet.url }}</span>
-    <div *ngIf="data?.contentlet" class="state">
-        <dot-state-icon [state]="data.contentlet" size="16px"></dot-state-icon>
-        <dot-badge bordered="true">{{ data.contentlet.language | lowercase }}</dot-badge>
-    </div>
+    @if (page) {
+        <span class="url">{{ data.contentlet.url }}</span>
+    }
+    @if (data?.contentlet) {
+        <div class="state">
+            <dot-state-icon [state]="data.contentlet" size="16px"></dot-state-icon>
+            <dot-badge bordered="true">{{ data.contentlet.language | lowercase }}</dot-badge>
+        </div>
+    }
 </div>
-
-<ng-template #image>
-    <img [src]="url" alt="" />
-</ng-template>
