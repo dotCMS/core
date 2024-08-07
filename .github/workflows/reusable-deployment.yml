@@ -174,7 +174,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "> :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) update version requested!\n \n>This automated script announce that a new *_SDK libs_* version is going to be published *tagged as:* [ `${{ steps.sdks_incremental.outputs.npm-package-version }}` ] on the `NPM` registry :package:!"
+                    "text": "> :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) update version requested!\n \n>This automated script announce that a new *_SDK libs_* version increment has been requested [ `${{ steps.sdks_incremental.outputs.pr-number }}` ] on the `NPM` registry :package:!"
                   }
                 }
               ]
