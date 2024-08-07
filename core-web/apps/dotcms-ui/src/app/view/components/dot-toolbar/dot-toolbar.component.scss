@@ -57,7 +57,7 @@ dot-toolbar-user {
 
 .toolbar__dot-wrapper {
     display: flex;
-    width: $navigation-width;
+    min-width: $navigation-width;
 }
 
 .toolbar__crumbtrail {

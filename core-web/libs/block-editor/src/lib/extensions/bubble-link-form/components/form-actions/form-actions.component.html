@@ -1,18 +1,20 @@
-<div *ngIf="link.length">
-    <div class="form-actions">
-        <button
-            (click)="copy()"
-            [style]="{ width: '50%' }"
-            pButton
-            type="button"
-            label="COPY LINK"
-            class="p-button-outlined"></button>
-        <button
-            (click)="remove.emit(true)"
-            [style]="{ width: '50%' }"
-            pButton
-            type="button"
-            label="REMOVE LINK"
-            class="p-button-outlined p-button-danger"></button>
+@if (link.length) {
+    <div>
+        <div class="form-actions">
+            <button
+                (click)="copy()"
+                [style]="{ width: '50%' }"
+                pButton
+                type="button"
+                label="COPY LINK"
+                class="p-button-outlined"></button>
+            <button
+                (click)="remove.emit(true)"
+                [style]="{ width: '50%' }"
+                pButton
+                type="button"
+                label="REMOVE LINK"
+                class="p-button-outlined p-button-danger"></button>
+        </div>
     </div>
-</div>
+}
