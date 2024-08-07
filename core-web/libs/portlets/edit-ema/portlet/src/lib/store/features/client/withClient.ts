@@ -46,13 +46,17 @@ export function withClient() {
         withState<ClientConfigState>(initialState),
         withComputed((store) => {
             return {
-                $clientRequestProps: computed<clientRequestProps>(() => {
+                $clientRequestProps: computed<{
+                    params: DotPageApiParams;
+                    query: string;
+                }>(() => {
                     const { query, params } = store.clientRequestProps();
+                    const baseParams = (store.params() || {}) as DotPageApiParams;
 
                     return {
                         query,
                         params: {
-                            ...store.params(),
+                            ...baseParams,
                             ...params
                         }
                     };

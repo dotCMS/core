@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { withClient } from './withClient';
 
+import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { UVEState } from '../../models';
 
@@ -22,6 +23,8 @@ const initialState: UVEState = {
     canEditPage: false,
     pageIsLocked: true
 };
+
+const emptyParams = {} as DotPageApiParams;
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withClient());
 
@@ -43,7 +46,7 @@ describe('UVEStore', () => {
         it('should return initial configuration', () => {
             expect(store.$clientRequestProps()).toEqual({
                 query: '',
-                params: {}
+                params: emptyParams
             });
         });
 
@@ -105,7 +108,7 @@ describe('UVEStore', () => {
 
             expect(store.$clientRequestProps()).toEqual({
                 query: 'test',
-                params: {}
+                params: emptyParams
             });
         });
     });
