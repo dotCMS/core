@@ -84,7 +84,7 @@ public class OpenAIContentPromptRunner implements Runnable {
                               final float temperature) {
 
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
-            throw new DotRuntimeException(
+            throw new IllegalArgumentException(
                     "Content must be saved and have an identifier before running AI Content Prompt");
         }
         this.contentlet = contentlet;
