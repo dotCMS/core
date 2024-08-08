@@ -1,5 +1,7 @@
 package com.dotcms.ai.listener;
 
+import com.dotcms.ai.api.DotAIAPI;
+import com.dotcms.ai.api.DotAIAPIFacadeImpl;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.AiTest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -18,7 +20,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.liferay.portal.model.User;
-import org.junit.After;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -30,10 +31,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.dotmarketing.util.ThreadUtils.sleep;
 import static org.junit.Assert.assertFalse;
@@ -94,6 +91,8 @@ public class EmbeddingContentListenerTest {
      */
     @Test
     public void test_onPublish() throws Exception {
+        DotAIAPIFacadeImpl.setDefaultEmbeddingsAPIProvider(new DotAIAPIFacadeImpl.DefaultEmbeddingsAPIProvider());
+
         final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog", host);
         contentTypes.add(blogContentType);
         final String text = "OpenAI has developed a new AI model that surpasses previous benchmarks in natural language understanding and generation. This model, GPT-4, can perform complex tasks such as writing essays, creating code, and understanding nuanced prompts with unprecedented accuracy.";
@@ -209,13 +208,17 @@ public class EmbeddingContentListenerTest {
             try {
                 contentletApi.archive(contentlet, user, false);
                 contentletApi.delete(contentlet, user, false);
-            } catch (DotDataException | DotSecurityException e) {}
+            } catch (DotDataException | DotSecurityException e) {
+                //ignore
+            }
         });
 
         contentTypes.forEach(contentType -> {
             try {
                 contentTypeApi.delete(contentType);
-            } catch (DotDataException | DotSecurityException e) {}
+            } catch (DotDataException | DotSecurityException e) {
+                //ignore
+            }
         });
     }
 

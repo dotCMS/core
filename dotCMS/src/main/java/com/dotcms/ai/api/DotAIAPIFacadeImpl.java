@@ -33,6 +33,7 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
     private static class DefaultCompletionsAPIProvider implements CompletionsAPIProvider {
 
         private final CompletionsAPI defaultCompletionAPI = new CompletionsAPIImpl(null);
+
         @Override
         public CompletionsAPI getCompletionsAPI(final Object... initArguments) {
             return Objects.nonNull(initArguments) && initArguments.length > 0?
@@ -46,14 +47,15 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
         }
     }
 
-    private static class DefaultEmbeddingsAPIProvider implements EmbeddingsAPIProvider {
+    public static class DefaultEmbeddingsAPIProvider implements EmbeddingsAPIProvider {
 
-        private final EmbeddingsAPI defaultCompletionAPI = new EmbeddingsAPIImpl(null);
+        private final EmbeddingsAPI defaultEmbeddingsAPI = new EmbeddingsAPIImpl(null);
+
         @Override
         public EmbeddingsAPI getEmbeddingsAPI(final Object... initArguments) {
             return Objects.nonNull(initArguments) && initArguments.length > 0?
                     new EmbeddingsAPIImpl(unwrap(initArguments)):
-                    defaultCompletionAPI;
+                    defaultEmbeddingsAPI;
         }
 
         private Host unwrap(final Object... initArguments) {
