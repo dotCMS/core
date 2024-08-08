@@ -5358,9 +5358,9 @@
     ts-dedent "^2.0.0"
 
 "@storybook/core-webpack@8.2.8":
-  version "8.2.7"
-  resolved "https://registry.npmjs.org/@storybook/core-webpack/-/core-webpack-8.2.7.tgz#f62166bf8e48eb7d765a3069e2428b16b0bcbe86"
-  integrity sha512-eVtizQZdjPePjjPBfMw+74ha2yZw68AQZu5TK01Vetdjz1h+SSt+p/otWcJWPMGpZOg9p+n0krWvlcYHBsZsbA==
+  version "8.2.8"
+  resolved "https://registry.npmjs.org/@storybook/core-webpack/-/core-webpack-8.2.8.tgz#abe9a012b8930c2ce3fd80d637c76015ec420785"
+  integrity sha512-IvrhsDNM/4aTIfUEtYorz9N9S+9gCVkUuUVTNiX0N9a24BFLTcPebtJZYXbguZqxN/NeJMMfk1k7YLU2cBmdjw==
   dependencies:
     "@types/node" "^18.0.0"
     ts-dedent "^2.0.0"
