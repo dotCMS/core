@@ -78,7 +78,7 @@ export function withEditorToolbar() {
                 const bookmarksUrl = createFavoritePagesURL({
                     languageId: Number(params?.language_id),
                     pageURI: url,
-                    siteId: pageAPIResponse?.site.identifier
+                    siteId: pageAPIResponse?.site?.identifier
                 });
 
                 return {

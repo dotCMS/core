@@ -1,15 +1,14 @@
-<button
-    *ngIf="label !== status.ERROR; else error"
-    (click)="byClick.emit()"
-    [disabled]="isCompleted || isLoading"
-    [icon]="isCompleted ? 'pi pi-check' : null"
-    [label]="title"
-    [loading]="isLoading"
-    [ngClass]="{ completed: isCompleted }"
-    pButton
-    iconPos="left"></button>
-
-<ng-template #error>
+@if (label !== status.ERROR) {
+    <button
+        (click)="byClick.emit()"
+        [disabled]="isCompleted || isLoading"
+        [icon]="isCompleted ? 'pi pi-check' : null"
+        [label]="title"
+        [loading]="isLoading"
+        [ngClass]="{ completed: isCompleted }"
+        pButton
+        iconPos="left"></button>
+} @else {
     <div class="alert">
         <i class="pi pi-exclamation-circle"></i>
         <span>
@@ -17,4 +16,4 @@
             <a href="https://www.dotcms.com/contact-us/">contact support</a>
         </span>
     </div>
-</ng-template>
+}
