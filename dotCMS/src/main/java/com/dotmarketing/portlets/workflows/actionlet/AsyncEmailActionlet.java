@@ -5,6 +5,7 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ public class AsyncEmailActionlet extends EmailActionlet {
     protected void sendEmail(final Mailer mail, final WorkflowProcessor processor) {
         DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
             try {
+                Logger.info(this, "Sending email asynchronously");
                 mail.sendMessage();
             } catch (Exception e) {
 

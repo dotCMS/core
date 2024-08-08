@@ -362,6 +362,7 @@ public class Mailer {
 					APILocator.getMailApi().getConnectionPort(), null, null);
 			transport.sendMessage(message, message.getAllRecipients());
 			result = "Send Ok";
+			Logger.info(this, "Email Sent Successfully");
 			return true;
 		} catch (javax.mail.SendFailedException f) {
 			String error = String.valueOf(f);
