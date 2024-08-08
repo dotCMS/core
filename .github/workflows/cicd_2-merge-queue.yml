@@ -1,0 +1,37 @@
+name: '-2 Merge Group Check'
+on:
+  merge_group:
+    types: [ checks_requested ]
+    branches: [ master ]
+jobs:
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/reusable-initialize.yml
+  build:
+    name: Merge Group Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/reusable-ci-build.yml
+    permissions:
+      contents: read
+      packages: write
+  test:
+    name: Merge Group Test
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/reusable-ci-test.yml
+    with:
+      jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
+      integration: ${{ needs.initialize.outputs.backend == 'true' }}
+      postman: ${{ needs.initialize.outputs.backend == 'true' }}
+      frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
+      cli: ${{ needs.initialize.outputs.cli == 'true' }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ test ]
+    uses: ./.github/workflows/reusable-finalize.yml
+    with:
+      needsData: ${{ toJson(needs) }}
