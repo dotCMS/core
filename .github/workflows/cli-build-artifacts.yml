@@ -44,9 +44,9 @@ jobs:
         id: set-os
         run: |
           if [[ "${{ inputs.buildNativeImage }}" == "true" ]]; then
-            RUNNERS='[{ "os": "ubuntu-22.04", "label": "Linux" }, { "os": "macos-13", "label": "macOS-Intel" }, { "os": "macos-14", "label": "macOS-Silicon" }]'
+            RUNNERS='[{ "os": "ubuntu-22.04", "label": "Linux", "platform": "linux-x86_64" }, { "os": "macos-13", "label": "macOS-Intel", "platform": "osx-x86_64" }, { "os": "macos-14", "label": "macOS-Silicon", "platform": "osx-aarch_64" }]'
           else
-            RUNNERS='[{ "os": "ubuntu-22.04", "label": "Linux" }]'
+            RUNNERS='[{ "os": "ubuntu-22.04", "label": "Linux", "platform": "linux-x86_64" }]'
           fi
           echo "runners=$RUNNERS" >> $GITHUB_OUTPUT
 
@@ -81,7 +81,7 @@ jobs:
         id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cli-artifacts-${{ matrix.os }}
+          name: cli-artifacts-${{ matrix.platform }}
           path: |
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
           retention-days: 2
