@@ -190,7 +190,11 @@ public class HostFactoryImpl implements HostFactory {
     @Override
     public Host bySiteName(final String siteName) {
         Host site = siteCache.get(siteName);
-        if (null == site || !UtilMethods.isSet(site.getIdentifier())) {
+        if (site != null && UtilMethods.isSet(site.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(site.getIdentifier())) {
+                return null;
+            }
+        } else if (null == site || !UtilMethods.isSet(site.getIdentifier())) {
             final DotConnect dc = new DotConnect();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
                     .append(WHERE);
@@ -200,6 +204,7 @@ public class HostFactoryImpl implements HostFactory {
             try {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
+                    siteCache.addHostNameOrId(siteName, HostCache.cache404Contentlet);
                     return null;
                 }
                 final String siteInode = dbResults.get(0).get("inode");
@@ -228,7 +233,11 @@ public class HostFactoryImpl implements HostFactory {
     @Override
     public Host byAlias(String alias) {
         Host site = this.siteCache.getHostByAlias(alias);
-        if (null == site) {
+        if (site != null && UtilMethods.isSet(site.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(site.getIdentifier())) {
+                return null;
+            }
+        } else if (null == site) {
             final DotConnect dc = new DotConnect();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE_AND_ALIASES)
                     .append(WHERE)
@@ -248,6 +257,7 @@ public class HostFactoryImpl implements HostFactory {
             try {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
+                    siteCache.addHostAlias(alias, HostCache.cache404Contentlet);
                     return null;
                 }
                 if (dbResults.size() == 1) {
@@ -408,6 +418,9 @@ public class HostFactoryImpl implements HostFactory {
                 site = new Host(siteAsContentlet);
                 this.siteCache.add(site);
             }
+        }
+        if (null == site && !Host.SYSTEM_HOST.equals(id)) {
+            this.siteCache.addHostNameOrId(id, HostCache.cache404Contentlet);
         }
         return site;
     }

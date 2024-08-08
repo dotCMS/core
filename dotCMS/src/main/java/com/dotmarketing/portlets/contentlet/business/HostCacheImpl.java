@@ -72,6 +72,9 @@ public class HostCacheImpl extends HostCache {
 		Host host = null;
     	try{
     		String hostId = (String) cache.get(key,ALIAS_GROUP);
+			if (CACHE_404_HOST.equals(hostId)) {
+				return cache404Contentlet;
+			}
     		host = get(hostId);
     		if(host == null){
     			cache.remove(key, ALIAS_GROUP);
@@ -155,8 +158,20 @@ public class HostCacheImpl extends HostCache {
     		cache.put(alias, host.getIdentifier(),ALIAS_GROUP);
     	}
     }
-    
-    
+
+	/**
+	 * Add the host name or id to the cache
+	 * @param nameOrId the name or id of the host
+	 * @param host the host object
+	 */
+	@Override
+	protected void addHostNameOrId(String nameOrId, Host host) {
+		if (nameOrId != null && host != null && UtilMethods.isSet(host.getIdentifier())) {
+			cache.put(nameOrId, host, PRIMARY_GROUP);
+		}
+	}
+
+
 	protected void clearAliasCache() {
         // clear the alias cache
         cache.flushGroup(ALIAS_GROUP);
