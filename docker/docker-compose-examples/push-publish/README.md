@@ -2,12 +2,15 @@
 
 Push publish environment where the sender runs on port 8081 and the receiver on port 8082. Database: postgres.
 
-**Important note:** For the endpoint configuration, the local IP address must be used instead of `localhost` or `127.0.0.1`.
-
 ## Usage
 
-### Important Note
-For the sender service (`dotcms-sender`) to reference the receiver service (`dotcms-receiver`), use the HTTP protocol with the alias `dotcms-receiver.local` and port `8082`. For example, you can use the following URL: `http://dotcms-receiver.local:8082`.
+### Endpoint Configuration
+
+In the endpoint configuration, it is mandatory to use a local IP address instead of `localhost` or `127.0.0.1`. You need to know the local IP address of the host where the application is running. In a Linux environment, you can find it using the `ifconfig` command, or `ipconfig` if you are in a Windows environment. The result will be something like `192.168.x.x`.
+
+As an alternative to using a local IP address, you can use directly the alias of the receiver node service, for instance:
+
+To reference the receiver service (`dotcms-receiver`), use the `HTTP` protocol with the alias `dotcms-receiver.local` and port `8082`.
 
 ### Environment Setup
 
