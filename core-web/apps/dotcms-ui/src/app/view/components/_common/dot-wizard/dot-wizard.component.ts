@@ -85,7 +85,6 @@ export class DotWizardComponent implements OnDestroy {
      * @memberof DotWizardComponent
      */
     close(): void {
-        // this.dialog.visible = false;
         this.data = null;
         this.currentStep = 0;
         this.updateTransform();
