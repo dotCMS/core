@@ -174,7 +174,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.action.delete'),
                     command: (item) => this.removeConfirmation(item),
-                    icon: 'delete'
+                    icon: 'pi pi-trash'
                 },
                 shouldShow: (item) => !item.fixed && !item.defaultType
             }
@@ -245,6 +245,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
 
         return actions;
     }
+    f;
 
     private removeIconsFromMenuItem(action: DotActionMenuItem): DotActionMenuItem {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
