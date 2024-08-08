@@ -27,6 +27,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
 
     form: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private enableTabChange = true;
 
     constructor(
         private store: DotTemplateStore,
@@ -139,7 +140,8 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateBuilderComponent
      */
     onCustomEvent($event: CustomEvent): void {
-        this.store.goToEditTemplate($event.detail.data.id, $event.detail.data.inode);
+        const { data } = $event.detail;
+        this.store.goToEditTemplate(data.id, data.inode);
     }
 
     private createTemplate(): void {
