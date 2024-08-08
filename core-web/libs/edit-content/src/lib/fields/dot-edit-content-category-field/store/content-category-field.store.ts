@@ -201,8 +201,6 @@ export const CategoryFieldStore = signalStore(
                     item
                 );
 
-                console.log('currentChecked', currentChecked);
-
                 patchState(store, {
                     selected: currentChecked
                 });
