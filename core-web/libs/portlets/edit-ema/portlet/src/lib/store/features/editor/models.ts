@@ -46,8 +46,8 @@ export interface PageData {
 export interface ReloadEditorContent {
     code: string;
     isTraditionalPage: boolean;
-    isEditState: boolean;
-    isEnterprise: boolean;
+    enableInlineEdit: boolean;
+    isClientReady: boolean;
 }
 
 export interface EditorProps {

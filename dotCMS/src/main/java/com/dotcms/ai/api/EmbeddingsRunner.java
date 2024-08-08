@@ -68,7 +68,10 @@ class EmbeddingsRunner implements Runnable {
             int totalTokens = 0;
             for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
                 final String sentence = cleanContent.substring(start, end);
-                final int tokenCount = EncodingUtil.ENCODING.get().countTokens(sentence);
+                final int tokenCount = EncodingUtil.get()
+                        .getEncoding()
+                        .map(encoding -> encoding.countTokens(sentence))
+                        .orElse(0);
                 totalTokens += tokenCount;
 
                 if (totalTokens < splitAtTokens) {

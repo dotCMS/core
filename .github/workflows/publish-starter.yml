@@ -73,8 +73,9 @@ jobs:
       - uses: jfrog/setup-jfrog-cli@v4
         env:
           JF_URL: ${{ vars.ARTIFACTORY_URL }}
-          JF_ACCESS_TOKEN: ${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}      
-          
+          JF_USER: ${{ secrets.EE_REPO_USERNAME }}
+          JF_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}          
+                    
       - name: 'JFrog CLI context'
         run: |
           echo "::group::JFrog CLI context"
