@@ -1,3 +1,4 @@
+import { expect } from '@jest/globals';
 import { Spectator, createRoutingFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
@@ -24,9 +25,11 @@ class DotcmsSDKMockComponent {
 }
 
 jest.mock('@dotcms/client', () => ({
+    ...jest.requireActual('@dotcms/client'),
     isInsideEditor: jest.fn().mockReturnValue(true),
     initEditor: jest.fn(),
     updateNavigation: jest.fn(),
+    postMessageToEditor: jest.fn(),
     DotCmsClient: {
         instance: {
             editor: {
@@ -125,6 +128,32 @@ describe('DotcmsLayoutComponent', () => {
                 spectator.detectChanges();
 
                 expect(client.editor.off).toHaveBeenCalledWith('changes');
+            });
+        });
+
+        describe('client is ready', () => {
+            const query = { query: 'query { ... }' };
+
+            beforeEach(() => {
+                spectator.setInput('editor', query);
+                spectator.detectChanges();
+            });
+
+            it('should post message to editor', () => {
+                spectator.detectChanges();
+                expect(dotcmsClient.postMessageToEditor).toHaveBeenCalledWith({
+                    action: dotcmsClient.CUSTOMER_ACTIONS.CLIENT_READY,
+                    payload: query
+                });
+            });
+        });
+
+        describe('onChange', () => {
+            const client = DotCmsClient.instance;
+            beforeEach(() => spectator.detectChanges());
+
+            it('should update the page asset when changes are made in the editor', () => {
+                expect(client.editor.on).toHaveBeenCalledWith('changes', expect.any(Function));
             });
         });
     });
