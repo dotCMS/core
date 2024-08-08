@@ -45,9 +45,9 @@
 	}
 
 	let isBringBack = false;
-	function bringBackVersion(inode){
-		if(!isBringBack && confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version"))%>')){
-			isBringBack = true;
+	function bringBackTemplateVersion(inode){
+		if(!isBringBack && confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.replace.template.working.version"))%>')){
+			setIsBringBack(true);
 			fetch(`/api/v1/versionables/${inode}/_bringback`, {
 				method: 'PUT'
 			})
@@ -67,7 +67,13 @@
 			.catch((error) => {
 				console.error('Error bringing back version: ', error);
 			})
-			.finally(() => (isBringBack = false));
+			.finally(() => setIsBringBack(false));
 		}
+	}
+
+	function setIsBringBack(isBringBack){
+		const element = document.querySelector("[data-messageId='bring-back-message']");
+		element.style.display = isBringBack ? 'flex' : 'none';
+		isBringBack = isBringBack
 	}
 </script>
