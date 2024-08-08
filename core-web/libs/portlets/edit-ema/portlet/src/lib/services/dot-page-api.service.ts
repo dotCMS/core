@@ -5,6 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
+import { graphqlToPageEntity } from '@dotcms/client';
 import { Site } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -19,6 +20,7 @@ import {
 
 import { PAGE_MODE } from '../shared/enums';
 import { DotPage, SavePagePayload } from '../shared/models';
+import { ClientRequestProps } from '../store/features/client/withClient';
 import { createPageApiUrlWithQueryParams } from '../utils';
 
 export interface DotPageApiResponse {
@@ -44,6 +46,7 @@ export interface DotPageApiParams {
     experimentId?: string;
     mode?: string;
     clientHost?: string;
+    depth?: string;
 }
 
 export interface GetPersonasParams {
@@ -87,6 +90,7 @@ export class DotPageApiService {
             'com.dotmarketing.persona.id': params['com.dotmarketing.persona.id'],
             variantName: params.variantName,
             experimentId: params.experimentId,
+            depth: params['depth'] || '0',
             mode
         });
 
@@ -173,10 +177,63 @@ export class DotPageApiService {
         return apiUrl + queryParams.toString();
     }
 
+    /**
+     *
+     * @description Save a contentlet in a page
+     * @param {{ contentlet: { [fieldName: string]: string; inode: string } }} { contentlet }
+     * @return {*}
+     * @memberof DotPageApiService
+     */
     saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
         return this.http.put(
             `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
             { contentlet }
         );
+    }
+
+    /**
+     *
+     * @description Get a page from GraphQL
+     * @template T
+     * @param {string} query
+     * @return {*}  {Observable<T>}
+     * @memberof DotPageApiService
+     */
+    getGraphQLPage(query: string): Observable<DotPageApiResponse> {
+        const headers = {
+            'Content-Type': 'application/json',
+            dotcachettl: '0' // Bypasses GraphQL cache
+        };
+
+        return this.http
+            .post<{
+                data: { page: Record<string, unknown> };
+            }>('/api/v1/graphql', { query }, { headers })
+            .pipe(
+                pluck('data'),
+                map((data) => graphqlToPageEntity(data) as DotPageApiResponse)
+            );
+    }
+
+    /**
+     *
+     * @description Get Client Page from the Page API or GraphQL
+     * @return {*}  {Observable<DotPageApiResponse>}
+     * @memberof DotPageApiService
+     */
+    getClientPage(
+        params: DotPageApiParams,
+        clientProps: ClientRequestProps
+    ): Observable<DotPageApiResponse> {
+        const { query, params: clientParams } = clientProps;
+
+        if (!query) {
+            return this.get({
+                ...(clientParams || {}),
+                ...params
+            });
+        }
+
+        return this.getGraphQLPage(query);
     }
 }

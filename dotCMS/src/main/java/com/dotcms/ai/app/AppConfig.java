@@ -25,13 +25,13 @@ public class AppConfig implements Serializable {
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
     private final String host;
+    private final String apiKey;
     private final transient AIModel model;
     private final transient AIModel imageModel;
     private final transient AIModel embeddingsModel;
     private final String apiUrl;
     private final String apiImageUrl;
     private final String apiEmbeddingsUrl;
-    private final String apiKey;
     private final String rolePrompt;
     private final String textPrompt;
     private final String imagePrompt;
@@ -43,6 +43,7 @@ public class AppConfig implements Serializable {
         this.host = host;
 
         final AIAppUtil aiAppUtil = AIAppUtil.get();
+
         AIModels.get().loadModels(
                 this.host,
                 List.of(
@@ -50,14 +51,15 @@ public class AppConfig implements Serializable {
                         aiAppUtil.createImageModel(secrets),
                         aiAppUtil.createEmbeddingsModel(secrets)));
 
-        model = resolveModel(AIModelType.TEXT);
-        imageModel = resolveModel(AIModelType.IMAGE);
-        embeddingsModel = resolveModel(AIModelType.EMBEDDINGS);
-
         apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL);
         apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL);
         apiEmbeddingsUrl = discoverEmbeddingsApiUrl(secrets);
         apiKey = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
+
+        model = resolveModel(AIModelType.TEXT);
+        imageModel = resolveModel(AIModelType.IMAGE);
+        embeddingsModel = resolveModel(AIModelType.EMBEDDINGS);
+
         rolePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.ROLE_PROMPT);
         textPrompt = aiAppUtil.discoverSecret(secrets, AppKeys.TEXT_PROMPT);
         imagePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.IMAGE_PROMPT);
@@ -66,17 +68,17 @@ public class AppConfig implements Serializable {
 
         configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+        Logger.debug(getClass(), () -> "apiKey: " + apiKey);
         Logger.debug(getClass(), () -> "apiUrl: " + apiUrl);
         Logger.debug(getClass(), () -> "apiImageUrl: " + apiImageUrl);
         Logger.debug(getClass(), () -> "embeddingsUrl: " + apiEmbeddingsUrl);
-        Logger.debug(getClass(), () -> "apiKey: " + apiKey);
-        Logger.debug(getClass(), () -> "model: " + model);
-        Logger.debug(getClass(), () -> "imageModel: " + imageModel);
-        Logger.debug(getClass(), () -> "embeddingsModel: " + embeddingsModel);
         Logger.debug(getClass(), () -> "rolePrompt: " + rolePrompt);
         Logger.debug(getClass(), () -> "textPrompt: " + textPrompt);
+        Logger.debug(getClass(), () -> "model: " + model);
         Logger.debug(getClass(), () -> "imagePrompt: " + imagePrompt);
+        Logger.debug(getClass(), () -> "imageModel: " + imageModel);
         Logger.debug(getClass(), () -> "imageSize: " + imageSize);
+        Logger.debug(getClass(), () -> "embeddingsModel: " + embeddingsModel);
         Logger.debug(getClass(), () -> "listerIndexer: " + listenerIndexer);
     }
 
@@ -251,7 +253,7 @@ public class AppConfig implements Serializable {
      * @param type the type of the model to find
      */
     public AIModel resolveModel(final AIModelType type) {
-        return AIModels.get().findModel(host, type).orElse(AIModels.NOOP_MODEL);
+        return AIModels.get().findModel(host, type).orElse(AIModel.NOOP_MODEL);
     }
 
     /**
@@ -260,13 +262,24 @@ public class AppConfig implements Serializable {
      * @param modelName the name of the model to find
      */
     public AIModel resolveModelOrThrow(final String modelName) {
-        return AIModels.get()
+        final AIModel aiModel = AIModels.get()
                 .findModel(host, modelName)
                 .orElseThrow(() -> {
                     final String supported = String.join(", ", AIModels.get().getOrPullSupportedModels());
                     return new DotRuntimeException(
                             "Unable to find model: [" + modelName + "]. Only [" + supported + "] are supported ");
                 });
+
+        if (!aiModel.isOperational()) {
+            debugLogger(
+                    AppConfig.class,
+                    () -> String.format(
+                            "Resolved model [%s] is not operational, avoiding its usage",
+                            aiModel.getCurrentModel()));
+            throw new DotRuntimeException(String.format("Model [%s] is not operational", aiModel.getCurrentModel()));
+        }
+
+        return aiModel;
     }
 
     /**
@@ -280,6 +293,10 @@ public class AppConfig implements Serializable {
         if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(clazz, message.get());
         }
+    }
+
+    public boolean isEnabled() {
+        return StringUtils.isNotBlank(apiKey);
     }
 
     private String discoverEmbeddingsApiUrl(final Map<String, Secret> secrets) {
