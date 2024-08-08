@@ -245,7 +245,6 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
 
         return actions;
     }
-    f;
 
     private removeIconsFromMenuItem(action: DotActionMenuItem): DotActionMenuItem {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
