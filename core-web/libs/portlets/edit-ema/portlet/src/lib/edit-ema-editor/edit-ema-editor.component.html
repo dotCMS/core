@@ -1,88 +1,72 @@
-<ng-container *ngIf="editorState$ | async as es">
-    <dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
+<dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
+
+@if ($editorProps().seoResults && ogTagsResults$) {
     <dot-results-seo-tool
-        *ngIf="es.editorData.mode === editorMode.SOCIAL_MEDIA && ogTags() && ogTagsResults$"
-        [seoMedia]="es.editorData.socialMedia"
-        [seoOGTags]="ogTags()"
+        [seoMedia]="$editorProps().seoResults.socialMedia"
+        [seoOGTags]="$editorProps().seoResults.ogTags"
         [seoOGTagsResults]="ogTagsResults$"
         data-testId="results-seo-tool"></dot-results-seo-tool>
-    <div
-        [ngClass]="{
-            'editor-content--device': es.editorData.mode === editorMode.DEVICE,
-            'editor-content--expanded':
-                !es.editor.page.canEdit ||
-                !es.editorData.canEditVariant ||
-                es.editorData.page.isLocked,
-            'editor-content--hidden': es.editorData.mode === editorMode.SOCIAL_MEDIA
-        }"
-        class="editor-content"
-        data-testId="editor-content">
+}
+@if ($editorProps().showEditorContent) {
+    <div class="editor-content" data-testId="editor-content">
         <div
             [ngClass]="{
-                'iframe-wrapper--device': es.editorData.mode === editorMode.DEVICE
+                'iframe-wrapper--device': $editorProps().iframe.wrapper
             }"
             [ngStyle]="{
-                width:
-                    es.editorData.mode === editorMode.DEVICE
-                        ? es.editorData.device.cssWidth + 'px'
-                        : '100%',
-                height:
-                    es.editorData.mode === editorMode.DEVICE
-                        ? es.editorData.device.cssHeight + 'px'
-                        : '100%'
+                width: $editorProps().iframe?.wrapper?.width,
+                height: $editorProps().iframe?.wrapper?.height
             }"
             class="iframe-wrapper">
             <iframe
-                (load)="onIframePageLoad(es.editorData.mode)"
-                [src]="es.iframeURL | safeUrl"
+                (load)="onIframePageLoad()"
+                [src]="$editorProps().iframe.src | safeUrl"
                 [title]="host"
                 [ngStyle]="{
-                    pointerEvents:
-                        es.state === editorState.DRAGGING || es.state === editorState.SCROLL_DRAG
-                            ? 'none'
-                            : 'auto',
-                    opacity: es.state === editorState.LOADING ? '0.5' : '1'
+                    pointerEvents: $editorProps().iframe.pointerEvents,
+                    opacity: $editorProps().iframe.opacity
                 }"
                 #iframe
                 data-testId="iframe"
                 width="100%"
                 height="100%"></iframe>
-            <p-progressBar
-                *ngIf="es.state === editorState.LOADING"
-                [ngStyle]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"
-                [style]="{ height: '6px' }"
-                data-testId="progress-bar"
-                mode="indeterminate"></p-progressBar>
-
-            <dot-ema-contentlet-tools
-                *ngIf="es.showContentletTools"
-                (edit)="handleEditContentlet($event)"
-                (editVTL)="handleEditVTL($event)"
-                (delete)="deleteContentlet($event)"
-                (addWidget)="dialog.addWidget($event)"
-                (addForm)="dialog.addForm($event)"
-                (addContent)="dialog.addContentlet($event)"
-                [hide]="es.state === editorState.DRAGGING"
-                [contentletArea]="es.contentletArea"
-                [isEnterprise]="es.isEnterpriseLicense"
-                data-testId="contentlet-tools" />
-            <dot-ema-page-dropzone
-                *ngIf="es.showDropzone"
-                [containers]="es.bounds"
-                [dragItem]="es.dragItem"
-                data-testId="dropzone" />
+            @if ($editorProps().progressBar) {
+                <p-progressBar
+                    [ngStyle]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"
+                    [style]="{ height: '6px' }"
+                    data-testId="progress-bar"
+                    mode="indeterminate"></p-progressBar>
+            }
+            @if ($editorProps().contentletTools; as contentletTools) {
+                <dot-ema-contentlet-tools
+                    (edit)="handleEditContentlet($event)"
+                    (editVTL)="handleEditVTL($event)"
+                    (delete)="deleteContentlet($event)"
+                    (addWidget)="dialog.addWidget($event)"
+                    (addForm)="dialog.addForm($event)"
+                    (addContent)="dialog.addContentlet($event)"
+                    [hide]="contentletTools.hide"
+                    [contentletArea]="contentletTools.contentletArea"
+                    [isEnterprise]="contentletTools.isEnterprise"
+                    data-testId="contentlet-tools" />
+            }
+            @if ($editorProps().dropzone; as dropzone) {
+                <dot-ema-page-dropzone
+                    [containers]="dropzone.bounds"
+                    [dragItem]="dropzone.dragItem"
+                    data-testId="dropzone" />
+            }
         </div>
     </div>
-
+}
+@if ($editorProps().palette; as palette) {
     <dot-edit-ema-palette
-        *ngIf="es.showPalette"
-        [languageId]="es.editor.viewAs.language.id"
-        [containers]="es.editor.containers"
-        [variantId]="es.editorData.variantId"
+        [languageId]="palette.languageId"
+        [containers]="palette.containers"
+        [variantId]="palette.variantId"
         data-testId="palette" />
-
-    @if ( es.editorData.canEditVariant && (es.editorData.mode === editorMode.EDIT ||
-    es.editorData.mode === editorMode.EDIT_VARIANT) ) {
+}
+@if ($editorProps().showDialogs) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"
         (reloadFromDialog)="reloadFromDialog()"
@@ -96,5 +80,4 @@
         acceptIcon="hidden"
         rejectButtonStyleClass="p-button-outlined"
         data-testId="confirm-dialog"></p-confirmDialog>
-    }
-</ng-container>
+}

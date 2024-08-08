@@ -7,9 +7,9 @@
             formArrayName="conditions">
             <div [formGroupName]="i" class="condition flex">
                 <div class="field flex-grow-1 flex flex-column w-15rem" formGroupName="value">
-                    <label dotFieldRequired for="name">{{
-                        'experiments.goal.url_parameter.form.conditions.parameter.label' | dm
-                    }}</label>
+                    <label dotFieldRequired for="name">
+                        {{ 'experiments.goal.url_parameter.form.conditions.parameter.label' | dm }}
+                    </label>
                     <input
                         id="name"
                         data-testId="name-input"
@@ -30,9 +30,9 @@
                 </div>
 
                 <div class="field flex-none flex flex-column w-15rem">
-                    <label dotFieldRequired for="operator">{{
-                        'experiments.goal.url_parameter.form.conditions.operator.label' | dm
-                    }}</label>
+                    <label dotFieldRequired for="operator">
+                        {{ 'experiments.goal.url_parameter.form.conditions.operator.label' | dm }}
+                    </label>
                     <p-dropdown
                         [dotOptions]="operatorsList"
                         id="operator"
@@ -50,9 +50,9 @@
                 </div>
 
                 <div class="field flex-grow-1 flex flex-column" formGroupName="value">
-                    <label dotFieldRequired for="value">{{
-                        'experiments.goal.url_parameter.form.conditions.value.label' | dm
-                    }}</label>
+                    <label dotFieldRequired for="value">
+                        {{ 'experiments.goal.url_parameter.form.conditions.value.label' | dm }}
+                    </label>
                     <input
                         id="value"
                         data-testId="value-input"

@@ -10,12 +10,12 @@ import com.dotcms.ai.db.EmbeddingsFactory;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotcms.ai.util.OpenAIRequest;
-import com.dotcms.ai.util.OpenAIThreadPool;
 import com.dotcms.ai.util.VelocityContextFactory;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
@@ -27,7 +27,6 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotCorruptedDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -37,7 +36,6 @@ import com.dotmarketing.util.json.JSONObject;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
@@ -68,9 +66,6 @@ import static com.liferay.util.StringPool.BLANK;
  * @since Mar 27th, 2024
  */
 class EmbeddingsAPIImpl implements EmbeddingsAPI {
-
-    private static final Lazy<String> OPEN_AI_EMBEDDINGS_URL = Lazy.of(()
-            -> Config.getStringProperty("OPEN_AI_EMBEDDINGS_URL", "https://api.openai.com/v1/embeddings"));
 
     private static final Cache<String, Tuple2<Integer, List<Float>>> EMBEDDING_CACHE =
             Caffeine.newBuilder()
@@ -138,7 +133,8 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
     @Override
     public void shutdown() {
-        Try.run(OpenAIThreadPool::shutdown);
+
+        Try.run(()->DotConcurrentFactory.getInstance().shutdown(OPEN_AI_THREAD_POOL_KEY));
     }
 
     @Override
@@ -192,7 +188,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return false;
         }
 
-        OpenAIThreadPool.submit(new EmbeddingsRunner(this, contentlet, parsed.get(), indexName));
+        DotConcurrentFactory.getInstance().getSubmitter(OPEN_AI_THREAD_POOL_KEY).submit(new EmbeddingsRunner(this, contentlet, parsed.get(), indexName));
 
         return true;
     }
@@ -332,7 +328,10 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return cachedEmbeddings;
         }
 
-        final List<Integer> tokens = EncodingUtil.encoding.get().encode(content);
+        final List<Integer> tokens = EncodingUtil.get()
+                .getEncoding()
+                .map(encoding -> encoding.encode(content))
+                .orElse(List.of());
         if (tokens.isEmpty()) {
             debugLogger(this.getClass(), () -> String.format("No tokens for content ID '%s' were encoded: %s", contentId, content));
             return Tuple.of(0, List.of());
@@ -348,7 +347,9 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return Tuple.of(dbEmbeddings._2, dbEmbeddings._3);
         }
 
-        final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(tokens.size(), this.sendTokensToOpenAI(contentId, tokens));
+        final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(
+                tokens.size(),
+                sendTokensToOpenAI(contentId, tokens));
         saveEmbeddingsForCache(content, openAiEmbeddings);
         EMBEDDING_CACHE.put(hashed, openAiEmbeddings);
 
@@ -424,13 +425,13 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
      */
     private List<Float> sendTokensToOpenAI(final String contentId, @NotNull final List<Integer> tokens) {
         final JSONObject json = new JSONObject();
-        json.put(AiKeys.MODEL, config.getConfig(AppKeys.EMBEDDINGS_MODEL));
+        json.put(AiKeys.MODEL, config.getEmbeddingsModel().getCurrentModel());
         json.put(AiKeys.INPUT, tokens);
         debugLogger(this.getClass(), () -> String.format("Content tokens for content ID '%s': %s", contentId, tokens));
         final String responseString = OpenAIRequest.doRequest(
-                OPEN_AI_EMBEDDINGS_URL.get(),
+                config.getApiEmbeddingsUrl(),
                 HttpMethod.POST,
-                this.config.getApiKey(),
+                config,
                 json);
         debugLogger(this.getClass(), () -> String.format("OpenAI Response for content ID '%s': %s",
                 contentId, responseString.replace("\n", BLANK)));

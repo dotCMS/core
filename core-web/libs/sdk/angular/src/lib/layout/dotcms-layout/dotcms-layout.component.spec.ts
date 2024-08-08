@@ -1,5 +1,5 @@
-import { Spectator } from '@ngneat/spectator';
-import { createRoutingFactory } from '@ngneat/spectator/jest';
+import { expect } from '@jest/globals';
+import { Spectator, createRoutingFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -25,13 +25,26 @@ class DotcmsSDKMockComponent {
 }
 
 jest.mock('@dotcms/client', () => ({
+    ...jest.requireActual('@dotcms/client'),
     isInsideEditor: jest.fn().mockReturnValue(true),
     initEditor: jest.fn(),
     updateNavigation: jest.fn(),
+    postMessageToEditor: jest.fn(),
+    DotCmsClient: {
+        instance: {
+            editor: {
+                on: jest.fn(),
+                off: jest.fn(),
+                callbacks: {}
+            }
+        }
+    },
     CUSTOMER_ACTIONS: {
         GET_PAGE_DATA: 'get-page-data'
     }
 }));
+
+const { DotCmsClient } = dotcmsClient as jest.Mocked<typeof dotcmsClient>;
 
 describe('DotcmsLayoutComponent', () => {
     let spectator: Spectator<DotcmsLayoutComponent>;
@@ -58,7 +71,8 @@ describe('DotcmsLayoutComponent', () => {
                 components: {
                     Banner: Promise.resolve(DotcmsSDKMockComponent)
                 }
-            }
+            },
+            detectChanges: false
         });
     });
 
@@ -93,6 +107,54 @@ describe('DotcmsLayoutComponent', () => {
                 new MessageEvent('message', { data: { name: 'SET_PAGE_DATA', payload: {} } })
             );
             expect(spectator.inject(PageContextService).setContext).toHaveBeenCalled();
+        });
+
+        describe('onReload', () => {
+            const client = DotCmsClient.instance;
+
+            beforeEach(() => {
+                spectator.setInput('onReload', () => {
+                    /* do nothing */
+                });
+                spectator.detectChanges();
+            });
+
+            it('should subscribe to the `CHANGE` event', () => {
+                expect(client.editor.on).toHaveBeenCalled();
+            });
+
+            it('should remove listener on unmount', () => {
+                spectator.component.ngOnDestroy();
+                spectator.detectChanges();
+
+                expect(client.editor.off).toHaveBeenCalledWith('changes');
+            });
+        });
+
+        describe('client is ready', () => {
+            const query = { query: 'query { ... }' };
+
+            beforeEach(() => {
+                spectator.setInput('editor', query);
+                spectator.detectChanges();
+            });
+
+            it('should post message to editor', () => {
+                spectator.detectChanges();
+                expect(dotcmsClient.postMessageToEditor).toHaveBeenCalledWith({
+                    action: dotcmsClient.CUSTOMER_ACTIONS.CLIENT_READY,
+                    payload: query
+                });
+            });
+        });
+
+        describe('onChange', () => {
+            const client = DotCmsClient.instance;
+            beforeEach(() => spectator.detectChanges());
+
+            it('should update the page asset when changes are made in the editor', () => {
+                expect(client.editor.on).toHaveBeenCalledWith('changes', expect.any(Function));
+            });
         });
     });
 });

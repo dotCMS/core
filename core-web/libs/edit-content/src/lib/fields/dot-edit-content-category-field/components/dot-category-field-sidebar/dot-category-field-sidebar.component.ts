@@ -1,11 +1,13 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    DestroyRef,
     EventEmitter,
     inject,
+    Input,
+    OnDestroy,
     OnInit,
     Output
 } from '@angular/core';
@@ -43,7 +45,8 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
         InputTextModule,
         DotCategoryFieldSearchComponent,
         DotCategoryFieldSearchListComponent,
-        DotCategoryFieldSelectedComponent
+        DotCategoryFieldSelectedComponent,
+        NgClass
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',
@@ -60,29 +63,36 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
         ])
     ]
 })
-export class DotCategoryFieldSidebarComponent implements OnInit {
+export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
     /**
-     * Indicates whether the sidebar is visible or not.
+     * Indicates the visibility of the sidebar.
+     *
+     * @memberof DotCategoryFieldSidebarComponent
      */
-    visible = true;
+    @Input() visible = false;
 
     /**
      * Output that emit if the sidebar is closed
      */
     @Output() closedSidebar = new EventEmitter<void>();
 
-    readonly store: InstanceType<typeof CategoryFieldStore> = inject(CategoryFieldStore);
+    /**
+     * Store based on the `CategoryFieldStore`.
+     *
+     * @memberof DotCategoryFieldSidebarComponent
+     */
+    readonly store = inject(CategoryFieldStore);
+
     /**
      * Computed property for retrieving all category keys.
      */
     $allCategoryKeys = computed(() => this.store.selected().map((category) => category.key));
-    readonly #destroyRef = inject(DestroyRef);
 
     ngOnInit(): void {
         this.store.getCategories();
+    }
 
-        this.#destroyRef.onDestroy(() => {
-            this.store.clean();
-        });
+    ngOnDestroy(): void {
+        this.store.clean();
     }
 }

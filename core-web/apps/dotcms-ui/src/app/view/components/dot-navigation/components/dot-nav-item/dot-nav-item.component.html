@@ -14,8 +14,7 @@
         <dot-icon
             class="dot-nav__item-arrow"
             aria-hidden="true"
-            name="{{ data.isOpen ? 'arrow_drop_down' : 'arrow_drop_up' }}">
-        </dot-icon>
+            name="{{ data.isOpen ? 'arrow_drop_down' : 'arrow_drop_up' }}"></dot-icon>
     </div>
 </div>
 <dot-sub-nav
@@ -23,5 +22,4 @@
     [ngStyle]="customStyles"
     [data]="data"
     [collapsed]="collapsed"
-    #subnav>
-</dot-sub-nav>
+    #subnav></dot-sub-nav>

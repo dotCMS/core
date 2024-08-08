@@ -44,7 +44,7 @@ public class EmbeddingsForm {
         this.indexName = UtilMethods.isSet(builder.indexName) ? builder.indexName : "default";
         this.velocityTemplate = builder.velocityTemplate;
         this.offset = builder.offset;
-        this.model = UtilMethods.isSet(builder.model) ? builder.model : ConfigService.INSTANCE.config().getConfig(AppKeys.EMBEDDINGS_MODEL);
+        this.model = UtilMethods.isSet(builder.model) ? builder.model : ConfigService.INSTANCE.config().getEmbeddingsModel().getCurrentModel();
         this.fields = (builder.fields != null) ? AppConfig.SPLITTER.split(builder.fields.toLowerCase()) : new String[0];
         this.userId= PortalUtil.getUser() != null ? PortalUtil.getUser().getUserId() : APILocator.systemUser().getUserId();
     }

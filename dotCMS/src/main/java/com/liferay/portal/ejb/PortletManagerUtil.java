@@ -22,10 +22,9 @@ package com.liferay.portal.ejb;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.portal.PortletFactory;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Portlet;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -38,22 +37,28 @@ import java.util.Map;
 public class PortletManagerUtil {
 
     @WrapInTransaction
-    public static Collection addPortlets(final InputStream[] xmls) throws com.liferay.portal.SystemException {
+    public static Map<String,Portlet> addPortlets(final InputStream[] xmls) throws com.liferay.portal.SystemException {
         try {
             final PortletFactory portletFactory = PortletManagerFactory.getManager();
 
-            Collection<Portlet> portlets = new ArrayList<>();
-
             final Map<String,Portlet> foundPortlets = portletFactory.xmlToPortlets(xmls);
             for(Portlet portlet : foundPortlets.values()) {
-              portlets.add(portletFactory.insertPortlet(portlet));
+                tryToInsertPortlet(portlet, portletFactory);
             }
-
-            return portlets;
+            return foundPortlets;
         } catch (final Exception e) {
             throw new com.liferay.portal.SystemException(e);
         }
     }
+
+    private static void tryToInsertPortlet(Portlet portlet, PortletFactory portletFactory) {
+        try {
+            portletFactory.insertPortlet(portlet);
+        } catch (final Exception e) {
+            Logger.error(PortletManagerUtil.class, "Failed to insert portlet to DB "+ portlet.getPortletId(), e);
+        }
+    }
+
     @CloseDBIfOpened
     public static com.liferay.portal.model.Portlet getPortletById(final java.lang.String companyId, final java.lang.String portletId)
             throws com.liferay.portal.SystemException {

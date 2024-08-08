@@ -32,7 +32,8 @@ const TINYMCE_EDITOR_MOCK: unknown = {
     focus: jest.fn(),
     getContent: (_data: unknown) => '',
     isDirty: () => false,
-    hasFocus: () => false
+    hasFocus: () => false,
+    setContent: jest.fn()
 };
 
 const TINYMCE_EDITOR_PROPERTY_MOCK = {
@@ -134,6 +135,21 @@ describe('DotEditableTextComponent', () => {
             jest.spyOn(mockedDotcmsClient, 'isInsideEditor').mockReturnValue(true);
         });
 
+        it('should set content with the right format when the contentlet changes', () => {
+            spectator.detectChanges();
+            mockEditorFn(spectator);
+
+            const editorComponent = spectator.query(EditorComponent) as EditorComponent;
+            const spySetContent = jest.spyOn(editorComponent.editor, 'setContent');
+
+            spectator.setInput('contentlet', {
+                ...dotcmsContentletMock,
+                title: 'New title'
+            });
+            spectator.detectChanges();
+            expect(spySetContent).toHaveBeenCalledWith('New title', { format: 'text' });
+        });
+
         describe('Configuration', () => {
             describe('Editor Configuration', () => {
                 it('should set a plain mode by default', () => {
@@ -145,7 +161,7 @@ describe('DotEditableTextComponent', () => {
                     expect(spectator.component.mode).toBe('plain');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['plain'],
-                        base_url: 'http://localhost:8080/html/js/tinymcev7'
+                        base_url: 'http://localhost:8080/ext/tinymcev7'
                     });
                 });
 
@@ -158,7 +174,7 @@ describe('DotEditableTextComponent', () => {
                     expect(spectator.component.mode).toBe('minimal');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['minimal'],
-                        base_url: 'http://localhost:8080/html/js/tinymcev7'
+                        base_url: 'http://localhost:8080/ext/tinymcev7'
                     });
                 });
 
@@ -171,7 +187,7 @@ describe('DotEditableTextComponent', () => {
                     expect(spectator.component.mode).toBe('full');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['full'],
-                        base_url: 'http://localhost:8080/html/js/tinymcev7'
+                        base_url: 'http://localhost:8080/ext/tinymcev7'
                     });
                 });
             });

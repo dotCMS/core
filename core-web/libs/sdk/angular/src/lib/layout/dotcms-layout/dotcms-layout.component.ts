@@ -10,9 +10,15 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
-import { filter } from 'rxjs/operators';
-
-import { initEditor, isInsideEditor, updateNavigation } from '@dotcms/client';
+import {
+    CUSTOMER_ACTIONS,
+    DotCmsClient,
+    EditorConfig,
+    initEditor,
+    isInsideEditor,
+    postMessageToEditor,
+    updateNavigation
+} from '@dotcms/client';
 
 import { DynamicComponentEntity } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';
@@ -39,31 +45,85 @@ import { RowComponent } from '../row/row.component';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotcmsLayoutComponent implements OnInit {
-    @Input({ required: true }) pageAsset: DotCMSPageAsset | null = null;
+    /**
+     * The `pageAsset` property represents the DotCMS page asset.
+     *
+     * @type {(DotCMSPageAsset)}
+     * @memberof DotcmsLayoutComponent
+     * @required
+     */
+    @Input({ required: true }) pageAsset!: DotCMSPageAsset;
+
+    /**
+     * The `components` property is a record of dynamic components for each Contentlet on the page.
+     *
+     * @type {Record<string, DynamicComponentEntity>}
+     * @memberof DotcmsLayoutComponent
+     * @required
+     */
     @Input({ required: true }) components!: Record<string, DynamicComponentEntity>;
+
+    /**
+     * The `onReload` property is a function that reloads the page after changes are made.
+     *
+     * @memberof DotcmsLayoutComponent
+     * @deprecated In future implementation we will be listening for the changes from the editor to update the page state so reload will not be needed.
+     */
+    @Input() onReload!: () => void;
+
+    /**
+     *
+     * @type {DotCMSFetchConfig}
+     * @memberof DotCMSPageEditorConfig
+     * @description The configuration custom params for data fetching on Edit Mode.
+     * @example <caption>Example with Custom GraphQL query</caption>
+     * <dotcms-layout [editor]="{ query: 'query { ... }' }"/>
+     *
+     * @example <caption>Example usage with Custom Page API parameters</caption>
+     * <dotcms-layout [editor]="{ params: { depth: '2' } }"/>;
+     */
+    @Input() editor!: EditorConfig;
 
     private readonly route = inject(ActivatedRoute);
     private readonly pageContextService = inject(PageContextService);
     private readonly destroyRef$ = inject(DestroyRef);
+    private client!: DotCmsClient;
 
     ngOnInit() {
-        this.route.url
-            .pipe(
-                takeUntilDestroyed(this.destroyRef$),
-                filter(() => isInsideEditor())
-            )
-            .subscribe((urlSegments) => {
-                const pathname = '/' + urlSegments.join('/');
+        this.setContext(this.pageAsset);
 
-                initEditor({ pathname });
-                updateNavigation(pathname || '/');
-            });
+        if (!isInsideEditor()) {
+            return;
+        }
+
+        this.client = DotCmsClient.instance;
+        this.route.url.pipe(takeUntilDestroyed(this.destroyRef$)).subscribe((urlSegments) => {
+            const pathname = '/' + urlSegments.join('/');
+
+            initEditor({ pathname });
+            updateNavigation(pathname || '/');
+        });
+
+        this.client.editor.on('changes', (data) => {
+            if (this.onReload) {
+                this.onReload();
+
+                return;
+            }
+
+            const pageAsset = data as DotCMSPageAsset;
+            this.pageAsset = pageAsset; // Update the page asset with the Editor Response
+            this.setContext(pageAsset); // Update the context with the new page asset
+        });
+
+        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: this.editor });
     }
 
-    ngOnChanges() {
-        //Each time the layout changes, we need to update the context
-        if (this.pageAsset !== null) {
-            this.pageContextService.setContext(this.pageAsset, this.components);
-        }
+    ngOnDestroy() {
+        this.client.editor.off('changes');
+    }
+
+    private setContext(pageAsset: DotCMSPageAsset) {
+        this.pageContextService.setContext(pageAsset, this.components);
     }
 }

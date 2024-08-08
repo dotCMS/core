@@ -59,7 +59,7 @@ interface AsyncWorkflowRunner extends Runnable, Serializable {
      * Method to run the workflow. Throws a DotRuntimeException if not implemented.
      */
     default void run() {
-        throw new DotRuntimeException("not implemented");
+        runInternal();
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.dotcms.graphql.business;
 
 import com.dotcms.graphql.util.TypeUtil;
+import com.dotmarketing.util.Logger;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -29,6 +30,8 @@ public enum QueryMetadataTypeProvider implements GraphQLTypesProvider {
 
     @Override
     public Collection<? extends GraphQLType> getTypes() {
+
+        Logger.debug(this, ()->"Creating Query Metadata types");
         return List.of(countType);
     }
 }

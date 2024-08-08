@@ -24,7 +24,7 @@ export interface PrincipalConfiguration {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEmptyContainerComponent {
-    //Todo: make required when Angular 16 updated
+    //Todo: change to input signal when ui migrated to jest
     /**
      * Principal configuration of the component
      */

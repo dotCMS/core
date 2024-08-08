@@ -23,6 +23,8 @@ import java.util.Optional;
  */
 public interface EmbeddingsAPI {
 
+    String OPEN_AI_THREAD_POOL_KEY = "OpenAIThreadPool";
+
     static EmbeddingsAPI impl(Host host) {
         return new EmbeddingsAPIImpl(host);
     }

@@ -42,9 +42,9 @@ const I8N_BASE = 'api.sites.ruleengine';
                 *ngIf="showCloseButton"
                 (click)="globalError.message = ''"
                 class="material-icons"
-                class="close-button"
-                >X</i
-            >
+                class="close-button">
+                X
+            </i>
         </div>
         <dot-not-license
             *ngIf="
@@ -71,25 +71,25 @@ const I8N_BASE = 'api.sites.ruleengine';
                         (click)="setFieldFilter('enabled', null)"
                         [class.active]="!isFilteringField('enabled')"
                         class="cw-filter-link"
-                        href="javascript:void(0)"
-                        >{{ rsrc('inputs.filter.status.all.label') | async }}</a
-                    >
+                        href="javascript:void(0)">
+                        {{ rsrc('inputs.filter.status.all.label') | async }}
+                    </a>
                     <span>&#124;</span>
                     <a
                         (click)="setFieldFilter('enabled', true)"
                         [class.active]="isFilteringField('enabled', true)"
                         class="cw-filter-link"
-                        href="javascript:void(0)"
-                        >{{ rsrc('inputs.filter.status.active.label') | async }}</a
-                    >
+                        href="javascript:void(0)">
+                        {{ rsrc('inputs.filter.status.active.label') | async }}
+                    </a>
                     <span>&#124;</span>
                     <a
                         (click)="setFieldFilter('enabled', false)"
                         [class.active]="isFilteringField('enabled', false)"
                         class="cw-filter-link"
-                        href="javascript:void(0)"
-                        >{{ rsrc('inputs.filter.status.inactive.label') | async }}</a
-                    >
+                        href="javascript:void(0)">
+                        {{ rsrc('inputs.filter.status.inactive.label') | async }}
+                    </a>
                 </div>
             </div>
             <div *ngIf="!rules.length" class="cw-rule-engine__empty">
@@ -101,9 +101,9 @@ const I8N_BASE = 'api.sites.ruleengine';
                             | async
                     }}{{ rsrc('inputs.add.one.now') | async }}
                 </h2>
-                <span *ngIf="pageId && !isContentletHost">{{
-                    rsrc('inputs.page.rules.fired.every.time') | async
-                }}</span>
+                <span *ngIf="pageId && !isContentletHost">
+                    {{ rsrc('inputs.page.rules.fired.every.time') | async }}
+                </span>
                 <button
                     (click)="addRule()"
                     pButton
