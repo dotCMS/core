@@ -73,7 +73,9 @@ export function MyPage({ pageAsset, nav }) {
                         components: componentsMap,
                         pageAsset: pageAsset,
                     }}
-                    config={{ pathname }}
+                    config={{
+                        pathname
+                    }}
                 />
             </main>
 

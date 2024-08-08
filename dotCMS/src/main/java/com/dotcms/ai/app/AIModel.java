@@ -18,6 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AIModel {
 
+    public static final AIModel NOOP_MODEL = AIModel.builder()
+            .withType(AIModelType.UNKNOWN)
+            .withNames(List.of())
+            .build();
+
     private final AIModelType type;
     private final List<String> names;
     private final int tokensPerMinute;
@@ -86,6 +91,10 @@ public class AIModel {
 
     public void setDecommissioned(final boolean decommissioned) {
         this.decommissioned.set(decommissioned);
+    }
+
+    public boolean isOperational() {
+        return this != NOOP_MODEL;
     }
 
     public String getCurrentModel() {
