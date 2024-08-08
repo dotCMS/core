@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
@@ -202,7 +203,8 @@ import org.junit.runners.Suite.SuiteClasses;
         EMAWebInterceptorTest.class,
         GoogleTranslationServiceIntegrationTest.class,
         Task240131UpdateLanguageVariableContentTypeTest.class,
-        PushedAssetUtilTest.class
+        PushedAssetUtilTest.class,
+        OpenAIAutoTagActionletTest.class
 })
 
 public class MainSuite2a {

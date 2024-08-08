@@ -15,14 +15,6 @@ import java.io.OutputStream;
  */
 public interface CompletionsAPI {
 
-    static CompletionsAPI impl(final AppConfig config) {
-        return new CompletionsAPIImpl(Lazy.of(() -> config));
-    }
-
-    static CompletionsAPI impl() {
-        return new CompletionsAPIImpl(null);
-    }
-
     /**
      * this method takes the query/prompt, searches dotCMS content for matching embeddings and then returns an AI
      * summary based on the matching content in dotCMS
