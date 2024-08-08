@@ -27,7 +27,6 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
 
     form: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private enableTabChange = true;
 
     constructor(
         private store: DotTemplateStore,
