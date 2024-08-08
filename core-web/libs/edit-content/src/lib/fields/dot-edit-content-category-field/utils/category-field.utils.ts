@@ -199,14 +199,14 @@ export const updateChecked = (
  * @param parentList
  */
 export const getParentPath = (parentList: DotCategoryParent[]): string => {
-    if (parentList.length > 0) {
-        return parentList
-            .slice(1)
-            .map((parent) => parent.name)
-            .join(' / ');
+    if (parentList.length === 0) {
+        return '';
     }
-
-    return '';
+    
+    return parentList
+        .slice(1)
+        .map((parent) => parent.name)
+        .join(' / ');
 };
 
 /**
