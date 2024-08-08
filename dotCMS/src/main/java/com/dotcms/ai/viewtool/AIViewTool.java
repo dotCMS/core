@@ -3,10 +3,10 @@ package com.dotcms.ai.viewtool;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.ai.service.OpenAIChatService;
-import com.dotcms.ai.service.OpenAIChatServiceImpl;
-import com.dotcms.ai.service.OpenAIImageService;
-import com.dotcms.ai.service.OpenAIImageServiceImpl;
+import com.dotcms.ai.api.ChatAPI;
+import com.dotcms.ai.api.OpenAIChatAPIImpl;
+import com.dotcms.ai.api.ImageAPI;
+import com.dotcms.ai.api.OpenAIImageAPIImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.json.JSONObject;
@@ -28,8 +28,8 @@ public class AIViewTool implements ViewTool {
 
     private ViewContext context;
     private AppConfig config;
-    private OpenAIChatService chatService;
-    private OpenAIImageService imageService;
+    private ChatAPI chatService;
+    private ImageAPI imageService;
 
     @Override
     public void init(final Object obj) {
@@ -127,13 +127,13 @@ public class AIViewTool implements ViewTool {
     }
 
     @VisibleForTesting
-    OpenAIChatService chatService() {
-        return new OpenAIChatServiceImpl(config);
+    ChatAPI chatService() {
+        return new OpenAIChatAPIImpl(config);
     }
 
     @VisibleForTesting
-    OpenAIImageService imageService() {
-        return new OpenAIImageServiceImpl(config, user(), APILocator.getHostAPI(), APILocator.getTempFileAPI());
+    ImageAPI imageService() {
+        return new OpenAIImageAPIImpl(config, user(), APILocator.getHostAPI(), APILocator.getTempFileAPI());
     }
 
     private <P extends Object> Try<JSONObject> generate(final P prompt, final Function<P, JSONObject> serviceCall) {

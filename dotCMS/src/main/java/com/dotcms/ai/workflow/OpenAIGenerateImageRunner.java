@@ -1,8 +1,8 @@
 package com.dotcms.ai.workflow;
 
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.ai.service.OpenAIImageService;
-import com.dotcms.ai.service.OpenAIImageServiceImpl;
+import com.dotcms.ai.api.ImageAPI;
+import com.dotcms.ai.api.OpenAIImageAPIImpl;
 import com.dotcms.ai.util.VelocityContextFactory;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
@@ -110,7 +110,7 @@ public class OpenAIGenerateImageRunner implements Runnable {
             }
 
             final String finalPrompt = VelocityUtil.eval(prompt, ctx);
-            final OpenAIImageService service = new OpenAIImageServiceImpl(
+            final ImageAPI service = new OpenAIImageAPIImpl(
                     ConfigService.INSTANCE.config(host),
                     user,
                     APILocator.getHostAPI(),

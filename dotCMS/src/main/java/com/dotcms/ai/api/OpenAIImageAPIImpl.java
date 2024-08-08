@@ -1,4 +1,4 @@
-package com.dotcms.ai.service;
+package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
@@ -29,7 +29,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class OpenAIImageServiceImpl implements OpenAIImageService {
+public class OpenAIImageAPIImpl implements ImageAPI {
 
     private static StopWordsUtil stopWordsUtil = StopWordsUtil.get();
 
@@ -38,10 +38,10 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
     private final HostAPI hostApi;
     private final TempFileAPI tempFileApi;
 
-    public OpenAIImageServiceImpl(final AppConfig config,
-                                  final User user,
-                                  final HostAPI hostApi,
-                                  final TempFileAPI tempFileApi) {
+    public OpenAIImageAPIImpl(final AppConfig config,
+                              final User user,
+                              final HostAPI hostApi,
+                              final TempFileAPI tempFileApi) {
         this.config = config;
         this.user = user;
         this.hostApi = hostApi;
@@ -188,7 +188,7 @@ public class OpenAIImageServiceImpl implements OpenAIImageService {
     }
 
     public static void setStopWordsUtil(final StopWordsUtil stopWordsUtil) {
-        OpenAIImageServiceImpl.stopWordsUtil = stopWordsUtil;
+        OpenAIImageAPIImpl.stopWordsUtil = stopWordsUtil;
     }
 
 }
