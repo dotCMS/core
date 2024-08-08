@@ -1,16 +1,17 @@
-import { Meta, moduleMetadata, argsToTemplate, StoryObj } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { Injectable } from '@angular/core';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotPaletteModule } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.module';
+import { DotContentTypeService, DotESContentService, DotMessageService, DotSessionStorageService, PaginatorService } from '@dotcms/data-access';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
 
-/*
+
 const data = [
     {
         baseType: 'CONTENT',
@@ -105,7 +106,6 @@ const data = [
         workflows: []
     }
 ];
-*/
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -123,22 +123,38 @@ const meta: Meta<DotPaletteComponent> = {
     component: DotPaletteComponent,
     decorators: [
         moduleMetadata({
-            declarations: [DotPaletteComponent],
-            imports: [CommonModule, DotIconModule, DotFilterPipeModule, DotMessagePipe],
+            imports: [CommonModule, DotIconModule, DotFilterPipeModule, DotPaletteModule, DotMessagePipe],
             providers: [
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService },
-                { provide: DotMessageService, useValue: messageServiceMock }
+                { provide: DotMessageService, useValue: messageServiceMock },
+                {
+                    provide: DotContentTypeService,
+                    useValue: {
+                        getContentTypes: () => { return data },
+                        filterContentTypes: () => { return data },
+                    }
+                },
+                { 
+                    provide: DotESContentService,
+                    useValue: {
+                        get: () => { return [] }
+                    }
+                },
+                { 
+                    provide: PaginatorService,
+                    useValue: {
+                        get: () => { return [] }
+                    }
+                },
+                { 
+                    provide: DotSessionStorageService,
+                    useValue: {
+                        get: () => { return [] }
+                    }
+                }
             ]
         })
     ],
-    render: (args) => {
-        return {
-            props: {
-                ...args
-            },
-            template: `<dot-palette ${argsToTemplate(args)} />`
-        };
-    }
 };
 export default meta;
 
