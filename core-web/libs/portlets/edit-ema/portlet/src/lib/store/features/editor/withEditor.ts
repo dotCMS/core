@@ -7,7 +7,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, untracked } from '@angular/core';
 
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
 
@@ -43,6 +43,8 @@ import {
     getEditorStates
 } from '../../../utils';
 import { UVEState } from '../../models';
+import { withClient } from '../client/withClient';
+
 const initialState: EditorState = {
     bounds: [],
     state: EDITOR_STATE.IDLE,
@@ -65,6 +67,7 @@ export function withEditor() {
         withState<EditorState>(initialState),
         withEditorToolbar(),
         withSave(),
+        withClient(),
         withComputed((store) => {
             return {
                 $pageData: computed<PageData>(() => {
@@ -85,9 +88,10 @@ export function withEditor() {
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
                         code: store.pageAPIResponse()?.page?.rendered,
-                        isTraditionalPage: store.isTraditionalPage(),
-                        isEditState: store.isEditState(),
-                        isEnterprise: store.isEnterprise()
+                        isClientReady: store.isClientReady(),
+                        isTraditionalPage: untracked(() => store.isTraditionalPage()),
+                        enableInlineEdit:
+                            store.isEditState() && untracked(() => store.isEnterprise())
                     };
                 }),
                 $editorIsInDraggingState: computed<boolean>(
@@ -103,11 +107,13 @@ export function withEditor() {
                     const state = store.state();
                     const params = store.params();
                     const isTraditionalPage = store.isTraditionalPage();
+                    const isClientReady = store.isClientReady();
                     const contentletArea = store.contentletArea();
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
                     const isLoading = store.status() === UVE_STATUS.LOADING;
+                    const isPageReady = isTraditionalPage || isClientReady;
 
                     const { dragIsActive, isScrolling, isDragging } = getEditorStates(state);
 
@@ -126,15 +132,17 @@ export function withEditor() {
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
+                    const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
+                    const origin = params.clientHost || window.location.origin;
+                    const iframeURL = new URL(pageAPIQueryParams, origin);
+
                     return {
                         showDialogs: showDialogs,
                         showEditorContent: !socialMedia,
                         iframe: {
-                            opacity: isLoading ? '0.5' : '1',
+                            opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
-                            src: !isTraditionalPage
-                                ? `${params.clientHost}/${pageAPIQueryParams}`
-                                : '',
+                            src: !isTraditionalPage ? iframeURL.href : '',
                             wrapper: device
                                 ? {
                                       width: `${device.cssWidth}${BASE_IFRAME_MEASURE_UNIT}`,
@@ -176,6 +184,11 @@ export function withEditor() {
         }),
         withMethods((store) => {
             return {
+                setIsClientReady(value: boolean) {
+                    patchState(store, {
+                        isClientReady: value
+                    });
+                },
                 updateEditorScrollState() {
                     // We dont want to change the state if the editor is out of bounds
                     // The scroll event is triggered after the user leaves the window

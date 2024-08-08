@@ -6,14 +6,19 @@ export const graphqlToPageEntity = ({ page }: { page: Record<string, unknown> })
         return null;
     }
 
-    const { layout, template, containers, urlContentMap, viewAs, ...pageAsset } = page;
+    const { layout, template, containers, urlContentMap, viewAs, site, _map, ...pageAsset } = page;
+    const data: any = _map || {};
 
     return {
         layout,
         template,
         viewAs,
         urlContentMap,
-        page: pageAsset,
+        site,
+        page: {
+            ...data,
+            ...pageAsset
+        },
         containers: parseContainers(containers as [])
     };
 };

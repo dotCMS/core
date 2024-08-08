@@ -41,6 +41,8 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
   protected readonly components = signal<any>(DYNAMIC_COMPONENTS);
   private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
+  protected readonly editorCofig = { params: { depth: '2' } };
+
   ngOnInit() {
     // Get the context data from the route
     this.route.data
@@ -48,6 +50,7 @@ export class DotCMSPagesComponent implements OnInit, OnDestroy {
       .subscribe((data) => {
         this.context.set(data['context']);
       });
+
 
     this.client.editor.on('changes', (pageAsset) => {
       this.context.update((context) => ({ ...context, pageAsset }));

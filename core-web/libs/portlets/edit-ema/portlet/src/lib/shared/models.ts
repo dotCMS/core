@@ -3,11 +3,6 @@ import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors } from './enums';
 
-import {
-    ClientContentletArea,
-    Container,
-    UpdatedContentlet
-} from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api.service';
 
 export interface InfoOptions {
@@ -104,14 +99,6 @@ export interface WorkflowActionResult extends MessageInfo {
     callback: string;
     args: unknown[];
 }
-
-export type PostMessagePayload =
-    | ActionPayload
-    | SetUrlPayload
-    | Container[]
-    | ClientContentletArea
-    | ReorderPayload
-    | UpdatedContentlet;
 
 export interface DeletePayload {
     payload: ActionPayload;

@@ -12,7 +12,8 @@ import {
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap,
-    areContainersEquals
+    areContainersEquals,
+    compareUrlPaths
 } from '.';
 
 import { dotPageContainerStructureMock } from '../shared/mocks';
@@ -573,6 +574,21 @@ describe('utils functions', () => {
                     }
                 )
             ).toBe(false);
+        });
+    });
+
+    describe('compareUrlPaths', () => {
+        it('should return true when the paths are equal', () => {
+            expect(compareUrlPaths('/test', '/test')).toBe(true);
+        });
+
+        it('should return true when the paths are equal without initial slash', () => {
+            expect(compareUrlPaths('/test', 'test')).toBe(true);
+            expect(compareUrlPaths('test', '/test')).toBe(true);
+        });
+
+        it('should return false when the paths are not equal', () => {
+            expect(compareUrlPaths('/test', '/test2')).toBe(false);
         });
     });
 });
