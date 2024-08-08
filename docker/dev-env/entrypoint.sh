@@ -34,6 +34,7 @@ setup_postgres () {
     su -c "psql -c \"CREATE database dotcms;\" 1> /dev/null" postgres
     su -c "psql -c \"CREATE USER dotcmsdbuser WITH PASSWORD 'password';\" 1> /dev/null" postgres
     su -c "psql -c \"ALTER DATABASE dotcms OWNER TO dotcmsdbuser;\" 1> /dev/null" postgres
+    su -c "psql -c \"CREATE EXTENSION if not exists vector;\" dotcms 1> /dev/null" postgres
 
     if [  -f "$DB_BACKUP_FILE" ]; then
       echo "- Importing dotCMS db from backup"

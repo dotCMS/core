@@ -1,7 +1,6 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.api.EmbeddingsCallStrategy;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.rest.forms.CompletionsForm;
@@ -19,7 +18,12 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -141,7 +145,7 @@ public class EmbeddingsResource {
 
         if (UtilMethods.isSet(() -> json.optString(AiKeys.DELETE_QUERY))){
             final int numberDeleted =
-                    EmbeddingsAPI.impl().deleteByQuery(
+                    APILocator.getDotAIAPI().getEmbeddingsAPI().deleteByQuery(
                             json.optString(AiKeys.DELETE_QUERY),
                             Optional.ofNullable(json.optString(AiKeys.INDEX_NAME)),
                             user);
@@ -156,7 +160,7 @@ public class EmbeddingsResource {
                 .withContentType(json.optString(AiKeys.CONTENT_TYPE))
                 .withHost(json.optString(AiKeys.SITE))
                 .build();
-        int deleted = EmbeddingsAPI.impl().deleteEmbedding(dto);
+        int deleted = APILocator.getDotAIAPI().getEmbeddingsAPI().deleteEmbedding(dto);
 
         return Response.ok(Map.of(AiKeys.DELETED, deleted)).build();
     }
@@ -184,8 +188,8 @@ public class EmbeddingsResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        EmbeddingsAPI.impl().dropEmbeddingsTable();
-        EmbeddingsAPI.impl().initEmbeddingsTable();
+        APILocator.getDotAIAPI().getEmbeddingsAPI().dropEmbeddingsTable();
+        APILocator.getDotAIAPI().getEmbeddingsAPI().initEmbeddingsTable();
         return Response.ok(Map.of(AiKeys.CREATED, true)).build();
     }
 
@@ -251,7 +255,7 @@ public class EmbeddingsResource {
                         .ofNullable(form)
                         .orElse(new CompletionsForm.Builder().prompt("NOT USED").build()))
                 .build();
-        return Response.ok(Map.of(AiKeys.EMBEDDINGS_COUNT, EmbeddingsAPI.impl().countEmbeddings(dto))).build();
+        return Response.ok(Map.of(AiKeys.EMBEDDINGS_COUNT, APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddings(dto))).build();
     }
 
     /**
@@ -274,7 +278,7 @@ public class EmbeddingsResource {
                 .rejectWhenNoUser(true)
                 .init();
         new WebResource.InitBuilder(request, response).requiredBackendUser(true).init().getUser();
-        return Response.ok(Map.of(AiKeys.INDEX_COUNT, EmbeddingsAPI.impl().countEmbeddingsByIndex())).build();
+        return Response.ok(Map.of(AiKeys.INDEX_COUNT, APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddingsByIndex())).build();
     }
 
 }
