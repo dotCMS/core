@@ -18,9 +18,12 @@ on:
       reuse-previous-build:
         default: false
         type: boolean
-      publish-npm-package:
+      publish-npm-cli:
         default: false
         type: boolean
+      increment-sdk-libs:
+        default: false
+        type: boolean        
     secrets:
         DOCKER_USERNAME:
           required: false
@@ -101,16 +104,22 @@ jobs:
           artifactory-password: ${{ secrets.EE_REPO_PASSWORD }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-
       - name: CLI Publish
         id: cli_publish
-        if: inputs.publish-npm-package
+        if: inputs.publish-npm-cli
         uses: ./.github/actions/publish-npm-cli
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           cli-artifact-run-id: ${{ github.run_id }} # currently cli artifacts are never from build queue
 
+      - name: SDKs increment version
+        id: sdks_incremental
+        if: inputs.increment-sdk-libs
+        uses: ./.github/actions/increment-sdk-libs
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          npm-token: ${{ secrets.NPM_ORG_TOKEN }}
 
       # A Slack notification is sent using the 'slackapi/slack-github-action' action if the repository is 'dotcms/core'.
       - name: Slack Notification (Docker image announcement)
@@ -134,7 +143,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Slack Notification (dotCLI announcement)
-        if: inputs.publish-npm-package
+        if: inputs.publish-npm-cli
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: "log-dotcli"
@@ -151,4 +160,24 @@ jobs:
               ]
             }
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}    
+
+      - name: Slack Notification (SDK libs announcement)
+        if: inputs.increment-sdk-libs
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            {
+              "blocks": [              
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "> :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) update version requested!\n \n>This automated script announce that a new *_SDK libs_* version increment has been requested [ `${{ steps.sdks_incremental.outputs.pr-number }}` ] on the `NPM` registry :package:!"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}          

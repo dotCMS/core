@@ -1,0 +1,80 @@
+name: Publish SDK Libraries
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - closed
+
+env:
+  SDK_LABEL: 'sdk-libs'
+
+jobs:
+  after-pr:
+    environment: trunk
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Get PR Labels'
+        id: get_pr_labels
+        env:
+          LABELS: ${{ toJson(github.event.pull_request.labels) }}
+        run: |
+          echo "::group::Get PR Labels"
+          echo "PR Labels: $LABELS"
+
+          if echo "$LABELS" | jq -e '.[] | select(.name == "${{ env.SDK_LABEL }}")' > /dev/null; then
+            echo "Label '${{ env.SDK_LABEL }}' is present."
+            PUBLISH=true
+          else
+            echo "Label '${{ env.SDK_LABEL }}' is not present."            
+            PUBLISH=false
+          fi
+          echo "publish-sdk-libs=$PUBLISH" >> $GITHUB_OUTPUT
+          echo "::endgroup::"          
+
+      - name: 'Checkout'
+        if: steps.get_pr_labels.outputs.publish-sdk-libs == 'true'  
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}          
+
+      - name: 'Publishing sdk into NPM registry'
+        id: sdks_publish
+        if: steps.get_pr_labels.outputs.publish-sdk-libs == 'true'
+        working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+        run: |
+          echo "::group::Publishing SDK packages"        
+          sdks=$(ls)
+          for sdk in $sdks; do
+            echo "Publishing SDK lib [${sdk}]"
+            cd $sdk && echo "$(pwd)"
+            NEXT_VERSION=$(cat package.json | jq -r '.version')
+            echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+            npm publish --access public --tag alpha
+            npm dist-tag $NEXT_VERSION latest
+            cd ..
+          done
+          echo "sdk-libs-version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+        
+      - name: Slack Notification (SDK libs announcement)
+        if: success() && steps.get_pr_labels.outputs.publish-sdk-libs == 'true'
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            {
+              "blocks": [              
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "> :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) published!\n \n>This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.sdk-libs-version }}` ] is now available on the `NPM` registry :package:!"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}              

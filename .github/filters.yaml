@@ -3,6 +3,9 @@ full_build_test: &full_build_test
   - 'core-web/.nvmrc'
   - '.nvmrc'
 
+sdk_libs: &sdk_libs
+  - 'core-web/libs/sdk/**'
+
 backend: &backend
   - '.github/workflows/maven-cicd-pipeline.yml'
   - 'bom/**'
@@ -25,6 +28,7 @@ frontend: &frontend
   - 'core-web/**'
   - 'dotCMS/src/main/webapp/html/**/*.{css,js}'
   - *full_build_test
+  - *sdk_libs
 
 cli: &cli
   - 'tools/dotcms-cli/**'

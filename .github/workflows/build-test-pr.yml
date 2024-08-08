@@ -16,7 +16,7 @@ jobs:
     name: Initialize
     uses: ./.github/workflows/reusable-initialize.yml
     with:
-      incremental: true
+      validation-level: 'full'
   build:
     name: PR Build
     needs: [ initialize ]
