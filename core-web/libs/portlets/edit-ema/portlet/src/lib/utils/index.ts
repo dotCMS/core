@@ -420,3 +420,18 @@ export const getEditorStates = (state: EDITOR_STATE) => ({
     dragIsActive: state === EDITOR_STATE.DRAGGING || state === EDITOR_STATE.SCROLL_DRAG,
     isScrolling: state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING
 });
+
+/**
+ * Compare two URL paths
+ *
+ * @param {string} urlPath
+ * @param {string} urlPath2
+ * @return {*}  {boolean}
+ */
+export const compareUrlPaths = (urlPath: string, urlPath2: string): boolean => {
+    // Host doesn't matter here, we just need the pathname
+    const { pathname: pathname1 } = new URL(urlPath, window.origin);
+    const { pathname: pathname2 } = new URL(urlPath2, window.origin);
+
+    return pathname1 === pathname2;
+};

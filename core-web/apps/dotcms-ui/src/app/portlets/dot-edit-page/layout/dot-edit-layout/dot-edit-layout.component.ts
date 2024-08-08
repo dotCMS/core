@@ -72,8 +72,6 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             .subscribe((state: DotPageRenderState) => {
                 this.updatePageState(state);
 
-                this.containerMap = this.pageState.containerMap; // containerMap from pageState is a get property, which causes to trigger a function everytime the Angular change detection runs.
-
                 const mappedContainers = this.getRemappedContainers(state.containers);
                 this.templateContainersCacheService.set(mappedContainers);
             });
@@ -102,9 +100,10 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @param {DotPageRenderState} newState
      * @memberof DotEditLayoutComponent
      */
-    updatePageState(newState: DotPageRenderState) {
+    updatePageState(newState: DotPageRenderState | DotPageRender) {
         this.pageState = newState;
         this.templateIdentifier.set(newState.template.identifier);
+        this.containerMap = newState.containerMap;
     }
 
     /**
@@ -204,7 +203,8 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             this.dotMessageService.get('dot.common.message.saved')
         );
         this.templateIdentifier.set(updatedPage.template.identifier);
-        this.containerMap = updatedPage.containerMap; // containerMap from pageState is a get property, which causes to trigger a function everytime the Angular change detection runs.
+        // We need to pass the new layout to the template builder to sync the value with the backend
+        this.updatePageState(updatedPage);
     }
 
     /**
