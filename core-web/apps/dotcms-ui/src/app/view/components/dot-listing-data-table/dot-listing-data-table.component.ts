@@ -81,7 +81,10 @@ export class DotListingDataTableComponent implements OnInit {
     maxLinksPage: number;
     totalRecords: number;
 
-    constructor(public loggerService: LoggerService, public paginatorService: PaginatorService) {
+    constructor(
+        public loggerService: LoggerService,
+        public paginatorService: PaginatorService
+    ) {
         this.paginatorService.url = this.url;
     }
 

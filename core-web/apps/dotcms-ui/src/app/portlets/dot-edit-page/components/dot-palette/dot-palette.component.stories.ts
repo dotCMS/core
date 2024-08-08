@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, argsToTemplate, StoryObj } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { Injectable } from '@angular/core';
@@ -10,6 +10,7 @@ import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
 
+/*
 const data = [
     {
         baseType: 'CONTENT',
@@ -104,6 +105,7 @@ const data = [
         workflows: []
     }
 ];
+*/
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -116,7 +118,7 @@ const messageServiceMock = new MockDotMessageService({
     structure: 'Content Type'
 });
 
-export default {
+const meta: Meta<DotPaletteComponent> = {
     title: 'DotCMS/ Content Palette',
     component: DotPaletteComponent,
     decorators: [
@@ -129,23 +131,25 @@ export default {
             ]
         })
     ],
-    args: {
-        items: data
+    render: (args) => {
+        return {
+            props: {
+                ...args
+            },
+            template: `<dot-palette ${argsToTemplate(args)} />`
+        };
     }
-} as Meta;
+};
+export default meta;
 
-export const Default: Story<DotPaletteComponent> = (props) => {
-    return {
-        component: DotPaletteComponent,
-        props,
-        template: `<dot-palette [items]='items' />`
-    };
+type Story = StoryObj<DotPaletteComponent>;
+
+export const Default: Story = {
+    args: {}
 };
 
-export const Empty: Story<DotPaletteComponent> = (props) => {
-    return {
-        component: DotPaletteComponent,
-        props,
-        template: `<dot-palette [items]='[]' />`
-    };
+export const Empty: Story = {
+    args: {
+        allowedContent: []
+    }
 };

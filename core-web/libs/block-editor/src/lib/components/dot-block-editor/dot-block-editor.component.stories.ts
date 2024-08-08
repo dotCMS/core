@@ -17,12 +17,10 @@ import {
     DotMessageService,
     DotPropertiesService,
     DotUploadFileService,
-    FileStatus,
-    DotAiService
+    FileStatus
 } from '@dotcms/data-access';
 import { DotSpinnerModule } from '@dotcms/ui';
 
-import { DotAiServiceMock } from '../../../../../data-access/src/lib/dot-ai/dot-ai-service.mock';
 import {
     AssetFormComponent,
     BubbleLinkFormComponent,
