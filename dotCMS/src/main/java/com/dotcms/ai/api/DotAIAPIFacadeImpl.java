@@ -33,7 +33,6 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
     private static class DefaultCompletionsAPIProvider implements CompletionsAPIProvider {
 
         private final CompletionsAPI defaultCompletionAPI = new CompletionsAPIImpl(null);
-
         @Override
         public CompletionsAPI getCompletionsAPI(final Object... initArguments) {
             return Objects.nonNull(initArguments) && initArguments.length > 0?
