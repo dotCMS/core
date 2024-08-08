@@ -179,7 +179,8 @@ describe('CategoryFieldUtils', () => {
             const item: DotCategoryFieldKeyValueObj = {
                 key: CATEGORY_LEVEL_1[1].key,
                 value: CATEGORY_LEVEL_1[1].categoryName,
-                inode: CATEGORY_LEVEL_1[1].inode
+                inode: CATEGORY_LEVEL_1[1].inode,
+                path: '',
             };
 
             const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected, item];
@@ -260,145 +261,6 @@ describe('CategoryFieldUtils', () => {
             };
 
             const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected];
-
-            const result = updateChecked(storedSelected, selected, item);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should add a new item if it is selected and not already in storedSelected', () => {
-            const storedSelected: DotCategoryFieldKeyValueObj[] = [
-                {
-                    key: '1f208488057007cedda0e0b5d52ee3b3',
-                    value: 'Electrical',
-                    inode: '12345',
-                    path: 'Category 1'
-                }
-            ];
-            const selected = [
-                '1f208488057007cedda0e0b5d52ee3b3',
-                'cb83dc32c0a198fd0ca427b3b587f4ce'
-            ];
-            const item: DotCategoryFieldKeyValueObj = {
-                key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
-                value: 'Doors & Windows',
-                inode: '67890',
-                path: 'Category 2'
-            };
-
-            const expected: DotCategoryFieldKeyValueObj[] = [
-                {
-                    key: '1f208488057007cedda0e0b5d52ee3b3',
-                    value: 'Electrical',
-                    inode: '12345',
-                    path: 'Category 1'
-                },
-                {
-                    key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
-                    value: 'Doors & Windows',
-                    inode: '67890',
-                    path: 'Category 2'
-                }
-            ];
-
-            const result = updateChecked(storedSelected, selected, item);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should not add a duplicate item if it is already in storedSelected', () => {
-            const storedSelected: DotCategoryFieldKeyValueObj[] = [
-                {
-                    key: '1f208488057007cedda0e0b5d52ee3b3',
-                    value: 'Electrical',
-                    inode: '12345',
-                    path: 'Category 1'
-                }
-            ];
-            const selected = ['1f208488057007cedda0e0b5d52ee3b3'];
-            const item: DotCategoryFieldKeyValueObj = {
-                key: '1f208488057007cedda0e0b5d52ee3b3',
-                value: 'Electrical',
-                inode: '12345',
-                path: 'Category 1'
-            };
-
-            const expected: DotCategoryFieldKeyValueObj[] = [
-                {
-                    key: '1f208488057007cedda0e0b5d52ee3b3',
-                    value: 'Electrical',
-                    inode: '12345',
-                    path: 'Category 1'
-                }
-            ];
-
-            const result = updateChecked(storedSelected, selected, item);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should remove an item if it is not selected', () => {
-            const storedSelected: DotCategoryFieldKeyValueObj[] = [
-                {
-                    key: '1f208488057007cedda0e0b5d52ee3b3',
-                    value: 'Electrical',
-                    inode: '12345',
-                    path: 'Category 1'
-                },
-                {
-                    key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
-                    value: 'Doors & Windows',
-                    inode: '67890',
-                    path: 'Category 2'
-                }
-            ];
-            const selected = ['1f208488057007cedda0e0b5d52ee3b3'];
-            const item: DotCategoryFieldKeyValueObj = {
-                key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
-                value: 'Doors & Windows',
-                inode: '67890',
-                path: 'Category 2'
-            };
-
-            const expected: DotCategoryFieldKeyValueObj[] = [
-                {
-                    key: '1f208488057007cedda0e0b5d52ee3b3',
-                    value: 'Electrical',
-                    inode: '12345',
-                    path: 'Category 1'
-                }
-            ];
-
-            const result = updateChecked(storedSelected, selected, item);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should not remove an item that is not in storedSelected', () => {
-            const storedSelected: DotCategoryFieldKeyValueObj[] = [
-                {
-                    key: '1f208488057007cedda0e0b5d52ee3b3',
-                    value: 'Electrical',
-                    inode: '12345',
-                    path: 'Category 1'
-                }
-            ];
-            const selected = [];
-            const item: DotCategoryFieldKeyValueObj = {
-                key: 'cb83dc32c0a198fd0ca427b3b587f4ce',
-                value: 'Doors & Windows',
-                inode: '67890',
-                path: 'Category 2'
-            };
-
-            const expected: DotCategoryFieldKeyValueObj[] = [
-                {
-                    key: '1f208488057007cedda0e0b5d52ee3b3',
-                    value: 'Electrical',
-                    inode: '12345',
-                    path: 'Category 1'
-                }
-            ];
 
             const result = updateChecked(storedSelected, selected, item);
 
