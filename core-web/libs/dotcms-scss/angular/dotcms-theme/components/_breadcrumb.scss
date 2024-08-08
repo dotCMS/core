@@ -13,8 +13,19 @@
     color: $color-palette-gray-700;
 }
 
-.p-breadcrumb .p-breadcrumb-list li .p-menuitem-link[href] .p-menuitem-text {
-    font-size: $font-size-lg;
+.p-breadcrumb ul li .p-menuitem-link {
+    transition: none;
+    border-radius: $border-radius-xs;
+}
+
+.p-breadcrumb ul li .p-menuitem-link:focus {
+    outline: 0 none;
+    outline-offset: 0;
+    box-shadow: none;
+}
+
+.p-breadcrumb ul li .p-menuitem-link[href] .p-menuitem-text {
+    font-size: $font-size-default;
 
     &:hover {
         color: $color-palette-primary;

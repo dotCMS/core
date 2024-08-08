@@ -1,4 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -44,7 +45,8 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
         InputTextModule,
         DotCategoryFieldSearchComponent,
         DotCategoryFieldSearchListComponent,
-        DotCategoryFieldSelectedComponent
+        DotCategoryFieldSelectedComponent,
+        NgClass
     ],
     templateUrl: './dot-category-field-sidebar.component.html',
     styleUrl: './dot-category-field-sidebar.component.scss',
@@ -68,16 +70,19 @@ export class DotCategoryFieldSidebarComponent implements OnInit, OnDestroy {
      * @memberof DotCategoryFieldSidebarComponent
      */
     @Input() visible = false;
+
     /**
      * Output that emit if the sidebar is closed
      */
     @Output() closedSidebar = new EventEmitter<void>();
+
     /**
      * Store based on the `CategoryFieldStore`.
      *
      * @memberof DotCategoryFieldSidebarComponent
      */
     readonly store = inject(CategoryFieldStore);
+
     /**
      * Computed property for retrieving all category keys.
      */

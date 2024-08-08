@@ -1,5 +1,6 @@
+import { tapResponse } from '@ngrx/operators';
+
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -8,27 +9,25 @@ import {
     ViewChild,
     inject
 } from '@angular/core';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { Params, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import {
-    DotCMSContentlet,
-    DotDevice,
-    DotExperimentStatus,
-    DotPersona
-} from '@dotcms/dotcms-models';
+    DotContentletLockerService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
+import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditEmaStore } from '../../../dot-ema-shell/store/dot-ema.store';
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_MODE, EDITOR_STATE } from '../../../shared/enums';
+import { UVEStore } from '../../../store/dot-uve.store';
+import { compareUrlPaths } from '../../../utils';
 import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
@@ -40,7 +39,6 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
     selector: 'dot-edit-ema-toolbar',
     standalone: true,
     imports: [
-        CommonModule,
         MenuModule,
         ButtonModule,
         ToolbarModule,
@@ -65,22 +63,16 @@ export class EditEmaToolbarComponent {
     @ViewChild('personaSelector')
     personaSelector!: EditEmaPersonaSelectorComponent;
 
-    private readonly store = inject(EditEmaStore);
-    private readonly messageService = inject(MessageService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly router = inject(Router);
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly personalizeService = inject(DotPersonalizeService);
-    private readonly activatedRouter = inject(ActivatedRoute);
+    readonly #messageService = inject(MessageService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #router = inject(Router);
+    readonly #dotContentletLockerService = inject(DotContentletLockerService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #personalizeService = inject(DotPersonalizeService);
 
-    readonly editorToolbarData$ = this.store.editorToolbarData$;
-    readonly editorState = EDITOR_STATE;
-    readonly editorMode = EDITOR_MODE;
-    readonly experimentStatus = DotExperimentStatus;
+    readonly uveStore = inject(UVEStore);
 
-    get queryParams(): DotPageApiParams {
-        return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
-    }
+    protected readonly $toolbarProps = this.uveStore.$toolbarProps;
 
     /**
      * Update the current device
@@ -89,7 +81,7 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     updateCurrentDevice(device: DotDevice & { icon?: string }) {
-        this.store.setDevice(device);
+        this.uveStore.setDevice(device);
     }
 
     /**
@@ -99,7 +91,7 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     onSeoMediaChange(seoMedia: string) {
-        this.store.setSocialMedia(seoMedia);
+        this.uveStore.setSocialMedia(seoMedia);
     }
 
     /**
@@ -108,9 +100,9 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     triggerCopyToast() {
-        this.messageService.add({
+        this.#messageService.add({
             severity: 'success',
-            summary: this.dotMessageService.get('Copied'),
+            summary: this.#dotMessageService.get('Copied'),
             life: 3000
         });
     }
@@ -139,16 +131,16 @@ export class EditEmaToolbarComponent {
                 'com.dotmarketing.persona.id': persona.identifier
             });
         } else {
-            this.confirmationService.confirm({
-                header: this.dotMessageService.get('editpage.personalization.confirm.header'),
-                message: this.dotMessageService.get(
+            this.#confirmationService.confirm({
+                header: this.#dotMessageService.get('editpage.personalization.confirm.header'),
+                message: this.#dotMessageService.get(
                     'editpage.personalization.confirm.message',
                     persona.name
                 ),
-                acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
-                rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
+                rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
                 accept: () => {
-                    this.personalizeService
+                    this.#personalizeService
                         .personalized(persona.pageId, persona.keyTag)
                         .subscribe(() => {
                             this.updateQueryParams({
@@ -172,16 +164,16 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     onDespersonalize(persona: DotPersona & { pageId: string; selected: boolean }) {
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('editpage.personalization.delete.confirm.header'),
-            message: this.dotMessageService.get(
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get('editpage.personalization.delete.confirm.header'),
+            message: this.#dotMessageService.get(
                 'editpage.personalization.delete.confirm.message',
                 persona.name
             ),
-            acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
-            rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+            acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
+            rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
             accept: () => {
-                this.personalizeService
+                this.#personalizeService
                     .despersonalized(persona.pageId, persona.keyTag)
                     .subscribe(() => {
                         this.personaSelector.fetchPersonas();
@@ -206,13 +198,15 @@ export class EditEmaToolbarComponent {
     handleNewPage(page: DotCMSContentlet): void {
         const { pageURI, url, languageId } = page;
         const params = {
-            ...this.updateQueryParams,
+            ...this.uveStore.params(),
             url: pageURI ?? url,
             language_id: languageId?.toString()
         };
 
-        if (this.shouldReload(params)) {
+        if (this.shouldNavigateToNewPage(params)) {
             this.updateQueryParams(params);
+        } else {
+            this.uveStore.reload();
         }
     }
 
@@ -223,21 +217,46 @@ export class EditEmaToolbarComponent {
      * @memberof EditEmaToolbarComponent
      */
     unlockPage(inode: string) {
-        this.store.unlockPage(inode);
+        this.#messageService.add({
+            severity: 'info',
+            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+            detail: this.#dotMessageService.get('edit.ema.page.is.being.unlocked')
+        });
+
+        this.#dotContentletLockerService
+            .unlock(inode)
+            .pipe(
+                tapResponse({
+                    next: () => {
+                        this.#messageService.add({
+                            severity: 'success',
+                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                            detail: this.#dotMessageService.get('edit.ema.page.unlock.success')
+                        });
+                    },
+                    error: () => {
+                        this.#messageService.add({
+                            severity: 'error',
+                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                            detail: this.#dotMessageService.get('edit.ema.page.unlock.error')
+                        });
+                    }
+                })
+            )
+            .subscribe(() => this.uveStore.reload());
     }
 
     private updateQueryParams(params: Params) {
-        this.store.updateEditorState(EDITOR_STATE.LOADING);
-        this.router.navigate([], {
+        this.#router.navigate([], {
             queryParams: params,
             queryParamsHandling: 'merge'
         });
     }
 
-    private shouldReload(params: Params): boolean {
+    private shouldNavigateToNewPage(params: Params): boolean {
         const { url: newUrl, language_id: newLanguageId } = params;
-        const { url, language_id } = this.queryParams;
+        const { url, language_id } = this.uveStore.params();
 
-        return newUrl != url || newLanguageId != language_id;
+        return !compareUrlPaths(newUrl, url) || newLanguageId != language_id;
     }
 }

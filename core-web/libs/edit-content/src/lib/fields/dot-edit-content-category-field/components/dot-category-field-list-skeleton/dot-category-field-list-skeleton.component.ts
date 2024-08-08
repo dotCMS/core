@@ -8,7 +8,7 @@ import { SkeletonModule } from 'primeng/skeleton';
     standalone: true,
     imports: [CommonModule, SkeletonModule],
     template: `
-        <ul class="m-0 p-1 list-none">
+        <ul class="m-0 p-1 list-none fadein animation-duration-500">
             @for (_ of $rows(); track $index) {
                 <li class="flex">
                     <p-skeleton size="1rem" styleClass="mr-2"></p-skeleton>

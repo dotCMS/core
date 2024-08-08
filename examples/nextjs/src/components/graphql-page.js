@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from 'next/navigation';
 import WebPageContent from "./content-types/webPageContent";
 import Banner from "./content-types/banner";
 import Activity from "./content-types/activity";
@@ -38,10 +39,10 @@ const componentsMap = {
     CustomNoComponent: CustomNoComponent,
 };
 
-export function MyGraphQLPage({ pageAsset, nav }) {
-    const { replace, refresh } = useRouter();
+export function MyGraphQLPage({ pageAsset, nav, query }) {
+    const { replace } = useRouter();
     const pathname = usePathname();
-
+    
     /**
      * If using experiments, `DotLayoutComponent` is `withExperiments(DotcmsLayout)`.
      * If not using experiments:
@@ -70,8 +71,8 @@ export function MyGraphQLPage({ pageAsset, nav }) {
                         pageAsset: pageAsset,
                     }}
                     config={{
-                        onReload: () => refresh(),
                         pathname,
+                        editor: { query }
                     }}
                 />
             </main>

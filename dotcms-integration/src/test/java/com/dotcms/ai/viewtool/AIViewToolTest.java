@@ -1,9 +1,12 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.liferay.portal.model.User;
@@ -43,7 +46,8 @@ public class AIViewToolTest {
         IntegrationTestInitService.getInstance().init();
         IPUtils.disabledIpPrivateSubnet(true);
         wireMockServer = AiTest.prepareWireMock();
-        config = AiTest.prepareConfig(wireMockServer);
+        AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
+        config = ConfigService.INSTANCE.config();
     }
 
     @AfterClass

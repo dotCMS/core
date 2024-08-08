@@ -24,10 +24,13 @@ import {
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
     getSelectedFromContentlet,
+    removeEmptyArrays,
     removeItemByKey,
     transformCategories,
     transformToSelectedObject,
-    updateChecked
+    updateChecked,
+    getMenuItemsFromKeyParentPath,
+    checkIfClickedIsLoaded
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
@@ -103,13 +106,30 @@ export const CategoryFieldStore = signalStore(
         ),
 
         /**
+         * Status of the Search Component
+         */
+        searchStatus: computed(() =>
+            store.mode() === 'search' ? store.state() : ComponentStatus.INIT
+        ),
+
+        /**
          * Categories for render with added properties
          */
         searchCategoryList: computed(() =>
             store
                 .searchCategories()
                 .map((column) => transformCategories(column, store.keyParentPath()))
-        )
+        ),
+
+        /**
+         * Transform the selected categories to a breadcrumb menu
+         */
+        breadcrumbMenu: computed(() => {
+            const categories = store.categories();
+            const keyParentPath = store.keyParentPath();
+
+            return getMenuItemsFromKeyParentPath(categories, keyParentPath);
+        })
     })),
     withMethods(
         (
@@ -141,13 +161,13 @@ export const CategoryFieldStore = signalStore(
                                     patchState(store, {
                                         field,
                                         selected,
-                                        state: ComponentStatus.IDLE
+                                        state: ComponentStatus.LOADED
                                     });
                                 },
                                 error: (error: HttpErrorResponse) => {
                                     patchState(store, {
                                         field,
-                                        state: ComponentStatus.IDLE
+                                        state: ComponentStatus.ERROR
                                     });
 
                                     dotHttpErrorManagerService.handle(error);
@@ -237,9 +257,13 @@ export const CategoryFieldStore = signalStore(
                     tap((event) => {
                         const index = event ? event.index : 0;
                         const currentCategories = store.categories();
+                        const keyParentPath = store.keyParentPath();
 
-                        if (event) {
-                            if (!checkIfClickedIsLastItem(index, currentCategories)) {
+                        if (event && event?.item) {
+                            if (
+                                !checkIfClickedIsLastItem(index, currentCategories) &&
+                                checkIfClickedIsLoaded(event, keyParentPath)
+                            ) {
                                 patchState(store, {
                                     categories: [
                                         ...clearCategoriesAfterIndex(currentCategories, index)
@@ -255,13 +279,13 @@ export const CategoryFieldStore = signalStore(
                     filter(
                         (event) =>
                             !event ||
-                            (event.item.hasChildren &&
-                                !store.keyParentPath().includes(event.item.key))
+                            (event?.item?.hasChildren &&
+                                !store.keyParentPath().includes(event?.item?.key))
                     ),
                     tap(() => patchState(store, { state: ComponentStatus.LOADING })),
                     switchMap((event) => {
                         const categoryInode: string = event
-                            ? event.item.inode
+                            ? event?.item.inode
                             : store.rootCategoryInode();
 
                         return categoryService.getChildren(categoryInode).pipe(
@@ -269,7 +293,10 @@ export const CategoryFieldStore = signalStore(
                                 next: (newCategories) => {
                                     if (event) {
                                         patchState(store, {
-                                            categories: [...store.categories(), newCategories],
+                                            categories: removeEmptyArrays([
+                                                ...store.categories(),
+                                                newCategories
+                                            ]),
                                             state: ComponentStatus.LOADED,
                                             keyParentPath: [
                                                 ...store.keyParentPath(),
@@ -278,14 +305,17 @@ export const CategoryFieldStore = signalStore(
                                         });
                                     } else {
                                         patchState(store, {
-                                            categories: [...store.categories(), newCategories],
+                                            categories: removeEmptyArrays([
+                                                ...store.categories(),
+                                                newCategories
+                                            ]),
                                             state: ComponentStatus.LOADED
                                         });
                                     }
                                 },
                                 error: () => {
                                     // TODO: Add Error Handler
-                                    patchState(store, { state: ComponentStatus.IDLE });
+                                    patchState(store, { state: ComponentStatus.ERROR });
                                 }
                             })
                         );
@@ -315,8 +345,10 @@ export const CategoryFieldStore = signalStore(
                                         });
                                     },
                                     error: () => {
-                                        // TODO: Add Error Handler
-                                        patchState(store, { state: ComponentStatus.IDLE });
+                                        patchState(store, {
+                                            state: ComponentStatus.ERROR,
+                                            searchCategories: []
+                                        });
                                     }
                                 })
                             );

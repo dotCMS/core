@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "dad2a40e-1c1a-4242-8a70-08013513981d",
+		"_postman_id": "dc526187-a3a3-4be4-ad40-328b4edf7d7c",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "36473486"
+		"_exporter_id": "31066048"
 	},
 	"item": [
 		{
@@ -1885,7 +1885,7 @@
 											"",
 											"pm.collectionVariables.set(\"contentTypeId\", contentType.id);",
 											"pm.collectionVariables.set(\"contentTypeName\", contentType.name);",
-											"pm.collectionVariables.set(\"fieldId\", contentType.fields[0].id);"
+											"pm.collectionVariables.set(\"fieldId\", contentType.fields[2].id);"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -3072,7 +3072,29 @@
 					"description": "This test verifies that Contentlets that are referenced inside a Block Editor field will include their respective related content as well."
 				}
 			],
-			"description": "This folder contains Postman tests related to the interaction of Contentlets with Block Editor fields in dotCMS."
+			"description": "This folder contains Postman tests related to the interaction of Contentlets with Block Editor fields in dotCMS.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
 		},
 		{
 			"name": "Description field",
@@ -3152,7 +3174,7 @@
 									"",
 									"",
 									"pm.test(\"description field check\", function () {",
-									"    pm.expect(jsonData.entity.fields[2].name).to.eql('description');",
+									"    pm.expect(jsonData.entity.fields[4].name).to.eql('description');",
 									"});"
 								],
 								"type": "text/javascript",
@@ -3895,6 +3917,98 @@
 		},
 		{
 			"key": "page_id",
+			"value": ""
+		},
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "contentTypeName",
+			"value": ""
+		},
+		{
+			"key": "fieldId",
+			"value": ""
+		},
+		{
+			"key": "testContentOneId",
+			"value": ""
+		},
+		{
+			"key": "testContentOneInode",
+			"value": ""
+		},
+		{
+			"key": "testContentTwoId",
+			"value": ""
+		},
+		{
+			"key": "testContentTwoInode",
+			"value": ""
+		},
+		{
+			"key": "testContentThreeId",
+			"value": ""
+		},
+		{
+			"key": "testContentThreeInode",
+			"value": ""
+		},
+		{
+			"key": "relatedContentTypeId",
+			"value": ""
+		},
+		{
+			"key": "relatedContentTypeName",
+			"value": ""
+		},
+		{
+			"key": "relatedContentTypeVarName",
+			"value": ""
+		},
+		{
+			"key": "innerContentTypeId",
+			"value": ""
+		},
+		{
+			"key": "innerContentTypeName",
+			"value": ""
+		},
+		{
+			"key": "innerContentTypeVarName",
+			"value": ""
+		},
+		{
+			"key": "parentContentTypeId",
+			"value": ""
+		},
+		{
+			"key": "parentContentTypeVarName",
+			"value": ""
+		},
+		{
+			"key": "relatedTestContentId",
+			"value": ""
+		},
+		{
+			"key": "relatedTestContentInode",
+			"value": ""
+		},
+		{
+			"key": "innerTestContentId",
+			"value": ""
+		},
+		{
+			"key": "innerTestContentInode",
+			"value": ""
+		},
+		{
+			"key": "parentContentId",
+			"value": ""
+		},
+		{
+			"key": "parentContentInode",
 			"value": ""
 		}
 	]

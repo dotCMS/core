@@ -1,11 +1,11 @@
 package com.dotcms.ai.viewtool;
 
-import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
@@ -49,8 +49,8 @@ public class CompletionsTool implements ViewTool {
                 this.config.getConfig(AppKeys.COMPLETION_ROLE_PROMPT),
                 AppKeys.COMPLETION_TEXT_PROMPT.key,
                 this.config.getConfig(AppKeys.COMPLETION_TEXT_PROMPT),
-                AppKeys.MODEL.key,
-                this.config.getConfig(AppKeys.MODEL));
+                AppKeys.TEXT_MODEL_NAMES.key,
+                this.config.getConfig(AppKeys.TEXT_MODEL_NAMES));
     }
 
     /**
@@ -71,7 +71,7 @@ public class CompletionsTool implements ViewTool {
     public Object summarize(final String prompt, final String indexName) {
         final CompletionsForm form = new CompletionsForm.Builder().indexName(indexName).prompt(prompt).build();
         try {
-            return CompletionsAPI.impl(config).summarize(form);
+            return APILocator.getDotAIAPI().getCompletionsAPI(config).summarize(form);
         } catch (Exception e) {
             return handleException(e);
         }
@@ -112,7 +112,7 @@ public class CompletionsTool implements ViewTool {
      */
     public Object raw(final JSONObject prompt) {
         try {
-            return CompletionsAPI.impl(config).raw(prompt);
+            return APILocator.getDotAIAPI().getCompletionsAPI(config).raw(prompt);
         } catch (Exception e) {
             return handleException(e);
         }
