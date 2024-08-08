@@ -6,6 +6,7 @@ import { fakeAsync } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { DropdownFilterEvent } from 'primeng/dropdown/dropdown.interface';
 
 import { DotEventsService, DotSiteService } from '@dotcms/data-access';
 import { CoreWebService, mockSites, SiteService } from '@dotcms/dotcms-js';
@@ -60,9 +61,11 @@ describe('DotSiteSelectorDirective', () => {
         });
 
         it('should get sites list with filter', fakeAsync(() => {
-            const filter = 'demo';
-
-            dropdown.onFilter.emit({ filter });
+            const filter: DropdownFilterEvent = {
+                filter: 'demo',
+                originalEvent: new MouseEvent('test')
+            };
+            dropdown.onFilter.emit(filter);
 
             spectator.tick(500);
             expect(getSitesSpy).toHaveBeenCalledWith(filter, 10);

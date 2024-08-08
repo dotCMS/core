@@ -21,7 +21,7 @@
   <properties>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>3.5.0</quarkus.platform.version>
+    <quarkus.platform.version>3.6.0</quarkus.platform.version>
     <jreleaser-plugin.version>1.8.0</jreleaser-plugin.version>
     <google.findbugs.version>3.0.2</google.findbugs.version>
   </properties>

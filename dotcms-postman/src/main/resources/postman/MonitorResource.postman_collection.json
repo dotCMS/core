@@ -1,0 +1,244 @@
+{
+	"info": {
+		"_postman_id": "b1ca6e0e-063b-459c-b00f-45b06cad54a3",
+		"name": "Monitor Resource",
+		"description": "@Path(\"/v1/{a:system-status|probes}\")  \n  \nIt gives a report on dotCMS and subsystems status",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "3028555"
+	},
+	"item": [
+		{
+			"name": "System Status",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test to validate the response schema",
+							"pm.test(\"Schema is valid\", function () {",
+							"  var schema = {",
+							"    type: \"object\",",
+							"    properties: {",
+							"      backendHealthy: {",
+							"        type: \"boolean\"",
+							"      },",
+							"      clusterID: {",
+							"        type: \"string\"",
+							"      },",
+							"      dotCMSHealthy: {",
+							"        type: \"boolean\"",
+							"      },",
+							"      frontendHealthy: {",
+							"        type: \"boolean\"",
+							"      },",
+							"      serverID: {",
+							"        type: \"string\"",
+							"      },",
+							"      subsystems: {",
+							"        type: \"object\",",
+							"        properties: {",
+							"          assetFSHealthy: {",
+							"            type: \"boolean\"",
+							"          },",
+							"          cacheHealthy: {",
+							"            type: \"boolean\"",
+							"          },",
+							"          dbSelectHealthy: {",
+							"            type: \"boolean\"",
+							"          },",
+							"          indexLiveHealthy: {",
+							"            type: \"boolean\"",
+							"          },",
+							"          indexWorkingHealthy: {",
+							"            type: \"boolean\"",
+							"          },",
+							"          localFSHealthy: {",
+							"            type: \"boolean\"",
+							"          }",
+							"        },",
+							"        required: [\"assetFSHealthy\", \"cacheHealthy\", \"dbSelectHealthy\", \"indexLiveHealthy\", \"indexWorkingHealthy\", \"localFSHealthy\"]",
+							"      }",
+							"    },",
+							"    required: [\"backendHealthy\", \"dotCMSHealthy\", \"frontendHealthy\", \"subsystems\"]",
+							"  };",
+							"",
+							"  var response = pm.response.json();",
+							"  pm.expect(tv4.validate(response, schema)).to.be.true;",
+							"});",
+							"",
+							"// Validate all the boolean fields looks ok (true)",
+							"pm.test(\"Boolean fields in the response are true\", function () {",
+							"  var responseJSON = pm.response.json();",
+							"  var booleanFields = [\"backendHealthy\", \"dotCMSHealthy\", \"frontendHealthy\", \"subsystems.assetFSHealthy\", \"subsystems.cacheHealthy\", \"subsystems.dbSelectHealthy\", \"subsystems.indexLiveHealthy\", \"subsystems.indexWorkingHealthy\", \"subsystems.localFSHealthy\"];",
+							"",
+							"  booleanFields.forEach(function(field) {",
+							"    pm.expect(responseJSON).to.have.nested.property(field, true);",
+							"  });",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/system-status?extended=true",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"system-status"
+					],
+					"query": [
+						{
+							"key": "extended",
+							"value": "true"
+						}
+					]
+				},
+				"description": "# System Status API\n\nThis API endpoint makes an HTTP GET request to retrieve the system status with extended details.\n\n## Request\n\n- Method: GET\n    \n- Endpoint: `{{serverURL}}/api/v1/system-status`\n    \n- Query Parameter:\n    - `extended`: Set to `true` to retrieve extended system status information\n        \n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n- Body:\n    \n    ``` json\n    {\n        \"backendHealthy\": true,\n        \"clusterID\": \"\",\n        \"dotCMSHealthy\": true,\n        \"frontendHealthy\": true,\n        \"serverID\": \"\",\n        \"subsystems\": {\n            \"assetFSHealthy\": true,\n            \"cacheHealthy\": true,\n            \"dbSelectHealthy\": true,\n            \"indexLiveHealthy\": true,\n            \"indexWorkingHealthy\": true,\n            \"localFSHealthy\": true\n        }\n    }\n    \n     ```\n    \n      \n    The response contains detailed information about the health status of different subsystems within the system."
+			},
+			"response": []
+		},
+		{
+			"name": "Probe Startup",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Validate a JSONError",
+							"pm.test(\"Response is null or empty\", function () {",
+							"    pm.expect(pm.response.text()).to.be.oneOf([null, \"\", \"{}\"]);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/probes",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"probes"
+					]
+				},
+				"description": "# Get Probes\n\nThis endpoint retrieves a list of probes from the server.\n\n## Request\n\n- Method: GET\n    \n- URL: `{{serverURL}}/api/v1/probes`\n    \n\n## Response\n\nIt will be empty is you dont send the <strong >extended</b> as<code >parameter</code>"
+			},
+			"response": []
+		},
+		{
+			"name": "Probe Ready",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Validate a JSONError",
+							"pm.test(\"Response is null or empty\", function () {",
+							"    pm.expect(pm.response.text()).to.be.oneOf([null, \"\", \"{}\"]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/probes/ready",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"probes",
+						"ready"
+					]
+				},
+				"description": "This endpoint makes an HTTP GET request to retrieve the readiness status of a probe. The response is in the form of a JSON schema.\n\n## Response\n\nIt will be empty is you dont send the **extended** as`parameter`"
+			},
+			"response": []
+		},
+		{
+			"name": "Probe Alive",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Validate a JSONError",
+							"pm.test(\"Response is null or empty\", function () {",
+							"    pm.expect(pm.response.text()).to.be.oneOf([null, \"\", \"{}\"]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/probes/alive",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"probes",
+						"alive"
+					]
+				},
+				"description": "This /alive probe is lightweight - it checks if the server is up by requesting a common object from the dotCMS cache layer twice in a row. By the time a request gets here it has already run through the CMSFilter) ."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"pm.test(\"Response code is 200\", function () {",
+					"    pm.response.to.have.status(200);",
+					"});"
+				]
+			}
+		}
+	]
+}

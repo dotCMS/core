@@ -18,6 +18,7 @@ public class MultiValueFieldDataFetcher implements DataFetcher<List<String>> {
             final Contentlet contentlet = environment.getSource();
             final String var = environment.getField().getName();
             final String values = (String) contentlet.get(var);
+            Logger.debug(this, ()-> "Fetching multi-value field for contentlet: " + contentlet.getIdentifier() + " field: " + var);
             return UtilMethods.isSet(values) ? Arrays.asList(values.split("\\s*,\\s*")) : Collections.emptyList();
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);

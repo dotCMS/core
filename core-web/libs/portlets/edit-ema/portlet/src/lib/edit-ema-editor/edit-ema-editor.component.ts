@@ -213,6 +213,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         return this.activatedRouter.snapshot.queryParams as DotPageApiParams;
     }
 
+    get contentWindow(): Window {
+        return this.iframe.nativeElement.contentWindow;
+    }
+
     isVTLPage = toSignal(this.store.clientHost$.pipe(map((clientHost) => !clientHost)));
     $isInlineEditing = toSignal(
         this.store.editorMode$.pipe(map((mode) => mode === EDITOR_MODE.INLINE_EDITING))
@@ -236,7 +240,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 requestAnimationFrame(() => {
-                    const win = this.iframe.nativeElement.contentWindow;
+                    const win = this.contentWindow;
 
                     fromEvent(win, 'click').subscribe((e: MouseEvent) => {
                         this.handleInternalNav(e);
@@ -251,7 +255,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             )
             .subscribe(({ mode }) => {
                 requestAnimationFrame(() => {
-                    const win = this.iframe.nativeElement.contentWindow;
+                    const win = this.contentWindow;
 
                     if (
                         mode === EDITOR_MODE.EDIT ||
@@ -317,10 +321,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     handleDragEvents() {
         this.store.isUserDragging$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-            this.iframe.nativeElement.contentWindow?.postMessage(
-                NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-                this.host
-            );
+            this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
         });
 
         fromEvent(this.window, 'dragstart')
@@ -401,10 +402,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.store.updateEditorState(EDITOR_STATE.DRAGGING);
                     }
 
-                    this.iframe.nativeElement.contentWindow?.postMessage(
-                        NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
-                        this.host
-                    );
+                    this.contentWindow?.postMessage(NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS, this.host);
                 }
             );
 
@@ -455,7 +453,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 this.store.setScrollingState();
 
-                this.iframe.nativeElement.contentWindow?.postMessage(
+                this.contentWindow?.postMessage(
                     { name: NOTIFY_CUSTOMER.EMA_SCROLL_INSIDE_IFRAME, direction },
                     this.host
                 );
@@ -567,7 +565,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 if (isVTL) {
                     this.setIframeContent(code);
                 } else {
-                    this.reloadIframe();
+                    this.reloadIframeContent();
                 }
 
                 this.store.setShouldReload(false);
@@ -1011,12 +1009,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.IFRAME_SCROLL_END]: () => {
                 this.store.updateEditorDragState();
             },
-            [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
-                this.iframe?.nativeElement?.contentWindow.postMessage(
-                    NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
-                    this.host
-                );
-            },
             [CUSTOMER_ACTIONS.INIT_INLINE_EDITING]: () => {
                 // The iframe says that the editor is ready to start inline editing
                 // The dataset of the inline-editing contentlet is ready inside the service.
@@ -1042,27 +1034,39 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             }
 
                             return this.handleCopyContent();
+                        }),
+                        tap((res) => {
+                            if (res) {
+                                this.store.reload({ params: this.queryParams });
+                            }
                         })
                     )
                     .subscribe((res: DotCMSContentlet | null) => {
-                        const updatedDataset = {
+                        const data = {
+                            oldInode: payload.dataset.inode,
                             inode: res?.inode || payload.dataset.inode,
                             fieldName: payload.dataset.fieldName,
                             mode: payload.dataset.mode,
                             language: payload.dataset.language
                         };
 
-                        this.inlineEditingService.setTargetInlineMCEDataset(updatedDataset);
-                        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
-                        if (res) {
-                            this.store.reload({
-                                params: this.queryParams
-                            });
+                        if (!this.isVTLPage()) {
+                            const message = {
+                                name: NOTIFY_CUSTOMER.COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                payload: data
+                            };
+
+                            this.contentWindow?.postMessage(message, this.host);
 
                             return;
                         }
 
-                        this.inlineEditingService.initEditor();
+                        this.inlineEditingService.setTargetInlineMCEDataset(data);
+                        this.store.setEditorMode(EDITOR_MODE.INLINE_EDITING);
+
+                        if (!res) {
+                            this.inlineEditingService.initEditor();
+                        }
                     });
             },
             [CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING]: () => {
@@ -1083,7 +1087,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.saveFromInlineEditedContentlet({
                     contentlet: {
                         inode: payload.dataset['inode'],
-                        [payload.dataset.fieldName]: payload.innerHTML
+                        [payload.dataset.fieldName]: payload.content
                     },
                     params: this.queryParams
                 });
@@ -1095,6 +1099,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     reorderUrl,
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
+            },
+            [CUSTOMER_ACTIONS.GET_PAGE_DATA]: () => {
+                this.reloadIframeContent();
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
@@ -1108,9 +1115,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @private
      * @memberof DotEmaComponent
      */
-    reloadIframe() {
+    reloadIframeContent() {
         this.iframe?.nativeElement?.contentWindow?.postMessage(
-            NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
+            { name: NOTIFY_CUSTOMER.SET_PAGE_DATA, payload: this.store.state().editor },
             this.host
         );
     }

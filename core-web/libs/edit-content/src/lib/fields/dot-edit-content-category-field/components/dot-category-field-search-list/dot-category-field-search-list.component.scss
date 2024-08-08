@@ -1,0 +1,11 @@
+.category-field__search-list {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+:host ::ng-deep .dotTable.p-datatable > .p-datatable-wrapper {
+    border-radius: 0;
+    border: none;
+}

@@ -2623,4 +2623,70 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertTrue(savedData.size() == 1);
         assertFalse(APILocator.getCategoryAPI().getParents(savedData.get(0),user,false).isEmpty());
     }
+
+
+    /**
+     * Method to test: This test tries the {@link ImportUtil#importFile}
+     * Given Scenario: A Content type which has a binary field, the binary field is required. Will try to preview the import of a CSV with a URL pointing to a valid image.
+     * ExpectedResult: The importer should return without errors, so content will be ready to be imported.
+     */
+    @Test
+    public void importFile_importBinaryFieldUsingURLWithRequiredBinaryField_success()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        CsvReader csvreader;
+        long time;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            time = System.currentTimeMillis();
+            final String contentTypeName = "ContentTypeBinaryField" + time;
+            final String contentTypeVarName = "contentTypeBinaryField" + time;
+
+            //create content type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            final com.dotcms.contenttype.model.field.Field binaryField = FieldBuilder.builder(BinaryField.class).name(BINARY_FIELD_NAME)
+                    .contentTypeId(contentType.id()).variable(BINARY_FIELD_NAME).sortOrder(1).required(true)
+                    .build();
+            fieldAPI.save(binaryField,user);
+
+            //Creating csv
+            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
+                    "test1" + time + ", " +
+                    "test1" + time + ", " +
+                    "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
+                                    new String[]{titleField.id()}, true, false,
+                                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                                    -1, reader,
+                                    saveAsDraftAction.getId(), getHttpRequest());
+
+            //Validations
+            validate(results, true, false, false);
+
+            assertEquals(results.get("warnings").size(), 0);
+            assertEquals(results.get("errors").size(), 0);
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

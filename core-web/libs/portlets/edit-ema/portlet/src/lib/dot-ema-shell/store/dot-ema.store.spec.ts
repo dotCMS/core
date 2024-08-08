@@ -7,11 +7,13 @@ import { MessageService } from 'primeng/api';
 import {
     DotContentletLockerService,
     DotExperimentsService,
+    DotLanguagesService,
     DotLicenseService,
     DotMessageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
+    DotLanguagesServiceMock,
     getDraftExperimentMock,
     getRunningExperimentMock,
     getScheduleExperimentMock,
@@ -19,6 +21,7 @@ import {
     mockDotLayout,
     MockDotMessageService,
     mockDotTemplate,
+    mockLanguageArray,
     mockSites
 } from '@dotcms/utils-testing';
 
@@ -43,7 +46,10 @@ const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         canLock: true,
         locked: false,
         lockedBy: '',
-        lockedByName: ''
+        lockedByName: '',
+        live: true,
+        liveInode: '1234',
+        stInode: '12345'
     },
     viewAs: {
         language: {
@@ -120,6 +126,10 @@ describe('EditEmaStore', () => {
                     useValue: {
                         getCurrentUser: () => of({})
                     }
+                },
+                {
+                    provide: DotLanguagesService,
+                    useValue: new DotLanguagesServiceMock()
                 }
             ]
         });
@@ -175,9 +185,9 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         currentExperiment: null,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
@@ -224,16 +234,16 @@ describe('EditEmaStore', () => {
                 spectator.service.editorToolbarData$.subscribe((state) => {
                     expect(state).toEqual({
                         previewURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         bounds: [],
                         contentletArea: null,
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         currentExperiment: null,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         pureURL: 'http://localhost:3000/test-url',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
@@ -288,9 +298,9 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: headlessResponseWithoutEditPermission,
                         currentExperiment: null,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
@@ -333,9 +343,9 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         currentExperiment,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
@@ -378,9 +388,9 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         currentExperiment,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=222&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=222',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=222&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=222',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
@@ -423,9 +433,9 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         currentExperiment,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=111',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
@@ -512,9 +522,9 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         currentExperiment: null,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
@@ -623,7 +633,8 @@ describe('EditEmaStore', () => {
                                 lockedByUser: ''
                             }
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
                     done();
                 });
@@ -666,7 +677,8 @@ describe('EditEmaStore', () => {
                             },
                             variantId: undefined
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
                     expect(spyGetPage).toHaveBeenCalledWith(params);
                     expect(spyWhenReloaded).toHaveBeenCalled();
@@ -693,9 +705,9 @@ describe('EditEmaStore', () => {
                         clientHost: 'http://localhost:3000',
                         editor: MOCK_RESPONSE_HEADLESS,
                         currentExperiment: null,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=',
                         iframeURL:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=&mode=EDIT_MODE',
+                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                         state: EDITOR_STATE.IDLE,
@@ -775,6 +787,70 @@ describe('EditEmaStore', () => {
                 });
             });
 
+            it('should call pageAPI with vanity URL params if it had', (done) => {
+                const dotPageApiService = spectator.inject(DotPageApiService);
+                const VANITY_URL = {
+                    pattern: '',
+                    vanityUrlId: '',
+                    url: 'test-url',
+                    siteId: '',
+                    languageId: 1,
+                    forwardTo: 'vanity-url',
+                    response: 200,
+                    order: 1,
+                    temporaryRedirect: false,
+                    permanentRedirect: false,
+                    forward: true
+                };
+                const MOCK_RESPONSE_HEADLESS_WITH_VANITYURL = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    vanityUrl: VANITY_URL
+                };
+
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of(MOCK_RESPONSE_HEADLESS_WITH_VANITYURL)
+                );
+
+                spectator.service.load({
+                    clientHost: 'http://localhost:3000',
+                    language_id: '1',
+                    url: 'vanity-url',
+                    'com.dotmarketing.persona.id': '123'
+                });
+
+                expect(dotPageApiService.get).toHaveBeenCalledWith({
+                    clientHost: 'http://localhost:3000',
+                    'com.dotmarketing.persona.id': '123',
+                    language_id: '1',
+                    url: 'test-url'
+                });
+                spectator.service.state$.subscribe((state) => {
+                    expect(state as unknown).toEqual({
+                        bounds: [],
+                        contentletArea: null,
+                        clientHost: 'http://localhost:3000',
+                        editor: MOCK_RESPONSE_HEADLESS_WITH_VANITYURL,
+                        currentExperiment: null,
+                        isEnterpriseLicense: true,
+                        editorState: EDITOR_STATE.IDLE,
+                        editorData: {
+                            mode: EDITOR_MODE.EDIT,
+                            canEditVariant: true,
+                            canEditPage: true,
+                            page: {
+                                canLock: true,
+                                isLocked: false,
+                                lockedByUser: ''
+                            },
+                            variantId: undefined
+                        },
+                        shouldReload: true,
+                        languages: mockLanguageArray
+                    });
+                    done();
+                });
+            });
+
             it('should add form to page and save', () => {
                 const payload: ActionPayload = {
                     pageId: 'page-identifier-123',
@@ -847,7 +923,6 @@ describe('EditEmaStore', () => {
                     }
                 });
             });
-
             it('should add form to page, save and perform a get afterwards', () => {
                 const payload: ActionPayload = {
                     pageId: 'page-identifier-123',
@@ -1022,7 +1097,8 @@ describe('EditEmaStore', () => {
                             },
                             variantId: undefined
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
 
                     done();
@@ -1088,7 +1164,8 @@ describe('EditEmaStore', () => {
                             },
                             variantId: '123'
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
 
                     done();
@@ -1141,6 +1218,10 @@ describe('EditEmaStore', () => {
                     useValue: {
                         getCurrentUser: () => of({})
                     }
+                },
+                {
+                    provide: DotLanguagesService,
+                    useValue: new DotLanguagesServiceMock()
                 }
             ]
         });
@@ -1185,7 +1266,7 @@ describe('EditEmaStore', () => {
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
                         currentExperiment: null,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
@@ -1233,7 +1314,7 @@ describe('EditEmaStore', () => {
                         contentletArea: null,
                         clientHost: undefined,
                         editor: MOCK_RESPONSE_VTL,
-                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&mode=EDIT_MODE',
+                        apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT',
                         iframeURL: '',
                         isEnterpriseLicense: true,
                         favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
@@ -1292,7 +1373,8 @@ describe('EditEmaStore', () => {
                             },
                             variantId: undefined
                         },
-                        shouldReload: true
+                        shouldReload: true,
+                        languages: mockLanguageArray
                     });
                     done();
                 });

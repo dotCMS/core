@@ -55,7 +55,6 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
                 this.treeSelect.cd.detectChanges();
             }
         });
-
         effect(() => {
             const nodeSelected = this.store.nodeSelected();
             this.pathControl.setValue(nodeSelected);

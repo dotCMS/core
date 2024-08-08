@@ -13,9 +13,11 @@
             <th class="dot-key-value__header-keyValue-label" scope="col">
                 {{ 'keyValue.value_header.label' | dm }}
             </th>
-            <th *ngIf="showHiddenField" scope="col" cclass="dot-key-value__header-hidden-label">
-                {{ 'keyValue.hidden_header.label' | dm }}
-            </th>
+            @if (showHiddenField) {
+                <th scope="col" cclass="dot-key-value__header-hidden-label">
+                    {{ 'keyValue.hidden_header.label' | dm }}
+                </th>
+            }
             <th class="dot-key-value__header-actions-label" scope="col">
                 {{ 'keyValue.actions_header.label' | dm }}
             </th>
@@ -24,8 +26,7 @@
             (save)="saveVariable($event)"
             [autoFocus]="autoFocus"
             [showHiddenField]="showHiddenField"
-            [forbiddenkeys]="forbiddenkeys()">
-        </dot-key-value-table-input-row>
+            [forbiddenkeys]="forbiddenkeys()"></dot-key-value-table-input-row>
     </ng-template>
     <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
         <dot-key-value-table-row
@@ -33,8 +34,7 @@
             (save)="updateKeyValue($event, rowIndex)"
             [showHiddenField]="showHiddenField"
             [variable]="variable"
-            #tableRow>
-        </dot-key-value-table-row>
+            #tableRow></dot-key-value-table-row>
     </ng-template>
     <ng-template pTemplate="emptymessage" let-variables>
         <tr data-testId="no-rows">

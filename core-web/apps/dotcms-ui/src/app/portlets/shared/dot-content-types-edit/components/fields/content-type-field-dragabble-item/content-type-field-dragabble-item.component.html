@@ -3,14 +3,13 @@
 <dot-icon class="field-icon" name="{{ icon }}"></dot-icon>
 <div class="field-properties">
     <div class="field-properties__info-container">
-        <span class="info-container__name"> {{ field.name }}</span>
+        <span class="info-container__name">{{ field.name }}</span>
         <p-button
             *ngIf="!field.fixed"
             (click)="removeItem($event)"
             id="info-container__delete"
             styleClass="p-button-text p-button-sm p-button-danger p-button-rounded"
-            icon="pi pi-trash">
-        </p-button>
+            icon="pi pi-trash"></p-button>
     </div>
     <div class="field-properties__actions-container">
         <dot-copy-link
@@ -25,8 +24,7 @@
                 [class.open]="open"
                 data-testid="field-info-button"
                 styleClass="p-button-text p-button-sm  p-button-rounded"
-                icon="pi pi-info-circle">
-            </p-button>
+                icon="pi pi-info-circle"></p-button>
         </div>
     </div>
 </div>

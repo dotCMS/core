@@ -1,13 +1,11 @@
-<dot-menu
-    *ngIf="actions.length > 1 && filteredActions.length"
-    [icon]="icon"
-    [model]="filteredActions"></dot-menu>
-
-<p-button
-    *ngIf="actions.length === 1 && filteredActions.length === 1"
-    (click)="filteredActions[0].command($event)"
-    [icon]="filteredActions[0].icon"
-    [pTooltip]="filteredActions[0].label"
-    styleClass="p-button-sm p-button-rounded p-button-text"
-    data-testid="dot-action-tooltip-button">
-</p-button>
+@if (actions.length > 1 && filteredActions.length) {
+    <dot-menu [icon]="icon" [model]="filteredActions"></dot-menu>
+}
+@if (actions.length === 1 && filteredActions.length === 1) {
+    <p-button
+        (click)="filteredActions[0].command($event)"
+        [icon]="filteredActions[0].icon"
+        [pTooltip]="filteredActions[0].label"
+        styleClass="p-button-sm p-button-rounded p-button-text"
+        data-testid="dot-action-tooltip-button"></p-button>
+}

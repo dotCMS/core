@@ -87,7 +87,8 @@ public class TypeUtil {
                 fieldDefinitionBuilder.argument(GraphQLArgument.newArgument()
                         .name("render")
                         .type(GraphQLBoolean)
-                        .defaultValue(null));
+                        .defaultValueProgrammatic(null)
+                );
 
                 fieldDefinitionList.add(fieldDefinitionBuilder.build());
             } catch (GraphQLException e) {
@@ -121,7 +122,7 @@ public class TypeUtil {
             fieldDefinitionBuilder.argument(GraphQLArgument.newArgument()
                     .name("render")
                     .type(GraphQLBoolean)
-                    .defaultValue(null));
+                    .defaultValueProgrammatic(null));
 
             builder.field(fieldDefinitionBuilder.build());
         });

@@ -5,8 +5,11 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
+
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 /**
@@ -484,4 +487,52 @@ public interface CategoryAPI {
 							final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	List<Category> getCategoriesFromContent(final Contentlet contentlet, final User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Return a list of Categories regardless of their levels.
+	 *
+	 * @param searchCriteria Searching criteria
+	 * @param user User to check Permission
+	 * @param respectFrontendRoles true if you must respect Frontend Roles
+	 *
+	 * @return List of Category filtered
+	 */
+	PaginatedCategories findAll(final CategorySearchCriteria searchCriteria, final User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Find Categories by inodes and calculate its Hierarchy.
+	 *
+	 * For Example if you have the follows categories:
+	 *
+	 *
+	 * | Inode  | Name        |  key        |Parent          |
+	 * |--------|-------------|-------------|----------------|
+	 * | 1      | Top Category| top         | null           |
+	 * | 2      | Child       | child       | Top Category   |
+	 * | 3      | Grand Child | grand_child | Child          |
+	 *
+	 * And you search by key 'grand_child' then you got:
+	 *
+	 * Inode: 3
+	 * key: 'grand_child'
+	 * categoryName: 'Grand Child'
+	 * parentList <code>[
+	 *   {
+	 *       'categoryName':'Top Category',
+	 *       'key': 'top',
+	 *       'inode': '1'
+	 *   },
+	 *   {
+	 *       'categoryName':'Child',
+	 *       'key': 'child',
+	 *       'inode': '2'
+	 *   }
+	 * ]</code>
+	 *
+	 * @param keys List of keys to search
+	 * @return
+	 * @throws DotDataException
+	 */
+	List<HierarchyShortCategory> findHierarchy(final Collection<String> keys) throws DotDataException;
 }

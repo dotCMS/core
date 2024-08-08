@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "e48ada2d-189e-48a7-87a2-c97346e5ce83",
+		"_postman_id": "8c53a096-125d-4e0a-b25c-11be5c6ac929",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "3028555"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -13250,32 +13250,19 @@
 									"    pm.expect(jsonData.entity.summary.affected).to.eql(20);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -13329,32 +13316,19 @@
 									"    pm.expect(jsonData.entity.summary.affected).to.eql(2);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -13403,22 +13377,18 @@
 									"pm.collectionVariables.set(\"temporalFileOneId\", jsonData.tempFiles[0].id);",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -13480,32 +13450,19 @@
 									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -13536,6 +13493,72 @@
 							]
 						},
 						"description": "Creates several contentlets with binary fields on them, to achieve this the file must be uploaded first using the temp resource."
+					},
+					"response": []
+				},
+				{
+					"name": "SaveSingle",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"SingleContent1\",\n        \"contentHost\": \"default\",\n        \"body\": \"Single Body Content1\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
 					},
 					"response": []
 				}
@@ -17180,6 +17203,139 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "CreateKeyValueWRONGMap",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Response include proper message\", function () {",
+									"   var response = pm.response.json();",
+									"    pm.expect(response.message).to.include(\"Invalid JSON field provided\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"keyValueContentType\",\n        \"title\": \"supporttest\",\n        \"titleFeature\": \"WRONG\",\n        \"titleEurope\": {\"12345\":\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\"}\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						},
+						"description": "Tries to create a key value map with wrong value, should return 400"
+					},
+					"response": []
+				},
+				{
+					"name": "CreateKeyValueRepeatedKey",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Check keyValueContentType content type\", function () {",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"keyValueContentType\");",
+									"});",
+									"",
+									"pm.test(\"Check keyValueContentType content type\", function () {",
+									"    pm.expect(jsonData.entity.titleEurope['12345']).to.eql(\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"keyValueContentType\",\n        \"title\": \"supporttest\",\n        \"titleFeature\": {\"12345\":\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\",\"12345\":\"yyyy\"},\n        \"titleEurope\": {\"12345\":\"d=2024-06-20&d2=2024-06-21&c=prc&v=56\"}\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						},
+						"description": "Fires an action with repeated key, by now the last repeated key overrides the previous and gets 200"
+					},
+					"response": []
 				}
 			],
 			"description": "This test creates a type with a key value field and fires a new\n\nThe idea is to be able to create contentlet, since key values before where throwing errors",
@@ -17190,44 +17346,46 @@
 						"type": "text/javascript",
 						"packages": {},
 						"exec": [
-							"if (!pm.environment.get('jwt')) {",
-							"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-							"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+							"const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+							"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
 							"",
-							"    if (!pm.environment.get('jwt')) {",
-							"        const username = 'admin@dotcms.com';",
-							"        const password = 'admin';",
-							"        const basicAuth = btoa(`${username}:${password}`);",
+							"// If we are unable to get the JWT we need to generate a new one",
+							"   if (!pm.environment.get('jwt')) {",
+							"       const username = pm.environment.get(\"user\");",
+							"       const password = pm.environment.get(\"password\");",
+							"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
 							"",
-							"        const requestOptions = {",
-							"            url: apiUrl,",
-							"            method: \"POST\",",
-							"            header: {",
-							"                \"accept\": \"*/*\",",
-							"                \"content-type\": \"application/json\",",
-							"                \"Authorization\": `Basic ${basicAuth}`",
-							"            },",
-							"            body: {",
-							"                mode: \"raw\",",
-							"                raw: JSON.stringify({",
-							"                    \"expirationSeconds\": 7200,",
-							"                    \"userId\": \"dotcms.org.1\",",
-							"                    \"network\": \"0.0.0.0/0\",",
-							"                    \"claims\": {\"label\": \"postman-tests\"}",
-							"                })",
-							"            }",
-							"        };",
 							"",
-							"        pm.sendRequest(requestOptions, function (err, response) {",
-							"            if (err) {",
-							"                console.log(err);",
-							"            } else {",
-							"                const jwt = response.json().entity.jwt;",
-							"                pm.environment.set('jwt', jwt);",
-							"            }",
-							"        });",
-							"    }",
-							"}"
+							"       const requestOptions = {",
+							"           url: apiUrl,",
+							"           method: \"POST\",",
+							"           header: {",
+							"               \"accept\": \"*/*\",",
+							"               \"content-type\": \"application/json\",",
+							"               \"Authorization\": `Basic ${basicAuth}`",
+							"           },",
+							"           body: {",
+							"               mode: \"raw\",",
+							"               raw: JSON.stringify({",
+							"                   \"expirationSeconds\": 7200,",
+							"                   \"userId\": \"dotcms.org.1\",",
+							"                   \"network\": \"0.0.0.0/0\",",
+							"                   \"claims\": {\"label\": \"postman-tests\"}",
+							"               })",
+							"           }",
+							"       };",
+							"",
+							"",
+							"       pm.sendRequest(requestOptions, function (err, response) {",
+							"           if (err) {",
+							"               console.log(err);",
+							"           } else {",
+							"               const jwt = response.json().entity.jwt;",
+							"               pm.environment.set('jwt', jwt);",
+							"               console.log(jwt);",
+							"           }",
+							"       });",
+							"   }"
 						]
 					}
 				},
@@ -17283,6 +17441,10 @@
 		},
 		{
 			"key": "schemeVariableName",
+			"value": ""
+		},
+		{
+			"key": "temporalFileOneId",
 			"value": ""
 		}
 	]

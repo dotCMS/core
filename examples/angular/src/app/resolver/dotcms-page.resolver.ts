@@ -1,6 +1,11 @@
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
-import { DotCMSPageAsset, DotcmsNavigationItem } from '@dotcms/angular';
-import { inject } from '@angular/core';
+import {
+  DotCMSPageAsset,
+  DotcmsNavigationItem,
+} from '@dotcms/angular';
+import { inject, InjectionToken } from '@angular/core';
+
+import { DotCmsClient } from '@dotcms/client';
 import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
 
 /**
@@ -11,12 +16,12 @@ import { DOTCMS_CLIENT_TOKEN } from '../client-token/dotcms-client';
  * @return {*}
  */
 export const DotCMSPageResolver = async (
-  route: ActivatedRouteSnapshot,
+  route: ActivatedRouteSnapshot
 ): Promise<{
   pageAsset: DotCMSPageAsset;
   nav: DotcmsNavigationItem;
 }> => {
-  const client = inject(DOTCMS_CLIENT_TOKEN);
+  const client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
   const pageAsset = route.data['pageAsset'] as DotCMSPageAsset;
 
   const { language_id } = route.queryParams;

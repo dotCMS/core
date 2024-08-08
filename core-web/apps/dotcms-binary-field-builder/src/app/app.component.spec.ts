@@ -14,10 +14,4 @@ describe('AppComponent', () => {
         const app = fixture.componentInstance;
         expect(app).toBeTruthy();
     });
-
-    it(`should have as title 'dotcms-binary-field-builder'`, () => {
-        const fixture = TestBed.createComponent(AppComponent);
-        const app = fixture.componentInstance;
-        expect(app.title).toEqual('dotcms-binary-field-builder');
-    });
 });

@@ -1,6 +1,6 @@
 import { EnvironmentProviders, InjectionToken, makeEnvironmentProviders } from '@angular/core';
 
-import { ClientConfig, DotCmsClient, dotcmsClient } from '@dotcms/client';
+import { ClientConfig, DotCmsClient } from '@dotcms/client';
 
 export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIENT');
 
@@ -10,11 +10,13 @@ export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIE
  * @param {*} config
  * @return {*}
  */
-export const provideDotcmsClient = (config: ClientConfig): EnvironmentProviders => {
-    return makeEnvironmentProviders([
-        {
-            provide: DOTCMS_CLIENT_TOKEN,
-            useValue: dotcmsClient.init(config)
-        }
-    ]);
+export const provideDotcmsClient = (
+  config: ClientConfig
+): EnvironmentProviders => {
+  return makeEnvironmentProviders([
+    {
+      provide: DOTCMS_CLIENT_TOKEN,
+      useValue: DotCmsClient.init(config),
+    },
+  ]);
 };
