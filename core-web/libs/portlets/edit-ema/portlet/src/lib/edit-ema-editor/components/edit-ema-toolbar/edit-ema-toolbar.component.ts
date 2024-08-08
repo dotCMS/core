@@ -27,6 +27,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { compareUrlPaths } from '../../../utils';
 import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
@@ -202,8 +203,10 @@ export class EditEmaToolbarComponent {
             language_id: languageId?.toString()
         };
 
-        if (this.shouldReload(params)) {
+        if (this.shouldNavigateToNewPage(params)) {
             this.updateQueryParams(params);
+        } else {
+            this.uveStore.reload();
         }
     }
 
@@ -250,10 +253,10 @@ export class EditEmaToolbarComponent {
         });
     }
 
-    private shouldReload(params: Params): boolean {
+    private shouldNavigateToNewPage(params: Params): boolean {
         const { url: newUrl, language_id: newLanguageId } = params;
         const { url, language_id } = this.uveStore.params();
 
-        return newUrl != url || newLanguageId != language_id;
+        return !compareUrlPaths(newUrl, url) || newLanguageId != language_id;
     }
 }
