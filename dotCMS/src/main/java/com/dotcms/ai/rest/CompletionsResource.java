@@ -1,7 +1,6 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.api.CompletionsAPI;
 import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
@@ -10,6 +9,7 @@ import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -59,8 +59,8 @@ public class CompletionsResource {
                 request,
                 response,
                 formIn,
-                () -> CompletionsAPI.impl().summarize(formIn),
-                out -> CompletionsAPI.impl().summarizeStream(formIn, new LineReadingOutputStream(out)));
+                () -> APILocator.getDotAIAPI().getCompletionsAPI().summarize(formIn),
+                out -> APILocator.getDotAIAPI().getCompletionsAPI().summarizeStream(formIn, new LineReadingOutputStream(out)));
     }
 
     /**
@@ -82,8 +82,8 @@ public class CompletionsResource {
                 request,
                 response,
                 formIn,
-                () -> CompletionsAPI.impl().raw(formIn),
-                out -> CompletionsAPI.impl().rawStream(formIn, new LineReadingOutputStream(out)));
+                () -> APILocator.getDotAIAPI().getCompletionsAPI().raw(formIn),
+                out -> APILocator.getDotAIAPI().getCompletionsAPI().rawStream(formIn, new LineReadingOutputStream(out)));
     }
 
     /**

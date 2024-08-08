@@ -49,7 +49,7 @@ public final class AIAppListener implements EventSubscriber<AppSecretSavedEvent>
         final String hostId = event.getHostIdentifier();
         final Host host = Try.of(() -> hostAPI.find(hostId, APILocator.systemUser(), false)).getOrNull();
 
-        Optional.ofNullable(host).ifPresent(found ->  AIModels.get().resetModels(found));
+        Optional.ofNullable(host).ifPresent(found -> AIModels.get().resetModels(found));
     }
 
     @Override

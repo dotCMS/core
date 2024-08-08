@@ -37,7 +37,7 @@ public class OpenAIContentPromptActionlet extends WorkFlowActionlet {
                         "<br>and the keys of the json object will be used to update the content fields.", "", false),
                 overwriteParameter,
                 new WorkflowActionletParameter(OpenAIParams.OPEN_AI_PROMPT.key, "The prompt that will be sent to the AI", "We need an attractive search result in Google. Return a json object that includes the fields \"pageTitle\" for a meta title of less than 55 characters and \"metaDescription\" for the meta description of less than 300 characters using this content:\\n\\n${fieldContent}\\n\\n", true),
-                new WorkflowActionletParameter(OpenAIParams.MODEL.key, "The AI model to use, defaults to " + ConfigService.INSTANCE.config().getConfig(AppKeys.TEXT_MODEL_NAMES), ConfigService.INSTANCE.config().getConfig(AppKeys.TEXT_MODEL_NAMES), false),
+                new WorkflowActionletParameter(OpenAIParams.MODEL.key, "The AI model to use, defaults to " + ConfigService.INSTANCE.config().getModel().getCurrentModel(), ConfigService.INSTANCE.config().getModel().getCurrentModel(), false),
                 new WorkflowActionletParameter(OpenAIParams.TEMPERATURE.key, "The AI temperature for the response.  Between .1 and 2.0.  Defaults to " + ConfigService.INSTANCE.config().getConfig(AppKeys.COMPLETION_TEMPERATURE), ConfigService.INSTANCE.config().getConfig(AppKeys.COMPLETION_TEMPERATURE), false)
         );
     }

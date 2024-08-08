@@ -1,33 +1,28 @@
 package com.dotcms.ai;
 
-import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
+import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
-import com.dotcms.security.apps.Type;
 import com.dotcms.util.WireMockTestHelper;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.github.tomakehurst.wiremock.WireMockServer;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public interface AiTest {
 
     String API_URL = "http://localhost:%d/c";
     String API_IMAGE_URL = "http://localhost:%d/i";
+    String API_EMBEDDINGS_URL = "http://localhost:%d/e";
     String API_KEY = "some-api-key-1a2bc3";
     String MODEL = "gpt-3.5-turbo-16k";
     String IMAGE_MODEL = "dall-e-3";
+    String EMBEDDINGS_MODEL = "text-embedding-ada-002";
     String IMAGE_SIZE = "1024x1024";
     int PORT = 50505;
-
-    static AppConfig prepareConfig(final Host host, final WireMockServer wireMockServer) {
-        return new AppConfig(host.getHostname(), appConfigMap(wireMockServer));
-    }
-
-    static AppConfig prepareCompletionConfig(final Host host, final WireMockServer wireMockServer) {
-        return new AppConfig(host.getHostname(), completionAppConfigMap(appConfigMap(wireMockServer)));
-    }
 
     static WireMockServer prepareWireMock() {
         final WireMockServer wireMockServer = WireMockTestHelper.wireMockServer(PORT);
@@ -36,61 +31,51 @@ public interface AiTest {
         return wireMockServer;
     }
 
-    private static Map<String, Secret> completionAppConfigMap(final Map<String, Secret> configMap) {
-        final Map<String, Secret> completionValues = Map.of(
-                AppKeys.COMPLETION_ROLE_PROMPT.key,
-                Secret.builder()
-                        .withType(Type.STRING)
-                        .withValue(AppKeys.COMPLETION_ROLE_PROMPT.defaultValue.toCharArray())
-                        .build(),
-
-                AppKeys.COMPLETION_TEXT_PROMPT.key,
-                Secret.builder()
-                        .withType(Type.STRING)
-                        .withValue(AppKeys.COMPLETION_TEXT_PROMPT.defaultValue.toCharArray())
-                        .build(),
-
-                AppKeys.TEXT_MODEL_NAMES.key,
-                Secret.builder()
-                        .withType(Type.STRING)
-                        .withValue(AppKeys.TEXT_MODEL_NAMES.defaultValue.toCharArray())
-                        .build()
-        );
-        final Map<String, Secret> all = new HashMap<>(configMap);
-        all.putAll(completionValues);
-        return Map.copyOf(all);
+    static Map<String, Secret> aiAppSecrets(final WireMockServer wireMockServer,
+                                            final Host host,
+                                            final String apiKey,
+                                            final String textModels,
+                                            final String imageModels,
+                                            final String embeddingsModel)
+            throws DotDataException, DotSecurityException {
+        final AppSecrets appSecrets = new AppSecrets.Builder()
+                .withKey(AppKeys.APP_KEY)
+                .withSecret(AppKeys.API_URL.key, String.format(API_URL, wireMockServer.port()))
+                .withSecret(AppKeys.API_IMAGE_URL.key, String.format(API_IMAGE_URL, wireMockServer.port()))
+                .withSecret(AppKeys.API_EMBEDDINGS_URL.key, String.format(API_EMBEDDINGS_URL, wireMockServer.port()))
+                .withHiddenSecret(AppKeys.API_KEY.key, apiKey)
+                .withSecret(AppKeys.TEXT_MODEL_NAMES.key, textModels)
+                .withSecret(AppKeys.IMAGE_MODEL_NAMES.key, imageModels)
+                .withSecret(AppKeys.EMBEDDINGS_MODEL_NAMES.key, embeddingsModel)
+                .withSecret(AppKeys.IMAGE_SIZE.key, IMAGE_SIZE)
+                .withSecret(AppKeys.LISTENER_INDEXER.key, "{\"default\":\"blog\"}")
+                .withSecret(AppKeys.COMPLETION_ROLE_PROMPT.key, AppKeys.COMPLETION_ROLE_PROMPT.defaultValue)
+                .withSecret(AppKeys.COMPLETION_TEXT_PROMPT.key, AppKeys.COMPLETION_TEXT_PROMPT.defaultValue)
+                .build();
+        APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
+        return appSecrets.getSecrets();
     }
 
-    static Map<String, Secret> appConfigMap(final WireMockServer wireMockServer) {
-        return Map.of(
-                AppKeys.API_URL.key,
-                Secret.builder()
-                        .withType(Type.STRING)
-                        .withValue(String.format(API_URL, wireMockServer.port()).toCharArray())
-                        .build(),
-
-                AppKeys.API_IMAGE_URL.key,
-                Secret.builder()
-                        .withType(Type.STRING)
-                        .withValue(String.format(API_IMAGE_URL, wireMockServer.port()).toCharArray())
-                        .build(),
-
-                AppKeys.API_KEY.key,
-                Secret.builder().withType(Type.STRING).withValue(API_KEY.toCharArray()).build(),
-
-                AppKeys.TEXT_MODEL_NAMES.key,
-                Secret.builder().withType(Type.STRING).withValue(MODEL.toCharArray()).build(),
-
-                AppKeys.IMAGE_MODEL_NAMES.key,
-                Secret.builder().withType(Type.STRING).withValue(IMAGE_MODEL.toCharArray()).build(),
-
-                AppKeys.IMAGE_SIZE.key,
-                Secret.builder().withType(Type.SELECT).withValue(IMAGE_SIZE.toCharArray()).build(),
-
-                AppKeys.LISTENER_INDEXER.key,
-                Secret.builder()
-                        .withType(Type.STRING)
-                        .withValue("{\"default\":\"blog\"}".toCharArray())
-                        .build());
+    static Map<String, Secret> aiAppSecrets(final WireMockServer wireMockServer,
+                                            final Host host,
+                                            final String apiKey)
+            throws DotDataException, DotSecurityException {
+        return aiAppSecrets(wireMockServer, host, apiKey, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
     }
+
+    static Map<String, Secret> aiAppSecrets(final WireMockServer wireMockServer,
+                                            final Host host,
+                                            final String textModels,
+                                            final String imageModels,
+                                            final String embeddingsModel)
+            throws DotDataException, DotSecurityException {
+        return aiAppSecrets(wireMockServer, host, API_KEY, textModels, imageModels, embeddingsModel);
+    }
+
+    static Map<String, Secret> aiAppSecrets(final WireMockServer wireMockServer, final Host host)
+            throws DotDataException, DotSecurityException {
+
+        return aiAppSecrets(wireMockServer, host, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
+    }
+
 }

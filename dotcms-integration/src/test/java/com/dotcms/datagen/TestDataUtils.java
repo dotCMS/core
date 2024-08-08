@@ -1260,6 +1260,7 @@ public class TestDataUtils {
     }
 
     public static Contentlet withEmbeddings(final boolean persist,
+                                            final Host host,
                                             final long languageId,
                                             final String contentTypeId,
                                             final String text) {
@@ -1273,7 +1274,7 @@ public class TestDataUtils {
                 .setProperty("body", "blogBody")
                 .setProperty("seo", text);
 
-        return getBlogContent(persist, null, contentletDataGen);
+        return getBlogContent(persist, host, contentletDataGen);
     }
 
     public static Contentlet getBlogContent(Boolean persist, long languageId,

@@ -78,7 +78,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     @Override
     public JSONObject summarize(final CompletionsForm summaryRequest) {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(summaryRequest).build();
-        final List<EmbeddingsDTO> localResults = EmbeddingsAPI.impl().getEmbeddingResults(searcher);
+        final List<EmbeddingsDTO> localResults = APILocator.getDotAIAPI().getEmbeddingsAPI().getEmbeddingResults(searcher);
 
         // send all this as a json blob to OpenAI
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
@@ -94,7 +94,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                         config.get(),
                         json))
                 .getOrElseThrow(DotRuntimeException::new);
-        final JSONObject dotCMSResponse = EmbeddingsAPI.impl().reduceChunksToContent(searcher, localResults);
+        final JSONObject dotCMSResponse = APILocator.getDotAIAPI().getEmbeddingsAPI().reduceChunksToContent(searcher, localResults);
         dotCMSResponse.put(AiKeys.OPEN_AI_RESPONSE, new JSONObject(openAiResponse));
 
         return dotCMSResponse;
@@ -103,7 +103,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     @Override
     public void summarizeStream(final CompletionsForm summaryRequest, final OutputStream out) {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(summaryRequest).build();
-        final List<EmbeddingsDTO> localResults = EmbeddingsAPI.impl().getEmbeddingResults(searcher);
+        final List<EmbeddingsDTO> localResults = APILocator.getDotAIAPI().getEmbeddingsAPI().getEmbeddingResults(searcher);
 
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
         json.put(AiKeys.STREAM, true);
@@ -204,7 +204,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private int countTokens(final String testString) {
-        return EncodingUtil.REGISTRY
+        return EncodingUtil.get().registry
                 .getEncodingForModel(config.get().getModel().getCurrentModel())
                 .map(enc -> enc.countTokens(testString))
                 .orElseThrow(() -> new DotRuntimeException("Encoder not found"));
@@ -256,7 +256,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MESSAGES, messages);
-        json.putIfAbsent(AiKeys.MODEL, config.get().getConfig(AppKeys.TEXT_MODEL_NAMES));
+        json.putIfAbsent(AiKeys.MODEL, config.get().getModel().getCurrentModel());
         json.put(AiKeys.TEMPERATURE, form.temperature);
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
         json.put(AiKeys.STREAM, form.stream);
