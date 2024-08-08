@@ -6,7 +6,7 @@ const GRAPHQL_ENPOINT = `/api/v1/graphql`;
  * @param {*} query
  * @return {*}
  */
-function getGraphQLPageQuery({ path, language_id, mode}) {
+export function getGraphQLPageQuery({ path, language_id, mode}) {
     const params = [];
 
     if (language_id) {
@@ -14,17 +14,21 @@ function getGraphQLPageQuery({ path, language_id, mode}) {
     }
 
     if (mode) {
-        params.push(`pageMode: "${mode}"`);
+        params.push('pageMode: "EDIT_MODE"');
     }
 
     const paramsString = params.length ? `, ${params.join(", ")}` : "";
 
     return `
     {
-        page(url: "${path}" ${paramsString}) {
-            title
-            url
-            seodescription
+        page(url: "${path}"${paramsString}) {
+            _map
+            canEdit
+            canLock
+            canRead
+            template {
+              drawed
+            }
             containers {
                 path
                 identifier
@@ -77,6 +81,10 @@ function getGraphQLPageQuery({ path, language_id, mode}) {
                 }
                 language {
                   id
+                  languageCode
+                  countryCode
+                  language
+                  country
                 }
             }
         }
@@ -91,8 +99,7 @@ function getGraphQLPageQuery({ path, language_id, mode}) {
  * @param {*} query
  * @return {*}
  */
-export const getGraphQLPageData = async (params) => {
-    const query = getGraphQLPageQuery(params);
+export const getGraphQLPageData = async (query) => {
     const url = new URL(GRAPHQL_ENPOINT, process.env.NEXT_PUBLIC_DOTCMS_HOST);
 
     try {

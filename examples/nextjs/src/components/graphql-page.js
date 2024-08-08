@@ -38,8 +38,8 @@ const componentsMap = {
     CustomNoComponent: CustomNoComponent,
 };
 
-export function MyGraphQLPage({ pageAsset, nav }) {
-    const { replace, refresh } = useRouter();
+export function MyGraphQLPage({ pageAsset, nav, query }) {
+    const { replace } = useRouter();
     const pathname = usePathname();
 
     /**
@@ -70,8 +70,8 @@ export function MyGraphQLPage({ pageAsset, nav }) {
                         pageAsset: pageAsset,
                     }}
                     config={{
-                        onReload: () => refresh(),
                         pathname,
+                        editor: { query }
                     }}
                 />
             </main>
