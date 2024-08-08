@@ -1,6 +1,7 @@
 package com.dotcms.ai.listener;
 
-import com.dotcms.ai.api.EmbeddingsAPI;
+import com.dotcms.ai.api.DotAIAPI;
+import com.dotcms.ai.api.DotAIAPIFacadeImpl;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.AiTest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -90,6 +91,8 @@ public class EmbeddingContentListenerTest {
      */
     @Test
     public void test_onPublish() throws Exception {
+        DotAIAPIFacadeImpl.setDefaultEmbeddingsAPIProvider(new DotAIAPIFacadeImpl.DefaultEmbeddingsAPIProvider());
+
         final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog", host);
         contentTypes.add(blogContentType);
         final String text = "OpenAI has developed a new AI model that surpasses previous benchmarks in natural language understanding and generation. This model, GPT-4, can perform complex tasks such as writing essays, creating code, and understanding nuanced prompts with unprecedented accuracy.";
@@ -105,7 +108,7 @@ public class EmbeddingContentListenerTest {
         boolean embeddingsExist = waitForEmbeddings(blogContent, text, true);
 
         assertTrue(embeddingsExist);
-        final Map<String, Map<String, Object>> embeddingsByIndex = EmbeddingsAPI.impl().countEmbeddingsByIndex();
+        final Map<String, Map<String, Object>> embeddingsByIndex = APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddingsByIndex();
         assertFalse(embeddingsByIndex.isEmpty());
         assertTrue(embeddingsByIndex.containsKey("default"));
         final Map<String, Object> embeddings = embeddingsByIndex.get("default");
@@ -176,14 +179,14 @@ public class EmbeddingContentListenerTest {
 
     private static boolean waitForEmbeddings(final Contentlet blogContent, final String text, final boolean expected) {
         int count = 0;
-        boolean embeddingsExist = EmbeddingsAPI.impl().embeddingExists(blogContent.getInode(), "default", text);
+        boolean embeddingsExist = APILocator.getDotAIAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
         while (embeddingsExist != expected) {
             if (count++ > MAX_ATTEMPTS) {
                 break;
             }
 
             sleep(500);
-            embeddingsExist = EmbeddingsAPI.impl().embeddingExists(blogContent.getInode(), "default", text);
+            embeddingsExist = APILocator.getDotAIAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
         }
         return embeddingsExist;
     }
@@ -205,13 +208,17 @@ public class EmbeddingContentListenerTest {
             try {
                 contentletApi.archive(contentlet, user, false);
                 contentletApi.delete(contentlet, user, false);
-            } catch (DotDataException | DotSecurityException e) {}
+            } catch (DotDataException | DotSecurityException e) {
+                //ignore
+            }
         });
 
         contentTypes.forEach(contentType -> {
             try {
                 contentTypeApi.delete(contentType);
-            } catch (DotDataException | DotSecurityException e) {}
+            } catch (DotDataException | DotSecurityException e) {
+                //ignore
+            }
         });
     }
 
