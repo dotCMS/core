@@ -46,7 +46,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype/id/4061db324fdce3993a494c856e76ab1e",
+							"raw": "{{serverURL}}/api/v1/contenttype/id/2c46b6586c38852ac08a824a303ced80",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -55,7 +55,7 @@
 								"v1",
 								"contenttype",
 								"id",
-								"4061db324fdce3993a494c856e76ab1e"
+								"2c46b6586c38852ac08a824a303ced80"
 							]
 						},
 						"description": "**Description**: Deletes an image content type by its ID.\n\n**Tests**: Ensures the response status code is 200 if the content type is found and successfully deleted.\n\nGiven a content type ID.  \nExpect that code is 200.  \nExpect content type is deleted successfully."
