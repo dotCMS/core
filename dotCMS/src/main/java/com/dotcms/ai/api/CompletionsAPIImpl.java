@@ -32,6 +32,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * This class implements the CompletionsAPI interface and provides the specific logic for interacting with the AI service.
@@ -40,18 +41,17 @@ import java.util.Map;
  */
 public class CompletionsAPIImpl implements CompletionsAPI {
 
-    private final Lazy<AppConfig> config;
+    private final AppConfig config;
+    private final Lazy<AppConfig> defaultConfig;
 
-    private final Lazy<AppConfig> defaultConfig =
-            Lazy.of(() -> ConfigService.INSTANCE.config(
-                    Try.of(() -> WebAPILocator
-                                    .getHostWebAPI()
-                                    .getCurrentHostNoThrow(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
-                            .getOrElse(APILocator.systemHost()))
-    );
-
-    public CompletionsAPIImpl(final Lazy<AppConfig> config) {
-        this.config = (config != null) ? config : defaultConfig;
+    public CompletionsAPIImpl(final AppConfig config) {
+        defaultConfig =
+                Lazy.of(() -> ConfigService.INSTANCE.config(
+                        Try.of(() -> WebAPILocator
+                                        .getHostWebAPI()
+                                        .getCurrentHostNoThrow(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+                                .getOrElse(APILocator.systemHost())));
+        this.config = Optional.ofNullable(config).orElse(defaultConfig.get());
     }
 
     @Override
@@ -60,7 +60,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                              final String modelIn,
                              final float temperature,
                              final int maxTokens) {
-        final AIModel model = config.get().resolveModelOrThrow(modelIn);
+        final AIModel model = config.resolveModelOrThrow(modelIn);
         final JSONObject json = new JSONObject();
 
         json.put(AiKeys.TEMPERATURE, temperature);
@@ -89,9 +89,9 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         json.put(AiKeys.STREAM, false);
         final String openAiResponse =
                 Try.of(() -> OpenAIRequest.doRequest(
-                        config.get().getApiUrl(),
+                        config.getApiUrl(),
                         HttpMethod.POST,
-                        config.get(),
+                        config,
                         json))
                 .getOrElseThrow(DotRuntimeException::new);
         final JSONObject dotCMSResponse = APILocator.getDotAIAPI().getEmbeddingsAPI().reduceChunksToContent(searcher, localResults);
@@ -107,21 +107,21 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
         json.put(AiKeys.STREAM, true);
-        OpenAIRequest.doPost(config.get().getApiUrl(), config.get(), json, out);
+        OpenAIRequest.doPost(config.getApiUrl(), config, json, out);
     }
 
     @Override
     public JSONObject raw(final JSONObject json) {
-        if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+        if (config.getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(this.getClass(), "OpenAI request:" + json.toString(2));
         }
 
         final String response = OpenAIRequest.doRequest(
-                config.get().getApiUrl(),
+                config.getApiUrl(),
                 HttpMethod.POST,
-                config.get(),
+                config,
                 json);
-        if (config.get().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+        if (config.getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
             Logger.info(this.getClass(), "OpenAI response:" + response);
         }
 
@@ -138,7 +138,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     public void rawStream(final CompletionsForm promptForm, final OutputStream out) {
         final JSONObject json = buildRequestJson(promptForm);
         json.put(AiKeys.STREAM, true);
-        OpenAIRequest.doRequest(config.get().getApiUrl(), HttpMethod.POST, config.get(), json, out);
+        OpenAIRequest.doRequest(config.getApiUrl(), HttpMethod.POST, config, json, out);
     }
 
     private void buildMessages(final String systemPrompt, final String userPrompt, final JSONObject json) {
@@ -151,7 +151,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form, final List<EmbeddingsDTO> searchResults) {
-        final AIModel model = config.get().resolveModelOrThrow(form.model);
+        final AIModel model = config.resolveModelOrThrow(form.model);
         // aggregate matching results into text
         final StringBuilder supportingContent = new StringBuilder();
         searchResults.forEach(s -> supportingContent.append(s.extractedText).append(" "));
@@ -184,7 +184,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
             throw new DotRuntimeException("no prompt or supporting content to summarize found");
         }
 
-        final String resolvedPrompt = config.get().getConfig(key);
+        final String resolvedPrompt = config.getConfig(key);
         final HttpServletRequest requestProxy = new FakeHttpRequest("localhost", "/").request();
         final HttpServletResponse responseProxy = new BaseResponse().response();
 
@@ -205,7 +205,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     private int countTokens(final String testString) {
         return EncodingUtil.get().registry
-                .getEncodingForModel(config.get().getModel().getCurrentModel())
+                .getEncodingForModel(config.getModel().getCurrentModel())
                 .map(enc -> enc.countTokens(testString))
                 .orElseThrow(() -> new DotRuntimeException("Encoder not found"));
     }
@@ -244,7 +244,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form) {
-        final AIModel aiModel = config.get().getModel();
+        final AIModel aiModel = config.getModel();
         final int promptTokens = countTokens(form.prompt);
 
         final JSONArray messages = new JSONArray();
@@ -256,7 +256,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MESSAGES, messages);
-        json.putIfAbsent(AiKeys.MODEL, config.get().getModel().getCurrentModel());
+        json.putIfAbsent(AiKeys.MODEL, config.getModel().getCurrentModel());
         json.put(AiKeys.TEMPERATURE, form.temperature);
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
         json.put(AiKeys.STREAM, form.stream);
