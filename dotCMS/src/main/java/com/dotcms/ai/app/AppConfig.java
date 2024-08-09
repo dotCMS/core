@@ -43,18 +43,19 @@ public class AppConfig implements Serializable {
         this.host = host;
 
         final AIAppUtil aiAppUtil = AIAppUtil.get();
-
-        AIModels.get().loadModels(
-                this.host,
-                List.of(
-                        aiAppUtil.createTextModel(secrets),
-                        aiAppUtil.createImageModel(secrets),
-                        aiAppUtil.createEmbeddingsModel(secrets)));
-
+        apiKey = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
         apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL);
         apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL);
         apiEmbeddingsUrl = discoverEmbeddingsApiUrl(secrets);
-        apiKey = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
+
+        if (!secrets.isEmpty() || isEnabled()) {
+            AIModels.get().loadModels(
+                    this.host,
+                    List.of(
+                            aiAppUtil.createTextModel(secrets),
+                            aiAppUtil.createImageModel(secrets),
+                            aiAppUtil.createEmbeddingsModel(secrets)));
+        }
 
         model = resolveModel(AIModelType.TEXT);
         imageModel = resolveModel(AIModelType.IMAGE);
@@ -300,10 +301,10 @@ public class AppConfig implements Serializable {
     }
 
     private String discoverEmbeddingsApiUrl(final Map<String, Secret> secrets) {
-        final String url = AIAppUtil.get().discoverEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL);
-        return StringUtils.isBlank(url)
-                ? Config.getStringProperty(OPEN_AI_EMBEDDINGS_URL_KEY, "https://api.openai.com/v1/embeddings")
-                : url;
+        return AIAppUtil.get().discoverEnvSecretFallback(
+                secrets,
+                AppKeys.API_EMBEDDINGS_URL,
+                () -> Config.getStringProperty(OPEN_AI_EMBEDDINGS_URL_KEY, "https://api.openai.com/v1/embeddings"));
     }
 
 }
