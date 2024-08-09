@@ -2752,6 +2752,71 @@
 					]
 				},
 				{
+					"name": "Checking Exception Messages",
+					"item": [
+						{
+							"name": "GivenRequestByURI_Page_EditMode_WithoutAuth",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Response contains errors and correct error message\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData)",
+											"    pm.expect(jsonData.errors, 'FAILED:[jsonData.errors]').to.be.an('array').that.is.not.empty;",
+											"",
+											"    var error = jsonData.errors[0];",
+											"    pm.expect(error.message, 'FAILED:[error.message]').to.equal(\"Exception while fetching data (/page) : Unauthorized: You do not have the necessary permissions to request this page in edit mode.\");",
+											"    pm.expect(error.extensions.errorCode, 'FAILED:[error.extensions.errorCode]').to.equal(403);",
+											"    pm.expect(error.extensions.errorMessage, 'FAILED:[error.extensions.errorMessage]').to.equal(\"Unauthorized: You do not have the necessary permissions to request this page in edit mode.\");",
+											"});",
+											"",
+											"pm.test(\"Page data is null\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.data.page, 'FAILED:[jsonData.data.page]').to.be.null;",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n    page(url: \"/home\", pageMode: \"WORKING\") {\n    title\n  }\n}\n\n",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "pre_ImportBundleWithMexicoPageAndRule",
 					"event": [
 						{
