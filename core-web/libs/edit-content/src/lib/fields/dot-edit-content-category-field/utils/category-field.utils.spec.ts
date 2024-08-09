@@ -179,7 +179,8 @@ describe('CategoryFieldUtils', () => {
             const item: DotCategoryFieldKeyValueObj = {
                 key: CATEGORY_LEVEL_1[1].key,
                 value: CATEGORY_LEVEL_1[1].categoryName,
-                inode: CATEGORY_LEVEL_1[1].inode
+                inode: CATEGORY_LEVEL_1[1].inode,
+                path: ''
             };
 
             const expected: DotCategoryFieldKeyValueObj[] = [...storedSelected, item];
