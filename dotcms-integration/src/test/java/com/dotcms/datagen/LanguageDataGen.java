@@ -18,7 +18,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
     private String countryCode;
     private String country;
 
-    private void initialize() {
+    private void setDefaults() {
         long currentTime = System.currentTimeMillis();
         languageCode = org.apache.commons.lang.RandomStringUtils.randomAlphanumeric(5);
         languageName = "testLanguage" + currentTime;
@@ -27,7 +27,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
     }
 
     public LanguageDataGen() {
-        initialize();
+        setDefaults();
     }
 
     @SuppressWarnings("unused")
@@ -68,17 +68,22 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
     @WrapInTransaction
     @Override
     public Language persist(final Language language) {
-        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
-        boolean languageExists = (testLanguageExist(language.getLanguageCode(), language.getCountryCode()) > 0);
-        if (languageExists) {
-            return languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode());
-        }
-        try {
-            languageAPI.saveLanguage(language);
-            return language;
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to persist Language.", e);
-        }
+
+            final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+            try {
+                //Our system allows for the same language to be cre-created with the same language code and country code which is source for trouble
+                boolean languageExists = (testLanguageExist(language.getLanguageCode(), language.getCountryCode()) > 0);
+                if (languageExists) {
+                    return languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode());
+                }
+                languageAPI.saveLanguage(language);
+                return language;
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to persist Language.", e);
+            } finally {
+                // Reset the values to the default ones
+                setDefaults();
+            }
     }
 
     /**
