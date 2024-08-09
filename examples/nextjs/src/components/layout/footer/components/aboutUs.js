@@ -3,7 +3,7 @@ import Image from "next/image";
 
 function AboutUs() {
     return (
-        <div className="flex gap-7 flex-col">
+        <div className="flex flex-col gap-7">
             <h2 className="text-2xl font-bold text-black">About us</h2>
             <p className="text-sm text-zinc-800">
                 We are TravelLux, a community of dedicated travel experts,
@@ -13,7 +13,7 @@ function AboutUs() {
                 registered clients.
             </p>
             <Image
-                src={"/dA/2f383e7fa6/fileAsset/logo.png"}
+                src={"82da90eb04/fileAsset/logo.png"}
                 height={53}
                 width={221}
                 alt="TravelLux logo"
