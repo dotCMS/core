@@ -45,21 +45,24 @@ public class AIModels {
             "https://api.openai.com/v1/models");
     private static final int AI_MODELS_CACHE_TTL = 28800;  // 8 hours
     private static final int AI_MODELS_CACHE_SIZE = 128;
+    private static final Supplier<AppConfig> APP_CONFIG_SUPPLIER = ConfigService.INSTANCE::config;
 
-    private final ConcurrentMap<String, List<Tuple2<AIModelType, AIModel>>> internalModels = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Tuple2<String, String>, AIModel> modelsByName = new ConcurrentHashMap<>();
-    private final Cache<String, List<String>> supportedModelsCache =
-            Caffeine.newBuilder()
-                    .expireAfterWrite(Duration.ofSeconds(AI_MODELS_CACHE_TTL))
-                    .maximumSize(AI_MODELS_CACHE_SIZE)
-                    .build();
-    private Supplier<AppConfig> appConfigSupplier = ConfigService.INSTANCE::config;
+    private final ConcurrentMap<String, List<Tuple2<AIModelType, AIModel>>> internalModels;
+    private final ConcurrentMap<Tuple2<String, String>, AIModel> modelsByName;
+    private final Cache<String, List<String>> supportedModelsCache;
 
     public static AIModels get() {
         return INSTANCE.get();
     }
 
     private AIModels() {
+        internalModels = new ConcurrentHashMap<>();
+        modelsByName = new ConcurrentHashMap<>();
+        supportedModelsCache =
+                Caffeine.newBuilder()
+                        .expireAfterWrite(Duration.ofSeconds(AI_MODELS_CACHE_TTL))
+                        .maximumSize(AI_MODELS_CACHE_SIZE)
+                        .build();
     }
 
     /**
@@ -155,7 +158,7 @@ public class AIModels {
             return cached;
         }
 
-        final AppConfig appConfig = appConfigSupplier.get();
+        final AppConfig appConfig = APP_CONFIG_SUPPLIER.get();
         if (!appConfig.isEnabled()) {
             Logger.debug(this, "OpenAI is not enabled, returning empty list of supported models");
             return List.of();
@@ -212,11 +215,6 @@ public class AIModels {
         }
 
         return response;
-    }
-
-    @VisibleForTesting
-    void setAppConfigSupplier(final Supplier<AppConfig> appConfigSupplier) {
-        this.appConfigSupplier = appConfigSupplier;
     }
 
     @VisibleForTesting
