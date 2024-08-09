@@ -4,7 +4,9 @@ full_build_test: &full_build_test
   - '.nvmrc'
 
 backend: &backend
-  - '.github/workflows/maven-cicd-pipeline.yml'
+  - '.github/workflows/cicd_comp_*.yml'
+  - '.github/workflows/cicd_1-pr.yml'
+  - '.github/actions/core-cicd/**/action.yml'
   - 'bom/**'
   - 'build-parent/**'
   - 'core-web/pom.xml'
