@@ -1,22 +1,16 @@
 package com.dotcms.graphql.util;
 
-import com.dotcms.graphql.InterfaceType;
-import com.dotcms.graphql.datafetcher.FieldDataFetcher;
+import static graphql.Scalars.GraphQLBoolean;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 
-import com.dotcms.util.DotPreconditions;
+import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import graphql.GraphQLException;
+import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldDefinition.Builder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNamedSchemaElement;
@@ -25,12 +19,12 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
-
-import static graphql.Scalars.GraphQLBoolean;
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 
 public class TypeUtil {
 
@@ -133,10 +127,6 @@ public class TypeUtil {
 
     public static String collectionizedName(final String typeName) {
         return typeName + "Collection";
-    }
-
-    public static String oldCollectionizedName(final String typeName) {
-        return typeName.substring(0, 1).toLowerCase() + typeName.substring(1) + "Collection";
     }
 
     public static String singularizeCollectionName(final String collectionName) {

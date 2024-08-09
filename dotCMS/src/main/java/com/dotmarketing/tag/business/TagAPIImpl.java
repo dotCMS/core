@@ -3,7 +3,6 @@ package com.dotmarketing.tag.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -15,6 +14,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import io.vavr.control.Try;
+
 import java.util.*;
 
 /**
@@ -31,6 +31,13 @@ public class TagAPIImpl implements TagAPI {
     @Override
     public List<Tag> getAllTags () throws DotDataException {
         return tagFactory.getAllTags();
+    }
+
+    @CloseDBIfOpened
+    public Set<String> findTopTags(final String siteId) throws DotDataException {
+
+        Logger.debug(this, ()-> "Finding top tags for siteId: " + siteId);
+        return this.tagFactory.getTopTagsBySiteId(siteId);
     }
 
     @CloseDBIfOpened
@@ -803,6 +810,7 @@ public class TagAPIImpl implements TagAPI {
             deleteTag(tag);
         }
     }
+
 
 
 }
