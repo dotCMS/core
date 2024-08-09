@@ -16,7 +16,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
@@ -67,7 +67,7 @@ public class PushedAssetUtilTest extends IntegrationTestBase {
         final PushedAssetUtil pushedAssetUtil = new PushedAssetUtil(config);
 
         final Host host = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType contentType =  new ContentTypeDataGen()
                 .host(host)

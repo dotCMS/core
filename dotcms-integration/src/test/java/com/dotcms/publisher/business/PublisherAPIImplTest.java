@@ -23,7 +23,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
@@ -32,7 +32,6 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -54,7 +53,7 @@ public class PublisherAPIImplTest {
     @Test
     public void test_deleteElementFromPublishQueueTable_OneAsset() throws DotPublisherException {
         final Host host = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType contentType =  new ContentTypeDataGen()
                 .host(host)
@@ -84,7 +83,7 @@ public class PublisherAPIImplTest {
     @Test
     public void test_deleteElementFromPublishQueueTable_TwoAssets() throws DotPublisherException {
         final Host host = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType contentType =  new ContentTypeDataGen()
                 .host(host)
@@ -122,7 +121,7 @@ public class PublisherAPIImplTest {
     @Test
     public void test_deleteElementsFromPublishQueueTable_TwoAssets() throws DotPublisherException {
         final Host host = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType contentType =  new ContentTypeDataGen()
                 .host(host)
@@ -187,7 +186,7 @@ public class PublisherAPIImplTest {
         final ContentType contentTypeForContentlet = new ContentTypeDataGen().nextPersisted();
         final Contentlet contentlet = new ContentletDataGen(contentTypeForContentlet).nextPersisted();
 
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
 

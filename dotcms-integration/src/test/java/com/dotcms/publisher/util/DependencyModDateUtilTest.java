@@ -16,26 +16,19 @@ import com.dotcms.datagen.EnvironmentDataGen;
 import com.dotcms.datagen.PushPublishingEndPointDataGen;
 import com.dotcms.datagen.PushedAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundler;
-import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.dependencies.DependencyModDateUtil;
-import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -46,7 +39,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -109,7 +101,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
         final DependencyModDateUtil dependencyModDateUtil = new DependencyModDateUtil(config);
 
         final Host host = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType contentType =  new ContentTypeDataGen()
                 .host(host)
@@ -149,7 +141,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
         final DependencyModDateUtil dependencyModDateUtil = new DependencyModDateUtil(config);
 
         final Host host = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType contentType =  new ContentTypeDataGen()
                 .host(host)
@@ -205,7 +197,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
         final DependencyModDateUtil dependencyModDateUtil = new DependencyModDateUtil(config);
 
         final Host host = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType contentType =  new ContentTypeDataGen()
                 .host(host)
@@ -283,7 +275,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
         final DependencyModDateUtil dependencyModDateUtil = new DependencyModDateUtil(config);
 
         final Host host = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType contentType =  new ContentTypeDataGen()
                 .host(host)

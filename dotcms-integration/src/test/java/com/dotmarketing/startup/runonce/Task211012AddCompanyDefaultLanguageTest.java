@@ -14,7 +14,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -82,7 +82,7 @@ public class Task211012AddCompanyDefaultLanguageTest {
             throws DotDataException, DotSecurityException {
         final LanguageAPI languageAPI = APILocator.getLanguageAPI();
         final Language defaultLang = languageAPI.getDefaultLanguage();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
         final Task211012AddCompanyDefaultLanguage task = new Task211012AddCompanyDefaultLanguage();
         final Tuple2<String, String> defaultLanguageDeclaration = getDeclaredDefaultLanguage();
 

@@ -58,7 +58,7 @@ public class LanguageAPITest {
 
 		systemUser = APILocator.systemUser();
 		
-		language= new LanguageDataGen().nextPersisted();
+		language= new UniqueLanguageDataGen().nextPersisted();
 		
 	}
 
@@ -80,7 +80,7 @@ public class LanguageAPITest {
 
 
 
-        Language lan = new LanguageDataGen().nextPersisted();
+        Language lan = new UniqueLanguageDataGen().nextPersisted();
 
         existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
         CacheLocator.getLanguageCache().clearCache();
@@ -192,7 +192,7 @@ public class LanguageAPITest {
 		final String SYSTEM_PROPERTYFILE_KEY = "contenttypes.action.cancel";
 		final LanguageAPIImpl languageAPi = new LanguageAPIImpl();
 
-		final Language language = new LanguageDataGen().nextPersisted();
+		final Language language = new UniqueLanguageDataGen().nextPersisted();
 		final LanguageAPIImpl lapi = Mockito.spy(languageAPi);
 		Mockito.doReturn(APILocator.systemUser()).when(lapi).getUser();
 		final ContentType langKeyType = APILocator.getContentTypeAPI(APILocator.systemUser())
@@ -298,7 +298,7 @@ public class LanguageAPITest {
 		Language newLanguage = null;
   		ContentType testType = null;
   		try {
-			newLanguage = new LanguageDataGen().nextPersisted();
+			newLanguage = new UniqueLanguageDataGen().nextPersisted();
 			testType = new ContentTypeDataGen().nextPersisted();
 			// We don't care about the reference to the content since deleting the type will take care of it
 			new ContentletDataGen(testType.id())
@@ -337,10 +337,10 @@ public class LanguageAPITest {
 			throws DotDataException, DotSecurityException, DotIndexException {
 		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
 		final Language defaultLang = languageAPI.getDefaultLanguage();
-		final Language newDefaultLanguage = new LanguageDataGen().nextPersisted();
+		final Language newDefaultLanguage = new UniqueLanguageDataGen().nextPersisted();
 		final User admin = mockAdminUser();
 		try {
-			final Language thirdLanguage = new LanguageDataGen().nextPersisted();
+			final Language thirdLanguage = new UniqueLanguageDataGen().nextPersisted();
 			final ContentType news = getNewsLikeContentType("News");
 
 			final Contentlet persistedWithOldDefaultLang = new ContentletDataGen(news)

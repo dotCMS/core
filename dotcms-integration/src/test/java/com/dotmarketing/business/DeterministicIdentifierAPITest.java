@@ -415,14 +415,13 @@ public class DeterministicIdentifierAPITest {
 
         prepareIfNecessary();
         //Propose a set of test languages
-        final List<LanguageTestCase> testCases = Stream
-                .of(new LanguageTestCase("es", "US", "United States", "Language:es:US", 4913155),
-                    new LanguageTestCase("ep", "", "", "Language:ep:", 5292269),
-                    new LanguageTestCase("sg", "SAG", "", "Language:sg:SAG", 4713118),
-                    new LanguageTestCase("en", "NZ", "New Zealand", "Language:en:NZ", 5382528))
-                .collect(Collectors.toList());
 
-        return testCases.toArray();
+        return Stream
+                .of(new LanguageTestCase("es", "US", "United States", "Language:es:US", 4913155),
+                        new LanguageTestCase("ep", "", "", "Language:ep:", 5292269),
+                        new LanguageTestCase("sg", "SAG", "", "Language:sg:SAG", 4713118),
+                        new LanguageTestCase("en", "NZ", "New Zealand", "Language:en:NZ", 5382528))
+                .toArray();
     }
 
     static class LanguageTestCase {
