@@ -76,7 +76,7 @@ public class UniqueLanguageDataGen extends AbstractDataGen<Language> {
     if (!StringUtils.isSet(countryCode)) {
       return new DotConnect().setSQL(
               "select count(*) as test from language where lower(language_code)=lower(?) and country_code is null "
-      ).addParam(languageCode).addParam(countryCode).getInt("test");
+      ).addParam(languageCode).getInt("test");
     }
 
     return new DotConnect().setSQL(
