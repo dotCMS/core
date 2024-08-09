@@ -145,8 +145,6 @@ public class AIModelsTest {
         supported = aiModels.getOrPullSupportedModels();
         assertNotNull(supported);
         assertEquals(32, supported.size());
-
-        AIModels.get().setAppConfigSupplier(ConfigService.INSTANCE::config);
     }
 
     /**
@@ -164,7 +162,6 @@ public class AIModelsTest {
         assertTrue(supported.isEmpty());
 
         IPUtils.disabledIpPrivateSubnet(true);
-        AIModels.get().setAppConfigSupplier(ConfigService.INSTANCE::config);
     }
 
     /**
