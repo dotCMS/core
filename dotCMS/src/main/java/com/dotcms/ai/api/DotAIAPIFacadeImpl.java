@@ -3,10 +3,9 @@ package com.dotcms.ai.api;
 import com.dotcms.ai.app.AppConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
-import io.vavr.Lazy;
+import org.bouncycastle.util.Arrays;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -30,39 +29,33 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
         }
     }
 
+    private static <T> T unwrap(final Class<T> clazz, final Object... initArguments) {
+        return !Arrays.isNullOrEmpty(initArguments) && clazz.isInstance(initArguments[0]) ? clazz.cast(initArguments[0]) : null;
+    }
+
     private static class DefaultCompletionsAPIProvider implements CompletionsAPIProvider {
 
-        private final CompletionsAPI defaultCompletionAPI = new CompletionsAPIImpl(null);
         @Override
         public CompletionsAPI getCompletionsAPI(final Object... initArguments) {
-            return Objects.nonNull(initArguments) && initArguments.length > 0?
-                    new CompletionsAPIImpl(unwrap(initArguments)):
-                    defaultCompletionAPI;
+            return new CompletionsAPIImpl(unwrap(initArguments));
         }
 
-        private Lazy<AppConfig> unwrap(final Object... initArguments) {
-            return initArguments[0] instanceof AppConfig?
-                    Lazy.of (()-> (AppConfig) initArguments[0]):(Lazy<AppConfig>) initArguments[0];
+        private AppConfig unwrap(final Object... initArguments) {
+            return DotAIAPIFacadeImpl.unwrap(AppConfig.class, initArguments);
         }
     }
 
     public static class DefaultEmbeddingsAPIProvider implements EmbeddingsAPIProvider {
 
-        private final EmbeddingsAPI defaultEmbeddingsAPI = new EmbeddingsAPIImpl(null);
-
         @Override
         public EmbeddingsAPI getEmbeddingsAPI(final Object... initArguments) {
-            return Objects.nonNull(initArguments) && initArguments.length > 0?
-                    new EmbeddingsAPIImpl(unwrap(initArguments)):
-                    defaultEmbeddingsAPI;
+            return new EmbeddingsAPIImpl(unwrap(initArguments));
         }
 
         private Host unwrap(final Object... initArguments) {
-            return initArguments[0] instanceof Host ?
-                    (Host) initArguments[0]:null;
+            return DotAIAPIFacadeImpl.unwrap(Host.class, initArguments);
         }
     }
-
 
     /**
      * Sets the current API implementation name.
