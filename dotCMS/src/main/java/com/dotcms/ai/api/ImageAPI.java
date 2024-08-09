@@ -1,4 +1,4 @@
-package com.dotcms.ai.service;
+package com.dotcms.ai.api;
 
 import com.dotcms.ai.model.AIImageRequestDTO;
 import com.dotmarketing.util.json.JSONObject;
@@ -6,7 +6,7 @@ import com.dotmarketing.util.json.JSONObject;
 /**
  * Service to interact with the OpenAI Image API
  */
-public interface OpenAIImageService {
+public interface ImageAPI {
 
     /**
      * Sends a text prompt to the OpenAI API.

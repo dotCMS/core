@@ -38,7 +38,6 @@ public class OpenAIGenerateImageActionlet extends WorkFlowActionlet {
     @Override
     public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-
         final Runnable task = new OpenAIGenerateImageRunner(processor, params);
         task.run();
     }

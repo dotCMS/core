@@ -9,4 +9,8 @@ public interface DotAIAPI {
     CompletionsAPI getCompletionsAPI(Object... initArguments);
 
     EmbeddingsAPI getEmbeddingsAPI(Object... initArguments);
+
+    ChatAPI getChatAPI(Object... initArguments);
+
+    ImageAPI getImageAPI(Object... initArguments);
 }
