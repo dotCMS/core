@@ -20,6 +20,7 @@ import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
@@ -601,10 +602,63 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{pageId}/content")
+    @Operation(operationId = "postPageContent",
+        summary = "Updates contentlets in a page's containers",
+        description = "This method updates a page to reflect the addition (or removal) of " + 
+                        "contentlets to (or from) containers. It takes a JSON object that " +
+                        "returns variables associated with the contentlets and their modifications.",
+        tags = {"Page"},
+        responses = {
+                @ApiResponse(responseCode = "200", description = "Content updated successfully",
+                        content = @Content(mediaType = "application/json",
+                                schema = @Schema(implementation = ResponseEntityStringView.class),
+                                        examples = @ExampleObject(
+                                                value = "{\n" +
+                                                        "  \"errors\": [\n" +
+                                                        "    {\n" +
+                                                        "      \"errorCode\": \"string\",\n" +
+                                                        "      \"message\": \"string\",\n" +
+                                                        "      \"fieldName\": \"string\"\n" +
+                                                        "    }\n" +
+                                                        "  ],\n" +
+                                                        "  \"entity\": \"Ok\",\n" +
+                                                        "  \"messages\": [\n" +
+                                                        "    {\n" +
+                                                        "      \"message\": \"string\"\n" +
+                                                        "    }\n" +
+                                                        "  ],\n" +
+                                                        "  \"i18nMessagesMap\": {\n" +
+                                                        "    \"additionalProp1\": \"string\",\n" +
+                                                        "    \"additionalProp2\": \"string\",\n" +
+                                                        "    \"additionalProp3\": \"string\"\n" +
+                                                        "  },\n" +
+                                                        "  \"permissions\": [\n" +
+                                                        "    \"string\"\n" +
+                                                        "  ],\n" +
+                                                        "  \"pagination\": {\n" +
+                                                        "    \"currentPage\": 0,\n" +
+                                                        "    \"perPage\": 0,\n" +
+                                                        "    \"totalEntries\": 0\n" +
+                                                        "  }\n" +
+                                                        "}"
+                                        )
+                        )),
+                @ApiResponse(responseCode = "400", description = "Bad request, modify entry"),
+                @ApiResponse(responseCode = "408", description = "Request timeout, request not received"),
+                @ApiResponse(responseCode = "500", description = "Unexpected error")
+                }
+        )
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("pageId") final String pageId,
+            @PathParam("pageId") @Parameter(description = "ID of page which is being updated") final String pageId,
             @QueryParam("variantName") final String variantNameParam,
+            @RequestBody(description = "POST body returns a JSON comprised of variables " +
+                                        "containing information of contentlets. This includes " +
+                                        "their identifiers, uuids, and modifications made.",
+                                        required = true,
+                                        content = @Content(
+                                                schema = @Schema(implementation = PageContainerForm.class)
+                                        ))
             final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
