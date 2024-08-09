@@ -6,6 +6,7 @@ import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -119,7 +120,10 @@ class EmbeddingsRunner implements Runnable {
         }
 
         final Tuple2<Integer, List<Float>> embeddings =
-                this.embeddingsAPI.pullOrGenerateEmbeddings(this.contentlet.getIdentifier(), normalizedContent);
+                this.embeddingsAPI.pullOrGenerateEmbeddings(
+                        contentlet.getIdentifier(),
+                        normalizedContent,
+                        APILocator.systemUser().getUserId());
         if (embeddings._2.isEmpty()) {
             Logger.info(this.getClass(), String.format("No tokens for Content Type " +
                     "'%s'. Normalized content: %s", this.contentlet.getContentType().variable(), normalizedContent));

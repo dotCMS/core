@@ -4,9 +4,7 @@ import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.api.ChatAPI;
-import com.dotcms.ai.api.OpenAIChatAPIImpl;
 import com.dotcms.ai.api.ImageAPI;
-import com.dotcms.ai.api.OpenAIImageAPIImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.json.JSONObject;
@@ -30,11 +28,13 @@ public class AIViewTool implements ViewTool {
     private AppConfig config;
     private ChatAPI chatService;
     private ImageAPI imageService;
+    private User user;
 
     @Override
     public void init(final Object obj) {
         context = (ViewContext) obj;
         config = config();
+        user = user();
         chatService = chatService();
         imageService = imageService();
     }
@@ -128,12 +128,12 @@ public class AIViewTool implements ViewTool {
 
     @VisibleForTesting
     ChatAPI chatService() {
-        return APILocator.getDotAIAPI().getChatAPI(config);
+        return APILocator.getDotAIAPI().getChatAPI(config, user);
     }
 
     @VisibleForTesting
     ImageAPI imageService() {
-        return APILocator.getDotAIAPI().getImageAPI(config, user(), APILocator.getHostAPI(), APILocator.getTempFileAPI());
+        return APILocator.getDotAIAPI().getImageAPI(config, user, APILocator.getHostAPI(), APILocator.getTempFileAPI());
     }
 
     private <P extends Object> Try<JSONObject> generate(final P prompt, final Function<P, JSONObject> serviceCall) {

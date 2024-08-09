@@ -2,8 +2,9 @@ package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.client.AIProxyClient;
+import com.dotcms.ai.domain.JSONObjectAIRequest;
 import com.dotcms.ai.model.AIImageRequestDTO;
-import com.dotcms.ai.util.OpenAIRequest;
 import com.dotcms.ai.util.OpenAiRequestUtil;
 import com.dotcms.ai.util.StopWordsUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -24,7 +25,6 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.HttpMethod;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -173,8 +173,10 @@ public class OpenAIImageAPIImpl implements ImageAPI {
     }
 
     @VisibleForTesting
-    public String doRequest(final String urlIn, final JSONObject json) {
-        return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, config, json);
+    String doRequest(final String urlIn, final JSONObject json) {
+        return AIProxyClient.get()
+                .callToAI(JSONObjectAIRequest.quickImage(config, json, user.getUserId()))
+                .getResponse();
     }
 
     @VisibleForTesting

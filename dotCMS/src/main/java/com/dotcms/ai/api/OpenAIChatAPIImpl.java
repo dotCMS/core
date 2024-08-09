@@ -3,21 +3,24 @@ package com.dotcms.ai.api;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
-import com.dotcms.ai.util.OpenAIRequest;
+import com.dotcms.ai.client.AIProxyClient;
+import com.dotcms.ai.domain.JSONObjectAIRequest;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 
-import javax.ws.rs.HttpMethod;
 import java.util.List;
 import java.util.Map;
 
 public class OpenAIChatAPIImpl implements ChatAPI {
 
     private final AppConfig config;
+    private final User user;
 
-    public OpenAIChatAPIImpl(final AppConfig appConfig) {
+    public OpenAIChatAPIImpl(final AppConfig appConfig, final User user) {
         this.config = appConfig;
+        this.user = user;
     }
 
     @Override
@@ -36,7 +39,7 @@ public class OpenAIChatAPIImpl implements ChatAPI {
 
         prompt.remove(AiKeys.PROMPT);
 
-        return new JSONObject(doRequest(config.getApiUrl(), prompt));
+        return new JSONObject(doRequest(prompt, user.getUserId()));
     }
 
     @Override
@@ -47,8 +50,8 @@ public class OpenAIChatAPIImpl implements ChatAPI {
     }
 
     @VisibleForTesting
-    public String doRequest(final String urlIn, final JSONObject json) {
-        return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, config, json);
+    String doRequest(final JSONObject json, final String userId) {
+        return AIProxyClient.get().callToAI(JSONObjectAIRequest.quickText(config, json, userId)).getResponse();
     }
 
 }
