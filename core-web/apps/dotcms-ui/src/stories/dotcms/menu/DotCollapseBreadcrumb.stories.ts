@@ -4,7 +4,6 @@ import {
     StoryObj,
     moduleMetadata,
     componentWrapperDecorator,
-    argsToTemplate,
     applicationConfig
 } from '@storybook/angular';
 
@@ -63,14 +62,6 @@ const meta: Meta<Args> = {
             description: 'Max items to display',
             control: { type: 'number' }
         }
-    },
-    render: (args: Args) => {
-        return {
-            props: {
-                ...args
-            },
-            template: `<dot-collapse-breadcrumb ${argsToTemplate(args)} />`
-        };
     }
 };
 

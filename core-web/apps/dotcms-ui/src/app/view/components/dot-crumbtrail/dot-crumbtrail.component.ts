@@ -5,7 +5,7 @@ import { Component, OnInit } from '@angular/core';
 import { DotCrumb, DotCrumbtrailService } from './service/dot-crumbtrail.service';
 @Component({
     selector: 'dot-crumbtrail',
-    templateUrl: './dot-crumbtrail.component.html',
+    template: '<p-breadcrumb [model]="crumb | async" />',
     styleUrls: ['./dot-crumbtrail.component.scss']
 })
 export class DotCrumbtrailComponent implements OnInit {
