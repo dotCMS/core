@@ -122,7 +122,7 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
     }
 
     /**
-     * Adds the default embeddings API Provider.
+     * Set the default embeddings API Provider.
      * @param embeddingsAPI
      */
     public static final void setDefaultEmbeddingsAPIProvider(final EmbeddingsAPIProvider embeddingsAPI) {
@@ -130,7 +130,23 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
     }
 
     /**
-     * Adds the default completions API provider.
+     * Set the default image API Provider.
+     * @param imageAPIProvider
+     */
+    public static final void setDefaultImageAPIProvider(final ImageAPIProvider imageAPIProvider) {
+        imageProviderMap.put(DEFAULT, imageAPIProvider);
+    }
+
+    /**
+     * Set the default chat API Provider.
+     * @param ChatAPIProvider
+     */
+    public static final void setDefaultChatAPIProvider(final ChatAPIProvider chatAPIProvider) {
+        chatProviderMap.put(DEFAULT, chatAPIProvider);
+    }
+
+    /**
+     * Adds completions API provider.
      * @param completionsAPI
      */
     public static final void addCompletionsAPIImplementation(final String apiName, final CompletionsAPIProvider completionsAPI) {
@@ -138,11 +154,27 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
     }
 
     /**
-     * Sets the default embeddings API provider.
+     * Adds default embeddings API provider.
      * @param embeddingsAPI
      */
-    public static final void addDefaultEmbeddingsAPIImplementation(final String apiName, final EmbeddingsAPIProvider embeddingsAPI) {
+    public static final void addEmbeddingsAPIImplementation(final String apiName, final EmbeddingsAPIProvider embeddingsAPI) {
         embeddingsProviderMap.put(apiName, embeddingsAPI);
+    }
+
+    /**
+     * Adds default chat API provider.
+     * @param chatAPI
+     */
+    public static final void addChatAPIImplementation(final String apiName, final ChatAPIProvider chatAPI) {
+        chatProviderMap.put(apiName, chatAPI);
+    }
+
+    /**
+     * Adds default image API provider.
+     * @param imageAPI
+     */
+    public static final void addImageAPIImplementation(final String apiName, final ImageAPIProvider imageAPI) {
+        imageProviderMap.put(apiName, imageAPI);
     }
 
     @Override

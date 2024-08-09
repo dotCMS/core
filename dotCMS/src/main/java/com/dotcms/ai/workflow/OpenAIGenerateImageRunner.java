@@ -110,13 +110,13 @@ public class OpenAIGenerateImageRunner implements Runnable {
             }
 
             final String finalPrompt = VelocityUtil.eval(prompt, ctx);
-            final ImageAPI service = APILocator.getDotAIAPI().getImageAPI(
+            final ImageAPI imageAPI = APILocator.getDotAIAPI().getImageAPI(
                     ConfigService.INSTANCE.config(host),
                     user,
                     APILocator.getHostAPI(),
                     APILocator.getTempFileAPI());
 
-            final JSONObject resp = Try.of(() -> service.sendTextPrompt(finalPrompt))
+            final JSONObject resp = Try.of(() -> imageAPI.sendTextPrompt(finalPrompt))
                     .onFailure(e -> Logger.warn(OpenAIGenerateImageRunner.class, "error generating image:" + e))
                     .getOrElse(JSONObject::new);
 
