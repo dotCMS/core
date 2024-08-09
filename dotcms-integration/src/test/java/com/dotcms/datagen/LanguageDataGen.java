@@ -1,7 +1,10 @@
 package com.dotcms.datagen;
 
+import static com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen.testLanguageExist;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 
@@ -10,12 +13,22 @@ import com.dotmarketing.util.Logger;
  */
 public class LanguageDataGen extends AbstractDataGen<Language> {
 
-    private final long currentTime = System.currentTimeMillis();
+    private String languageCode;
+    private String languageName;
+    private String countryCode;
+    private String country;
 
-    private String languageCode = org.apache.commons.lang.RandomStringUtils.randomAlphanumeric(5);
-    private String languageName = "testLanguage" + currentTime;
-    private String countryCode = "testCountryCode" + currentTime;
-    private String country = "testCountry" + currentTime;
+    private void initialize() {
+        long currentTime = System.currentTimeMillis();
+        languageCode = org.apache.commons.lang.RandomStringUtils.randomAlphanumeric(5);
+        languageName = "testLanguage" + currentTime;
+        countryCode = "testCountryCode" + currentTime;
+        country = "testCountry" + currentTime;
+    }
+
+    public LanguageDataGen() {
+        initialize();
+    }
 
     @SuppressWarnings("unused")
     public LanguageDataGen languageCode(final String languageCode) {
@@ -55,8 +68,13 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
     @WrapInTransaction
     @Override
     public Language persist(final Language language) {
+        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+        boolean languageExists = (testLanguageExist(language.getLanguageCode(), language.getCountryCode()) > 0);
+        if (languageExists) {
+            return languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode());
+        }
         try {
-            APILocator.getLanguageAPI().saveLanguage(language);
+            languageAPI.saveLanguage(language);
             return language;
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist Language.", e);
