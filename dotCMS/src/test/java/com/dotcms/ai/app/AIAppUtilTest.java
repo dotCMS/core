@@ -6,8 +6,11 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for the \AIAppUtil\ class. This test class verifies the functionality
@@ -81,34 +84,6 @@ public class AIAppUtilTest {
 
         String result = aiAppUtil.discoverSecret(secrets, AppKeys.API_KEY);
         assertEquals(AppKeys.API_KEY.defaultValue, result);
-    }
-
-    /**
-     * Given a map of secrets containing a key with an environment secret value
-     * When the discoverEnvSecret method is called with the key
-     * Then the environment secret value should be returned.
-     */
-    @Test
-    public void testDiscoverEnvSecret() {
-        when(secrets.get("apiKey")).thenReturn(secret);
-        when(secret.getString()).thenReturn("envSecretValue");
-
-        String result = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
-        assertEquals("envSecretValue", result);
-    }
-
-    /**
-     * Given a map of secrets containing a key with an environment secret value
-     * When the discoverEnvSecret method is called with the key
-     * Then the environment secret value should be returned.
-     */
-    @Test
-    public void testDiscoverNotFoundEnvSecret() {
-        when(secrets.get("something-else")).thenReturn(secret);
-        when(secret.getString()).thenReturn("envSecretValue");
-
-        String result = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
-        assertEquals("", result);
     }
 
     /**

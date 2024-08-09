@@ -1,11 +1,86 @@
 {
 	"info": {
-		"_postman_id": "7e9f91c0-35bf-4908-9f25-ba12d1dbf773",
+		"_postman_id": "914f967b-8219-4118-aece-005e7212e0d7",
 		"name": "AI",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "11174695"
 	},
 	"item": [
+		{
+			"name": "pre",
+			"item": [
+				{
+					"name": "dotAI App",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"apiUrl\": {\n    \"value\": \"http://wm:8080/c\"\n  },\n  \"apiEmbeddingsUrl\": {\n    \"value\": \"http://wm:8080/e\"\n  },\n  \"apiImageUrl\": {\n    \"value\": \"http://wm:8080/i\"\n  },\n  \"apiKey\": {\n    \"value\": \"some-api-key-1a2bc3\"\n  },\n  \"textModelNames\": {\n    \"value\": \"gpt-3.5-turbo-16k\"\n  },\n  \"imageModelNames\": {\n    \"value\": \"dall-e-3\"\n  },\n  \"embeddingsModelNames\": {\n    \"value\": \"text-embedding-ada-002\"\n  },\n  \"imageSize\": {\n    \"value\": \"1024x1024\"\n  }\n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/dotAI/SYSTEM_HOST",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"dotAI",
+								"SYSTEM_HOST"
+							]
+						},
+						"description": "This tests the endpoint that brings back one specific App/integration given the App-key followed by the site-id"
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Generative",
 			"item": [

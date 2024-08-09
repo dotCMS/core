@@ -7,7 +7,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
 
 import java.util.Map;
 import java.util.Objects;
@@ -38,6 +37,12 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
         } catch (Exception e) {
             Logger.error(DotAIAPI.class, e.getMessage(), e);
         }
+    }
+
+    private static <T> T unwrap(final Class<T> clazz, final Object... initArguments) {
+        return Objects.nonNull(initArguments)
+                && initArguments.length > 0
+                && clazz.isInstance(initArguments[0]) ? clazz.cast(initArguments[0]) : null;
     }
 
     public static class DefaultChatAPIProvider implements ChatAPIProvider {
@@ -72,38 +77,29 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
         }
     }
 
-    public static class DefaultCompletionsAPIProvider implements CompletionsAPIProvider {
+    private static class DefaultCompletionsAPIProvider implements CompletionsAPIProvider {
 
-        private final CompletionsAPI defaultCompletionAPI = new CompletionsAPIImpl(null);
         @Override
         public CompletionsAPI getCompletionsAPI(final Object... initArguments) {
-            return Objects.nonNull(initArguments) && initArguments.length > 0?
-                    new CompletionsAPIImpl(unwrap(initArguments)):
-                    defaultCompletionAPI;
+            return new CompletionsAPIImpl(unwrap(initArguments));
         }
 
-        private Lazy<AppConfig> unwrap(final Object... initArguments) {
-            return initArguments[0] instanceof AppConfig?
-                    Lazy.of (()-> (AppConfig) initArguments[0]):(Lazy<AppConfig>) initArguments[0];
+        private AppConfig unwrap(final Object... initArguments) {
+            return DotAIAPIFacadeImpl.unwrap(AppConfig.class, initArguments);
         }
     }
 
     public static class DefaultEmbeddingsAPIProvider implements EmbeddingsAPIProvider {
 
-        private final EmbeddingsAPI defaultEmbeddingsAPI = new EmbeddingsAPIImpl(null);
-
+        @Override
         public EmbeddingsAPI getEmbeddingsAPI(final Object... initArguments) {
-            return Objects.nonNull(initArguments) && initArguments.length > 0?
-                    new EmbeddingsAPIImpl(unwrap(initArguments)):
-                    defaultEmbeddingsAPI;
+            return new EmbeddingsAPIImpl(unwrap(initArguments));
         }
 
         private Host unwrap(final Object... initArguments) {
-            return initArguments[0] instanceof Host ?
-                    (Host) initArguments[0]:null;
+            return DotAIAPIFacadeImpl.unwrap(Host.class, initArguments);
         }
     }
-
 
     /**
      * Sets the current API implementation name.
@@ -139,7 +135,7 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
 
     /**
      * Set the default chat API Provider.
-     * @param ChatAPIProvider
+     * @param chatAPIProviderq
      */
     public static final void setDefaultChatAPIProvider(final ChatAPIProvider chatAPIProvider) {
         chatProviderMap.put(DEFAULT, chatAPIProvider);
