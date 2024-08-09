@@ -173,17 +173,17 @@ public class OpenAIImageAPIImpl implements ImageAPI {
     }
 
     @VisibleForTesting
-    String doRequest(final String urlIn, final JSONObject json) {
+    public String doRequest(final String urlIn, final JSONObject json) {
         return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, config, json);
     }
 
     @VisibleForTesting
-    User getUser() {
+    public User getUser() {
         return APILocator.systemUser();
     }
 
     @VisibleForTesting
-    AIImageRequestDTO.Builder getDtoBuilder() {
+    public AIImageRequestDTO.Builder getDtoBuilder() {
         return new AIImageRequestDTO.Builder();
     }
 

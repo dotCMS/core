@@ -128,12 +128,12 @@ public class AIViewTool implements ViewTool {
 
     @VisibleForTesting
     ChatAPI chatService() {
-        return new OpenAIChatAPIImpl(config);
+        return APILocator.getDotAIAPI().getChatAPI(config);
     }
 
     @VisibleForTesting
     ImageAPI imageService() {
-        return new OpenAIImageAPIImpl(config, user(), APILocator.getHostAPI(), APILocator.getTempFileAPI());
+        return APILocator.getDotAIAPI().getImageAPI(config, user(), APILocator.getHostAPI(), APILocator.getTempFileAPI());
     }
 
     private <P extends Object> Try<JSONObject> generate(final P prompt, final Function<P, JSONObject> serviceCall) {

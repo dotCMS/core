@@ -110,7 +110,7 @@ public class OpenAIGenerateImageRunner implements Runnable {
             }
 
             final String finalPrompt = VelocityUtil.eval(prompt, ctx);
-            final ImageAPI service = new OpenAIImageAPIImpl(
+            final ImageAPI service = APILocator.getDotAIAPI().getImageAPI(
                     ConfigService.INSTANCE.config(host),
                     user,
                     APILocator.getHostAPI(),

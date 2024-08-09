@@ -47,7 +47,7 @@ public class OpenAIChatAPIImpl implements ChatAPI {
     }
 
     @VisibleForTesting
-    String doRequest(final String urlIn, final JSONObject json) {
+    public String doRequest(final String urlIn, final JSONObject json) {
         return OpenAIRequest.doRequest(urlIn, HttpMethod.POST, config, json);
     }
 

@@ -113,7 +113,7 @@ public class ImageResource {
                     .build();
         }
 
-        final ImageAPI service = new OpenAIImageAPIImpl(
+        final ImageAPI service = APILocator.getDotAIAPI().getImageAPI(
                 config,
                 user,
                 APILocator.getHostAPI(),
