@@ -101,7 +101,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         if (languages.length) {
             const currentLanguage = languages.find((lang) => lang.id === languageId);
 
-            if (!currentLanguage.translated) {
+            if (!currentLanguage) {
+                return;
+            }
+
+            if (!currentLanguage?.translated) {
                 this.createNewTranslation(currentLanguage, page);
             }
         }
