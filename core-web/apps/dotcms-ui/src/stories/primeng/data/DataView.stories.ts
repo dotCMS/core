@@ -74,7 +74,7 @@ const meta: Meta<DataView> = {
             <p-dataView ${argsToTemplate(args)}>
                 <ng-template pTemplate="list" let-products>
                     <div class="grid grid-nogutter">
-                         <div class="col-12" *ngFor="let item of products; let first = first" class="col-12">
+                         <div class="col-12" *ngFor="let item of products">
                             <div class="flex flex-column sm:flex-row sm:align-items-center p-4 gap-3">
                                 <div class="md:w-10rem relative">
                                     <img class="block xl:block mx-auto border-round w-full" [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + item.image" [alt]="item.name" />

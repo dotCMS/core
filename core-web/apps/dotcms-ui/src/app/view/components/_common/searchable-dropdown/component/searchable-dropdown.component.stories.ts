@@ -124,3 +124,21 @@ export const Secondary: Story = {
         cssClass: 'd-secondary'
     }
 };
+
+export const Template: Story = {
+    args: {
+        cssClass: 'd-secondary'
+    },
+    render: (args) => {
+        return {
+            props: { ...args },
+            template: `
+            <ng-template let-data="data" #rowTemplate>
+                <div class="w-full" *ngFor="let item of data">
+                    <p>{{ item.label }} --</p>
+                </div>
+            </ng-template>
+            <dot-searchable-dropdown [externalItemListTemplate]="rowTemplate" ${argsToTemplate(args)} />`
+        };
+    }
+};
