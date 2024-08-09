@@ -194,6 +194,38 @@ public class ESSiteSearchAPITest {
         assertEquals(defIndex, indices.get(0));
     }
 
+    /**
+     * Method to test: {@link SiteSearchAPI#listIndices()}
+     * Given Scenario: Create a few SiteSearch, set one as default, delete it, Attempt to load the list.
+     * ExpectedResult: The list should load fine, a WARN message should be logged regarding Default Index not found.
+     */
+    @Test
+    public void test_listIndices_defaultIndexNotExist() throws IOException, DotDataException {
+        String timeStamp, indexName, aliasName;
+        String defIndex = "";
+
+        final int indicesAmount = 3;
+        for (int i = 0; i < indicesAmount; i++) {
+            timeStamp = String.valueOf(new Date().getTime());
+            indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
+            aliasName = "indexAlias" + "_" + timeStamp;
+
+            siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
+
+            if (i == 2){
+                //sets as default
+                siteSearchAPI.activateIndex(indexName);
+                defIndex = indexName;
+            }
+        }
+
+        //delete the default index
+        indexAPI.delete(defIndex);
+
+        //get the list of indices (previously was throwing an IndexOutOfBoundsException)
+        siteSearchAPI.listIndices();
+    }
+
 
     /**
      * Method to test: {@link SiteSearchAPI#deleteOldSiteSearchIndices()}
