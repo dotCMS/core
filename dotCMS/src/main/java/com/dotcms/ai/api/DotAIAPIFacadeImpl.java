@@ -3,9 +3,9 @@ package com.dotcms.ai.api;
 import com.dotcms.ai.app.AppConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
-import org.bouncycastle.util.Arrays;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -30,7 +30,9 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
     }
 
     private static <T> T unwrap(final Class<T> clazz, final Object... initArguments) {
-        return !Arrays.isNullOrEmpty(initArguments) && clazz.isInstance(initArguments[0]) ? clazz.cast(initArguments[0]) : null;
+        return Objects.nonNull(initArguments)
+                && initArguments.length > 0
+                && clazz.isInstance(initArguments[0]) ? clazz.cast(initArguments[0]) : null;
     }
 
     private static class DefaultCompletionsAPIProvider implements CompletionsAPIProvider {
