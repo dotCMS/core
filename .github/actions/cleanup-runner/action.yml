@@ -40,7 +40,7 @@ runs:
     - name: Cleanup Docker
       shell: bash
       run: |
-        if [[ "$RUNNER_OS" == "Linux" ]] || [[ "$RUNNER_OS" == "macOS" ]]; then
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
           echo 'Cleanup Docker'
           docker system prune -f
           docker volume prune -f

@@ -151,6 +151,7 @@ jobs:
           JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
           JRELEASER_DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
         with:
+          cleanup-runner: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           stage-name: "JReleaser"
           maven-args: "-Prelease validate -DartifactsDir=artifacts -Dm2Dir=$HOME/.m2/repository -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE"
