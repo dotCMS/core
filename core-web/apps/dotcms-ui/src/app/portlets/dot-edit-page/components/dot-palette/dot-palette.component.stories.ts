@@ -2,6 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { Injectable } from '@angular/core';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
@@ -133,7 +134,8 @@ const meta: Meta<DotPaletteComponent> = {
                 DotIconModule,
                 DotFilterPipeModule,
                 DotPaletteModule,
-                DotMessagePipe
+                DotMessagePipe,
+                BrowserAnimationsModule
             ],
             providers: [
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService },

@@ -10,7 +10,7 @@ import { DotContainersServiceMock, MockDotMessageService } from '@dotcms/utils-t
 import { DotContainerOptionsDirective } from './dot-container-options.directive';
 
 const meta: Meta<Dropdown> = {
-    title: 'Container Options Directive',
+    title: 'DotCMS/Container Options Directive',
     component: Dropdown,
     decorators: [
         moduleMetadata({
