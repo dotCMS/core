@@ -2,15 +2,18 @@ package com.dotcms.ai.app;
 
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -160,6 +163,23 @@ public class AIAppUtil {
         return Optional
                 .ofNullable(AppsUtil.discoverEnvVarValue(AppKeys.APP_KEY, key.key, null))
                 .orElse(StringPool.BLANK);
+    }
+
+    /**
+     * Resolves an environment-specific secret value from the provided secrets map using the specified key.
+     * If the secret is not found, it attempts to discover the value from environment variables.
+     * If the value is not found in the environment variables, the fallback supplier is used to provide a default value.
+     *
+     * @param secrets the map of secrets
+     * @param key the key to look up the secret
+     * @param fallback the supplier to provide a default value if the secret is not found
+     * @return the resolved environment-specific secret value or the default value provided by the fallback supplier
+     */
+    public String discoverEnvSecretFallback(final Map<String, Secret> secrets,
+                                            final AppKeys key,
+                                            final Supplier<String> fallback) {
+        final String url = AIAppUtil.get().discoverEnvSecret(secrets, key);
+        return StringUtils.isNotBlank(url) ? url : fallback.get();
     }
 
     private int toInt(final String value) {
