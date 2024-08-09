@@ -28,7 +28,7 @@
 .workflow-column__description {
     color: $black;
     height: 32px;
-    font-size: $font-size-smd;
+    font-size: $font-size-sm;
     line-height: $line-height;
     width: 100%;
     @include truncate-text;

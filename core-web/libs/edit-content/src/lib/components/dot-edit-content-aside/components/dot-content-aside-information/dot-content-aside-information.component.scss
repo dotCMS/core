@@ -49,7 +49,7 @@
         display: flex;
         justify-content: space-between;
         color: $black;
-        font-size: $font-size-smd;
+        font-size: $font-size-sm;
         font-weight: $font-weight-medium-bold;
         line-height: $line-height-relative;
         width: 100%;
@@ -61,7 +61,7 @@
 
     .sidebar-card__label {
         color: $color-palette-gray-800;
-        font-size: $font-size-smd;
+        font-size: $font-size-sm;
         font-weight: $font-weight-regular-bold;
         line-height: $line-height-relative;
     }
@@ -117,21 +117,21 @@
 
     .content-history__title {
         color: $black;
-        font-size: $font-size-smd;
+        font-size: $font-size-sm;
         font-weight: $font-weight-medium-bold;
         line-height: $line-height-relative;
     }
 
     .content-history__author {
         color: $color-palette-gray-800;
-        font-size: $font-size-smd;
+        font-size: $font-size-sm;
         font-weight: $font-weight-regular-bold;
         line-height: $line-height-relative;
     }
 
     .content-history__date {
         color: $color-palette-gray-700;
-        font-size: $font-size-xsm;
+        font-size: $font-size-xs;
         font-weight: $font-weight-regular-bold;
         line-height: $line-height-relative;
     }

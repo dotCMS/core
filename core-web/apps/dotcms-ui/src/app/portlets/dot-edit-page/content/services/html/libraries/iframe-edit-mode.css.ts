@@ -6,6 +6,16 @@ const mdShadow3 = '0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23
 const white = '#fff';
 const grayLight = '#c5c5c5';
 
+// Font sizes
+// Body font sizes
+const fontSizeSm = '0.75rem'; // 12px
+const fontSizeXs = '0.625rem'; // 10px
+
+// Font weights
+const fontWeightRegular = 400;
+const fontWeightSemiBold = 500;
+const fontWeightBold = 700;
+
 export const getEditPageCss = (
     timestampId: string,
     origin: string = window.location.origin
@@ -16,7 +26,7 @@ export const getEditPageCss = (
     @font-face {
         font-family: 'Assistant';
         font-style: normal;
-        font-weight: 400;
+        font-weight: ${fontWeightRegular};
         font-display: swap;
         src: local(''),
         url('${origin}/dotAdmin/assets/Assistant-Regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
@@ -26,7 +36,7 @@ export const getEditPageCss = (
     @font-face {
         font-family: 'Assistant';
         font-style: normal;
-        font-weight: 500;
+        font-weight: ${fontWeightSemiBold};
         font-display: swap;
         src: local(''),
         url('${origin}/dotAdmin/assets/Assistant-SemiBold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
@@ -36,7 +46,7 @@ export const getEditPageCss = (
     @font-face {
         font-family: 'Assistant';
         font-style: normal;
-        font-weight: 700;
+        font-weight: ${fontWeightBold};
         font-display: swap;
         src: local(''),
         url('${origin}/dotAdmin/assets/Assistant-Bold.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
@@ -90,7 +100,7 @@ export const getEditPageCss = (
         margin: 0 !important;
         border: solid 1px #53c2f9;
         padding: 1rem !important;
-        background: #FFF !important;
+        background: ${white} !important;
         color: #444 !important;
         height: auto !important;
         min-height: auto !important;
@@ -272,10 +282,10 @@ export const getEditPageCss = (
 
     ${timestampId} .dotedit-menu__list {
         color: #000 !important;
-        background-color: #ffffff !important;
+        background-color: ${white} !important;
         box-shadow: ${mdShadow1} !important;
         font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif !important;
-        font-size: 13px !important;
+        font-size: 0.8125rem !important;
         list-style: none !important;
         margin: 0 !important;
         min-width: 100px !important;
@@ -317,8 +327,8 @@ export const getEditPageCss = (
         position: absolute !important;
         top: 4px !important;
         background: rgba(0,0,0,.7);
-        font-size: 12px;
-        color: #fff;
+        font-size: ${fontSizeSm};
+        color: ${white};
         padding: 4px;
         border-radius: 3px;
         margin-right: 4px;
@@ -356,7 +366,7 @@ export const getEditPageCss = (
         border-right: solid 5px var(--color-palette-secondary-op-20) !important;
         border-top: solid 5px var(--color-palette-secondary-op-20) !important;
         display: inline-block !important;
-        font-size: 10px !important;
+        font-size: ${fontSizeXs} !important;
         overflow: hidden !important;
         position: relative !important;
         text-indent: -9999em !important;

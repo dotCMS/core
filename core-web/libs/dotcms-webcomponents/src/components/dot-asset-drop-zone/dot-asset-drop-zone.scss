@@ -1,5 +1,6 @@
 @import "../../global/variables";
 @import "../../../../dotcms-scss/shared/colors";
+@import "../../../../dotcms-scss/shared/fonts";
 
 dot-asset-drop-zone {
     .dot-asset-drop-zone__indicators {
@@ -48,7 +49,7 @@ dot-asset-drop-zone {
                 display: block;
                 color: $color-palette-secondary-500;
                 margin-top: -20px;
-                font-size: 20px;
+                font-size: $font-size-lmd;
                 text-align: center;
             }
         }
@@ -58,7 +59,7 @@ dot-asset-drop-zone {
             display: none;
 
             span {
-                font-size: 16px;
+                font-size: $font-size-md;
             }
         }
     }

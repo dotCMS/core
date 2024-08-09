@@ -1,3 +1,4 @@
+@use "variables" as *;
 h1,
 h2,
 h3,
@@ -8,23 +9,23 @@ h5 {
 }
 
 h1 {
-    font-size: 4.28rem;
+    font-size: $font-size-xxxl;
     letter-spacing: -0.5px;
 }
 
 h2 {
-    font-size: 3.43rem;
+    font-size: $font-size-xxl;
 }
 
 h3 {
-    font-size: 2.43rem;
+    font-size: $font-size-xl;
     letter-spacing: 0.25px;
 }
 
 h4 {
-    font-size: 1.71rem;
+    font-size: $font-size-lg;
 }
 
 h5 {
-    font-size: 1.43rem;
+    font-size: $font-size-lmd;
 }

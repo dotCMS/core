@@ -38,7 +38,7 @@ p-inputSwitch {
             @include md-icon;
             color: $color-palette-primary;
             content: "lock_open";
-            font-size: 13px;
+            font-size: $font-size-sm;
             left: 4px;
             position: absolute;
             text-rendering: auto;
