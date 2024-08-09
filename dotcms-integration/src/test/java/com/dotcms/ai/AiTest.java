@@ -6,11 +6,11 @@ import com.dotcms.security.apps.Secret;
 import com.dotcms.util.WireMockTestHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.github.tomakehurst.wiremock.WireMockServer;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public interface AiTest {
 
@@ -31,55 +31,56 @@ public interface AiTest {
         return wireMockServer;
     }
 
-    static Map<String, Secret> aiAppSecrets(final WireMockServer wireMockServer,
-                                            final Host host,
+    static Map<String, Secret> aiAppSecrets(final Host host,
                                             final String apiKey,
                                             final String textModels,
                                             final String imageModels,
-                                            final String embeddingsModel)
-            throws DotDataException, DotSecurityException {
-        final AppSecrets appSecrets = new AppSecrets.Builder()
+                                            final String embeddingsModel) throws Exception {
+        final AppSecrets.Builder builder = new AppSecrets.Builder()
                 .withKey(AppKeys.APP_KEY)
-                .withSecret(AppKeys.API_URL.key, String.format(API_URL, wireMockServer.port()))
-                .withSecret(AppKeys.API_IMAGE_URL.key, String.format(API_IMAGE_URL, wireMockServer.port()))
-                .withSecret(AppKeys.API_EMBEDDINGS_URL.key, String.format(API_EMBEDDINGS_URL, wireMockServer.port()))
+                .withSecret(AppKeys.API_URL.key, String.format(API_URL, PORT))
+                .withSecret(AppKeys.API_IMAGE_URL.key, String.format(API_IMAGE_URL, PORT))
+                .withSecret(AppKeys.API_EMBEDDINGS_URL.key, String.format(API_EMBEDDINGS_URL, PORT))
                 .withHiddenSecret(AppKeys.API_KEY.key, apiKey)
-                .withSecret(AppKeys.TEXT_MODEL_NAMES.key, textModels)
-                .withSecret(AppKeys.IMAGE_MODEL_NAMES.key, imageModels)
-                .withSecret(AppKeys.EMBEDDINGS_MODEL_NAMES.key, embeddingsModel)
                 .withSecret(AppKeys.IMAGE_SIZE.key, IMAGE_SIZE)
                 .withSecret(AppKeys.LISTENER_INDEXER.key, "{\"default\":\"blog\"}")
                 .withSecret(AppKeys.COMPLETION_ROLE_PROMPT.key, AppKeys.COMPLETION_ROLE_PROMPT.defaultValue)
-                .withSecret(AppKeys.COMPLETION_TEXT_PROMPT.key, AppKeys.COMPLETION_TEXT_PROMPT.defaultValue)
-                .build();
+                .withSecret(AppKeys.COMPLETION_TEXT_PROMPT.key, AppKeys.COMPLETION_TEXT_PROMPT.defaultValue);
+
+        if (Objects.nonNull(textModels)) {
+            builder.withSecret(AppKeys.TEXT_MODEL_NAMES.key, textModels);
+        }
+        if (Objects.nonNull(imageModels)) {
+            builder.withSecret(AppKeys.IMAGE_MODEL_NAMES.key, imageModels);
+        }
+        if (Objects.nonNull(embeddingsModel)) {
+            builder.withSecret(AppKeys.EMBEDDINGS_MODEL_NAMES.key, embeddingsModel);
+        }
+
+        final AppSecrets appSecrets = builder.build();
         APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
+        TimeUnit.SECONDS.sleep(1);
         return appSecrets.getSecrets();
     }
 
-    static Map<String, Secret> aiAppSecrets(final WireMockServer wireMockServer,
-                                            final Host host,
-                                            final String apiKey)
-            throws DotDataException, DotSecurityException {
-        return aiAppSecrets(wireMockServer, host, apiKey, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
+    static Map<String, Secret> aiAppSecrets(final Host host, final String apiKey) throws Exception {
+        return aiAppSecrets(host, apiKey, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
     }
 
-    static Map<String, Secret> aiAppSecrets(final WireMockServer wireMockServer,
-                                            final Host host,
+    static Map<String, Secret> aiAppSecrets(final Host host,
                                             final String textModels,
                                             final String imageModels,
-                                            final String embeddingsModel)
-            throws DotDataException, DotSecurityException {
-        return aiAppSecrets(wireMockServer, host, API_KEY, textModels, imageModels, embeddingsModel);
+                                            final String embeddingsModel) throws Exception {
+        return aiAppSecrets(host, API_KEY, textModels, imageModels, embeddingsModel);
     }
 
-    static Map<String, Secret> aiAppSecrets(final WireMockServer wireMockServer, final Host host)
-            throws DotDataException, DotSecurityException {
+    static Map<String, Secret> aiAppSecrets(final Host host) throws Exception {
 
-        return aiAppSecrets(wireMockServer, host, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
+        return aiAppSecrets(host, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
     }
 
-    static void removeSecrets(final Host host) throws DotDataException, DotSecurityException {
-        APILocator.getAppsAPI().removeSecretsForSite(host, APILocator.systemUser());
+    static void removeAiAppSecrets(final Host host) throws Exception {
+        APILocator.getAppsAPI().deleteSecrets(AppKeys.APP_KEY, host, APILocator.systemUser());
     }
 
 }

@@ -3,6 +3,7 @@ package com.dotcms.ai.listener;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.db.EmbeddingsDTO;
+import com.dotcms.ai.exception.DotAIAppConfigDisabledException;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
@@ -10,7 +11,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.util.Logger;
@@ -86,7 +86,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
             AppConfig.debugLogger(
                     getClass(),
                     () -> "dotAI is not enabled since no API urls or API key found in app config");
-            throw new DotRuntimeException("App dotAI config without API urls or API key");
+            throw new DotAIAppConfigDisabledException("App dotAI config without API urls or API key");
         }
 
         return appConfig;

@@ -53,7 +53,8 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
         @Override
         public ChatAPI getChatAPI(final Object... initArguments) {
             if (Objects.nonNull(initArguments) && initArguments.length > 0 && initArguments[0] instanceof AppConfig) {
-                return new OpenAIChatAPIImpl((AppConfig) initArguments[0]);
+                final User user = initArguments.length > 1 && initArguments[1] instanceof User ? (User) initArguments[1] : null;
+                return new OpenAIChatAPIImpl((AppConfig) initArguments[0], user);
             }
 
             throw new IllegalArgumentException("To create a ChatAPI you need to provide an AppConfig");

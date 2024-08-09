@@ -10,6 +10,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -56,7 +57,7 @@ public class TextResource {
      *
      * @param request the HTTP request
      * @param response the HTTP response
-     * @param formIn the form data containing the prompt
+     * @param form the form data containing the prompt
      * @return a Response object containing the generated text
      * @throws IOException if an I/O error occurs
      */
@@ -65,13 +66,14 @@ public class TextResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response doPost(@Context final HttpServletRequest request,
                            @Context final HttpServletResponse response,
-                           final CompletionsForm formIn) throws IOException {
+                           final CompletionsForm form) throws IOException {
 
-        new WebResource.InitBuilder(request, response)
+        final User user = new WebResource.InitBuilder(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(true)
                 .init()
                 .getUser();
+        final CompletionsForm formIn = CompletionsForm.copy(form).user(user).build();
 
         if (UtilMethods.isEmpty(formIn.prompt)) {
             return Response
@@ -82,7 +84,12 @@ public class TextResource {
 
         final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
 
-        return Response.ok(APILocator.getDotAIAPI().getCompletionsAPI().raw(generateRequest(formIn, config)).toString()).build();
+        return Response.ok(
+                APILocator.getDotAIAPI()
+                        .getCompletionsAPI()
+                        .raw(generateRequest(formIn, config), user.getUserId())
+                        .toString())
+                .build();
     }
 
     /**
@@ -93,12 +100,12 @@ public class TextResource {
      * @return a JSONObject representing the request
      */
     private JSONObject generateRequest(final CompletionsForm form, final AppConfig config) {
-        final String systemPrompt = UtilMethods.isSet(config.getRolePrompt()) ? config.getRolePrompt() : null;
         final String model = form.model;
         final float temperature = form.temperature;
         final JSONObject request = new JSONObject();
         final JSONArray messages = new JSONArray();
 
+        final String systemPrompt = UtilMethods.isSet(config.getRolePrompt()) ? config.getRolePrompt() : null;
         if (UtilMethods.isSet(systemPrompt)) {
             messages.add(Map.of(AiKeys.ROLE, AiKeys.SYSTEM, AiKeys.CONTENT, systemPrompt));
         }

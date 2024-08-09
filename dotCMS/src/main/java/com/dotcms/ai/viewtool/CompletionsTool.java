@@ -9,6 +9,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -24,14 +26,18 @@ import java.util.Map;
  */
 public class CompletionsTool implements ViewTool {
 
+    private final ViewContext context;
     private final HttpServletRequest request;
     private final Host host;
     private final AppConfig config;
+    private final User user;
 
     CompletionsTool(Object initData) {
-        this.request = ((ViewContext) initData).getRequest();
+        this.context = (ViewContext) initData;
+        this.request = this.context.getRequest();
         this.host = host();
         this.config = config();
+        this.user = user();
     }
 
     @Override
@@ -69,7 +75,11 @@ public class CompletionsTool implements ViewTool {
      * @return The summarized object.
      */
     public Object summarize(final String prompt, final String indexName) {
-        final CompletionsForm form = new CompletionsForm.Builder().indexName(indexName).prompt(prompt).build();
+        final CompletionsForm form = new CompletionsForm.Builder()
+                .indexName(indexName)
+                .prompt(prompt)
+                .user(user)
+                .build();
         try {
             return APILocator.getDotAIAPI().getCompletionsAPI(config).summarize(form);
         } catch (Exception e) {
@@ -112,7 +122,7 @@ public class CompletionsTool implements ViewTool {
      */
     public Object raw(final JSONObject prompt) {
         try {
-            return APILocator.getDotAIAPI().getCompletionsAPI(config).raw(prompt);
+            return APILocator.getDotAIAPI().getCompletionsAPI(config).raw(prompt, user.getUserId());
         } catch (Exception e) {
             return handleException(e);
         }
@@ -139,6 +149,11 @@ public class CompletionsTool implements ViewTool {
     @VisibleForTesting
     AppConfig config() {
         return ConfigService.INSTANCE.config(this.host);
+    }
+
+    @VisibleForTesting
+    User user() {
+        return PortalUtil.getUser(context.getRequest());
     }
 
 }

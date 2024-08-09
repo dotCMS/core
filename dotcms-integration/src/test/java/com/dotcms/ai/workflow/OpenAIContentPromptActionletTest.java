@@ -89,7 +89,7 @@ public class OpenAIContentPromptActionletTest {
             }
 
             @Override
-            public JSONObject raw(final JSONObject promptJSON) {
+            public JSONObject raw(final JSONObject promptJSON, final String userId) {
                 return new JSONObject("{\n" +
                         "  \"id\": \"chatcmpl-7bHkIY2cNQXV3yWZmZ1lM1b4AIlJ6\",\n" +
                         "  \"object\": \"chat.completion\",\n" +
@@ -126,7 +126,8 @@ public class OpenAIContentPromptActionletTest {
                                      final String userPrompt,
                                      final String model,
                                      final float temperature,
-                                     final int maxTokens) {
+                                     final int maxTokens,
+                                     final String userId) {
                 return new JSONObject("{\n" +
                         "  \"id\": \"chatcmpl-7bHkIY2cNQXV3yWZmZ1lM1b4AIlJ6\",\n" +
                         "  \"object\": \"chat.completion\",\n" +

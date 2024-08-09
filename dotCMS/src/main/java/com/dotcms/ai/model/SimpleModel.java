@@ -17,16 +17,20 @@ public class SimpleModel implements Serializable {
 
     private final String name;
     private final AIModelType type;
+    private final boolean current;
 
     @JsonCreator
-    public SimpleModel(@JsonProperty("name") final String name, @JsonProperty("type") final AIModelType type) {
+    public SimpleModel(@JsonProperty("name") final String name,
+                       @JsonProperty("type") final AIModelType type,
+                       @JsonProperty("current") final boolean current) {
         this.name = name;
         this.type = type;
+        this.current = current;
     }
 
     @JsonCreator
     public SimpleModel(@JsonProperty("name") final String name) {
-        this(name, null);
+        this(name, null, false);
     }
 
     public String getName() {
@@ -37,17 +41,30 @@ public class SimpleModel implements Serializable {
         return type;
     }
 
+    public boolean isCurrent() {
+        return current;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SimpleModel that = (SimpleModel) o;
-        return Objects.equals(name, that.name);
+        return Objects.equals(name, that.name) && type == that.type;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(name);
+        return Objects.hash(name, type);
+    }
+
+    @Override
+    public String toString() {
+        return "SimpleModel{" +
+                "name='" + name + '\'' +
+                ", type=" + type +
+                ", current=" + current +
+                '}';
     }
 
 }
