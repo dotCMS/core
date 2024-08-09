@@ -8,7 +8,7 @@ function ImageComponent({ fileAsset, title, description }) {
                     <Image
                         src={fileAsset?.idPath ?? fileAsset}
                         fill={true}
-                        className="object-cover"
+                        className="object-cover w-full h-full"
                         alt={title}
                     />
                 )}

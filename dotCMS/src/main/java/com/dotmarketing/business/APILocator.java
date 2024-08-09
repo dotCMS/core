@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.ai.api.DotAIAPI;
+import com.dotcms.ai.api.DotAIAPIFacadeImpl;
 import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.AnalyticsAPIImpl;
 import com.dotcms.analytics.bayesian.BayesianAPI;
@@ -267,6 +269,16 @@ public class APILocator extends Locator<APIIndex> {
      */
 	public static SecurityLoggerServiceAPI getSecurityLogger() {
 		return (SecurityLoggerServiceAPI)getInstance(APIIndex.SECURITY_LOGGER_API);
+	}
+
+	/**
+	 * Creates a single instance of the {@link DotAIAPI} class.
+	 *
+	 * @return The {@link DotAIAPI} class.
+	 */
+	public static DotAIAPI getDotAIAPI() {
+
+		return  (DotAIAPI)getInstance(APIIndex.ARTIFICIAL_INTELLIGENCE_API);
 	}
 
 	/**
@@ -1297,6 +1309,7 @@ enum APIIndex
 	DETERMINISTIC_IDENTIFIER_API,
 	CONTENTLET_JSON_API,
 	STORY_BLOCK_API,
+	ARTIFICIAL_INTELLIGENCE_API,
 	VARIANT_API,
 	EXPERIMENTS_API,
 	BAYESIAN_API,
@@ -1394,6 +1407,7 @@ enum APIIndex
 			case ANALYTICS_API: return new AnalyticsAPIImpl();
 			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
 			case SYSTEM_API: return new SystemAPIImpl();
+			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

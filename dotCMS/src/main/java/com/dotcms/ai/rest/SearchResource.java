@@ -1,7 +1,6 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.ContentToStringUtil;
@@ -22,7 +21,12 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -123,7 +127,7 @@ public class SearchResource {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(form).withUser(user).build();
 
         return Response.ok(
-                EmbeddingsAPI.impl().searchForContent(searcher).toString(),
+                APILocator.getDotAIAPI().getEmbeddingsAPI().searchForContent(searcher).toString(),
                 MediaType.APPLICATION_JSON).build();
     }
 
@@ -232,7 +236,7 @@ public class SearchResource {
                 .build();
 
         return Response
-                .ok(EmbeddingsAPI.impl(host).searchForContent(searcher).toString(), MediaType.APPLICATION_JSON)
+                .ok(APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher).toString(), MediaType.APPLICATION_JSON)
                 .build();
     }
 

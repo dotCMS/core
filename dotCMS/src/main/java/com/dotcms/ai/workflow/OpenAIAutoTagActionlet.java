@@ -60,8 +60,7 @@ public class OpenAIAutoTagActionlet extends WorkFlowActionlet {
     public void executeAction(final WorkflowProcessor processor,
                               final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-        final  Runnable task = new OpenAIAutoTagRunner(processor, params);
-        task.run();
+        new OpenAIAutoTagRunner(processor, params).run();
     }
 
 
