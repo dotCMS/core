@@ -4,14 +4,38 @@ This document provides an overview of the CI/CD process for dotCMS, explaining t
 
 ## Table of Contents
 
-1. [Overall Structure](#overall-structure)
-2. [Top-Level Workflows](#top-level-workflows)
-3. [Reusable Workflow Phases](#reusable-workflow-phases)
-4. [Custom Actions](#custom-actions)
-5. [Caching and Artifacts](#caching-and-artifacts)
-6. [Parallel Execution](#parallel-execution)
-7. [PR Verification Process](#pr-verification-process)
-8. [Benefits of Our Approach](#benefits-of-our-approach)
+1.  [File Structure](#file-structure)
+2.  [Important info and Best Practices](#important-info-and-best-practices)
+3.  [Overall Structure](#overall-structure)
+4.  [Top-Level Workflows](#top-level-workflows)
+5.  [Reusable Workflow Phases](#reusable-workflow-phases)
+6.  [Custom Actions](#custom-actions)
+7.  [Caching and Artifacts](#caching-and-artifacts)
+8.  [Parallel Execution](#parallel-execution)
+9.  [PR Verification Process](#pr-verification-process)
+10. [Benefits of Our Approach](#benefits-of-our-approach)
+
+## File structure
+
+Github only allows workflows, including reusable workflows (workflow components) to be placed into the .github/workflows directory.
+Any subfolders are ignored.   When there are many files such as we have this can get large and difficult to understand and maintain.
+As such we will use a folder like naming convention to help organize and sort the workflow files.  
+Each element "folder" will be separated by an underscore allowing for a simple hierarchy to be encoded.
+eg.  cicd/comp/build-phase.yml will be represented as cicd_comp_build-phase.yml
+
+The main initial workflows are using a numerical prefix to order these in the order a PR goes through these.
+Also we are using a prefix here in the workflow name e.g. "-1 PR Check".  Although Github has now introduced the 
+ability to bookmark a few workflows in the UI listing, these are not manually sorted and all other workflows are alphanumerically sorted
+using the "-" followed by an index ensures these are at the top of the list and easy to find.
+
+The actions are not restricted and we use subfolders for these.
+
+## Important info and Best Practices
+
+- **Secrets**: Secrets should be stored in GitHub Secrets and accessed using the `${{ secrets.SECRET_NAME }}` syntax.
+- The PR workflow is run before any code is reviewed and should not use secrets. Secrets will also not be available if run on a fork
+- The exact name of the first Job "Initialize / Initialize" and the last job "Finalize / Final Status" is important for the PR and merge-queue workflows as the completion state of these indicate the start and success or failure of the workflow to the Checks.  Changing these may result in the Checks to wait until time out.
+- Try not to create new workflows where there already is one for the same trigger, handle all functionality for that trigger in the same place, make use of expanding on the new cicd process to take advantage of its features before creating a whole new flow. 
 
 ## Overall Structure
 
@@ -134,7 +158,7 @@ Before Nightly run                       After Nightly Promote Step
 nightly:    PR1A                             PR1A--PR2B--PR3B--PR4B
              |                                |     |     |     |
 master:   --PR1---PR2---PR3---PR4     run: --PR1---PR2---PR3---PR4
-
+```
 The commits into nightly are not the exact same commit sha as the parent on master
 The change between the two is determanistic and repreducable.  We only add a ./mvn/maven.config containing the release version to embed and build with by default
 We also provide the original SHA to link back to the source commit on master.  
@@ -144,10 +168,34 @@ We do not pick and choose individual PRS to sync up,  by default we would pull a
 be a reason to select a previous commit but must always be a commit between what is already merged and the HEAD and will contain all the commits and changes inbetween. 
 The only difference will be the change in release number assigned to the commits which will help us with change logs.
 
+**Example flow of PR through to Release**
+
+```text
 
 
+x indicates a promotion with version change
+
+
+release         PR1a--PR2b--PR3b--PR4b--PR5b--PR6b
+                 |x    |     |    |     |     |x
+rc              PR1A--PR2B--PR3B--PR4B--PR5C--PR6C--PR7D
+                 |x    |     |     |x    |     |x    |x
+master    run: --PR1---PR2---PR3---PR4---PR5---PR6---PR7---PR8
+
+1. PR1 promoted to Release Candidate and RC testing occurs on PR1A  rc-A
+2. PR1A tested and approved for release with new release version.   Release A
+    In the meantime PR2 and PR3 have been added to master and have no impact on RC branch 
+3. PR4 promoted to RC as version B and PR4B tested while PR5 is added to master. RC-B PR2B,PR3B,PR4B included
+4. PR4B is not approved for release, PR6 adds a fix is promoted to RC as version C
+5. PR6C is approved for release and promoted to release.
 ```
+Notes:
 
+* RC can set build to a version that indicates it is a release candidate e.g. x.x.x-rc requring the release 
+version to be set on promotion to release, or it could be set with the final release number, in this case it must be
+deployed to a staging deployment area and then the release promotion just moves the artifacts to the final destination.
+This prevents the need for a new build of artifacts on release.
+* A promotion could always require a new version, or it could retain the same version e.g. to maintain the intended next version number we want to release. In this case we should still maintain an internal build number to distinguish when the PR related to that version has been updated
 
 
 ## Benefits of Our Approach
