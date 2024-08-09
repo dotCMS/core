@@ -89,6 +89,7 @@ import graphql.schema.GraphQLSchema;
 import io.vavr.Tuple2;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BiFunction;
@@ -533,6 +534,29 @@ public class GraphqlAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Given Scenario: Generate a graphQL Schema and validate the field definitions.
+     * <p>
+     * ExpectedResult: Field definitions are not duplicated.
+     */
+    @Test
+    public void testGetSchema_Validate_No_Duplicated_Fields() throws DotDataException {
+
+        final GraphqlAPI api = APILocator.getGraphqlAPI();
+
+        final GraphQLSchema schema = api.getSchema();
+        final var fieldDefinitions = schema.getQueryType().getFieldDefinitions();
+
+        var fieldNames = new HashSet<String>();
+        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
+            assertFalse(
+                    String.format("Found duplicated field in graphQL Scheme [%s]",
+                            fieldDefinition.getName()),
+                    fieldNames.contains(fieldDefinition.getName().toLowerCase())
+            );
+            fieldNames.add(fieldDefinition.getName().toLowerCase());
+        }
+    }
 
     @UseDataProvider("fieldTestCases")
     @Test
