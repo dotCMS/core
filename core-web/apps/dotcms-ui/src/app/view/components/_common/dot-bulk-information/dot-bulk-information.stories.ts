@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, componentWrapperDecorator, StoryObj } from '@storybook/angular';
 
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -16,8 +16,9 @@ const messageServiceMock = new MockDotMessageService({
     'message.template.plural': 'templates'
 });
 
-export default {
+const meta: Meta<DotBulkInformationComponent> = {
     title: 'DotCMS/Misc/BulkDialog',
+    component: DotBulkInformationComponent,
     decorators: [
         moduleMetadata({
             imports: [DotMessagePipe],
@@ -59,15 +60,9 @@ export default {
                 }
             ],
             declarations: [DotBulkInformationComponent]
-        })
-    ],
-    component: DotBulkInformationComponent,
-    args: {}
-} as Meta;
-
-const container = (child) => {
-    return `
-    <div style="
+        }),
+        componentWrapperDecorator(
+            (story) => `<div style="
       background: white;
       padding: 2rem;
       width: 500px; 
@@ -77,15 +72,16 @@ const container = (child) => {
       border: 1px solid #eee;
       " 
     >
-      ${child}
-    </div>`;
+      ${story}
+    </div>`
+        )
+    ],
+    args: {}
 };
+export default meta;
 
-export const Basic: Story = (props) => {
-    return {
-        template: `
-          ${container(`<dot-bulk-information></dot-bulk-information>`)}
-        `,
-        props
-    };
+type Story = StoryObj<DotBulkInformationComponent>;
+
+export const Basic: Story = {
+    args: {}
 };

@@ -1,5 +1,18 @@
 @use "variables" as *;
 
+.p-breadcrumb {
+    border: 0 none;
+    padding: $spacing-3 0;
+}
+
+.p-breadcrumb .p-breadcrumb-list li:first-child .p-menuitem-link .p-menuitem-text {
+    color: $black;
+}
+
+.p-breadcrumb .p-breadcrumb-list li .p-menuitem-link .p-menuitem-text {
+    color: $color-palette-gray-700;
+}
+
 .p-breadcrumb ul li .p-menuitem-link {
     transition: none;
     border-radius: $border-radius-xs;
@@ -20,19 +33,30 @@
     }
 }
 
-.p-breadcrumb ul li .p-menuitem-link .p-menuitem-text {
-    color: $color-palette-gray-700;
-}
-
-.p-breadcrumb ul li .p-menuitem-link .p-menuitem-icon {
+.p-breadcrumb .p-breadcrumb-list li .p-menuitem-link .p-menuitem-icon {
     color: $black;
 }
 
-.p-breadcrumb ul li.p-breadcrumb-chevron {
+.p-breadcrumb .p-breadcrumb-list li.p-menuitem-separator {
     margin: 0 $spacing-1 0 $spacing-1;
     color: $black;
 }
 
-.p-breadcrumb ul li:last-child .p-menuitem-icon {
-    color: $black;
+.p-breadcrumb .p-breadcrumb-list li:last-child .p-menuitem-text {
+    color: $color-palette-gray-700;
+}
+
+.p-breadcrumb .p-breadcrumb-list li:nth-child(2) {
+    &:before {
+        content: "";
+        width: 1px;
+        height: 20px;
+        background: $color-palette-gray-500;
+        display: block;
+        margin: 0 $spacing-1;
+    }
+
+    .p-icon-wrapper {
+        display: none;
+    }
 }

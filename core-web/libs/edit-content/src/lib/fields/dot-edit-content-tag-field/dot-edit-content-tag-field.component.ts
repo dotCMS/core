@@ -1,13 +1,12 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
 import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotSelectItemDirective } from '@dotcms/ui';
 
 import { AutoCompleteCompleteEvent } from '../../models/dot-edit-content-tag.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
@@ -15,7 +14,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 @Component({
     selector: 'dot-edit-content-tag-field',
     standalone: true,
-    imports: [CommonModule, AutoCompleteModule, DotSelectItemDirective, ReactiveFormsModule],
+    imports: [CommonModule, AutoCompleteModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-tag-field.component.html',
     styleUrls: ['./dot-edit-content-tag-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,11 +27,17 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 })
 export class DotEditContentTagFieldComponent {
     @Input() field: DotCMSContentTypeField;
-
+    options$!: Observable<string[]>;
     private readonly editContentService = inject(DotEditContentService);
     private readonly controlContainer = inject(ControlContainer);
 
-    options$!: Observable<string[]>;
+    /**
+     * Returns the form control for the select field.
+     * @returns {AbstractControl} The form control for the select field.
+     */
+    get formControl() {
+        return this.controlContainer.control.get(this.field.variable) as AbstractControl<string>;
+    }
 
     /**
      * Retrieves tags based on the provided query.
@@ -44,13 +49,5 @@ export class DotEditContentTagFieldComponent {
         }
 
         this.options$ = this.editContentService.getTags(query);
-    }
-
-    /**
-     * Returns the form control for the select field.
-     * @returns {AbstractControl} The form control for the select field.
-     */
-    get formControl() {
-        return this.controlContainer.control.get(this.field.variable) as AbstractControl<string>;
     }
 }

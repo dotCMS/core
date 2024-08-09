@@ -1,10 +1,11 @@
 /* eslint-disable no-console */
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { DotEmptyStateComponent } from './dot-empty-state.component';
 import { DotEmptyStateModule } from './dot-empty-state.module';
 
 const messageServiceMock = new MockDotMessageService({
@@ -14,7 +15,7 @@ const messageServiceMock = new MockDotMessageService({
     'message.template.empty.button.label': 'Add New Template'
 });
 
-export default {
+const meta: Meta<DotEmptyStateComponent> = {
     title: 'DotCMS/Structure/Empty State',
     decorators: [
         moduleMetadata({
@@ -26,35 +27,27 @@ export default {
         docs: {}
     },
     args: {
-        handleButtonClick: () => {
-            console.log('button click');
-        }
+        rows: 10,
+        colsTextWidth: [60, 50, 60, 80],
+        icon: 'web',
+        title: 'Your template list is empty',
+        content: "You haven't added anything yet, start by clicking the button below",
+        buttonLabel: 'Add New Template'
+    },
+    render: (args) => {
+        return {
+            props: {
+                ...args,
+                buttonClick: () => console.log('Button clicked')
+            },
+            template: `<dot-empty-state (buttonClick)="buttonClick" ${argsToTemplate(args)} />`
+        };
     }
-} as Meta;
-
-const PrimaryTemplate = `
-    <dot-empty-state
-        [rows]="10"
-        [colsTextWidth]="[60, 50, 60, 80]"
-        icon="web"
-        [title]="'message.template.empty.title' | dm"
-        [content]="'message.template.empty.content' | dm"
-        [buttonLabel]="'message.template.empty.button.label' | dm"
-        (buttonClick)="handleButtonClick()"
-    >
-    </dot-empty-state>
-`;
-
-export const Primary: Story = () => {
-    return {
-        template: PrimaryTemplate
-    };
 };
+export default meta;
 
-Primary.parameters = {
-    docs: {
-        source: {
-            code: PrimaryTemplate
-        }
-    }
+type Story = StoryObj<DotEmptyStateComponent>;
+
+export const Primary: Story = {
+    args: {}
 };
