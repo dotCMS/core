@@ -50,8 +50,8 @@ const data = [
         quantity: 25,
         inventoryStatus: 'INSTOCK',
         rating: 5
-    },
-]
+    }
+];
 
 const meta: Meta<DataView> = {
     title: 'PrimeNG/Data/DataView',

@@ -117,9 +117,7 @@ export default meta;
 
 type Story = StoryObj<SearchableDropdownComponent>;
 
-export const Primary: Story = {
-    args: {}
-};
+export const Primary: Story = {};
 
 export const Secondary: Story = {
     args: {

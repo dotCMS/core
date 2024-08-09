@@ -70,15 +70,17 @@
         [totalRecords]="totalRecords"
         [value]="options"
         class="searchable-dropdown__data-list">
-        <ng-template let-item pTemplate="listItem">
-            <ng-container
-                [ngTemplateOutletContext]="{
-                    item: item,
-                    selectedOptionValue: selectedOptionValue
-                }"
-                [ngTemplateOutlet]="
-                    externalItemListTemplate || defaultItemListTemplate
-                "></ng-container>
+        <ng-template pTemplate="list" let-data>
+            <ng-container *ngFor="let item of data">
+                <span
+                    (click)="handleClick(item)"
+                    [class.selected]="item[labelPropertyName] === valueString"
+                    class="searchable-dropdown__data-list-item"
+                    data-testid="searchable-dropdown-data-list-item">
+                    <i *ngIf="item[labelPropertyName] === valueString" class="pi pi-check"></i>
+                    {{ item.label }}
+                </span>
+            </ng-container>
         </ng-template>
     </p-dataView>
 </p-overlayPanel>

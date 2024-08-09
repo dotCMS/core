@@ -54,9 +54,6 @@
         .p-paginator {
             justify-content: center;
         }
-        .p-dataview-content {
-            margin-bottom: $spacing-9;
-        }
 
         .p-paginator-bottom {
             @include paginator-bottom-absolute;
