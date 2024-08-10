@@ -133,12 +133,12 @@ public class OpenAIGenerateImageActionletTest {
 
         final WorkflowProcessor processor = new WorkflowProcessor(contentlet, APILocator.systemUser());
         final Map<String, WorkflowActionClassParameter> params = Map.of(
-                //OpenAIParams.OPEN_AI_PROMPT.key, new WorkflowActionClassParameter("We need an attractive search result in Google. Return a json object that includes the fields \"pageTitle\" for a meta title of less than 55 characters and \"metaDescription\" for the meta description of less than 300 characters using this content:\\n\\n${fieldContent}\\n\\n"),
+                OpenAIParams.OPEN_AI_PROMPT.key, new WorkflowActionClassParameter(""),
                 OpenAIParams.OVERWRITE_FIELDS.key, new WorkflowActionClassParameter("true"),
                 OpenAIParams.FIELD_TO_WRITE.key, new WorkflowActionClassParameter("image")
         );
 
-        new OpenAIContentPromptActionlet().executeAction(processor, params);
+        new OpenAIGenerateImageActionlet().executeAction(processor, params);
 
         Assert.assertNull("No prompt sent, no image generated",contentlet.get("image"));
     }
@@ -173,7 +173,7 @@ public class OpenAIGenerateImageActionletTest {
                 OpenAIParams.FIELD_TO_WRITE.key, new WorkflowActionClassParameter("image")
         );
 
-        new OpenAIContentPromptActionlet().executeAction(processor, params);
+        new OpenAIGenerateImageActionlet().executeAction(processor, params);
         final Object object = contentlet.get("body");
         Assert.assertNull("When not binary field as part of the contentlet, should not generate the image", object);
     }
@@ -211,15 +211,13 @@ public class OpenAIGenerateImageActionletTest {
                 OpenAIParams.FIELD_TO_WRITE.key, new WorkflowActionClassParameter("image")
         );
 
-        new OpenAIContentPromptActionlet().executeAction(processor, params);
+        new OpenAIGenerateImageActionlet().executeAction(processor, params);
 
         final Object bodyObject = contentlet.get("image");
         Assert.assertNotNull("Body returned can not be null",bodyObject);
         Assert.assertTrue("Body returned should be a String",bodyObject instanceof CharSequence);
         final CharSequence body = (CharSequence) bodyObject;
         Assert.assertEquals("Body returned should be not empty", body, "image_id123");
-
-
     }
 
 }
