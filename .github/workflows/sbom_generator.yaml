@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       dotcms_version:
-        description: 'The dotCMS version tag (e.g., v24.07.30)'
+        description: 'Enter the dotCMS version (vYY.MM.DD)'
         required: true
-        default: 'v24.07.30'
+        default: ''
 
 jobs:
   scan:
