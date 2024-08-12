@@ -83,7 +83,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
 
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
         if (!appConfig.isEnabled()) {
-            throw new DotRuntimeException("No API key found in app config");
+            throw new DotRuntimeException("No API urls or API key found in app config");
         }
 
         return appConfig;

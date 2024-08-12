@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The AppConfig class provides a configuration for the AI application.
@@ -294,8 +295,13 @@ public class AppConfig implements Serializable {
         }
     }
 
+    /**
+     * Checks if the configuration is enabled.
+     *
+     * @return true if the configuration is enabled, false otherwise
+     */
     public boolean isEnabled() {
-        return StringUtils.isNotBlank(apiKey);
+        return Stream.of(apiUrl, apiImageUrl, apiEmbeddingsUrl, apiKey).allMatch(StringUtils::isNotBlank);
     }
 
 }
