@@ -9,6 +9,12 @@ import { isInsideEditor } from '@dotcms/client';
 import { DotCMSPageComponent, DotCMSPageContext } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';
 
+/**
+ * @author dotCMS
+ * @description This service is responsible for managing the page context.
+ * @export
+ * @class PageContextService
+ */
 @Injectable({
     providedIn: 'root'
 })

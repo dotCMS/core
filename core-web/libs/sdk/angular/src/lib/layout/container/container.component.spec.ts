@@ -168,7 +168,7 @@ describe('ContainerComponent', () => {
                 {
                     provide: PageContextService,
                     useValue: {
-                        pageContextValue: {
+                        context: {
                             pageAsset: {
                                 containers: PageResponseMock.containers
                             },
