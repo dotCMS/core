@@ -1,9 +1,8 @@
 package com.dotcms.ai.listener;
 
-import com.dotcms.ai.api.DotAIAPI;
+import com.dotcms.ai.AiTest;
 import com.dotcms.ai.api.DotAIAPIFacadeImpl;
 import com.dotcms.ai.app.AppKeys;
-import com.dotcms.ai.AiTest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.SiteDataGen;
@@ -20,10 +19,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.liferay.portal.model.User;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,6 +26,10 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.dotmarketing.util.ThreadUtils.sleep;
 import static org.junit.Assert.assertFalse;
