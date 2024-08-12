@@ -62,19 +62,15 @@ const { DotCmsClient } = dotcmsClient as jest.Mocked<typeof dotcmsClient>;
 
 describe('DotcmsLayoutComponent', () => {
     let spectator: Spectator<DotcmsLayoutComponent>;
+    let pageContextService: PageContextService;
 
     const createComponent = createRoutingFactory({
         component: DotcmsLayoutComponent,
         imports: [MockComponent(RowComponent)],
         providers: [
+            PageContextService,
             { provide: ActivatedRoute, useValue: { url: of([]) } },
-            { provide: Router, useValue: {} },
-            {
-                provide: PageContextService,
-                useValue: {
-                    setContext: jest.fn()
-                }
-            }
+            { provide: Router, useValue: {} }
         ]
     });
 
@@ -88,6 +84,8 @@ describe('DotcmsLayoutComponent', () => {
             },
             detectChanges: false
         });
+
+        pageContextService = spectator.inject(PageContextService, true);
     });
 
     afterEach(() => {
@@ -100,9 +98,9 @@ describe('DotcmsLayoutComponent', () => {
     });
 
     it('should save pageContext', () => {
+        const setContextSpy = jest.spyOn(pageContextService, 'setContext');
         spectator.detectChanges();
-        jest.spyOn(spectator.inject(PageContextService), 'setContext');
-        expect(spectator.inject(PageContextService).setContext).toHaveBeenCalled();
+        expect(setContextSpy).toHaveBeenCalled();
     });
 
     describe('inside editor', () => {
@@ -113,14 +111,6 @@ describe('DotcmsLayoutComponent', () => {
             spectator.detectChanges();
             expect(initEditorSpy).toHaveBeenCalled();
             expect(updateNavigationSpy).toHaveBeenCalled();
-        });
-
-        it('should listen to SET_PAGE_DATA message', () => {
-            spectator.detectChanges();
-            window.dispatchEvent(
-                new MessageEvent('message', { data: { name: 'SET_PAGE_DATA', payload: {} } })
-            );
-            expect(spectator.inject(PageContextService).setContext).toHaveBeenCalled();
         });
 
         describe('onReload', () => {

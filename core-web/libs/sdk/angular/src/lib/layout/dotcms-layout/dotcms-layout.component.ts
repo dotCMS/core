@@ -1,5 +1,3 @@
-import { BehaviorSubject } from 'rxjs';
-
 import { AsyncPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -92,10 +90,10 @@ export class DotcmsLayoutComponent implements OnInit {
     private readonly pageContextService = inject(PageContextService);
     private readonly destroyRef$ = inject(DestroyRef);
     private client!: DotCmsClient;
-    protected readonly pageAsset$ = new BehaviorSubject<DotCMSPageAsset | null>(null);
+    protected readonly pageAsset$ = this.pageContextService.currentPage$;
 
     ngOnInit() {
-        this.setContext(this.pageAsset);
+        this.pageContextService.setContext(this.pageAsset, this.components);
 
         if (!isInsideEditor()) {
             return;
@@ -116,7 +114,7 @@ export class DotcmsLayoutComponent implements OnInit {
                 return;
             }
 
-            this.setContext(data as DotCMSPageAsset); // Update the context with the new page asset
+            this.pageContextService.setPageAsset(data as DotCMSPageAsset);
         });
 
         postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: this.editor });
@@ -124,10 +122,5 @@ export class DotcmsLayoutComponent implements OnInit {
 
     ngOnDestroy() {
         this.client.editor.off('changes');
-    }
-
-    private setContext(pageAsset: DotCMSPageAsset) {
-        this.pageAsset$.next(pageAsset);
-        this.pageContextService.setContext(pageAsset, this.components);
     }
 }
