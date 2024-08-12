@@ -731,7 +731,11 @@
         customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
         document.dispatchEvent(customEvent);
 
-        setBinaryFieldInputs()
+
+
+        if(window.setBinaryFieldInputs) {
+            setBinaryFieldInputs()
+        }
 
     }
 

@@ -62,7 +62,7 @@
     Object inodeObj =(Object) request.getAttribute("inode");
     String inode = inodeObj != null ? inodeObj.toString() : "";
 
-    String contentletIdentifierGlobal = contentlet.getIdentifier();
+    String contentletIdentifier = contentlet.getIdentifier();
 
     String counter = (String) request.getAttribute("counter");
 
@@ -214,7 +214,6 @@
             String textValue = UtilMethods.isSet(value) ? value.toString(): (UtilMethods.isSet(defaultValue) ? defaultValue : "");
             String safeTextValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`";
 
-            String contentletIdentifier = contentlet.getIdentifier();
             String jsonField = "{}";
             String contentletObj = "{}";
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
@@ -785,7 +784,9 @@
                      * because there is no way to get the same contentlet the AP retreive from the dwr call.
                      */
 
-                    const identifier =  "<%=contentletIdentifierGlobal%>";
+                    const identifier =  "<%=contentletIdentifier%>";
+
+
 
 
 
