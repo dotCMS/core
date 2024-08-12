@@ -166,6 +166,7 @@ public class PortletResource implements Serializable {
             final DotPortlet updatedPortlet =  DotPortlet.builder()
                     .portletId(portletId)
                     .portletClass(contentPortlet.getPortletClass())
+                    .putAllInitParams(contentPortlet.getInitParams()) // add view-action from base content portlet
                     .putInitParam("name", formData.portletName)
                     .putInitParam("baseTypes", formData.baseTypes)
                     .putInitParam("contentTypes", formData.contentTypes)
