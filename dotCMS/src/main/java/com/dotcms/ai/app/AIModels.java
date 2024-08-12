@@ -3,7 +3,6 @@ package com.dotcms.ai.app;
 import com.dotcms.ai.model.OpenAIModel;
 import com.dotcms.ai.model.OpenAIModels;
 import com.dotcms.http.CircuitBreakerUrl;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -129,18 +128,16 @@ public class AIModels {
      *
      * @param host the host for which the models are being reset
      */
-    public void resetModels(final Host host) {
-        final String hostKey = host.getHostname();
-        Optional.ofNullable(internalModels.get(hostKey)).ifPresent(models -> {
+    public void resetModels(final String host) {
+        Optional.ofNullable(internalModels.get(host)).ifPresent(models -> {
             models.clear();
-            internalModels.remove(hostKey);
+            internalModels.remove(host);
         });
         modelsByName.keySet()
                 .stream()
-                .filter(key -> key._1.equals(hostKey))
+                .filter(key -> key._1.equals(host))
                 .collect(Collectors.toSet())
                 .forEach(modelsByName::remove);
-        ConfigService.INSTANCE.config(host);
     }
 
     /**
