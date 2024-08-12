@@ -99,6 +99,10 @@ export const CategoryFieldStore = signalStore(
         ),
 
         /**
+         * Determines if the store state is currently loaded.
+         */
+        isListLoaded: computed(() => store.state() === ComponentStatus.LOADED),
+        /**
          * Determines if the search mode is currently loading.
          */
         isSearchLoading: computed(

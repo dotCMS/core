@@ -2,6 +2,7 @@ package com.dotcms.ai.listener;
 
 import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppKeys;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.model.KeyFilterable;
@@ -49,7 +50,8 @@ public final class AIAppListener implements EventSubscriber<AppSecretSavedEvent>
         final String hostId = event.getHostIdentifier();
         final Host host = Try.of(() -> hostAPI.find(hostId, APILocator.systemUser(), false)).getOrNull();
 
-        Optional.ofNullable(host).ifPresent(found -> AIModels.get().resetModels(found));
+        Optional.ofNullable(host).ifPresent(found -> AIModels.get().resetModels(found.getHostname()));
+        ConfigService.INSTANCE.config(host);
     }
 
     @Override
