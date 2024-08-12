@@ -33,7 +33,7 @@ env:
 jobs:
   get-starter:
     runs-on: macos-13
-    if: github.repository == 'dotcms/core-workflow-test'
+    if: github.repository == 'dotcms/core'
     environment: trunk
     steps:
       - name: 'Github context'
