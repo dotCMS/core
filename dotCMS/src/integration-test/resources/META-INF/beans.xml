@@ -6,6 +6,5 @@
     <scan>
         <exclude name="org.apache.**">
         </exclude>
-        <exclude name="com.dotmarketing.util.jasper.DotJasperTask"></exclude>
     </scan>
 </beans>
