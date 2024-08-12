@@ -176,9 +176,10 @@ describe('DotcmsLayoutComponent', () => {
             const rowComponents = spectator.queryAll(RowComponent);
             const rows = PageResponseMock.layout.body.rows;
             expect(rowComponents.length).toBe(rows.length);
-            expect(rowComponents[0].row).toEqual(rows[0]);
-            expect(rowComponents[1].row).toEqual(rows[1]);
-            expect(rowComponents[2].row).toEqual(rows[2]);
+
+            rowComponents.forEach((component, index) => {
+                expect(component.row).toEqual(rows[index]);
+            });
         });
 
         it('should update the page asset when changes are made in the editor', () => {
