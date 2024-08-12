@@ -5,6 +5,9 @@ import com.dotcms.security.apps.AppSecrets;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import java.util.Map;
@@ -25,13 +28,23 @@ public class ConfigService {
      * by dotCMS.
      */
     public AppConfig config(final Host host) {
+        final User systemUser = APILocator.systemUser();
         final Host resolved = resolveHost(host);
-        final Optional<AppSecrets> appSecrets = Try.of(() -> APILocator
-                        .getAppsAPI()
-                        .getSecrets(AppKeys.APP_KEY, true, resolved, APILocator.systemUser()))
-                .getOrElse(Optional.empty());
+        Optional<AppSecrets> appSecrets = Try
+                .of(() -> APILocator.getAppsAPI().getSecrets(AppKeys.APP_KEY, false, resolved, systemUser))
+                .get();
+        final Host realHost;
+        if (appSecrets.isEmpty()) {
+            realHost = APILocator.systemHost();
+            appSecrets = Try
+                    .of(() -> APILocator.getAppsAPI().getSecrets(AppKeys.APP_KEY, false, realHost, systemUser))
+                    .get();
+        } else {
+            realHost = resolved;
+        }
 
-        return new AppConfig(resolved.getHostname(), appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
+
+        return new AppConfig(realHost.getHostname(), appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
     }
 
     /**
