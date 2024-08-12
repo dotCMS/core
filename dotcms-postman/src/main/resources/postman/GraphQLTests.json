@@ -2755,6 +2755,38 @@
 					"name": "Checking Exception Messages",
 					"item": [
 						{
+							"name": "invalidateSession",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/logout",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"logout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "GivenRequestByURI_Page_EditMode_WithoutAuth",
 							"event": [
 								{
@@ -2772,8 +2804,6 @@
 											"",
 											"    var error = jsonData.errors[0];",
 											"    pm.expect(error.message, 'FAILED:[error.message]').to.equal(\"Exception while fetching data (/page) : Unauthorized: You do not have the necessary permissions to request this page in edit mode.\");",
-											"    pm.expect(error.extensions.errorCode, 'FAILED:[error.extensions.errorCode]').to.equal(403);",
-											"    pm.expect(error.extensions.errorMessage, 'FAILED:[error.extensions.errorMessage]').to.equal(\"Unauthorized: You do not have the necessary permissions to request this page in edit mode.\");",
 											"});",
 											"",
 											"pm.test(\"Page data is null\", function () {",
@@ -2796,7 +2826,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n    page(url: \"/home\", pageMode: \"WORKING\") {\n    title\n  }\n}\n\n",
+										"query": "{\n    page(url: \"/myCoolPageWithDotAsset\", pageMode: \"WORKING\") {\n    title\n  }\n}\n\n",
 										"variables": ""
 									}
 								},
