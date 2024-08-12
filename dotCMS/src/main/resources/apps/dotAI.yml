@@ -14,6 +14,13 @@ params:
     label: "API Key"
     hint: "Your ChatGPT API key"
     required: true
+  textModelNames:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Model Names"
+    hint: "Comma delimited list of models used to generate OpenAI API response (e.g. gpt-3.5-turbo-16k)"
+    required: true
   rolePrompt:
     value: "You are dotCMSbot, and AI assistant to help content creators generate and rewrite content in their content management system."
     hidden: false
@@ -28,13 +35,6 @@ params:
     label: "Text Prompt"
     hint: "A prompt describing writing style."
     required: false
-  textModelNames:
-    value: "gpt-3.5-turbo-16k"
-    hidden: false
-    type: "STRING"
-    label: "Model Names"
-    hint: "Comma delimited list of models used to generate OpenAI API response."
-    required: true
   textModelTokensPerMinute:
     value: "180000"
     hidden: false
@@ -63,6 +63,13 @@ params:
     label: "Completion model enabled"
     hint: "Enable completion model used to generate OpenAI API response."
     required: false
+  imageModelNames:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Image Model Names"
+    hint: "Comma delimited list of image models used to generate OpenAI API response(e.g. dall-e-3)."
+    required: true
   imagePrompt:
     value: "Use 16:9 aspect ratio."
     hidden: false
@@ -96,13 +103,6 @@ params:
         value: "1920x1080"
       - label: "256x256 (Small Square 1:1)"
         value: "256x256"
-  imageModelNames:
-    value: "dall-e-3"
-    hidden: false
-    type: "STRING"
-    label: "Image Model Names"
-    hint: "Comma delimited list of image models used to generate OpenAI API response."
-    required: true
   imageModelTokensPerMinute:
     value: "0"
     hidden: false
@@ -132,11 +132,11 @@ params:
     hint: "Enable completion model used to generate OpenAI API response."
     required: false
   embeddingsModelNames:
-    value: "text-embedding-ada-002"
+    value: ""
     hidden: false
     type: "STRING"
     label: "Embeddings Model Names"
-    hint: "Comma delimited list of embeddings models used to generate OpenAI API response."
+    hint: "Comma delimited list of embeddings models used to generate OpenAI API response (e.g. text-embedding-ada-002)."
     required: true
   embeddingsModelTokensPerMinute:
     value: "1000000"
