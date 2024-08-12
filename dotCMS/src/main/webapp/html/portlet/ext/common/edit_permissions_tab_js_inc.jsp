@@ -333,9 +333,7 @@
 
 	function adjustAccordionHeigth() {
 		var container = dijit.byId('permissionsAccordionContainer');
-		console.info('adjustAccordionHeigth',container);
 		container.resize();
-
 	}
 
 	function addPermissionsAccordionPane(role) {
