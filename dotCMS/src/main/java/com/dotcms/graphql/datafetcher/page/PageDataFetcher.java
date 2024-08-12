@@ -1,7 +1,6 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.graphql.exception.CustomGraphQLException;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
