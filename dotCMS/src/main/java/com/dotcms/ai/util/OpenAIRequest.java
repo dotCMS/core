@@ -54,8 +54,7 @@ public class OpenAIRequest {
                                  final OutputStream out) {
 
         if (!appConfig.isEnabled()) {
-            Logger.debug(OpenAIRequest.class, "OpenAI is not enabled and will not send request.");
-            return;
+            throw new DotRuntimeException("OpenAI is not enabled and will not send request.");
         }
 
         final AIModel model = appConfig.resolveModelOrThrow(json.optString(AiKeys.MODEL));
