@@ -8,12 +8,24 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import * as dotcmsClient from '@dotcms/client';
 
-import { PageResponseMock } from './../../utils/testing.utils';
+import { PageResponseMock, PageResponseOneRowMock } from './../../utils/testing.utils';
 import { DotcmsLayoutComponent } from './dotcms-layout.component';
 
 import { DotCMSContentlet, DotCMSPageAsset } from '../../models';
 import { PageContextService } from '../../services/dotcms-context/page-context.service';
 import { RowComponent } from '../row/row.component';
+
+interface Callback {
+    [key: string]: (data: unknown) => void;
+}
+
+interface DotCmsClientMock extends dotcmsClient.DotCmsClient {
+    editor: {
+        on: (type: string, callbackFn: (data: unknown) => void) => void;
+        off: jest.Mock;
+        callbacks: Callback;
+    };
+}
 
 @Component({
     selector: 'dotcms-mock-component',
@@ -33,9 +45,11 @@ jest.mock('@dotcms/client', () => ({
     DotCmsClient: {
         instance: {
             editor: {
-                on: jest.fn(),
+                on: function (type: string, callbackFn: (data: unknown) => void): void {
+                    this.callbacks[type] = callbackFn;
+                },
                 off: jest.fn(),
-                callbacks: {}
+                callbacks: {} as Callback
             }
         }
     },
@@ -111,8 +125,10 @@ describe('DotcmsLayoutComponent', () => {
 
         describe('onReload', () => {
             const client = DotCmsClient.instance;
+            let editorOnSpy: jest.SpyInstance;
 
             beforeEach(() => {
+                editorOnSpy = jest.spyOn(client.editor, 'on');
                 spectator.setInput('onReload', () => {
                     /* do nothing */
                 });
@@ -120,7 +136,7 @@ describe('DotcmsLayoutComponent', () => {
             });
 
             it('should subscribe to the `CHANGE` event', () => {
-                expect(client.editor.on).toHaveBeenCalled();
+                expect(editorOnSpy).toHaveBeenCalled();
             });
 
             it('should remove listener on unmount', () => {
@@ -153,8 +169,36 @@ describe('DotcmsLayoutComponent', () => {
             beforeEach(() => spectator.detectChanges());
 
             it('should update the page asset when changes are made in the editor', () => {
-                expect(client.editor.on).toHaveBeenCalledWith('changes', expect.any(Function));
+                const editorOnSpy = jest.spyOn(client.editor, 'on');
+                expect(editorOnSpy).toHaveBeenCalledWith('changes', expect.any(Function));
             });
+        });
+    });
+
+    describe('template', () => {
+        beforeEach(() => spectator.detectChanges());
+
+        it('should render rows', () => {
+            expect(spectator.queryAll(RowComponent).length).toBe(3);
+        });
+
+        it('should pass the correct row to RowComponent', () => {
+            const rowComponents = spectator.queryAll(RowComponent);
+            const rows = PageResponseMock.layout.body.rows;
+            expect(rowComponents.length).toBe(rows.length);
+            expect(rowComponents[0].row).toEqual(rows[0]);
+            expect(rowComponents[1].row).toEqual(rows[1]);
+            expect(rowComponents[2].row).toEqual(rows[2]);
+        });
+
+        it('should update the page asset when changes are made in the editor', () => {
+            const { editor } = DotCmsClient.instance as DotCmsClientMock;
+            editor.callbacks['changes'](PageResponseOneRowMock);
+            spectator.detectChanges();
+            const rowComponents = spectator.queryAll(RowComponent);
+            const rows = PageResponseMock.layout.body.rows;
+            expect(rowComponents.length).toBe(1);
+            expect(rowComponents[0].row).toEqual(rows[0]);
         });
     });
 });
