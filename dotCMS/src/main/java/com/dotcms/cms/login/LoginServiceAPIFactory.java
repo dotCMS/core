@@ -193,18 +193,18 @@ public class LoginServiceAPIFactory implements Serializable {
 
             final HttpSession session = req.getSession(false);
             if (null != session) {
-                log.debug("Logout - Events Processor Pre Logout events.");
+                log.info("Logout - Events Processor Pre Logout events.");
                 EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_PRE), req, res);
             }
 
-            log.debug("Logout - Set expire cookies");
+            log.info("Logout - Set expire cookies");
             com.dotmarketing.util.CookieUtil.setExpireCookies(req, res);
 
             if (null != session) {
                 final Map sessions = PortletSessionPool.remove(session.getId());
                 if (null != sessions) {
 
-                    log.debug("Logout - Invalidating portlet sessions...");
+                    log.info("Logout - Invalidating portlet sessions...");
 
                     final Iterator itr = sessions.values().iterator();
                     while (itr.hasNext()) {
@@ -216,12 +216,16 @@ public class LoginServiceAPIFactory implements Serializable {
                         }
                     }
                 }
+                try {
+                    log.info("Logout - Invalidating http session...");
+                    session.setAttribute(LOG_OUT_ATTRIBUTE, true);
+                    session.invalidate();
+                } catch (final Throwable t) {
+                    log.warn("Failed to invalidate the session. It was probably invalidated already: " +
+                            ExceptionUtil.getErrorMessage(t));
+                }
 
-                log.debug("Logout - Invalidating http session...");
-                session.setAttribute(LOG_OUT_ATTRIBUTE, true);
-                session.invalidate();
-
-                log.debug("Logout - Events Processor Post Logout events.");
+                log.info("Logout - Events Processor Post Logout events.");
                 EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_POST), req, res);
             }
 

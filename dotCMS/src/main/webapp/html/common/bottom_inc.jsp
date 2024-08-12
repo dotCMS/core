@@ -4,11 +4,17 @@
 		var myId=document.getElementById("hidden_iframe");
 		myId.src ="/html/common/keep_alive.jsp?r=<%=System.currentTimeMillis()%>";
 	}
-	function killSession(){
-		window.location = "/c/portal/logout?referer=/c";
+
+	/**
+	 * Kills the current User's session once Tomcat has marked it for expiration.
+	 */
+	function killSession() {
+		window.location = "/dotAdmin/logout?r=<%= System.currentTimeMillis() %>";
 	}
+
 	<% if(Config.getStringProperty("KEEP_SESSION_ALIVE").equalsIgnoreCase("true")) {%>
 		// 15 minutes
+		alert("Seteando el keepAlive cada 15 minutos");
 		setTimeout("setKeepAlive()", 60000 * 15);
 	<%}else{%>
 		// 30 minutes

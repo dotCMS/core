@@ -99,7 +99,9 @@ public class SessionMonitor implements ServletRequestListener,
     }
     
     public void sessionDestroyed(final HttpSessionEvent event) {
-
+        Logger.info(this, "===========================");
+        Logger.info(this, "Killing session ID: " + event.getSession().getId());
+        Logger.info(this, "===========================");
         final String userId = (String) event.getSession().getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
         if (userId != null) {
 
@@ -111,7 +113,7 @@ public class SessionMonitor implements ServletRequestListener,
 
             try {
 
-                Logger.debug(this, "Triggering a session destroyed event");
+                Logger.info(this, "Triggering a session destroyed event");
 
                 final boolean isLogout =
                         event.getSession().getAttribute(LOG_OUT_ATTRIBUTE) != null && Boolean.parseBoolean(event.getSession().getAttribute(LOG_OUT_ATTRIBUTE).toString());
@@ -125,7 +127,7 @@ public class SessionMonitor implements ServletRequestListener,
                 }
             } catch (DotDataException e) {
 
-                Logger.debug(this, "Could not sent the session destroyed event" + e.getMessage(), e);
+                Logger.error(this, "Could not sent the session destroyed event: " + e.getMessage(), e);
             }
         }
     }
