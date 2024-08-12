@@ -192,6 +192,9 @@ public class LoginServiceAPIFactory implements Serializable {
                 final HttpServletResponse res) throws Exception {
 
             final HttpSession session = req.getSession(false);
+
+            log.info("Logout - Destroying session ID: " + (null != session ? session.getId() : "< null >"));
+
             if (null != session) {
                 log.info("Logout - Events Processor Pre Logout events.");
                 EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_PRE), req, res);
