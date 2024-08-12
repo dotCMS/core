@@ -7,11 +7,12 @@ on:
         required: true
         type: choice
         options:
-          - 'Full Starter'
+          - 'full'
+          - 'empty'
       changelog:
         description: 'Changes description'
         required: true
-        type: string          
+        type: string
       dry-run:
         description: 'Enable dry-run mode'
         required: true
@@ -23,47 +24,66 @@ defaults:
 
 env:
   STARTER_TYPE: ${{ github.event.inputs.type }}
+  EMPTY_STARTER_URL: ${{ vars.DOT_EMPTY_STARTER_URL }}
+  EMPTY_STARTER_TOKEN: ${{ secrets.DOT_EMPTY_STARTER_ACCESS_TOKEN }}
+  FULL_STARTER_URL: ${{ vars.DOT_STARTER_URL }}
+  FULL_STARTER_TOKEN: ${{ secrets.DOT_STARTER_ACCESS_TOKEN }}
+  DOWNLOAD_ENDPOINT: api/v1/maintenance/_downloadStarterWithAssets?oldAssets=true
 
 jobs:
-  get-full-starter:
+  get-starter:
     runs-on: macos-13
-    if: github.repository == 'dotcms/core'
+    if: github.repository == 'dotcms/core-workflow-test'
     environment: trunk
     steps:
-      - name: Context
+      - name: 'Github context'
         run: |
-          echo "Generating a Full Starter..."
+          echo "::group::Github context"
           echo "${{ toJSON(github.event.inputs) }}"
+          echo "::endgroup::"
+       
       - name: 'Get zip file'
         id: get-zip-file
-        env:
-          URL: ${{ vars.DOT_STARTER_URL }}
-          ACCESS_TOKEN: ${{ secrets.DOT_STARTER_ACCESS_TOKEN }}
         run: |
           echo "::group::Getting zip file"
+          echo "::notice::Starter type: $STARTER_TYPE"
+          function download_starter {
+            URL=$1/${{ env.DOWNLOAD_ENDPOINT }}
+            ACCESS_TOKEN=$2
+            OUTPUT_FILENAME=$3
+            curl -s -w "%{http_code}" --output ${OUTPUT_FILENAME} $URL \
+              -H "Content-Type: application/json" \
+              -H "Accept: application/octet-stream" \
+              -H "Authorization: Bearer $ACCESS_TOKEN"
+          }
           mkdir -p starter && cd starter
-          RESP=$(curl -s -w "%{http_code}" --output $(date +'%Y%m%d').zip $URL \
-            -H "Content-Type: application/json" \
-            -H "Accept: application/octet-stream" \
-            -H "Authorization: Bearer $ACCESS_TOKEN")
-          if [[ "$RESP" != "200" ]]; then
-            echo "RESP: $RESP"
+          if [[ "$STARTER_TYPE" == "empty" ]]; then
+            echo "::debug::Empty Starter: downloading from [${{ env.EMPTY_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
+            RESPONSE=$(download_starter ${{ env.EMPTY_STARTER_URL }} ${{ env.EMPTY_STARTER_TOKEN }} empty_$(date +'%Y%m%d').zip)            
+          else
+            echo "::debut::Full Starter: downloading from [${{ env.FULL_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
+            RESPONSE=$(download_starter ${{ env.FULL_STARTER_URL }} ${{ env.FULL_STARTER_TOKEN }} $(date +'%Y%m%d').zip)             
+          fi                    
+          echo "::notice::Status Code: $RESPONSE" 
+          if [[ "$RESPONSE" != "200" ]]; then
+            echo "::error::Failed with status code: $RESPONSE"
             exit 1
           fi
           ls -ltrh
-          echo "::endgroup::"
+          # echo "::endgroup::"
+
       - name: 'Upload artifacts'
         id: upload-artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: starter
+          name: ${{ env.STARTER_TYPE }}-starter
           path: |
             ${{ github.workspace }}/starter/*.zip
           retention-days: 2
-          if-no-files-found: ignore          
+          if-no-files-found: ignore   
           
   deploy-artifacts:
-    needs: [ get-full-starter ]
+    needs: [ get-starter ]
     runs-on: ubuntu-20.04
     environment: trunk
     outputs:
@@ -86,7 +106,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          name: starter
+          name: ${{ env.STARTER_TYPE }}-starter
           path: ${{ github.workspace }}/starter
 
       - name: 'Listing artifacts'
