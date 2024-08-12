@@ -75,6 +75,7 @@
 									"",
 									"    pm.expect(jsonData.entity.response.portletId).to.eql(\"c_myCustom\");",
 									"    pm.expect(jsonData.entity.response.initParams.dataViewMode).to.eql(\"card\");",
+									"    pm.expect(jsonData.entity.response.initParams.view-action).to.eql(\"/ext/contentlet/view_contentlets\");",
 									"});"
 								],
 								"type": "text/javascript",
