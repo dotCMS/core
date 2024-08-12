@@ -14,6 +14,7 @@ import { files } from '../../utils/tree-node-files';
 
 const meta: Meta<Tree> = {
     title: 'PrimeNG/Data/Tree',
+    component: Tree,
     decorators: [
         moduleMetadata({
             imports: [TreeModule, FormsModule]
@@ -23,7 +24,6 @@ const meta: Meta<Tree> = {
                 `<div class="card flex justify-content-center w-25rem h-25rem">${story}</div>`
         )
     ],
-    component: Tree,
     parameters: {
         layout: 'centered',
         docs: {
@@ -40,8 +40,7 @@ const meta: Meta<Tree> = {
         props: {
             ...args
         },
-        template: `
-        <p-tree ${argsToTemplate(args)} />`
+        template: `<p-tree ${argsToTemplate(args)} />`
     })
 };
 export default meta;

@@ -40,8 +40,8 @@ const meta: Meta<DotCollapseBreadcrumbComponent> = {
         }
     },
     args: {
-        maxItems: 4,
-        model: [
+        $maxItems: 4,
+        $model: [
             { label: 'Electronics', command: console.log },
             { label: 'Computer', command: console.log },
             { label: 'Accessories', command: console.log },
@@ -50,10 +50,10 @@ const meta: Meta<DotCollapseBreadcrumbComponent> = {
         ]
     },
     argTypes: {
-        model: {
+        $model: {
             description: 'Menu items to display'
         },
-        maxItems: {
+        $maxItems: {
             description: 'Max items to display',
             control: { type: 'number' }
         }
