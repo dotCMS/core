@@ -18,7 +18,7 @@ npm --version
 echo
 docker version
 echo
-docker-compose version
+docker compose version
 echo
 
 echo "HOME: ${HOME}"
