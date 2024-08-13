@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
@@ -37,7 +37,7 @@ import {
     MOCK_STYLE_CLASSES_FILE
 } from './utils/mocks';
 
-export default {
+const meta: Meta<TemplateBuilderComponent> = {
     title: 'Library/Template Builder',
     component: TemplateBuilderComponent,
     decorators: [
@@ -91,40 +91,40 @@ export default {
                 }
             ]
         })
-    ]
-} as Meta<TemplateBuilderComponent>;
+    ],
+    render: (args) => ({
+        props: args,
+        template: `
+            <dotcms-template-builder-lib
+                [layout]="layout"
+                [containerMap]="containerMap"
+            >
+                <button
+                    [label]="'Publish'"
+                    toolbar-actions-right
+                    type="button"
+                    pButton
+                ></button>
+            </dotcms-template-builder-lib>
+        `,
+    }),
+};
+export default meta;
 
-const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
-    props: args,
-    template: `
-        <dotcms-template-builder-lib
-            [layout]="layout"
-            [themeId]="themeId"
-            [containerMap]="containerMap"
-        >
-            <button
-                [label]="'Publish'"
-                toolbar-actions-right
-                type="button"
-                pButton
-            ></button>
-        </dotcms-template-builder-lib>
-    `
-});
+type Story = StoryObj<TemplateBuilderComponent>;
 
-export const Base = Template.bind({});
-
-Base.args = {
-    layout: {
-        body: FULL_DATA_MOCK,
-        header: true,
-        footer: false,
-        sidebar: {
-            location: 'left',
-            width: 'medium',
-            containers: []
-        }
-    },
-    themeId: '123',
-    containerMap: CONTAINER_MAP_MOCK
+export const Base: Story = {
+    args: {
+        layout: {
+            body: FULL_DATA_MOCK,
+            header: true,
+            footer: false,
+            sidebar: {
+                location: 'left',
+                width: 'medium',
+                containers: []
+            }
+        },
+        containerMap: CONTAINER_MAP_MOCK
+    }
 };

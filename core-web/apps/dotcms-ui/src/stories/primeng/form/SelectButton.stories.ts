@@ -1,8 +1,8 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
-export default {
+const meta: Meta<SelectButton> = {
     title: 'PrimeNG/Form/SelectButton',
     decorators: [
         moduleMetadata({
@@ -25,24 +25,10 @@ export default {
             }
         }
     }
-} as Meta;
+};
+export default meta;
 
-const TabbedTemplate = `
-<p>
-    <p-selectButton [options]="options" [(ngModel)]="selectedOption" class="p-button-tabbed">
-        <ng-template let-item>
-            <span>{{item.label}}</span>
-        </ng-template>
-    </p-selectButton>
-</p>
-<p>
-    <p-selectButton [options]="options" disabled="true" class="p-button-tabbed">
-        <ng-template let-item>
-            <span>{{item.label}}</span>
-        </ng-template>
-    </p-selectButton>
-</p>
-`;
+type Story = StoryObj<SelectButton>;
 
 const PrimaryTemplate = `
 <p>
@@ -61,45 +47,64 @@ const PrimaryTemplate = `
 </p>
 `;
 
-export const Primary: Story<SelectButton> = () => {
-    return {
-        template: PrimaryTemplate,
-        props: {
-            options: [
-                { label: 'Push', value: 'push' },
-                { label: 'Remove', value: 'remove' },
-                { label: 'Push Publish', value: 'push-publish' }
-            ]
+export const Primary: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: PrimaryTemplate
+            }
         }
-    };
-};
-
-Primary.parameters = {
-    docs: {
-        source: {
-            code: PrimaryTemplate
-        }
+    },
+    render: () => {
+        return {
+            template: PrimaryTemplate,
+            props: {
+                options: [
+                    { label: 'Push', value: 'push' },
+                    { label: 'Remove', value: 'remove' },
+                    { label: 'Push Publish', value: 'push-publish' }
+                ]
+            }
+        };
     }
 };
 
-export const Tabbed: Story<SelectButton> = () => {
-    return {
-        template: TabbedTemplate,
-        props: {
-            options: [
-                { label: 'Push', value: 'push' },
-                { label: 'Remove', value: 'remove' },
-                { label: 'Push Publish', value: 'push-publish' }
-            ],
-            selectedOption: 'push'
-        }
-    };
-};
+const TabbedTemplate = `
+<p>
+    <p-selectButton [options]="options" [(ngModel)]="selectedOption" class="p-button-tabbed">
+        <ng-template let-item>
+            <span>{{item.label}}</span>
+        </ng-template>
+    </p-selectButton>
+</p>
+<p>
+    <p-selectButton [options]="options" disabled="true" class="p-button-tabbed">
+        <ng-template let-item>
+            <span>{{item.label}}</span>
+        </ng-template>
+    </p-selectButton>
+</p>
+`;
 
-Tabbed.parameters = {
-    docs: {
-        source: {
-            code: TabbedTemplate
+export const Tabbed: Story = {
+    parameters: {
+        docs: {
+            source: {
+                code: TabbedTemplate
+            }
         }
+    },
+    render: () => {
+        return {
+            template: TabbedTemplate,
+            props: {
+                options: [
+                    { label: 'Push', value: 'push' },
+                    { label: 'Remove', value: 'remove' },
+                    { label: 'Push Publish', value: 'push-publish' }
+                ],
+                selectedOption: 'push'
+            }
+        };
     }
 };

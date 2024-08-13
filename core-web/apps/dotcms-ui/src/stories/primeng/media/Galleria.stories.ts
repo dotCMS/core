@@ -1,23 +1,11 @@
-import { Meta, StoryFn } from '@storybook/angular';
+import { faker } from '@faker-js/faker';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { Galleria, GalleriaModule } from 'primeng/galleria';
 
-export default {
-    title: 'PrimeNG/Media/Galleria',
-    component: Galleria,
-    args: { activeIndex: 0, circular: true, showItemNavigators: true },
-    parameters: {
-        docs: {
-            description: {
-                component: 'Galleria is an advanced content gallery component.'
-            }
-        }
-    }
-} as Meta;
-
-const Template = `
+const templateGalleria = `
     <p-galleria [value]="images" 
     [activeIndex]="activeIndex" 
     [circular]="circular" 
@@ -29,25 +17,34 @@ const Template = `
         </ng-template>
     </p-galleria>`;
 
-export const Main: StoryFn = (args) => {
-    return {
-        props: {
-            images: [
-                {
-                    url: 'https://picsum.photos/600/900'
-                },
-                {
-                    url: 'https://picsum.photos/900/600'
-                },
-                {
-                    url: 'https://picsum.photos/600/600'
-                }
-            ],
-            activeIndex: args.activeIndex,
-            circular: args.circular,
-            showItemNavigators: args.showItemNavigators
-        },
-        moduleMetadata: { imports: [GalleriaModule, BrowserAnimationsModule] },
-        template: Template
-    };
+const meta: Meta<Galleria> = {
+    title: 'PrimeNG/Media/Galleria',
+    component: Galleria,
+    decorators: [
+        moduleMetadata({
+            imports: [GalleriaModule, BrowserAnimationsModule]
+        })
+    ],
+    args: {
+        activeIndex: 0,
+        circular: true,
+        showItemNavigators: true,
+        value: Array.from({ length: 3 }, (_, i) => i).map(() => ({ url: faker.image.url() }))
+    },
+    parameters: {
+        docs: {
+            description: {
+                component: 'Galleria is an advanced content gallery component.'
+            }
+        }
+    },
+    render: (args) => ({
+        props: args,
+        template: templateGalleria
+    })
 };
+export default meta;
+
+type Story = StoryObj<Galleria>;
+
+export const Main: Story = {};

@@ -16,7 +16,7 @@ type Args = Chip & {
 
 const DEFAULT = 'default';
 
-const mergeArgsClassNamesToString = (args: Args): string => {
+const mergeArgsClassNamesToString = (args): string => {
     const size = args.size ?? '';
     const severity = args.severity ?? '';
     const styles = args.styles ?? '';
@@ -105,7 +105,7 @@ const meta: Meta<Args> = {
             description: 'Class name used in `styleClass` for the severity of the chip'
         }
     },
-    render: (args: Args) => {
+    render: (args) => {
         const newArgs = { ...args };
         delete newArgs.size;
         delete newArgs.severity;

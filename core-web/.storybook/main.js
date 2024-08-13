@@ -23,9 +23,9 @@ module.exports = {
     framework: {
         name: '@storybook/angular',
         options: {
-            builder: {
-                useSWC: true
-            }
+          builder: {
+            useSWC: true
+          }
         }
     },
 

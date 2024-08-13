@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
@@ -7,34 +7,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { InputTextModule } from 'primeng/inputtext';
 import { KeyFilterModule } from 'primeng/keyfilter';
 import { MessageModule } from 'primeng/message';
-
-export default {
-    title: 'PrimeNG/Form/KeyFilter',
-    parameters: {
-        docs: {
-            description: {
-                component:
-                    'KeyFilter directive restricts user input based on a regular expression.: https://primeng.org/keyfilter'
-            }
-        }
-    },
-    decorators: [
-        moduleMetadata({
-            imports: [
-                BrowserModule,
-                BrowserAnimationsModule,
-                KeyFilterModule,
-                InputTextModule,
-                MessageModule,
-                FormsModule
-            ]
-        })
-    ],
-    args: {
-        ccRegex: /^[^<>*!]+$/,
-        inputValue: ''
-    }
-} as Meta;
 
 const KeyFilterTemplate = `
   <form #form="ngForm">
@@ -55,24 +27,42 @@ const KeyFilterTemplate = `
   </form>
 `;
 
-const Template: Story<{
-    ccRegex: RegExp;
-    inputValue: string;
-}> = (props: { ccRegex: RegExp; inputValue: string }) => {
-    const template = KeyFilterTemplate;
-
-    return {
-        props,
-        template
-    };
-};
-
-export const Basic: Story = Template.bind({});
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: KeyFilterTemplate
+const meta: Meta = {
+    title: 'PrimeNG/Form/KeyFilter',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'KeyFilter directive restricts user input based on a regular expression.: https://primeng.org/keyfilter'
+            },
+            source: {
+                code: KeyFilterTemplate
+            }
         }
-    }
+    },
+    decorators: [
+        moduleMetadata({
+            imports: [
+                BrowserModule,
+                BrowserAnimationsModule,
+                KeyFilterModule,
+                InputTextModule,
+                MessageModule,
+                FormsModule
+            ]
+        })
+    ],
+    args: {
+        ccRegex: /^[^<>*!]+$/,
+        inputValue: ''
+    },
+    render: (args) => ({
+        props: args,
+        template: KeyFilterTemplate
+    })
 };
+export default meta;
+
+type Story = StoryObj;
+
+export const Basic: Story = {};
