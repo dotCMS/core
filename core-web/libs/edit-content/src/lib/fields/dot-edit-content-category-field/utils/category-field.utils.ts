@@ -69,7 +69,7 @@ const transformCategory = (
     const { key, inode, categoryName, childrenCount } = category;
     const hasChildren = childrenCount > 0;
 
-    const path = category.parentList ? getParentPath(category.parentList) : '';
+    const path = getParentPath(category.parentList ?? []);
 
     return {
         key,
@@ -181,7 +181,7 @@ export const updateChecked = (
         if (!currentChecked.some((entry) => entry.key === item.key)) {
             currentChecked = [
                 ...currentChecked,
-                { key: item.key, value: item.value, inode: item.inode }
+                { key: item.key, value: item.value, inode: item.inode, path: item?.path ?? '' }
             ];
         }
     } else {
@@ -199,14 +199,14 @@ export const updateChecked = (
  * @param parentList
  */
 export const getParentPath = (parentList: DotCategoryParent[]): string => {
-    if (parentList) {
-        return parentList
-            .slice(1)
-            .map((parent) => parent.name)
-            .join(' / ');
+    if (parentList.length === 0) {
+        return '';
     }
 
-    return '';
+    return parentList
+        .slice(1)
+        .map((parent) => parent.name)
+        .join(' / ');
 };
 
 /**
