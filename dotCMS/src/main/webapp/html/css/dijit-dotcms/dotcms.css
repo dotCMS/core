@@ -6275,7 +6275,7 @@ select[multiple]:hover {
   border-bottom: 1px solid #f3f3f4;
   vertical-align: middle;
   height: 2.5rem !important;
-  padding: 8px 0.5rem;
+  padding: 0.5rem;
 }
 #listing-table th .listingThumbDiv, .listingTable th .listingThumbDiv, .dojoxUploaderFileListTable th .listingThumbDiv,
 #listing-table td .listingThumbDiv,
@@ -8944,10 +8944,8 @@ Styles for commons fields along the backend
   border-radius: 0.25rem;
   color: var(--color-palette-primary-500);
   font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
+  line-height: 0.374rem;
+  text-align: center;
   text-decoration: none;
   border: 1px solid rgba(0, 0, 0, 0.1);
   width: auto;
@@ -8955,7 +8953,7 @@ Styles for commons fields along the backend
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  padding-left: 1.313rem;
+  padding-left: 1.25rem;
   position: relative;
 }
 .tagLink.persona:before {
