@@ -12,8 +12,6 @@ import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { title } from 'process';
-
 import {
     DotContainersService,
     DotEventsService,
