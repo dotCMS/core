@@ -4,12 +4,16 @@ import com.dotcms.security.apps.Secret;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -25,8 +29,10 @@ public class AppConfig implements Serializable {
     private static final String AI_API_URL_KEY = "AI_API_URL";
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
     private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
-
+    private static final String SYSTEM_HOST = "System Host";
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
+
+    private static final AtomicReference<AppConfig> SYSTEM_HOST_CONFIG = new AtomicReference<>();
 
     private final String host;
     private final String apiKey;
@@ -45,6 +51,9 @@ public class AppConfig implements Serializable {
 
     public AppConfig(final String host, final Map<String, Secret> secrets) {
         this.host = host;
+        if (SYSTEM_HOST.equalsIgnoreCase(host)) {
+            setSystemHostConfig(this);
+        }
 
         final AIAppUtil aiAppUtil = AIAppUtil.get();
         apiKey = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY, AI_API_KEY_KEY);
@@ -73,18 +82,36 @@ public class AppConfig implements Serializable {
 
         configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        Logger.debug(getClass(), () -> "apiKey: " + apiKey);
-        Logger.debug(getClass(), () -> "apiUrl: " + apiUrl);
-        Logger.debug(getClass(), () -> "apiImageUrl: " + apiImageUrl);
-        Logger.debug(getClass(), () -> "embeddingsUrl: " + apiEmbeddingsUrl);
-        Logger.debug(getClass(), () -> "rolePrompt: " + rolePrompt);
-        Logger.debug(getClass(), () -> "textPrompt: " + textPrompt);
-        Logger.debug(getClass(), () -> "model: " + model);
-        Logger.debug(getClass(), () -> "imagePrompt: " + imagePrompt);
-        Logger.debug(getClass(), () -> "imageModel: " + imageModel);
-        Logger.debug(getClass(), () -> "imageSize: " + imageSize);
-        Logger.debug(getClass(), () -> "embeddingsModel: " + embeddingsModel);
-        Logger.debug(getClass(), () -> "listerIndexer: " + listenerIndexer);
+        Logger.debug(this, this::toString);
+    }
+
+    /**
+     * Retrieves the system host configuration.
+     *
+     * @return the system host configuration
+     */
+    public static AppConfig getSystemHostConfig() {
+        if (Objects.isNull(SYSTEM_HOST_CONFIG.get())) {
+            setSystemHostConfig(ConfigService.INSTANCE.config());
+        }
+        return SYSTEM_HOST_CONFIG.get();
+    }
+
+    /**
+     * Prints a specific error message to the log, based on the {@link AppKeys#DEBUG_LOGGING}
+     * property instead of the usual Log4j configuration.
+     *
+     * @param clazz   The {@link Class} to log the message for.
+     * @param message The {@link Supplier} with the message to log.
+     */
+    public static void debugLogger(final Class<?> clazz, final Supplier<String> message) {
+        if (getSystemHostConfig().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
+            Logger.info(clazz, message.get());
+        }
+    }
+
+    public static void setSystemHostConfig(final AppConfig systemHostConfig) {
+        AppConfig.SYSTEM_HOST_CONFIG.set(systemHostConfig);
     }
 
     /**
@@ -288,25 +315,31 @@ public class AppConfig implements Serializable {
     }
 
     /**
-     * Prints a specific error message to the log, based on the {@link AppKeys#DEBUG_LOGGING}
-     * property instead of the usual Log4j configuration.
-     *
-     * @param clazz   The {@link Class} to log the message for.
-     * @param message The {@link Supplier} with the message to log.
-     */
-    public static void debugLogger(final Class<?> clazz, final Supplier<String> message) {
-        if (ConfigService.INSTANCE.config().getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-            Logger.info(clazz, message.get());
-        }
-    }
-
-    /**
      * Checks if the configuration is enabled.
      *
      * @return true if the configuration is enabled, false otherwise
      */
     public boolean isEnabled() {
         return Stream.of(apiUrl, apiImageUrl, apiEmbeddingsUrl, apiKey).allMatch(StringUtils::isNotBlank);
+    }
+
+    @Override
+    public String toString() {
+        return "AppConfig{\n" +
+                "  host='" + host + "',\n" +
+                "  apiKey='" + Optional.ofNullable(apiKey).map(key -> "*****").orElse(StringPool.BLANK) + "',\n" +
+                "  model=" + model + "',\n" +
+                "  imageModel=" + imageModel + "',\n" +
+                "  embeddingsModel=" + embeddingsModel + "',\n" +
+                "  apiUrl='" + apiUrl + "',\n" +
+                "  apiImageUrl='" + apiImageUrl + "',\n" +
+                "  apiEmbeddingsUrl='" + apiEmbeddingsUrl + "',\n" +
+                "  rolePrompt='" + rolePrompt + "',\n" +
+                "  textPrompt='" + textPrompt + "',\n" +
+                "  imagePrompt='" + imagePrompt + "',\n" +
+                "  imageSize='" + imageSize + "',\n" +
+                "  listenerIndexer='" + listenerIndexer + "'\n" +
+                '}';
     }
 
 }

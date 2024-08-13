@@ -19,6 +19,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +50,7 @@ public class AIModels {
 
     private final ConcurrentMap<String, List<Tuple2<AIModelType, AIModel>>> internalModels = new ConcurrentHashMap<>();
     private final ConcurrentMap<Tuple2<String, String>, AIModel> modelsByName = new ConcurrentHashMap<>();
-    private final Cache<String, List<String>> supportedModelsCache =
+    private final Cache<String, Set<String>> supportedModelsCache =
             Caffeine.newBuilder()
                     .expireAfterWrite(Duration.ofSeconds(AI_MODELS_CACHE_TTL))
                     .maximumSize(AI_MODELS_CACHE_SIZE)
@@ -107,7 +108,11 @@ public class AIModels {
      * @return an Optional containing the found AIModel, or an empty Optional if not found
      */
     public Optional<AIModel> findModel(final String host, final String modelName) {
-        return Optional.ofNullable(modelsByName.get(Tuple.of(host, modelName.toLowerCase())));
+        final String lowered = modelName.toLowerCase();
+        final Set<String> supported = getOrPullSupportedModels();
+        return supported.contains(lowered)
+                ? Optional.ofNullable(modelsByName.get(Tuple.of(host, lowered)))
+                : Optional.empty();
     }
 
     /**
@@ -146,10 +151,10 @@ public class AIModels {
      * Retrieves the list of supported models, either from the cache or by fetching them
      * from an external source if the cache is empty or expired.
      *
-     * @return a list of supported model names
+     * @return a set of supported model names
      */
-    public List<String> getOrPullSupportedModels() {
-        final List<String> cached = supportedModelsCache.getIfPresent(SUPPORTED_MODELS_KEY);
+    public Set<String> getOrPullSupportedModels() {
+        final Set<String> cached = supportedModelsCache.getIfPresent(SUPPORTED_MODELS_KEY);
         if (CollectionUtils.isNotEmpty(cached)) {
             return cached;
         }
@@ -160,17 +165,18 @@ public class AIModels {
             throw new DotRuntimeException("App dotAI config without API urls or API key");
         }
 
-        final CircuitBreakerUrl.Response<OpenAIModels> response = Try
-                .of(() -> fetchOpenAIModels(appConfig))
-                .getOrElseThrow(() -> new DotRuntimeException("Error fetching OpenAI supported models"));
+        final CircuitBreakerUrl.Response<OpenAIModels> response = fetchOpenAIModels(appConfig);
+        if (Objects.nonNull(response.getResponse().getError())) {
+            throw new DotRuntimeException("Found error in AI response: " + response.getResponse().getError().getMessage());
+        }
 
-        final List<String> supported = response
+        final Set<String> supported = response
                 .getResponse()
                 .getData()
                 .stream()
                 .map(OpenAIModel::getId)
                 .map(String::toLowerCase)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
         supportedModelsCache.put(SUPPORTED_MODELS_KEY, supported);
 
         return supported;
@@ -204,7 +210,7 @@ public class AIModels {
                 .setTimeout(AI_MODELS_FETCH_TIMEOUT)
                 .setTryAgainAttempts(AI_MODELS_FETCH_ATTEMPTS)
                 .setHeaders(CircuitBreakerUrl.authHeaders("Bearer " + appConfig.getApiKey()))
-                .setThrowWhenNot2xx(false)
+                .setThrowWhenNot2xx(true)
                 .build()
                 .doResponse(OpenAIModels.class);
 
@@ -215,6 +221,7 @@ public class AIModels {
                             "Error fetching OpenAI supported models from [%s] (status code: [%d])",
                             OPEN_AI_MODELS_URL,
                             response.getStatusCode()));
+            throw new DotRuntimeException("Error fetching OpenAI supported models");
         }
 
         return response;

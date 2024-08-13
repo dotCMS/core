@@ -113,11 +113,14 @@ public class AIModel {
     @Override
     public String toString() {
         return "AIModel{" +
-                "name='" + names + '\'' +
+                "type=" + type +
+                ", names=" + names +
                 ", tokensPerMinute=" + tokensPerMinute +
                 ", apiPerMinute=" + apiPerMinute +
                 ", maxTokens=" + maxTokens +
                 ", isCompletion=" + isCompletion +
+                ", current=" + current +
+                ", decommissioned=" + decommissioned +
                 '}';
     }
 

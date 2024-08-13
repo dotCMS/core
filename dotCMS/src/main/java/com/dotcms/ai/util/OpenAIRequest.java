@@ -52,18 +52,23 @@ public class OpenAIRequest {
                                  final AppConfig appConfig,
                                  final JSONObject json,
                                  final OutputStream out) {
+        AppConfig.debugLogger(
+                OpenAIRequest.class,
+                () -> String.format(
+                        "Posting to [%s] with method [%s]%s  with app config:%s%s  the payload: %s",
+                        urlIn,
+                        method,
+                        System.lineSeparator(),
+                        appConfig.toString(),
+                        System.lineSeparator(),
+                        json.toString(2)));
 
         if (!appConfig.isEnabled()) {
-            AppConfig.debugLogger(OpenAIRequest.class, () -> "dotAI is not enabled and will not send request.");
+            AppConfig.debugLogger(OpenAIRequest.class, () -> "App dotAI is not enabled and will not send request.");
             throw new DotRuntimeException("App dotAI config without API urls or API key");
         }
 
         final AIModel model = appConfig.resolveModelOrThrow(json.optString(AiKeys.MODEL));
-
-        if (appConfig.getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
-            Logger.debug(OpenAIRequest.class, "posting: " + json);
-        }
-
         final long sleep = lastRestCall.computeIfAbsent(model, m -> 0L)
                 + model.minIntervalBetweenCalls()
                 - System.currentTimeMillis();

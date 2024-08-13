@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -51,7 +52,6 @@ public class AIModelsTest {
     @AfterClass
     public static void afterClass() {
         wireMockServer.stop();
-        IPUtils.disabledIpPrivateSubnet(false);
     }
 
     @Before
@@ -74,6 +74,7 @@ public class AIModelsTest {
      */
     @Test
     public void test_loadModels_andFindThem() throws DotDataException, DotSecurityException {
+        AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
         saveSecrets(
                     host,
                     "text-model-1,text-model-2",
@@ -123,16 +124,15 @@ public class AIModelsTest {
 
         final Optional<AIModel> text7 = aiModels.findModel(hostId, "text-model-7");
         final Optional<AIModel> text8 = aiModels.findModel(hostId, "text-model-8");
-        assertModels(text7, text8, AIModelType.TEXT);
+        assertNotPresentModels(text7, text8);
 
         final Optional<AIModel> image9 = aiModels.findModel(hostId, "image-model-9");
         final Optional<AIModel> image10 = aiModels.findModel(hostId, "image-model-10");
-        assertModels(image9, image10, AIModelType.IMAGE);
+        assertNotPresentModels(image9, image10);
 
         final Optional<AIModel> embeddings11 = aiModels.findModel(hostId, "embeddings-model-11");
-        assertTrue(embeddings11.isPresent());
         final Optional<AIModel> embeddings12 = aiModels.findModel(hostId, "embeddings-model-12");
-        assertModels(embeddings11, embeddings12, AIModelType.EMBEDDINGS);
+        assertNotPresentModels(embeddings11, embeddings12);
     }
 
     /**
@@ -145,9 +145,9 @@ public class AIModelsTest {
         AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
         AIModels.get().cleanSupportedModelsCache();
 
-        List<String> supported = aiModels.getOrPullSupportedModels();
+        Set<String> supported = aiModels.getOrPullSupportedModels();
         assertNotNull(supported);
-        assertEquals(32, supported.size());
+        assertEquals(38, supported.size());
 
         AIModels.get().setAppConfigSupplier(ConfigService.INSTANCE::config);
     }
@@ -158,13 +158,12 @@ public class AIModelsTest {
      * Then an empty list of supported models should be returned.
      */
     @Test(expected = DotRuntimeException.class)
-    public void test_getOrPullSupportedModules_invalidEndpoint() {
+    public void test_getOrPullSupportedModules_withNetworkError() {
         AIModels.get().cleanSupportedModelsCache();
         IPUtils.disabledIpPrivateSubnet(false);
 
-        final List<String> supported = aiModels.getOrPullSupportedModels();
-        assertNotNull(supported);
-        assertTrue(supported.isEmpty());
+        final Set<String> supported = aiModels.getOrPullSupportedModels();
+        assertSupported(supported);
 
         IPUtils.disabledIpPrivateSubnet(true);
         AIModels.get().setAppConfigSupplier(ConfigService.INSTANCE::config);
@@ -178,6 +177,19 @@ public class AIModelsTest {
     @Test(expected = DotRuntimeException.class)
     public void test_getOrPullSupportedModules_noApiKey() throws DotDataException, DotSecurityException {
         AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost(), null);
+
+        AIModels.get().cleanSupportedModelsCache();
+        aiModels.getOrPullSupportedModels();
+    }
+
+    /**
+     * Given no API key
+     * When the getOrPullSupportedModules method is called
+     * Then an empty list of supported models should be returned.
+     */
+    @Test(expected = DotRuntimeException.class)
+    public void test_getOrPullSupportedModules_noSystemHost() throws DotDataException, DotSecurityException {
+        AiTest.removeSecrets(APILocator.systemHost());
 
         AIModels.get().cleanSupportedModelsCache();
         aiModels.getOrPullSupportedModels();
@@ -205,6 +217,16 @@ public class AIModelsTest {
         assertSame(model1.get(), model2.get());
         assertSame(type, model1.get().getType());
         assertSame(type, model2.get().getType());
+    }
+
+    private static void assertNotPresentModels(final Optional<AIModel> model1, final Optional<AIModel> model2) {
+        assertTrue(model1.isEmpty());
+        assertTrue(model2.isEmpty());
+    }
+
+    private static void assertSupported(Set<String> supported) {
+        assertNotNull(supported);
+        assertTrue(supported.isEmpty());
     }
 
 }
