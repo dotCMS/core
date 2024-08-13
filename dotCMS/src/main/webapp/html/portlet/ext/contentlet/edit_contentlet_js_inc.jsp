@@ -731,6 +731,11 @@
         customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
         document.dispatchEvent(customEvent);
 
+        const binaryCallbacks = Object.keys(window.binaryFieldCallbacksMap || {}).map(key => window.binaryFieldCallbacksMap[key]); // Get the callbacks in an array
+
+        binaryCallbacks.forEach(callback => {
+            callback(); // To reload all binary fields
+        });
     }
 
     function refreshPermissionsTab(){
