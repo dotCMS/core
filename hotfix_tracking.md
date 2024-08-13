@@ -283,3 +283,5 @@ This maintenance release includes the following code fixes:
 217. https://github.com/dotCMS/core/issues/28509 : Remove three dots at the end of the Bundle ID #28509
 
 **Release-23.01.22**
+
+218. https://github.com/dotCMS/core/issues/28163 : alive' and 'startup' healthcheck APIs return 503 on seemingly healthy app #28163

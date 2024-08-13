@@ -106,6 +106,23 @@ public class ConfigUtils {
 		return path;
 	}
 
+	private static Lazy<String> assetPath  = Lazy.of(()->{
+		String realPath = Config.getStringProperty("ASSET_REAL_PATH", null);
+		if (UtilMethods.isSet(realPath) && !realPath.endsWith(File.separator)) {
+			return realPath + File.separator;
+		}
+
+		final String path = Try
+				.of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
+				.getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
+		return FileUtil.getRealPath(path);
+
+	});
+
+	public static String getAssetPath() {
+		return assetPath.get();
+	}
+
     /**
      * Builds the path using STATIC_PUBLISHING_ROOT_PATH values or default
      * /assets/static_publishing, created the fodler if it doesn't exist.
