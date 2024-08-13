@@ -1523,4 +1523,61 @@ public class CategoryFactoryTest extends IntegrationTestBase {
             }
         }
     }
+
+    /**
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
+     * When:
+     * - Create a Top level Category and one child.
+     * - Crate a Content Type with a category Field.
+     * - Crate a Contentlet and select the Child Category as value of the Category Field.
+     * - Find these 2 categories and count the children
+     * -  and set parentList to true
+     *
+     * Should:
+     * - For the Top level Category the counting should be 1
+     * - For the Child the counting should be 0.
+     */
+    @Test
+    public void getCategoriesLinkWithContentletWithListparent() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+
+        final Category topLevelCategory = new CategoryDataGen().setCategoryName("Top Level Category - " + filter)
+                .setKey("top_level_getCategoriesLinkWithContentlet")
+                .setCategoryVelocityVarName("top_level_categoria_getCategoriesLinkWithContentlet")
+                .nextPersisted();
+
+        final Category childCategory = new CategoryDataGen().setCategoryName("Child Category - " + filter)
+                .setKey("child_getCategoriesLinkWithContentlet")
+                .setCategoryVelocityVarName("child_category_getCategoriesLinkWithContentlet")
+                .parent(topLevelCategory)
+                .nextPersisted();
+
+        final Field catField = new FieldDataGen()
+                .type(CategoryField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen().field(catField).nextPersisted();
+
+        Contentlet content = new ContentletDataGen(contentType.id()).next();
+
+        content = APILocator.getContentletAPI().checkin(content, APILocator.systemUser(), false,
+                list(childCategory));
+
+        final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
+                new CategorySearchCriteria.Builder().searchAllLevels(true).parentList(true).setCountChildren(true).filter(filter).build());
+
+        System.out.println("resultCategories = " + resultCategories);
+
+        assertEquals(2, resultCategories.size());
+
+        for (HierarchedCategory resultCategory : resultCategories) {
+            if (resultCategory.getCategoryName().equals(topLevelCategory.getCategoryName())) {
+                assertEquals(1, resultCategory.getChildrenCount());
+            } else if (resultCategory.getCategoryName().equals(childCategory.getCategoryName())) {
+                assertEquals(0, resultCategory.getChildrenCount());
+            } else {
+                throw new AssertionError("Category is not expected");
+            }
+        }
+    }
 }

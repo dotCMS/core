@@ -119,7 +119,7 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
                 ", CONCAT(ch.path, ',', json_build_object('inode', c.inode, 'name', c.category_name, 'key', c.category_key)::varchar) AS path" :
                 StringPool.BLANK;
 
-        final String parentList_3 = this.parentList ? ", ch.path" : StringPool.BLANK;
+        final String parentList_3 = this.parentList ? ", c.path" : StringPool.BLANK;
 
         return StringUtils.format(QUERY_TEMPLATE, Map.of(
             "rootFilter", rootFilter,
