@@ -8,6 +8,7 @@ import {
     Input,
     OnDestroy,
     QueryList,
+    signal,
     Type,
     ViewChild,
     ViewChildren
@@ -37,7 +38,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
 })
 export class DotWizardComponent implements OnDestroy {
     wizardData: { [key: string]: string };
-    dialogActions: DotDialogActions;
+    $dialogActions = signal<DotDialogActions | null>(null);
     transform = '';
 
     @Input() data: DotWizardInput;
@@ -84,7 +85,6 @@ export class DotWizardComponent implements OnDestroy {
      * @memberof DotWizardComponent
      */
     close(): void {
-        this.dialog.visible = false;
         this.data = null;
         this.currentStep = 0;
         this.updateTransform();
@@ -100,25 +100,16 @@ export class DotWizardComponent implements OnDestroy {
         const [form]: HTMLFieldSetElement[] = event
             .composedPath()
             .filter((x: Node) => x.nodeName === 'FORM') as HTMLFieldSetElement[];
+
         if (form) {
             if (form.elements.item(form.elements.length - 1) === event.target) {
+                event.preventDefault();
+                event.stopPropagation();
                 const acceptButton = document.getElementsByClassName(
                     'dialog__button-accept'
                 )[0] as HTMLButtonElement;
                 acceptButton.focus();
-                event.preventDefault();
             }
-        }
-    }
-
-    /**
-     * handle the enter event, if the form is valid move to the next step
-     * @memberof DotWizardComponent
-     */
-    handleEnter(event: KeyboardEvent): void {
-        event.stopImmediatePropagation();
-        if (this.stepsValidation[this.currentStep]) {
-            this.dialog.acceptAction();
         }
     }
 
@@ -158,7 +149,7 @@ export class DotWizardComponent implements OnDestroy {
     }
 
     private setDialogActions(): void {
-        this.dialogActions = {
+        this.$dialogActions.set({
             accept: {
                 action: () => {
                     this.getAcceptAction();
@@ -169,7 +160,7 @@ export class DotWizardComponent implements OnDestroy {
                 disabled: true
             },
             cancel: this.setCancelButton()
-        };
+        });
     }
 
     private loadNextStep(next: number): void {
@@ -177,17 +168,17 @@ export class DotWizardComponent implements OnDestroy {
         this.focusFistFormElement();
         this.updateTransform();
         if (this.isLastStep()) {
-            this.dialogActions.accept.label = this.dotMessageService.get('send');
-            this.dialogActions.cancel.disabled = false;
+            this.$dialogActions().accept.label = this.dotMessageService.get('send');
+            this.$dialogActions().cancel.disabled = false;
         } else if (this.isFirstStep()) {
-            this.dialogActions.cancel.disabled = true;
-            this.dialogActions.accept.label = this.dotMessageService.get('next');
+            this.$dialogActions().cancel.disabled = true;
+            this.$dialogActions().accept.label = this.dotMessageService.get('next');
         } else {
-            this.dialogActions.cancel.disabled = false;
-            this.dialogActions.accept.label = this.dotMessageService.get('next');
+            this.$dialogActions().cancel.disabled = false;
+            this.$dialogActions().accept.label = this.dotMessageService.get('next');
         }
 
-        this.dialogActions.accept.disabled = !this.stepsValidation[this.currentStep];
+        this.$dialogActions().accept.disabled = !this.stepsValidation[this.currentStep];
     }
 
     private getAcceptAction(): void {
@@ -205,7 +196,7 @@ export class DotWizardComponent implements OnDestroy {
     private setValid(valid: boolean, step: number): void {
         this.stepsValidation[step] = valid;
         if (this.currentStep === step) {
-            this.dialogActions.accept.disabled = !valid;
+            this.$dialogActions().accept.disabled = !valid;
         }
     }
 

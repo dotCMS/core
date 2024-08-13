@@ -450,6 +450,34 @@ export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
         template: {
             drawed: true
         }
+    }),
+
+    3: of({
+        page: {
+            title: 'hello world',
+            identifier: '123',
+            inode: '123',
+            canEdit: true,
+            canRead: true,
+            pageURI: 'index',
+            liveInode: '1234',
+            stInode: '12345',
+            live: true
+        },
+        viewAs: {
+            language: {
+                id: 3,
+                languageCode: 'ES',
+                countryCode: '',
+                language: 'Spanish',
+                country: 'Spain'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        site: mockSites[0],
+        template: {
+            drawed: true
+        }
     })
 };
 
