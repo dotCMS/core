@@ -1471,7 +1471,14 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When:
+     * - Create a Top level Category and one child.
+     * - Crate a Content Type with a category Field.
+     * - Crate a Contentlet and select the Child Category as value of the Category Field.
+     * - Find these 2 categories and count the children
+     *
      * Should:
+     * - For the Top level Category the counting should be 1
+     * - For the Child the counting should be 0.
      */
     @Test
     public void getCategoriesLinkWithContentlet() throws DotDataException, DotSecurityException {
