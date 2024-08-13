@@ -254,7 +254,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             reducedResults.putIfAbsent(result.inode,contentObject);
         }
 
-        final long count = EmbeddingsAPI.impl().countEmbeddings(searcher);
+        final long count = APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddings(searcher);
         final JSONObject map = new JSONObject();
         map.put(AiKeys.TIME_TO_EMBEDDINGS, System.currentTimeMillis() - startTime + "ms");
         map.put(AiKeys.TOTAL, searchResults.size());
@@ -328,7 +328,10 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return cachedEmbeddings;
         }
 
-        final List<Integer> tokens = EncodingUtil.ENCODING.get().encode(content);
+        final List<Integer> tokens = EncodingUtil.get()
+                .getEncoding()
+                .map(encoding -> encoding.encode(content))
+                .orElse(List.of());
         if (tokens.isEmpty()) {
             debugLogger(this.getClass(), () -> String.format("No tokens for content ID '%s' were encoded: %s", contentId, content));
             return Tuple.of(0, List.of());

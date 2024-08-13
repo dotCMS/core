@@ -85,13 +85,12 @@ import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     QUERY_PARAMS_MOCK,
-    PAGE_INODE_MOCK,
-    dotPageContainerStructureMock,
     URL_CONTENT_MAP_MOCK,
     EDIT_ACTION_PAYLOAD_MOCK,
     TREE_NODE_MOCK,
     newContentlet,
-    PAYLOAD_MOCK
+    PAYLOAD_MOCK,
+    UVE_PAGE_RESPONSE_MAP
 } from '../shared/mocks';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -128,7 +127,7 @@ const IFRAME_MOCK = {
     }
 };
 
-const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
+const createRouting = () =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
@@ -260,215 +259,11 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 useValue: {
                     get({ language_id }) {
                         // We use the language_id to determine the response, use this to test different behaviors
-                        return {
-                            // Locked without unlock permission
-                            8: of({
-                                page: {
-                                    title: 'hello world',
-                                    inode: PAGE_INODE_MOCK,
-                                    identifier: '123',
-                                    ...permissions,
-                                    pageURI: 'page-one',
-                                    canEdit: true,
-                                    canLock: false,
-                                    isLocked: true,
-                                    lockedByUser: 'user'
-                                },
-                                site: {
-                                    identifier: '123'
-                                },
-                                viewAs: {
-                                    language: {
-                                        id: 2,
-                                        language: 'Spanish',
-                                        countryCode: 'ES',
-                                        languageCode: 'es',
-                                        country: 'España'
-                                    },
-                                    persona: DEFAULT_PERSONA
-                                },
-                                containers: dotPageContainerStructureMock
-                            }),
-                            //Locked  with unlock permission
-                            7: of({
-                                page: {
-                                    title: 'hello world',
-                                    inode: PAGE_INODE_MOCK,
-                                    identifier: '123',
-                                    ...permissions,
-                                    pageURI: 'page-one',
-                                    canEdit: true,
-                                    canLock: true,
-                                    locked: true,
-                                    lockedByName: 'user'
-                                },
-                                site: {
-                                    identifier: '123'
-                                },
-                                viewAs: {
-                                    language: {
-                                        id: 2,
-                                        language: 'Spanish',
-                                        countryCode: 'ES',
-                                        languageCode: 'es',
-                                        country: 'España'
-                                    },
-                                    persona: DEFAULT_PERSONA
-                                },
-                                containers: dotPageContainerStructureMock
-                            }),
-                            6: of({
-                                page: {
-                                    title: 'hello world',
-                                    inode: PAGE_INODE_MOCK,
-                                    identifier: '123',
-                                    ...permissions,
-                                    pageURI: 'page-one',
-                                    canEdit: false
-                                },
-                                site: {
-                                    identifier: '123'
-                                },
-                                viewAs: {
-                                    language: {
-                                        id: 6,
-                                        language: 'Portuguese',
-                                        countryCode: 'BR',
-                                        languageCode: 'br',
-                                        country: 'Brazil'
-                                    },
-                                    persona: DEFAULT_PERSONA
-                                },
-                                urlContentMap: URL_CONTENT_MAP_MOCK,
-                                containers: dotPageContainerStructureMock
-                            }),
-                            5: of({
-                                page: {
-                                    title: 'hello world',
-                                    inode: PAGE_INODE_MOCK,
-                                    identifier: 'i-have-a-running-experiment',
-                                    ...permissions,
-                                    pageURI: 'page-one',
-                                    rendered: '<div>New Content - Hello World</div>',
-                                    canEdit: true
-                                },
-                                site: {
-                                    identifier: '123'
-                                },
-                                viewAs: {
-                                    language: {
-                                        id: 4,
-                                        language: 'Russian',
-                                        countryCode: 'Ru',
-                                        languageCode: 'ru',
-                                        country: 'Russia'
-                                    },
-                                    persona: DEFAULT_PERSONA
-                                },
-                                urlContentMap: URL_CONTENT_MAP_MOCK,
-                                containers: dotPageContainerStructureMock
-                            }),
-                            4: of({
-                                page: {
-                                    title: 'hello world',
-                                    inode: PAGE_INODE_MOCK,
-                                    identifier: '123',
-                                    ...permissions,
-                                    pageURI: 'page-one',
-                                    rendered: '<div>New Content - Hello World</div>',
-                                    canEdit: true
-                                },
-                                site: {
-                                    identifier: '123'
-                                },
-                                viewAs: {
-                                    language: {
-                                        id: 4,
-                                        language: 'German',
-                                        countryCode: 'DE',
-                                        languageCode: 'de',
-                                        country: 'Germany'
-                                    },
-                                    persona: DEFAULT_PERSONA
-                                },
-                                urlContentMap: URL_CONTENT_MAP_MOCK,
-                                containers: dotPageContainerStructureMock
-                            }),
-                            3: of({
-                                page: {
-                                    title: 'hello world',
-                                    inode: PAGE_INODE_MOCK,
-                                    identifier: '123',
-                                    ...permissions,
-                                    pageURI: 'page-one',
-                                    rendered: '<div>hello world</div>',
-                                    canEdit: true
-                                },
-                                site: {
-                                    identifier: '123'
-                                },
-                                viewAs: {
-                                    language: {
-                                        id: 3,
-                                        language: 'German',
-                                        countryCode: 'DE',
-                                        languageCode: 'de',
-                                        country: 'Germany'
-                                    },
-                                    persona: DEFAULT_PERSONA
-                                },
-                                urlContentMap: URL_CONTENT_MAP_MOCK,
-                                containers: dotPageContainerStructureMock
-                            }),
-                            2: of({
-                                page: {
-                                    title: 'hello world',
-                                    inode: PAGE_INODE_MOCK,
-                                    identifier: '123',
-                                    ...permissions,
-                                    pageURI: 'page-one',
-                                    canEdit: true
-                                },
-                                site: {
-                                    identifier: '123'
-                                },
-                                viewAs: {
-                                    language: {
-                                        id: 2,
-                                        language: 'Spanish',
-                                        countryCode: 'ES',
-                                        languageCode: 'es',
-                                        country: 'España'
-                                    },
-                                    persona: DEFAULT_PERSONA
-                                },
-                                containers: dotPageContainerStructureMock
-                            }),
-                            1: of({
-                                page: {
-                                    title: 'hello world',
-                                    inode: PAGE_INODE_MOCK,
-                                    identifier: '123',
-                                    ...permissions,
-                                    pageURI: 'page-one'
-                                },
-                                site: {
-                                    identifier: '123'
-                                },
-                                viewAs: {
-                                    language: {
-                                        id: 1,
-                                        language: 'English',
-                                        countryCode: 'US',
-                                        languageCode: 'EN',
-                                        country: 'United States'
-                                    },
-                                    persona: DEFAULT_PERSONA
-                                },
-                                urlContentMap: URL_CONTENT_MAP_MOCK,
-                                containers: dotPageContainerStructureMock
-                            })
-                        }[language_id];
+                        return UVE_PAGE_RESPONSE_MAP[language_id];
+                    },
+                    getClientPage({ language_id }, _clientConfig) {
+                        // We use the language_id to determine the response, use this to test different behaviors
+                        return UVE_PAGE_RESPONSE_MAP[language_id];
                     },
                     save() {
                         return of({});
@@ -539,7 +334,7 @@ describe('EditEmaEditorComponent', () => {
         let router: Router;
         let dotPageApiService: DotPageApiService;
 
-        const createComponent = createRouting({ canEdit: true, canRead: true });
+        const createComponent = createRouting();
 
         const triggerCustomEvent = (
             element: DebugElement,
@@ -2907,6 +2702,79 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(saveContentletSpy).not.toHaveBeenCalled();
                     expect(setEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                });
+            });
+
+            describe('CUSTOMER ACTIONS', () => {
+                describe('CLIENT_READY', () => {
+                    it('should set client is ready when not extra configuration is send', () => {
+                        const setIsClientReadySpy = jest.spyOn(store, 'setIsClientReady');
+
+                        window.dispatchEvent(
+                            new MessageEvent('message', {
+                                origin: HOST,
+                                data: {
+                                    action: CUSTOMER_ACTIONS.CLIENT_READY
+                                }
+                            })
+                        );
+
+                        expect(setIsClientReadySpy).toHaveBeenCalledWith(true);
+                    });
+
+                    it('should set client GraphQL configuration and call the reload', () => {
+                        const setClientConfigurationSpy = jest.spyOn(
+                            store,
+                            'setClientConfiguration'
+                        );
+                        const reloadSpy = jest.spyOn(store, 'reload');
+
+                        const config = {
+                            params: {},
+                            query: '{ query: { hello } }'
+                        };
+
+                        window.dispatchEvent(
+                            new MessageEvent('message', {
+                                origin: HOST,
+                                data: {
+                                    action: CUSTOMER_ACTIONS.CLIENT_READY,
+                                    payload: config
+                                }
+                            })
+                        );
+
+                        expect(setClientConfigurationSpy).toHaveBeenCalledWith(config);
+                        expect(reloadSpy).toHaveBeenCalled();
+                    });
+
+                    it('should set client PAGEAPI configuration and call the reload', () => {
+                        const setClientConfigurationSpy = jest.spyOn(
+                            store,
+                            'setClientConfiguration'
+                        );
+                        const reloadSpy = jest.spyOn(store, 'reload');
+
+                        const config = {
+                            params: {
+                                depth: '1'
+                            },
+                            query: ''
+                        };
+
+                        window.dispatchEvent(
+                            new MessageEvent('message', {
+                                origin: HOST,
+                                data: {
+                                    action: CUSTOMER_ACTIONS.CLIENT_READY,
+                                    payload: config
+                                }
+                            })
+                        );
+
+                        expect(setClientConfigurationSpy).toHaveBeenCalledWith(config);
+                        expect(reloadSpy).toHaveBeenCalled();
+                    });
                 });
             });
         });

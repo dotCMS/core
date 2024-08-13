@@ -1,8 +1,6 @@
 package com.dotcms.ai.app;
 
-import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -42,7 +40,7 @@ public class AIAppUtil {
     public AIModel createTextModel(final Map<String, Secret> secrets) {
         return AIModel.builder()
                 .withType(AIModelType.TEXT)
-                .withNames(discoverSecret(secrets, AppKeys.TEXT_MODEL_NAMES))
+                .withNames(splitDiscoveredSecret(secrets, AppKeys.TEXT_MODEL_NAMES))
                 .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_TOKENS_PER_MINUTE))
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_MAX_TOKENS))
@@ -59,7 +57,7 @@ public class AIAppUtil {
     public AIModel createImageModel(final Map<String, Secret> secrets) {
         return AIModel.builder()
                 .withType(AIModelType.IMAGE)
-                .withNames(discoverSecret(secrets, AppKeys.IMAGE_MODEL_NAMES))
+                .withNames(splitDiscoveredSecret(secrets, AppKeys.IMAGE_MODEL_NAMES))
                 .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_TOKENS_PER_MINUTE))
                 .withApiPerMinute(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_API_PER_MINUTE))
                 .withMaxTokens(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_MAX_TOKENS))
@@ -117,7 +115,7 @@ public class AIAppUtil {
      * @return the list of split secret values
      */
     public List<String> splitDiscoveredSecret(final Map<String, Secret> secrets, final AppKeys key) {
-        return Arrays.stream(discoverSecret(secrets, key).split(","))
+        return Arrays.stream(Optional.ofNullable(discoverSecret(secrets, key)).orElse(StringPool.BLANK).split(","))
                 .map(String::trim)
                 .map(String::toLowerCase)
                 .collect(Collectors.toList());
@@ -141,25 +139,6 @@ public class AIAppUtil {
      */
     public boolean discoverBooleanSecret(final Map<String, Secret> secrets, final AppKeys key) {
         return Boolean.parseBoolean(discoverSecret(secrets, key));
-    }
-
-    /**
-     * Resolves an environment-specific secret value from the provided secrets map using the specified key.
-     * If the secret is not found, it attempts to discover the value from environment variables.
-     *
-     * @param secrets the map of secrets
-     * @param key the key to look up the secret
-     * @return the resolved environment-specific secret value or an empty string if not found
-     */
-    public String discoverEnvSecret(final Map<String, Secret> secrets, final AppKeys key) {
-        final String secret = discoverSecret(secrets, key, StringPool.BLANK);
-        if (UtilMethods.isSet(secret)) {
-            return secret;
-        }
-
-        return Optional
-                .ofNullable(AppsUtil.discoverEnvVarValue(AppKeys.APP_KEY, key.key, null))
-                .orElse(StringPool.BLANK);
     }
 
     private int toInt(final String value) {

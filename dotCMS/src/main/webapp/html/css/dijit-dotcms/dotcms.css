@@ -2876,6 +2876,9 @@
   --color-palette-primary-op-70: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.7);
   --color-palette-primary-op-80: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.8);
   --color-palette-primary-op-90: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.9);
+  --color-palette-primary-shade: var(--color-palette-primary-600);
+  --color-palette-primary: var(--color-palette-primary-500);
+  --color-palette-primary-tint: var(--color-palette-primary-200);
   --color-palette-secondary-100: hsl(var(--color-secondary-h) var(--color-secondary-s) 98%);
   --color-palette-secondary-200: hsl(var(--color-secondary-h) var(--color-secondary-s) 94%);
   --color-palette-secondary-300: hsl(var(--color-secondary-h) var(--color-secondary-s) 84%);
@@ -2939,6 +2942,9 @@
       60%,
       0.9
   );
+  --color-palette-secondary-shade: var(--color-palette-secondary-600);
+  --color-palette-secondary: var(--color-palette-secondary-500);
+  --color-palette-secondary-tint: var(--color-palette-secondary-200);
   /* COLOR BLACK OPACITY */
   --color-palette-black-op-10: hsla(
       var(--color-black-h),
@@ -8944,16 +8950,26 @@ Styles for commons fields along the backend
   gap: 0.25rem;
   text-decoration: none;
   border: 1px solid rgba(0, 0, 0, 0.1);
+  width: auto;
+  max-width: 112px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-left: 1.313rem;
+  position: relative;
 }
 .tagLink.persona:before {
   content: "\f007";
   display: flex;
 }
 .tagLink:after {
+  position: absolute;
+  left: 0.5rem;
   color: var(--color-palette-primary-500);
   content: "✕";
   font-size: 0.75rem;
   text-align: center;
+  line-height: 0.374rem;
 }
 .tagLink:hover {
   border: 1px solid var(--color-palette-primary-500);

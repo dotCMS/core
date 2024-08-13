@@ -14,7 +14,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -46,9 +45,7 @@ public class AIViewTool implements ViewTool {
      * @return true if AI is enabled, false otherwise
      */
     public boolean isAiEnabled() {
-        return Optional.ofNullable(config)
-                .map(appConfig -> StringUtils.isNotBlank(appConfig.getApiKey()))
-                .orElse(false);
+        return Optional.ofNullable(config).map(AppConfig::isEnabled).orElse(false);
     }
 
     /**

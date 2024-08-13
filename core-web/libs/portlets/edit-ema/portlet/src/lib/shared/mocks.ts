@@ -450,6 +450,34 @@ export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
         template: {
             drawed: true
         }
+    }),
+
+    3: of({
+        page: {
+            title: 'hello world',
+            identifier: '123',
+            inode: '123',
+            canEdit: true,
+            canRead: true,
+            pageURI: 'index',
+            liveInode: '1234',
+            stInode: '12345',
+            live: true
+        },
+        viewAs: {
+            language: {
+                id: 3,
+                languageCode: 'ES',
+                countryCode: '',
+                language: 'Spanish',
+                country: 'Spain'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        site: mockSites[0],
+        template: {
+            drawed: true
+        }
     })
 };
 
@@ -695,4 +723,215 @@ export const BASE_SHELL_PROPS_RESPONSE = {
             id: 'properties'
         }
     ]
+};
+
+export const UVE_PAGE_RESPONSE_MAP = {
+    // Locked without unlock permission
+    8: of({
+        page: {
+            title: 'hello world',
+            inode: PAGE_INODE_MOCK,
+            identifier: '123',
+            canEdit: true,
+            canRead: true,
+            pageURI: 'page-one',
+            canLock: false,
+            isLocked: true,
+            lockedByUser: 'user'
+        },
+        site: {
+            identifier: '123'
+        },
+        viewAs: {
+            language: {
+                id: 2,
+                language: 'Spanish',
+                countryCode: 'ES',
+                languageCode: 'es',
+                country: 'España'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        containers: dotPageContainerStructureMock
+    }),
+    //Locked  with unlock permission
+    7: of({
+        page: {
+            title: 'hello world',
+            inode: PAGE_INODE_MOCK,
+            identifier: '123',
+            canEdit: true,
+            canRead: true,
+            pageURI: 'page-one',
+            canLock: true,
+            locked: true,
+            lockedByName: 'user'
+        },
+        site: {
+            identifier: '123'
+        },
+        viewAs: {
+            language: {
+                id: 2,
+                language: 'Spanish',
+                countryCode: 'ES',
+                languageCode: 'es',
+                country: 'España'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        containers: dotPageContainerStructureMock
+    }),
+    6: of({
+        page: {
+            title: 'hello world',
+            inode: PAGE_INODE_MOCK,
+            identifier: '123',
+            canRead: true,
+            pageURI: 'page-one',
+            canEdit: false
+        },
+        site: {
+            identifier: '123'
+        },
+        viewAs: {
+            language: {
+                id: 6,
+                language: 'Portuguese',
+                countryCode: 'BR',
+                languageCode: 'br',
+                country: 'Brazil'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        urlContentMap: URL_CONTENT_MAP_MOCK,
+        containers: dotPageContainerStructureMock
+    }),
+    5: of({
+        page: {
+            title: 'hello world',
+            inode: PAGE_INODE_MOCK,
+            identifier: 'i-have-a-running-experiment',
+            canRead: true,
+            pageURI: 'page-one',
+            rendered: '<div>New Content - Hello World</div>',
+            canEdit: true
+        },
+        site: {
+            identifier: '123'
+        },
+        viewAs: {
+            language: {
+                id: 4,
+                language: 'Russian',
+                countryCode: 'Ru',
+                languageCode: 'ru',
+                country: 'Russia'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        urlContentMap: URL_CONTENT_MAP_MOCK,
+        containers: dotPageContainerStructureMock
+    }),
+    4: of({
+        page: {
+            title: 'hello world',
+            inode: PAGE_INODE_MOCK,
+            identifier: '123',
+            canRead: true,
+            pageURI: 'page-one',
+            rendered: '<div>New Content - Hello World</div>',
+            canEdit: true
+        },
+        site: {
+            identifier: '123'
+        },
+        viewAs: {
+            language: {
+                id: 4,
+                language: 'German',
+                countryCode: 'DE',
+                languageCode: 'de',
+                country: 'Germany'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        urlContentMap: URL_CONTENT_MAP_MOCK,
+        containers: dotPageContainerStructureMock
+    }),
+    3: of({
+        page: {
+            title: 'hello world',
+            inode: PAGE_INODE_MOCK,
+            identifier: '123',
+            canRead: true,
+            pageURI: 'page-one',
+            rendered: '<div>hello world</div>',
+            canEdit: true
+        },
+        site: {
+            identifier: '123'
+        },
+        viewAs: {
+            language: {
+                id: 3,
+                language: 'German',
+                countryCode: 'DE',
+                languageCode: 'de',
+                country: 'Germany'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        urlContentMap: URL_CONTENT_MAP_MOCK,
+        containers: dotPageContainerStructureMock
+    }),
+    2: of({
+        page: {
+            title: 'hello world',
+            inode: PAGE_INODE_MOCK,
+            identifier: '123',
+            canRead: true,
+            pageURI: 'page-one',
+            canEdit: true
+        },
+        site: {
+            identifier: '123'
+        },
+        viewAs: {
+            language: {
+                id: 2,
+                language: 'Spanish',
+                countryCode: 'ES',
+                languageCode: 'es',
+                country: 'España'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        containers: dotPageContainerStructureMock
+    }),
+    1: of({
+        page: {
+            title: 'hello world',
+            inode: PAGE_INODE_MOCK,
+            identifier: '123',
+            canEdit: true,
+            canRead: true,
+            pageURI: 'page-one'
+        },
+        site: {
+            identifier: '123'
+        },
+        viewAs: {
+            language: {
+                id: 1,
+                language: 'English',
+                countryCode: 'US',
+                languageCode: 'EN',
+                country: 'United States'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        urlContentMap: URL_CONTENT_MAP_MOCK,
+        containers: dotPageContainerStructureMock
+    })
 };

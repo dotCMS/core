@@ -1,12 +1,12 @@
 package com.dotcms.ai.viewtool;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.json.JSONObject;
@@ -64,7 +64,7 @@ public class SearchTool implements ViewTool {
                 .build();
 
         try {
-            return EmbeddingsAPI.impl(host).searchForContent(searcher);
+            return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
             return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
         }
@@ -82,7 +82,7 @@ public class SearchTool implements ViewTool {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(mapIn).withUser(user).build();
 
         try {
-            return EmbeddingsAPI.impl(host).searchForContent(searcher);
+            return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
             return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
         }
@@ -137,7 +137,7 @@ public class SearchTool implements ViewTool {
                     .withLimit(50)
                     .withThreshold(.25f)
                     .build();
-            return EmbeddingsAPI.impl(host).searchForContent(searcher);
+            return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
             return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
         }

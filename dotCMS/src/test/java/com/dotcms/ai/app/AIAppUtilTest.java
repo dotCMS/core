@@ -6,8 +6,11 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for the \AIAppUtil\ class. This test class verifies the functionality
@@ -84,20 +87,6 @@ public class AIAppUtilTest {
     }
 
     /**
-     * Given a map of secrets containing a key with an environment secret value
-     * When the discoverEnvSecret method is called with the key
-     * Then the environment secret value should be returned.
-     */
-    @Test
-    public void testDiscoverEnvSecret() {
-        when(secrets.get("apiKey")).thenReturn(secret);
-        when(secret.getString()).thenReturn("envSecretValue");
-
-        String result = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
-        assertEquals("envSecretValue", result);
-    }
-
-    /**
      * Given a map of secrets containing a key with an integer secret value
      * When the discoverIntSecret method is called with the key
      * Then the integer secret value should be returned.
@@ -138,7 +127,7 @@ public class AIAppUtilTest {
         AIModel model = aiAppUtil.createTextModel(secrets);
         assertNotNull(model);
         assertEquals(AIModelType.TEXT, model.getType());
-        assertTrue(model.getNames().contains("textModel"));
+        assertTrue(model.getNames().contains("textmodel"));
     }
 
     /**
@@ -154,7 +143,7 @@ public class AIAppUtilTest {
         AIModel model = aiAppUtil.createImageModel(secrets);
         assertNotNull(model);
         assertEquals(AIModelType.IMAGE, model.getType());
-        assertTrue(model.getNames().contains("imageModel"));
+        assertTrue(model.getNames().contains("imagemodel"));
     }
 
     /**
