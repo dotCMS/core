@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions';
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -12,7 +12,7 @@ const messageServiceMock = new MockDotMessageService({
     'error.form.validator.required': 'Required message validator'
 });
 
-export default {
+const meta: Meta<DotExperimentsInlineEditTextComponent> = {
     title: 'Library/Experiments/Components/InlineEditText',
     component: DotExperimentsInlineEditTextComponent,
     decorators: [
@@ -67,12 +67,13 @@ export default {
         },
         textChanged: { action: 'textChanged' }
     }
-} as Meta<DotExperimentsInlineEditTextComponent>;
+};
+export default meta;
 
-const Template: Story<DotExperimentsInlineEditTextComponent> = (
-    args: DotExperimentsInlineEditTextComponent
-) => ({
-    props: { ...args, textChanged: action('textChanged') }
-});
+type Story = StoryObj<DotExperimentsInlineEditTextComponent>;
 
-export const Default = Template.bind({});
+export const Default: Story = {
+    args: {
+        textChanged: action('textChanged')
+    },
+}

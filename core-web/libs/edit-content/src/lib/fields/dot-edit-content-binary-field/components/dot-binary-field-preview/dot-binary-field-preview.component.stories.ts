@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions';
-import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
@@ -68,7 +68,14 @@ const previewFile = {
     </html>`
 };
 
-export default {
+type Args = DotBinaryFieldPreviewComponent & {
+    file: DotFilePreview,
+    variableName: string,
+    fieldVariable: string,
+    styles: string[]
+};
+
+const meta: Meta<Args> = {
     title: 'Library / Edit Content / Binary Field / Components / Preview',
     component: DotBinaryFieldPreviewComponent,
     decorators: [
@@ -96,7 +103,19 @@ export default {
     },
     args: {
         file: previewImage,
-        variableName: 'binaryField'
+        variableName: 'binaryField',
+        styles: [
+            `
+            .container {
+                width: 100%;
+                max-width: 36rem;
+                height: 12.5rem;
+                border: 1px solid #f2f2f2;
+                border-radius: 4px;
+                padding: 0.5rem;
+            }
+    `
+        ],
     },
     argTypes: {
         file: {
@@ -114,54 +133,43 @@ export default {
             control: 'text',
             description: 'Field variable name'
         }
-    }
-} as Meta<DotBinaryFieldPreviewComponent>;
-
-const Template: Story<DotBinaryFieldPreviewComponent> = (args: DotBinaryFieldPreviewComponent) => ({
-    props: {
-        ...args,
-        // https://storybook.js.org/docs/6.5/angular/essentials/actions#action-args
-        editFile: action('editFile'),
-        removeFile: action('removeFile')
     },
-    styles: [
-        `
-        .container {
-            width: 100%;
-            max-width: 36rem;
-            height: 12.5rem;
-            border: 1px solid #f2f2f2;
-            border-radius: 4px;
-            padding: 0.5rem;
-        }
-`
-    ],
-    template: `
+    render: (args) => ({
+        props: args,
+        template: `
         <div class="container">
             <dot-binary-field-preview
                 [file]="file"
                 [variableName]="variableName"
                 (editFile)="editFile($event)"
                 (removeFile)="removeFile($event)"
-            ></dot-binary-field-preview>
-        </div> 
-    `
-});
+            />
+        </div> `
+    })
+};
+export default meta;
 
-export const Image = Template.bind({});
+type Story = StoryObj<Args>;
 
-export const Video = Template.bind({});
-
-Video.args = {
-    file: previewVideo,
-    variableName: 'binaryField',
-    fieldVariable: 'Blog'
+export const Image: Story = {
+    args: {
+        editFile: action('editFile'),
+        removeFile: action('removeFile'),
+    },
 };
 
-export const File = Template.bind({});
+export const Video = {
+    args: {
+        file: previewVideo,
+        variableName: 'binaryField',
+        fieldVariable: 'Blog'
+    }
+}
 
-File.args = {
-    file: previewFile,
-    variableName: 'binaryField',
-    fieldVariable: 'Blog'
+export const File = {
+    args: {
+        file: previewFile,
+        variableName: 'binaryField',
+        fieldVariable: 'Blog'
+    }
 };

@@ -1,4 +1,5 @@
-import { Meta, Story, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { of } from 'rxjs';
 
 import { NgClass, NgFor, NgIf, TitleCasePipe } from '@angular/common';
 
@@ -9,13 +10,13 @@ import { seoOGTagsMock, seoOGTagsResultMock } from '@dotcms/utils-testing';
 
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
 
-export default {
+const meta: Meta<DotResultsSeoToolComponent> = {
     title: 'DotCMS/Results Seo Tool',
     component: DotResultsSeoToolComponent,
     args: {
         hostName: 'A title',
         seoOGTags: seoOGTagsMock,
-        seoOGTagsResults: seoOGTagsResultMock
+        seoOGTagsResults: of(seoOGTagsResultMock)
     },
     decorators: [
         moduleMetadata({
@@ -30,8 +31,9 @@ export default {
             ]
         })
     ]
-} as Meta;
+};
+export default meta;
 
-export const Primary: Story = (args) => ({
-    props: args
-});
+type Story = StoryObj<DotResultsSeoToolComponent>;
+
+export const Primary: Story = {};
