@@ -1,57 +1,20 @@
+import { faker } from '@faker-js/faker';
 import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { DataView, DataViewModule } from 'primeng/dataview';
 
-const data = [
-    {
-        id: '1000',
-        code: 'f230fh0g3',
-        name: 'Bamboo Watch',
-        description: 'Product Description',
-        image: 'bamboo-watch.jpg',
-        price: 65,
-        category: 'Accessories',
-        quantity: 24,
-        inventoryStatus: 'INSTOCK',
-        rating: 5
-    },
-    {
-        id: '1001',
-        code: 'nvklal433',
-        name: 'Black Watch',
-        description: 'Product Description',
-        image: 'bamboo-watch.jpg',
-        price: 72,
-        category: 'Accessories',
-        quantity: 61,
-        inventoryStatus: 'INSTOCK',
-        rating: 4
-    },
-    {
-        id: '1002',
-        code: 'zz21cz3c1',
-        name: 'Blue Band',
-        description: 'Product Description',
-        image: 'bamboo-watch.jpg',
-        price: 79,
-        category: 'Fitness',
-        quantity: 2,
-        inventoryStatus: 'LOWSTOCK',
-        rating: 3
-    },
-    {
-        id: '1003',
-        code: '244wgerg2',
-        name: 'Blue T-Shirt',
-        description: 'Product Description',
-        image: 'bamboo-watch.jpg',
-        price: 29,
-        category: 'Clothing',
-        quantity: 25,
-        inventoryStatus: 'INSTOCK',
-        rating: 5
-    }
-];
+const data = Array.from({ length: 4 }).map(() => ({
+    id: faker.commerce.isbn(),
+    name: faker.commerce.productName(),
+    description: faker.commerce.productDescription(),
+    image: faker.image.urlLoremFlickr({
+        category: 'fashion',
+        width: 300,
+        height: 300
+    }),
+    price: faker.commerce.price(),
+    category: faker.commerce.productMaterial()
+}));
 
 const meta: Meta<DataView> = {
     title: 'PrimeNG/Data/DataView',
@@ -77,7 +40,7 @@ const meta: Meta<DataView> = {
                          <div class="col-12" *ngFor="let item of products">
                             <div class="flex flex-column sm:flex-row sm:align-items-center p-4 gap-3">
                                 <div class="md:w-10rem relative">
-                                    <img class="block xl:block mx-auto border-round w-full" [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + item.image" [alt]="item.name" />
+                                    <img class="block xl:block mx-auto border-round w-full" [src]="item.image" [alt]="item.name" />
                                 </div>
                                 <div>
                                     <span class="font-medium text-secondary text-sm">{{ item.category }}</span>
