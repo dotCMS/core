@@ -61,7 +61,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.RuleDataGen;
@@ -201,7 +201,7 @@ public class DependencyBundlerTest {
         final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final Host site = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
         final ContentType contentType = new ContentTypeDataGen().host(site).nextPersisted();
         final ContentType referencedContentType = new ContentTypeDataGen().host(site).nextPersisted();
         final Field storyBlockField =
@@ -238,7 +238,7 @@ public class DependencyBundlerTest {
             throws DotDataException, DotSecurityException {
 
         final Host host = createHostWithDependencies();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final TestData contentTypeWithDependencies = createContentTypeWithDependencies();
         final ContentType contentType = (ContentType) contentTypeWithDependencies.assetsToAddInBundle;
@@ -586,7 +586,7 @@ public class DependencyBundlerTest {
     private static Collection<TestData> createContentTestCase()
             throws DotDataException, DotSecurityException, IOException {
         final Host host = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
         final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
 
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
@@ -654,7 +654,7 @@ public class DependencyBundlerTest {
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
-        final Language imageFileLanguage = new LanguageDataGen().nextPersisted();
+        final Language imageFileLanguage = new UniqueLanguageDataGen().nextPersisted();
         final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
         File tempFile = File.createTempFile("contentWithImageBundleTest", ".jpg");
         URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
@@ -826,7 +826,7 @@ public class DependencyBundlerTest {
     }
 
     private static Collection<TestData> createLanguageTestCase() {
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         return list(
                 new TestData(language, new HashMap<>(), new HashMap<>(), filterDescriptorAllDependencies, "Language with filterDescriptorAllDependencies"),
@@ -1604,7 +1604,7 @@ public class DependencyBundlerTest {
         final Contentlet contentParent = (Contentlet) relationShip.get("contentParent");
 
         final Contentlet contentletChildAnotherLang = ContentletDataGen.checkout(contentletChild);
-        final Language anotherLang = new LanguageDataGen().nextPersisted();
+        final Language anotherLang = new UniqueLanguageDataGen().nextPersisted();
         contentletChildAnotherLang.setLanguageId(anotherLang.getId());
         ContentletDataGen.checkin(contentletChildAnotherLang);
 
@@ -1766,7 +1766,7 @@ public class DependencyBundlerTest {
 
     private Map<String, Object> createRelationShip() {
         final Host host = new SiteDataGen().nextPersisted();
-        final Language language = new LanguageDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType contentTypeParent =  new ContentTypeDataGen()
                 .host(host)
