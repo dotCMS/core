@@ -2,6 +2,7 @@ package com.dotcms.ai.app;
 
 import com.dotcms.ai.model.OpenAIModel;
 import com.dotcms.ai.model.OpenAIModels;
+import com.dotcms.ai.model.SimpleModel;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -15,7 +16,6 @@ import io.vavr.control.Try;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -177,18 +177,23 @@ public class AIModels {
      *
      * @return a list of available model names
      */
-    public List<String> getAvailableModels() {
-        final Set<String> configured = internalModels.entrySet().stream().flatMap(entry -> entry.getValue().stream())
+    public List<SimpleModel> getAvailableModels() {
+        final Set<SimpleModel> configured = internalModels.entrySet()
+                .stream()
+                .flatMap(entry -> entry.getValue().stream())
                 .map(Tuple2::_2)
-                .flatMap(model -> model.getNames().stream())
+                .flatMap(model -> model.getNames().stream().map(name -> new SimpleModel(name, model.getType())))
                 .collect(Collectors.toSet());
-        final Set<String> supported = new HashSet<>(getOrPullSupportedModels());
+        final Set<SimpleModel> supported = getOrPullSupportedModels()
+                .stream()
+                .map(SimpleModel::new)
+                .collect(Collectors.toSet());
         configured.retainAll(supported);
+
         return configured.stream().sorted().collect(Collectors.toList());
     }
 
     private static CircuitBreakerUrl.Response<OpenAIModels> fetchOpenAIModels(final AppConfig appConfig) {
-
         final CircuitBreakerUrl.Response<OpenAIModels> response = CircuitBreakerUrl.builder()
                 .setMethod(CircuitBreakerUrl.Method.GET)
                 .setUrl(OPEN_AI_MODELS_URL)

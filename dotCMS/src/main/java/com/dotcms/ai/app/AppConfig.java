@@ -301,9 +301,7 @@ public class AppConfig implements Serializable {
      * @return true if the configuration is enabled, false otherwise
      */
     public boolean isEnabled() {
-        return Stream.of(apiUrl, apiImageUrl, apiEmbeddingsUrl, apiKey)
-                .map(String::trim)
-                .allMatch(StringUtils::isNotBlank);
+        return Stream.of(apiUrl, apiImageUrl, apiEmbeddingsUrl, apiKey).allMatch(StringUtils::isNotBlank);
     }
 
 }
