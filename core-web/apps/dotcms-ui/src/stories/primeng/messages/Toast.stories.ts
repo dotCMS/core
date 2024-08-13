@@ -1,4 +1,4 @@
-import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
 
 import { importProvidersFrom } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -9,7 +9,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { ToastComponent } from './Toast.component';
 
-export default {
+const meta: Meta<ToastComponent> = {
     title: 'PrimeNG/Messages/Toast',
     component: ToastComponent,
     args: {
@@ -76,10 +76,9 @@ export default {
             providers: [MessageService, importProvidersFrom(BrowserAnimationsModule)]
         })
     ]
-} as Meta;
+};
+export default meta;
 
-const Template = (): StoryFn => (args) => ({
-    props: args
-});
+type Story = StoryObj;
 
-export const Base = Template();
+export const Base: Story = {};

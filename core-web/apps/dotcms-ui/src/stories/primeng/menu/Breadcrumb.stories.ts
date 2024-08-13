@@ -51,7 +51,6 @@ const meta: Meta<Breadcrumb> = {
         };
     }
 };
-
 export default meta;
 
 type Story = StoryObj<Breadcrumb>;
