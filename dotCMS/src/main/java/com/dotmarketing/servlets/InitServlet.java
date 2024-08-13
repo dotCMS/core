@@ -47,7 +47,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.loggers.mbeans.Log4jConfig;
 import com.dotmarketing.menubuilders.RefreshMenus;
-import com.dotmarketing.plugin.PluginLoader;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -113,8 +112,6 @@ public class InitServlet extends HttpServlet {
         Logger.info(this, "");
 
         String classPath = config.getServletContext().getRealPath("/WEB-INF/lib");
-
-        new PluginLoader().loadPlugins(config.getServletContext().getRealPath("/"),classPath);
 
         int mc = Config.getIntProperty("lucene_max_clause_count", 4096);
         BooleanQuery.setMaxClauseCount(mc);
