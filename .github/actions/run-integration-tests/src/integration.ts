@@ -85,14 +85,14 @@ export const COMMANDS: Commands = {
 }
 
 const START_DEPENDENCIES_CMD: Command = {
-  cmd: 'docker-compose',
+  cmd: 'docker compose',
   args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'],
   workingDir: dockerFolder,
   env: DEPS_ENV[dbType as keyof DatabaseEnvs]
 }
 
 const STOP_DEPENDENCIES_CMD: Command = {
-  cmd: 'docker-compose',
+  cmd: 'docker compose',
   args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'down'],
   workingDir: dockerFolder,
   env: DEPS_ENV[dbType as keyof DatabaseEnvs]

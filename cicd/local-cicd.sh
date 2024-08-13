@@ -69,7 +69,7 @@ function startDependencies {
   local test_type=${1}
   echo "Starting ${test_type} dependencies"
 
-  executeCmd "docker-compose
+  executeCmd "docker compose
     -f open-distro-compose.yml
     -f ${INPUT_DB_TYPE}-compose.yml
     up
@@ -83,7 +83,7 @@ function stopDependencies {
   local test_type=${1}
   echo "Stopping ${test_type} dependencies"
 
-  executeCmd "docker-compose
+  executeCmd "docker compose
     -f open-distro-compose.yml
     -f ${INPUT_DB_TYPE}-compose.yml
     down"

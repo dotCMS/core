@@ -130,13 +130,13 @@ const startDeps = async () => {
     =======================================`)
 
   if (includeAnalytics) {
-    execCmdAsync(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'up'], dockerFolder))
+    execCmdAsync(toCommand('docker compose', ['-f', 'analytics-compose.yml', 'up'], dockerFolder))
     await waitFor(140, 'Analytics Infrastructure')
   }
 
   execCmdAsync(
     toCommand(
-      'docker-compose',
+      'docker compose',
       ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'],
       dockerFolder,
       DEPS_ENV
@@ -155,7 +155,7 @@ const stopDeps = async () => {
     ===================================`)
   if (includeAnalytics) {
     try {
-      await execCmd(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'down', '-v'], dockerFolder))
+      await execCmd(toCommand('docker compose', ['-f', 'analytics-compose.yml', 'down', '-v'], dockerFolder))
     } catch (err) {
       console.error(`Error stopping dependencies: ${err}`)
     }
@@ -164,7 +164,7 @@ const stopDeps = async () => {
   try {
     await execCmd(
       toCommand(
-        'docker-compose',
+        'docker compose',
         ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down', '-v'],
         dockerFolder,
         DEPS_ENV
