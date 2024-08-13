@@ -649,7 +649,6 @@ public class PageResource {
                 }
         )
     public final Response addContent(@Context final HttpServletRequest request,
-            @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("pageId") @Parameter(description = "ID of page which is being updated") final String pageId,
             @QueryParam("variantName") final String variantNameParam,
