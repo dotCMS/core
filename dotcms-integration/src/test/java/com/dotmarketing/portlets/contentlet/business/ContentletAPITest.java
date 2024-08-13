@@ -1,11 +1,24 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
+import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
+import static java.io.File.separator;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
-import com.dotcms.content.model.type.text.FloatTextFieldType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -36,7 +49,6 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.LanguageCodeDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.PersonaDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -141,24 +153,6 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.awaitility.Awaitility;
-import org.elasticsearch.action.search.SearchResponse;
-import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -186,20 +180,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
-import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
-import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
-import static java.io.File.separator;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.awaitility.Awaitility;
+import org.elasticsearch.action.search.SearchResponse;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 /**
  * Created by Jonathan Gamba. Date: 3/20/12 Time: 12:12 PM
@@ -3114,12 +3111,11 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         final User chrisPublisher = TestUserUtils.getChrisPublisherUser();
         final User adminUser = TestUserUtils.getAdminUser();
-        final LanguageCodeDataGen languageCodeDataGen = new LanguageCodeDataGen();
-        final String languageCode1 = languageCodeDataGen.next();
-        final Language language1 = new LanguageDataGen().languageCode(languageCode1)
+
+        final Language language1 = new LanguageDataGen()
                 .countryCode("IT").nextPersisted();
-        final String languageCode2 = languageCodeDataGen.next();
-        final Language language2 = new LanguageDataGen().languageCode(languageCode2)
+
+        final Language language2 = new LanguageDataGen()
                 .countryCode("IT").nextPersisted();
         final Structure testStructure = createStructure(
                 "JUnit Test Destroy Structure_" + new Date().getTime(),
@@ -3168,12 +3164,11 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         final User adminUser2 = TestUserUtils.getAdminUser();
         final User adminUser = TestUserUtils.getAdminUser();
-        final LanguageCodeDataGen languageCodeDataGen = new LanguageCodeDataGen();
-        final String languageCode1 = languageCodeDataGen.next();
-        final Language language1 = new LanguageDataGen().languageCode(languageCode1)
+
+        final Language language1 = new LanguageDataGen()
                 .countryCode("IT").nextPersisted();
-        final String languageCode2 = languageCodeDataGen.next();
-        final Language language2 = new LanguageDataGen().languageCode(languageCode2)
+
+        final Language language2 = new LanguageDataGen()
                 .countryCode("IT").nextPersisted();
         final Structure testStructure = createStructure(
                 "JUnit Test Destroy Structure_" + new Date().getTime(),

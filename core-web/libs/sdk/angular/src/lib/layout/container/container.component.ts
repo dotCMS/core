@@ -54,13 +54,9 @@ export class ContainerComponent implements OnChanges {
     @HostBinding('attr.data-testid') testId = 'dot-container';
 
     ngOnChanges() {
-        const {
-            pageAsset: { containers },
-            components,
-            isInsideEditor
-        } = this.pageContextService.pageContextValue;
+        const { pageAsset, components, isInsideEditor } = this.pageContextService.context;
         const { acceptTypes, maxContentlets, variantId, path, contentlets } = getContainersData(
-            containers,
+            pageAsset.containers,
             this.container
         );
         const { identifier, uuid } = this.container;
