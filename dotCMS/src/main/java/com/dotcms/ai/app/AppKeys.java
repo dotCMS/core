@@ -2,10 +2,10 @@ package com.dotcms.ai.app;
 
 public enum AppKeys {
 
+    API_KEY("apiKey", null),
     API_URL("apiUrl", "https://api.openai.com/v1/chat/completions"),
     API_IMAGE_URL("apiImageUrl", "https://api.openai.com/v1/images/generations"),
     API_EMBEDDINGS_URL("apiEmbeddingsUrl", "https://api.openai.com/v1/embeddings"),
-    API_KEY("apiKey", null),
     ROLE_PROMPT(
             "rolePrompt",
             "You are dotCMSbot, and AI assistant to help content" +

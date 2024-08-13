@@ -7,10 +7,12 @@ import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.vavr.control.Try;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -43,7 +45,6 @@ public class AIModelsTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        IPUtils.disabledIpPrivateSubnet(true);
         wireMockServer = AiTest.prepareWireMock();
     }
 
@@ -55,9 +56,15 @@ public class AIModelsTest {
 
     @Before
     public void before() {
+        IPUtils.disabledIpPrivateSubnet(true);
         host = new SiteDataGen().nextPersisted();
         otherHost = new SiteDataGen().nextPersisted();
         List.of(host, otherHost).forEach(h -> Try.of(() -> AiTest.aiAppSecrets(wireMockServer, host)).get());
+    }
+
+    @After
+    public void after() {
+        IPUtils.disabledIpPrivateSubnet(false);
     }
 
     /**
@@ -142,10 +149,6 @@ public class AIModelsTest {
         assertNotNull(supported);
         assertEquals(32, supported.size());
 
-        supported = aiModels.getOrPullSupportedModels();
-        assertNotNull(supported);
-        assertEquals(32, supported.size());
-
         AIModels.get().setAppConfigSupplier(ConfigService.INSTANCE::config);
     }
 
@@ -154,7 +157,7 @@ public class AIModelsTest {
      * When the getOrPullSupportedModules method is called
      * Then an empty list of supported models should be returned.
      */
-    @Test
+    @Test(expected = DotRuntimeException.class)
     public void test_getOrPullSupportedModules_invalidEndpoint() {
         AIModels.get().cleanSupportedModelsCache();
         IPUtils.disabledIpPrivateSubnet(false);
@@ -172,14 +175,12 @@ public class AIModelsTest {
      * When the getOrPullSupportedModules method is called
      * Then an empty list of supported models should be returned.
      */
-    @Test
+    @Test(expected = DotRuntimeException.class)
     public void test_getOrPullSupportedModules_noApiKey() throws DotDataException, DotSecurityException {
         AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost(), null);
 
         AIModels.get().cleanSupportedModelsCache();
-        final List<String> supported = aiModels.getOrPullSupportedModels();
-        assertNotNull(supported);
-        assertTrue(supported.isEmpty());
+        aiModels.getOrPullSupportedModels();
     }
 
     private void saveSecrets(final Host host,

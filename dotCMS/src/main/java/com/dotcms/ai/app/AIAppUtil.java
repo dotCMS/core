@@ -1,6 +1,8 @@
 package com.dotcms.ai.app;
 
+import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.Secret;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -139,6 +141,24 @@ public class AIAppUtil {
      */
     public boolean discoverBooleanSecret(final Map<String, Secret> secrets, final AppKeys key) {
         return Boolean.parseBoolean(discoverSecret(secrets, key));
+    }
+
+    /**
+     * Resolves a secret value from the provided secrets map using the specified key and environment variable.
+     * If the secret is not found in the secrets map, it attempts to discover the value from the environment variable.
+     *
+     * @param secrets the map of secrets
+     * @param key the key to look up the secret
+     * @param envVar the environment variable name to look up if the secret is not found in the secrets map
+     * @return the resolved secret value or the value from the environment variable if the secret is not found
+     */
+    public String discoverEnvSecret(final Map<String, Secret> secrets, final AppKeys key, final String envVar) {
+        final String secret = discoverSecret(secrets, key);
+        if (UtilMethods.isSet(secret)) {
+            return secret;
+        }
+
+        return AppsUtil.discoverEnvVarValue(AppKeys.APP_KEY, key.key, envVar);
     }
 
     private int toInt(final String value) {

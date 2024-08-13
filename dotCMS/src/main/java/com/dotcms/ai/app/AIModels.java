@@ -4,6 +4,7 @@ import com.dotcms.ai.model.OpenAIModel;
 import com.dotcms.ai.model.OpenAIModels;
 import com.dotcms.ai.model.SimpleModel;
 import com.dotcms.http.CircuitBreakerUrl;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -155,19 +156,21 @@ public class AIModels {
 
         final AppConfig appConfig = appConfigSupplier.get();
         if (!appConfig.isEnabled()) {
-            Logger.debug(this, "OpenAI is not enabled, returning empty list of supported models");
-            return List.of();
+            AppConfig.debugLogger(getClass(), () -> "dotAI is not enabled, returning empty list of supported models");
+            throw new DotRuntimeException("App dotAI config without API urls or API key");
         }
 
-        final List<String> supported = Try.of(() ->
-                        fetchOpenAIModels(appConfig)
-                                .getResponse()
-                                .getData()
-                                .stream()
-                                .map(OpenAIModel::getId)
-                                .map(String::toLowerCase)
-                                .collect(Collectors.toList()))
-                .getOrElse(Optional.ofNullable(cached).orElse(List.of()));
+        final CircuitBreakerUrl.Response<OpenAIModels> response = Try
+                .of(() -> fetchOpenAIModels(appConfig))
+                .getOrElseThrow(() -> new DotRuntimeException("Error fetching OpenAI supported models"));
+
+        final List<String> supported = response
+                .getResponse()
+                .getData()
+                .stream()
+                .map(OpenAIModel::getId)
+                .map(String::toLowerCase)
+                .collect(Collectors.toList());
         supportedModelsCache.put(SUPPORTED_MODELS_KEY, supported);
 
         return supported;
