@@ -1,4 +1,3 @@
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';

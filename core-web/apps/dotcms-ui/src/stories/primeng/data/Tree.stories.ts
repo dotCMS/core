@@ -36,7 +36,7 @@ const meta: Meta<Tree> = {
     args: {
         value: [...files]
     },
-    render: (args: Tree) => ({
+    render: (args) => ({
         props: {
             ...args
         },

@@ -101,7 +101,7 @@ type Story = StoryObj<AutoComplete>;
 
 // First arguments is the Args from Meta, the second one is the whole storybook context
 export const Main: Story = {
-    render: (args: AutoComplete, { id }) => {
+    render: (args, { id }) => {
         return {
             props: {
                 ...args,
