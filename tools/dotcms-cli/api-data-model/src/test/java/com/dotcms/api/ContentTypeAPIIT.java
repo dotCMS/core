@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotcms.contenttype.model.field.ImmutableRelationships;
 import com.dotcms.contenttype.model.field.ImmutableRowField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipCardinality;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.Relationships;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -23,7 +24,6 @@ import com.dotcms.contenttype.model.workflow.ImmutableWorkflowAction;
 import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
-import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
 import com.dotcms.model.contenttype.FilterContentTypesRequest;
 import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.dotcms.model.site.GetSiteByNameRequest;
@@ -33,6 +33,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Date;
@@ -40,8 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -225,8 +225,8 @@ class ContentTypeAPIIT {
                 ).build();
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType).build();
 
         final ResponseEntityView<List<ContentType>> response = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(response);
@@ -239,8 +239,8 @@ class ContentTypeAPIIT {
         client.getContentType(newContentType.variable(), 1L, true);
         //Now lets test update
         final ImmutableSimpleContentType updatedContentType = ImmutableSimpleContentType.builder().from(newContentType).description("Updated").build();
-        final SaveContentTypeRequest request = AbstractSaveContentTypeRequest.builder()
-                .of(updatedContentType).build();
+        final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
+                from(updatedContentType).build();
         final ResponseEntityView<ContentType> responseEntityView = client.updateContentType(
                 request.variable(), request);
         Assertions.assertEquals("Updated", responseEntityView.entity().description());
@@ -325,8 +325,8 @@ class ContentTypeAPIIT {
 
         System.out.println(content);
 
-        final SaveContentTypeRequest request = AbstractSaveContentTypeRequest.builder()
-                .of(contentType).build();
+        final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
+                from(contentType).build();
 
         final ResponseEntityView<List<ContentType>> response2 = client.createContentTypes(List.of(request));
 
@@ -340,7 +340,8 @@ class ContentTypeAPIIT {
                         .variable("anyField2" + System.currentTimeMillis())
                         .build()).description("Modified!").build();
 
-        final SaveContentTypeRequest request2 = AbstractSaveContentTypeRequest.builder().of(modifiedContentType).build();
+        final SaveContentTypeRequest request2 = SaveContentTypeRequest.builder().
+                from(modifiedContentType).build();
         final ResponseEntityView<ContentType> entityView = client.updateContentType(
                 request2.variable(), request2
         );
@@ -497,8 +498,8 @@ class ContentTypeAPIIT {
                                 .build()
                 ).build();
 
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType1).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType1).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse1);
@@ -544,8 +545,8 @@ class ContentTypeAPIIT {
                                 .build()
                 ).build();
 
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType1).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType1).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse2);
@@ -592,9 +593,8 @@ class ContentTypeAPIIT {
                                 .build()
                 ).build();
 
-
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType2).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType2).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse2);
@@ -645,8 +645,8 @@ class ContentTypeAPIIT {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse);
@@ -734,8 +734,8 @@ class ContentTypeAPIIT {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse);
@@ -789,7 +789,7 @@ class ContentTypeAPIIT {
                 .addFields(
                         ImmutableRelationshipField.builder().name("Blog Comment").variable("myBlogComment"+timeMark).indexed(true)
                                 .relationships(ImmutableRelationships.builder()
-                                .cardinality(0)
+                                        .cardinality(RelationshipCardinality.ONE_TO_MANY)
                                 .isParentField(true)
                                 .velocityVar("MyBlogComment"+timeMark)
                                 .build()
@@ -809,7 +809,7 @@ class ContentTypeAPIIT {
                 .addFields(
                         ImmutableRelationshipField.builder().name("Blog").variable("myBlog"+timeMark).indexed(true)
                                 .relationships(ImmutableRelationships.builder()
-                                .cardinality(1)
+                                        .cardinality(RelationshipCardinality.MANY_TO_MANY)
                                 .velocityVar("MyBlog.myBlogComment"+timeMark)
                                 .isParentField(false)
                                 .build()
@@ -818,7 +818,8 @@ class ContentTypeAPIIT {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveBlogRequest = AbstractSaveContentTypeRequest.builder().of(blog).build();
+        final SaveContentTypeRequest saveBlogRequest = SaveContentTypeRequest.builder().
+                from(blog).build();
         final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(List.of(saveBlogRequest));
         ContentType savedContentType1 = null;
         ContentType savedContentType2 = null;
@@ -832,7 +833,8 @@ class ContentTypeAPIIT {
                     .get(2);
             final Relationships relationships1 = parentRel1.relationships();
             Assertions.assertNotNull(relationships1);
-            Assertions.assertEquals(0, relationships1.cardinality());
+            Assertions.assertEquals(RelationshipCardinality.ONE_TO_MANY,
+                    relationships1.cardinality());
             // For some reason the server side is not setting the isParentField flag from the Content Type definition
             //Apparently there some extra logic that takes place when relationships are created from the UI
             //Relationship creations is triggered by the fields API
@@ -840,8 +842,8 @@ class ContentTypeAPIIT {
             //Assertions.assertTrue(relationships1.isParentField());
             Assertions.assertEquals("MyBlogComment" + timeMark, relationships1.velocityVar());
 
-            final SaveContentTypeRequest saveBlogCommentRequest = AbstractSaveContentTypeRequest.builder()
-                    .of(blogComment).build();
+            final SaveContentTypeRequest saveBlogCommentRequest = SaveContentTypeRequest.builder().
+                    from(blogComment).build();
             final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(
                     List.of(saveBlogCommentRequest));
             final List<ContentType> contentTypes2 = contentTypeResponse2.entity();
@@ -852,7 +854,8 @@ class ContentTypeAPIIT {
             final Relationships relationships2 = parentRel2.relationships();
             Assertions.assertNotNull(relationships2);
 
-            Assertions.assertEquals(1, relationships2.cardinality());
+            Assertions.assertEquals(RelationshipCardinality.MANY_TO_MANY,
+                    relationships2.cardinality());
             // For some reason the server side is not setting the isParentField flag from the Content Type definition
             //Apparently there some extra logic that takes place when relationships are created from the UI
             //Relationship creations is triggered by the fields API
