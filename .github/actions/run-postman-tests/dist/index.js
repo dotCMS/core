@@ -222,10 +222,10 @@ const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     Starting postman tests dependencies
     =======================================`);
     if (includeAnalytics) {
-        execCmdAsync(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'up'], dockerFolder));
+        execCmdAsync(toCommand('docker compose', ['-f', 'analytics-compose.yml', 'up'], dockerFolder));
         yield waitFor(140, 'Analytics Infrastructure');
     }
-    execCmdAsync(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'], dockerFolder, DEPS_ENV));
+    execCmdAsync(toCommand('docker compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'], dockerFolder, DEPS_ENV));
 });
 /**
  * Stop postman depencies: db, ES and DotCMS isntance.
@@ -238,14 +238,14 @@ const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     ===================================`);
     if (includeAnalytics) {
         try {
-            yield execCmd(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'down', '-v'], dockerFolder));
+            yield execCmd(toCommand('docker compose', ['-f', 'analytics-compose.yml', 'down', '-v'], dockerFolder));
         }
         catch (err) {
             console.error(`Error stopping dependencies: ${err}`);
         }
     }
     try {
-        yield execCmd(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down', '-v'], dockerFolder, DEPS_ENV));
+        yield execCmd(toCommand('docker compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down', '-v'], dockerFolder, DEPS_ENV));
     }
     catch (err) {
         console.error(`Error stopping dependencies: ${err}`);
