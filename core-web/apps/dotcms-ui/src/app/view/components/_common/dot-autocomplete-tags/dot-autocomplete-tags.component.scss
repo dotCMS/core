@@ -4,12 +4,6 @@
     .p-autocomplete-token {
         flex-direction: row-reverse;
         max-width: $spacing-10;
-
-        .p-autocomplete-token-label {
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
     }
 
     .p-autocomplete-loader {
