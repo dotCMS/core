@@ -172,7 +172,6 @@
         "@storybook/addon-essentials": "8.2.8",
         "@storybook/angular": "8.2.8",
         "@storybook/blocks": "8.2.8",
-        "@storybook/builder-webpack5": "8.2.8",
         "@storybook/channels": "8.2.8",
         "@storybook/core-events": "8.2.8",
         "@storybook/manager-api": "8.2.8",
