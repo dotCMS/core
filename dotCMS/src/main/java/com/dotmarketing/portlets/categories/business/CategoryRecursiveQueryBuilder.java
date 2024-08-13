@@ -96,8 +96,8 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
             "SELECT c.*,ch.level + 1 AS level :parentList_2 " +
             "FROM Category c JOIN tree t ON c.inode = t.child JOIN CategoryHierarchy ch ON t.parent = ch.inode " +
             ") " +
-            "SELECT distinct * :parentList_3 :countChildren FROM CategoryHierarchy ch " +
-            "WHERE level = (SELECT MAX(level) FROM CategoryHierarchy WHERE inode = ch.inode group by inode) :levelFilter_2 :filterCategories " +
+            "SELECT distinct * :parentList_3 :countChildren FROM CategoryHierarchy c " +
+            "WHERE level = (SELECT MAX(level) FROM CategoryHierarchy WHERE inode = c.inode group by inode) :levelFilter_2 :filterCategories " +
             "ORDER BY :orderBy :direction";
 
     public CategoryRecursiveQueryBuilder(final CategorySearchCriteria searchCriteria) {

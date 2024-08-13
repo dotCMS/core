@@ -11,7 +11,15 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCacheAddTestCase;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.APILocator;
@@ -30,6 +38,7 @@ import java.util.stream.Collectors;
 import com.dotmarketing.portlets.categories.model.HierarchedCategory;
 import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.portlets.categories.model.ShortCategory;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -1455,6 +1464,55 @@ public class CategoryFactoryTest extends IntegrationTestBase {
                 assertEquals("Grand Child Category", category.getParentList().get(2).getName());
             } else {
                 throw new AssertionError("Unexpected Category");
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
+     * When:
+     * Should:
+     */
+    @Test
+    public void getCategoriesLinkWithContentlet() throws DotDataException, DotSecurityException {
+        final  String  filter = new RandomString().nextString();
+
+        final Category topLevelCategory = new CategoryDataGen().setCategoryName("Top Level Category - " + filter)
+                .setKey("top_level_getCategoriesLinkWithContentlet")
+                .setCategoryVelocityVarName("top_level_categoria_getCategoriesLinkWithContentlet")
+                .nextPersisted();
+
+        final Category childCategory = new CategoryDataGen().setCategoryName("Child Category - " + filter)
+                .setKey("child_getCategoriesLinkWithContentlet")
+                .setCategoryVelocityVarName("child_category_getCategoriesLinkWithContentlet")
+                .parent(topLevelCategory)
+                .nextPersisted();
+
+        final Field catField = new FieldDataGen()
+                .type(CategoryField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen().field(catField).nextPersisted();
+
+        Contentlet content = new ContentletDataGen(contentType.id()).next();
+
+        content = APILocator.getContentletAPI().checkin(content, APILocator.systemUser(), false,
+                list(childCategory));
+
+        final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
+                new CategorySearchCriteria.Builder().searchAllLevels(true).setCountChildren(true).filter(filter).build());
+
+        System.out.println("resultCategories = " + resultCategories);
+
+        assertEquals(2, resultCategories.size());
+
+        for (HierarchedCategory resultCategory : resultCategories) {
+            if (resultCategory.getCategoryName().equals(topLevelCategory.getCategoryName())) {
+                assertEquals(1, resultCategory.getChildrenCount());
+            } else if (resultCategory.getCategoryName().equals(childCategory.getCategoryName())) {
+                assertEquals(0, resultCategory.getChildrenCount());
+            } else {
+                throw new AssertionError("Category is not expected");
             }
         }
     }
