@@ -1,5 +1,5 @@
 import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, ViewChild, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { Menu, MenuModule } from 'primeng/menu';
@@ -31,13 +31,14 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
     ]
 })
 export class DotToolbarUserComponent implements OnInit {
-    vm$ = this.store.vm$;
+    readonly #store = inject(DotToolbarUserStore);
+
+    vm$ = this.#store.vm$;
     @ViewChild('menu') menu: Menu;
     showMask = signal<boolean>(false);
-    constructor(private store: DotToolbarUserStore) {}
 
     ngOnInit(): void {
-        this.store.init();
+        this.#store.init();
     }
 
     toogleMenu(event: CustomEvent): void {

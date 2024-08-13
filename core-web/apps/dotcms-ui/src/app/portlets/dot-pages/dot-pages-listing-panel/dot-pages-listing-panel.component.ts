@@ -5,6 +5,7 @@ import {
     Component,
     EventEmitter,
     HostListener,
+    inject,
     OnDestroy,
     OnInit,
     Output,
@@ -28,6 +29,9 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     styleUrls: ['./dot-pages-listing-panel.component.scss']
 })
 export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterViewInit {
+    readonly #store = inject(DotPageStore);
+    readonly #dotMessageService = inject(DotMessageService);
+
     @ViewChild('cm') cm: ContextMenu;
     @ViewChild('table') table: Table;
     @Output() goToUrl = new EventEmitter<string>();
@@ -37,22 +41,17 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     private domIdMenuAttached = '';
     private destroy$ = new Subject<boolean>();
     private scrollElement?: HTMLElement;
-    vm$: Observable<DotPagesState> = this.store.vm$;
+    vm$: Observable<DotPagesState> = this.#store.vm$;
 
     dotStateLabels = {
-        archived: this.dotMessageService.get('Archived'),
-        published: this.dotMessageService.get('Published'),
-        revision: this.dotMessageService.get('Revision'),
-        draft: this.dotMessageService.get('Draft')
+        archived: this.#dotMessageService.get('Archived'),
+        published: this.#dotMessageService.get('Published'),
+        revision: this.#dotMessageService.get('Revision'),
+        draft: this.#dotMessageService.get('Draft')
     };
 
-    constructor(
-        private store: DotPageStore,
-        private dotMessageService: DotMessageService
-    ) {}
-
     ngOnInit() {
-        this.store.actionMenuDomId$
+        this.#store.actionMenuDomId$
             .pipe(
                 takeUntil(this.destroy$),
                 filter((actionMenuDomId) => !!actionMenuDomId)
@@ -89,7 +88,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     private closeContextMenu(): void {
         if (this.domIdMenuAttached.includes('tableRow')) {
             this.cm.hide();
-            this.store.clearMenuActions();
+            this.#store.clearMenuActions();
         }
     }
 
@@ -100,7 +99,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
      * @memberof DotPagesListingPanelComponent
      */
     loadPagesLazy(event: LazyLoadEvent): void {
-        this.store.getPages({
+        this.#store.getPages({
             offset: event.first >= 0 ? event.first : 0,
             sortField: event.sortField || '',
             sortOrder: event.sortOrder || null
@@ -115,10 +114,10 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
      */
     showActionsContextMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
         event.stopPropagation();
-        this.store.clearMenuActions();
+        this.#store.clearMenuActions();
         this.cm.hide();
 
-        this.store.showActionsMenu({ item, actionMenuDomId });
+        this.#store.showActionsMenu({ item, actionMenuDomId });
     }
 
     /**
@@ -137,9 +136,9 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
      * @memberof DotPagesListingPanelComponent
      */
     filterData(keyword: string): void {
-        this.store.setKeyword(keyword);
-        this.store.getPages({ offset: 0 });
-        this.store.setSessionStorageFilterParams();
+        this.#store.setKeyword(keyword);
+        this.#store.getPages({ offset: 0 });
+        this.#store.setSessionStorageFilterParams();
     }
 
     /**
@@ -163,9 +162,9 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
      * @memberof DotPagesListingPanelComponent
      */
     setPagesLanguage(languageId: string): void {
-        this.store.setLanguageId(languageId);
-        this.store.getPages({ offset: 0 });
-        this.store.setSessionStorageFilterParams();
+        this.#store.setLanguageId(languageId);
+        this.#store.getPages({ offset: 0 });
+        this.#store.setSessionStorageFilterParams();
     }
 
     /**
@@ -175,8 +174,8 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
      * @memberof DotPagesListingPanelComponent
      */
     setPagesArchived(archived: string): void {
-        this.store.setArchived(archived);
-        this.store.getPages({ offset: 0 });
-        this.store.setSessionStorageFilterParams();
+        this.#store.setArchived(archived);
+        this.#store.getPages({ offset: 0 });
+        this.#store.setSessionStorageFilterParams();
     }
 }
