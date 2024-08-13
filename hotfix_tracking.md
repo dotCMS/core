@@ -285,3 +285,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.22**
 
 218. https://github.com/dotCMS/core/issues/28163 : alive' and 'startup' healthcheck APIs return 503 on seemingly healthy app #28163
+219. https://github.com/dotCMS/core/issues/26546 : Enable better logging for getPageByPath in HTMLPageAssetAPIImpl.java #26546

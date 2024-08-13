@@ -57,7 +57,7 @@ public class CMSUrlUtil {
 	private static final String HTMLPAGE = "htmlpage";
 	private static final String FILE_ASSET = "file_asset";
 	private static final String FOLDER = "folder";
-	private static final String NOT_FOUND = "NOTFOUND";
+	public static final String NOT_FOUND = "NOTFOUND";
 	private static final String UNABLE_TO_FIND = "Unable to find ";
 
 	public static final Set<String> BACKEND_FILTERED_COLLECTION =
