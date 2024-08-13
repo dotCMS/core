@@ -1,5 +1,4 @@
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Meta } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -13,7 +12,7 @@ import { ConfirmDialogComponent, ConfirmDialogTemplate } from './ConfirmDialog.c
 
 import { ToastComponent } from '../messages/Toast.component';
 
-export default {
+const meta: Meta<ConfirmDialogComponent> = {
     title: 'PrimeNG/Overlay/ConfirmDialog',
     component: ConfirmDialogComponent,
     parameters: {
@@ -21,38 +20,34 @@ export default {
             description: {
                 component:
                     'ConfirmDialog is backed by a service utilizing Observables to display confirmation windows easily that can be shared by multiple actions on the same component: https://primefaces.org/primeng/showcase/#/confirmdialog'
-            }
+            },
+            source: {
+                code: ConfirmDialogTemplate
+            },
+            iframeHeight: 300
         }
-    }
-} as Meta;
-
-export const Basic = () => ({
-    component: ConfirmDialogComponent,
-    moduleMetadata: {
-        imports: [
-            ConfirmDialogModule,
-            ButtonModule,
-            MessagesModule,
-            BrowserAnimationsModule,
-            ToastModule
-        ],
-        providers: [ConfirmationService],
-        declarations: [ToastComponent],
-        entryComponents: [ToastComponent]
-    }
-});
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: ConfirmDialogTemplate
-        },
-        iframeHeight: 300
-    }
+    },
+    decorators: [
+        moduleMetadata({
+            imports: [
+                ConfirmDialogModule,
+                ButtonModule,
+                MessagesModule,
+                BrowserAnimationsModule,
+                ToastModule
+            ],
+            providers: [ConfirmationService],
+            declarations: [ToastComponent],
+            entryComponents: [ToastComponent]
+        })
+    ],
+    render: (args) => ({
+        props: args,
+        template: ConfirmDialogTemplate
+    })
 };
+export default meta;
 
-Basic.args = {
-    confirm: () => {
-        //
-    }
-};
+type Story = StoryObj<ConfirmDialogComponent>;
+
+export const Basic: Story = {};
