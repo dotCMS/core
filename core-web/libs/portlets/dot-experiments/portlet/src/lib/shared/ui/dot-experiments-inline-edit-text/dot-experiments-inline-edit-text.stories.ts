@@ -75,5 +75,5 @@ type Story = StoryObj<DotExperimentsInlineEditTextComponent>;
 export const Default: Story = {
     args: {
         textChanged: action('textChanged')
-    },
-}
+    }
+};

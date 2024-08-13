@@ -58,7 +58,7 @@ const meta: Meta<DotDropZoneComponent> = {
             </div>
         </dot-drop-zone>
     `
-    }),
+    })
 };
 export default meta;
 

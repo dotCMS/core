@@ -35,7 +35,7 @@ const iconItem: Record<string, string> = {
 export const Icon: Story = {
     args: {
         item: iconItem
-    },
+    }
 };
 
 const imageItem: Record<string, string> = {
@@ -47,8 +47,5 @@ const imageItem: Record<string, string> = {
 export const Image: Story = {
     args: {
         item: imageItem
-    },
+    }
 };
-
-
-

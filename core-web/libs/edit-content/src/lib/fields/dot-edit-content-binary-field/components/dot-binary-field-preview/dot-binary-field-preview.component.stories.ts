@@ -69,10 +69,10 @@ const previewFile = {
 };
 
 type Args = DotBinaryFieldPreviewComponent & {
-    file: DotFilePreview,
-    variableName: string,
-    fieldVariable: string,
-    styles: string[]
+    file: DotFilePreview;
+    variableName: string;
+    fieldVariable: string;
+    styles: string[];
 };
 
 const meta: Meta<Args> = {
@@ -115,7 +115,7 @@ const meta: Meta<Args> = {
                 padding: 0.5rem;
             }
     `
-        ],
+        ]
     },
     argTypes: {
         file: {
@@ -154,8 +154,8 @@ type Story = StoryObj<Args>;
 export const Image: Story = {
     args: {
         editFile: action('editFile'),
-        removeFile: action('removeFile'),
-    },
+        removeFile: action('removeFile')
+    }
 };
 
 export const Video = {
@@ -164,7 +164,7 @@ export const Video = {
         variableName: 'binaryField',
         fieldVariable: 'Blog'
     }
-}
+};
 
 export const File = {
     args: {

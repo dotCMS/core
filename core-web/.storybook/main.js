@@ -17,5 +17,10 @@ module.exports = {
     },
     docs: {
         autodocs: true
-    }
+    },
+    core: {
+        builder: {
+          name: '@storybook/builder-webpack5',
+        },
+      },
 };

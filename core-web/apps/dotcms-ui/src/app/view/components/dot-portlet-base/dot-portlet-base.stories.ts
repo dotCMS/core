@@ -37,7 +37,7 @@ const meta: Meta = {
                 DotPortletBaseModule,
                 DotApiLinkComponent,
                 TabViewModule
-            ],
+            ]
         }),
         componentWrapperDecorator(
             (story) =>
@@ -123,7 +123,6 @@ export const BasicActions: Story = {
         template: NoActionsTemplate
     })
 };
-
 
 const MultipleActionsTemplate = `
 <dot-portlet-base>

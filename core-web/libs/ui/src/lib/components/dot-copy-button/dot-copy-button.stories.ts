@@ -37,5 +37,4 @@ export default meta;
 
 type Story = StoryObj<DotCopyButtonComponent>;
 
-
 export const Primary: Story = {};

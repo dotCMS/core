@@ -41,5 +41,4 @@ export default meta;
 
 type Story = StoryObj<TemplateBuilderRowComponent>;
 
-
 export const Primary: Story = {};

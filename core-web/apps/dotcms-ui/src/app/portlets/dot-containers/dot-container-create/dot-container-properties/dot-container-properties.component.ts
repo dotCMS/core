@@ -37,8 +37,8 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     constructor(
         private dotMessageService: DotMessageService,
         private fb: FormBuilder,
-        private dotAlertConfirmService: DotAlertConfirmService,
-    ) { }
+        private dotAlertConfirmService: DotAlertConfirmService
+    ) {}
 
     ngOnInit(): void {
         this.#store.containerAndStructure$

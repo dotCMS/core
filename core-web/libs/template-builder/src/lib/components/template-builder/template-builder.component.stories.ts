@@ -12,6 +12,8 @@ import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
+import { title } from 'process';
+
 import {
     DotContainersService,
     DotEventsService,
@@ -19,6 +21,7 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotLayout } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
@@ -106,25 +109,29 @@ const meta: Meta<TemplateBuilderComponent> = {
                     pButton
                 ></button>
             </dotcms-template-builder-lib>
-        `,
-    }),
+        `
+    })
 };
 export default meta;
 
 type Story = StoryObj<TemplateBuilderComponent>;
 
+const layout: DotLayout = {
+    body: FULL_DATA_MOCK,
+    header: true,
+    footer: false,
+    sidebar: {
+        location: 'left',
+        width: 'medium',
+        containers: []
+    },
+    title: 'Test',
+    width: ''
+};
+
 export const Base: Story = {
     args: {
-        layout: {
-            body: FULL_DATA_MOCK,
-            header: true,
-            footer: false,
-            sidebar: {
-                location: 'left',
-                width: 'medium',
-                containers: []
-            }
-        },
+        layout: layout,
         containerMap: CONTAINER_MAP_MOCK
     }
 };

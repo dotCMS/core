@@ -125,6 +125,6 @@ type Story = StoryObj;
 export const Base: Story = {
     args: {
         accept: [],
-        maxFileSize: 1000000,
+        maxFileSize: 1000000
     }
 };
