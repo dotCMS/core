@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { Injectable } from '@angular/core';
@@ -125,7 +125,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const meta: Meta<DotPaletteComponent> = {
-    title: 'DotCMS/ Content Palette',
+    title: 'DotCMS/Content Palette',
     component: DotPaletteComponent,
     decorators: [
         moduleMetadata({
@@ -143,49 +143,41 @@ const meta: Meta<DotPaletteComponent> = {
                 {
                     provide: DotContentTypeService,
                     useValue: {
-                        getContentTypes: () => {
-                            return data;
-                        },
-                        filterContentTypes: () => {
-                            return data;
-                        }
+                        getContentTypes: () => data,
+                        filterContentTypes: () => data
                     }
                 },
                 {
                     provide: DotESContentService,
                     useValue: {
-                        get: () => {
-                            return [];
-                        }
+                        get: () => []
                     }
                 },
                 {
                     provide: PaginatorService,
                     useValue: {
-                        get: () => {
-                            return [];
-                        }
+                        get: () => []
                     }
                 },
                 {
                     provide: DotSessionStorageService,
                     useValue: {
-                        get: () => {
-                            return [];
-                        }
+                        get: () => []
                     }
                 }
             ]
         })
-    ]
+    ],
+    render: (args) => ({
+        props: args,
+        template: `<dot-palette ${argsToTemplate(args)} />`
+    })
 };
 export default meta;
 
 type Story = StoryObj<DotPaletteComponent>;
 
-export const Default: Story = {
-    args: {}
-};
+export const Default: Story = {};
 
 export const Empty: Story = {
     args: {

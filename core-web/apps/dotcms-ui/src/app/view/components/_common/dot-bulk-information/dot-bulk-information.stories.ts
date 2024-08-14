@@ -1,4 +1,10 @@
-import { Meta, moduleMetadata, componentWrapperDecorator, StoryObj } from '@storybook/angular';
+import {
+    Meta,
+    moduleMetadata,
+    componentWrapperDecorator,
+    StoryObj,
+    argsToTemplate
+} from '@storybook/angular';
 
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -62,26 +68,16 @@ const meta: Meta<DotBulkInformationComponent> = {
             declarations: [DotBulkInformationComponent]
         }),
         componentWrapperDecorator(
-            (story) => `<div style="
-      background: white;
-      padding: 2rem;
-      width: 500px; 
-      margin: 0 auto; 
-      height: 420px; 
-      overflow: auto;
-      border: 1px solid #eee;
-      " 
-    >
-      ${story}
-    </div>`
+            (story) => `<div class="w-30rem border-1 mx-auto p-2">${story}</div>`
         )
     ],
-    args: {}
+    render: (args) => ({
+        props: args,
+        template: `<dot-bulk-information ${argsToTemplate(args)} />`
+    })
 };
 export default meta;
 
 type Story = StoryObj<DotBulkInformationComponent>;
 
-export const Basic: Story = {
-    args: {}
-};
+export const Default: Story = {};

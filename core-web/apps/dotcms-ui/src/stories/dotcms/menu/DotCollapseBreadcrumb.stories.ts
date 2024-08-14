@@ -11,11 +11,14 @@ import {
 import { importProvidersFrom } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { MenuItem } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
-const meta: Meta<DotCollapseBreadcrumbComponent> = {
+type Args = DotCollapseBreadcrumbComponent & { model: MenuItem[]; maxItems: number };
+
+const meta: Meta<Args> = {
     title: 'DotCMS/Menu/DotCollapseBreadcrumb',
     component: DotCollapseBreadcrumbComponent,
     decorators: [
@@ -39,37 +42,34 @@ const meta: Meta<DotCollapseBreadcrumbComponent> = {
             }
         }
     },
+    argTypes: {
+        model: {
+            description: 'Menu items to display'
+        },
+        maxItems: {
+            description: 'Max items to display',
+            control: { type: 'number' }
+        }
+    },
+    render: (args) => ({
+        props: args,
+        template: `<dot-collapse-breadcrumb ${argsToTemplate(args)} />`
+    })
+};
+
+export default meta;
+
+type Story = StoryObj<Args>;
+
+export const Default: Story = {
     args: {
-        $maxItems: 4,
-        $model: [
+        maxItems: 4,
+        model: [
             { label: 'Electronics', command: console.log },
             { label: 'Computer', command: console.log },
             { label: 'Accessories', command: console.log },
             { label: 'Keyboard', command: console.log },
             { label: 'Wireless', command: console.log }
         ]
-    },
-    argTypes: {
-        $model: {
-            description: 'Menu items to display'
-        },
-        $maxItems: {
-            description: 'Max items to display',
-            control: { type: 'number' }
-        }
-    },
-    render: (args) => {
-        return {
-            props: {
-                ...args
-            },
-            template: `<dot-collapse-breadcrumb ${argsToTemplate(args)} />`
-        };
     }
 };
-
-export default meta;
-
-type Story = StoryObj<DotCollapseBreadcrumbComponent>;
-
-export const Default: Story = {};

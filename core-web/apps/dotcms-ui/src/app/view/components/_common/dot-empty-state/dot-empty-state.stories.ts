@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import { action } from '@storybook/addon-actions';
 import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -26,28 +27,23 @@ const meta: Meta<DotEmptyStateComponent> = {
     parameters: {
         docs: {}
     },
+    render: (args) => ({
+        props: args,
+        template: `<dot-empty-state ${argsToTemplate(args)} />`
+    })
+};
+export default meta;
+
+type Story = StoryObj<DotEmptyStateComponent>;
+
+export const Default: Story = {
     args: {
         rows: 10,
         colsTextWidth: [60, 50, 60, 80],
         icon: 'web',
         title: 'Your template list is empty',
         content: "You haven't added anything yet, start by clicking the button below",
-        buttonLabel: 'Add New Template'
-    },
-    render: (args) => {
-        return {
-            props: {
-                ...args,
-                buttonClick: () => console.log('Button clicked')
-            },
-            template: `<dot-empty-state (buttonClick)="buttonClick" ${argsToTemplate(args)} />`
-        };
+        buttonLabel: 'Add New Template',
+        buttonClick: action('buttonClick')
     }
-};
-export default meta;
-
-type Story = StoryObj<DotEmptyStateComponent>;
-
-export const Primary: Story = {
-    args: {}
 };
