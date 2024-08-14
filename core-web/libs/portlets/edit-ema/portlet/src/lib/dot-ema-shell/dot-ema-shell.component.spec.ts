@@ -671,6 +671,21 @@ describe('DotEmaShellComponent', () => {
                 expect(confirmationServiceSpy).not.toHaveBeenCalled();
             });
 
+            it('should not trigger the confirmation service if the page dont have current language', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 3,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
+                spectator.detectChanges();
+
+                expect(confirmationServiceSpy).not.toHaveBeenCalled();
+            });
+
             it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
                 spectator.triggerNavigation({
                     url: [],

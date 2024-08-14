@@ -96,6 +96,12 @@ p-autocomplete.p-inputwrapper-focus {
 
             .p-autocomplete-token {
                 @extend #field-chip;
+
+                .p-autocomplete-token-label {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
             }
 
             .p-autocomplete-input-token {
