@@ -1,5 +1,3 @@
-# Generate SBOM for latest version of dotCMS and put into core repo
-
 name: Generate SBOM for dotCMS Releases
 
 on:
@@ -16,7 +14,7 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout core repository
@@ -37,12 +35,6 @@ jobs:
           formatted_tag=$(echo "$latest_tag" | sed -e 's/^dotcms-cli-//' -e 's/^v//')
           echo "DOTCMS_VERSION=$formatted_tag" >> $GITHUB_ENV
 
-      - name: Setup Python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-          cache: 'pip'
-
       - name: Install pipx and Syft
         run: |
           python -m pip install --upgrade pip
@@ -58,29 +50,6 @@ jobs:
           mkdir -p core/sbom
           pipx run syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core/sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
 
-  commit:
-    runs-on: ubuntu-latest
-    needs: scan
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout core repository
-        uses: actions/checkout@v3
-        with:
-          repository: dotCMS/core
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: core
-
-      - name: Create sbom folder if not exists
-        run: |
-          mkdir -p core/sbom
-
-      - name: Configure Git
-        run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Actions"
-
       - name: Commit and push SBOM
         run: |
           cd core
@@ -89,4 +58,3 @@ jobs:
           git push origin master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-# EoF
