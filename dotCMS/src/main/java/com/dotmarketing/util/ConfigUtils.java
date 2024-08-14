@@ -189,5 +189,18 @@ public class ConfigUtils {
 		return Tuple.of(langCode, countryCode);
 
 	}
-    
+
+	private static Lazy<String> assetTempPath  = Lazy.of(()->{
+		java.io.File adir=new java.io.File(getAbsoluteAssetsRootPath() + java.io.File.separator + "tmp_upload");
+		if(!adir.isDirectory()) {
+			adir.mkdirs();
+		}
+
+		return adir.getPath();
+
+	});
+
+	public static String getAssetTempPath() {
+		return assetTempPath.get();
+	}
 }

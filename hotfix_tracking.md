@@ -288,3 +288,4 @@ This maintenance release includes the following code fixes:
 219. https://github.com/dotCMS/core/issues/26546 : Enable better logging for getPageByPath in HTMLPageAssetAPIImpl.java #26546
 220. https://github.com/dotCMS/core/issues/28366 : Uploaded images in another language than the default one do not inherit permissions #28366
 221. https://github.com/dotCMS/core/issues/28838 : Category Child Permissions Not Loading #28838
+222. https://github.com/dotCMS/core/issues/29079 : fileAsset Required Error while importing FileAsset through CSV #29079
