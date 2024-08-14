@@ -105,10 +105,10 @@ const newVersion = bumpVersion(currentVersion);
 
 // Define the dependency mappings
 const sdkDependencies = {
-    'sdk-client': newVersion,
-    'sdk-angular': newVersion,
-    'sdk-react': newVersion,
-    'sdk-experiments': newVersion
+    '@dotcms/client': newVersion,
+    '@dotcms/angular': newVersion,
+    '@dotcms/react': newVersion,
+    '@dotcms/experiments': newVersion
 };
 
 const exampleDependencies = {
