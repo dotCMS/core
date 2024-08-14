@@ -57,6 +57,8 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -1270,10 +1272,16 @@ public class ImportUtil {
                         }
                     }
                     try{
-                        if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName()) && !preview){
-                            if(null != value && UtilMethods.isSet(value.toString())){
-                                final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFileFromUrl(null,request,new URL(value.toString()),-1,-1);
-                                cont.setBinary(field.getVelocityVarName(), tempFile.file);
+                        if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName())){
+                            if(preview){
+                                //To avoid creating temp files for preview, we just create a dummy file and assign it to the contentlet
+                                final File dummyFile = File.createTempFile("dummy", ".txt", new File(ConfigUtils.getAssetTempPath()));
+                                cont.setBinary(field.getVelocityVarName(), dummyFile);
+                            } else {
+                                if (null != value && UtilMethods.isSet(value.toString())) {
+                                    final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFileFromUrl(null, request, new URL(value.toString()), -1,1000L);
+                                    cont.setBinary(field.getVelocityVarName(), tempFile.file);
+                                }
                             }
                         } else {
                             conAPI.setContentletProperty(cont, field, value);
