@@ -1,7 +1,7 @@
 package com.dotcms.cli.command.contenttype;
 
-import static com.dotcms.common.ContentTypesTestHelperService.SYSTEM_WORKFLOW_ID;
-import static com.dotcms.common.ContentTypesTestHelperService.SYSTEM_WORKFLOW_VARIABLE_NAME;
+import static com.dotcms.cli.common.ContentTypesTestHelperService.SYSTEM_WORKFLOW_ID;
+import static com.dotcms.cli.common.ContentTypesTestHelperService.SYSTEM_WORKFLOW_VARIABLE_NAME;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.dotcms.DotCMSITProfile;
@@ -12,7 +12,7 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
-import com.dotcms.common.ContentTypesTestHelperService;
+import com.dotcms.cli.common.ContentTypesTestHelperService;
 import com.dotcms.cli.common.ContentsTestHelperService;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.cli.common.SitesTestHelperService;
@@ -28,6 +28,8 @@ import com.dotcms.model.config.Workspace;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -43,8 +45,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
