@@ -289,3 +289,4 @@ This maintenance release includes the following code fixes:
 220. https://github.com/dotCMS/core/issues/28366 : Uploaded images in another language than the default one do not inherit permissions #28366
 221. https://github.com/dotCMS/core/issues/28838 : Category Child Permissions Not Loading #28838
 222. https://github.com/dotCMS/core/issues/29079 : fileAsset Required Error while importing FileAsset through CSV #29079
+223. https://github.com/dotCMS/core/issues/29209 : Wrong url when exporting file asset #29209

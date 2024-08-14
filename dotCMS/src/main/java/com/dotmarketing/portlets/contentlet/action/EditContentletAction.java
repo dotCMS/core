@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.*;
@@ -67,6 +68,7 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.ResourceLink;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.contentlet.struts.EventAwareContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -325,30 +327,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_editWebAsset(req, res, config, form, user);
 
 			} catch (Exception ae) {
-				if ((referer != null) && (referer.length() != 0)) {
-					if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
-						// The web asset edit threw an exception because it's
-						// locked so it should redirect back with message
-						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
-						params.put("struts_action", new String[] { "/ext/director/direct" });
-						params.put("cmd", new String[] { "editContentlet" });
-						params.put("contentlet", new String[] { req.getParameter("inode") });
-						params.put("container",
-								new String[] { (req.getParameter("contentcontainer_inode") != null) ? req
-										.getParameter("contentcontainer_inode") : "0" });
-						params.put("htmlPage", new String[] { (req.getParameter("htmlpage_inode") != null) ? req
-								.getParameter("htmlpage_inode") : "0" });
-						params.put("referer", new String[] { java.net.URLEncoder.encode(referer, "UTF-8") });
-
-						String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,
-								WindowState.MAXIMIZED.toString(), params);
-
-						_sendToReferral(req, res, directorURL);
-					} else {
-						_handleException(ae, req);
-					}
-				} else
-					_handleException(ae, req);
+				handleEditAssetException(ae, req, res, referer, httpReq);
 				return;
 			}
 		}
@@ -366,32 +345,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_newContent(req, res, config, form, user);
 
 			} catch (Exception ae) {
-				if ((referer != null) && (referer.length() != 0)) {
-					if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
-						// The web asset edit threw an exception because it's
-						// locked so it should redirect back with message
-						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
-						params.put("struts_action", new String[] { "/ext/director/direct" });
-						params.put("cmd", new String[] { "editContentlet" });
-						params.put("contentlet", new String[] { req.getParameter("inode") });
-						params.put("container",
-								new String[] { (req.getParameter("contentcontainer_inode") != null) ? req
-										.getParameter("contentcontainer_inode") : "0" });
-						params.put("htmlPage", new String[] { (req.getParameter("htmlpage_inode") != null) ? req
-								.getParameter("htmlpage_inode") : "0" });
-						params.put("referer", new String[] { java.net.URLEncoder.encode(referer, "UTF-8") });
-
-						String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,
-								WindowState.MAXIMIZED.toString(), params);
-
-						_sendToReferral(req, res, directorURL);
-					} else if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
-						_sendToReferral(req, res, referer);
-					} else {
-						_handleException(ae, req);
-					}
-				} else
-					_handleException(ae, req);
+				handleEditAssetException(ae, req, res, referer, httpReq);
 				return;
 			}
 		}
@@ -2017,6 +1971,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								if (null != id && UtilMethods.isSet(id.getId())) {
 									text = id.getPath();
 								}
+							} else if (field instanceof BinaryField){
+								final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+								final String fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, user, content, field.variable());
+								text = fileLink;
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if (field instanceof DateField) {
@@ -2076,6 +2034,31 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
             Logger.info(this, endMsg);
         } else {
 			try {writer.print("\r\n");} catch (Exception e) {	Logger.debug(this,"Error: download to excel "+e);	}
+		}
+	}
+
+	private void handleEditAssetException(Exception ae, ActionRequest req, ActionResponse res, String referer, HttpServletRequest httpReq) throws Exception {
+		if ((referer != null) && (referer.length() != 0)) {
+			if (ae.getMessage() != null && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
+				// The web asset edit threw an exception because it's locked so it should redirect back with message
+				java.util.Map<String, String[]> params = new java.util.HashMap<>();
+				params.put("struts_action", new String[]{"/ext/director/direct"});
+				params.put("cmd", new String[]{"editContentlet"});
+				params.put("contentlet", new String[]{req.getParameter("inode")});
+				params.put("container", new String[]{(req.getParameter("contentcontainer_inode") != null) ? req.getParameter("contentcontainer_inode") : "0"});
+				params.put("htmlPage", new String[]{(req.getParameter("htmlpage_inode") != null) ? req.getParameter("htmlpage_inode") : "0"});
+				params.put("referer", new String[]{java.net.URLEncoder.encode(referer, "UTF-8")});
+
+				String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq, WindowState.MAXIMIZED.toString(), params);
+
+				_sendToReferral(req, res, directorURL);
+			} else if (ae.getMessage() != null && ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
+				_sendToReferral(req, res, referer);
+			} else {
+				_handleException(ae, req);
+			}
+		} else {
+			_handleException(ae, req);
 		}
 	}
 
