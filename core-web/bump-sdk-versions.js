@@ -23,28 +23,36 @@ const bumpVersion = (version) => {
 };
 
 // Function to update dependencies in a package.json file
-const updatePackageDependencies = (packageJsonPath, newVersion, dependenciesMap) => {
+const updatePackageDependencies = (
+    packageJsonPath,
+    newVersion,
+    dependenciesMap,
+    isPeerDependency = false
+) => {
     const packageJson = readJSON(packageJsonPath);
     let updated = false;
 
-    // Update dependencies to the new version based on the dependenciesMap
-    if (packageJson.dependencies) {
-        Object.keys(dependenciesMap).forEach((dep) => {
-            if (packageJson.dependencies[dep]) {
-                console.log(
-                    `Updating dependency ${dep} in ${packageJsonPath} to version ${newVersion}`
-                );
-                packageJson.dependencies[dep] = newVersion;
-                updated = true;
-            }
-        });
-    }
+    // Determine whether to update dependencies or peerDependencies
+    const depsKey = isPeerDependency ? 'peerDependencies' : 'dependencies';
+    const dependencies = packageJson[depsKey] || {};
+
+    // Update dependencies/peerDependencies to the new version based on the dependenciesMap
+    Object.keys(dependenciesMap).forEach((dep) => {
+        if (dependencies[dep]) {
+            console.log(
+                `Updating ${depsKey.slice(0, -1)} ${dep} in ${packageJsonPath} to version ${newVersion}`
+            );
+            dependencies[dep] = newVersion;
+            updated = true;
+        }
+    });
 
     if (updated) {
+        packageJson[depsKey] = dependencies;
         writeJSON(packageJsonPath, packageJson);
-        console.log(`Updated dependencies in ${packageJsonPath} to version ${newVersion}`);
+        console.log(`Updated ${depsKey} in ${packageJsonPath} to version ${newVersion}`);
     } else {
-        console.log(`No relevant dependencies to update in ${packageJsonPath}`);
+        console.log(`No relevant ${depsKey} to update in ${packageJsonPath}`);
     }
 };
 
@@ -53,15 +61,8 @@ const updateSdkPackageVersion = (packageJsonPath, newVersion, dependenciesMap) =
     const packageJson = readJSON(packageJsonPath);
     packageJson.version = newVersion;
 
-    // Update the internal dependencies within SDKs
-    Object.keys(dependenciesMap).forEach((dep) => {
-        if (packageJson.dependencies && packageJson.dependencies[dep]) {
-            console.log(
-                `Updating internal dependency ${dep} in ${packageJsonPath} to version ${newVersion}`
-            );
-            packageJson.dependencies[dep] = newVersion;
-        }
-    });
+    // Update the internal peerDependencies within SDKs
+    updatePackageDependencies(packageJsonPath, newVersion, dependenciesMap, true);
 
     writeJSON(packageJsonPath, packageJson);
     console.log(`Updated ${packageJsonPath} to version ${newVersion}`);
@@ -117,7 +118,7 @@ const exampleDependencies = {
     '@dotcms/experiments': newVersion
 };
 
-// Update all SDK package.json files (versions and internal dependencies)
+// Update all SDK package.json files (versions and peerDependencies)
 sdkPackages.forEach((pkg) => updateSdkPackageVersion(pkg, newVersion, sdkDependencies));
 
 // Update all example package.json files (dependencies only)
