@@ -39,7 +39,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pipx
-          pipx install anchore-syft
+          pipx install anchor-syft
 
       - name: Pull dotCMS Docker image
         run: |
@@ -48,7 +48,7 @@ jobs:
       - name: Generate SBOM using Syft
         run: |
           mkdir -p core/sbom
-          pipx run syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core/sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
+          anchor-syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx > core/sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
 
       - name: Commit and push SBOM
         run: |
