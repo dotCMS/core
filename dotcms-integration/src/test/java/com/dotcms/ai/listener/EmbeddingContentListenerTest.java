@@ -1,12 +1,12 @@
 package com.dotcms.ai.listener;
 
-import com.dotcms.ai.api.EmbeddingsAPI;
-import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.AiTest;
+import com.dotcms.ai.api.DotAIAPIFacadeImpl;
+import com.dotcms.ai.app.AppKeys;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
@@ -19,19 +19,17 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.liferay.portal.model.User;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.dotmarketing.util.ThreadUtils.sleep;
 import static org.junit.Assert.assertFalse;
@@ -69,8 +67,9 @@ public class EmbeddingContentListenerTest {
         contentletApi = APILocator.getContentletAPI();
         languageApi = APILocator.getLanguageAPI();
         appsAPI = APILocator.getAppsAPI();
-        host = APILocator.systemHost();
+        host = new SiteDataGen().nextPersisted();
         wireMockServer = AiTest.prepareWireMock();
+        addDotAISecrets();
     }
 
     @AfterClass
@@ -79,16 +78,6 @@ public class EmbeddingContentListenerTest {
         IPUtils.disabledIpPrivateSubnet(false);
 
         removeContentRelated();
-        removeDotAISecrets();
-    }
-
-    @Before
-    public void setup() throws Exception {
-        addDotAISecrets();
-    }
-
-    @After
-    public void tearDown() throws Exception {
         removeDotAISecrets();
     }
 
@@ -101,11 +90,14 @@ public class EmbeddingContentListenerTest {
      */
     @Test
     public void test_onPublish() throws Exception {
-        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog");
+        DotAIAPIFacadeImpl.setDefaultEmbeddingsAPIProvider(new DotAIAPIFacadeImpl.DefaultEmbeddingsAPIProvider());
+
+        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog", host);
         contentTypes.add(blogContentType);
         final String text = "OpenAI has developed a new AI model that surpasses previous benchmarks in natural language understanding and generation. This model, GPT-4, can perform complex tasks such as writing essays, creating code, and understanding nuanced prompts with unprecedented accuracy.";
         final Contentlet blogContent = TestDataUtils.withEmbeddings(
                 true,
+                host,
                 languageApi.getDefaultLanguage().getId(),
                 blogContentType.id(),
                 text);
@@ -115,7 +107,7 @@ public class EmbeddingContentListenerTest {
         boolean embeddingsExist = waitForEmbeddings(blogContent, text, true);
 
         assertTrue(embeddingsExist);
-        final Map<String, Map<String, Object>> embeddingsByIndex = EmbeddingsAPI.impl().countEmbeddingsByIndex();
+        final Map<String, Map<String, Object>> embeddingsByIndex = APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddingsByIndex();
         assertFalse(embeddingsByIndex.isEmpty());
         assertTrue(embeddingsByIndex.containsKey("default"));
         final Map<String, Object> embeddings = embeddingsByIndex.get("default");
@@ -134,11 +126,12 @@ public class EmbeddingContentListenerTest {
      */
     @Test
     public void test_onArchive() throws Exception {
-        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog");
+        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog", host);
         contentTypes.add(blogContentType);
         final String text = "In the latest NBA finals, the Golden State Warriors clinched the championship title after a thrilling seven-game series against the Boston Celtics. Stephen Curry was named the MVP for his outstanding performance.";
         final Contentlet blogContent = TestDataUtils.withEmbeddings(
                 true,
+                host,
                 languageApi.getDefaultLanguage().getId(),
                 blogContentType.id(),
                 text);
@@ -165,6 +158,7 @@ public class EmbeddingContentListenerTest {
         final String text = "The latest Marvel movie, 'Avengers: Endgame,' has broken box office records with its stunning visual effects and compelling storyline. Critics praise the film for its emotional depth and action-packed scenes.";
         final Contentlet blogContent = TestDataUtils.withEmbeddings(
                 true,
+                host,
                 languageApi.getDefaultLanguage().getId(),
                 blogContentType.id(),
                 text);
@@ -184,23 +178,21 @@ public class EmbeddingContentListenerTest {
 
     private static boolean waitForEmbeddings(final Contentlet blogContent, final String text, final boolean expected) {
         int count = 0;
-        boolean embeddingsExist = EmbeddingsAPI.impl().embeddingExists(blogContent.getInode(), "default", text);
+        boolean embeddingsExist = APILocator.getDotAIAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
         while (embeddingsExist != expected) {
             if (count++ > MAX_ATTEMPTS) {
                 break;
             }
 
-            sleep(1000);
-            embeddingsExist = EmbeddingsAPI.impl().embeddingExists(blogContent.getInode(), "default", text);
+            sleep(500);
+            embeddingsExist = APILocator.getDotAIAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
         }
         return embeddingsExist;
     }
 
     private static void addDotAISecrets() throws DotDataException, DotSecurityException {
-        final AppSecrets.Builder builder = AppSecrets.builder()
-                .withKey(AppKeys.APP_KEY)
-                .withSecrets(AiTest.appConfigMap(wireMockServer));
-        appsAPI.saveSecrets(builder.build(), host, user);
+        AiTest.aiAppSecrets(wireMockServer, host, AiTest.API_KEY);
+        AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost(), AiTest.API_KEY);
     }
 
     private static void removeDotAISecrets() throws DotDataException, DotSecurityException {
@@ -215,13 +207,17 @@ public class EmbeddingContentListenerTest {
             try {
                 contentletApi.archive(contentlet, user, false);
                 contentletApi.delete(contentlet, user, false);
-            } catch (DotDataException | DotSecurityException e) {}
+            } catch (DotDataException | DotSecurityException e) {
+                //ignore
+            }
         });
 
         contentTypes.forEach(contentType -> {
             try {
                 contentTypeApi.delete(contentType);
-            } catch (DotDataException | DotSecurityException e) {}
+            } catch (DotDataException | DotSecurityException e) {
+                //ignore
+            }
         });
     }
 

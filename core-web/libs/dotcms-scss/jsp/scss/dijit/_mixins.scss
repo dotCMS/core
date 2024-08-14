@@ -12,7 +12,7 @@
 }
 
 @mixin mouse {
-    font-size: 11px; // TODO: set a variable
+    font-size: $font-size-xs;
     color: $color-palette-gray-500;
 }
 

@@ -1,10 +1,10 @@
 package com.dotcms.ai.viewtool;
 
-import com.dotcms.ai.api.EmbeddingsAPI;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
@@ -51,7 +51,7 @@ public class EmbeddingsTool implements ViewTool {
      * @return The number of tokens in the prompt, or -1 if no encoding is found for the model.
      */
     public int countTokens(final String prompt) {
-        return EncodingUtil.REGISTRY
+        return EncodingUtil.get().registry
                 .getEncodingForModel(appConfig.getModel().getCurrentModel())
                 .map(encoding -> encoding.countTokens(prompt))
                 .orElse(-1);
@@ -74,7 +74,7 @@ public class EmbeddingsTool implements ViewTool {
                     "Prompt is too long.  Maximum prompt size is " + maxTokens + " tokens (roughly ~" + maxTokens * .75 + " words).  Your prompt was " + tokens + " tokens ");
         }
 
-        return EmbeddingsAPI.impl().pullOrGenerateEmbeddings(prompt)._2;
+        return APILocator.getDotAIAPI().getEmbeddingsAPI().pullOrGenerateEmbeddings(prompt)._2;
     }
 
     /**
@@ -83,7 +83,7 @@ public class EmbeddingsTool implements ViewTool {
      * @return A map where the keys are index names and the values are maps of index properties.
      */
     public Map<String, Map<String, Object>> getIndexCount() {
-        return EmbeddingsAPI.impl().countEmbeddingsByIndex();
+        return APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddingsByIndex();
     }
 
     @VisibleForTesting
