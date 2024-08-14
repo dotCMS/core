@@ -2,6 +2,7 @@ package com.dotcms.contenttype.model.type;
 
 import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.model.views.CommonViews;
+import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -30,7 +31,7 @@ public class SystemActionMappingsDeserializer extends JsonDeserializer<JsonNode>
      */
     @Override
     public JsonNode deserialize(JsonParser p, DeserializationContext ctxt)
-            throws IOException, JsonProcessingException {
+            throws IOException, JacksonException {
 
         final ObjectMapper mapper = new ObjectMapper();
         final ObjectNode transformedMappings = mapper.createObjectNode();

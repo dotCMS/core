@@ -19,8 +19,6 @@ import com.dotcms.contenttype.model.field.Relationships;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.model.workflow.ImmutableActionMapping;
-import com.dotcms.contenttype.model.workflow.ImmutableWorkflowAction;
 import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
@@ -268,43 +266,18 @@ class ContentTypeAPIIT {
 
     @Test
     void Test_Create_Then_Update_Action_Mappings() throws JsonProcessingException {
+
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+
         //We're only using this to extract the existing Workflows
         final ResponseEntityView<ContentType> response = client.getContentType("FileAsset", 1L, false);
         final ContentType fileAsset = response.entity();
         Assertions.assertFalse(Objects.requireNonNull(fileAsset.workflows()).isEmpty());
-        final String systemWorkflowId = fileAsset.workflows().get(0).id();
 
+        final Map<String, String> actionMappings = Map.of(
+                SystemAction.NEW.name(), "b9d89c80-3d88-4311-8365-187323c96436"
+        );
         final ObjectMapper mapper = new ObjectMapper();
-        final ImmutableWorkflowAction workflowAction = ImmutableWorkflowAction.builder()
-                .id("b9d89c80-3d88-4311-8365-187323c96436")
-                .name("Publish")
-                .assignable(false)
-                .commentable(false)
-                .condition("")
-                .icon("workflowIcon")
-                .nextAssign("654b0931-1027-41f7-ad4d-173115ed8ec1")
-                .nextStep("dc3c9cd0-8467-404b-bf95-cb7df3fbc293")
-                .nextStepCurrentStep(false)
-                .order(0)
-                .roleHierarchyForAssign(false)
-                .schemeId("d61a59e1-a49c-46f2-a929-db2b4bfa88b2")
-                .showOn(List.of("EDITING",
-                        "PUBLISHED",
-                        "UNLOCKED",
-                        "NEW",
-                        "UNPUBLISHED",
-                        "LISTING",
-                        "LOCKED"))
-                .build();
-
-        final ImmutableActionMapping actionMapping = ImmutableActionMapping.builder()
-                .workflowAction(workflowAction)
-                .identifier(systemWorkflowId)
-                .systemAction("NEW")
-                .build();
-
-        final Map<String, ImmutableActionMapping> actionMappings = Map.of(SystemAction.NEW.name(), actionMapping);
         final JsonNode jsonNode = mapper.valueToTree(actionMappings);
 
         final long identifier =  System.currentTimeMillis();
@@ -320,22 +293,16 @@ class ContentTypeAPIIT {
                 .systemActionMappings(jsonNode)
                 .build();
 
-        final String content = mapper.writerWithDefaultPrettyPrinter()
-                .writeValueAsString(contentType);
-
-        System.out.println(content);
-
         final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
                 from(contentType).build();
-
         final ResponseEntityView<List<ContentType>> response2 = client.createContentTypes(List.of(request));
 
-        final ContentType creted = response2.entity().get(0);
-        Assertions.assertNotNull(creted.systemActionMappings());
+        final ContentType created = response2.entity().get(0);
+        Assertions.assertNotNull(created.systemActionMappings());
 
         final ImmutableSimpleContentType modifiedContentType = ImmutableSimpleContentType.builder()
-                .from(creted).addFields(ImmutableBinaryField.builder()
-                        .contentTypeId(creted.id())
+                .from(created).addFields(ImmutableBinaryField.builder()
+                        .contentTypeId(created.id())
                         .name("_bin_var_2" + identifier)
                         .variable("anyField2" + System.currentTimeMillis())
                         .build()).description("Modified!").build();
@@ -350,7 +317,6 @@ class ContentTypeAPIIT {
         Assertions.assertNotNull(updatedContentType.systemActionMappings());
         Assertions.assertEquals("Modified!",updatedContentType.description());
         Assertions.assertEquals(4, updatedContentType.fields().size());
-
     }
 
         /**
