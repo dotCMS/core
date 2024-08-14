@@ -38,6 +38,7 @@
                         (rowClicked)="store.getCategories($event)"
                         [categories]="store.categoryList()"
                         [isLoading]="store.isListLoading()"
+                        [isInitialState]="store.isInitSate()"
                         [selected]="store.selectedCategoriesValues()"
                         [breadcrumbs]="store.breadcrumbMenu()" />
                 } @else {
