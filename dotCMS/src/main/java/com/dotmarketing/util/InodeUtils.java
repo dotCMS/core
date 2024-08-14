@@ -198,6 +198,8 @@ public class InodeUtils {
 		}else if ( shortOpt.isPresent() && ShortType.FOLDER == shortOpt.get().subType ) {
 			//Folder no longer inherit from inode, returning an empty inode
 			inodeObj = new Inode();
+		} else if ( shortOpt.isPresent() && ShortType.CATEGORY == shortOpt.get().subType ) {
+			inodeObj = APILocator.getCategoryAPI().find(inode, APILocator.systemUser(), false);
 		} else {
             inodeObj = InodeFactory.getInode(inode, Inode.class);
         }
