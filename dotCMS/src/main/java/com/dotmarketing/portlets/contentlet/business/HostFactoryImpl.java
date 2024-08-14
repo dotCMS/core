@@ -189,11 +189,13 @@ public class HostFactoryImpl implements HostFactory {
 
     @Override
     public Host bySiteName(final String siteName) {
-        Host site = siteCache.getByName(siteName);
-        if (UtilMethods.isSet(site::getIdentifier)) {
-            if (HostCache.CACHE_404_HOST.equals(site.getIdentifier())) {
+        Host site;
+        final Host cachedSiteByName = siteCache.getByName(siteName);;
+        if (UtilMethods.isSet(() -> cachedSiteByName.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(cachedSiteByName.getIdentifier())) {
                 return null;
             }
+            site = cachedSiteByName;
         } else {
             final DotConnect dc = new DotConnect();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
@@ -232,11 +234,13 @@ public class HostFactoryImpl implements HostFactory {
 
     @Override
     public Host byAlias(String alias) {
-        Host site = this.siteCache.getHostByAlias(alias);
-        if (UtilMethods.isSet(site::getIdentifier)) {
-            if (HostCache.CACHE_404_HOST.equals(site.getIdentifier())) {
+        Host site = null;
+        Host cachedSiteByAlias = this.siteCache.getHostByAlias(alias);
+        if (UtilMethods.isSet(() -> cachedSiteByAlias.getIdentifier())) {
+            if (HostCache.CACHE_404_HOST.equals(cachedSiteByAlias.getIdentifier())) {
                 return null;
             }
+            site = cachedSiteByAlias;
         } else {
             final DotConnect dc = new DotConnect();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE_AND_ALIASES)
