@@ -138,3 +138,4 @@ This maintenance release includes the following code fixes:
 131. https://github.com/dotCMS/core/issues/27816 : Content Displacement Bug when Editing Template #27816
 132. https://github.com/dotCMS/core/issues/28163 : 'alive' and 'startup' healthcheck APIs return 503 on seemingly healthy app #28163
 133. https://github.com/dotCMS/core/issues/26546 : Enable better logging for getPageByPath in HTMLPageAssetAPIImpl.java #26546
+134. https://github.com/dotCMS/core/issues/28366 : Uploaded images in another language than the default one do not inherit permissions #28366
