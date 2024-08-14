@@ -62,6 +62,8 @@
     Object inodeObj =(Object) request.getAttribute("inode");
     String inode = inodeObj != null ? inodeObj.toString() : "";
 
+    String contentletIdentifier = contentlet.getIdentifier();
+
     String counter = (String) request.getAttribute("counter");
 
     boolean fullScreenField = Try.of(()->(boolean)request.getAttribute("DOT_FULL_SCREEN_FIELD")).getOrElse(false);
@@ -113,6 +115,11 @@
         }
     }
 </style>
+
+<script>
+var binaryCallbacksMap = {} // This is a map to store the callbacks for the binary fields, used to reload them when we publish or save a contentlet, look on dotCMS/src/main/webapp/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp on saveContentCallback function
+</script>
+
 
 <div class="fieldWrapper" >
     <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
@@ -212,11 +219,10 @@
             String textValue = UtilMethods.isSet(value) ? value.toString(): (UtilMethods.isSet(defaultValue) ? defaultValue : "");
             String safeTextValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`";
 
-            String contentletIdentifier = contentlet.getIdentifier();
             String jsonField = "{}";
             String contentletObj = "{}";
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
-            
+
             // If it can be parsed as a JSON, then it means that the value is already a Block Editor's value
             if (value != null) {
                 try {
@@ -287,7 +293,7 @@
                             field.value = !detail ? null : JSON.stringify(detail);;
                         });
 
-                        // 
+                        //
                         blockEditor.contentlet = contentlet;
                         blockEditor.field = fieldData;
 
@@ -730,16 +736,16 @@
                         helperText=fv.getValue();
                     }
                 }
-            
+
                 %>
-            
+
 
             <div id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>" dojoType="dijit.Dialog" >
                 <div dojoType="dijit.layout.ContentPane" style="text-align:center;height:auto;" class="box" hasShadow="true" id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>CP">
                     <p style="margin:0;max-width:600px;word-wrap: break-word">
-                        <%= LanguageUtil.get(pageContext, "Do-you-want-to-replace-the-existing-asset-name") %> 
-                        "<span id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-oldValue"> </span>" 
-                        <%= LanguageUtil.get(pageContext, "with") %>  
+                        <%= LanguageUtil.get(pageContext, "Do-you-want-to-replace-the-existing-asset-name") %>
+                        "<span id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-oldValue"> </span>"
+                        <%= LanguageUtil.get(pageContext, "with") %>
                         "<span id="confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-newValue"></span>""
                         <br>&nbsp;<br>
                     </p>
@@ -767,14 +773,14 @@
                     fileNameField?.setValue(newFileName);
                     dijit.byId("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>").hide();
                 }
-                
+
                 function closeConfirmReplaceName(){
                     dijit.byId("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>").hide();
                 }
             </script>
             <script>
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
-                (function autoexecute() {
+                function setBinaryFieldInputs() {
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
 
                     /**
@@ -782,7 +788,10 @@
                      * This is a workaround to get the contentlet from the API
                      * because there is no way to get the same contentlet the AP retreive from the dwr call.
                      */
-                    fetch('/api/v1/content/<%=inode%>', {
+
+                    const identifier =  "<%=contentletIdentifier%>";
+
+                    fetch(`/api/v1/content/${identifier}`, {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json'
@@ -830,12 +839,12 @@
                             if(contentBaseType === 4){ // FileAsset
                                 let titleField = dijit.byId("title");
                                 let fileNameField = dijit.byId("fileName");
-                                window.newFileName = fileName; //To use in confirmReplaceName function 
-                                
+                                window.newFileName = fileName; //To use in confirmReplaceName function
+
                                 if(!fileNameField.value){
                                     titleField?.setValue(fileName);
                                 }
-    
+
                                 if(fileNameField.value && fileName && fileNameField.value !== fileName) {
                                     document.getElementById("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-oldValue").innerHTML = fileNameField.value;
                                     document.getElementById("confirmReplaceNameDialog-<%=field.getVelocityVarName()%>-newValue").innerHTML = fileName;
@@ -869,7 +878,14 @@
                     .catch(() => {
                         binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
                     })
-                })();
+                };
+
+                setBinaryFieldInputs(); // Initialize the binary Field
+
+                // This code covers the multiple binaries in a contentlet
+                if(!binaryCallbacksMap["<%=field.getVelocityVarName()%>"]) {
+                    binaryCallbacksMap["<%=field.getVelocityVarName()%>"] = setBinaryFieldInputs; // Register the function to be called when the contentlet is saved
+                }
             </script>
         <%}else{%>
 
