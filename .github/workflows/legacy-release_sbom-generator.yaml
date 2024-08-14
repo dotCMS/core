@@ -55,7 +55,7 @@ jobs:
 
       - name: Rename SBOM file with dotCMS version
         run: |
-          mkdir -p core-test-results/sbom
+          mkdir -p core/sbom
           mv core/sbom/cyclonedx.json core/sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
 
       - name: Configure Git
