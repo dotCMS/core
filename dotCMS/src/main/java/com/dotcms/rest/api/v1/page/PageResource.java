@@ -1126,7 +1126,9 @@ public class PageResource {
             ));
         }
 
-        throw new DoesNotExistException("The page: " + findAvailableActionsForm.getPath() + " do not exist");
+        throw new DoesNotExistException(String.format("HTML Page path '%s' with language ID '%s' in Site " +
+                        "'%s' does not exist", findAvailableActionsForm.getPath(),
+                findAvailableActionsForm.getLanguageId(), findAvailableActionsForm.getHostId()));
     } // findAvailableActions.
 
     /**
