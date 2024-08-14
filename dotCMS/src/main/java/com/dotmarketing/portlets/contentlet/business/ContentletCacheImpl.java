@@ -135,7 +135,7 @@ public class ContentletCacheImpl extends ContentletCache {
 			Logger.debug(this, "Cache not able to be removed", e);
 		}
 
-		final Host host = CacheLocator.getHostCache().get(key);
+		final Host host = CacheLocator.getHostCache().getById(key);
 		if(host != null){
 			CacheLocator.getHostCache().remove(host);
 		}

@@ -183,7 +183,7 @@ public class HostFactoryImplTest extends IntegrationTestBase {
         // Check 404 after deletion of test host
         final HostCache hostCache = new HostCacheImpl();
         final Host nonExistingHost = hostFactory.bySiteName(hostName);
-        final Host cached404Host = hostCache.get(hostName);
+        final Host cached404Host = hostCache.getByName(hostName);
 
         assertNull(nonExistingHost);
         assertNotNull(cached404Host);
