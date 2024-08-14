@@ -10,100 +10,87 @@ const writeJSON = (filePath, data) =>
 
 // Function to bump the version
 const bumpVersion = (version) => {
-    const match = version.match(/^(\d+\.\d+\.\d+-alpha\.)(\d+)$/);
+    const match = version.match(/^(\d+\.\d+\.\d+)(-alpha\.)?(\d+)?$/);
     if (!match) {
         throw new Error(`Invalid version format: ${version}`);
     }
 
-    const prefix = match[1];
-    const buildNumber = parseInt(match[2]);
-
-    const newBuildNumber = buildNumber + 1;
-    return `${prefix}${newBuildNumber}`;
+    const [majorMinorPatch, , buildNumber = 0] = match;
+    const newBuildNumber = parseInt(buildNumber) + 1;
+    return `${majorMinorPatch}-alpha.${newBuildNumber}`;
 };
 
-// Function to update dependencies in a package.json file
-const updatePackageDependencies = (
-    packageJsonPath,
-    newVersion,
-    dependenciesMap,
-    isPeerDependency = false
-) => {
+// Function to update the version in a package.json file
+const updateVersionInPackageJson = (packageJsonPath, newVersion) => {
+    const packageJson = readJSON(packageJsonPath);
+    packageJson.version = newVersion;
+    writeJSON(packageJsonPath, packageJson);
+    console.log(`Updated version in ${packageJsonPath} to ${newVersion}`);
+};
+
+// Function to update peerDependencies in a package.json file
+const updatePeerDependencies = (packageJsonPath, newVersion) => {
     const packageJson = readJSON(packageJsonPath);
     let updated = false;
 
-    // Determine whether to update dependencies or peerDependencies
-    const depsKey = isPeerDependency ? 'peerDependencies' : 'dependencies';
-    const dependencies = packageJson[depsKey] || {};
+    if (packageJson.peerDependencies && packageJson.peerDependencies['@dotcms/client']) {
+        packageJson.peerDependencies['@dotcms/client'] = newVersion;
+        updated = true;
+    }
 
-    // Update dependencies/peerDependencies to the new version based on the dependenciesMap
-    Object.keys(dependenciesMap).forEach((dep) => {
-        if (dependencies[dep]) {
-            console.log(
-                `Updating ${depsKey.slice(0, -1)} ${dep} in ${packageJsonPath} to version ${newVersion}`
-            );
-            dependencies[dep] = newVersion;
+    if (updated) {
+        writeJSON(packageJsonPath, packageJson);
+        console.log(`Updated peerDependencies in ${packageJsonPath} to version ${newVersion}`);
+    }
+};
+
+// Function to update dependencies in a package.json file for examples
+const updateDependenciesInExamples = (packageJsonPath, sdkDependencies) => {
+    const packageJson = readJSON(packageJsonPath);
+    let updated = false;
+
+    Object.keys(sdkDependencies).forEach((dep) => {
+        if (packageJson.dependencies && packageJson.dependencies[dep]) {
+            packageJson.dependencies[dep] = sdkDependencies[dep];
             updated = true;
         }
     });
 
     if (updated) {
-        packageJson[depsKey] = dependencies;
         writeJSON(packageJsonPath, packageJson);
-        console.log(`Updated ${depsKey} in ${packageJsonPath} to version ${newVersion}`);
-    } else {
-        console.log(`No relevant ${depsKey} to update in ${packageJsonPath}`);
+        console.log(`Updated dependencies in ${packageJsonPath} to new SDK versions`);
     }
 };
 
-// Function to update the version of the SDK packages themselves
-const updateSdkPackageVersion = (packageJsonPath, newVersion, dependenciesMap) => {
-    const packageJson = readJSON(packageJsonPath);
-    packageJson.version = newVersion;
+// Paths
+const sdkDir = path.join(__dirname, 'libs/sdk');
+const examplesDir = path.join(__dirname, '../examples');
 
-    // Update the internal peerDependencies within SDKs
-    updatePackageDependencies(packageJsonPath, newVersion, dependenciesMap, true);
-
-    writeJSON(packageJsonPath, packageJson);
-    console.log(`Updated ${packageJsonPath} to version ${newVersion}`);
-};
-
-// Function to find all package.json files in a directory recursively
-const findPackageJsonFilesRecursively = (dir) => {
-    let results = [];
-    const list = fs.readdirSync(dir);
-    list.forEach((file) => {
-        const filePath = path.join(dir, file);
-        const stat = fs.statSync(filePath);
-        if (stat && stat.isDirectory()) {
-            results = results.concat(findPackageJsonFilesRecursively(filePath));
-        } else if (file === 'package.json') {
-            results.push(filePath);
-        }
-    });
-    return results;
-};
-
-// Define the root directories to search
-const sdkRoot = path.join(__dirname, 'libs/sdk');
-const examplesRoot = path.join(__dirname, '../examples');
-
-// Find all package.json files in the SDK and examples directories
-const sdkPackages = findPackageJsonFilesRecursively(sdkRoot);
-const examplePackages = findPackageJsonFilesRecursively(examplesRoot);
-
-// Log the found files for verification
-console.log(`Found SDK packages: ${sdkPackages.join(', ')}`);
-console.log(`Found Example packages: ${examplePackages.join(', ')}`);
-
-// Get the current version from sdk-client
-const sdkClientPackageJson = readJSON(sdkPackages.find((pkg) => pkg.includes('client')));
-const currentVersion = sdkClientPackageJson.version;
-
-// Bump the version
+// Step 1: Bump the version of the client library
+const clientPackageJsonPath = path.join(sdkDir, 'client/package.json');
+const clientPackageJson = readJSON(clientPackageJsonPath);
+const currentVersion = clientPackageJson.version;
 const newVersion = bumpVersion(currentVersion);
+console.log(`Bumping version of client from ${currentVersion} to ${newVersion}`);
 
-// Define the dependency mappings
+// Step 2: Update the version in all SDK libraries
+const sdkLibraries = fs
+    .readdirSync(sdkDir)
+    .filter((lib) => fs.existsSync(path.join(sdkDir, lib, 'package.json')));
+sdkLibraries.forEach((lib) => {
+    const packageJsonPath = path.join(sdkDir, lib, 'package.json');
+    updateVersionInPackageJson(packageJsonPath, newVersion);
+});
+
+// Step 3: Update peerDependencies in other SDK libraries
+sdkLibraries.forEach((lib) => {
+    if (lib !== 'client') {
+        const packageJsonPath = path.join(sdkDir, lib, 'package.json');
+        updatePeerDependencies(packageJsonPath, newVersion);
+    }
+});
+
+// Step 4: Update dependencies in example projects
 const sdkDependencies = {
     '@dotcms/client': newVersion,
     '@dotcms/angular': newVersion,
@@ -111,17 +98,12 @@ const sdkDependencies = {
     '@dotcms/experiments': newVersion
 };
 
-const exampleDependencies = {
-    '@dotcms/client': newVersion,
-    '@dotcms/angular': newVersion,
-    '@dotcms/react': newVersion,
-    '@dotcms/experiments': newVersion
-};
+const exampleProjects = fs
+    .readdirSync(examplesDir)
+    .filter((proj) => fs.existsSync(path.join(examplesDir, proj, 'package.json')));
+exampleProjects.forEach((proj) => {
+    const packageJsonPath = path.join(examplesDir, proj, 'package.json');
+    updateDependenciesInExamples(packageJsonPath, sdkDependencies);
+});
 
-// Update all SDK package.json files (versions and peerDependencies)
-sdkPackages.forEach((pkg) => updateSdkPackageVersion(pkg, newVersion, sdkDependencies));
-
-// Update all example package.json files (dependencies only)
-examplePackages.forEach((pkg) => updatePackageDependencies(pkg, newVersion, exampleDependencies));
-
-console.log(`All relevant package.json files updated to version ${newVersion}`);
+console.log(`All updates complete. New SDK version: ${newVersion}`);

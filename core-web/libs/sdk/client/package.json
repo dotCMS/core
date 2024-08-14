@@ -1,6 +1,6 @@
 {
   "name": "@dotcms/client",
-  "version": "0.0.1-alpha.34",
+  "version": "0.0.1-alpha.34-alpha.NaN",
   "type": "module",
   "description": "Official JavaScript library for interacting with DotCMS REST APIs.",
   "repository": {
