@@ -5,9 +5,6 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { MessageService } from 'primeng/api';
-import { DeferModule } from 'primeng/defer';
-import { TableModule } from 'primeng/table';
-import { ToastModule } from 'primeng/toast';
 
 import { DeferComponent } from './Defer.component';
 
@@ -24,14 +21,7 @@ const meta: Meta<DeferComponent> = {
     },
     decorators: [
         moduleMetadata({
-            imports: [
-                BrowserModule,
-                BrowserAnimationsModule,
-                DeferModule,
-                ToastModule,
-                TableModule,
-                HttpClientModule
-            ],
+            imports: [BrowserModule, BrowserAnimationsModule, HttpClientModule],
             providers: [MessageService]
         })
     ],

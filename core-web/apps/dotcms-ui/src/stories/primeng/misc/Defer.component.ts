@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
+import { DeferModule } from 'primeng/defer';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 
@@ -14,7 +15,7 @@ export interface Car {
 @Component({
     selector: 'dot-p-defer',
     standalone: true,
-    imports: [ToastModule, TableModule],
+    imports: [ToastModule, TableModule, DeferModule],
     template: `
         <div style="height:1200px">Table is not loaded yet, scroll down to initialize it.</div>
 

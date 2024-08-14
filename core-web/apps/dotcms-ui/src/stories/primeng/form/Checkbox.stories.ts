@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, componentWrapperDecorator } from '@storybook/angular';
 
 import { NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -34,7 +34,8 @@ const meta: Meta = {
     decorators: [
         moduleMetadata({
             imports: [CheckboxModule, BrowserAnimationsModule, FormsModule, NgFor]
-        })
+        }),
+        componentWrapperDecorator((story) => `<div class="flex flex-column gap-2">${story}</div>`)
     ],
     args: {
         cities: [...cities],
@@ -55,14 +56,35 @@ const meta: Meta = {
             description: 'Whether the radio buttons are invalid'
         }
     },
-    render: () => ({
-        template: `<div class="flex flex-column gap-2">
-            <p-checkbox *ngFor="let city of cities" name="city" [value]="city" [(ngModel)]="selectedCity" [inputId]="city.code" [label]="city.name" [disabled]="disabled" [class]="invalid ? 'ng-dirty ng-invalid' : ''"></p-checkbox>
-        </div>`
+    render: (args) => ({
+        props: args,
+        template: `
+        <p-checkbox
+            *ngFor="let city of cities" name="city"
+            [value]="city"
+            [(ngModel)]="selectedCity"
+            [inputId]="city.code"
+            [label]="city.name"
+            [disabled]="disabled"
+            [class]="invalid ? 'ng-dirty ng-invalid' : ''"
+            />
+        `
     })
 };
 export default meta;
 
 type Story = StoryObj;
 
-export const Main: Story = {};
+export const Default: Story = {};
+
+export const Invalid: Story = {
+    args: {
+        invalid: true
+    }
+};
+
+export const Disabled: Story = {
+    args: {
+        disabled: true
+    }
+};

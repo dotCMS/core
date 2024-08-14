@@ -1,5 +1,6 @@
+import { faker } from '@faker-js/faker';
 import { action } from '@storybook/addon-actions';
-import { moduleMetadata } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -14,7 +15,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
 
-import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
@@ -38,7 +39,7 @@ const mockActivatedRoute = {
     snapshot: {}
 };
 
-export default {
+const meta: Meta<DotDeviceSelectorSeoComponent> = {
     title: 'dotcms/Device Selector SEO',
     component: DotDeviceSelectorSeoComponent,
     decorators: [
@@ -66,27 +67,38 @@ export default {
                         request: () => of(mockDotDevices)
                     }
                 },
-                { provide: ActivatedRoute, useValue: mockActivatedRoute }
+                { provide: ActivatedRoute, useValue: mockActivatedRoute },
+                {
+                    provide: DotCurrentUserService,
+                    useValue: {
+                        getCurrentUser: () =>
+                            of({
+                                admin: false,
+                                email: faker.internet.email(),
+                                givenName: faker.internet.userName(),
+                                roleId: '1',
+                                surnaname: faker.internet.userName(),
+                                userId: '1'
+                            })
+                    }
+                }
             ]
         })
-    ]
-};
-
-export const Default = () => {
-    const handleClick = () => {
-        // open selector logic
-    };
-
-    return {
+    ],
+    render: (args) => ({
+        props: args,
         template: `
-        <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
-        <dot-device-selector-seo #op></dot-device-selector-seo>
-      `,
-        props: {
-            handleClick,
-            props: {
-                selected: action('selected')
-            }
-        }
-    };
+            <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
+            <dot-device-selector-seo #op />
+        `
+    })
+};
+export default meta;
+
+type Story = StoryObj<DotDeviceSelectorSeoComponent>;
+
+export const Default: Story = {
+    args: {
+        selected: action('selected')
+    }
 };

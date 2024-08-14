@@ -1,11 +1,15 @@
-import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
+import {
+    Meta,
+    StoryObj,
+    applicationConfig,
+    moduleMetadata,
+    componentWrapperDecorator
+} from '@storybook/angular';
 
 import { importProvidersFrom } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { ToastModule } from 'primeng/toast';
 
 import { ToastComponent } from './Toast.component';
 
@@ -67,14 +71,14 @@ const meta: Meta<ToastComponent> = {
     },
     decorators: [
         moduleMetadata({
-            imports: [ToastModule, ButtonModule],
             providers: [MessageService]
         }),
         // Apply application config to all stories
         applicationConfig({
             // List of providers and environment providers that should be available to the root component and all its children.
             providers: [MessageService, importProvidersFrom(BrowserAnimationsModule)]
-        })
+        }),
+        componentWrapperDecorator((story) => `<div class="w-full h-20rem">${story}</div>`)
     ]
 };
 export default meta;
