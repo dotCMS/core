@@ -1,3 +1,5 @@
+# Generate SBOM for dotCMS Releases once they are published based on core repo. 
+
 name: Generate SBOM for dotCMS Releases
 
 on:
