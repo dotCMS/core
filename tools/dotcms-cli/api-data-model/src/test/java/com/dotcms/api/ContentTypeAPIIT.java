@@ -4,7 +4,8 @@ import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.provider.ClientObjectMapper;
-import com.dotcms.common.ContentTypeTestHelperService;
+import com.dotcms.common.ContentTypeLayoutTestHelperService;
+import com.dotcms.common.ContentTypesTestHelperService;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
@@ -68,7 +69,10 @@ class ContentTypeAPIIT {
     ServiceManager serviceManager;
 
     @Inject
-    ContentTypeTestHelperService contentTypeTestHelperService;
+    ContentTypeLayoutTestHelperService contentTypeLayoutTestHelperService;
+
+    @Inject
+    ContentTypesTestHelperService contentTypesTestHelperService;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -264,59 +268,164 @@ class ContentTypeAPIIT {
         }
     }
 
+    /**
+     * Test: Create action mappings, then update them.
+     *
+     * <p><strong>Scenario:</strong></p>
+     * <ol>
+     *   <li>Create a new set of action mappings.</li>
+     *   <li>Update the created action mappings with new values.</li>
+     *   <li>Verify that the updates are correctly applied.</li>
+     * </ol>
+     *
+     * <p><strong>Expected:</strong></p>
+     * <ul>
+     *   <li>Action mappings should be created successfully.</li>
+     *   <li>The updates to the action mappings should be reflected correctly.</li>
+     *   <li>The entire process should complete without errors.</li>
+     * </ul>
+     *
+     * @throws JsonProcessingException If an error occurs while processing JSON.
+     */
     @Test
     void Test_Create_Then_Update_Action_Mappings() throws JsonProcessingException {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
         //We're only using this to extract the existing Workflows
-        final ResponseEntityView<ContentType> response = client.getContentType("FileAsset", 1L, false);
-        final ContentType fileAsset = response.entity();
+        final ResponseEntityView<ContentType> fileAssetResponse = client.getContentType(
+                "FileAsset", 1L, false
+        );
+        final ContentType fileAsset = fileAssetResponse.entity();
         Assertions.assertFalse(Objects.requireNonNull(fileAsset.workflows()).isEmpty());
 
-        final Map<String, String> actionMappings = Map.of(
+        // Creating tha action mappings
+        final Map<String, String> actionMappingsV1 = Map.of(
                 SystemAction.NEW.name(), "b9d89c80-3d88-4311-8365-187323c96436"
         );
         final ObjectMapper mapper = new ObjectMapper();
-        final JsonNode jsonNode = mapper.valueToTree(actionMappings);
+        final JsonNode jsonNodeV1 = mapper.valueToTree(actionMappingsV1);
 
-        final long identifier =  System.currentTimeMillis();
-        final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
+        final long identifier = System.currentTimeMillis();
+        final String contentTypeVariable = "_var_" + identifier;
+        final ImmutableSimpleContentType contentTypeWithoutMapping = ImmutableSimpleContentType.builder()
                 .description("ct action mappings.")
-                .variable("_var_"+identifier)
+                .variable(contentTypeVariable)
                 .addFields(
                         ImmutableBinaryField.builder()
-                                .name("_bin_var_"+identifier)
-                                .variable("anyField"+System.currentTimeMillis())
+                                .name("_bin_var_" + identifier)
+                                .variable("anyField" + System.currentTimeMillis())
                                 .build()
                 ).workflows(fileAsset.workflows())
-                .systemActionMappings(jsonNode)
                 .build();
 
-        final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
-                from(contentType).build();
-        final ResponseEntityView<List<ContentType>> response2 = client.createContentTypes(List.of(request));
+        try {
 
-        final ContentType created = response2.entity().get(0);
-        Assertions.assertNotNull(created.systemActionMappings());
+            // ---
+            // Creating the content type
+            final var contentType = contentTypeWithoutMapping.withSystemActionMappings(jsonNodeV1);
+            final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
+                    from(contentType).build();
+            final ResponseEntityView<List<ContentType>> createContentTypeResponse =
+                    client.createContentTypes(List.of(request));
 
-        final ImmutableSimpleContentType modifiedContentType = ImmutableSimpleContentType.builder()
-                .from(created).addFields(ImmutableBinaryField.builder()
-                        .contentTypeId(created.id())
-                        .name("_bin_var_2" + identifier)
-                        .variable("anyField2" + System.currentTimeMillis())
-                        .build()).description("Modified!").build();
+            // Make sure the content type was saved and indexed (This waits in case the
+            // indexing/saving took time)
+            final var byVarName = contentTypesTestHelperService.findContentType(
+                    contentTypeVariable);
+            Assertions.assertTrue(byVarName.isPresent());
 
-        final SaveContentTypeRequest request2 = SaveContentTypeRequest.builder().
-                from(modifiedContentType).build();
-        final ResponseEntityView<ContentType> entityView = client.updateContentType(
-                request2.variable(), request2
-        );
+            final ContentType createdContentType = createContentTypeResponse.entity().get(0);
+            Assertions.assertNotNull(createdContentType.systemActionMappings());
+            Assertions.assertEquals(1, createdContentType.systemActionMappings().size());
 
-        final ContentType updatedContentType = entityView.entity();
-        Assertions.assertNotNull(updatedContentType.systemActionMappings());
-        Assertions.assertEquals("Modified!",updatedContentType.description());
-        Assertions.assertEquals(4, updatedContentType.fields().size());
+            // ---
+            // Now we are going to modify the content type WITHOUT system mappings, nothing should
+            // change for the mappings
+            var modifiedContentType = contentTypeWithoutMapping.withDescription("Modified!");
+
+            SaveContentTypeRequest contentTypeRequest = SaveContentTypeRequest.builder().
+                    from(modifiedContentType).build();
+            ResponseEntityView<ContentType> updateContentTypeResponse = client.updateContentType(
+                    contentTypeRequest.variable(), contentTypeRequest
+            );
+
+            ContentType updatedContentType = updateContentTypeResponse.entity();
+            Assertions.assertNotNull(updatedContentType.systemActionMappings());
+            Assertions.assertEquals(1, updatedContentType.systemActionMappings().size());
+            Assertions.assertEquals("Modified!", updatedContentType.description());
+
+            // ---
+            // Updating the system mappings, we are going to add more mappings
+            final Map<String, String> actionMappingsV2 = Map.of(
+                    SystemAction.NEW.name(), "b9d89c80-3d88-4311-8365-187323c96436",
+                    SystemAction.ARCHIVE.name(), "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+                    SystemAction.PUBLISH.name(), "b9d89c80-3d88-4311-8365-187323c96436"
+            );
+            final JsonNode jsonNodeV2 = new ObjectMapper().valueToTree(actionMappingsV2);
+
+            modifiedContentType = contentTypeWithoutMapping.
+                    withDescription("Modified 2!").
+                    withSystemActionMappings(jsonNodeV2);
+
+            contentTypeRequest = SaveContentTypeRequest.builder().from(modifiedContentType).build();
+            updateContentTypeResponse = client.updateContentType(
+                    contentTypeRequest.variable(), contentTypeRequest
+            );
+
+            updatedContentType = updateContentTypeResponse.entity();
+            Assertions.assertNotNull(updatedContentType.systemActionMappings());
+            Assertions.assertEquals(3, updatedContentType.systemActionMappings().size());
+            Assertions.assertEquals("Modified 2!", updatedContentType.description());
+
+            // ---
+            // Updating again the system mappings, removing one
+            final Map<String, String> actionMappingsV3 = Map.of(
+                    SystemAction.NEW.name(), "b9d89c80-3d88-4311-8365-187323c96436",
+                    SystemAction.ARCHIVE.name(), "4da13a42-5d59-480c-ad8f-94a3adf809fe"
+            );
+            final JsonNode jsonNodeV3 = new ObjectMapper().valueToTree(actionMappingsV3);
+
+            modifiedContentType = contentTypeWithoutMapping.
+                    withDescription("Modified 3!").
+                    withSystemActionMappings(jsonNodeV3);
+
+            contentTypeRequest = SaveContentTypeRequest.builder().from(modifiedContentType).build();
+            updateContentTypeResponse = client.updateContentType(
+                    contentTypeRequest.variable(), contentTypeRequest
+            );
+
+            updatedContentType = updateContentTypeResponse.entity();
+            Assertions.assertNotNull(updatedContentType.systemActionMappings());
+            Assertions.assertEquals(2, updatedContentType.systemActionMappings().size());
+            Assertions.assertEquals("Modified 3!", updatedContentType.description());
+
+            // ---
+            // Finally trying to remove all system mappings
+            final Map<String, String> actionMappingsV4 = Map.of();
+            final JsonNode jsonNodeV4 = new ObjectMapper().valueToTree(actionMappingsV4);
+
+            modifiedContentType = contentTypeWithoutMapping.
+                    withDescription("Modified 4!").
+                    withSystemActionMappings(jsonNodeV4);
+
+            contentTypeRequest = SaveContentTypeRequest.builder().from(modifiedContentType).build();
+            updateContentTypeResponse = client.updateContentType(
+                    contentTypeRequest.variable(), contentTypeRequest
+            );
+
+            updatedContentType = updateContentTypeResponse.entity();
+            Assertions.assertNull(updatedContentType.systemActionMappings());
+            Assertions.assertEquals("Modified 4!", updatedContentType.description());
+        } finally {
+
+            // Clean up
+            try {
+                client.delete(contentTypeVariable);
+            } catch (Exception e) {
+                // Ignore any issue here on the cleanup
+            }
+        }
     }
 
         /**
@@ -657,20 +766,26 @@ class ContentTypeAPIIT {
         var rowField1 = ImmutableRowField.builder().name("row-1").build();
         var columnField1 = ImmutableColumnField.builder().name("column-1").build();
         //Four textFields are created
-        var fieldsList1 = this.contentTypeTestHelperService.buildTextFields(columnField1.name(), 4);
+        var fieldsList1 = this.contentTypeLayoutTestHelperService.buildTextFields(
+                columnField1.name(), 4);
         //The textFields are added to the column
-        var layoutColumnFieldList1 = this.contentTypeTestHelperService.buildLayoutColumns(List.of(columnField1), fieldsList1);
+        var layoutColumnFieldList1 = this.contentTypeLayoutTestHelperService.buildLayoutColumns(
+                List.of(columnField1), fieldsList1);
         //The layout row is created with the row and its columns
-        var fieldLayoutRow1 = this.contentTypeTestHelperService.buildFieldLayoutRow(rowField1, layoutColumnFieldList1);
+        var fieldLayoutRow1 = this.contentTypeLayoutTestHelperService.buildFieldLayoutRow(rowField1,
+                layoutColumnFieldList1);
 
         var rowField2 = ImmutableRowField.builder().name("row-2").build();
         var columnField2 = ImmutableColumnField.builder().name("column-1").build();
         //Six fields are created
-        var fieldsList2 = this.contentTypeTestHelperService.buildTextFields(columnField1.name(), 6);
+        var fieldsList2 = this.contentTypeLayoutTestHelperService.buildTextFields(
+                columnField1.name(), 6);
         //The textFields are added to the column
-        var layoutColumnFieldList2 = this.contentTypeTestHelperService.buildLayoutColumns(List.of(columnField2), fieldsList2);
+        var layoutColumnFieldList2 = this.contentTypeLayoutTestHelperService.buildLayoutColumns(
+                List.of(columnField2), fieldsList2);
         //The layout row is created with the row and its columns
-        var fieldLayoutRow2 = this.contentTypeTestHelperService.buildFieldLayoutRow(rowField2, layoutColumnFieldList2);
+        var fieldLayoutRow2 = this.contentTypeLayoutTestHelperService.buildFieldLayoutRow(rowField2,
+                layoutColumnFieldList2);
 
         final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
                 .baseType(BaseContentType.CONTENT)

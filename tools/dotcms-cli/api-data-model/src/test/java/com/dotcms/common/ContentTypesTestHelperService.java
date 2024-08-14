@@ -1,4 +1,4 @@
-package com.dotcms.cli.common;
+package com.dotcms.common;
 
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
