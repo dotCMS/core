@@ -105,6 +105,8 @@ public class SessionMonitor implements ServletRequestListener,
         final String userId = (String) event.getSession().getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
         if (userId != null) {
 
+            Logger.info(this, String.format("- User ID '%s' is still present. Removing user from data maps...", userId));
+
             final String sessionId = event.getSession().getId();
 
             sysUsers.remove(sessionId);
@@ -119,6 +121,9 @@ public class SessionMonitor implements ServletRequestListener,
                         event.getSession().getAttribute(LOG_OUT_ATTRIBUTE) != null && Boolean.parseBoolean(event.getSession().getAttribute(LOG_OUT_ATTRIBUTE).toString());
 
                 if (!isLogout) {
+
+                    Logger.info(this, String.format("- Pushing session expiration event for User ID '%s'", userId));
+
                     this.systemEventsAPI.push(new SystemEvent
                             (SystemEventType.SESSION_DESTROYED, UserSessionPayloadBuilder.build(userId, sessionId)));
                 } else {
@@ -129,6 +134,8 @@ public class SessionMonitor implements ServletRequestListener,
 
                 Logger.error(this, "Could not sent the session destroyed event: " + e.getMessage(), e);
             }
+        } else {
+            Logger.info(this, String.format("WARNING!! User ID in Session ID '%s' was not found. No event was sent!!", event.getSession().getId()));
         }
     }
     
