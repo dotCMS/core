@@ -10,14 +10,14 @@ const writeJSON = (filePath, data) =>
 
 // Function to bump the version
 const bumpVersion = (version) => {
-    const match = version.match(/^(\d+\.\d+\.\d+)(-alpha\.)?(\d+)?$/);
+    const match = version.match(/^(\d+\.\d+\.\d+)(-alpha\.)(\d+)?$/);
     if (!match) {
         throw new Error(`Invalid version format: ${version}`);
     }
 
-    const [majorMinorPatch, , buildNumber = 0] = match;
+    const [, majorMinorPatch, alphaPrefix, buildNumber = 0] = match;
     const newBuildNumber = parseInt(buildNumber) + 1;
-    return `${majorMinorPatch}-alpha.${newBuildNumber}`;
+    return `${majorMinorPatch}${alphaPrefix}${newBuildNumber}`;
 };
 
 // Function to update the version in a package.json file
