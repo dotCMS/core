@@ -18,14 +18,29 @@ NC='\033[0m' # No Color
 
 check_sdk_client_affected() {
     local YARN_EXEC="${root_dir}/installs/node/yarn/dist/bin/yarn"
-
     local affected_projects=$(npx nx show projects --affected)
     echo "Affected projects: $affected_projects"
-    if echo "$affected_projects" | grep -q "sdk-client"; then
-        echo "Building sdk-client"
-        if ! $YARN_EXEC nx run sdk-client:build:js; then
-            echo "Failed to build sdk-client"
+
+    # Check if sdk-client, sdk-angular, or sdk-react are affected
+    if echo "$affected_projects" | grep -qE "sdk-client|sdk-angular|sdk-react"; then
+        echo "Running update-versions.js script"
+        if ! node "${root_dir}/core-web/bump-sdk-versions.js"; then
+            echo "Failed to update versions"
             has_errors=true
+        else
+            # Add all modified package.json files to staging
+            git add "${root_dir}/core-web/libs/sdk/"
+            git add "${root_dir}/examples/"
+            echo "Staged updated package.json files for SDKs and examples"
+        fi
+
+        # Build sdk-client if affected
+        if echo "$affected_projects" | grep -q "sdk-client"; then
+            echo "Building sdk-client"
+            if ! $YARN_EXEC nx run sdk-client:build:js; then
+                echo "Failed to build sdk-client"
+                has_errors=true
+            fi
         fi
     fi
 
