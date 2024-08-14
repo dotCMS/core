@@ -135,6 +135,7 @@ function getHostURL(url: string): URL | undefined {
 }
 
 /**
+ * The `DotCmsClient` class provides methods to interact with the DotCMS REST API.
  * `DotCmsClient` is a TypeScript class that provides methods to interact with the DotCMS REST API.
  * It requires a configuration object on instantiation, which includes the DotCMS URL, site ID, and authentication token.
  *

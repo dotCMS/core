@@ -31,6 +31,9 @@ const updatePackageDependencies = (packageJsonPath, newVersion) => {
     if (packageJson.dependencies) {
         ['sdk-client', 'sdk-angular', 'sdk-react', 'sdk-experiments'].forEach((dep) => {
             if (packageJson.dependencies[dep]) {
+                console.log(
+                    `Updating dependency ${dep} in ${packageJsonPath} to version ${newVersion}`
+                );
                 packageJson.dependencies[dep] = newVersion;
                 updated = true;
             }
@@ -40,6 +43,8 @@ const updatePackageDependencies = (packageJsonPath, newVersion) => {
     if (updated) {
         writeJSON(packageJsonPath, packageJson);
         console.log(`Updated dependencies in ${packageJsonPath} to version ${newVersion}`);
+    } else {
+        console.log(`No relevant dependencies to update in ${packageJsonPath}`);
     }
 };
 
@@ -75,6 +80,10 @@ const examplesRoot = path.join(__dirname, '../examples');
 // Find all package.json files in the SDK and examples directories
 const sdkPackages = findPackageJsonFilesRecursively(sdkRoot);
 const examplePackages = findPackageJsonFilesRecursively(examplesRoot);
+
+// Log the found files for verification
+console.log(`Found SDK packages: ${sdkPackages.join(', ')}`);
+console.log(`Found Example packages: ${examplePackages.join(', ')}`);
 
 // Get the current version from sdk-client
 const sdkClientPackageJson = readJSON(sdkPackages.find((pkg) => pkg.includes('client')));
