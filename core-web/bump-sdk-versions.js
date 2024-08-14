@@ -23,13 +23,13 @@ const bumpVersion = (version) => {
 };
 
 // Function to update dependencies in a package.json file
-const updatePackageDependencies = (packageJsonPath, newVersion) => {
+const updatePackageDependencies = (packageJsonPath, newVersion, dependenciesMap) => {
     const packageJson = readJSON(packageJsonPath);
     let updated = false;
 
-    // Update dependencies to the new version
+    // Update dependencies to the new version based on the dependenciesMap
     if (packageJson.dependencies) {
-        ['sdk-client', 'sdk-angular', 'sdk-react', 'sdk-experiments'].forEach((dep) => {
+        Object.keys(dependenciesMap).forEach((dep) => {
             if (packageJson.dependencies[dep]) {
                 console.log(
                     `Updating dependency ${dep} in ${packageJsonPath} to version ${newVersion}`
@@ -49,9 +49,19 @@ const updatePackageDependencies = (packageJsonPath, newVersion) => {
 };
 
 // Function to update the version of the SDK packages themselves
-const updateSdkPackageVersion = (packageJsonPath, newVersion) => {
+const updateSdkPackageVersion = (packageJsonPath, newVersion, dependenciesMap) => {
     const packageJson = readJSON(packageJsonPath);
     packageJson.version = newVersion;
+
+    // Update the internal dependencies within SDKs
+    Object.keys(dependenciesMap).forEach((dep) => {
+        if (packageJson.dependencies && packageJson.dependencies[dep]) {
+            console.log(
+                `Updating internal dependency ${dep} in ${packageJsonPath} to version ${newVersion}`
+            );
+            packageJson.dependencies[dep] = newVersion;
+        }
+    });
 
     writeJSON(packageJsonPath, packageJson);
     console.log(`Updated ${packageJsonPath} to version ${newVersion}`);
@@ -92,10 +102,25 @@ const currentVersion = sdkClientPackageJson.version;
 // Bump the version
 const newVersion = bumpVersion(currentVersion);
 
-// Update all SDK package.json files (versions)
-sdkPackages.forEach((pkg) => updateSdkPackageVersion(pkg, newVersion));
+// Define the dependency mappings
+const sdkDependencies = {
+    'sdk-client': newVersion,
+    'sdk-angular': newVersion,
+    'sdk-react': newVersion,
+    'sdk-experiments': newVersion
+};
+
+const exampleDependencies = {
+    '@dotcms/client': newVersion,
+    '@dotcms/angular': newVersion,
+    '@dotcms/react': newVersion,
+    '@dotcms/experiments': newVersion
+};
+
+// Update all SDK package.json files (versions and internal dependencies)
+sdkPackages.forEach((pkg) => updateSdkPackageVersion(pkg, newVersion, sdkDependencies));
 
 // Update all example package.json files (dependencies only)
-examplePackages.forEach((pkg) => updatePackageDependencies(pkg, newVersion));
+examplePackages.forEach((pkg) => updatePackageDependencies(pkg, newVersion, exampleDependencies));
 
 console.log(`All relevant package.json files updated to version ${newVersion}`);
