@@ -6,12 +6,12 @@ on:
 jobs:
   initialize:
     name: Initialize
-    uses: ./.github/workflows/reusable-initialize.yml
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
   build:
     name: Merge Group Build
     needs: [ initialize ]
     if: needs.initialize.outputs.found_artifacts == 'false'
-    uses: ./.github/workflows/reusable-ci-build.yml
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
     permissions:
       contents: read
       packages: write
@@ -19,7 +19,7 @@ jobs:
     name: Merge Group Test
     needs: [ initialize,build ]
     if: always() && !failure() && !cancelled()
-    uses: ./.github/workflows/reusable-ci-test.yml
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
       jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
       integration: ${{ needs.initialize.outputs.backend == 'true' }}
@@ -32,6 +32,6 @@ jobs:
     name: Finalize
     if: always()
     needs: [ test ]
-    uses: ./.github/workflows/reusable-finalize.yml
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}

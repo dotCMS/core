@@ -105,7 +105,7 @@ jobs:
     name: Finalize
     if: always()
     needs: [ initialize, build, build-cli, test, deployment ]
-    uses: ./.github/workflows/finalize-phase.yml
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       needsData: ${{ toJson(needs) }}
