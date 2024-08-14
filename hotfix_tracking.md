@@ -287,3 +287,4 @@ This maintenance release includes the following code fixes:
 218. https://github.com/dotCMS/core/issues/28163 : alive' and 'startup' healthcheck APIs return 503 on seemingly healthy app #28163
 219. https://github.com/dotCMS/core/issues/26546 : Enable better logging for getPageByPath in HTMLPageAssetAPIImpl.java #26546
 220. https://github.com/dotCMS/core/issues/28366 : Uploaded images in another language than the default one do not inherit permissions #28366
+221. https://github.com/dotCMS/core/issues/28838 : Category Child Permissions Not Loading #28838
