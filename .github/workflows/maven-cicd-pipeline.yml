@@ -417,9 +417,11 @@ jobs:
         run: |
           echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
           
-          touch docker-compose
-          echo 'docker compose --compatibility "$@"' | tee docker-compose
-          chmod +x docker-compose
+          touch /usr/bin/docker-compose
+          echo 'docker compose --compatibility "$@"' | tee /usr/bin/docker-compose
+          chmod +x /usr/bin/docker-compose
+          
+          docker-compose version
 
         shell: bash
       - name: Restore Maven Repository
