@@ -4,6 +4,7 @@
 
 :host {
     display: block;
+    font-size: $font-size-md;
 
     &.dot-nav-item__collapsed {
         position: relative;
