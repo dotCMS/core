@@ -130,6 +130,10 @@ const layout: DotLayout = {
 export const Base: Story = {
     args: {
         layout: layout,
-        containerMap: CONTAINER_MAP_MOCK
+        containerMap: CONTAINER_MAP_MOCK,
+        template: {
+            identifier: '111',
+            themeId: '123'
+        }
     }
 };
