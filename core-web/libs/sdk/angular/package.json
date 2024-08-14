@@ -1,6 +1,6 @@
 {
   "name": "@dotcms/angular",
-  "version": "0.0.1-alpha.33",
+  "version": "0.0.1-alpha.32",
   "peerDependencies": {
     "@angular/common": "^17.1.0",
     "@angular/core": "^17.1.0",
