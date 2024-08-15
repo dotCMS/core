@@ -89,7 +89,7 @@ Styles for commons fields along the backend
         border-radius: $border-radius-xs;
         border: $field-normal-border;
         display: inline-block;
-        font-size: 12px;
+        font-size: $font-size-xs;
         margin: 2px 5px 2px 0px;
         padding: (calc($spacing-1 / 2)) $spacing-1 (calc($spacing-1 / 2)) (calc($spacing-1 / 2));
         position: relative;
