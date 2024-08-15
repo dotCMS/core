@@ -1,4 +1,4 @@
-# Generate SBOM for latest version of dotCMS and put into core-test-repo
+# Generate SBOM for latest version of dotCMS and put into release-24.04.24_lts branch
 on:
   release:
     types: [published]
@@ -66,11 +66,16 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "Github Actions"
 
-      - name: Commit and push results to core-test-results repository
+      - name: Check out the target branch
+        run: |
+          cd core
+          git checkout release-24.04.24_lts  # Check out the existing branch
+          
+      - name: Commit and push results to release-24.04.24_lts branch
         run: |
           cd core
           git add sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
           git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
-          git push origin master
+          git push origin release-24.04.24_lts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
