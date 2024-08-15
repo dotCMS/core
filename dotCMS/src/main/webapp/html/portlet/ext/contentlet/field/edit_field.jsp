@@ -115,12 +115,6 @@
         }
     }
 </style>
-
-<script>
-var binaryFieldCallbacksMap = {} // This is a map to store the callbacks for the binary fields, used to reload them when we publish or save a contentlet, look on dotCMS/src/main/webapp/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp on saveContentCallback function
-</script>
-
-
 <div class="fieldWrapper" >
     <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
         <% if (hint != null) {%>
@@ -881,6 +875,7 @@ var binaryFieldCallbacksMap = {} // This is a map to store the callbacks for the
                 };
 
                 setBinaryFieldInputs(); // Initialize the binary Field
+
 
                 // This code covers the multiple binaries in a contentlet
                 if(!binaryFieldCallbacksMap["<%=field.getVelocityVarName()%>"]) {
