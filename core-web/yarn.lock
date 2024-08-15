@@ -19506,20 +19506,20 @@ pretty-hrtime@^1.0.3:
   resolved "https://registry.yarnpkg.com/pretty-hrtime/-/pretty-hrtime-1.0.3.tgz#b7e3ea42435a4c9b2759d99e0f201eb195802ee1"
   integrity sha512-66hKPCr+72mlfiSjlEB1+45IjXSqvVAIy6mocupoww4tBFE9R9IhwwUGoI4G++Tc9Aq+2rxOt0RFU6gPcrte0A==
 
-primeflex@^3.3.0:
+primeflex@3.3.1:
   version "3.3.1"
   resolved "https://registry.yarnpkg.com/primeflex/-/primeflex-3.3.1.tgz#361dddf6eb5db50d733e4cddd4b6e376a3d7bd68"
   integrity sha512-zaOq3YvcOYytbAmKv3zYc+0VNS9Wg5d37dfxZnveKBFPr7vEIwfV5ydrpiouTft8MVW6qNjfkaQphHSnvgQbpQ==
 
-primeicons@^6.0.1:
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/primeicons/-/primeicons-6.0.1.tgz#431fa7c79825934eefd62087d8e1faa6a9e376ad"
-  integrity sha512-KDeO94CbWI4pKsPnYpA1FPjo79EsY9I+M8ywoPBSf9XMXoe/0crjbUK7jcQEDHuc0ZMRIZsxH3TYLv4TUtHmAA==
+primeicons@7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/primeicons/-/primeicons-7.0.0.tgz#6b25c3fdcb29bb745a3035bdc1ed5902f4a419cf"
+  integrity sha512-jK3Et9UzwzTsd6tzl2RmwrVY/b8raJ3QZLzoDACj+oTJ0oX7L9Hy+XnVwgo4QVKlKpnP/Ur13SXV/pVh4LzaDw==
 
-primeng@15.4.13-lts:
-  version "15.4.13-lts"
-  resolved "https://registry.yarnpkg.com/primeng/-/primeng-15.4.13-lts.tgz#a2480a83ea9796889c81ce8036fecb65ead1ab03"
-  integrity sha512-yybyQ4n7phd1Z6DrSWfhsUKAbgR4QIDynmnfnL3iJ9cnu8Rckgx2OITMGx+0e0G8iaO5AZnqyKiYKIcsoineCg==
+primeng@17.18.9:
+  version "17.18.9"
+  resolved "https://registry.yarnpkg.com/primeng/-/primeng-17.18.9.tgz#dc3b65689548b53ce07ce7032a0aa3d1eb5dfbea"
+  integrity sha512-1FT0B8wtgvs/joduB1DDOLe2IsP1pegOiEfSPAHSbc6otgNx/6iLR0k2M/xr2c9Ur1aC7tAikkVfH3FGpWof3w==
   dependencies:
     tslib "^2.3.0"
 
