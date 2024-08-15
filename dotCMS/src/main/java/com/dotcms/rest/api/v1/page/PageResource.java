@@ -901,9 +901,29 @@ public class PageResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getPageContentTree",
+        summary = "Returns the tree of a page",
+        description = "This method returns a tree of information " +
+                        "that is nested within the specified page.",
+        tags = {"Page"},
+        responses = {
+                @ApiResponse(responseCode = "200", description = "Successfully returned content tree",
+                        content = @Content(mediaType = "application/javascript")
+                        ),
+                @ApiResponse(responseCode = "400", description = "Forbidden request"),
+                @ApiResponse(responseCode = "404", description = "Not found"),
+                @ApiResponse(responseCode = "500", description = "Unexpected error")
+                }
+        )
     public ResponseEntityView<List<MulitreeView>> getContentTree (@Context final HttpServletRequest  request,
                                                    @Context final HttpServletResponse response,
-                                                   @PathParam("pageId") final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
+                                                   @PathParam("pageId") 
+                                                        @Parameter(required = true,
+                                                                description = "The ID of the page whos tree is being returned.\n\n",
+                                                                schema = @Schema(type = "string")
+                                                        ) 
+                                                   final String  pageId) 
+                                                   throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
 
