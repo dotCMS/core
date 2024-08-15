@@ -1,4 +1,6 @@
-# Generate SBOM for latest version of dotCMS
+#Generate SBOM for the latest dotCMS version
+name: Generate and Commit SBOM
+
 on:
   release:
     types: [published]
@@ -33,13 +35,10 @@ jobs:
             # Use the input provided in manual run
             latest_tag=${{ github.event.inputs.dotcms_version }}
           fi
-
           # Format the tag name: remove 'v' prefix
           formatted_tag=$(echo "$latest_tag" | sed -e 's/^v//' -e 's/^dotcms-cli-//')
-
           # Construct the branch name based on the formatted version
-          branch_name="v${formatted_tag}"
-
+          branch_name="release-${formatted_tag}"
           echo "DOTCMS_VERSION=${formatted_tag}" >> $GITHUB_ENV
           echo "BRANCH_NAME=${branch_name}" >> $GITHUB_ENV
 
@@ -64,7 +63,7 @@ jobs:
       - name: Create SBOM folder
         run: |
           mkdir -p core/sbom
-          
+
       - name: Scan Docker Image with Syft
         run: |
           pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core/sbom/cyclonedx.json
@@ -73,17 +72,27 @@ jobs:
         run: |
           mv core/sbom/cyclonedx.json core/sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
 
-      - name: Configure Git
+      - name: Fetch all branches and list them
         run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "Github Actions"
+          cd core
+          git fetch --all
+          git branch -a
 
       - name: Check out the target branch
         run: |
           cd core
-          # Fetch and check out the branch
-          git fetch origin
-          git checkout ${{ env.BRANCH_NAME }}
+          git fetch origin ${{ env.BRANCH_NAME }}
+          git checkout -b ${{ env.BRANCH_NAME }} origin/${{ env.BRANCH_NAME }} || { echo "Failed to checkout branch ${{ env.BRANCH_NAME }}"; exit 1; }
+
+      - name: Confirm branch checkout
+        run: |
+          cd core
+          git status
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "Github Actions"
 
       - name: Commit and push results to target branch
         run: |
