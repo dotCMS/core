@@ -1,4 +1,4 @@
-# Generate SBOM for latest version of dotCMS and put into respective branch
+# Generate SBOM for latest version of dotCMS and put into core-test-repo
 on:
   release:
     types: [published]
@@ -38,13 +38,22 @@ jobs:
           formatted_tag=$(echo "$latest_tag" | sed -e 's/^dotcms-cli-//' -e 's/^v//')
 
           # Construct the branch name based on the version
-          branch_name="release-${formatted_tag}_lts"
+          branch_name="release-v${formatted_tag}_lts"
 
-          echo "Latest tag: $formatted_tag"
-          echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
+          echo "DOTCMS_VERSION=${latest_tag}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${branch_name}" >> $GITHUB_ENV
+
+      - name: Print environment variables
+        run: |
+          echo "DOTCMS_VERSION=${{ env.DOTCMS_VERSION }}"
+          echo "BRANCH_NAME=${{ env.BRANCH_NAME }}"
 
       - name: Pull and run dotCMS Docker image
         run: |
+          if [ -z "${{ env.DOTCMS_VERSION }}" ]; then
+            echo "Error: DOTCMS_VERSION is not set"
+            exit 1
+          fi
           docker pull dotcms/dotcms:${{ env.DOTCMS_VERSION }}
           docker run -d -p 8082:8082 dotcms/dotcms:${{ env.DOTCMS_VERSION }}
 
@@ -72,6 +81,7 @@ jobs:
       - name: Check out the target branch
         run: |
           cd core
+          # Fetch and check out the branch
           git fetch origin
           git checkout ${{ env.BRANCH_NAME }}
 
