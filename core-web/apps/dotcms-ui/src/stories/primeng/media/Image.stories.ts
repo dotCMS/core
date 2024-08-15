@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -14,7 +13,7 @@ const meta: Meta<Image> = {
         })
     ],
     args: {
-        src: faker.image.urlLoremFlickr({ width: 600, height: 900 }),
+        src: 'https://primefaces.org/cdn/primeng/images/demo/product/bamboo-watch.jpg',
         alt: 'Image Description',
         preview: true
     },

@@ -1,9 +1,16 @@
-import { faker } from '@faker-js/faker';
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { Galleria, GalleriaModule } from 'primeng/galleria';
+
+const images = [
+    { url: 'https://primefaces.org/cdn/primeng/images/demo/product/bamboo-watch.jpg' },
+    { url: 'https://primefaces.org/cdn/primeng/images/demo/product/black-watch.jpg' },
+    { url: 'https://primefaces.org/cdn/primeng/images/demo/product/blue-band.jpg' },
+    { url: 'https://primefaces.org/cdn/primeng/images/demo/product/blue-t-shirt.jpg' },
+    { url: 'https://primefaces.org/cdn/primeng/images/demo/product/bracelet.jpg' }
+];
 
 const templateGalleria = `
     <p-galleria [value]="images" 
@@ -29,7 +36,7 @@ const meta: Meta<Galleria> = {
         activeIndex: 0,
         circular: true,
         showItemNavigators: true,
-        value: Array.from({ length: 3 }, (_, i) => i).map(() => ({ url: faker.image.url() }))
+        value: [...images]
     },
     parameters: {
         docs: {

@@ -28,7 +28,10 @@ const meta: Meta<DotEmptyStateComponent> = {
         docs: {}
     },
     render: (args) => ({
-        props: args,
+        props: {
+            ...args,
+            buttonClick: action('buttonClick')
+        },
         template: `<dot-empty-state ${argsToTemplate(args)} />`
     })
 };
@@ -43,7 +46,6 @@ export const Default: Story = {
         icon: 'web',
         title: 'Your template list is empty',
         content: "You haven't added anything yet, start by clicking the button below",
-        buttonLabel: 'Add New Template',
-        buttonClick: action('buttonClick')
+        buttonLabel: 'Add New Template'
     }
 };

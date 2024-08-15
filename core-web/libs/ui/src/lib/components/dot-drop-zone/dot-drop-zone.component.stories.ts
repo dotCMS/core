@@ -20,7 +20,12 @@ const meta: Meta<DotDropZoneComponent> = {
         }
     },
     render: (args) => ({
-        props: args,
+        props: {
+            ...args,
+            fileDropped: action('fileDropped'),
+            fileDragEnter: action('fileDragEnter'),
+            fileDragLeave: action('fileDragLeave')
+        },
         styles: [
             `
             .content {
@@ -67,9 +72,6 @@ type Story = StoryObj<DotDropZoneComponent>;
 export const Base: Story = {
     args: {
         accept: [],
-        maxFileSize: 1000000,
-        fileDropped: action('fileDropped'),
-        fileDragEnter: action('fileDragEnter'),
-        fileDragLeave: action('fileDragLeave')
+        maxFileSize: 1000000
     }
 };

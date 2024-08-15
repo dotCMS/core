@@ -1,6 +1,5 @@
-import { faker } from '@faker-js/faker';
 import { action } from '@storybook/addon-actions';
-import { moduleMetadata, StoryObj, Meta } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta, argsToTemplate } from '@storybook/angular';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -74,10 +73,10 @@ const meta: Meta<DotDeviceSelectorSeoComponent> = {
                         getCurrentUser: () =>
                             of({
                                 admin: false,
-                                email: faker.internet.email(),
-                                givenName: faker.internet.userName(),
+                                email: 'admin@adminc.com',
+                                givenName: 'admin',
                                 roleId: '1',
-                                surnaname: faker.internet.userName(),
+                                surnaname: 'admin',
                                 userId: '1'
                             })
                     }
@@ -85,20 +84,21 @@ const meta: Meta<DotDeviceSelectorSeoComponent> = {
             ]
         })
     ],
-    render: (args) => ({
-        props: args,
-        template: `
-            <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
-            <dot-device-selector-seo #op />
-        `
-    })
+    render: (args) => {
+        return {
+            props: {
+                ...args,
+                selected: action('selected')
+            },
+            template: `
+                <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
+                <dot-device-selector-seo #op ${argsToTemplate(args)} />
+            `
+        };
+    }
 };
 export default meta;
 
 type Story = StoryObj<DotDeviceSelectorSeoComponent>;
 
-export const Default: Story = {
-    args: {
-        selected: action('selected')
-    }
-};
+export const Default: Story = {};

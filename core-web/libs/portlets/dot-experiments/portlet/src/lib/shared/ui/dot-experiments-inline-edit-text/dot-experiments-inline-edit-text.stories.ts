@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions';
-import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -66,14 +66,17 @@ const meta: Meta<DotExperimentsInlineEditTextComponent> = {
             defaultValue: true
         },
         textChanged: { action: 'textChanged' }
-    }
+    },
+    render: (args) => ({
+        props: {
+            ...args,
+            textChanged: action('textChanged')
+        },
+        template: `<dot-experiments-inline-edit-text ${argsToTemplate(args)} />`
+    })
 };
 export default meta;
 
 type Story = StoryObj<DotExperimentsInlineEditTextComponent>;
 
-export const Default: Story = {
-    args: {
-        textChanged: action('textChanged')
-    }
-};
+export const Default: Story = {};

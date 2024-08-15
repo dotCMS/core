@@ -135,7 +135,11 @@ const meta: Meta<Args> = {
         }
     },
     render: (args) => ({
-        props: args,
+        props: {
+            ...args,
+            editFile: action('editFile'),
+            removeFile: action('removeFile')
+        },
         template: `
         <div class="container">
             <dot-binary-field-preview
@@ -151,12 +155,7 @@ export default meta;
 
 type Story = StoryObj<Args>;
 
-export const Image: Story = {
-    args: {
-        editFile: action('editFile'),
-        removeFile: action('removeFile')
-    }
-};
+export const Image: Story = {};
 
 export const Video = {
     args: {
