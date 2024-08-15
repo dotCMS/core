@@ -60,17 +60,14 @@ jobs:
         run: |
           pip install pipx
 
-      - name: Create SBOM folder
-        run: |
-          mkdir -p core/sbom
 
       - name: Scan Docker Image with Syft
         run: |
-          pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core/sbom/cyclonedx.json
+          pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core/cyclonedx.json
 
       - name: Rename SBOM file with dotCMS version
         run: |
-          mv core/sbom/cyclonedx.json core/sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
+          mv core/cyclonedx.json core/dotcms-${{ env.DOTCMS_VERSION }}.json
 
       - name: Fetch all branches and list them
         run: |
