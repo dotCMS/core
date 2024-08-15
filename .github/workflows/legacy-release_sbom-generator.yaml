@@ -63,11 +63,8 @@ jobs:
 
       - name: Scan Docker Image with Syft
         run: |
-          pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core/cyclonedx.json
+          pipx run anchore_syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-xml > core/sbom-cyclonedx.json
 
-      - name: Rename SBOM file with dotCMS version
-        run: |
-          mv core/cyclonedx.json core/dotcms-${{ env.DOTCMS_VERSION }}.json
 
       - name: Fetch all branches and list them
         run: |
@@ -94,7 +91,7 @@ jobs:
       - name: Commit and push results to target branch
         run: |
           cd core
-          git add dotcms-${{ env.DOTCMS_VERSION }}.json
+          git add sbom-cyclonedx.json
           git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
           git push origin ${{ env.BRANCH_NAME }}
         env:
