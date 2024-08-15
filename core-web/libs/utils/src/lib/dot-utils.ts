@@ -41,17 +41,6 @@ export function generateDotFavoritePageUrl(params: {
 }
 
 /**
- * Get the query parameter separator
- * @param url
- * @returns
- */
-export function getQueryParameterSeparator(url: string): string {
-    const regex = /[?&]/;
-
-    return url.match(regex) ? '&' : '?';
-}
-
-/**
  * Generates a runnable link by replacing placeholders in the base URL and appending query parameters.
  *
  * This function takes a base URL that may contain placeholders for the request host name and current URL,
