@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       dotcms_version:
-        description: 'Enter the dotCMS version (vYY.MM.DD)'
+        description: 'Enter the dotCMS version (vYY.MM.DD_lts)'
         required: true
         default: ''
 
@@ -75,7 +75,7 @@ jobs:
       - name: Commit and push results to release-24.04.24_lts branch
         run: |
           cd core
-          git add sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
+          git add dotcms-${{ env.DOTCMS_VERSION }}.json
           git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
           git push origin release-24.04.24_lts
         env:
