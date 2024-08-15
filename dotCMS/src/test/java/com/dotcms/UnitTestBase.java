@@ -49,7 +49,7 @@ public abstract class UnitTestBase extends BaseMessageResources {
 	}
 
 	@BeforeClass
-	public static void prepare () throws DotDataException, DotSecurityException, Exception {
+	public static void prepare () throws Exception {
 		weld = new Weld().containerId(RegistrySingletonProvider.STATIC_INSTANCE)
 				.initialize();
 
@@ -66,7 +66,9 @@ public abstract class UnitTestBase extends BaseMessageResources {
 	}
 
 	@AfterClass
-	public static void cleanup() throws DotDataException, DotSecurityException, Exception {
-		weld.shutdown();
+	public static void cleanup() {
+		if( null != weld  && weld.isRunning() ){
+		   weld.shutdown();
+		}
 	}
 }
