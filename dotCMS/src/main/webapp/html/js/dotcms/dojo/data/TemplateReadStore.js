@@ -165,7 +165,7 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 				if (response.ok) {
 					const result = await response.json();
 
-					fetchItemByIdentityCallback(request, result.entity); // here we pass the result of the json response to the callback function
+					this.fetchItemByIdentityCallback(request, result.entity); // here we pass the result of the json response to the callback function
 				}
 			}).catch((e) => {
 				console.log(e) // Here we can catch the error
