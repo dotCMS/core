@@ -38,7 +38,7 @@ jobs:
           formatted_tag=$(echo "$latest_tag" | sed -e 's/^v//' -e 's/^dotcms-cli-//')
 
           # Construct the branch name based on the formatted version
-          branch_name="release-v${formatted_tag}_lts"
+          branch_name="v${formatted_tag}"
 
           echo "DOTCMS_VERSION=${formatted_tag}" >> $GITHUB_ENV
           echo "BRANCH_NAME=${branch_name}" >> $GITHUB_ENV
