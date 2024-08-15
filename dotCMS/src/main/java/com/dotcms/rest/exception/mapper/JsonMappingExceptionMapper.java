@@ -22,8 +22,8 @@ import java.util.Set;
 @Provider
 public class JsonMappingExceptionMapper implements ExceptionMapper<JsonMappingException> {
 
-    private final static Set<Class<? extends Throwable>> EXCEPTIONS =
-                    ImmutableSet.of(WebApplicationException.class, ValidationException.class, BadRequestException.class, HttpStatusCodeException.class);
+    private static final Set<Class<? extends Throwable>> EXCEPTIONS =
+                    Set.of(WebApplicationException.class, ValidationException.class, BadRequestException.class, HttpStatusCodeException.class);
 
     @Override
     public Response toResponse(final JsonMappingException exception)
