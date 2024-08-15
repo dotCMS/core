@@ -277,9 +277,20 @@ export function createFavoritePagesURL(params: {
  * @param {DotPageApiParams} params
  * @return {*}  {string}
  */
-export function createFullURL(params: DotPageApiParams): string {
+/**
+ * @description Create a full URL with the clientHost
+ * @export
+ * @param {DotPageApiParams} params
+ * @param {string} [siteId]
+ * @return {*}  {string}
+ */
+export function createFullURL(params: DotPageApiParams, siteId?: string): string {
     // If we are going to delete properties from the params, we need to make a copy of it
     const paramsCopy = { ...params };
+
+    if (siteId) {
+        paramsCopy['host_id'] = siteId;
+    }
 
     const clientHost = paramsCopy?.clientHost ?? window.location.origin;
     const url = paramsCopy?.url;
@@ -289,7 +300,7 @@ export function createFullURL(params: DotPageApiParams): string {
     delete paramsCopy?.url;
     delete paramsCopy?.mode;
 
-    const searchParams = new URLSearchParams(paramsCopy as unknown as Record<string, string>);
+    const searchParams = new URLSearchParams(paramsCopy);
 
     const pureURL = new URL(`${url}?${searchParams.toString()}`, clientHost);
 

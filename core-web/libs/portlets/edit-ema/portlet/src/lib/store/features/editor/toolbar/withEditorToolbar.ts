@@ -81,10 +81,11 @@ export function withEditorToolbar() {
                     siteId: pageAPIResponse?.site?.identifier
                 });
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
+                const siteId = pageAPIResponse?.site?.identifier;
 
                 return {
                     bookmarksUrl,
-                    copyUrl: createFullURL(params),
+                    copyUrl: createFullURL(params, siteId),
                     apiUrl: pageAPI,
                     currentLanguage: pageAPIResponse?.viewAs.language,
                     urlContentMap: store.isEditState()

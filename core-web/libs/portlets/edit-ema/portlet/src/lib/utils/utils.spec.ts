@@ -620,5 +620,17 @@ describe('utils functions', () => {
             });
             expect(result).toBe(expectedURL);
         });
+
+        it('should add the host_id if the side identifier is passed', () => {
+            const result = createFullURL(
+                {
+                    ...params,
+                    clientHost: 'http://localhost:4200//',
+                    url: '/page'
+                },
+                '123'
+            );
+            expect(result).toBe(`${expectedURL}${'&host_id=123'}`);
+        });
     });
 });

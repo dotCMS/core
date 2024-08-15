@@ -160,7 +160,7 @@ describe('EditEmaToolbarComponent', () => {
                     mockProvider(UVEStore, {
                         $toolbarProps: signal({
                             bookmarksUrl,
-                            copyUrl: createFullURL(params),
+                            copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
                             apiUrl: `${'http://localhost'}${pageAPI}`,
                             currentLanguage: pageAPIResponse?.viewAs.language,
                             urlContentMap: null,
