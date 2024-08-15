@@ -20,7 +20,7 @@
             @include fa-icon();
             content: $fa-var-chevron-right;
             color: $color-palette-gray-500;
-            font-size: 9px;
+            font-size: $font-size-xs;
             position: absolute;
             right: 5px;
             top: 5px;

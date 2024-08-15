@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "05736e5c-e3a6-47b3-94e7-7b3ed372feca",
+		"_postman_id": "0a7ed4a9-b343-4a56-8d63-39ef0ec770e1",
 		"name": "LanguageResource",
 		"description": "This collections is focused on the /v2/languages resource\nThis should cover Language CRUD Operations",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/dot~4cc47d20-3185-46cd-99c6-0febe52d5eef/collection/10041132-05736e5c-e3a6-47b3-94e7-7b3ed372feca?action=share&source=collection_link&creator=10041132"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -504,478 +503,1189 @@
 			]
 		},
 		{
-			"name": "SaveLanguage",
+			"name": "Saving Languages",
 			"item": [
 				{
-					"name": "CreateLanguageSuccess",
-					"event": [
+					"name": "With ISO-Compliant Codes",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
-									"",
-									"pm.test(\"languageCode returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
-									"});",
-									"",
-									"pm.test(\"countryCode returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
-									"});",
-									"",
-									"pm.test(\"language returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"language\");",
-									"});",
-									"",
-									"pm.test(\"country returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"country\");",
-									"});",
-									"",
-									"pm.test(\"Expected Language info returned\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.languageCode).to.eql(\"it\");",
-									"    pm.expect(jsonData.entity.countryCode).to.eql(\"IT\");",
-									"    pm.expect(jsonData.entity.language).to.eql(\"Italian\");",
-									"    pm.expect(jsonData.entity.country).to.eql(\"Italy\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
+							"name": "Successful Request",
+							"item": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
+									"name": "Valid Language",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"languageCode returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+													"});",
+													"",
+													"pm.test(\"countryCode returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+													"});",
+													"",
+													"pm.test(\"language returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"language\");",
+													"});",
+													"",
+													"pm.test(\"country returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"country\");",
+													"});",
+													"",
+													"pm.test(\"Expected Language info returned\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.entity.languageCode).to.eql(\"it\");",
+													"    pm.expect(jsonData.entity.countryCode).to.eql(\"IT\");",
+													"    pm.expect(jsonData.entity.language).to.eql(\"Italian\");",
+													"    pm.expect(jsonData.entity.country).to.eql(\"Italy\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v2/languages",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v2",
+												"languages"
+											]
+										}
+									},
+									"response": []
 								},
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
+									"name": "Language Using Tag",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"languageCode returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+													"});",
+													"",
+													"pm.test(\"countryCode returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+													"});",
+													"",
+													"pm.test(\"language returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"language\");",
+													"});",
+													"",
+													"pm.test(\"country returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"country\");",
+													"});",
+													"",
+													"pm.test(\"Expected Language info returned\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.entity.languageCode).to.eql(\"da\");",
+													"    pm.expect(jsonData.entity.countryCode).to.eql(\"DK\");",
+													"    pm.expect(jsonData.entity.language).to.eql(\"Danish\");",
+													"    pm.expect(jsonData.entity.country).to.eql(\"Denmark\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v2/languages/da-DK",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v2",
+												"languages",
+												"da-DK"
+											]
+										},
+										"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
+									},
+									"response": []
+								},
+								{
+									"name": "Language By Tag - No Country Code",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"languageCode returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+													"});",
+													"",
+													"pm.test(\"countryCode returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+													"});",
+													"",
+													"pm.test(\"language returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"language\");",
+													"});",
+													"",
+													"pm.test(\"country returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"country\");",
+													"});",
+													"",
+													"pm.test(\"Expected Language info returned\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.entity.languageCode).to.eql(\"da\");",
+													"    pm.expect(jsonData.entity.countryCode).to.eql(\"\");",
+													"    pm.expect(jsonData.entity.language).to.eql(\"Danish\");",
+													"    pm.expect(jsonData.entity.country).to.eql(\"\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v2/languages/da",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v2",
+												"languages",
+												"da"
+											]
+										},
+										"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
+									},
+									"response": []
+								},
+								{
+									"name": "Language By Tag - Complex Code",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"languageCode returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+													"});",
+													"",
+													"pm.test(\"countryCode returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+													"});",
+													"",
+													"pm.test(\"language returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"language\");",
+													"});",
+													"",
+													"pm.test(\"country returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"country\");",
+													"});",
+													"",
+													"pm.test(\"Expected Language info returned\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.entity.languageCode).to.eql(\"cmn\");",
+													"    pm.expect(jsonData.entity.country).to.eql(\"China\");",
+													"    pm.expect(jsonData.entity.countryCode).to.eql(\"CN\");",
+													"    pm.expect(jsonData.entity.language).to.eql(\"cmn\");",
+													"    pm.expect(jsonData.entity.isoCode).to.eql(\"cmn-cn\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v2/languages/zh-cmn-Hans-CN",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v2",
+												"languages",
+												"zh-cmn-Hans-CN"
+											]
+										},
+										"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
+									},
+									"response": []
+								},
+								{
+									"name": "Already Existing Language By Tag",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"languageCode returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+													"});",
+													"",
+													"pm.test(\"countryCode returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+													"});",
+													"",
+													"pm.test(\"language returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"language\");",
+													"});",
+													"",
+													"pm.test(\"country returned\", function () {",
+													"    pm.expect(pm.response.text()).to.include(\"country\");",
+													"});",
+													"",
+													"pm.test(\"Expected Language info returned\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.entity.languageCode).to.eql(\"da\");",
+													"    pm.expect(jsonData.entity.countryCode).to.eql(\"DK\");",
+													"    pm.expect(jsonData.entity.language).to.eql(\"Danish\");",
+													"    pm.expect(jsonData.entity.country).to.eql(\"Denmark\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v2/languages/da-DK",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v2",
+												"languages",
+												"da-DK"
+											]
+										},
+										"description": "This test is meant to verify that a second creation attempt on the same language returns the same entity and not a Bad Request - Error code."
+									},
+									"response": []
+								}
+							],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"HTTP Status must be 200\", function () {",
+											"    pm.response.to.be.ok",
+											"});",
+											""
+										]
+									}
 								}
 							]
 						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+						{
+							"name": "Bad Request",
+							"item": [
+								{
+									"name": "Missing Language Code",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Should show error msg about Language Code\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.message).to.eql(\"Language Code can't be null or empty\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"language\":\"Italian\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v2/languages",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v2",
+												"languages"
+											]
+										},
+										"description": "Saves a language via POST Passing a form with the basic info required. \nLanguage code\nCountry Code\nLanguage Name \nCountry Name\nIn this case we're not passing language code therefore we should expect a Bad Request"
+									},
+									"response": []
+								},
+								{
+									"name": "Language with Missing Language Name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Should show error msg about Language string\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.expect(jsonData.message).to.eql(\"Language String can't be null or empty\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"languageCode\":\"it\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v2/languages",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v2",
+												"languages"
+											]
+										},
+										"description": "Saves a language via POST Passing a form with the basic info required. \nLanguage code\nCountry Code\nLanguage Name \nCountry Name\nIn this case we're not passing language therefore we should expect a Bad Request"
+									},
+									"response": []
 								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v2/languages",
-							"host": [
-								"{{serverURL}}"
 							],
-							"path": [
-								"api",
-								"v2",
-								"languages"
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"HTTP Status must be 400\", function () {",
+											"    pm.response.to.be.badRequest",
+											"});",
+											""
+										]
+									}
+								}
 							]
 						}
-					},
-					"response": []
+					],
+					"description": "Creating Languages using valid ISO Codes; e.g., en-us, es-es, en-uk, etc."
 				},
 				{
-					"name": "CreateLanguageMissingLanguageString",
+					"name": "WITHOUT ISO-Compliant Codes",
+					"item": [
+						{
+							"name": "Valid Language",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"languageCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+											"});",
+											"",
+											"pm.test(\"countryCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+											"});",
+											"",
+											"pm.test(\"language returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"language\");",
+											"});",
+											"",
+											"pm.test(\"country returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"country\");",
+											"});",
+											"",
+											"pm.test(\"Expected Language info returned\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.languageCode).to.eql(\"a\");",
+											"    pm.expect(jsonData.entity.countryCode).to.eql(\"ATL\");",
+											"    pm.expect(jsonData.entity.language).to.eql(\"Atlantean\");",
+											"    pm.expect(jsonData.entity.country).to.eql(\"Atlantis\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"languageCode\":\"a\",\n\t\"language\":\"Atlantean\", \n\t\"countryCode\":\"atl\", \n\t\"country\":\"Atlantis\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Language By Tag - Case #1",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"languageCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+											"});",
+											"",
+											"pm.test(\"countryCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+											"});",
+											"",
+											"pm.test(\"language returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"language\");",
+											"});",
+											"",
+											"pm.test(\"country returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"country\");",
+											"});",
+											"",
+											"pm.test(\"Expected Language info returned\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.languageCode).to.eql(\"a\");",
+											"    pm.expect(jsonData.entity.country).to.eql(\"\");",
+											"    pm.expect(jsonData.entity.countryCode).to.eql(\"BCD\");",
+											"    pm.expect(jsonData.entity.language).to.eql(\"a\");",
+											"    pm.expect(jsonData.entity.isoCode).to.eql(\"a-bcd\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages/a-bcd",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages",
+										"a-bcd"
+									]
+								},
+								"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
+							},
+							"response": []
+						},
+						{
+							"name": "Language By Tag - Case #2",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"languageCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+											"});",
+											"",
+											"pm.test(\"countryCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+											"});",
+											"",
+											"pm.test(\"language returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"language\");",
+											"});",
+											"",
+											"pm.test(\"country returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"country\");",
+											"});",
+											"",
+											"pm.test(\"Expected Language info returned\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.languageCode).to.eql(\"abc\");",
+											"    pm.expect(jsonData.entity.country).to.eql(\"\");",
+											"    pm.expect(jsonData.entity.countryCode).to.eql(\"\");",
+											"    pm.expect(jsonData.entity.language).to.eql(\"abc\");",
+											"    pm.expect(jsonData.entity.isoCode).to.eql(\"abc\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages/abc-d",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages",
+										"abc-d"
+									]
+								},
+								"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
+							},
+							"response": []
+						},
+						{
+							"name": "Language By Tag - Case #3",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"languageCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+											"});",
+											"",
+											"pm.test(\"countryCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+											"});",
+											"",
+											"pm.test(\"language returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"language\");",
+											"});",
+											"",
+											"pm.test(\"country returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"country\");",
+											"});",
+											"",
+											"pm.test(\"Expected Language info returned\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.languageCode).to.eql(\"xxx\");",
+											"    pm.expect(jsonData.entity.country).to.eql(\"\");",
+											"    pm.expect(jsonData.entity.countryCode).to.eql(\"Y\");",
+											"    pm.expect(jsonData.entity.language).to.eql(\"xxx\");",
+											"    pm.expect(jsonData.entity.isoCode).to.eql(\"xxx-y\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages/xxx_y",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages",
+										"xxx_y"
+									]
+								},
+								"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
+							},
+							"response": []
+						},
+						{
+							"name": "Language By Tag - Case #4",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"languageCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+											"});",
+											"",
+											"pm.test(\"countryCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+											"});",
+											"",
+											"pm.test(\"language returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"language\");",
+											"});",
+											"",
+											"pm.test(\"country returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"country\");",
+											"});",
+											"",
+											"pm.test(\"Expected Language info returned\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.languageCode).to.eql(\"x\");",
+											"    pm.expect(jsonData.entity.country).to.eql(\"\");",
+											"    pm.expect(jsonData.entity.countryCode).to.eql(\"YYY\");",
+											"    pm.expect(jsonData.entity.language).to.eql(\"x\");",
+											"    pm.expect(jsonData.entity.isoCode).to.eql(\"x-yyy\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages/x_yyy",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages",
+										"x_yyy"
+									]
+								},
+								"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
+							},
+							"response": []
+						},
+						{
+							"name": "Language By Tag - Case #5",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"languageCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+											"});",
+											"",
+											"pm.test(\"countryCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+											"});",
+											"",
+											"pm.test(\"language returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"language\");",
+											"});",
+											"",
+											"pm.test(\"country returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"country\");",
+											"});",
+											"",
+											"pm.test(\"Expected Language info returned\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.languageCode).to.eql(\"espa\");",
+											"    pm.expect(jsonData.entity.country).to.eql(\"\");",
+											"    pm.expect(jsonData.entity.countryCode).to.eql(\"SPAIN\");",
+											"    pm.expect(jsonData.entity.language).to.eql(\"espa\");",
+											"    pm.expect(jsonData.entity.isoCode).to.eql(\"espa-spain\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages/espa_Spain",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages",
+										"espa_Spain"
+									]
+								},
+								"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
+							},
+							"response": []
+						},
+						{
+							"name": "Language By Tag - No Country Code",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"languageCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+											"});",
+											"",
+											"pm.test(\"countryCode returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+											"});",
+											"",
+											"pm.test(\"language returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"language\");",
+											"});",
+											"",
+											"pm.test(\"country returned\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"country\");",
+											"});",
+											"",
+											"pm.test(\"Expected Language info returned\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.isoCode).to.eql(\"abcde\");",
+											"    pm.expect(jsonData.entity.countryCode).to.eql(\"\");",
+											"    pm.expect(jsonData.entity.country).to.eql(\"\");",
+											"    pm.expect(jsonData.entity.language).to.eql(\"abcde\");",
+											"    pm.expect(jsonData.entity.languageCode).to.eql(\"abcde\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages/abcde",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages",
+										"abcde"
+									]
+								},
+								"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
+							},
+							"response": []
+						}
+					],
+					"description": "Creating Languages using invalid or non-existing ISO Codes; e.g., a-bcd, xxx-y, etc.",
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
 						{
 							"listen": "test",
 							"script": {
+								"type": "text/javascript",
+								"packages": {},
 								"exec": [
-									"pm.test(\"Status code is 400\", function () { pm.response.to.be.badRequest });",
-									"",
-									"pm.test(\"Should show error msg about Language string\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.message).to.eql(\"Language String can't be null or empty\");",
-									"});"
-								],
-								"type": "text/javascript"
+									"pm.test(\"HTTP Status must be 200\", function () {",
+									"    pm.response.to.be.ok",
+									"});",
+									""
+								]
 							}
 						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"languageCode\":\"it\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v2/languages",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"languages"
-							]
-						},
-						"description": "Saves a language via POST Passing a form with the basic info required. \nLanguage code\nCountry Code\nLanguage Name \nCountry Name\nIn this case we're not passing language therefore we should expect a Bad Request"
-					},
-					"response": []
-				},
-				{
-					"name": "CreateLanguageMissingLanguageCode",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 400\", function () { pm.response.to.be.badRequest });",
-									"",
-									"pm.test(\"Should show error msg about Language Code\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.message).to.eql(\"Language Code can't be null or empty\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"language\":\"Italian\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v2/languages",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"languages"
-							]
-						},
-						"description": "Saves a language via POST Passing a form with the basic info required. \nLanguage code\nCountry Code\nLanguage Name \nCountry Name\nIn this case we're not passing language code therefore we should expect a Bad Request"
-					},
-					"response": []
-				},
-				{
-					"name": "CreateLanguageByTagSuccess",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
-									"",
-									"pm.test(\"languageCode returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
-									"});",
-									"",
-									"pm.test(\"countryCode returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
-									"});",
-									"",
-									"pm.test(\"language returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"language\");",
-									"});",
-									"",
-									"pm.test(\"country returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"country\");",
-									"});",
-									"",
-									"pm.test(\"Expected Language info returned\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.languageCode).to.eql(\"da\");",
-									"    pm.expect(jsonData.entity.countryCode).to.eql(\"DK\");",
-									"    pm.expect(jsonData.entity.language).to.eql(\"Danish\");",
-									"    pm.expect(jsonData.entity.country).to.eql(\"Denmark\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v2/languages/da-DK",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"languages",
-								"da-DK"
-							]
-						},
-						"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
-					},
-					"response": []
-				},
-				{
-					"name": "CreateLanguageByTagWithoutCountrySuccess",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
-									"",
-									"pm.test(\"languageCode returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
-									"});",
-									"",
-									"pm.test(\"countryCode returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
-									"});",
-									"",
-									"pm.test(\"language returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"language\");",
-									"});",
-									"",
-									"pm.test(\"country returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"country\");",
-									"});",
-									"",
-									"pm.test(\"Expected Language info returned\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.languageCode).to.eql(\"da\");",
-									"    pm.expect(jsonData.entity.countryCode).to.eql(\"\");",
-									"    pm.expect(jsonData.entity.language).to.eql(\"Danish\");",
-									"    pm.expect(jsonData.entity.country).to.eql(\"\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v2/languages/da",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"languages",
-								"da"
-							]
-						},
-						"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
-					},
-					"response": []
-				},
-				{
-					"name": "CreateLanguageByTagAlreadyExists",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
-									"",
-									"pm.test(\"languageCode returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
-									"});",
-									"",
-									"pm.test(\"countryCode returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
-									"});",
-									"",
-									"pm.test(\"language returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"language\");",
-									"});",
-									"",
-									"pm.test(\"country returned\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"country\");",
-									"});",
-									"",
-									"pm.test(\"Expected Language info returned\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.languageCode).to.eql(\"da\");",
-									"    pm.expect(jsonData.entity.countryCode).to.eql(\"DK\");",
-									"    pm.expect(jsonData.entity.language).to.eql(\"Danish\");",
-									"    pm.expect(jsonData.entity.country).to.eql(\"Denmark\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v2/languages/da-DK",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"languages",
-								"da-DK"
-							]
-						},
-						"description": "This test is meant to verify that a second creation attempt on the same language returns the same entity and not a Bad Request - Error code."
-					},
-					"response": []
+					]
 				}
 			],
-			"description": "Saves a language via POST Passing a form with the basic info required. \nLanguage code\nCountry Code\nLanguage Name \nCountry Name\n200 is the expected if the language creation succeeds otherwise a Bad request is returned.\nIf the language already exists then we return 200 with the existing matching language",
+			"description": "Saves a language via POST Passing a form with the basic info required. You can pass down a JSON objct that includes the following data:\n\n- Language code\n    \n- Country Code\n    \n- Language Name\n    \n- Country Name\n    \n\nOr, you can specify the Locale Tag via Query String. Also, keep in mind that Users are able to pass down any information they consider valid, and dotCMS will save it.\n\nStatus 200 is expected if the language creation succeeds; otherwise, a Bad request is returned. If the language already exists then we return 200 with the existing matching language.",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -2613,42 +3323,76 @@
 			]
 		}
 	],
-	"variable": [
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
 		{
-			"key": "languageId",
-			"value": 1590173592510
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}",
+					""
+				]
+			}
 		},
 		{
-			"key": "contentTypeVariable",
-			"value": "myStructure87670122"
-		},
-		{
-			"key": "contentIdentifier",
-			"value": "e6f65042-d936-4615-af1b-e168e77c8bba"
-		},
-		{
-			"key": "defaultLanguage",
-			"value": ""
-		},
-		{
-			"key": "newDefaultLanguageCandidate",
-			"value": ""
-		},
-		{
-			"key": "newDefaultLanguageId",
-			"value": ""
-		},
-		{
-			"key": "newDefaultLanguageCandidateId",
-			"value": ""
-		},
-		{
-			"key": "originalDefaultLanguageId",
-			"value": ""
-		},
-		{
-			"key": "newDefaultLanguage",
-			"value": ""
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	]
 }
