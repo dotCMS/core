@@ -162,4 +162,17 @@ public class AIAppUtilTest {
         assertTrue(model.getNames().contains("embeddingsmodel"));
     }
 
+    @Test
+    public void testDiscoverEnvSecret() {
+        // Mock the secret value in the secrets map
+        when(secrets.get("apiKey")).thenReturn(secret);
+        when(secret.getString()).thenReturn("secretValue");
+
+        // Call the method with the key and environment variable
+        String result = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY, "ENV_API_KEY");
+
+        // Assert the expected outcome
+        assertEquals("secretValue", result);
+    }
+
 }
