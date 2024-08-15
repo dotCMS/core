@@ -1,11 +1,11 @@
-# Generate SBOM for latest version of dotCMS and put into release-24.04.24_lts branch
+# Generate SBOM for latest version of dotCMS and put into respective branch
 on:
   release:
     types: [published]
   workflow_dispatch:
     inputs:
       dotcms_version:
-        description: 'Enter the dotCMS version (vYY.MM.DD_lts)'
+        description: 'Enter the dotCMS version (vYY.MM.DD)'
         required: true
         default: ''
 
@@ -37,8 +37,11 @@ jobs:
           # Format the tag name if necessary
           formatted_tag=$(echo "$latest_tag" | sed -e 's/^dotcms-cli-//' -e 's/^v//')
 
+          # Construct the branch name based on the version
+          branch_name="release-${formatted_tag}_lts"
+
           echo "Latest tag: $formatted_tag"
-          echo "DOTCMS_VERSION=$formatted_tag" >> $GITHUB_ENV
+          echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
 
       - name: Pull and run dotCMS Docker image
         run: |
@@ -69,14 +72,14 @@ jobs:
       - name: Check out the target branch
         run: |
           cd core
-          git fetch origin release-24.04.24_lts
-          git checkout release-24.04.24_lts 
-          
-      - name: Commit and push results to release-24.04.24_lts branch
+          git fetch origin
+          git checkout ${{ env.BRANCH_NAME }}
+
+      - name: Commit and push results to target branch
         run: |
           cd core
-          git add dotcms-${{ env.DOTCMS_VERSION }}.json
+          git add sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
           git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
-          git push origin release-24.04.24_lts
+          git push origin ${{ env.BRANCH_NAME }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
