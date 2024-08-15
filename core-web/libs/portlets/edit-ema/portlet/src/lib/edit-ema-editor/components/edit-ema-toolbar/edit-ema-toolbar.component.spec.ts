@@ -47,7 +47,7 @@ import {
     sanitizeURL,
     createPageApiUrlWithQueryParams,
     createFavoritePagesURL,
-    createPureURL
+    createFullURL
 } from '../../../utils';
 import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -160,7 +160,7 @@ describe('EditEmaToolbarComponent', () => {
                     mockProvider(UVEStore, {
                         $toolbarProps: signal({
                             bookmarksUrl,
-                            copyUrl: createPureURL(params),
+                            copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
                             apiUrl: `${'http://localhost'}${pageAPI}`,
                             currentLanguage: pageAPIResponse?.viewAs.language,
                             urlContentMap: null,
