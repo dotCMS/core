@@ -59,7 +59,7 @@ export function generateDotFavoritePageUrl(params: {
 export function getRunnableLink(url: string, currentPageUrlParams: DotPageToolUrlParams): string {
     // If URL is empty, return an empty string
     if (!url) return '';
-    // Destructure properties from currentPageUrlParams with default empty strings for optional values
+    // Destructure properties from currentPageUrlParams
     const { currentUrl, requestHostName, siteId, languageId } = currentPageUrlParams;
 
     // Create a URLSearchParams object to manage query parameters
