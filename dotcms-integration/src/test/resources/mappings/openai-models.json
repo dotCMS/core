@@ -9,6 +9,36 @@
       "object": "list",
       "data": [
         {
+          "id": "text-model-1",
+          "object": "model",
+          "created": 1698785189,
+          "owned_by": "system"
+        },{
+          "id": "text-model-2",
+          "object": "model",
+          "created": 1698785189,
+          "owned_by": "system"
+        },{
+          "id": "image-model-3",
+          "object": "model",
+          "created": 1698785189,
+          "owned_by": "system"
+        },{
+          "id": "image-model-4",
+          "object": "model",
+          "created": 1698785189,
+          "owned_by": "system"
+        },{
+          "id": "embeddings-model-5",
+          "object": "model",
+          "created": 1698785189,
+          "owned_by": "system"
+        },{
+          "id": "embeddings-model-6",
+          "object": "model",
+          "created": 1698785189,
+          "owned_by": "system"
+        },{
           "id": "dall-e-3",
           "object": "model",
           "created": 1698785189,
