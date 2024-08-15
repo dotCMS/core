@@ -8,9 +8,7 @@ import {
 
 import { Breadcrumb, BreadcrumbModule } from 'primeng/breadcrumb';
 
-type Args = Breadcrumb;
-
-const meta: Meta<Args> = {
+const meta: Meta<Breadcrumb> = {
     title: 'PrimeNG/Menu/Breadcrumbs',
     component: Breadcrumb,
     decorators: [
@@ -18,7 +16,8 @@ const meta: Meta<Args> = {
             imports: [BreadcrumbModule]
         }),
         componentWrapperDecorator(
-            (story) => `<div class="card flex justify-content-center">${story}</div>`
+            (story) =>
+                `<div class="card flex justify-content-center w-50rem h-25rem">${story}</div>`
         )
     ],
     parameters: {
@@ -43,7 +42,7 @@ const meta: Meta<Args> = {
     argTypes: {
         model: { description: 'Defines the data' }
     },
-    render: (args: Args) => {
+    render: (args) => {
         return {
             props: {
                 ...args
@@ -52,9 +51,8 @@ const meta: Meta<Args> = {
         };
     }
 };
-
 export default meta;
 
-type Story = StoryObj<Args>;
+type Story = StoryObj<Breadcrumb>;
 
 export const Default: Story = {};

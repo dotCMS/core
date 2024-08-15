@@ -6,6 +6,7 @@ import {
     Component,
     ElementRef,
     HostListener,
+    inject,
     OnDestroy,
     ViewChild
 } from '@angular/core';
@@ -49,14 +50,15 @@ export interface DotActionsMenuEventParams {
     templateUrl: './dot-pages.component.html'
 })
 export class DotPagesComponent implements AfterViewInit, OnDestroy {
+    readonly #store = inject(DotPageStore);
+
     @ViewChild('menu') menu: Menu;
-    vm$: Observable<DotPagesState> = this.store.vm$;
+    vm$: Observable<DotPagesState> = this.#store.vm$;
 
     private domIdMenuAttached = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private store: DotPageStore,
         private dotRouterService: DotRouterService,
         private dotMessageDisplayService: DotMessageDisplayService,
         private dotEventsService: DotEventsService,
@@ -65,7 +67,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
         private element: ElementRef,
         private dotSiteService: SiteService
     ) {
-        this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
+        this.#store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
 
     /**
@@ -75,7 +77,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     goToUrl(url: string): void {
-        this.store.setPortletStatus(ComponentStatus.LOADING);
+        this.#store.setPortletStatus(ComponentStatus.LOADING);
 
         const splittedUrl = url.split('?');
         const urlParams = { url: splittedUrl[0] };
@@ -102,12 +104,12 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
                             })
                         );
                         this.dotHttpErrorManagerService.handle(error);
-                        this.store.setPortletStatus(ComponentStatus.LOADED);
+                        this.#store.setPortletStatus(ComponentStatus.LOADED);
                     }
                 },
                 (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
-                    this.store.setPortletStatus(ComponentStatus.LOADED);
+                    this.#store.setPortletStatus(ComponentStatus.LOADED);
                 }
             );
     }
@@ -121,7 +123,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     closeMenu(): void {
         if (this.menuIsLoaded(this.domIdMenuAttached)) {
             this.menu.hide();
-            this.store.clearMenuActions();
+            this.#store.clearMenuActions();
         }
     }
 
@@ -133,10 +135,10 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
      */
     showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
         event.stopPropagation();
-        this.store.clearMenuActions();
+        this.#store.clearMenuActions();
         this.menu.hide();
 
-        this.store.showActionsMenu({ item, actionMenuDomId });
+        this.#store.showActionsMenu({ item, actionMenuDomId });
     }
 
     /**
@@ -149,7 +151,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     }
 
     ngAfterViewInit(): void {
-        this.store.actionMenuDomId$
+        this.#store.actionMenuDomId$
             .pipe(
                 takeUntil(this.destroy$),
                 filter((actionMenuDomId) => !!actionMenuDomId)
@@ -175,7 +177,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
                     evt.data['payload']?.contentType === 'dotFavoritePage' ||
                     evt.data['payload']?.contentletType === 'dotFavoritePage';
 
-                this.store.updateSinglePageData({ identifier, isFavoritePage });
+                this.#store.updateSinglePageData({ identifier, isFavoritePage });
 
                 this.dotMessageDisplayService.push({
                     life: 3000,
@@ -186,7 +188,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
             });
 
         this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
-            this.store.getPages({ offset: 0 });
+            this.#store.getPages({ offset: 0 });
             this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
         });
     }
@@ -216,7 +218,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     loadPagesOnDeactivation() {
-        this.store.getPages({
+        this.#store.getPages({
             offset: 0
         });
     }

@@ -1,4 +1,4 @@
-import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule, NgIf } from '@angular/common';
 
@@ -99,7 +99,7 @@ const data = [
     }
 ] as WorkflowItem[];
 
-export default {
+const meta: Meta = {
     title: 'PrimeNG/Data/Table/List View',
     decorators: [
         moduleMetadata({
@@ -114,13 +114,18 @@ export default {
             }
         }
     }
-} as Meta;
+};
+export default meta;
 
-export const Default: StoryFn = () => ({
-    props: {
-        data
-    },
-    template: `
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: () => {
+        return {
+            props: {
+                data
+            },
+            template: `
         <p-table [value]="data" styleClass="dotTable">
             <ng-template pTemplate="caption">
                 <span>List of Documents</span>
@@ -158,4 +163,6 @@ export const Default: StoryFn = () => ({
             </ng-template>
         </p-table>
   `
-});
+        };
+    }
+};

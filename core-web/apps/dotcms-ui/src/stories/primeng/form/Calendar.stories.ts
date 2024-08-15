@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -14,6 +14,11 @@ const DISABLED_DAYS: Date[] = [...Array(DAYS_TO_DISABLE)].map(
 const meta: Meta<Calendar> = {
     title: 'PrimeNG/Form/Calendar',
     component: Calendar,
+    decorators: [
+        moduleMetadata({
+            imports: [BrowserAnimationsModule, ButtonModule]
+        })
+    ],
     args: {
         disabled: false,
         readonlyInput: true,
@@ -58,7 +63,7 @@ const meta: Meta<Calendar> = {
             description: 'Placeholder text for the input.'
         },
         disabledDates: {
-            control: 'array',
+            control: 'object',
             description: 'Array with dates that should be disabled (not selectable). Date[]'
         },
         selectionMode: {
@@ -72,11 +77,6 @@ const meta: Meta<Calendar> = {
 
 export default meta;
 
-export const Primary: Story = (args) => ({
-    moduleMetadata: {
-        imports: [BrowserAnimationsModule, ButtonModule]
-    },
-    props: {
-        ...args
-    }
-});
+type Story = StoryObj<Calendar>;
+
+export const Primary: Story = {};

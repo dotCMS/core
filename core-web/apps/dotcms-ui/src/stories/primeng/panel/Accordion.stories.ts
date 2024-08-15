@@ -1,22 +1,8 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { Accordion, AccordionModule } from 'primeng/accordion';
-
-export default {
-    title: 'PrimeNG/Panel/Accordion',
-    component: Accordion,
-    args: { activeIndex: 0, expandIcon: 'pi pi-angle-down', collapseIcon: 'pi pi-angle-up' },
-    parameters: {
-        docs: {
-            description: {
-                component:
-                    'Accordion groups a collection of contents in tabs.: https://www.primefaces.org/primeng-v15-lts/accordion'
-            }
-        }
-    }
-} as Meta;
 
 const BasicTemplate = `
     <p-accordion [activeIndex]="activeIndex" [expandIcon]="expandIcon" [collapseIcon]="collapseIcon">
@@ -37,14 +23,30 @@ const BasicTemplate = `
         </p-accordionTab>
     </p-accordion>`;
 
-export const Main: Story = (args) => {
-    return {
-        props: {
-            activeIndex: args.activeIndex,
-            expandIcon: args.expandIcon,
-            collapseIcon: args.collapseIcon
-        },
-        moduleMetadata: { imports: [AccordionModule, BrowserAnimationsModule] },
+const meta: Meta<Accordion> = {
+    title: 'PrimeNG/Panel/Accordion',
+    component: Accordion,
+    decorators: [
+        moduleMetadata({
+            imports: [AccordionModule, BrowserAnimationsModule]
+        })
+    ],
+    args: { activeIndex: 0, expandIcon: 'pi pi-angle-down', collapseIcon: 'pi pi-angle-up' },
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Accordion groups a collection of contents in tabs.: https://www.primefaces.org/primeng-v15-lts/accordion'
+            }
+        }
+    },
+    render: (args) => ({
+        props: args,
         template: BasicTemplate
-    };
+    })
 };
+export default meta;
+
+type Story = StoryObj<Accordion>;
+
+export const Main: Story = {};

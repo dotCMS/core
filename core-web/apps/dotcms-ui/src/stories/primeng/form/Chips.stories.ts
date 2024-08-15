@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -8,6 +8,11 @@ import { Chips, ChipsModule } from 'primeng/chips';
 const meta: Meta = {
     title: 'PrimeNG/Form/Chips',
     component: Chips,
+    decorators: [
+        moduleMetadata({
+            imports: [ChipsModule, BrowserAnimationsModule, FormsModule]
+        })
+    ],
     parameters: {
         docs: {
             description: {
@@ -24,18 +29,14 @@ const meta: Meta = {
     },
     args: {
         values: ['one', 'two']
-    }
+    },
+    render: (args) => ({
+        props: args,
+        template: `<p-chips [(ngModel)]="values" />`
+    })
 };
 export default meta;
 
 type Story = StoryObj<Chips>;
 
-export const Default: Story = {
-    render: (args) => ({
-        props: args,
-        moduleMetadata: {
-            imports: [ChipsModule, BrowserAnimationsModule, FormsModule]
-        },
-        template: `<p-chips [(ngModel)]="values" />`
-    })
-};
+export const Default: Story = {};

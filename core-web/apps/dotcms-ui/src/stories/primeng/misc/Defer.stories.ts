@@ -1,18 +1,16 @@
-import { Meta, moduleMetadata } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { MessageService } from 'primeng/api';
-import { DeferModule } from 'primeng/defer';
-import { TableModule } from 'primeng/table';
-import { ToastModule } from 'primeng/toast';
 
 import { DeferComponent } from './Defer.component';
 
-export default {
+const meta: Meta<DeferComponent> = {
     title: 'PrimeNG/Misc/Defer',
+    component: DeferComponent,
     parameters: {
         docs: {
             description: {
@@ -23,23 +21,11 @@ export default {
     },
     decorators: [
         moduleMetadata({
-            imports: [
-                BrowserModule,
-                BrowserAnimationsModule,
-                DeferModule,
-                ToastModule,
-                TableModule,
-                HttpClientModule
-            ],
+            imports: [BrowserModule, BrowserAnimationsModule, HttpClientModule],
             providers: [MessageService]
         })
-    ]
-} as Meta;
-
-// inbox screen default state
-export const Default = () => ({
-    component: DeferComponent,
-    props: {
+    ],
+    args: {
         cars: [
             { brand: 'VW', year: 2012, color: 'Orange', vin: 'dsad231ff' },
             { brand: 'Audi', year: 2011, color: 'Black', vin: 'gwregre345' },
@@ -58,4 +44,9 @@ export const Default = () => ({
             { brand: 'Fiat', year: 2013, color: 'Red', vin: '245t2s' }
         ]
     }
-});
+};
+export default meta;
+
+type Story = StoryObj<DeferComponent>;
+
+export const Default: Story = {};

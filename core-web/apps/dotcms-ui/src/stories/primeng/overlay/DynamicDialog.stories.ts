@@ -1,5 +1,4 @@
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Meta } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
@@ -14,7 +13,7 @@ import { DynamicDialogButtonComponent } from './DynamicDialogButton.component';
 import { DynamicDialogProductsComponent } from './DynamicDialogProducts.component';
 import { ProductService } from './SharedProducts.service';
 
-export default {
+const meta: Meta<DynamicDialogButtonComponent> = {
     title: 'PrimeNG/Overlay/DynamicDialog',
     component: DynamicDialogButtonComponent,
     parameters: {
@@ -22,34 +21,32 @@ export default {
             description: {
                 component:
                     'Dialogs can be created dynamically with any component as the content using a DialogService: https://primefaces.org/primeng/showcase/#/dynamicdialog'
-            }
+            },
+            source: {
+                code: `<button type="button" (click)="show()" pButton icon="pi pi-info-circle" label="Show"></button>`
+            },
+            iframeHeight: 300
         }
-    }
-} as Meta;
-
-export const Basic = () => ({
-    component: DynamicDialogButtonComponent,
-    moduleMetadata: {
-        imports: [
-            BrowserModule,
-            BrowserAnimationsModule,
-            DynamicDialogModule,
-            ToastModule,
-            TableModule,
-            ButtonModule,
-            HttpClientModule
-        ],
-        providers: [ProductService, DynamicDialogRef, DynamicDialogConfig],
-        declarations: [DynamicDialogProductsComponent],
-        entryComponents: [DynamicDialogProductsComponent]
-    }
-});
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: `<button type="button" (click)="show()" pButton icon="pi pi-info-circle" label="Show"></button>`
-        },
-        iframeHeight: 300
-    }
+    },
+    decorators: [
+        moduleMetadata({
+            imports: [
+                BrowserModule,
+                BrowserAnimationsModule,
+                DynamicDialogModule,
+                ToastModule,
+                TableModule,
+                ButtonModule,
+                HttpClientModule
+            ],
+            providers: [ProductService, DynamicDialogRef, DynamicDialogConfig],
+            declarations: [DynamicDialogProductsComponent],
+            entryComponents: [DynamicDialogProductsComponent]
+        })
+    ]
 };
+export default meta;
+
+type Story = StoryObj;
+
+export const Basic: Story = {};
