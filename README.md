@@ -3,7 +3,7 @@
 
 [![Merge Queue](https://github.com/dotCMS/core/actions/workflows/cicd_2-merge-queue.yml/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_2-merge-queue.yml)
 
-[![Trunk](https://github.com/dotCMS/core/actions/workflows/cicd_3-trunk/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_3-trunk.yml)
+[![Trunk](https://github.com/dotCMS/core/actions/workflows/cicd_3-trunk.yml/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_3-trunk.yml)
 
 [![Nightly](https://github.com/dotCMS/core/actions/workflows/cicd_4-nightly.yml/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_4-nightly.yml)
 

@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -6,12 +6,17 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotClipboardUtil, DotCopyButtonComponent } from '@dotcms/ui';
 
-export default {
+type Args = DotCopyButtonComponent & {
+    label: string;
+    originalTooltipText: string;
+};
+
+const meta: Meta = {
     title: 'DotCMS/Copy Button',
     component: DotCopyButtonComponent,
     args: {
         label: 'Copy',
-        tooltipText: 'Tooltip'
+        originalTooltipText: 'Tooltip'
     },
     decorators: [
         moduleMetadata({
@@ -32,8 +37,9 @@ export default {
             ]
         })
     ]
-} as Meta;
+};
+export default meta;
 
-export const Primary: Story = (args) => ({
-    props: args
-});
+type Story = StoryObj<Args>;
+
+export const Primary: Story = {};

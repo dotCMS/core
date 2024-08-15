@@ -50,7 +50,7 @@ export const initialState: CategoryFieldState = {
     selected: [],
     categories: [],
     keyParentPath: [],
-    state: ComponentStatus.IDLE,
+    state: ComponentStatus.INIT,
     mode: 'list',
     filter: '',
     searchCategories: []
@@ -101,7 +101,7 @@ export const CategoryFieldStore = signalStore(
         /**
          * Determines if the store state is currently loaded.
          */
-        isListLoaded: computed(() => store.state() === ComponentStatus.LOADED),
+        isInitSate: computed(() => store.state() === ComponentStatus.INIT),
         /**
          * Determines if the search mode is currently loading.
          */
@@ -295,21 +295,27 @@ export const CategoryFieldStore = signalStore(
                         return categoryService.getChildren(categoryInode).pipe(
                             tapResponse({
                                 next: (newCategories) => {
-                                    const changes: Partial<CategoryFieldState> = {
-                                        categories: removeEmptyArrays([
-                                            ...store.categories(),
-                                            newCategories
-                                        ]),
-                                        state: ComponentStatus.LOADED
-                                    };
                                     if (event) {
-                                        changes.keyParentPath = [
-                                            ...store.keyParentPath(),
-                                            event.item.key
-                                        ];
+                                        patchState(store, {
+                                            categories: removeEmptyArrays([
+                                                ...store.categories(),
+                                                newCategories
+                                            ]),
+                                            state: ComponentStatus.LOADED,
+                                            keyParentPath: [
+                                                ...store.keyParentPath(),
+                                                event.item.key
+                                            ]
+                                        });
+                                    } else {
+                                        patchState(store, {
+                                            categories: removeEmptyArrays([
+                                                ...store.categories(),
+                                                newCategories
+                                            ]),
+                                            state: ComponentStatus.LOADED
+                                        });
                                     }
-
-                                    patchState(store, changes);
                                 },
                                 error: () => {
                                     // TODO: Add Error Handler

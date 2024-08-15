@@ -134,8 +134,12 @@
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>
                                     <DOT_ANNOUNCEMENTS_BASE_URL>http://localhost:8080</DOT_ANNOUNCEMENTS_BASE_URL>
                                     <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>
-                                    <DOT_OPEN_AI_MODELS_URL>http://wm:8080/m</DOT_OPEN_AI_MODELS_URL>
                                     <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
+                                    <DOT_AI_API_URL>http://wm:8080/c</DOT_AI_API_URL>
+                                    <DOT_AI_IMAGE_API_URL>http://wm:8080/i</DOT_AI_IMAGE_API_URL>
+                                    <DOT_AI_EMBEDDINGS_API_URL>http://wm:8080/e</DOT_AI_EMBEDDINGS_API_URL>
+                                    <DOT_AI_MODELS_API_URL>http://wm:8080/m</DOT_AI_MODELS_API_URL>
+                                    <DOT_AI_DEBUG_LOGGER>true</DOT_AI_DEBUG_LOGGER>
                                 </env>
                                 <links combine.children="append">
                                     <link>wiremock:wm</link>

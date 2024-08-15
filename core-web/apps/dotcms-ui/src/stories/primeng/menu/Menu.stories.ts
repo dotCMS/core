@@ -1,26 +1,13 @@
 /* eslint-disable no-console */
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Meta } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
 
-export default {
-    title: 'PrimeNG/Menu/Menu',
-    component: Menu,
-    parameters: {
-        docs: {
-            description: {
-                component:
-                    'Menu is a navigation / command component that supports dynamic and static positioning: https://primefaces.org/primeng/showcase/#/menu'
-            }
-        }
-    }
-} as Meta;
-
-const items = [
+const items: MenuItem[] = [
     {
         label: 'Options',
         items: [
@@ -42,27 +29,43 @@ const items = [
     }
 ];
 
-export const Basic = (_args: Menu) => {
-    return {
-        props: {
-            items
-        },
-        moduleMetadata: {
-            imports: [MenuModule, BrowserAnimationsModule]
-        },
-        template: `<p-menu [model]="items"></p-menu>`
-    };
+type Args = Menu & { items: MenuItem[] };
+
+const meta: Meta<Args> = {
+    title: 'PrimeNG/Menu/Menu',
+    component: Menu,
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Menu is a navigation / command component that supports dynamic and static positioning: https://primefaces.org/primeng/showcase/#/menu'
+            }
+        }
+    },
+    decorators: [
+        moduleMetadata({
+            imports: [MenuModule, BrowserAnimationsModule, ButtonModule]
+        })
+    ],
+    args: {
+        items: [...items]
+    }
+};
+export default meta;
+
+type Story = StoryObj;
+
+export const Basic: Story = {
+    render: (args) => ({
+        props: args,
+        template: `<p-menu #menu [model]="items" />`
+    })
 };
 
-export const Overlay = (_args: Menu) => {
-    return {
-        props: {
-            items
-        },
-        moduleMetadata: {
-            imports: [MenuModule, BrowserAnimationsModule, ButtonModule]
-        },
-        template: `<p-menu #menu [popup]="true" [model]="items"></p-menu>
+export const Overlay: Story = {
+    render: (args) => ({
+        props: args,
+        template: `<p-menu #menu [popup]="true" [model]="items" />
     <button type="button" pButton icon="pi pi-list" label="Show" (click)="menu.toggle($event)"></button>`
-    };
+    })
 };

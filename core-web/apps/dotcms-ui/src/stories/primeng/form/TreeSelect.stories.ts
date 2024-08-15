@@ -48,7 +48,7 @@ const meta: Meta<Args> = {
         invalid: false,
         selectionMode: 'single'
     },
-    render: (args: TreeSelect) => ({
+    render: (args) => ({
         props: {
             ...args
         },
