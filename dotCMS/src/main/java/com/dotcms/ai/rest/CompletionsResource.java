@@ -5,6 +5,7 @@ import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.model.SimpleModel;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
 import com.dotcms.rest.WebResource;
@@ -118,7 +119,7 @@ public class CompletionsResource {
         final String apiKey = UtilMethods.isSet(app.getApiKey()) ? "*****" : "NOT SET";
         map.put(AppKeys.API_KEY.key, apiKey);
 
-        final List<String> models = AIModels.get().getAvailableModels();
+        final List<SimpleModel> models = AIModels.get().getAvailableModels();
         map.put(AiKeys.AVAILABLE_MODELS, models);
 
         return Response.ok(map).build();

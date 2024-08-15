@@ -4,8 +4,8 @@ import {
     StoryObj,
     moduleMetadata,
     componentWrapperDecorator,
-    argsToTemplate,
-    applicationConfig
+    applicationConfig,
+    argsToTemplate
 } from '@storybook/angular';
 
 import { importProvidersFrom } from '@angular/core';
@@ -16,10 +16,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
-type Args = DotCollapseBreadcrumbComponent & {
-    model: MenuItem[];
-    maxItems: number;
-};
+type Args = DotCollapseBreadcrumbComponent & { model: MenuItem[]; maxItems: number };
 
 const meta: Meta<Args> = {
     title: 'DotCMS/Menu/DotCollapseBreadcrumb',
@@ -45,16 +42,6 @@ const meta: Meta<Args> = {
             }
         }
     },
-    args: {
-        maxItems: 4,
-        model: [
-            { label: 'Electronics', command: console.log },
-            { label: 'Computer', command: console.log },
-            { label: 'Accessories', command: console.log },
-            { label: 'Keyboard', command: console.log },
-            { label: 'Wireless', command: console.log }
-        ]
-    },
     argTypes: {
         model: {
             description: 'Menu items to display'
@@ -64,18 +51,25 @@ const meta: Meta<Args> = {
             control: { type: 'number' }
         }
     },
-    render: (args: Args) => {
-        return {
-            props: {
-                ...args
-            },
-            template: `<dot-collapse-breadcrumb ${argsToTemplate(args)} />`
-        };
-    }
+    render: (args) => ({
+        props: args,
+        template: `<dot-collapse-breadcrumb ${argsToTemplate(args)} />`
+    })
 };
 
 export default meta;
 
 type Story = StoryObj<Args>;
 
-export const Default: Story = {};
+export const Default: Story = {
+    args: {
+        maxItems: 4,
+        model: [
+            { label: 'Electronics', command: console.log },
+            { label: 'Computer', command: console.log },
+            { label: 'Accessories', command: console.log },
+            { label: 'Keyboard', command: console.log },
+            { label: 'Wireless', command: console.log }
+        ]
+    }
+};
