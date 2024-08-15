@@ -271,13 +271,13 @@ export function createFavoritePagesURL(params: {
 }
 
 /**
- * Create a pure URL from the params
  *
+ * @description Create a full URL with the clientHost
  * @export
  * @param {DotPageApiParams} params
  * @return {*}  {string}
  */
-export function createPureURL(params: DotPageApiParams): string {
+export function createFullURL(params: DotPageApiParams): string {
     // If we are going to delete properties from the params, we need to make a copy of it
     const paramsCopy = { ...params };
 
@@ -291,7 +291,9 @@ export function createPureURL(params: DotPageApiParams): string {
 
     const searchParams = new URLSearchParams(paramsCopy as unknown as Record<string, string>);
 
-    return `${clientHost}/${url}?${searchParams.toString()}`;
+    const pureURL = new URL(`${url}?${searchParams.toString()}`, clientHost);
+
+    return pureURL.toString();
 }
 
 /**
