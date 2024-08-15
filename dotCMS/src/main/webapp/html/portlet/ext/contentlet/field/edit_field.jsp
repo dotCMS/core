@@ -883,8 +883,8 @@ var binaryFieldCallbacksMap = {} // This is a map to store the callbacks for the
                 setBinaryFieldInputs(); // Initialize the binary Field
 
                 // This code covers the multiple binaries in a contentlet
-                if(!binaryCallbacksMap["<%=field.getVelocityVarName()%>"]) {
-                    binaryCallbacksMap["<%=field.getVelocityVarName()%>"] = setBinaryFieldInputs; // Register the function to be called when the contentlet is saved
+                if(!binaryFieldCallbacksMap["<%=field.getVelocityVarName()%>"]) {
+                    binaryFieldCallbacksMap["<%=field.getVelocityVarName()%>"] = setBinaryFieldInputs; // Register the function to be called when the contentlet is saved
                 }
             </script>
         <%}else{%>
