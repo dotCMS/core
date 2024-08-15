@@ -19508,18 +19508,18 @@ pretty-hrtime@^1.0.3:
 
 primeflex@3.3.1:
   version "3.3.1"
-  resolved "https://registry.npmjs.org/primeflex/-/primeflex-3.3.1.tgz#361dddf6eb5db50d733e4cddd4b6e376a3d7bd68"
+  resolved "https://registry.yarnpkg.com/primeflex/-/primeflex-3.3.1.tgz#361dddf6eb5db50d733e4cddd4b6e376a3d7bd68"
   integrity sha512-zaOq3YvcOYytbAmKv3zYc+0VNS9Wg5d37dfxZnveKBFPr7vEIwfV5ydrpiouTft8MVW6qNjfkaQphHSnvgQbpQ==
 
 primeicons@7.0.0:
   version "7.0.0"
-  resolved "https://registry.npmjs.org/primeicons/-/primeicons-7.0.0.tgz#6b25c3fdcb29bb745a3035bdc1ed5902f4a419cf"
+  resolved "https://registry.yarnpkg.com/primeicons/-/primeicons-7.0.0.tgz#6b25c3fdcb29bb745a3035bdc1ed5902f4a419cf"
   integrity sha512-jK3Et9UzwzTsd6tzl2RmwrVY/b8raJ3QZLzoDACj+oTJ0oX7L9Hy+XnVwgo4QVKlKpnP/Ur13SXV/pVh4LzaDw==
 
-primeng@17.18.8:
-  version "17.18.8"
-  resolved "https://registry.npmjs.org/primeng/-/primeng-17.18.8.tgz#80c61cb3bf5094d9fe0ea434ea38b14865e8e7ba"
-  integrity sha512-5ehktDTkEtr9wvTFZf3ySAqaV2LMS1JWhYfMCxphsbP4XWthoYvY+MLt1k9sU0V0YZUH242vVlHIvOC23o7hFg==
+primeng@17.18.9:
+  version "17.18.9"
+  resolved "https://registry.yarnpkg.com/primeng/-/primeng-17.18.9.tgz#dc3b65689548b53ce07ce7032a0aa3d1eb5dfbea"
+  integrity sha512-1FT0B8wtgvs/joduB1DDOLe2IsP1pegOiEfSPAHSbc6otgNx/6iLR0k2M/xr2c9Ur1aC7tAikkVfH3FGpWof3w==
   dependencies:
     tslib "^2.3.0"
 
