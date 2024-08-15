@@ -1,22 +1,18 @@
-import { Meta, Story, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { of } from 'rxjs';
 
 import { NgClass, NgFor, NgIf, TitleCasePipe } from '@angular/common';
 
 import { CardModule } from 'primeng/card';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import { seoOGTagsMock, seoOGTagsResultMock } from '@dotcms/utils-testing';
 
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
 
-export default {
+const meta: Meta<DotResultsSeoToolComponent> = {
     title: 'DotCMS/Results Seo Tool',
     component: DotResultsSeoToolComponent,
-    args: {
-        hostName: 'A title',
-        seoOGTags: seoOGTagsMock,
-        seoOGTagsResults: seoOGTagsResultMock
-    },
     decorators: [
         moduleMetadata({
             imports: [NgClass, CardModule, NgFor, TitleCasePipe, NgIf],
@@ -26,12 +22,23 @@ export default {
                     useValue: {
                         get: () => 'Read More'
                     }
+                },
+                {
+                    provide: DotSeoMetaTagsUtilService
                 }
             ]
         })
     ]
-} as Meta;
+};
+export default meta;
 
-export const Primary: Story = (args) => ({
-    props: args
-});
+type Story = StoryObj<DotResultsSeoToolComponent>;
+
+export const Primary: Story = {
+    args: {
+        hostName: 'A title',
+        seoMedia: 'all',
+        seoOGTags: seoOGTagsMock,
+        seoOGTagsResults: of(seoOGTagsResultMock)
+    }
+};
