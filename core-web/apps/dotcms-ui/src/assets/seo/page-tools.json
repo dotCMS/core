@@ -12,7 +12,7 @@
             "title": "Mozilla Observatory",
             "description": "The Mozilla Observatory has helped hundreds of thousands of websites by teaching developers, system administrators, and security professionals how to configure their sites safely and securely. ",
             "tags": ["Security", "Best Practices"],
-            "runnableLink": "https://observatory.mozilla.org/analyze/{requestHostName}"
+            "runnableLink": "https://developer.mozilla.org/en-US/observatory/analyze?host={requestHostName}"
         },
         {
             "icon": "assets/seo/security-headers.png",
