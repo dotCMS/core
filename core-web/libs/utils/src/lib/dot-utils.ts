@@ -70,7 +70,7 @@ export function getRunnableLink(url: string, currentPageUrlParams: DotPageToolUr
     if (languageId) pageParams.append('language_id', String(languageId));
 
     // Replace placeholders in the base URL with actual values and append query parameters if they exist
-    let finalUrl = url
+    const finalUrl = url
         .replace(/{requestHostName}/g, requestHostName ?? '')
         .replace(/{currentUrl}/g, currentUrl ?? '')
         .replace(/{urlSearchParams}/g, pageParams.toString() ? `?${pageParams.toString()}` : '');
