@@ -1,5 +1,6 @@
 @import "../../global/variables";
 @import "../../../../dotcms-scss/shared/colors";
+@import "../../../../dotcms-scss/shared/fonts";
 
 :host {
     @include mwc-dotcms-theme;
@@ -49,6 +50,7 @@ label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: $font-size-md;
 }
 
 .main,

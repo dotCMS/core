@@ -1,11 +1,5 @@
 package com.dotcms.rest.api.v2.languages;
 
-import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.isLocalizationEnhancementsEnabled;
-import static com.dotmarketing.util.WebKeys.CONTENT_SELECTED_LANGUAGE;
-import static com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE;
-import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
-
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.languagevariable.business.LanguageVariable;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -39,16 +33,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import org.apache.commons.beanutils.BeanUtils;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
@@ -66,8 +55,21 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.commons.beanutils.BeanUtils;
-import org.glassfish.jersey.server.JSONP;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.isLocalizationEnhancementsEnabled;
+import static com.dotmarketing.util.WebKeys.CONTENT_SELECTED_LANGUAGE;
+import static com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE;
+import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
 
 /**
  * Language endpoint for the v2 API
@@ -236,17 +238,13 @@ public class LanguagesResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveFromLanguageTag(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("languageTag") final String languageTag
-    ) throws AlreadyExistException {
+            @PathParam("languageTag") final String languageTag,
+            @DefaultValue("false") @QueryParam("strict") final boolean strict) throws AlreadyExistException {
         DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
 
-        final Locale locale = validateLanguageTag(languageTag);
-
-        final LanguageForm languageForm = new LanguageForm.Builder()
-                .language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
-                .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
+        final LanguageForm languageForm = this.getLanguageData(languageTag, strict);
 
         final Language language = validateLanguageExists(languageForm);
         if(null != language && language != LanguageCacheImpl.LANG_404){
@@ -258,6 +256,42 @@ public class LanguagesResource {
         )).build(); // 200
     }
 
+    /**
+     * Takes the incoming Language Tag and creates a {@link LanguageForm} object with it. It's worth
+     * noting that the languageTag can be in the format of a valid Locale, or any other format
+     * specified by the User.
+     *
+     * @param languageTag The Language Tag that is being transformed into a {@link LanguageForm}
+     *                    object.
+     * @param strict      If the Language Tag must be checked against a valid Locale, set this to
+     *                    {@code true}. If invalid Locales must be supported, set this to
+     *                    {@code false}.
+     *
+     * @return The {@link LanguageForm} object created from the Language Tag.
+     */
+    private LanguageForm getLanguageData(final String languageTag, final boolean strict) {
+        final LanguageForm.Builder languageFormBuilder = new LanguageForm.Builder();
+        Locale locale;
+        if (strict) {
+            locale = this.validateLanguageTag(languageTag);
+            languageFormBuilder.language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
+                    .country(locale.getDisplayCountry()).countryCode(locale.getCountry());
+            return languageFormBuilder.build();
+        }
+        locale = Locale.forLanguageTag(languageTag);
+        if (UtilMethods.isNotSet(locale.toString())) {
+            Logger.warn(this, String.format("Language Tag '%s' " +
+                    "may not be a valid Locale. Creating Language with available information", languageTag));
+            final Tuple2<String, String> extractedCodes = LanguageUtil.getLanguageCountryCodes(languageTag);
+            languageFormBuilder.language(extractedCodes._1).languageCode(extractedCodes._1)
+                    .countryCode(extractedCodes._2);
+        } else {
+            languageFormBuilder.language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
+                    .country(locale.getDisplayCountry()).countryCode(locale.getCountry());
+        }
+        return languageFormBuilder.build();
+    }
+
 
     @GET
     @Path("/{languageTag}")
@@ -267,14 +301,9 @@ public class LanguagesResource {
     public Response getFromLanguageTag (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("languageTag") final String languageTag) {
-
-
-        final Locale locale = validateLanguageTag(languageTag);
-        final LanguageForm languageForm = new LanguageForm.Builder()
-                .language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
-                .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
-
+            @PathParam("languageTag") final String languageTag,
+            @DefaultValue("false") @QueryParam("strict") final boolean strict) {
+        final LanguageForm languageForm = this.getLanguageData(languageTag, strict);
         DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
         final Language language = getLanguage(languageForm);
         if(null == language){
