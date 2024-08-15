@@ -50,7 +50,7 @@ export const initialState: CategoryFieldState = {
     selected: [],
     categories: [],
     keyParentPath: [],
-    state: ComponentStatus.IDLE,
+    state: ComponentStatus.INIT,
     mode: 'list',
     filter: '',
     searchCategories: []
@@ -101,7 +101,7 @@ export const CategoryFieldStore = signalStore(
         /**
          * Determines if the store state is currently loaded.
          */
-        isListLoaded: computed(() => store.state() === ComponentStatus.LOADED),
+        isInitSate: computed(() => store.state() === ComponentStatus.INIT),
         /**
          * Determines if the search mode is currently loading.
          */
