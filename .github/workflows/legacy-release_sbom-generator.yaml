@@ -69,7 +69,8 @@ jobs:
       - name: Check out the target branch
         run: |
           cd core
-          git checkout release-24.04.24_lts  # Check out the existing branch
+          git fetch origin release-24.04.24_lts
+          git checkout release-24.04.24_lts 
           
       - name: Commit and push results to release-24.04.24_lts branch
         run: |
