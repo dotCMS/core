@@ -1,5 +1,6 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.mock;
  *
  * @author vico
  */
-public class AIViewToolTest {
+public class AIViewToolTest extends IntegrationTestBase {
 
     private static AppConfig config;
     private static WireMockServer wireMockServer;
@@ -127,6 +128,19 @@ public class AIViewToolTest {
         final JSONObject response = aiViewTool.generateImage(prompt);
         // then
         assertImageResponse(response, prompt.get("prompt").toString(), "dalailama");
+    }
+
+    /**
+     * Scenario: Generate image from a map prompt
+     * Given a map prompt about Dalai Lama winning a slam dunk contest
+     * When the generateImage method is called with the prompt
+     * Then the response should contain an image of Dalai Lama winning a slam dunk contest
+     */
+    @Test
+    public void test_noLicense_initShouldNotFail() throws Exception {
+        runNoLicense(()-> {
+            new AIViewTool().init(mock(ViewContext.class));
+        });
     }
 
     private void assertTextResponse(final JSONObject response, final String containedText) {

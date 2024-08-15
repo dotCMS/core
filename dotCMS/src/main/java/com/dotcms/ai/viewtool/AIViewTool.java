@@ -7,6 +7,8 @@ import com.dotcms.ai.service.OpenAIChatService;
 import com.dotcms.ai.service.OpenAIChatServiceImpl;
 import com.dotcms.ai.service.OpenAIImageService;
 import com.dotcms.ai.service.OpenAIImageServiceImpl;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.json.JSONObject;
@@ -31,12 +33,16 @@ public class AIViewTool implements ViewTool {
     private OpenAIChatService chatService;
     private OpenAIImageService imageService;
 
+    private final LicenseValiditySupplier licenseValiditySupplier = new LicenseValiditySupplier() {};
+
     @Override
     public void init(final Object obj) {
-        context = (ViewContext) obj;
-        config = config();
-        chatService = chatService();
-        imageService = imageService();
+        if(licenseValiditySupplier.hasValidLicense()) {
+            context = (ViewContext) obj;
+            config = config();
+            chatService = chatService();
+            imageService = imageService();
+        }
     }
 
     /**
