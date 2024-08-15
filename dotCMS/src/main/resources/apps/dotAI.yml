@@ -15,7 +15,7 @@ params:
     hint: "Your ChatGPT API key"
     required: true
   textModelNames:
-    value: ""
+    value: "gpt-4o"
     hidden: false
     type: "STRING"
     label: "Model Names"
@@ -64,7 +64,7 @@ params:
     hint: "Enable completion model used to generate OpenAI API response."
     required: false
   imageModelNames:
-    value: ""
+    value: "dall-e-3"
     hidden: false
     type: "STRING"
     label: "Image Model Names"
@@ -132,7 +132,7 @@ params:
     hint: "Enable completion model used to generate OpenAI API response."
     required: false
   embeddingsModelNames:
-    value: ""
+    value: "text-embedding-ada-002"
     hidden: false
     type: "STRING"
     label: "Embeddings Model Names"
