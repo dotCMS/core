@@ -97,7 +97,7 @@ jobs:
       - name: Commit and push results to target branch
         run: |
           cd core
-          git add sbom/dotcms-${{ env.DOTCMS_VERSION }}.json
+          git add dotcms-${{ env.DOTCMS_VERSION }}.json
           git commit -m "Add SBOM for dotCMS version ${{ env.DOTCMS_VERSION }}" || echo "No changes to commit"
           git push origin ${{ env.BRANCH_NAME }}
         env:
