@@ -1,4 +1,4 @@
-# Generate SBOM for latest version of dotCMS and put into core-test-repo
+# Generate SBOM for latest version of dotCMS
 on:
   release:
     types: [published]
@@ -34,13 +34,13 @@ jobs:
             latest_tag=${{ github.event.inputs.dotcms_version }}
           fi
 
-          # Format the tag name if necessary
-          formatted_tag=$(echo "$latest_tag" | sed -e 's/^dotcms-cli-//' -e 's/^v//')
+          # Format the tag name: remove 'v' prefix
+          formatted_tag=$(echo "$latest_tag" | sed -e 's/^v//' -e 's/^dotcms-cli-//')
 
-          # Construct the branch name based on the version
+          # Construct the branch name based on the formatted version
           branch_name="release-v${formatted_tag}_lts"
 
-          echo "DOTCMS_VERSION=${latest_tag}" >> $GITHUB_ENV
+          echo "DOTCMS_VERSION=${formatted_tag}" >> $GITHUB_ENV
           echo "BRANCH_NAME=${branch_name}" >> $GITHUB_ENV
 
       - name: Print environment variables
