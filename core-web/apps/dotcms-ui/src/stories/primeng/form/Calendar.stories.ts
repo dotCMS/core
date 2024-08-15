@@ -3,7 +3,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { Calendar } from 'primeng/calendar';
+import { Calendar, CalendarModule } from 'primeng/calendar';
 
 const TODAY = new Date();
 const DAYS_TO_DISABLE = 5;
@@ -16,7 +16,7 @@ const meta: Meta<Calendar> = {
     component: Calendar,
     decorators: [
         moduleMetadata({
-            imports: [BrowserAnimationsModule, ButtonModule]
+            imports: [BrowserAnimationsModule, ButtonModule, CalendarModule]
         })
     ],
     args: {
