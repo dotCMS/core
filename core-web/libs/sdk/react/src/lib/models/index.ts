@@ -87,3 +87,44 @@ export interface DotCMSPageContext {
     };
     isInsideEditor: boolean;
 }
+
+export interface DotCMSContentlet {
+    archived: boolean;
+    baseType: string;
+    deleted?: boolean;
+    binary?: string;
+    binaryContentAsset?: string;
+    binaryVersion?: string;
+    contentType: string;
+    file?: string;
+    folder: string;
+    hasLiveVersion?: boolean;
+    hasTitleImage: boolean;
+    host: string;
+    hostName: string;
+    identifier: string;
+    inode: string;
+    image?: string;
+    languageId: number;
+    language?: string;
+    live: boolean;
+    locked: boolean;
+    mimeType?: string;
+    modDate: string;
+    modUser: string;
+    modUserName: string;
+    owner: string;
+    sortOrder: number;
+    stInode: string;
+    title: string;
+    titleImage: string;
+    text?: string;
+    url: string;
+    working: boolean;
+    body?: string;
+    contentTypeIcon?: string;
+    variant?: string;
+    __icon__?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any; // This is a catch-all for any other custom properties that might be on the contentlet.
+}

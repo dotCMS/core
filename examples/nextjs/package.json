@@ -10,8 +10,9 @@
     },
     "dependencies": {
         "@dotcms/client": "0.0.1-alpha.31",
-        "@dotcms/react": "0.0.1-alpha.31",
         "@dotcms/experiments": "0.0.1-alpha.31",
+        "@dotcms/react": "0.0.1-alpha.31",
+        "@tinymce/tinymce-react": "^5.1.1",
         "next": "14.1.1",
         "react": "^18",
         "react-dom": "^18"

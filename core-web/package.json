@@ -75,6 +75,7 @@
         "@storybook/builder-webpack5": "^8.1.1",
         "@tarekraafat/autocomplete.js": "^10.2.6",
         "@tinymce/tinymce-angular": "^7.0.0",
+        "@tinymce/tinymce-react": "^5.1.1",
         "@tiptap/core": "^2.0.0-beta.218",
         "@tiptap/extension-bubble-menu": "^2.0.0-beta.218",
         "@tiptap/extension-character-count": "^2.0.0-beta.218",
