@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, componentWrapperDecorator } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -17,7 +17,8 @@ const meta: Meta<Calendar> = {
     decorators: [
         moduleMetadata({
             imports: [BrowserAnimationsModule, ButtonModule, CalendarModule]
-        })
+        }),
+        componentWrapperDecorator((story) => `<div class="h-30rem">${story}</div>`)
     ],
     args: {
         disabled: false,
