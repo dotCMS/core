@@ -8,9 +8,9 @@
     <div class="category_listing">
         <p-table
             (onLazyLoad)="loadCategories($event)"
-            (onRowSelect)="handleRowCheck($event)"
-            (onRowUnselect)="handleRowCheck($event)"
-            (onHeaderCheckboxToggle)="handleRowCheck($event)"
+            (onRowSelect)="handleRowCheck()"
+            (onRowUnselect)="handleRowCheck()"
+            (onHeaderCheckboxToggle)="handleRowCheck()"
             (onFilter)="handleFilter()"
             [(selection)]="selectedCategories"
             [value]="vm.categories"
@@ -35,7 +35,7 @@
                             type="button"
                             pButton
                             icon="pi pi-ellipsis-v"
-                            attr.data-testId="actions"></button>
+                            data-testId="actions"></button>
                         <p-menu
                             [popup]="true"
                             [model]="vm.categoriesBulkActions"
@@ -48,10 +48,10 @@
                                 <i class="pi pi-search"></i>
                             </span>
                             <input
-                                (input)="dataTable.filterGlobal($event.target.value, 'contains')"
                                 [placeholder]="'message.category.search' | dm"
                                 class="border-left-none"
                                 #gf
+                                (input)="dataTable.filterGlobal(gf.value ,'contains')"
                                 type="text"
                                 pInputText />
                         </div>
