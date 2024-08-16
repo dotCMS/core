@@ -3,7 +3,7 @@ import { Observable, of, Subject } from 'rxjs';
 import { Component, EventEmitter, forwardRef, Input, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteSelectEvent } from 'primeng/autocomplete';
 
 import { switchMap, take } from 'rxjs/operators';
 
@@ -110,22 +110,22 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @param DotPageAsset item
      * @memberof DotPageSelectorComponent
      */
-    onSelect(item: DotPageSelectorItem): void {
+    onSelect(event: AutoCompleteSelectEvent): void {
+        const { originalEvent, value } = event;
+
         if (this.searchType === 'site') {
-            const site: Site = <Site>item.payload;
+            const site: Site = <Site>value.payload;
             this.currentHost = site;
-            const event: AutoCompleteCompleteEvent = {
+            this.autoComplete.completeMethod.emit({
                 query: `//${site.hostname}/`,
-                originalEvent: {} as Event
-            };
-            // this.autoComplete.completeMethod.emit({ query: `//${site.hostname}/` });
-            this.autoComplete.completeMethod.emit(event);
+                originalEvent
+            });
         } else if (this.searchType === 'page') {
-            const page: DotPageAsset = <DotPageAsset>item.payload;
+            const page: DotPageAsset = <DotPageAsset>value.payload;
             this.selected.emit(page);
             this.propagateChange(page.identifier);
         } else if (this.searchType === 'folder') {
-            this.handleFolderSelection(<DotFolder>item.payload);
+            this.handleFolderSelection(<DotFolder>value.payload);
         }
 
         this.resetResults();
