@@ -97,7 +97,7 @@ jobs:
         with:
           context: ./docker/dotcms
           push: true
-          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}_SNAPSHOT
+          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}_SNAPSHOT,dotcms/dotcms:23.10.24_lts_SNAPSHOT
           platforms: linux/amd64,linux/arm64
           build-args: |
             BUILD_FROM=COMMIT
