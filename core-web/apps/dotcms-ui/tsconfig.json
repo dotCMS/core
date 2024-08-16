@@ -20,7 +20,6 @@
         "target": "es2020"
     },
     "angularCompilerOptions": {
-        "strictTemplates": true,
-        "preserveWhitespaces": true,
-      }
+        "strictTemplates": false
+    }
 }
