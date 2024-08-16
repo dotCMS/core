@@ -1,4 +1,4 @@
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -33,23 +33,26 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
         DotMyAccountModule,
         DotSafeHtmlPipe,
         MenuModule,
-        AsyncPipe,
-        NgIf
+        AsyncPipe
     ]
 })
 export class DotToolbarUserComponent implements OnInit {
-    readonly #store = inject(DotToolbarUserStore);
+    readonly store = inject(DotToolbarUserStore);
 
-    vm$ = this.#store.vm$;
+    vm$ = this.store.vm$;
     @ViewChild('menu') menu: Menu;
-    showMask = signal<boolean>(false);
+    $showMask = signal<boolean>(false);
 
     ngOnInit(): void {
-        this.#store.init();
+        this.store.init();
     }
 
-    toogleMenu(event: CustomEvent): void {
+    toggleMenu(event: CustomEvent): void {
         this.menu.toggle(event);
-        this.showMask.update((value) => !value);
+        this.toggleMask();
+    }
+
+    toggleMask(): void {
+        this.$showMask.update((value) => !value);
     }
 }
