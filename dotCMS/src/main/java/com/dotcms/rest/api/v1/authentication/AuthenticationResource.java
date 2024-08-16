@@ -109,7 +109,15 @@ public class AuthenticationResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "postAuthentication",
                 summary = "Verifies user or application authentication",
-                description = "")
+                description = "Takes a user ID and checks if the user has permissions in the system.\n\n" +
+                                "If the user is authenticated they will be prompted to log in and a session is created.\n\n" +
+                                "Otherwise the system will return an 'authentication failed' message.\n\n",
+                tags = {"Authentication"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "User authentication successful",
+                        content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityUserMapView.class)))
+                })
     public final Response authentication(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    final AuthenticationForm authenticationForm) {
