@@ -99,6 +99,11 @@ export class DotCategoryFieldCategoryListComponent {
     $isLoading = input<boolean>(true, { alias: 'isLoading' });
 
     /**
+     * Represents a variable indicating if the component is in initial state.
+     */
+    $isInitialState = input<boolean>(true, { alias: 'isInitialState' });
+
+    /**
      * Represents the breadcrumbs to display
      */
     $breadcrumbs = input<DotCategoryFieldKeyValueObj[]>([], { alias: 'breadcrumbs' });

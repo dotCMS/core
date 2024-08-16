@@ -676,7 +676,8 @@ public class AppsUtil {
     private static String discoverEnvVarValue(final Supplier<String> envVarSupplier, final String envVar) {
         return Optional
                 .ofNullable(envVarSupplier.get())
-                .map(discovered -> Config.getStringProperty(discovered, null))
+                .map(supplied -> Config.getStringProperty(supplied, null))
+                .or(() -> Optional.ofNullable(envVar).map(ev -> Config.getStringProperty(ev, null)))
                 .or(() -> Optional.ofNullable(envVar).map(System::getenv))
                 .orElse(null);
     }

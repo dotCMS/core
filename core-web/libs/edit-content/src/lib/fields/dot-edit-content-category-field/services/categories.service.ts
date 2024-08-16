@@ -21,15 +21,13 @@ export interface GetChildrenParams {
     showChildrenCount: boolean;
     filter?: string;
     allLevels?: boolean;
-    parentList?: boolean;
 }
 
 const DEFAULT_PARAMS: Omit<GetChildrenParams, 'inode'> = {
     per_page: 7000,
     direction: 'ASC',
     showChildrenCount: true,
-    allLevels: false,
-    parentList: true
+    allLevels: false
 };
 
 /**
@@ -92,8 +90,7 @@ export class CategoriesService {
         let httpParams = new HttpParams()
             .set('inode', params.inode)
             .set('per_page', params.per_page.toString())
-            .set('direction', params.direction)
-            .set('parentList', params.parentList);
+            .set('direction', params.direction);
 
         if (!params.filter) {
             // No add showChildrenCount when we use filter
