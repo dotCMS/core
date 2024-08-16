@@ -109,6 +109,7 @@
 
 <script type="text/javascript">
 
+	var binaryFieldCallbacksMap = {} // This is a map to store the callbacks for the binary fields, used to reload them when we publish or save a contentlet, look on dotCMS/src/main/webapp/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp on saveContentCallback function
 	const relationsLoadedMap = {};
 
 	function waitForRelation() {
@@ -137,10 +138,10 @@
 
 <script language="javascript">
 	require(["vs/editor/editor.main"], function() {
-		// Hack to avoid MonacoEditorLoaderService to load the editor again 
+		// Hack to avoid MonacoEditorLoaderService to load the editor again
 		// That service not works in `dojo` environment Dojo amdLoader. See docs: [https://dojotoolkit.org/reference-guide/1.7/loader/amd.html?highlight=packages%20location%20name%20main]
 		window.monacoEditorAlreadyInitialized = !!window.monaco;
-	});		
+	});
 </script>
 
 <%
