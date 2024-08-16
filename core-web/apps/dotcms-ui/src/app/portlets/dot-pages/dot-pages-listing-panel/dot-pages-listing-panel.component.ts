@@ -1,4 +1,4 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -11,19 +11,18 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { LazyLoadEvent } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
 import { Table } from 'primeng/table';
 
-import { filter, takeUntil } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
-
-
 
 @Component({
     selector: 'dot-pages-listing-panel',
@@ -46,37 +45,34 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
         revision: this.#dotMessageService.get('Revision'),
         draft: this.#dotMessageService.get('Draft')
     };
-    private domIdMenuAttached = '';
-    private destroy$ = new Subject<boolean>();
-    private scrollElement?: HTMLElement;
+    #domIdMenuAttached = '';
+    #scrollElement?: HTMLElement;
 
     ngOnInit() {
         this.store.actionMenuDomId$
             .pipe(
-                takeUntil(this.destroy$),
+                takeUntilDestroyed(),
                 filter((actionMenuDomId) => !!actionMenuDomId)
             )
             .subscribe((actionMenuDomId: string) => {
                 if (actionMenuDomId.includes('tableRow')) {
                     this.cm.show(new Event('click'));
-                    this.domIdMenuAttached = actionMenuDomId;
+                    this.#domIdMenuAttached = actionMenuDomId;
                     // To hide when the menu is opened
                 } else this.cm.hide();
             });
     }
 
     ngAfterViewInit(): void {
-        this.scrollElement = document.querySelector('dot-pages');
+        this.#scrollElement = document.querySelector('dot-pages');
 
-        this.scrollElement?.addEventListener('scroll', () => {
+        this.#scrollElement?.addEventListener('scroll', () => {
             this.closeContextMenu();
         });
     }
 
     ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-        this.scrollElement?.removeAllListeners('scroll');
+        this.#scrollElement?.removeAllListeners('scroll');
     }
 
     /**
@@ -113,7 +109,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
      * @memberof DotPagesComponent
      */
     closedActionsContextMenu() {
-        this.domIdMenuAttached = '';
+        this.#domIdMenuAttached = '';
     }
 
     /**
@@ -173,7 +169,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
      */
     @HostListener('window:click')
     private closeContextMenu(): void {
-        if (this.domIdMenuAttached.includes('tableRow')) {
+        if (this.#domIdMenuAttached.includes('tableRow')) {
             this.cm.hide();
             this.store.clearMenuActions();
         }
