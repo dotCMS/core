@@ -6,12 +6,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotClipboardUtil, DotCopyButtonComponent } from '@dotcms/ui';
 
-type Args = DotCopyButtonComponent & {
-    label: string;
-    originalTooltipText: string;
-};
-
-const meta: Meta = {
+const meta: Meta<DotCopyButtonComponent> = {
     title: 'DotCMS/Copy Button',
     component: DotCopyButtonComponent,
     args: {
@@ -40,6 +35,6 @@ const meta: Meta = {
 };
 export default meta;
 
-type Story = StoryObj<Args>;
+type Story = StoryObj<DotCopyButtonComponent>;
 
 export const Primary: Story = {};
