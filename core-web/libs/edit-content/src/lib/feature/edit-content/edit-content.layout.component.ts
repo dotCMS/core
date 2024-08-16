@@ -1,6 +1,6 @@
 import { Observable, forkJoin, of } from 'rxjs';
 
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -31,7 +31,6 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
     selector: 'dot-edit-content-form-layout',
     standalone: true,
     imports: [
-        JsonPipe,
         AsyncPipe,
         DotMessagePipe,
         ButtonModule,
