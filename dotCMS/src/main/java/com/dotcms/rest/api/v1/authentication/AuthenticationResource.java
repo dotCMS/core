@@ -26,6 +26,16 @@ import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -52,8 +62,15 @@ import org.glassfish.jersey.server.JSONP;
  * @version 3.7
  * @since Jul 7, 2016
  */
+
+
 @SuppressWarnings("serial")
 @Path("/v1/authentication")
+@Tag(name = "Authentication",
+        description = "Endpoints that perform operations related to user authentication",
+        externalDocs = @ExternalDocumentation(description = "Additional Authentication API information",
+                                                url = "https://www.dotcms.com/docs/latest/rest-api-authentication"))
+
 public class AuthenticationResource implements Serializable {
 
     static final String USER = "user";
@@ -90,6 +107,9 @@ public class AuthenticationResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "postAuthentication",
+                summary = "Verifies user or application authentication",
+                description = "")
     public final Response authentication(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    final AuthenticationForm authenticationForm) {
