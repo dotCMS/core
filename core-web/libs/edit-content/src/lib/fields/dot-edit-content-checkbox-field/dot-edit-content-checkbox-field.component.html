@@ -1,8 +1,8 @@
-@for (option of options; track option; let i = $index) {
+@for (option of options; track $index) {
     <p-checkbox
         [name]="field.variable"
         [formControl]="formControl"
         [value]="option.value"
         [label]="option.label"
-        [inputId]="option.value + i"></p-checkbox>
+        [inputId]="option.value + $index"></p-checkbox>
 }
