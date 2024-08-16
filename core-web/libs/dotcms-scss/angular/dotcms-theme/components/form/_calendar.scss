@@ -47,6 +47,10 @@
             width: $icon-lg-box;
             font-size: $icon-lg;
         }
+
+        .p-icon-wrapper {
+            color: $color-palette-primary-500;
+        }
     }
 
     .p-button:enabled.p-datepicker-trigger .pi {
