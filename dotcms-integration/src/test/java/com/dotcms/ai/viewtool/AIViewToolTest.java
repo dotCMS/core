@@ -131,10 +131,9 @@ public class AIViewToolTest extends IntegrationTestBase {
     }
 
     /**
-     * Scenario: Generate image from a map prompt
-     * Given a map prompt about Dalai Lama winning a slam dunk contest
-     * When the generateImage method is called with the prompt
-     * Then the response should contain an image of Dalai Lama winning a slam dunk contest
+     * Scenario: No license
+     * When initializing the AIView tool
+     * Then should NOT throw exception 
      */
     @Test
     public void test_noLicense_initShouldNotFail() throws Exception {
