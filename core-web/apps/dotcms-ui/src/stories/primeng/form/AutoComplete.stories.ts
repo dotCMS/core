@@ -3,7 +3,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { UPDATE_STORY_ARGS } from '@storybook/core-events';
 
 import { BrowserModule } from '@angular/platform-browser';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 
@@ -42,7 +42,7 @@ const meta: Meta<AutoComplete> = {
     },
     decorators: [
         moduleMetadata({
-            imports: [AutoCompleteModule, NoopAnimationsModule, BrowserModule]
+            imports: [AutoCompleteModule, BrowserAnimationsModule, BrowserModule]
         })
     ],
     args: {

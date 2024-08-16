@@ -204,10 +204,10 @@ p-chip .p-chip {
     &.p-chip-lg {
         height: $field-height-lg;
         border-radius: $border-radius-lg;
-        font-size: $font-size-lg;
+        font-size: $font-size-lmd;
 
         .p-chip-text {
-            font-size: $font-size-lg;
+            font-size: $font-size-lmd;
         }
     }
 

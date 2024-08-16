@@ -1,9 +1,16 @@
-import { Meta, moduleMetadata, StoryObj, componentWrapperDecorator } from '@storybook/angular';
+import {
+    Meta,
+    moduleMetadata,
+    StoryObj,
+    argsToTemplate,
+    componentWrapperDecorator
+} from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { Calendar, CalendarModule } from 'primeng/calendar';
+import { ChevronLeftIcon } from 'primeng/icons/chevronleft';
 
 const TODAY = new Date();
 const DAYS_TO_DISABLE = 5;
@@ -16,14 +23,14 @@ const meta: Meta<Calendar> = {
     component: Calendar,
     decorators: [
         moduleMetadata({
-            imports: [BrowserAnimationsModule, ButtonModule, CalendarModule]
+            imports: [BrowserAnimationsModule, ButtonModule, CalendarModule, ChevronLeftIcon]
         }),
         componentWrapperDecorator((story) => `<div class="h-30rem">${story}</div>`)
     ],
     args: {
         disabled: false,
         readonlyInput: true,
-        showIcon: true,
+        showIcon: false,
         showTime: true,
         showClear: true,
         inline: false,
@@ -73,11 +80,21 @@ const meta: Meta<Calendar> = {
             description:
                 'Defines the quantity of the selection, valid values are "single", "multiple" and "range".'
         }
-    }
+    },
+    render: (args) => ({
+        props: args,
+        template: `<p-calendar ${argsToTemplate(args)} />`
+    })
 };
 
 export default meta;
 
 type Story = StoryObj<Calendar>;
 
-export const Primary: Story = {};
+export const Default: Story = {};
+
+export const WithIcon: Story = {
+    args: {
+        showIcon: true
+    }
+};
