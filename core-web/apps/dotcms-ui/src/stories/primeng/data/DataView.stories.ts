@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { DataView, DataViewModule } from 'primeng/dataview';
@@ -11,64 +12,14 @@ type Data = {
     category: string;
 };
 
-const data: Data[] = [
-    {
-        id: '1000',
-        name: 'Apple iPhone 12 Pro',
-        description: 'Apple iPhone 12 Pro 128GB Graphite',
-        image: 'assets/demo/images/product/iphone.jpg',
-        price: '$999.99',
-        category: 'Cell Phones'
-    },
-    {
-        id: '1001',
-        name: 'Apple iPhone 12 Pro',
-        description: 'Apple iPhone 12 Pro 256GB Graphite',
-        image: 'assets/demo/images/product/iphone.jpg',
-        price: '$1099.99',
-        category: 'Cell Phones'
-    },
-    {
-        id: '1002',
-        name: 'Apple iPhone 12 Pro',
-        description: 'Apple iPhone 12 Pro 512GB Graphite',
-        image: 'assets/demo/images/product/iphone.jpg',
-        price: '$1299.99',
-        category: 'Cell Phones'
-    },
-    {
-        id: '1003',
-        name: 'Samsung Galaxy S21 Ultra',
-        description: 'Samsung Galaxy S21 Ultra 128GB Phantom Black',
-        image: 'assets/demo/images/product/samsung.jpg',
-        price: '$1199.99',
-        category: 'Cell Phones'
-    },
-    {
-        id: '1004',
-        name: 'Samsung Galaxy S21 Ultra',
-        description: 'Samsung Galaxy S21 Ultra 256GB Phantom Black',
-        image: 'assets/demo/images/product/samsung.jpg',
-        price: '$1299.99',
-        category: 'Cell Phones'
-    },
-    {
-        id: '1005',
-        name: 'Samsung Galaxy S21 Ultra',
-        description: 'Samsung Galaxy S21 Ultra 512GB Phantom Black',
-        image: 'assets/demo/images/product/samsung.jpg',
-        price: '$1499.99',
-        category: 'Cell Phones'
-    },
-    {
-        id: '1006',
-        name: 'Apple MacBook Pro 13',
-        description: 'Apple MacBook Pro 13-inch 256GB Space Gray',
-        image: 'assets/demo/images/product/macbook.jpg',
-        price: '$1299.99',
-        category: 'Laptops'
-    }
-];
+const data: Data[] = Array.from({ length: 100 }, () => ({
+    id: faker.commerce.isbn(),
+    name: faker.commerce.productName(),
+    description: faker.commerce.productDescription(),
+    image: faker.image.url(),
+    price: faker.commerce.price(),
+    category: faker.commerce.department()
+}));
 
 const meta: Meta<DataView> = {
     title: 'PrimeNG/Data/DataView',
