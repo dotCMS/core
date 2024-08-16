@@ -15,7 +15,6 @@
     justify-content: space-between;
     padding: 0 $spacing-4 $spacing-4;
     width: 100%;
-    font-size: $font-size-md;
 
     input {
         width: 31.42rem;
@@ -60,4 +59,5 @@
     background-color: $white;
     box-shadow: $shadow-m;
     padding-top: $spacing-4;
+    font-size: $font-size-md;
 }
