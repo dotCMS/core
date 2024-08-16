@@ -18,8 +18,5 @@
     ],
     "compilerOptions": {
         "target": "es2020"
-    },
-    "angularCompilerOptions": {
-        "strictTemplates": false
     }
 }
