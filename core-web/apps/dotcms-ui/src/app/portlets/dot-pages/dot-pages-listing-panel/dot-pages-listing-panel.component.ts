@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
-import { ContextMenu as PrimeNGContextMenu } from 'primeng/contextmenu';
+import { ContextMenu } from 'primeng/contextmenu';
 import { Table } from 'primeng/table';
 
 import { filter, takeUntil } from 'rxjs/operators';
@@ -23,9 +23,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
 
-interface CustomContextMenu extends PrimeNGContextMenu {
-    show(event?: unknown): void;
-}
+
 
 @Component({
     selector: 'dot-pages-listing-panel',
@@ -36,7 +34,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     readonly store = inject(DotPageStore);
     readonly #dotMessageService = inject(DotMessageService);
 
-    @ViewChild('cm') cm: CustomContextMenu;
+    @ViewChild('cm') cm: ContextMenu;
     @ViewChild('table') table: Table;
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
@@ -60,7 +58,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
             )
             .subscribe((actionMenuDomId: string) => {
                 if (actionMenuDomId.includes('tableRow')) {
-                    this.cm.show();
+                    this.cm.show(new Event('click'));
                     this.domIdMenuAttached = actionMenuDomId;
                     // To hide when the menu is opened
                 } else this.cm.hide();
