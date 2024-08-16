@@ -38,17 +38,17 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
     ]
 })
 export class DotToolbarUserComponent implements OnInit {
-    readonly store = inject(DotToolbarUserStore);
+    readonly #store = inject(DotToolbarUserStore);
 
-    vm$ = this.store.vm$;
+    vm$ = this.#store.vm$;
     @ViewChild('menu') menu: Menu;
     showMask = signal<boolean>(false);
 
     ngOnInit(): void {
-        this.store.init();
+        this.#store.init();
     }
 
-    toogleMenu(event: Event): void {
+    toogleMenu(event: CustomEvent): void {
         this.menu.toggle(event);
         this.showMask.update((value) => !value);
     }
