@@ -5,7 +5,7 @@ import { RouterModule } from '@angular/router';
     selector: 'dot-edit-content',
     standalone: true,
     imports: [RouterModule],
-    templateUrl: './edit-content.shell.component.html',
+    template: '<router-outlet />',
     styleUrls: ['./edit-content.shell.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
