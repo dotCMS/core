@@ -2215,7 +2215,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		})).onFailure(e -> {
 			throw new DotRuntimeException(e);
 		});
-		Logger.info(this.getClass(), "permission inherited: " + Try.of(()->type.substring(type.lastIndexOf(".")+1, type.length())).getOrElse(type)  + " : "  + permissionKey + " -> " +finalNewReference);
+		if (Logger.isDebugEnabled(this.getClass())) {
+			Logger.debug(this.getClass(), "permission inherited: " + Try.of(() -> type.substring(type.lastIndexOf(".") + 1, type.length())).getOrElse(type) + " : " + permissionKey + " -> " + finalNewReference);
+		}
 
 		permissionCache.addToPermissionCache(permissionKey, permissionList);
 		return permissionList;
