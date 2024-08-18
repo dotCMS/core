@@ -13,7 +13,7 @@ describe('CategoriesService', () => {
         const inode = 'inode-identifier';
         spectator.service.getChildren(inode).subscribe();
         spectator.expectOne(
-            `${API_URL}/children?inode=${inode}&per_page=${ITEMS_PER_PAGE}&direction=ASC&parentList=true&showChildrenCount=true`,
+            `${API_URL}/children?inode=${inode}&per_page=${ITEMS_PER_PAGE}&direction=ASC&showChildrenCount=true`,
             HttpMethod.GET
         );
     });
@@ -23,7 +23,7 @@ describe('CategoriesService', () => {
         const filter = 'query';
         spectator.service.getChildren(inode, { filter }).subscribe();
         spectator.expectOne(
-            `${API_URL}/children?inode=${inode}&per_page=${ITEMS_PER_PAGE}&direction=ASC&parentList=true&filter=${filter}&allLevels=true`,
+            `${API_URL}/children?inode=${inode}&per_page=${ITEMS_PER_PAGE}&direction=ASC&filter=${filter}&allLevels=true`,
 
             HttpMethod.GET
         );

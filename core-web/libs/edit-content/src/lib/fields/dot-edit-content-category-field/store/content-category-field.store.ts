@@ -295,21 +295,27 @@ export const CategoryFieldStore = signalStore(
                         return categoryService.getChildren(categoryInode).pipe(
                             tapResponse({
                                 next: (newCategories) => {
-                                    const changes: Partial<CategoryFieldState> = {
-                                        categories: removeEmptyArrays([
-                                            ...store.categories(),
-                                            newCategories
-                                        ]),
-                                        state: ComponentStatus.LOADED
-                                    };
                                     if (event) {
-                                        changes.keyParentPath = [
-                                            ...store.keyParentPath(),
-                                            event.item.key
-                                        ];
+                                        patchState(store, {
+                                            categories: removeEmptyArrays([
+                                                ...store.categories(),
+                                                newCategories
+                                            ]),
+                                            state: ComponentStatus.LOADED,
+                                            keyParentPath: [
+                                                ...store.keyParentPath(),
+                                                event.item.key
+                                            ]
+                                        });
+                                    } else {
+                                        patchState(store, {
+                                            categories: removeEmptyArrays([
+                                                ...store.categories(),
+                                                newCategories
+                                            ]),
+                                            state: ComponentStatus.LOADED
+                                        });
                                     }
-
-                                    patchState(store, changes);
                                 },
                                 error: () => {
                                     // TODO: Add Error Handler

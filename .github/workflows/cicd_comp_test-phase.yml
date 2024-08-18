@@ -157,7 +157,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        collection_group: [ 'category-content', 'container', 'experiment', 'graphql', 'page', 'pp', 'template', 'workflow', 'default-split', 'default' ]
+        collection_group: [ 'ai', 'category-content', 'container', 'experiment', 'graphql', 'page', 'pp', 'template', 'workflow', 'default-split', 'default' ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -173,3 +173,4 @@ jobs:
           needs-docker-image: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          cleanup-runner: true

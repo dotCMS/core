@@ -82,7 +82,7 @@ jobs:
     name: CLI Build
     needs: [ initialize,test ]
     if: always() && !failure() && !cancelled()
-    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
       buildNativeImage: true
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
