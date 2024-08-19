@@ -362,7 +362,7 @@ jobs:
       - name: Checkout core
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: release-24.04.24_lts
 
       - uses: ./.github/actions/cleanup-runner
 
