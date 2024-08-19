@@ -1,0 +1,93 @@
+name: 'SDK Publish NPM Packages'
+description: 'Publish the dotCMS SDK libs on NPM registry.'
+inputs:
+  ref:
+    description: 'Branch to build from'
+    required: false
+    default: 'master'
+  npm-token:
+    description: 'NPM token'
+    required: true
+  npm-package-tag:
+    description: 'Package tag'
+    required: false
+    default: 'alpha'
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '19'
+  github-token:
+    description: 'GitHub Token'
+    required: true
+outputs:
+  npm-package-version:
+    description: 'SDK libs - NPM package version'
+    value: ${{ steps.next_version.outputs.next_version }}
+runs:
+  using: "composite"
+  steps:
+    - name: 'Checkout'
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+        token: ${{ inputs.github-token }}
+
+    - name: 'Set up Node.js'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: 'Get next version'
+      id: next_version
+      run: |
+        next_version=$(node -p "require('./core-web/libs/sdk/client/package.json').version")
+        echo "next_version=${next_version}" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: 'Valitate version'
+      run: |
+        echo "::group::Validating version"
+        publish=false
+        
+        CURRENT_VERSION=$(npm view '@dotcms/client' version)
+        NEXT_VERSION=${{ steps.next_version.outputs.next_version }}
+
+        base_number=$(echo "$CURRENT_VERSION" | grep -oE '[0-9]+$')
+        next_number=$((base_number + 1))
+        prefix=$(echo "$CURRENT_VERSION" | grep -oE '^[^-]+-[^-]+')
+
+        EXPECTED_VERSION="$prefix.$next_number"
+
+        if [ "$CURRENT_VERSION" == "$NEXT_VERSION" ]; then
+          echo "Version $NEXT_VERSION already exists in NPM registry"
+        elif [[ "$CURRENT_VERSION" != "$EXPECTED_VERSION" ]]; then
+          echo "Version $NEXT_VERSION is not the expected version."
+        else
+          publish=true
+        fi
+
+        echo "publish=$publish" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+      shell: bash
+
+    - name: 'Publishing sdk into NPM registry'
+      if: ${{ steps.next_version.outputs.publish == 'true' }}
+      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      env:
+        NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
+        NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
+        NPM_TAG: ${{ inputs.npm-package-tag }}
+      run: |
+        echo "::group::Publishing SDK packages"        
+        sdks=$(ls)
+        for sdk in $sdks; do
+          echo "Publishing SDK lib [${sdk}]"
+          cd $sdk && echo "$(pwd)"
+          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+          npm publish --access public --tag $NPM_TAG
+          npm dist-tag $NEXT_VERSION latest
+          cd ..
+        done
+        echo "::endgroup::"
+      shell: bash      
+      

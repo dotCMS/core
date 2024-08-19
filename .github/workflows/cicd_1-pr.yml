@@ -41,7 +41,7 @@ jobs:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
     with:
-      incremental: true
+      validation-level: 'full'
 
   # Build job - only runs if no artifacts were found during initialization
   build:
