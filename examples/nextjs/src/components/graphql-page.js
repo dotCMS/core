@@ -41,7 +41,7 @@ const componentsMap = {
 export function MyGraphQLPage({ pageAsset, nav, query }) {
     const { replace } = useRouter();
     const pathname = usePathname();
-
+    
     /**
      * If using experiments, `DotLayoutComponent` is `withExperiments(DotcmsLayout)`.
      * If not using experiments:

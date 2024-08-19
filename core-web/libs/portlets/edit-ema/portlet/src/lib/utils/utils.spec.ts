@@ -592,6 +592,7 @@ describe('utils functions', () => {
             expect(compareUrlPaths('/test', '/test2')).toBe(false);
         });
     });
+<<<<<<< HEAD
 
     describe('createFullURL', () => {
         const expectedURL =
@@ -633,4 +634,6 @@ describe('utils functions', () => {
             expect(result).toBe(`${expectedURL}${'&host_id=123'}`);
         });
     });
+=======
+>>>>>>> e29a7c3c19 (feat(UVE): Enable Editing Pages with Custom Query (#29407))
 });
