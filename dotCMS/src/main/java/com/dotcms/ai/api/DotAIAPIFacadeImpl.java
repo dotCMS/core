@@ -45,6 +45,9 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
                 && clazz.isInstance(initArguments[0]) ? clazz.cast(initArguments[0]) : null;
     }
 
+    /**
+     * Default provider for the ChatAPI
+     */
     public static class DefaultChatAPIProvider implements ChatAPIProvider {
 
         @Override
@@ -57,6 +60,9 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
         }
     }
 
+    /**
+     * Default provider for the ImageAPI
+     */
     public static class DefaultImageAPIProvider implements ImageAPIProvider {
 
         @Override
@@ -77,6 +83,9 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
         }
     }
 
+    /**
+     * Default provider for the CompletionsAPI
+     */
     private static class DefaultCompletionsAPIProvider implements CompletionsAPIProvider {
 
         @Override
@@ -89,6 +98,9 @@ public class DotAIAPIFacadeImpl implements DotAIAPI {
         }
     }
 
+    /**
+     * Default provider for the EmbeddingsAPI
+     */
     public static class DefaultEmbeddingsAPIProvider implements EmbeddingsAPIProvider {
 
         @Override
