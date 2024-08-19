@@ -70,8 +70,13 @@ export function getRunnableLink(url: string, currentPageUrlParams: DotPageToolUr
     if (languageId) pageParams.append('language_id', String(languageId));
 
     // Replace placeholders in the base URL with actual values and append query parameters if they exist
+    const requestHostUrl = requestHostName ? new URL(requestHostName) : null;
     const finalUrl = url
-        .replace(/{requestHostName}/g, requestHostName ?? '')
+        .replace(
+            /{requestHostName}/g,
+            requestHostUrl ? `${requestHostUrl.protocol}//${requestHostUrl.hostname}` : ''
+        )
+        .replace(/{domainName}/g, requestHostUrl ? requestHostUrl.hostname : '')
         .replace(/{currentUrl}/g, currentUrl ?? '')
         .replace(/{urlSearchParams}/g, pageParams.toString() ? `?${pageParams.toString()}` : '');
 
