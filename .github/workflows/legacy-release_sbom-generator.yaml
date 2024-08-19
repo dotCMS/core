@@ -25,7 +25,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: core
 
-      - name: Get dotCMS release version
+      - name: Get dotCMS release version and set the branch name based on formatted version
         id: get_version
         run: |
           if [ "${{ github.event_name }}" == "release" ]; then
