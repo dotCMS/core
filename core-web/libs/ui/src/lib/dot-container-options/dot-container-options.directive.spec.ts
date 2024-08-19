@@ -18,9 +18,11 @@ import { DotContainerOptionsDirective } from './dot-container-options.directive'
 @Component({
     selector: `dot-containers-dropdown-mock`,
     imports: [DropdownModule, DotContainerOptionsDirective],
-    template: `<p-dropdown dotContainerOptions />`,
-    standalone: true,
-  })
+    template: `
+        <p-dropdown dotContainerOptions />
+    `,
+    standalone: true
+})
 class MockContainersDropdownComponent {}
 
 const sortedContainersMock = containersMock

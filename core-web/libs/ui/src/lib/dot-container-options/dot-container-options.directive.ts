@@ -51,14 +51,14 @@ export class DotContainerOptionsDirective implements OnInit {
             this.control.filterBy = 'value.friendlyName,value.title';
 
             this.control.onFilter
-            .pipe(
-                takeUntilDestroyed(),
-                debounceTime(500),
-                switchMap((event: { filter: string }) => {
-                    return this.fetchContainerOptions(event.filter);
-                })
-            )
-            .subscribe((options) => this.setOptions(options));
+                .pipe(
+                    takeUntilDestroyed(),
+                    debounceTime(500),
+                    switchMap((event: { filter: string }) => {
+                        return this.fetchContainerOptions(event.filter);
+                    })
+                )
+                .subscribe((options) => this.setOptions(options));
         } else {
             console.warn('ContainerOptionsDirective is for use with PrimeNg Dropdown');
         }

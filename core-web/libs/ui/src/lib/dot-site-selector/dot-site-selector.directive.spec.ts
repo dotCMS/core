@@ -29,7 +29,7 @@ describe('DotSiteSelectorDirective', () => {
             DotEventsService,
             mockProvider(DotSiteService, {
                 getSites: jasmine.createSpy().and.returnValue(of(mockSites))
-            }),
+            })
         ]
     });
 
@@ -48,8 +48,6 @@ describe('DotSiteSelectorDirective', () => {
     });
 
     describe('Get Sites', () => {
-
-
         it('should get sites list', () => {
             spectator.detectChanges();
 
