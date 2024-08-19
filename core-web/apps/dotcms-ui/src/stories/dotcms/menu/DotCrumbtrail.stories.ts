@@ -5,9 +5,7 @@ import { DotCrumbtrailComponent } from '@components/dot-crumbtrail/dot-crumbtrai
 import { DotCrumbtrailModule } from '@components/dot-crumbtrail/dot-crumbtrail.module';
 import { DotCrumbtrailService } from '@components/dot-crumbtrail/service/dot-crumbtrail.service';
 
-type Args = DotCrumbtrailComponent;
-
-const meta: Meta<Args> = {
+const meta: Meta<DotCrumbtrailComponent> = {
     title: 'DotCMS/Menu/DotCrumbtrail',
     component: DotCrumbtrailComponent,
     decorators: [
@@ -60,6 +58,6 @@ const meta: Meta<Args> = {
 
 export default meta;
 
-type Story = StoryObj<Args>;
+type Story = StoryObj<DotCrumbtrailComponent>;
 
 export const Default: Story = {};
