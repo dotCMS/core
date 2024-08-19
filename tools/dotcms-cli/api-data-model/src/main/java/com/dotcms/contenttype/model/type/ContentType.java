@@ -21,15 +21,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -181,11 +182,7 @@ public abstract class ContentType {
         return Collections.emptyList();
     }
 
-    //System action mappings are rendered quite differently depending on what endpoint gets called
-    //if it's coming from an endpoint that returns a list of CT we get a simplified version
-    //if it's coming from an endpoint that returns only one CT then we get a full representation
-    //Again a different form of this attribute is used when sending the request to create or update the CT
-    //Therefore it's best if we keep a Generic high level representation of the field through JsonNode
+    @JsonDeserialize(using = SystemActionMappingsDeserializer.class)
     @JsonInclude(Include.NON_NULL)
     @Nullable
     public abstract JsonNode systemActionMappings();
