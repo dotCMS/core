@@ -174,7 +174,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.action.delete'),
                     command: (item) => this.removeConfirmation(item),
-                    icon: 'delete'
+                    icon: 'pi pi-trash'
                 },
                 shouldShow: (item) => !item.fixed && !item.defaultType
             }

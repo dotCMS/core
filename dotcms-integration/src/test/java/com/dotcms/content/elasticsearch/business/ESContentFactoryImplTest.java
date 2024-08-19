@@ -32,7 +32,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -512,8 +512,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     @Test
     public void test_findContentletByIdentifier() throws Exception {
     
-        final Language language1 = new LanguageDataGen().nextPersisted();
-        final Language language2 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
+        final Language language2 = new UniqueLanguageDataGen().nextPersisted();
         final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
         
 
@@ -561,7 +561,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     @Test
     public void test_cached_es_query_response() throws Exception {
         
-        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
         
@@ -604,7 +604,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_cached_es_query_different_responses_for_all_params() throws Exception {
-        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
         
@@ -715,8 +715,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final User user = APILocator.systemUser();
-        final Language language1 = new LanguageDataGen().nextPersisted();
-        final Language language2 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
+        final Language language2 = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
 
@@ -750,8 +750,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final User user = APILocator.systemUser();
-        final Language language1 = new LanguageDataGen().nextPersisted();
-        final Language language2 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
+        final Language language2 = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
 
@@ -789,8 +789,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final User user = APILocator.systemUser();
-        final Language language1 = new LanguageDataGen().nextPersisted();
-        final Language language2 = new LanguageDataGen().nextPersisted();
+        final Language language1 = new UniqueLanguageDataGen().nextPersisted();
+        final Language language2 = new UniqueLanguageDataGen().nextPersisted();
 
         final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
 

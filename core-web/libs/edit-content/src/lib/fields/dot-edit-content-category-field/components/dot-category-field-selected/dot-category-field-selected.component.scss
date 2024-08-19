@@ -3,7 +3,7 @@
 .category-list {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 0 $spacing-3 0 0;
 }
 
 .category-list__item {
@@ -26,7 +26,7 @@
 
 .category-list__title {
     color: $black;
-    font-size: $font-size-smd;
+    font-size: $font-size-sm;
     font-weight: $font-weight-medium-bold;
     flex-shrink: 0;
     white-space: nowrap;
@@ -40,7 +40,7 @@
 }
 
 .category-list__path-content {
-    font-size: $font-size-smd;
+    font-size: $font-size-sm;
     color: $color-palette-gray-700;
     font-weight: $font-weight-regular-bold;
     display: block;

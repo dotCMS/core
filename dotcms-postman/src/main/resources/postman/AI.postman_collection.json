@@ -1,11 +1,86 @@
 {
 	"info": {
-		"_postman_id": "0d99325f-2e9a-49d7-a096-6770084ffa49",
+		"_postman_id": "45540605-95ba-4b50-adba-254915172f48",
 		"name": "AI",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "11174695"
 	},
 	"item": [
+		{
+			"name": "pre",
+			"item": [
+				{
+					"name": "dotAI App",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"apiKey\": {\n    \"value\": \"some-api-key-1a2bc3\"\n  },\n  \"textModelNames\": {\n    \"value\": \"gpt-4o\"\n  },\n  \"textModelMaxTokens\": {\n    \"value\":\"16384\"\n  },\n  \"imageModelNames\": {\n    \"value\": \"dall-e-3\"\n  },\n  \"imageSize\": {\n    \"value\": \"1024x1024\"\n  },\n  \"imageModelMaxTokens\": {\n    \"value\":\"0\"\n  },\n  \"embeddingsModelNames\": {\n    \"value\": \"text-embedding-ada-002\"\n  },\n  \"embeddingsModelMaxTokens\": {\n    \"value\":\"8191\"\n  },\n  \"listenerIndexer\": {\n    \"value\": \"{\\\"default\\\":\\\"blog,dotcmsdocumentation,feature,ProductBriefs,news,report.file,builds,casestudy\\\",\\\"documentation\\\":\\\"dotcmsdocumentation\\\"}\"\n  }\n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/dotAI/SYSTEM_HOST",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"dotAI",
+								"SYSTEM_HOST"
+							]
+						},
+						"description": "This tests the endpoint that brings back one specific App/integration given the App-key followed by the site-id"
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Generative",
 			"item": [
@@ -1010,12 +1085,13 @@
 									"pm.test('Emebeddings are created', function () {",
 									"    pm.expect(jsonData.indexName, 'Index name should be \"default\"').equals('default');",
 									"    pm.expect(parseInt(jsonData.timeToEmbeddings.split('ms')[0]), 'Time to embeddings must be greater than zero').greaterThan(0);",
-									"    if (currentSeo.embedded) {",
-									"        pm.expect(jsonData.totalToEmbed, 'Total to embed is greater than zero').greaterThan(0);",
-									"    } else {",
-									"        pm.expect(jsonData.totalToEmbed, 'Total to embed is greater than zero').equals(0);",
-									"    }",
 									"});",
+									"",
+									"if (currentSeo.embedded) {",
+									"    pm.expect(jsonData.totalToEmbed, 'Total to embed is greater than zero').greaterThan(0);",
+									"} else {",
+									"    pm.expect(jsonData.totalToEmbed, 'Total to embed is zero').equals(0);",
+									"}",
 									"",
 									"seoIndex++;",
 									"pm.collectionVariables.set('seoIndex', seoIndex);",
@@ -1082,7 +1158,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"query\": \"+contentType:{{seoContentTypeVar}}\",\n    \"fields\": \"seo\"\n}",
+							"raw": "{\n    \"query\": \"+contentType:{{seoContentTypeVar}}\",\n    \"fields\": \"seo\",\n    \"model\": \"text-embedding-ada-002\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1245,7 +1321,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"prompt\": \"{{seoText}}\"\n}",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"model\": \"text-embedding-ada-002\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2724,7 +2800,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"query\": \"+contentType:{{seoContentTypeVar}}\",\n    \"fields\": \"seo\"\n}",
+							"raw": "{\n    \"query\": \"+contentType:{{seoContentTypeVar}}\",\n    \"model\": \"text-embedding-ada-002\",\n    \"fields\": \"seo\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2959,7 +3035,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1\n}",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"model\": \"text-embedding-ada-002\",\n    \"responseLengthTokens\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3035,7 +3111,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1,\n    \"stream\": true\n}",
+							"raw": "{\n    \"prompt\": \"{{seoText}}\",\n    \"responseLengthTokens\": 1,\n    \"model\": \"text-embedding-ada-002\",\n    \"stream\": true\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3064,7 +3140,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test('Status code should be ok 20', function () {",
+									"pm.test('Status code should be ok 200', function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
@@ -3269,14 +3345,14 @@
 									"    pm.expect(jsonData).to.have.property(\"apiUrl\");",
 									"    pm.expect(jsonData).to.have.property(\"availableModels\");",
 									"    pm.expect(jsonData.availableModels).to.be.an(\"array\");",
-									"    const expectedModels = [\"gpt-3.5-turbo\", \"gpt-3.5-turbo-16k\", \"gpt-4\", \"gpt-4-1106-preview\", \"gpt-4-turbo-preview\"];",
-									"    expectedModels.forEach(function(model) {",
-									"        pm.expect(jsonData.availableModels).to.include(model);",
-									"    });",
+									"    pm.expect(jsonData.availableModels.length).equals(3);",
+									"    pm.expect(jsonData.availableModels.find(model => model.type === 'TEXT')).is.not.undefined",
+									"    pm.expect(jsonData.availableModels.find(model => model.type === 'IMAGE')).is.not.undefined",
+									"    pm.expect(jsonData.availableModels.find(model => model.type === 'EMBEDDINGS')).is.not.undefined",
 									"    pm.expect(jsonData[\"com.dotcms.ai.completion.default.temperature\"]).to.equal(\"1\");",
 									"    pm.expect(jsonData[\"com.dotcms.ai.debug.logging\"]).to.equal(\"false\");",
-									"    pm.expect(jsonData[\"com.dotcms.ai.embeddings.model\"]).to.equal(\"text-embedding-ada-002\");",
-									"    pm.expect(jsonData.imageModel).to.equal(\"dall-e-3\");",
+									"    pm.expect(jsonData.embeddingsModelNames).to.equal(\"text-embedding-ada-002\");",
+									"    pm.expect(jsonData.imageModelNames).to.equal(\"dall-e-3\");",
 									"    pm.expect(jsonData.textPrompt).to.include(\"Descriptive writing style\");",
 									"    pm.expect(jsonData.rolePrompt).to.include(\"dotCMSbot\");",
 									"    pm.expect(jsonData.apiImageUrl).to.match(/^https?:\\/\\/.+/);",
@@ -3376,6 +3452,10 @@
 		},
 		{
 			"key": "seoText",
+			"value": ""
+		},
+		{
+			"key": "key",
 			"value": ""
 		}
 	]

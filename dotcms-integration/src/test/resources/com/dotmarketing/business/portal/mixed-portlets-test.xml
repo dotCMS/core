@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE portlets>
+
+<portlets>
+    <portlet id="EXT_HELLO_WORLD" narrow="true"/>
+    <portlet id="EXT_STRUTS_HELLO_WORLD" struts-path="ext/strutshello" narrow="true"/>
+    <!-- Add one valid portlet to check that others are ignored -->
+    <portlet>
+        <portlet-name>files-legacy</portlet-name>
+        <display-name>File Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/files/view_files</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+    <portlet id="EXT_JSP_HELLO_WORLD" narrow="true"/>
+</portlets>

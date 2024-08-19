@@ -24,6 +24,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import org.xml.sax.SAXException;
 
 /**
  * Implementation class for the {@link PortletFactory} interface. This class uses JAXB to map XML
@@ -39,6 +42,9 @@ import java.util.*;
 public class PortletFactoryImpl extends PrincipalBean implements PortletFactory {
 
   private final String[] systemXmlFiles;
+
+
+
 
   /**
    * Creates an instance of this Factory using the specified XML files as sources of Portlet
@@ -68,7 +74,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
    * @throws IOException   An error occurred while reading the XML file.
    * @throws JAXBException An error occurred while mapping the XML file into Java objects.
    */
-  private Map<String, Portlet> xmlToPortlets(final String pathToXmlFile) throws IOException, JAXBException {
+  private Map<String, Portlet> xmlToPortlets(final String pathToXmlFile) throws IOException, ParserConfigurationException, SAXException {
     if (UtilMethods.isNotSet(pathToXmlFile)) {
       return new HashMap<>();
     }
@@ -88,29 +94,40 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
    *
    * @throws JAXBException An error occurred while mapping the XML file into Java objects.
    */
-  private Map<String, Portlet> xmlToPortlets(final InputStream fileStream) throws IOException {
-    if (fileStream == null) {
-      return new HashMap<>();
-    }
+  /**
+   * Takes the Input Stream of an XML file and extracts the Portlet definitions from it into
+   * Portlet objects.
+   *
+   * @param fileStream The {@link InputStream} of the XML file to read.
+   *
+   * @return A map with the {@link Portlet} definitions.
+   *
+   * @throws JAXBException An error occurred while mapping the XML file into Java objects.
+   */
+  public Map<String, Portlet> xmlToPortlets(InputStream fileStream) throws IOException, ParserConfigurationException, SAXException {
     final Map<String, Portlet> portlets = new HashMap<>();
-    final PortletList portletList = PortletList.builder().fromXml(fileStream);
-    int counter = 1;
-    if (UtilMethods.isSet(portletList) && UtilMethods.isSet(portletList.getPortlets())) {
-      for (final DotPortlet dotPortlets : portletList.getPortlets()) {
-        portlets.put(dotPortlets.getPortletId(), dotPortlets.toPortlet());
-        Logger.debug(this, String.format("%d. Loading portlet ID '%s'", counter, dotPortlets.getPortletId()));
-        counter++;
-      }
+
+    if (fileStream == null) {
+      return portlets;
     }
-    return portlets;
+
+    SAXParser saxParser = ThreadLocalSaxParserFactory.getSaxParser();
+    PortletSaxHandler<Portlet> handler = new PortletSaxHandler<>(this::xmlToPortlet);
+    saxParser.parse(fileStream, handler);
+    return handler.getValueMap();
   }
+
+
 
   @Override
   @VisibleForTesting
-  public Optional<Portlet> xmlToPortlet(final String xml) throws IOException {
-    final DotPortlet portlet = DotPortlet.builder().fromXml(xml);
-    if (portlet.getPortletId() == null || portlet.getPortletClass() == null) {
-      return Optional.empty();
+  public Optional<Portlet> xmlToPortlet(final String xml){
+    final DotPortlet portlet;
+    try {
+        portlet = DotPortlet.builder().fromXml(xml);
+    } catch (IOException e) {
+       Logger.debug(PortletFactoryImpl.class,"Not a DotPortlet skipping "+xml);
+       return Optional.empty();
     }
     return Optional.of(portlet.toPortlet());
   }

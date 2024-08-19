@@ -49,7 +49,6 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
 
             Logger.debug(this, ()-> "Creating collection field for type: " + type.variable());
             fieldDefinitions.add(createCollectionField(type, TypeUtil.collectionizedName(type.variable())));
-            fieldDefinitions.add(createCollectionField(type, TypeUtil.oldCollectionizedName(type.variable())));
         });
 
         // Each BaseType as query'able collection field

@@ -73,8 +73,8 @@ describe('DotCategoryFieldSearchListComponent', () => {
         expect(rows.length).toBe(CATEGORY_MOCK_TRANSFORMED.length);
     });
 
-    it('should render `dot-empty-container` with `empty` configuration ', () => {
-        const expectedConfig = CATEGORY_FIELD_EMPTY_MESSAGES.empty;
+    it('should render `dot-empty-container` with `no results` configuration ', () => {
+        const expectedConfig = CATEGORY_FIELD_EMPTY_MESSAGES.noResults;
         spectator.setInput('status', ComponentStatus.LOADED);
         spectator.setInput('categories', []);
         spectator.detectChanges();

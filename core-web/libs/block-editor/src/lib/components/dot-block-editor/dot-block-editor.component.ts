@@ -83,6 +83,8 @@ import {
     ]
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
+    readonly #injector = inject(Injector);
+
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
 
@@ -105,7 +107,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
-        ['dotContent', ContentletBlock(this.injector)],
+        ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
         ['table', DotTableExtension()],
@@ -117,7 +119,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private isAIPluginInstalled$: Observable<boolean>;
 
     constructor(
-        private readonly injector: Injector,
         private readonly viewContainerRef: ViewContainerRef,
         private readonly dotMarketingConfigService: DotMarketingConfigService,
         private readonly dotAiService: DotAiService
@@ -444,14 +445,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             BubbleLinkFormExtension(this.viewContainerRef, this.languageId),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
-            DotFloatingButton(this.injector, this.viewContainerRef),
+            DotFloatingButton(this.#injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
             TableRow,
             FreezeScroll,
             CharacterCount,
-            AssetUploader(this.injector, this.viewContainerRef)
+            AssetUploader(this.#injector, this.viewContainerRef)
         ];
 
         if (isAIPluginInstalled) {

@@ -1,6 +1,7 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -13,7 +14,54 @@ import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
 import { SearchableDropdownComponent } from '.';
 
-export default {
+const data = [
+    {
+        label: 'This is a really long option to test the power of the ellipsis in this component',
+        value: 'option1'
+    },
+    {
+        label: 'Hola Mundo',
+        value: 'option2'
+    },
+    {
+        label: 'Freddy',
+        value: 'option3'
+    },
+    {
+        label: 'DotCMS',
+        value: 'option4'
+    },
+    {
+        label: 'Hybrid CMS',
+        value: 'option5'
+    },
+    {
+        label: 'Trying a really long long long option to see what happen',
+        value: 'option6'
+    },
+    {
+        label: 'Option',
+        value: 'option'
+    },
+    {
+        label: 'Be here now',
+        value: 'beherenow'
+    },
+    {
+        label: 'And now what?',
+        value: 'nowwhat'
+    },
+    {
+        label: 'More and more',
+        value: 'more'
+    },
+    {
+        label: 'And the last one',
+        value: 'lastone'
+    }
+];
+
+const meta: Meta<SearchableDropdownComponent> = {
     title: 'DotCMS/Searchable Dropdown',
     component: SearchableDropdownComponent,
     parameters: {
@@ -36,7 +84,8 @@ export default {
                 FormsModule,
                 InputTextModule,
                 OverlayPanelModule,
-                DotMessagePipe
+                DotMessagePipe,
+                HttpClientModule
             ]
         })
     ],
@@ -52,104 +101,40 @@ export default {
             }
         }
     },
+    render: (args) => ({
+        props: args,
+        template: `<dot-searchable-dropdown ${argsToTemplate(args)} />`
+    })
+};
+export default meta;
+
+type Story = StoryObj<SearchableDropdownComponent>;
+
+export const Default: Story = {
     args: {
         rows: 4,
         pageLinkSize: 2,
-        optionsWidth: '300',
-        paginate: () => {
-            //
-        },
-        showOverlayHandler: () => {
-            //
-        },
-        hideOverlayHandler: () => {
-            //
-        },
-        handleClick: () => {
-            //
-        },
-        data: [
-            {
-                label: 'This is a really long option to test the power of the ellipsis in this component',
-                value: 'option1'
-            },
-            {
-                label: 'Hola Mundo',
-                value: 'option2'
-            },
-            {
-                label: 'Freddy',
-                value: 'option3'
-            },
-            {
-                label: 'DotCMS',
-                value: 'option4'
-            },
-            {
-                label: 'Hybrid CMS',
-                value: 'option5'
-            },
-            {
-                label: 'Trying a really long long long option to see what happen',
-                value: 'option6'
-            },
-            {
-                label: 'Option',
-                value: 'option'
-            },
-            {
-                label: 'Be here now',
-                value: 'beherenow'
-            },
-            {
-                label: 'And now what?',
-                value: 'nowwhat'
-            },
-            {
-                label: 'More and more',
-                value: 'more'
-            },
-            {
-                label: 'And the last one',
-                value: 'lastone'
-            }
-        ],
         placeholder: 'Select something',
         labelPropertyName: 'label',
-        width: '300px'
+        width: '300px',
+        cssClass: '',
+        data: [...data]
     }
-} as Meta;
-
-const getTemplate = (extraAttr = '') => {
-    const template = `
-        <dot-searchable-dropdown
-            ${extraAttr}
-            [rows]="rows"
-            [pageLinkSize]="pageLinkSize"
-            [data]="data"
-            [width]="width"
-            [labelPropertyName]="labelPropertyName"
-            [placeholder]="placeholder"
-        >
-        </dot-searchable-dropdown>
-    `;
-
-    return template;
 };
 
-export const Primary: Story<SearchableDropdownComponent> = (props: SearchableDropdownComponent) => {
-    return {
-        moduleMetadata: {
-            declarations: [SearchableDropdownComponent]
-        },
-        component: SearchableDropdownComponent,
-        props,
-        template: getTemplate()
-    };
+export const Secondary: Story = {
+    args: {
+        ...Default.args,
+        cssClass: 'd-secondary'
+    },
+    render: (args) => ({
+        props: args,
+        template: `
+        <ng-template let-data="data" #rowTemplate>
+            <div class="w-full" *ngFor="let item of data">
+                <p>{{ item.label }} --</p>
+            </div>
+        </ng-template>
+        <dot-searchable-dropdown [externalItemListTemplate]="rowTemplate" ${argsToTemplate(args)} />`
+    })
 };
-
-export const Secondary = (props: SearchableDropdownComponent) => ({
-    component: SearchableDropdownComponent,
-    props,
-    template: getTemplate(`class="d-secondary"`)
-});

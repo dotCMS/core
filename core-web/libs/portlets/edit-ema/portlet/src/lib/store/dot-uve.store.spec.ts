@@ -18,7 +18,7 @@ import {
     DotLicenseService,
     DotMessageService
 } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
+import { CurrentUser, LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
@@ -69,7 +69,22 @@ const buildPageAPIResponseFromMock =
                 pageURI: url
             }
         });
-
+const mockCurrentUser: CurrentUser = {
+    email: 'admin@dotcms.com',
+    givenName: 'Admin',
+    loginAs: true,
+    roleId: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+    surname: 'User',
+    userId: 'dotcms.org.1'
+};
+const mockOtherUser: CurrentUser = {
+    email: 'admin2@dotcms.com',
+    givenName: 'Admin2',
+    loginAs: true,
+    roleId: '73ec980e-d74f-4cec-a4d0-e319061e20b9',
+    surname: 'User',
+    userId: 'dotcms.org.2808'
+};
 describe('UVEStore', () => {
     let spectator: SpectatorService<InstanceType<typeof UVEStore>>;
     let store: InstanceType<typeof UVEStore>;
@@ -87,6 +102,9 @@ describe('UVEStore', () => {
                 provide: DotPageApiService,
                 useValue: {
                     get() {
+                        return of({});
+                    },
+                    getClientPage() {
                         return of({});
                     },
                     save: jest.fn()
@@ -566,10 +584,10 @@ describe('UVEStore', () => {
                 describe('$toolbarProps', () => {
                     it('should return the base info', () => {
                         expect(store.$toolbarProps()).toEqual({
-                            apiUrl: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
+                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
                             bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                             copyUrl:
-                                'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT',
+                                'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl',
                             currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
                             deviceSelector: {
                                 apiLink:
@@ -644,22 +662,73 @@ describe('UVEStore', () => {
                     });
 
                     describe('unlockButton', () => {
-                        it('should have unlockButton if the page is locked and the user can lock the page', () => {
+                        it('should display unlockButton if the page is locked by another user and the current user can lock the page', () => {
                             patchState(store, {
                                 pageAPIResponse: {
                                     ...MOCK_RESPONSE_HEADLESS,
                                     page: {
                                         ...MOCK_RESPONSE_HEADLESS.page,
                                         locked: true,
+                                        lockedBy: mockOtherUser.userId,
                                         canLock: true
                                     }
-                                }
+                                },
+                                currentUser: mockCurrentUser
                             });
 
                             expect(store.$toolbarProps().unlockButton).toEqual({
                                 inode: '123-i',
                                 loading: false
                             });
+                        });
+
+                        it('should not display unlockButton if the page is locked by the current user', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: mockCurrentUser.userId,
+                                        canLock: true
+                                    }
+                                },
+                                currentUser: mockCurrentUser
+                            });
+
+                            expect(store.$toolbarProps().unlockButton).toBeNull();
+                        });
+
+                        it('should not display unlockButton if the page is not locked', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: false,
+                                        canLock: true
+                                    }
+                                },
+                                currentUser: mockCurrentUser
+                            });
+
+                            expect(store.$toolbarProps().unlockButton).toBeNull();
+                        });
+
+                        it('should not display unlockButton if the user cannot lock the page', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        canLock: false
+                                    }
+                                },
+                                currentUser: mockCurrentUser
+                            });
+
+                            expect(store.$toolbarProps().unlockButton).toBeNull();
                         });
                     });
 
@@ -694,6 +763,40 @@ describe('UVEStore', () => {
                             });
 
                             expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                        });
+                        it('should have shouldShowInfoDisplay as true if the page is locked by another user', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: mockOtherUser.userId
+                                    }
+                                },
+                                currentUser: mockCurrentUser
+                            });
+
+                            expect(store.$toolbarProps().showInfoDisplay).toBe(true);
+                        });
+
+                        it('should have shouldShowInfoDisplay as false if the page is locked by the current user and other conditions are not met', () => {
+                            patchState(store, {
+                                pageAPIResponse: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: mockCurrentUser.userId
+                                    }
+                                },
+                                currentUser: mockCurrentUser,
+                                canEditPage: true,
+                                device: null,
+                                socialMedia: null
+                            });
+
+                            expect(store.$toolbarProps().showInfoDisplay).toBe(false);
                         });
                     });
                 });
@@ -899,8 +1002,8 @@ describe('UVEStore', () => {
 
                         // It's impossible to get a VTL when we are in Headless
                         // but I just want to check the state is being patched
-                        const getSpy = jest
-                            .spyOn(dotPageApiService, 'get')
+                        const getClientPageSpy = jest
+                            .spyOn(dotPageApiService, 'getClientPage')
                             .mockImplementation(() => of(MOCK_RESPONSE_VTL));
 
                         const payload = {
@@ -913,7 +1016,10 @@ describe('UVEStore', () => {
 
                         expect(saveSpy).toHaveBeenCalledWith(payload);
 
-                        expect(getSpy).toHaveBeenCalledWith(store.params());
+                        expect(getClientPageSpy).toHaveBeenCalledWith(
+                            store.params(),
+                            store.clientRequestProps()
+                        );
 
                         expect(store.status()).toBe(UVE_STATUS.LOADED);
                         expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
@@ -942,8 +1048,8 @@ describe('UVEStore', () => {
                     expect(store.$reloadEditorContent()).toEqual({
                         code: MOCK_RESPONSE_HEADLESS.page.rendered,
                         isTraditionalPage: false,
-                        isEditState: true,
-                        isEnterprise: true
+                        enableInlineEdit: true,
+                        isClientReady: false
                     });
                 });
                 it('should return the expected data for VTL', () => {
@@ -956,8 +1062,8 @@ describe('UVEStore', () => {
                     expect(store.$reloadEditorContent()).toEqual({
                         code: MOCK_RESPONSE_VTL.page.rendered,
                         isTraditionalPage: true,
-                        isEditState: true,
-                        isEnterprise: true
+                        enableInlineEdit: true,
+                        isClientReady: false
                     });
                 });
             });
@@ -981,7 +1087,7 @@ describe('UVEStore', () => {
                         showDialogs: true,
                         showEditorContent: true,
                         iframe: {
-                            opacity: '1',
+                            opacity: '0.5',
                             pointerEvents: 'auto',
                             src: 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
                             wrapper: null
@@ -996,6 +1102,12 @@ describe('UVEStore', () => {
                         },
                         seoResults: null
                     });
+                });
+
+                it('should set iframe opacity to 1 when client is Ready', () => {
+                    store.setIsClientReady(true);
+
+                    expect(store.$editorProps().iframe.opacity).toBe('1');
                 });
 
                 describe('showDialogs', () => {
@@ -1255,6 +1367,13 @@ describe('UVEStore', () => {
                     store.updateEditorScrollState();
 
                     expect(store.state()).toEqual(EDITOR_STATE.OUT_OF_BOUNDS);
+                });
+                it('should set the contentletArea to null when we are scrolling', () => {
+                    store.setEditorState(EDITOR_STATE.SCROLLING);
+
+                    store.updateEditorScrollState();
+
+                    expect(store.contentletArea()).toBe(null);
                 });
             });
 

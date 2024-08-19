@@ -137,6 +137,9 @@ describe('DotEmaShellComponent', () => {
                     get({ language_id }) {
                         return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
                     },
+                    getClientPage({ language_id }, _clientConfig) {
+                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id];
+                    },
                     save() {
                         return of({});
                     },
@@ -663,6 +666,21 @@ describe('DotEmaShellComponent', () => {
 
         describe('language checking', () => {
             it('should not trigger the confirmation service if the page is translated to the current language', () => {
+                spectator.detectChanges();
+
+                expect(confirmationServiceSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not trigger the confirmation service if the page dont have current language', () => {
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 3,
+                        url: 'index',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    }
+                });
+
                 spectator.detectChanges();
 
                 expect(confirmationServiceSpy).not.toHaveBeenCalled();

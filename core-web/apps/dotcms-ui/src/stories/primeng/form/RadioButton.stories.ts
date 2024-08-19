@@ -1,4 +1,4 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -21,7 +21,13 @@ const cities = [
     { name: 'Indianapolis', code: 'IND' }
 ];
 
-export default {
+const RadioButtonTemplate = `
+<div class="flex flex-column gap-2">
+<p-radioButton *ngFor="let city of cities" name="city" [value]="city" [(ngModel)]="selectedCity" [inputId]="city.code" [label]="city.name" [disabled]="disabled" [class]="invalid ? 'ng-dirty ng-invalid' : ''" />
+</div>
+`;
+
+const meta: Meta = {
     title: 'PrimeNG/Form/RadioButton',
     parameters: {
         docs: {
@@ -43,7 +49,7 @@ export default {
     },
     argTypes: {
         cities: {
-            control: 'array',
+            control: 'object',
             description: 'List of cities to display as radio buttons'
         },
         disabled: {
@@ -54,20 +60,14 @@ export default {
             control: 'boolean',
             description: 'Whether the radio buttons are invalid'
         }
-    }
-} as Meta;
-
-const RadioButtonTemplate = `
-<div class="flex flex-column gap-2">
-<p-radioButton *ngFor="let city of cities" name="city" [value]="city" [(ngModel)]="selectedCity" [inputId]="city.code" [label]="city.name" [disabled]="disabled" [class]="invalid ? 'ng-dirty ng-invalid' : ''"></p-radioButton>
-</div>
-`;
-
-export const Main: Story<{ selectedValue: string }> = (props: { selectedValue: string }) => {
-    const template = RadioButtonTemplate;
-
-    return {
-        props,
-        template
-    };
+    },
+    render: (args) => ({
+        props: args,
+        template: RadioButtonTemplate
+    })
 };
+export default meta;
+
+type Story = StoryObj;
+
+export const Basic: Story = {};

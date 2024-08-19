@@ -1,11 +1,19 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import org.apache.velocity.tools.view.context.ViewContext;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,7 +29,17 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * Integration tests for the \EmbeddingsTool\ class. This test class verifies the functionality
+ * of methods in \EmbeddingsTool\ such as counting tokens, generating embeddings, and
+ * retrieving index counts. It uses mock objects to simulate the \ViewContext\ and
+ * \AppConfig\ dependencies.
+ *
+ * @author vico
+ */
 public class EmbeddingsToolTest {
+
+    private static WireMockServer wireMockServer;
 
     private Host host;
     private AppConfig appConfig;
@@ -30,15 +48,25 @@ public class EmbeddingsToolTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        IPUtils.disabledIpPrivateSubnet(true);
+        wireMockServer = AiTest.prepareWireMock();
+        AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
     }
 
     @Before
-    public void before() {
+    public void before() throws DotDataException, DotSecurityException {
         final ViewContext viewContext = mock(ViewContext.class);
         when(viewContext.getRequest()).thenReturn(mock(HttpServletRequest.class));
         host = new SiteDataGen().nextPersisted();
-        appConfig = prepareAppConfig();
+        AiTest.aiAppSecrets(wireMockServer, host);
+        appConfig = ConfigService.INSTANCE.config(host);
         embeddingsTool = prepareEmbeddingsTool(viewContext);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        wireMockServer.stop();
+        IPUtils.disabledIpPrivateSubnet(false);
     }
 
     /**
@@ -76,6 +104,11 @@ public class EmbeddingsToolTest {
      */
     @Test
     public void test_getIndexCount() {
+        final String prompt = "Explain the meaning of life.";
+        EmbeddingsDTODataGen.persistEmbeddings(prompt, null, "default");
+
+        embeddingsTool.generateEmbeddings(prompt);
+
         final Map<String, Map<String, Object>> embeddings = embeddingsTool.getIndexCount();
         assertNotNull(embeddings);
         assertEmbeddings(embeddings, "default");
@@ -104,12 +137,6 @@ public class EmbeddingsToolTest {
                 return appConfig;
             }
         };
-    }
-
-    private AppConfig prepareAppConfig() {
-        final AppConfig appConfig = mock(AppConfig.class);
-        when(appConfig.getModel()).thenReturn("gpt-3.5-turbo-16k");
-        return appConfig;
     }
 
 }

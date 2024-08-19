@@ -1,30 +1,9 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InputText, InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
-
-export default {
-    title: 'PrimeNG/Form/InputText/Default',
-    component: InputText,
-    parameters: {
-        docs: {
-            description: {
-                component:
-                    'InputText renders a text field to enter data.: https://primeng.org/inputtext'
-            }
-        }
-    },
-    decorators: [
-        moduleMetadata({
-            imports: [InputTextModule, BrowserAnimationsModule, PasswordModule]
-        })
-    ],
-    args: {
-        checked: false
-    }
-} as Meta;
 
 const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
 <div class="flex flex-column gap-2" style="width:200px;">
@@ -124,21 +103,35 @@ const InputTextTemplate = `<div class="flex flex-column gap-3 mb-2">
 </div>
 `;
 
-const Template: Story<InputText> = (props: InputText) => {
-    const template = InputTextTemplate;
-
-    return {
-        props,
-        template
-    };
-};
-
-export const Basic: Story = Template.bind({});
-
-Basic.parameters = {
-    docs: {
-        source: {
-            code: InputTextTemplate
+const meta: Meta = {
+    title: 'PrimeNG/Form/InputText/Default',
+    component: InputText,
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'InputText renders a text field to enter data.: https://primeng.org/inputtext'
+            },
+            source: {
+                code: InputTextTemplate
+            }
         }
-    }
+    },
+    decorators: [
+        moduleMetadata({
+            imports: [InputTextModule, BrowserAnimationsModule, PasswordModule]
+        })
+    ],
+    args: {
+        checked: false
+    },
+    render: (args) => ({
+        props: args,
+        template: InputTextTemplate
+    })
 };
+export default meta;
+
+type Story = StoryObj;
+
+export const Basic: Story = {};

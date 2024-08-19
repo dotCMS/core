@@ -50,7 +50,13 @@ export enum CUSTOMER_ACTIONS {
      * Tell the editor to send the page info to iframe
      */
     GET_PAGE_DATA = 'get-page-data',
-
+    /**
+     * Tell the editor an user send a graphql query
+     */
+    CLIENT_READY = 'client-ready',
+    /**
+     * Tell the editor to do nothing
+     */
     NOOP = 'noop'
 }
 

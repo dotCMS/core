@@ -89,7 +89,7 @@ Styles for commons fields along the backend
         border-radius: $border-radius-xs;
         border: $field-normal-border;
         display: inline-block;
-        font-size: 12px;
+        font-size: $font-size-xs;
         margin: 2px 5px 2px 0px;
         padding: (calc($spacing-1 / 2)) $spacing-1 (calc($spacing-1 / 2)) (calc($spacing-1 / 2));
         position: relative;
@@ -120,7 +120,7 @@ Styles for commons fields along the backend
 
 .lineDividerTitle {
     color: $color-palette-gray-700;
-    font-size: $font-size-xl;
+    font-size: $font-size-lg;
     border-bottom: 1px solid $color-palette-gray-400;
     padding-bottom: $spacing-1 * 2;
     margin: $spacing-1 * 6 0 $spacing-1 * 3;
@@ -263,12 +263,17 @@ $key-val-width: 500px;
     border-radius: $border-radius-sm;
     color: $color-palette-primary;
     font-size: $font-size-sm;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: $spacing-0;
+    line-height: 0.374rem;
+    text-align: center;
     text-decoration: none;
     border: 1px solid rgba(0, 0, 0, 0.1);
+    width: auto;
+    max-width: 112px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding-left: calc($spacing-1 + $font-size-sm);
+    position: relative;
 
     &.persona {
         &:before {
@@ -279,10 +284,13 @@ $key-val-width: 500px;
     }
 
     &:after {
+        position: absolute;
+        left: $spacing-1;
         color: $color-palette-primary;
         content: "\2715";
         font-size: $font-size-sm;
         text-align: center;
+        line-height: 0.374rem;
     }
 
     &:hover {
