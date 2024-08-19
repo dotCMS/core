@@ -58,6 +58,7 @@ public class AppConfig implements Serializable {
         }
 
         final AIAppUtil aiAppUtil = AIAppUtil.get();
+<<<<<<< HEAD
         apiKey = aiAppUtil.discoverSecret(secrets, AppKeys.API_KEY);
         apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL, AI_API_URL_KEY);
         apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL, AI_IMAGE_API_URL_KEY);
@@ -72,6 +73,21 @@ public class AppConfig implements Serializable {
                             aiAppUtil.createEmbeddingsModel(secrets)));
         }
 
+=======
+
+        AIModels.get().loadModels(
+                this.host,
+                List.of(
+                        aiAppUtil.createTextModel(secrets),
+                        aiAppUtil.createImageModel(secrets),
+                        aiAppUtil.createEmbeddingsModel(secrets)));
+
+        apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL);
+        apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL);
+        apiEmbeddingsUrl = discoverEmbeddingsApiUrl(secrets);
+        apiKey = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
+
+>>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
         model = resolveModel(AIModelType.TEXT);
         imageModel = resolveModel(AIModelType.IMAGE);
         embeddingsModel = resolveModel(AIModelType.EMBEDDINGS);
@@ -84,6 +100,7 @@ public class AppConfig implements Serializable {
 
         configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+<<<<<<< HEAD
         Logger.debug(this, this::toString);
     }
 
@@ -114,6 +131,20 @@ public class AppConfig implements Serializable {
 
     public static void setSystemHostConfig(final AppConfig systemHostConfig) {
         AppConfig.SYSTEM_HOST_CONFIG.set(systemHostConfig);
+=======
+        Logger.debug(getClass(), () -> "apiKey: " + apiKey);
+        Logger.debug(getClass(), () -> "apiUrl: " + apiUrl);
+        Logger.debug(getClass(), () -> "apiImageUrl: " + apiImageUrl);
+        Logger.debug(getClass(), () -> "embeddingsUrl: " + apiEmbeddingsUrl);
+        Logger.debug(getClass(), () -> "rolePrompt: " + rolePrompt);
+        Logger.debug(getClass(), () -> "textPrompt: " + textPrompt);
+        Logger.debug(getClass(), () -> "model: " + model);
+        Logger.debug(getClass(), () -> "imagePrompt: " + imagePrompt);
+        Logger.debug(getClass(), () -> "imageModel: " + imageModel);
+        Logger.debug(getClass(), () -> "imageSize: " + imageSize);
+        Logger.debug(getClass(), () -> "embeddingsModel: " + embeddingsModel);
+        Logger.debug(getClass(), () -> "listerIndexer: " + listenerIndexer);
+>>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
     }
 
     /**
@@ -325,6 +356,7 @@ public class AppConfig implements Serializable {
         return Stream.of(apiUrl, apiImageUrl, apiEmbeddingsUrl, apiKey).allMatch(StringUtils::isNotBlank);
     }
 
+<<<<<<< HEAD
     @Override
     public String toString() {
         return "AppConfig{\n" +
@@ -342,6 +374,17 @@ public class AppConfig implements Serializable {
                 "  imageSize='" + imageSize + "',\n" +
                 "  listenerIndexer='" + listenerIndexer + "'\n" +
                 '}';
+=======
+    public boolean isEnabled() {
+        return StringUtils.isNotBlank(apiKey);
+    }
+
+    private String discoverEmbeddingsApiUrl(final Map<String, Secret> secrets) {
+        final String url = AIAppUtil.get().discoverEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL);
+        return StringUtils.isBlank(url)
+                ? Config.getStringProperty(OPEN_AI_EMBEDDINGS_URL_KEY, "https://api.openai.com/v1/embeddings")
+                : url;
+>>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
     }
 
 }

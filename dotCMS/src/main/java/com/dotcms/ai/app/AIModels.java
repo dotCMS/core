@@ -135,6 +135,7 @@ public class AIModels {
      *
      * @param host the host for which the models are being reset
      */
+<<<<<<< HEAD
     public void resetModels(final String host) {
         Optional.ofNullable(internalModels.get(host)).ifPresent(models -> {
             models.clear();
@@ -145,6 +146,20 @@ public class AIModels {
                 .filter(key -> key._1.equals(host))
                 .collect(Collectors.toSet())
                 .forEach(modelsByName::remove);
+=======
+    public void resetModels(final Host host) {
+        final String hostKey = host.getHostname();
+        Optional.ofNullable(internalModels.get(hostKey)).ifPresent(models -> {
+            models.clear();
+            internalModels.remove(hostKey);
+        });
+        modelsByName.keySet()
+                .stream()
+                .filter(key -> key._1.equals(hostKey))
+                .collect(Collectors.toSet())
+                .forEach(modelsByName::remove);
+        ConfigService.INSTANCE.config(host);
+>>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
     }
 
     /**
@@ -161,6 +176,7 @@ public class AIModels {
 
         final AppConfig appConfig = appConfigSupplier.get();
         if (!appConfig.isEnabled()) {
+<<<<<<< HEAD
             AppConfig.debugLogger(getClass(), () -> "dotAI is not enabled, returning empty list of supported models");
             throw new DotRuntimeException("App dotAI config without API urls or API key");
         }
@@ -177,6 +193,21 @@ public class AIModels {
                 .map(OpenAIModel::getId)
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
+=======
+            Logger.debug(this, "OpenAI is not enabled, returning empty list of supported models");
+            return List.of();
+        }
+
+        final List<String> supported = Try.of(() ->
+                        fetchOpenAIModels(appConfig)
+                                .getResponse()
+                                .getData()
+                                .stream()
+                                .map(OpenAIModel::getId)
+                                .map(String::toLowerCase)
+                                .collect(Collectors.toList()))
+                .getOrElse(Optional.ofNullable(cached).orElse(List.of()));
+>>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
         supportedModelsCache.put(SUPPORTED_MODELS_KEY, supported);
 
         return supported;

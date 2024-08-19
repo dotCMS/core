@@ -205,7 +205,11 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     private int countTokens(final String testString) {
         return EncodingUtil.get().registry
+<<<<<<< HEAD
                 .getEncodingForModel(config.getModel().getCurrentModel())
+=======
+                .getEncodingForModel(config.get().getModel().getCurrentModel())
+>>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
                 .map(enc -> enc.countTokens(testString))
                 .orElseThrow(() -> new DotRuntimeException("Encoder not found"));
     }
@@ -256,7 +260,11 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MESSAGES, messages);
+<<<<<<< HEAD
         json.putIfAbsent(AiKeys.MODEL, config.getModel().getCurrentModel());
+=======
+        json.putIfAbsent(AiKeys.MODEL, config.get().getModel().getCurrentModel());
+>>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
         json.put(AiKeys.TEMPERATURE, form.temperature);
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
         json.put(AiKeys.STREAM, form.stream);
