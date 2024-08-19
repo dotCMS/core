@@ -1,12 +1,11 @@
-import { createDirectiveFactory, SpectatorDirective, mockProvider, SpyObject } from '@ngneat/spectator';
+import { createDirectiveFactory, createFakeEvent, SpectatorDirective } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { fakeAsync } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
-import { DropdownFilterEvent } from 'primeng/dropdown/dropdown.interface';
+import { Dropdown, DropdownFilterEvent, DropdownModule } from 'primeng/dropdown';
 
 import { DotEventsService, DotSiteService } from '@dotcms/data-access';
 import { CoreWebService, mockSites, SiteService } from '@dotcms/dotcms-js';
@@ -18,7 +17,7 @@ describe('DotSiteSelectorDirective', () => {
     let spectator: SpectatorDirective<DotSiteSelectorDirective>;
     let dropdown: Dropdown;
     let dotEventsService: DotEventsService;
-    let dotSiteService: SpyObject<DotSiteService>;
+    let dotSiteService: DotSiteService;
 
     const createDirective = createDirectiveFactory({
         directive: DotSiteSelectorDirective,
@@ -27,9 +26,7 @@ describe('DotSiteSelectorDirective', () => {
             { provide: SiteService, useClass: SiteServiceMock },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
             DotEventsService,
-            mockProvider(DotSiteService, {
-                getSites: jasmine.createSpy().and.returnValue(of(mockSites))
-            })
+            DotSiteService
         ]
     });
 
@@ -48,19 +45,25 @@ describe('DotSiteSelectorDirective', () => {
     });
 
     describe('Get Sites', () => {
+        let getSitesSpy;
+
+        beforeEach(() => {
+            getSitesSpy = spyOn(dotSiteService, 'getSites').and.returnValue(of(mockSites));
+        });
+
         it('should get sites list', () => {
             spectator.detectChanges();
 
             spectator.directive.ngOnInit();
 
-            expect(dotSiteService.getSites).toHaveBeenCalled();
+            expect(getSitesSpy).toHaveBeenCalled();
         });
 
         it('should get sites list with filter', fakeAsync(() => {
-            spectator.detectChanges();
+
             const event: DropdownFilterEvent = {
                 filter: 'demo',
-                originalEvent: new MouseEvent('test')
+                originalEvent: createFakeEvent('click')
             };
             dropdown.onFilter.emit(event);
 
@@ -71,12 +74,13 @@ describe('DotSiteSelectorDirective', () => {
 
     describe('Listen login-as/logout-as events', () => {
         it('should send notification when login-as/logout-as', fakeAsync(() => {
-            spectator.tick(0);
+            const getSitesSpy = spyOn(dotSiteService, 'getSites').and.returnValue(of(mockSites));
+            spectator.detectChanges();
             dotEventsService.notify('login-as');
             spectator.tick(0);
             dotEventsService.notify('logout-as');
             spectator.tick(0);
-            expect(dotSiteService.getSites).toHaveBeenCalledTimes(3);
+            expect(getSitesSpy).toHaveBeenCalledTimes(2);
         }));
     });
 });
