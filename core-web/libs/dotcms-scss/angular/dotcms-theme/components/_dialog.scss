@@ -20,8 +20,7 @@
 }
 
 .p-dialog .p-dialog-header .p-dialog-title {
-    font-size: $font-size-xl;
-    font-size: 1.5rem;
+    font-size: $font-size-lg;
 }
 
 .p-dialog .p-dialog-header .p-dialog-header-icon {
@@ -86,7 +85,7 @@
 
 //TODO: This need to go to the confirm-dialog stylesheet when we update the look and feel
 .p-dialog.p-confirm-dialog .p-confirm-dialog-icon {
-    font-size: $font-size-xxl;
+    font-size: $font-size-xl;
     padding-right: $spacing-1;
     color: $color-palette-primary;
 }
