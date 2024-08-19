@@ -14,9 +14,12 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.workflow.ImmutableWorkflow;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
-import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
 import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,10 +29,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.control.ActivateRequestContext;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
 @ApplicationScoped
@@ -71,8 +70,8 @@ public class ContentTypesTestHelperService {
                 null, null, detailPage, urlMapPattern
         );
 
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType).build();
         contentTypeAPI.createContentTypes(List.of(saveRequest));
 
         return varName;

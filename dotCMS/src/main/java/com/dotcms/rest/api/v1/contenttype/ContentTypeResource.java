@@ -31,7 +31,6 @@ import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
-import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -776,7 +775,6 @@ public class ContentTypeResource implements Serializable {
 																								   final ContentTypeAPI contentTypeAPI,
 																								   final boolean isNew) throws DotSecurityException, DotDataException {
 
-		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = new ArrayList<>();
 		ContentType contentTypeSaved = contentTypeAPI.save(contentType);
 		this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
 
@@ -791,38 +789,11 @@ public class ContentTypeResource implements Serializable {
 				contentTypeSaved.id(), user
 		);
 
-		if (UtilMethods.isSet(systemActionMappings)) {
-
-			for (final Tuple2<WorkflowAPI.SystemAction,String> tuple2 : systemActionMappings) {
-
-				final WorkflowAPI.SystemAction systemAction = tuple2._1;
-				final String workflowActionId               = tuple2._2;
-				if (UtilMethods.isSet(workflowActionId)) {
-
-					Logger.warn(this, "Saving the system action: " + systemAction +
-							", for content type: " + contentTypeSaved.variable() + ", with the workflow action: "
-							+ workflowActionId );
-
-					systemActionWorkflowActionMappings.add(this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
-							.systemAction(systemAction).actionId(workflowActionId)
-							.contentTypeVariable(contentTypeSaved.variable()).build(), user));
-				} else if (UtilMethods.isSet(systemAction)) {
-
-					if (!isNew) {
-						Logger.warn(this, "Deleting the system action: " + systemAction +
-								", for content type: " + contentTypeSaved.variable());
-
-						final SystemActionWorkflowActionMapping mappingDeleted =
-								this.workflowHelper.deleteSystemAction(systemAction, contentTypeSaved, user);
-
-						Logger.warn(this, "Deleted the system action mapping: " + mappingDeleted);
-					}
-				} else {
-
-					throw new IllegalArgumentException("On System Action Mappings, a system action has been sent null or empty");
-				}
-			}
-		}
+		// Processing the content type action mappings
+		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings =
+				this.contentTypeHelper.processWorkflowActionMapping(
+						contentTypeSaved, user, systemActionMappings, isNew
+				);
 
 		return Tuple.of(contentTypeSaved, systemActionWorkflowActionMappings);
 	}
