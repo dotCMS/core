@@ -16,18 +16,24 @@ import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.workflow.form.WorkflowSystemActionForm;
+import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
+import io.vavr.Tuple2;
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.util.Comparator;
@@ -119,6 +125,169 @@ public class ContentTypeHelper implements Serializable {
 
         // Sort and fix the content type fields
         return sortAndFixContentTypeFields(contentType, updatedContentTypeBuilder);
+    }
+
+    /**
+     * This method processes the workflow action mappings for a given content type. It adds or
+     * updates the mappings based on the formSystemActionMappings parameter. If isNew is false, it
+     * also checks for mappings that need to be deleted.
+     *
+     * @param contentType              The content type for which the mappings need to be
+     *                                 processed.
+     * @param user                     The user performing the action.
+     * @param formSystemActionMappings The list of system action mappings to be added or updated.
+     * @param isNew                    A flag indicating whether the content type is new or not.
+     * @return The updated version of the action mappings for the given content type.
+     * @throws DotDataException     If there is an issue with the data storage.
+     * @throws DotSecurityException If there is a security violation.
+     */
+    @WrapInTransaction
+    public List<SystemActionWorkflowActionMapping> processWorkflowActionMapping(
+            final ContentType contentType, final User user,
+            final List<Tuple2<SystemAction, String>> formSystemActionMappings, final boolean isNew)
+            throws DotDataException, DotSecurityException {
+
+        // If not mapping was sent at all by the user, we should ignore this processing,
+        // nothing to do.
+        if (null != formSystemActionMappings) {
+
+            // Add/update the given mappings
+            saveSystemActions(formSystemActionMappings, contentType, user);
+
+            // Compare to identify what needs to be deleted
+            if (!isNew) {
+                deleteSystemActionsIfNecessary(formSystemActionMappings, contentType, user);
+            }
+        }
+
+        // Regarding what we do, we need to return the updated version of the action mappings
+        return WorkflowHelper.getInstance().findSystemActionsByContentType(contentType, user);
+    }
+
+    /**
+     * Saves the system actions for a given list of system action mappings.
+     *
+     * @param formSystemActionMappings a list of tuples containing system actions and workflow
+     *                                 action IDs
+     * @param contentType              the content type to save the system actions for
+     * @param user                     the user performing the action
+     * @throws DotDataException     if there is an error accessing the data
+     * @throws DotSecurityException if the user does not have permission to perform the action
+     */
+    private void saveSystemActions(
+            final List<Tuple2<SystemAction, String>> formSystemActionMappings,
+            final ContentType contentType, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+
+        // Now we add/update the given mappings
+        for (final Tuple2<WorkflowAPI.SystemAction, String> tuple2 : formSystemActionMappings) {
+
+            final WorkflowAPI.SystemAction systemAction = tuple2._1;
+            final String workflowActionId = tuple2._2;
+            if (UtilMethods.isSet(workflowActionId)) {
+
+                Logger.warn(this, "Saving the system action: " + systemAction +
+                        ", for content type: " + contentType.variable()
+                        + ", with the workflow action: "
+                        + workflowActionId);
+
+                workflowHelper.mapSystemActionToWorkflowAction(
+                        new WorkflowSystemActionForm.Builder().
+                                systemAction(systemAction).
+                                actionId(workflowActionId).
+                                contentTypeVariable(contentType.variable()).build(),
+                        user
+                );
+            }
+        }
+    }
+
+    /**
+     * Deletes system actions if necessary, comparing given system actions with the existing ones.
+     *
+     * @param formSystemActionMappings a list of tuple containing system actions and their
+     *                                 respective IDs
+     * @param contentType              the content type
+     * @param user                     the user performing the operation
+     * @throws DotDataException     if there is an error accessing the data
+     * @throws DotSecurityException if there is an error with security permissions
+     */
+    private void deleteSystemActionsIfNecessary(
+            final List<Tuple2<SystemAction, String>> formSystemActionMappings,
+            final ContentType contentType, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+
+        // Handle a special case where having the system action name without an ID implies we
+        // want to delete the mapping.
+        for (final Tuple2<WorkflowAPI.SystemAction, String> tuple2 : formSystemActionMappings) {
+
+            final WorkflowAPI.SystemAction systemAction = tuple2._1;
+            final String workflowActionId = tuple2._2;
+
+            if (UtilMethods.isNotSet(workflowActionId) && UtilMethods.isSet(systemAction)) {
+                deleteSystemAction(
+                        systemAction, contentType, user
+                );
+            }
+        }
+
+        // Getting the existing mappings
+        final var existingSystemActionMappings = workflowHelper.findSystemActionsByContentType(
+                contentType, user
+        );
+
+        // Comparing existing mappings with the mappings in the form to decide whether
+        //  they should be deleted.
+        for (final var existingSystemActionMapping : existingSystemActionMappings) {
+
+            var found = false;
+
+            for (final Tuple2<SystemAction, String> formMappingData : formSystemActionMappings) {
+
+                if (existingSystemActionMapping.getSystemAction().name().
+                        equalsIgnoreCase(formMappingData._1().name())) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+
+                // Was not found in the user request, needs to be deleted.
+                deleteSystemAction(
+                        existingSystemActionMapping.getSystemAction(), contentType, user
+                );
+            }
+
+        }
+    }
+
+    /**
+     * Deletes a system action for a specific content type and user.
+     *
+     * @param systemAction The system action to be deleted.
+     * @param contentType  The content type associated with the system action.
+     * @param user         The user performing the deletion.
+     * @throws DotDataException     if there is an issue with the data layer.
+     * @throws DotSecurityException if there is a security violation.
+     */
+    private void deleteSystemAction(final SystemAction systemAction, final ContentType contentType,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+
+        Logger.warn(this, "Deleting the system action: " + systemAction +
+                ", for content type: " + contentType.variable());
+
+        final var mappingDeleted = workflowHelper.deleteSystemAction(
+                systemAction, contentType, user
+        );
+
+        Logger.warn(this, "Deleted the system action mapping: " + mappingDeleted);
     }
 
     /**

@@ -20,7 +20,6 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -80,8 +79,8 @@ public class ContentTypeForm  {
 
             final List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
             final List<List<WorkflowFormEntry>> workflows = getWorkflowsFromJson(json);
-            final List<List<Tuple2<SystemAction, String>>> systemActionWorkflowActionIds = systemActionWorkflowActionIdMapFromJson(
-                    json);
+            final List<List<Tuple2<SystemAction, String>>> systemActionWorkflowActionIds =
+                    systemActionWorkflowActionIdMapFromJson(json);
 
             final List<ContentTypeFormEntry> entries = getContentTypeFormEntries(typesToSave, workflows, systemActionWorkflowActionIds);
 
@@ -95,21 +94,25 @@ public class ContentTypeForm  {
 
             try {
 
-                final JSONArray jsonArray = new JSONArray(json);
+                for (Object jsonObject : new JSONArray(json)) {
 
-                for (int i = 0; i < jsonArray.size(); i++) {
-                    final JSONObject fieldJsonObject = (JSONObject) jsonArray.get(i);
-                    systemActionWorkflowActionIdMapList.add(this.getSystemActionsWorkflowActionIds(fieldJsonObject));
+                    final JSONObject fieldJsonObject = (JSONObject) jsonObject;
+                    systemActionWorkflowActionIdMapList.add(
+                            getSystemActionsWorkflowActionIds(fieldJsonObject)
+                    );
                 }
             } catch (JSONException e) {
 
                 try {
-                    final JSONObject  fieldJsonObject = new JSONObject(json);
-                    systemActionWorkflowActionIdMapList.add(this.getSystemActionsWorkflowActionIds(fieldJsonObject));
+                    final JSONObject fieldJsonObject = new JSONObject(json);
+                    systemActionWorkflowActionIdMapList.add(
+                            getSystemActionsWorkflowActionIds(fieldJsonObject)
+                    );
                 } catch (JSONException e1) {
                     throw new DotRuntimeException(e1);
                 }
             }
+
             return systemActionWorkflowActionIdMapList;
         }
 
@@ -123,11 +126,11 @@ public class ContentTypeForm  {
             for (int i = 0; i < workflows.size(); i++) {
                 final List<WorkflowFormEntry> contentTypeWorkflows = workflows.get(i);
                 final ContentType contentType = typesToSave.get(i);
-                final List<Tuple2<SystemAction, String>> systemActionWorkflowActions =
-                        i < systemActionWorkflowActionIds.size()?systemActionWorkflowActionIds.get(i):Collections.emptyList();
+                final var systemActionWorkflowActions = systemActionWorkflowActionIds.get(i);
 
-                final ContentTypeFormEntry entry = new ContentTypeFormEntry(contentType,
-                        contentTypeWorkflows, systemActionWorkflowActions);
+                final ContentTypeFormEntry entry = new ContentTypeFormEntry(
+                        contentType, contentTypeWorkflows, systemActionWorkflowActions
+                );
                 entries.add(entry);
             }
             return entries;
@@ -249,11 +252,14 @@ public class ContentTypeForm  {
         private static List<Tuple2<SystemAction, String>> getSystemActionsWorkflowActionIds(
                 final JSONObject fieldJsonObject) throws JSONException {
 
-            SystemAction systemAction = null;
-            String workflowActionId               = null;
-            final List<Tuple2<SystemAction, String>> tuple2List = new ArrayList<>();
+            List<Tuple2<SystemAction, String>> tuple2List = null;
 
             if (fieldJsonObject.has(SYSTEM_ACTION_ATTRIBUTE_NAME)) {
+
+                SystemAction systemAction;
+                String workflowActionId;
+
+                tuple2List = new ArrayList<>();
 
                 final JSONObject systemActionWorkflowActionIdJSONObject = (JSONObject) fieldJsonObject.get(SYSTEM_ACTION_ATTRIBUTE_NAME);
                 final Iterator keys = systemActionWorkflowActionIdJSONObject.keys();
@@ -269,6 +275,7 @@ public class ContentTypeForm  {
 
             return tuple2List;
         }
+
     }
 
     public static class ContentTypeFormEntry {
