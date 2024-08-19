@@ -17,7 +17,7 @@ import { InfoOptions } from '../../../../shared/models';
 import {
     createFavoritePagesURL,
     createPageApiUrlWithQueryParams,
-    createPureURL,
+    createFullURL,
     getIsDefaultVariant,
     sanitizeURL,
     computePageIsLocked
@@ -80,11 +80,13 @@ export function withEditorToolbar() {
                     pageURI: url,
                     siteId: pageAPIResponse?.site?.identifier
                 });
+                const clientHost = `${params?.clientHost ?? window.location.origin}`;
+                const siteId = pageAPIResponse?.site?.identifier;
 
                 return {
                     bookmarksUrl,
-                    copyUrl: createPureURL(params),
-                    apiUrl: `${window.location.origin}${pageAPI}`,
+                    copyUrl: createFullURL(params, siteId),
+                    apiUrl: pageAPI,
                     currentLanguage: pageAPIResponse?.viewAs.language,
                     urlContentMap: store.isEditState()
                         ? (pageAPIResponse?.urlContentMap ?? null)
@@ -94,7 +96,7 @@ export function withEditorToolbar() {
                     unlockButton: shouldShowUnlock ? unlockButton : null,
                     showInfoDisplay: shouldShowInfoDisplay,
                     deviceSelector: {
-                        apiLink: `${params?.clientHost ?? window.location.origin}${pageAPI}`,
+                        apiLink: `${clientHost}${pageAPI}`,
                         hideSocialMedia: !store.isTraditionalPage()
                     },
                     personaSelector: {

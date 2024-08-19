@@ -1,10 +1,14 @@
 package com.dotcms.rendering.velocity.directive;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotmarketing.business.CacheLocator;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
@@ -18,7 +22,6 @@ import org.apache.velocity.runtime.directive.StopCommand;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
-import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 
@@ -70,8 +73,17 @@ abstract class DotDirective extends InputBase {
     }
   }
 
-  
-  
+
+  /**
+   * Return the value from Cache if the Directive is using some kind of Cache level
+   * the default implementation return a Empty Optional.
+   *
+   * @return Value from cache
+   */
+  public Optional<String> getFromCache(final String[] arguments) {
+    return Optional.empty();
+  }
+
   final public boolean render(InternalContextAdapter context, Writer writer, Node node)
       throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
 
@@ -84,11 +96,12 @@ abstract class DotDirective extends InputBase {
         arguments[i]= (value == null) ? null : value.toString();
     }
     
-    
+    final Optional<String> fromCache = getFromCache(arguments);
 
-    
-    
-
+    if (fromCache.isPresent()) {
+      writer.write(fromCache.get());
+      return true;
+    }
 
     RenderParams params = new RenderParams(request);
 
@@ -98,7 +111,13 @@ abstract class DotDirective extends InputBase {
           throw new ResourceNotFoundException("null template");
       }
       Template t = loadTemplate(context, templatePath);
-      return this.renderTemplate(context, writer, t, templatePath);
+
+      final Writer innerWriter = new StringWriter();
+      final boolean result = this.renderTemplate(context, innerWriter, t, templatePath);
+      this.afterRender(innerWriter.toString(), arguments);
+      writer.write(innerWriter.toString());
+
+      return result;
     } catch(ParseErrorException|ResourceNotFoundException rnfe){
       context.remove("ContentIdentifier");
       postRender(context);
@@ -107,6 +126,16 @@ abstract class DotDirective extends InputBase {
 
   }
 
+  /**
+   * Call after render the Template, it allow you to do something before the return of
+   * the {@link DotDirective#render(InternalContextAdapter, Writer, Node)}
+   *
+   * @param render    Template content after render
+   * @param arguments
+   */
+  void afterRender(final String render, String[] arguments) {
+
+  }
 
 
   final boolean renderTemplate(InternalContextAdapter context, final Writer writer, final Template t, final String templatePath)

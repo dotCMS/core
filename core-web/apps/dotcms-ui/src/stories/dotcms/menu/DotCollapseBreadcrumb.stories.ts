@@ -4,24 +4,18 @@ import {
     StoryObj,
     moduleMetadata,
     componentWrapperDecorator,
-    argsToTemplate,
-    applicationConfig
+    applicationConfig,
+    argsToTemplate
 } from '@storybook/angular';
 
 import { importProvidersFrom } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { MenuItem } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
-type Args = DotCollapseBreadcrumbComponent & {
-    model: MenuItem[];
-    maxItems: number;
-};
-
-const meta: Meta<Args> = {
+const meta: Meta<DotCollapseBreadcrumbComponent> = {
     title: 'DotCMS/Menu/DotCollapseBreadcrumb',
     component: DotCollapseBreadcrumbComponent,
     decorators: [
@@ -45,37 +39,34 @@ const meta: Meta<Args> = {
             }
         }
     },
+    argTypes: {
+        $model: {
+            description: 'Menu items to display'
+        },
+        $maxItems: {
+            description: 'Max items to display',
+            control: { type: 'number' }
+        }
+    },
+    render: (args) => ({
+        props: args,
+        template: `<dot-collapse-breadcrumb ${argsToTemplate(args)} />`
+    })
+};
+
+export default meta;
+
+type Story = StoryObj<DotCollapseBreadcrumbComponent>;
+
+export const Default: Story = {
     args: {
-        maxItems: 4,
-        model: [
+        $maxItems: 4,
+        $model: [
             { label: 'Electronics', command: console.log },
             { label: 'Computer', command: console.log },
             { label: 'Accessories', command: console.log },
             { label: 'Keyboard', command: console.log },
             { label: 'Wireless', command: console.log }
         ]
-    },
-    argTypes: {
-        model: {
-            description: 'Menu items to display'
-        },
-        maxItems: {
-            description: 'Max items to display',
-            control: { type: 'number' }
-        }
-    },
-    render: (args: Args) => {
-        return {
-            props: {
-                ...args
-            },
-            template: `<dot-collapse-breadcrumb ${argsToTemplate(args)} />`
-        };
     }
 };
-
-export default meta;
-
-type Story = StoryObj<Args>;
-
-export const Default: Story = {};

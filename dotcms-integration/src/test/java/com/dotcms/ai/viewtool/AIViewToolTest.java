@@ -1,5 +1,6 @@
 package com.dotcms.ai.viewtool;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
@@ -23,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -33,7 +35,7 @@ import static org.mockito.Mockito.mock;
  *
  * @author vico
  */
-public class AIViewToolTest {
+public class AIViewToolTest extends IntegrationTestBase {
 
     private static AppConfig config;
     private static WireMockServer wireMockServer;
@@ -127,6 +129,22 @@ public class AIViewToolTest {
         final JSONObject response = aiViewTool.generateImage(prompt);
         // then
         assertImageResponse(response, prompt.get("prompt").toString(), "dalailama");
+    }
+
+    /**
+     * Scenario: No license
+     * When initializing the AIView tool
+     * Then should NOT throw exception
+     */
+    @Test
+    public void test_noLicense_initShouldNotFail() throws Exception {
+        runNoLicense(()-> {
+            try {
+                aiViewTool.init(mock(ViewContext.class));
+            } catch (Exception e) {
+                fail("Should not throw exception");
+            }
+        });
     }
 
     private void assertTextResponse(final JSONObject response, final String containedText) {
