@@ -116,10 +116,19 @@ public class AuthenticationResource implements Serializable {
                 responses = {
                     @ApiResponse(responseCode = "200", description = "User authentication successful",
                         content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityUserMapView.class)))
-                })
-    public final Response authentication(@Context final HttpServletRequest request,
+                            schema = @Schema(implementation = ResponseEntityUserMapView.class))),
+                    @ApiResponse(responseCode = "401", description = "User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden request"),
+                    @ApiResponse(responseCode = "500", description = "Unexpected error")
+                }
+            )
+    public final Response authentication(
+                                   @Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
+                                   @RequestBody(description = "This method takes a user's ID and verifies if they are authenticated. " +
+                                                                "Authenticated users will asked to input their credentials.",
+                                                required = true,
+                                                content = @Content())
                                    final AuthenticationForm authenticationForm) {
 
         Response res = null;
@@ -196,6 +205,8 @@ public class AuthenticationResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getLogInUser",
+                summary = " ")
     @Path("logInUser")
     public final Response getLoginUser(@Context final HttpServletRequest request){
         Response res = null;
