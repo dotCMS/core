@@ -1,4 +1,4 @@
-import { createDirectiveFactory, SpectatorDirective, mockProvider } from '@ngneat/spectator';
+import { createDirectiveFactory, SpectatorDirective, mockProvider, SpyObject } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -18,7 +18,7 @@ describe('DotSiteSelectorDirective', () => {
     let spectator: SpectatorDirective<DotSiteSelectorDirective>;
     let dropdown: Dropdown;
     let dotEventsService: DotEventsService;
-    let dotSiteService: DotSiteService;
+    let dotSiteService: SpyObject<DotSiteService>;
 
     const createDirective = createDirectiveFactory({
         directive: DotSiteSelectorDirective,
@@ -57,6 +57,7 @@ describe('DotSiteSelectorDirective', () => {
         });
 
         it('should get sites list with filter', fakeAsync(() => {
+            spectator.detectChanges();
             const event: DropdownFilterEvent = {
                 filter: 'demo',
                 originalEvent: new MouseEvent('test')
@@ -70,12 +71,12 @@ describe('DotSiteSelectorDirective', () => {
 
     describe('Listen login-as/logout-as events', () => {
         it('should send notification when login-as/logout-as', fakeAsync(() => {
-            spectator.detectChanges();
+            spectator.tick(0);
             dotEventsService.notify('login-as');
             spectator.tick(0);
             dotEventsService.notify('logout-as');
             spectator.tick(0);
-            expect(dotSiteService.getSites).toHaveBeenCalledTimes(2);
+            expect(dotSiteService.getSites).toHaveBeenCalledTimes(3);
         }));
     });
 });
