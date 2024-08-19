@@ -125,10 +125,13 @@ public class AuthenticationResource implements Serializable {
     public final Response authentication(
                                    @Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
-                                   @RequestBody(description = "This method takes a user's ID and verifies if they are authenticated. " +
-                                                                "Authenticated users will asked to input their credentials.",
+                                   @RequestBody(description = "POST body returns a JSON object containing a user's\n\n" +
+                                                                "authentication status. Authenticated users will asked \n\n" +
+                                                                "to input their credentials.\n\n",
                                                 required = true,
-                                                content = @Content())
+                                                content = @Content(
+                                                    schema = @Schema(implementation = AuthenticationForm.class)
+                                                ))
                                    final AuthenticationForm authenticationForm) {
 
         Response res = null;
@@ -206,7 +209,20 @@ public class AuthenticationResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "getLogInUser",
-                summary = " ")
+                summary = "Retrieves user data",
+                description = "Provides information about any users that are currently " +
+                                "in a session. This retrieved data will be formatted into " +
+                                "a JSON response body.",
+                tags = {"Authentication"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "User data successfully collected",
+                                content = @Content(
+                                    schema = @Schema(implementation = ResponseEntityUserView.class)
+                                )),
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized request"),
+                    @ApiResponse(responseCode = "404", description = "User not found")
+                })
     @Path("logInUser")
     public final Response getLoginUser(@Context final HttpServletRequest request){
         Response res = null;
