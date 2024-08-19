@@ -21,7 +21,7 @@ export class DotSelectItemDirective {
 
         if (event.key === 'Enter' && !!target.value) {
             // TODO: find a way to get the selected item from the autocomplete selectItem method was removed since v.16
-            this.autoComplete.selectItem(target.value);
+            // this.autoComplete.selectItem(target.value);
         }
     }
 }
