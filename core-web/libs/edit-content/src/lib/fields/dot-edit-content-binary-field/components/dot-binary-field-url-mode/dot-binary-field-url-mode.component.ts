@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -34,13 +34,13 @@ import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-v
     selector: 'dot-binary-field-url-mode',
     standalone: true,
     imports: [
-        CommonModule,
         FormsModule,
         ReactiveFormsModule,
         ButtonModule,
         InputTextModule,
         DotMessagePipe,
-        DotFieldValidationMessageComponent
+        DotFieldValidationMessageComponent,
+        AsyncPipe
     ],
     providers: [DotBinaryFieldUrlModeStore],
     templateUrl: './dot-binary-field-url-mode.component.html',
