@@ -32,7 +32,7 @@ on:
       reuse-previous-build:
         default: false
         type: boolean
-      publish-npm-package:
+      publish-npm-cli:
         default: false
         type: boolean
       publish-npm-sdk-libs:
@@ -125,7 +125,7 @@ jobs:
       # Publish CLI to NPM (if required)
       - name: CLI Publish
         id: cli_publish
-        if: inputs.publish-npm-package
+        if: inputs.publish-npm-cli
         uses: ./.github/actions/core-cicd/deployment/deploy-cli-npm
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -164,7 +164,7 @@ jobs:
 
       # Send Slack notification for CLI publication (if required)
       - name: Slack Notification (dotCLI announcement)
-        if: inputs.publish-npm-package
+        if: inputs.publish-npm-cli
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: "log-dotcli"
