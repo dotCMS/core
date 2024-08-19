@@ -23,6 +23,8 @@ public interface Relationships {
 
       String velocityVar();
 
-      Integer cardinality();
+      @JsonSerialize(using = RelationshipCardinalityViewBasedSerializer.class)
+      @JsonDeserialize(using = RelationshipCardinalityDeserializer.class)
+      RelationshipCardinality cardinality();
 
 }

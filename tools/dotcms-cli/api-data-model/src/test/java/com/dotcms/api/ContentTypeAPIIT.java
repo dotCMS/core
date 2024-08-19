@@ -4,7 +4,8 @@ import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.provider.ClientObjectMapper;
-import com.dotcms.common.ContentTypeTestHelperService;
+import com.dotcms.common.ContentTypeLayoutTestHelperService;
+import com.dotcms.common.ContentTypesTestHelperService;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
@@ -13,17 +14,15 @@ import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotcms.contenttype.model.field.ImmutableRelationships;
 import com.dotcms.contenttype.model.field.ImmutableRowField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipCardinality;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.Relationships;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.model.workflow.ImmutableActionMapping;
-import com.dotcms.contenttype.model.workflow.ImmutableWorkflowAction;
 import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
-import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
 import com.dotcms.model.contenttype.FilterContentTypesRequest;
 import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.dotcms.model.site.GetSiteByNameRequest;
@@ -33,6 +32,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Date;
@@ -40,8 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,7 +69,10 @@ class ContentTypeAPIIT {
     ServiceManager serviceManager;
 
     @Inject
-    ContentTypeTestHelperService contentTypeTestHelperService;
+    ContentTypeLayoutTestHelperService contentTypeLayoutTestHelperService;
+
+    @Inject
+    ContentTypesTestHelperService contentTypesTestHelperService;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -225,8 +227,8 @@ class ContentTypeAPIIT {
                 ).build();
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType).build();
 
         final ResponseEntityView<List<ContentType>> response = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(response);
@@ -239,8 +241,8 @@ class ContentTypeAPIIT {
         client.getContentType(newContentType.variable(), 1L, true);
         //Now lets test update
         final ImmutableSimpleContentType updatedContentType = ImmutableSimpleContentType.builder().from(newContentType).description("Updated").build();
-        final SaveContentTypeRequest request = AbstractSaveContentTypeRequest.builder()
-                .of(updatedContentType).build();
+        final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
+                from(updatedContentType).build();
         final ResponseEntityView<ContentType> responseEntityView = client.updateContentType(
                 request.variable(), request);
         Assertions.assertEquals("Updated", responseEntityView.entity().description());
@@ -266,90 +268,164 @@ class ContentTypeAPIIT {
         }
     }
 
+    /**
+     * Test: Create action mappings, then update them.
+     *
+     * <p><strong>Scenario:</strong></p>
+     * <ol>
+     *   <li>Create a new set of action mappings.</li>
+     *   <li>Update the created action mappings with new values.</li>
+     *   <li>Verify that the updates are correctly applied.</li>
+     * </ol>
+     *
+     * <p><strong>Expected:</strong></p>
+     * <ul>
+     *   <li>Action mappings should be created successfully.</li>
+     *   <li>The updates to the action mappings should be reflected correctly.</li>
+     *   <li>The entire process should complete without errors.</li>
+     * </ul>
+     *
+     * @throws JsonProcessingException If an error occurs while processing JSON.
+     */
     @Test
     void Test_Create_Then_Update_Action_Mappings() throws JsonProcessingException {
+
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+
         //We're only using this to extract the existing Workflows
-        final ResponseEntityView<ContentType> response = client.getContentType("FileAsset", 1L, false);
-        final ContentType fileAsset = response.entity();
+        final ResponseEntityView<ContentType> fileAssetResponse = client.getContentType(
+                "FileAsset", 1L, false
+        );
+        final ContentType fileAsset = fileAssetResponse.entity();
         Assertions.assertFalse(Objects.requireNonNull(fileAsset.workflows()).isEmpty());
-        final String systemWorkflowId = fileAsset.workflows().get(0).id();
 
+        // Creating tha action mappings
+        final Map<String, String> actionMappingsV1 = Map.of(
+                SystemAction.NEW.name(), "b9d89c80-3d88-4311-8365-187323c96436"
+        );
         final ObjectMapper mapper = new ObjectMapper();
-        final ImmutableWorkflowAction workflowAction = ImmutableWorkflowAction.builder()
-                .id("b9d89c80-3d88-4311-8365-187323c96436")
-                .name("Publish")
-                .assignable(false)
-                .commentable(false)
-                .condition("")
-                .icon("workflowIcon")
-                .nextAssign("654b0931-1027-41f7-ad4d-173115ed8ec1")
-                .nextStep("dc3c9cd0-8467-404b-bf95-cb7df3fbc293")
-                .nextStepCurrentStep(false)
-                .order(0)
-                .roleHierarchyForAssign(false)
-                .schemeId("d61a59e1-a49c-46f2-a929-db2b4bfa88b2")
-                .showOn(List.of("EDITING",
-                        "PUBLISHED",
-                        "UNLOCKED",
-                        "NEW",
-                        "UNPUBLISHED",
-                        "LISTING",
-                        "LOCKED"))
-                .build();
+        final JsonNode jsonNodeV1 = mapper.valueToTree(actionMappingsV1);
 
-        final ImmutableActionMapping actionMapping = ImmutableActionMapping.builder()
-                .workflowAction(workflowAction)
-                .identifier(systemWorkflowId)
-                .systemAction("NEW")
-                .build();
-
-        final Map<String, ImmutableActionMapping> actionMappings = Map.of(SystemAction.NEW.name(), actionMapping);
-        final JsonNode jsonNode = mapper.valueToTree(actionMappings);
-
-        final long identifier =  System.currentTimeMillis();
-        final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
+        final long identifier = System.currentTimeMillis();
+        final String contentTypeVariable = "_var_" + identifier;
+        final ImmutableSimpleContentType contentTypeWithoutMapping = ImmutableSimpleContentType.builder()
                 .description("ct action mappings.")
-                .variable("_var_"+identifier)
+                .variable(contentTypeVariable)
                 .addFields(
                         ImmutableBinaryField.builder()
-                                .name("_bin_var_"+identifier)
-                                .variable("anyField"+System.currentTimeMillis())
+                                .name("_bin_var_" + identifier)
+                                .variable("anyField" + System.currentTimeMillis())
                                 .build()
                 ).workflows(fileAsset.workflows())
-                .systemActionMappings(jsonNode)
                 .build();
 
-        final String content = mapper.writerWithDefaultPrettyPrinter()
-                .writeValueAsString(contentType);
+        try {
 
-        System.out.println(content);
+            // ---
+            // Creating the content type
+            final var contentType = contentTypeWithoutMapping.withSystemActionMappings(jsonNodeV1);
+            final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
+                    from(contentType).build();
+            final ResponseEntityView<List<ContentType>> createContentTypeResponse =
+                    client.createContentTypes(List.of(request));
 
-        final SaveContentTypeRequest request = AbstractSaveContentTypeRequest.builder()
-                .of(contentType).build();
+            // Make sure the content type was saved and indexed (This waits in case the
+            // indexing/saving took time)
+            final var byVarName = contentTypesTestHelperService.findContentType(
+                    contentTypeVariable);
+            Assertions.assertTrue(byVarName.isPresent());
 
-        final ResponseEntityView<List<ContentType>> response2 = client.createContentTypes(List.of(request));
+            final ContentType createdContentType = createContentTypeResponse.entity().get(0);
+            Assertions.assertNotNull(createdContentType.systemActionMappings());
+            Assertions.assertEquals(1, createdContentType.systemActionMappings().size());
 
-        final ContentType creted = response2.entity().get(0);
-        Assertions.assertNotNull(creted.systemActionMappings());
+            // ---
+            // Now we are going to modify the content type WITHOUT system mappings, nothing should
+            // change for the mappings
+            var modifiedContentType = contentTypeWithoutMapping.withDescription("Modified!");
 
-        final ImmutableSimpleContentType modifiedContentType = ImmutableSimpleContentType.builder()
-                .from(creted).addFields(ImmutableBinaryField.builder()
-                        .contentTypeId(creted.id())
-                        .name("_bin_var_2" + identifier)
-                        .variable("anyField2" + System.currentTimeMillis())
-                        .build()).description("Modified!").build();
+            SaveContentTypeRequest contentTypeRequest = SaveContentTypeRequest.builder().
+                    from(modifiedContentType).build();
+            ResponseEntityView<ContentType> updateContentTypeResponse = client.updateContentType(
+                    contentTypeRequest.variable(), contentTypeRequest
+            );
 
-        final SaveContentTypeRequest request2 = AbstractSaveContentTypeRequest.builder().of(modifiedContentType).build();
-        final ResponseEntityView<ContentType> entityView = client.updateContentType(
-                request2.variable(), request2
-        );
+            ContentType updatedContentType = updateContentTypeResponse.entity();
+            Assertions.assertNotNull(updatedContentType.systemActionMappings());
+            Assertions.assertEquals(1, updatedContentType.systemActionMappings().size());
+            Assertions.assertEquals("Modified!", updatedContentType.description());
 
-        final ContentType updatedContentType = entityView.entity();
-        Assertions.assertNotNull(updatedContentType.systemActionMappings());
-        Assertions.assertEquals("Modified!",updatedContentType.description());
-        Assertions.assertEquals(4, updatedContentType.fields().size());
+            // ---
+            // Updating the system mappings, we are going to add more mappings
+            final Map<String, String> actionMappingsV2 = Map.of(
+                    SystemAction.NEW.name(), "b9d89c80-3d88-4311-8365-187323c96436",
+                    SystemAction.ARCHIVE.name(), "4da13a42-5d59-480c-ad8f-94a3adf809fe",
+                    SystemAction.PUBLISH.name(), "b9d89c80-3d88-4311-8365-187323c96436"
+            );
+            final JsonNode jsonNodeV2 = new ObjectMapper().valueToTree(actionMappingsV2);
 
+            modifiedContentType = contentTypeWithoutMapping.
+                    withDescription("Modified 2!").
+                    withSystemActionMappings(jsonNodeV2);
+
+            contentTypeRequest = SaveContentTypeRequest.builder().from(modifiedContentType).build();
+            updateContentTypeResponse = client.updateContentType(
+                    contentTypeRequest.variable(), contentTypeRequest
+            );
+
+            updatedContentType = updateContentTypeResponse.entity();
+            Assertions.assertNotNull(updatedContentType.systemActionMappings());
+            Assertions.assertEquals(3, updatedContentType.systemActionMappings().size());
+            Assertions.assertEquals("Modified 2!", updatedContentType.description());
+
+            // ---
+            // Updating again the system mappings, removing one
+            final Map<String, String> actionMappingsV3 = Map.of(
+                    SystemAction.NEW.name(), "b9d89c80-3d88-4311-8365-187323c96436",
+                    SystemAction.ARCHIVE.name(), "4da13a42-5d59-480c-ad8f-94a3adf809fe"
+            );
+            final JsonNode jsonNodeV3 = new ObjectMapper().valueToTree(actionMappingsV3);
+
+            modifiedContentType = contentTypeWithoutMapping.
+                    withDescription("Modified 3!").
+                    withSystemActionMappings(jsonNodeV3);
+
+            contentTypeRequest = SaveContentTypeRequest.builder().from(modifiedContentType).build();
+            updateContentTypeResponse = client.updateContentType(
+                    contentTypeRequest.variable(), contentTypeRequest
+            );
+
+            updatedContentType = updateContentTypeResponse.entity();
+            Assertions.assertNotNull(updatedContentType.systemActionMappings());
+            Assertions.assertEquals(2, updatedContentType.systemActionMappings().size());
+            Assertions.assertEquals("Modified 3!", updatedContentType.description());
+
+            // ---
+            // Finally trying to remove all system mappings
+            final Map<String, String> actionMappingsV4 = Map.of();
+            final JsonNode jsonNodeV4 = new ObjectMapper().valueToTree(actionMappingsV4);
+
+            modifiedContentType = contentTypeWithoutMapping.
+                    withDescription("Modified 4!").
+                    withSystemActionMappings(jsonNodeV4);
+
+            contentTypeRequest = SaveContentTypeRequest.builder().from(modifiedContentType).build();
+            updateContentTypeResponse = client.updateContentType(
+                    contentTypeRequest.variable(), contentTypeRequest
+            );
+
+            updatedContentType = updateContentTypeResponse.entity();
+            Assertions.assertNull(updatedContentType.systemActionMappings());
+            Assertions.assertEquals("Modified 4!", updatedContentType.description());
+        } finally {
+
+            // Clean up
+            try {
+                client.delete(contentTypeVariable);
+            } catch (Exception e) {
+                // Ignore any issue here on the cleanup
+            }
+        }
     }
 
         /**
@@ -497,8 +573,8 @@ class ContentTypeAPIIT {
                                 .build()
                 ).build();
 
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType1).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType1).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse1);
@@ -544,8 +620,8 @@ class ContentTypeAPIIT {
                                 .build()
                 ).build();
 
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType1).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType1).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse2);
@@ -592,9 +668,8 @@ class ContentTypeAPIIT {
                                 .build()
                 ).build();
 
-
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType2).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType2).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse2);
@@ -645,8 +720,8 @@ class ContentTypeAPIIT {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse);
@@ -691,20 +766,26 @@ class ContentTypeAPIIT {
         var rowField1 = ImmutableRowField.builder().name("row-1").build();
         var columnField1 = ImmutableColumnField.builder().name("column-1").build();
         //Four textFields are created
-        var fieldsList1 = this.contentTypeTestHelperService.buildTextFields(columnField1.name(), 4);
+        var fieldsList1 = this.contentTypeLayoutTestHelperService.buildTextFields(
+                columnField1.name(), 4);
         //The textFields are added to the column
-        var layoutColumnFieldList1 = this.contentTypeTestHelperService.buildLayoutColumns(List.of(columnField1), fieldsList1);
+        var layoutColumnFieldList1 = this.contentTypeLayoutTestHelperService.buildLayoutColumns(
+                List.of(columnField1), fieldsList1);
         //The layout row is created with the row and its columns
-        var fieldLayoutRow1 = this.contentTypeTestHelperService.buildFieldLayoutRow(rowField1, layoutColumnFieldList1);
+        var fieldLayoutRow1 = this.contentTypeLayoutTestHelperService.buildFieldLayoutRow(rowField1,
+                layoutColumnFieldList1);
 
         var rowField2 = ImmutableRowField.builder().name("row-2").build();
         var columnField2 = ImmutableColumnField.builder().name("column-1").build();
         //Six fields are created
-        var fieldsList2 = this.contentTypeTestHelperService.buildTextFields(columnField1.name(), 6);
+        var fieldsList2 = this.contentTypeLayoutTestHelperService.buildTextFields(
+                columnField1.name(), 6);
         //The textFields are added to the column
-        var layoutColumnFieldList2 = this.contentTypeTestHelperService.buildLayoutColumns(List.of(columnField2), fieldsList2);
+        var layoutColumnFieldList2 = this.contentTypeLayoutTestHelperService.buildLayoutColumns(
+                List.of(columnField2), fieldsList2);
         //The layout row is created with the row and its columns
-        var fieldLayoutRow2 = this.contentTypeTestHelperService.buildFieldLayoutRow(rowField2, layoutColumnFieldList2);
+        var fieldLayoutRow2 = this.contentTypeLayoutTestHelperService.buildFieldLayoutRow(rowField2,
+                layoutColumnFieldList2);
 
         final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
                 .baseType(BaseContentType.CONTENT)
@@ -734,8 +815,8 @@ class ContentTypeAPIIT {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
-                .of(contentType).build();
+        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
+                from(contentType).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse);
@@ -789,7 +870,7 @@ class ContentTypeAPIIT {
                 .addFields(
                         ImmutableRelationshipField.builder().name("Blog Comment").variable("myBlogComment"+timeMark).indexed(true)
                                 .relationships(ImmutableRelationships.builder()
-                                .cardinality(0)
+                                        .cardinality(RelationshipCardinality.ONE_TO_MANY)
                                 .isParentField(true)
                                 .velocityVar("MyBlogComment"+timeMark)
                                 .build()
@@ -809,7 +890,7 @@ class ContentTypeAPIIT {
                 .addFields(
                         ImmutableRelationshipField.builder().name("Blog").variable("myBlog"+timeMark).indexed(true)
                                 .relationships(ImmutableRelationships.builder()
-                                .cardinality(1)
+                                        .cardinality(RelationshipCardinality.MANY_TO_MANY)
                                 .velocityVar("MyBlog.myBlogComment"+timeMark)
                                 .isParentField(false)
                                 .build()
@@ -818,7 +899,8 @@ class ContentTypeAPIIT {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveBlogRequest = AbstractSaveContentTypeRequest.builder().of(blog).build();
+        final SaveContentTypeRequest saveBlogRequest = SaveContentTypeRequest.builder().
+                from(blog).build();
         final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(List.of(saveBlogRequest));
         ContentType savedContentType1 = null;
         ContentType savedContentType2 = null;
@@ -832,7 +914,8 @@ class ContentTypeAPIIT {
                     .get(2);
             final Relationships relationships1 = parentRel1.relationships();
             Assertions.assertNotNull(relationships1);
-            Assertions.assertEquals(0, relationships1.cardinality());
+            Assertions.assertEquals(RelationshipCardinality.ONE_TO_MANY,
+                    relationships1.cardinality());
             // For some reason the server side is not setting the isParentField flag from the Content Type definition
             //Apparently there some extra logic that takes place when relationships are created from the UI
             //Relationship creations is triggered by the fields API
@@ -840,8 +923,8 @@ class ContentTypeAPIIT {
             //Assertions.assertTrue(relationships1.isParentField());
             Assertions.assertEquals("MyBlogComment" + timeMark, relationships1.velocityVar());
 
-            final SaveContentTypeRequest saveBlogCommentRequest = AbstractSaveContentTypeRequest.builder()
-                    .of(blogComment).build();
+            final SaveContentTypeRequest saveBlogCommentRequest = SaveContentTypeRequest.builder().
+                    from(blogComment).build();
             final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(
                     List.of(saveBlogCommentRequest));
             final List<ContentType> contentTypes2 = contentTypeResponse2.entity();
@@ -852,7 +935,8 @@ class ContentTypeAPIIT {
             final Relationships relationships2 = parentRel2.relationships();
             Assertions.assertNotNull(relationships2);
 
-            Assertions.assertEquals(1, relationships2.cardinality());
+            Assertions.assertEquals(RelationshipCardinality.MANY_TO_MANY,
+                    relationships2.cardinality());
             // For some reason the server side is not setting the isParentField flag from the Content Type definition
             //Apparently there some extra logic that takes place when relationships are created from the UI
             //Relationship creations is triggered by the fields API
