@@ -181,16 +181,6 @@ public class MaintenanceResource implements Serializable {
             tailLogFolder = tailLogFolder + File.separator;
         }
 
-        final File[] files = new File(tailLogFolder).listFiles();
-        if(null != files){
-            Logger.info(this.getClass(), "files listed in log folder: " + files.length);
-            for (File file : files) {
-             Logger.info(this.getClass(), "file: " + file.getCanonicalPath());
-            }
-        } else {
-            Logger.info(this.getClass(), "No files listed in log folder: " + tailLogFolder);
-        }
-
         final File logFile = new File(FileUtil.getAbsolutlePath(tailLogFolder + fileName));
         if(!logFile.exists()){
             throw new DoesNotExistException("Requested LogFile: " + logFile.getCanonicalPath() + " does not exist.");
