@@ -1,9 +1,13 @@
 import { Component, Input } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { ToastModule } from 'primeng/toast';
 
 @Component({
     selector: 'dot-p-toast',
+    standalone: true,
+    imports: [ToastModule, ButtonModule],
     template: `
         <p-toast></p-toast>
         <p-toast [position]="position" [key]="position"></p-toast>

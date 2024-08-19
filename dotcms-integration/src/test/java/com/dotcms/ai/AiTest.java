@@ -78,4 +78,8 @@ public interface AiTest {
         return aiAppSecrets(wireMockServer, host, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
     }
 
+    static void removeSecrets(final Host host) throws DotDataException, DotSecurityException {
+        APILocator.getAppsAPI().removeSecretsForSite(host, APILocator.systemUser());
+    }
+
 }

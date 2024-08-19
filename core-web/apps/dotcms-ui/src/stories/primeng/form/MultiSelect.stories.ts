@@ -44,7 +44,7 @@ const meta: Meta<MultiSelect> = {
         optionLabel: 'name',
         value: [{ name: 'Paris', code: 'PRS' }]
     },
-    render: (args: MultiSelect) => ({
+    render: (args) => ({
         props: {
             ...args
         },

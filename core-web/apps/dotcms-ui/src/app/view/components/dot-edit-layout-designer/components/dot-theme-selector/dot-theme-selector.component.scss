@@ -9,7 +9,7 @@ $theme-item-dimension: 240px;
 
         dot-searchable-dropdown .p-button,
         .site-selector__title {
-            font-size: $font-size-lg;
+            font-size: $font-size-lmd;
             min-width: 200px;
         }
     }
@@ -39,7 +39,7 @@ $theme-item-dimension: 240px;
 
     .p-dataview-content .p-widget-content.p-g-12 {
         text-align: center;
-        font-size: $font-size-lg;
+        font-size: $font-size-lmd;
         margin-top: $spacing-7;
     }
 
@@ -65,7 +65,7 @@ $theme-item-dimension: 240px;
     position: relative;
 
     input {
-        font-size: $font-size-lg;
+        font-size: $font-size-lmd;
     }
 
     dot-icon {

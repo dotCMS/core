@@ -1,24 +1,9 @@
-// also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Meta } from '@storybook/angular';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { Menu } from 'primeng/menu';
 import { TabView, TabViewModule } from 'primeng/tabview';
-
-export default {
-    title: 'PrimeNG/Tabs/TabView',
-    component: TabView,
-    parameters: {
-        docs: {
-            description: {
-                component:
-                    'TabView is a container component to group content with tabs.: https://primefaces.org/primeng/showcase/#/tabview'
-            }
-        }
-    }
-} as Meta;
 
 const BasicTemplate = `
   <p-tabView>
@@ -40,15 +25,32 @@ const BasicTemplate = `
 </p-tabView>
 `;
 
-// tslint:disable-next-line: variable-name
-export const Basic = (_args: Menu) => {
-    return {
-        props: {
-            activeIndex: 0
-        },
-        moduleMetadata: {
+const meta: Meta<TabView> = {
+    title: 'PrimeNG/Tabs/TabView',
+    component: TabView,
+    decorators: [
+        moduleMetadata({
             imports: [TabViewModule, ButtonModule, BrowserAnimationsModule]
-        },
+        })
+    ],
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'TabView is a container component to group content with tabs.: https://primefaces.org/primeng/showcase/#/tabview'
+            }
+        }
+    },
+    args: {
+        activeIndex: 0
+    },
+    render: (args) => ({
+        props: args,
         template: BasicTemplate
-    };
+    })
 };
+export default meta;
+
+type Story = StoryObj<TabView>;
+
+export const Basic: Story = {};

@@ -1,0 +1,122 @@
+# Cleanup Runner Action
+#
+# This composite action is designed to clean up resources on GitHub Actions runners,
+# helping to reclaim disk space and optimize performance for subsequent steps or jobs.
+#
+# Features:
+# - Displays initial disk usage
+# - Cleans package manager caches (Homebrew on macOS, apt on Linux)
+# - Prunes Docker resources (images, volumes, containers, networks)
+# - Removes unnecessary large directories and files
+# - Shows final disk usage after cleanup
+#
+# Supports both macOS and Linux runners.
+
+name: 'Cleanup Runner'
+description: 'Cleans up runner resources'
+runs:
+  using: 'composite'
+  steps:
+    - name: Show Initial Disk Usage
+      shell: bash
+      run: |
+        echo '# Initial Disk Usage'
+        df -h
+        echo "Runner OS: $RUNNER_OS"
+        
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          HOME_DIR="/Users/runner"
+          echo '# du -sh $HOME_DIR'
+          sudo du -sh $HOME_DIR || true
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          HOME_DIR="/home/runner"
+          echo '# docker images'
+          docker images || true
+          echo '# du -sh $HOME_DIR'
+          sudo du -sh $HOME_DIR || true
+        fi
+
+    - name: Clean Cache
+      shell: bash
+      run: |
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          echo 'Clean Homebrew cache'
+          brew cleanup -s
+          rm -rf "$(brew --cache)"
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          echo 'Clean apt cache'
+          sudo apt-get clean -y
+          sudo apt-get autoclean -y
+          sudo apt-get autoremove -y
+          sudo rm -rf /var/lib/apt/lists/*
+        fi
+
+    - name: Cleanup Docker
+      shell: bash
+      run: |
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          echo 'Cleanup Docker'
+          docker system prune -f
+          docker volume prune -f
+          docker image prune -f
+          docker container prune -f
+          docker network prune -f
+        fi
+
+    - name: Reclaim Disk Space
+      shell: bash
+      run: |
+        removeIfExists() {
+          local file=$1
+          [[ -e $file ]] && sudo rm -rf $1 || true
+        }
+
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          HOME_DIR="/Users/runner"
+          removeIfExists ${HOME_DIR}/.cache
+          removeIfExists ${HOME_DIR}/Library/Logs
+          removeIfExists ${HOME_DIR}/Library/Caches
+          removeIfExists ${HOME_DIR}/work/_temp
+          removeIfExists ${HOME_DIR}/.cargo/bin/cargo
+          removeIfExists ${HOME_DIR}/.ghcup/bin/ghc
+          removeIfExists ${HOME_DIR}/Library/Android/sdk
+
+          removeIfExists /usr/local/bin/pipx             
+          removeIfExists /usr/bin/swift
+          removeIfExists /usr/local/bin/dotnet
+          removeIfExists /usr/local/Caskroom/
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          HOME_DIR="/home/runner"
+          removeIfExists /usr/share/dotnet
+          removeIfExists /usr/share/swift
+          removeIfExists /usr/local/lib/android
+          removeIfExists /opt/ghc
+          removeIfExists /opt/pipx
+
+          removeIfExists /opt/hostedtoolcache/CodeQL
+          removeIfExists /imagegeneration/installers/go-*
+          removeIfExists /imagegeneration/installers/node-*
+          removeIfExists /imagegeneration/installers/python-*
+
+          removeIfExists ${HOME_DIR}/work/_temp/*
+          removeIfExists ${HOME_DIR}/work/_tool/*
+          removeIfExists ${HOME_DIR}/work/_config/*
+        fi
+
+    - name: Show Final Disk Usage
+      shell: bash
+      run: |
+        echo '# Final Disk Usage'
+        df -h
+
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          HOME_DIR="/Users/runner"
+          echo '# du -sh $HOME_DIR'
+          sudo du -sh $HOME_DIR || true
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          HOME_DIR="/home/runner"
+          echo '# docker images'
+          docker images || true
+          echo '# du -sh $HOME_DIR'
+          sudo du -sh $HOME_DIR || true
+        fi
