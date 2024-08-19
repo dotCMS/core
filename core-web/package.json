@@ -46,7 +46,6 @@
         "workspace-generator": "nx workspace-generator",
         "help": "nx help"
     },
-    "private": false,
     "dependencies": {
         "@angular-devkit/core": "17.3.8",
         "@angular/animations": "17.3.9",
