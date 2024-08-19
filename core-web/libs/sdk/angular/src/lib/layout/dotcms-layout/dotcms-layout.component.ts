@@ -123,8 +123,4 @@ export class DotcmsLayoutComponent implements OnInit {
     ngOnDestroy() {
         this.client.editor.off('changes');
     }
-
-    private setContext(pageAsset: DotCMSPageAsset) {
-        this.pageContextService.setContext(pageAsset, this.components);
-    }
 }

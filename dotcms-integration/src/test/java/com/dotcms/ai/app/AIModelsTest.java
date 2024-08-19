@@ -7,18 +7,12 @@ import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-<<<<<<< HEAD
 import com.dotmarketing.exception.DotRuntimeException;
-=======
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.vavr.control.Try;
-<<<<<<< HEAD
 import org.junit.After;
-=======
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -66,14 +60,11 @@ public class AIModelsTest {
         host = new SiteDataGen().nextPersisted();
         otherHost = new SiteDataGen().nextPersisted();
         List.of(host, otherHost).forEach(h -> Try.of(() -> AiTest.aiAppSecrets(wireMockServer, host)).get());
-<<<<<<< HEAD
     }
 
     @After
     public void after() {
         IPUtils.disabledIpPrivateSubnet(false);
-=======
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
     }
 
     /**
@@ -83,10 +74,7 @@ public class AIModelsTest {
      */
     @Test
     public void test_loadModels_andFindThem() throws DotDataException, DotSecurityException {
-<<<<<<< HEAD
         AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
-=======
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
         saveSecrets(
                     host,
                     "text-model-1,text-model-2",
@@ -136,7 +124,6 @@ public class AIModelsTest {
 
         final Optional<AIModel> text7 = aiModels.findModel(hostId, "text-model-7");
         final Optional<AIModel> text8 = aiModels.findModel(hostId, "text-model-8");
-<<<<<<< HEAD
         assertNotPresentModels(text7, text8);
 
         final Optional<AIModel> image9 = aiModels.findModel(hostId, "image-model-9");
@@ -146,18 +133,6 @@ public class AIModelsTest {
         final Optional<AIModel> embeddings11 = aiModels.findModel(hostId, "embeddings-model-11");
         final Optional<AIModel> embeddings12 = aiModels.findModel(hostId, "embeddings-model-12");
         assertNotPresentModels(embeddings11, embeddings12);
-=======
-        assertModels(text7, text8, AIModelType.TEXT);
-
-        final Optional<AIModel> image9 = aiModels.findModel(hostId, "image-model-9");
-        final Optional<AIModel> image10 = aiModels.findModel(hostId, "image-model-10");
-        assertModels(image9, image10, AIModelType.IMAGE);
-
-        final Optional<AIModel> embeddings11 = aiModels.findModel(hostId, "embeddings-model-11");
-        assertTrue(embeddings11.isPresent());
-        final Optional<AIModel> embeddings12 = aiModels.findModel(hostId, "embeddings-model-12");
-        assertModels(embeddings11, embeddings12, AIModelType.EMBEDDINGS);
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
     }
 
     /**
@@ -170,19 +145,9 @@ public class AIModelsTest {
         AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost());
         AIModels.get().cleanSupportedModelsCache();
 
-<<<<<<< HEAD
         Set<String> supported = aiModels.getOrPullSupportedModels();
         assertNotNull(supported);
         assertEquals(38, supported.size());
-=======
-        List<String> supported = aiModels.getOrPullSupportedModels();
-        assertNotNull(supported);
-        assertEquals(32, supported.size());
-
-        supported = aiModels.getOrPullSupportedModels();
-        assertNotNull(supported);
-        assertEquals(32, supported.size());
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
 
         AIModels.get().setAppConfigSupplier(ConfigService.INSTANCE::config);
     }
@@ -192,13 +157,8 @@ public class AIModelsTest {
      * When the getOrPullSupportedModules method is called
      * Then an empty list of supported models should be returned.
      */
-<<<<<<< HEAD
     @Test(expected = DotRuntimeException.class)
     public void test_getOrPullSupportedModules_withNetworkError() {
-=======
-    @Test
-    public void test_getOrPullSupportedModules_invalidEndpoint() {
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
         AIModels.get().cleanSupportedModelsCache();
         IPUtils.disabledIpPrivateSubnet(false);
 
@@ -214,16 +174,11 @@ public class AIModelsTest {
      * When the getOrPullSupportedModules method is called
      * Then an empty list of supported models should be returned.
      */
-<<<<<<< HEAD
     @Test(expected = DotRuntimeException.class)
-=======
-    @Test
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
     public void test_getOrPullSupportedModules_noApiKey() throws DotDataException, DotSecurityException {
         AiTest.aiAppSecrets(wireMockServer, APILocator.systemHost(), null);
 
         AIModels.get().cleanSupportedModelsCache();
-<<<<<<< HEAD
         aiModels.getOrPullSupportedModels();
     }
 
@@ -238,11 +193,6 @@ public class AIModelsTest {
 
         AIModels.get().cleanSupportedModelsCache();
         aiModels.getOrPullSupportedModels();
-=======
-        final List<String> supported = aiModels.getOrPullSupportedModels();
-        assertNotNull(supported);
-        assertTrue(supported.isEmpty());
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
     }
 
     private void saveSecrets(final Host host,

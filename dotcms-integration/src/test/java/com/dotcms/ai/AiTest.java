@@ -78,11 +78,8 @@ public interface AiTest {
         return aiAppSecrets(wireMockServer, host, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
     }
 
-<<<<<<< HEAD
     static void removeSecrets(final Host host) throws DotDataException, DotSecurityException {
         APILocator.getAppsAPI().removeSecretsForSite(host, APILocator.systemUser());
     }
 
-=======
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
 }

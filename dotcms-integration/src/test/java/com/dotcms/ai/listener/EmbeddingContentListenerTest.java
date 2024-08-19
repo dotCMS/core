@@ -19,13 +19,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.liferay.portal.model.User;
-<<<<<<< HEAD
-=======
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -97,11 +90,8 @@ public class EmbeddingContentListenerTest {
      */
     @Test
     public void test_onPublish() throws Exception {
-<<<<<<< HEAD
         DotAIAPIFacadeImpl.setDefaultEmbeddingsAPIProvider(new DotAIAPIFacadeImpl.DefaultEmbeddingsAPIProvider());
 
-=======
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
         final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog", host);
         contentTypes.add(blogContentType);
         final String text = "OpenAI has developed a new AI model that surpasses previous benchmarks in natural language understanding and generation. This model, GPT-4, can perform complex tasks such as writing essays, creating code, and understanding nuanced prompts with unprecedented accuracy.";
@@ -195,11 +185,7 @@ public class EmbeddingContentListenerTest {
             }
 
             sleep(500);
-<<<<<<< HEAD
             embeddingsExist = APILocator.getDotAIAPI().getEmbeddingsAPI().embeddingExists(blogContent.getInode(), "default", text);
-=======
-            embeddingsExist = EmbeddingsAPI.impl().embeddingExists(blogContent.getInode(), "default", text);
->>>>>>> 344e6e3371 (#29281: adding a centralized OpenAI api-key validation procedure (#29420))
         }
         return embeddingsExist;
     }
