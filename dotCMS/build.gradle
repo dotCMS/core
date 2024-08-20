@@ -6,7 +6,7 @@ buildscript {
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
-        classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.4.3'
+        classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:4.1.0'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
         classpath 'nl.eveoh:gradle-aspectj:1.6'
     }
@@ -570,36 +570,36 @@ clean.finalizedBy 'cleanImmutables'
 // This task finds all th plugins and runs 'ant build' inside each one.
 // In order to compile everything it need the dependency jars in a folder ($buildDir/pluginsLib)
 task buildPlugins(dependsOn: 'jar') {
-    doLast {
-        delete "$buildDir/pluginsLib"
-
-        copy {
-            into "$buildDir/pluginsLib"
-            from configurations.compile
-            from "$buildDir/libs/"
-        }
-
-        def pluginsFolder = new File("src/main/plugins");
-
-        if (!pluginsFolder.exists()) {
-            pluginsFolder = new File("../plugins");
-        }
-
-        pluginsFolder.eachDir() {
-            def pluginPath = it
-            println "Compile Plugin: " + pluginPath
-
-            javaexec {
-                workingDir pluginPath
-                main = "-jar";
-                args = [
-                        "$rootDir/../bin/ant/ant-launcher.jar",
-                        "-buildfile",
-                        pluginPath.getAbsolutePath() + "/build.xml"
-                ]
-            }
-        }
-    }
+//    doLast {
+//        delete "$buildDir/pluginsLib"
+//
+//        copy {
+//            into "$buildDir/pluginsLib"
+//            from configurations.compile
+//            from "$buildDir/libs/"
+//        }
+//
+//        def pluginsFolder = new File("src/main/plugins");
+//
+//        if (!pluginsFolder.exists()) {
+//            pluginsFolder = new File("../plugins");
+//        }
+//
+//        pluginsFolder.eachDir() {
+//            def pluginPath = it
+//            println "Compile Plugin: " + pluginPath
+//
+//            javaexec {
+//                workingDir pluginPath
+//                main = "-jar";
+//                args = [
+//                        "$rootDir/../bin/ant/ant-launcher.jar",
+//                        "-buildfile",
+//                        pluginPath.getAbsolutePath() + "/build.xml"
+//                ]
+//            }
+//        }
+//    }
 }
 buildPlugins.group='dotCMS Development'
 buildPlugins.description='Compiles and Builds all the plugins but does not deploy.'
@@ -635,42 +635,42 @@ deployConfig.description='This task will copy what is used to be src-conf to web
 //    all the properties/files from the static plugins.
 task deployPlugins(dependsOn: ['buildPlugins']) {
 
-    doLast {
-
-        def pluginsFolder = new File("src/main/plugins")
-        def webAppFolder = 'src/main/webapp'
-
-        if (!pluginsFolder.exists()) {
-            pluginsFolder = new File("../plugins");
-            webAppFolder = "$dotcmsDistBase$webAppRootFolder"
-        }
-
-        copy {
-            from "$pluginsFolder.path"
-            into "$webAppFolder/WEB-INF/classes"
-            include 'plugins.xml'
-        }
-
-        //<target name="deploy-plugin"/>
-        pluginsFolder.eachDir() {
-            def pluginPath = it
-            copy {
-                from pluginPath.getPath() + '/build/jar'
-                into "$webAppFolder/WEB-INF/lib"
-                include '*.jar'
-            }
-        }
-
-        ant.taskdef(
-                name: 'pluginDeployTask',
-                classname: 'com.dotmarketing.plugin.ant.DeployTask',
-                classpath: configurations.compile.asPath)
-
-        ant.pluginDeployTask(
-                distributionPath: '../',
-                dotcmsHome: "$webAppFolder",
-                plugins: "$webAppFolder/WEB-INF/lib")
-    }
+//    doLast {
+//
+//        def pluginsFolder = new File("src/main/plugins")
+//        def webAppFolder = 'src/main/webapp'
+//
+//        if (!pluginsFolder.exists()) {
+//            pluginsFolder = new File("../plugins");
+//            webAppFolder = "$dotcmsDistBase$webAppRootFolder"
+//        }
+//
+//        copy {
+//            from "$pluginsFolder.path"
+//            into "$webAppFolder/WEB-INF/classes"
+//            include 'plugins.xml'
+//        }
+//
+//        //<target name="deploy-plugin"/>
+//        pluginsFolder.eachDir() {
+//            def pluginPath = it
+//            copy {
+//                from pluginPath.getPath() + '/build/jar'
+//                into "$webAppFolder/WEB-INF/lib"
+//                include '*.jar'
+//            }
+//        }
+//
+//        ant.taskdef(
+//                name: 'pluginDeployTask',
+//                classname: 'com.dotmarketing.plugin.ant.DeployTask',
+//                classpath: configurations.compile.asPath)
+//
+//        ant.pluginDeployTask(
+//                distributionPath: '../',
+//                dotcmsHome: "$webAppFolder",
+//                plugins: "$webAppFolder/WEB-INF/lib")
+//    }
 }
 deployPlugins.group='dotCMS Development'
 deployPlugins.description='Builds and deploys all the plugins under /plugins folder.'
