@@ -105,10 +105,11 @@ has_errors=false
 perform_frontend_fixes() {
     local files="$1"
     local add_to_index="$2"
-    local file
 
     local NODE_EXEC="${root_dir}/installs/node/node"
     local YARN_EXEC="${root_dir}/installs/node/yarn/dist/bin/yarn"
+
+    echo "frontend fixes"
 
     # Check if Yarn and Node executables are present
     if [[ ! -x "$YARN_EXEC" || ! -x "$NODE_EXEC" ]]; then
@@ -143,7 +144,8 @@ perform_frontend_fixes() {
         local modified_files
         modified_files=$( (git diff --name-only && git diff --name-only --cached) | sort | uniq)
 
-        local unmatched_files=()
+        # Use a string to store unmatched files
+        unmatched_files=""
 
         for file in $files; do
             if echo "$modified_files" | grep -Fxq "$file"; then
@@ -151,15 +153,16 @@ perform_frontend_fixes() {
                     has_errors=true
                 fi
             else
-                unmatched_files+=("$file")
+                # Append to string instead of array
+                unmatched_files="${unmatched_files}${file}\n"
             fi
         done
 
-        if [ ${#unmatched_files[@]} -ne 0 ]; then
+        if [ -n "$unmatched_files" ]; then
             echo "==================================="
             echo "Warning: The following unrelated files in the affected modules should be linted and/or formatted"
             echo ""
-            for file in "${unmatched_files[@]}"; do
+            echo -e "$unmatched_files" | while read -r file; do
                 echo "    ${file}"
                 git restore "${file}"
             done
@@ -235,7 +238,7 @@ if [ -n "${staged_files}" ]; then
     core_web_files_staged=$(echo "$staged_files" | grep -E '^core-web/' || true )
 
     # Determine if untracked files should be backed up
-    backup_untracked=true # Default to false if not set
+    backup_untracked=true # Default to true if not set
 fi
 
 echo ${core_web_files_staged}
@@ -249,8 +252,7 @@ if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
     fi
     echo "Created temporary directory ${temp_dir}"
 
-
-    for file in $untracked_files; do
+    echo "$untracked_files" | while IFS= read -r file; do
         if echo "${staged_files}" | grep -q "^${file}$"; then
             mkdir -p "${temp_dir}/$(dirname "${file}")"  # Ensure the directory structure exists in the temp directory
             cp "${root_dir}/${file}" "${temp_dir}/${file}"  # Copy the file to the temp directory, preserving the directory structure
@@ -263,10 +265,10 @@ if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
     # Set trap to ensure restore_untracked_files is called on exit
     trap restore_untracked_files EXIT
 
-    for file in $untracked_files; do
-            if echo "${staged_files}" | grep -q "^${file}$"; then
-                git restore "${root_dir}/${file}"  # Using relative path relative to current directory
-            fi
+    echo "$untracked_files" | while IFS= read -r file; do
+        if echo "${staged_files}" | grep -q "^${file}$"; then
+            git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+        fi
     done
 
     echo "Backed up workspace to ${temp_dir}"
@@ -280,11 +282,11 @@ fi
 restore_untracked_files
 
 ## Running fixes on untracked files
-core_web_files_untracked=$(echo "untracked_files" | grep -E '^core-web/' || true )
+core_web_files_untracked=$(echo "$untracked_files" | grep -E '^core-web/' || true )
 if [ -n "$core_web_files_untracked" ]; then
     perform_frontend_fixes "${core_web_files_untracked}" false
 fi
-
+echo "Checking sdk-client"
 # Check if sdk-client is affected
 check_sdk_client_affected
 
