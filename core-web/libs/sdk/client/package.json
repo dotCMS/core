@@ -1,26 +1,26 @@
 {
-  "name": "@dotcms/client",
-  "version": "0.0.1-alpha.31",
-  "type": "module",
-  "description": "Official JavaScript library for interacting with DotCMS REST APIs.",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dotCMS/core.git#master"
-  },
-  "scripts": {
-    "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"
-  },
-  "keywords": [
-    "dotCMS",
-    "CMS",
-    "Content Management",
-    "API Client",
-    "REST API"
-  ],
-  "author": "dotcms <dev@dotcms.com>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/dotCMS/core/issues"
-  },
-  "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/client/README.md"
+    "name": "@dotcms/client",
+    "version": "0.0.1-alpha.31",
+    "type": "module",
+    "description": "Official JavaScript library for interacting with DotCMS REST APIs.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dotCMS/core.git#master"
+    },
+    "scripts": {
+        "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"
+    },
+    "keywords": [
+        "dotCMS",
+        "CMS",
+        "Content Management",
+        "API Client",
+        "REST API"
+    ],
+    "author": "dotcms <dev@dotcms.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/dotCMS/core/issues"
+    },
+    "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/client/README.md"
 }
