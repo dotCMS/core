@@ -13,14 +13,14 @@ export interface DotEditableTextProps {
      * @type {TINYMCE_MODE}
      * @memberof DotEditableTextProps
      */
-    mode: TINYMCE_MODE;
+    mode?: TINYMCE_MODE;
     /**
      * Represents the format of the editor which can be `text` or `html`
      *
      * @type {TINYMCE_FORMAT}
      * @memberof DotEditableTextProps
      */
-    format: TINYMCE_FORMAT;
+    format?: TINYMCE_FORMAT;
     /**
      * Represents the `contentlet` that can be inline edited
      *
