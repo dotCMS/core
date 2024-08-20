@@ -23,6 +23,9 @@ outputs:
   npm-package-version:
     description: 'SDK libs - NPM package version'
     value: ${{ steps.next_version.outputs.next_version }}
+  published:
+    description: 'SDK libs - Published'
+    value: ${{ steps.next_version.outputs.publish }}
 runs:
   using: "composite"
   steps:

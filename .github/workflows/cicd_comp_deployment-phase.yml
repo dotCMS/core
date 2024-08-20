@@ -161,7 +161,7 @@ jobs:
 
       # Send Slack notification for SDK publication (if required)          
       - name: Slack Notification (SDK announcement)
-        if: inputs.publish-npm-sdk-libs
+        if: success() && steps.sdks_publish.outputs.published == 'true'
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-sdk-libs"
