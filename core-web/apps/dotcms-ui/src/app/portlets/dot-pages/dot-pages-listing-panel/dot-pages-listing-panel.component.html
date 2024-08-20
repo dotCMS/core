@@ -26,11 +26,11 @@
                 <div class="dot-pages-listing-header__inputs">
                     <div class="p-input-icon-right">
                         <input
-                            (input)="filterData($event.target.value)"
                             [placeholder]="'Type-To-Search' | dm"
                             [value]="vm.keywordValue"
                             class="dot-pages-listing-header__filter-input"
                             #input
+                            (input)="filterData(input.value)"
                             data-testid="dot-pages-listing-header__keyword-input"
                             type="text"
                             pInputText
