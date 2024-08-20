@@ -1,9 +1,10 @@
 package com.dotcms.visitor.filter.characteristics;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.visitor.domain.Visitor;
-
 import com.dotcms.visitor.filter.servlet.VisitorFilter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -15,16 +16,17 @@ import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.WebKeys;
-
+import io.vavr.control.Try;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class BaseCharacter extends AbstractCharacter {
+public class BaseCharacter implements Character {
 
     private final static String CLUSTER_ID;
     private final static String SERVER_ID;
@@ -32,12 +34,11 @@ public class BaseCharacter extends AbstractCharacter {
     static {
         CLUSTER_ID = ClusterFactory.getClusterId();
         SERVER_ID = APILocator.getServerAPI().readServerId();
-
     }
 
 
-    private BaseCharacter(final HttpServletRequest request, final HttpServletResponse response, final Visitor visitor) {
-        super(request, response, visitor);
+    public Map<String, Serializable> getMap(final HttpServletRequest request, final HttpServletResponse response, final Visitor visitor) {
+
         clearMap();
         final Object asset = (request.getAttribute("idInode") != null) ? request.getAttribute("idInode")
                 : (Identifier) request.getAttribute(Constants.CMS_FILTER_IDENTITY);
@@ -58,35 +59,53 @@ public class BaseCharacter extends AbstractCharacter {
 
         final Optional<String> content = Optional.ofNullable((String) request.getAttribute(WebKeys.WIKI_CONTENTLET));
         final Language lang = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-        IAm iAm = resolveResourceType(uri, getHostNoThrow(request), lang.getId());
+        final IAm iAm = resolveResourceType(uri, getHostNoThrow(request), lang.getId());
         final long pageProcessingTime = (Long) request.getAttribute(VisitorFilter.DOTPAGE_PROCESSING_TIME);
-        myMap.get().put("id", UUID.randomUUID().toString());
-        myMap.get().put("status", response.getStatus());
-        myMap.get().put("iAm", iAm);
-        myMap.get().put("uri", uri);
-        myMap.get().put("ms", pageProcessingTime);
+        
+        accrue("id", UUID.randomUUID().toString());
+        accrue("status", response.getStatus());
+        accrue("iAm", iAm);
+        accrue("uri", uri);
+        accrue("ms", pageProcessingTime);
+        accrue("method", request.getMethod());
+        accrue("cluster", shorty.shortify(CLUSTER_ID));
+        accrue("server", shorty.shortify(SERVER_ID));
+        accrue("session", (request.getSession(false)!=null) ? request.getSession().getId() : "n/a");
+        accrue("sessionNew", (request.getSession(false)!=null) ? request.getSession().isNew() : false);
+        accrue("time", System.currentTimeMillis());
 
-        myMap.get().put("cluster", shorty.shortify(CLUSTER_ID));
-        myMap.get().put("server", shorty.shortify(SERVER_ID));
-        myMap.get().put("session", request.getSession().getId());
-        myMap.get().put("sessionNew", request.getSession().isNew());
-        myMap.get().put("time", System.currentTimeMillis());
+        accrue("mime", response.getContentType());
+        
+        CachedVanityUrl cachedVanity = (CachedVanityUrl) request.getAttribute(Constants.VANITY_URL_OBJECT);
+        if(cachedVanity!=null) {
+            accrue("vanityUrl", cachedVanity.vanityUrlId);
+        }   
+        accrue("referer", request.getHeader("referer"));
+        accrue("host", request.getHeader("host"));
+        accrue("assetId", assetId);
+        accrue("contentId", content.orElse(null));
 
-        myMap.get().put("mime", response.getContentType());
-        myMap.get().put("vanityUrl", (String) request.getAttribute(VisitorFilter.VANITY_URL_ATTRIBUTE));
-        myMap.get().put("referer", request.getHeader("referer"));
-        myMap.get().put("host", request.getHeader("host"));
-        myMap.get().put("assetId", assetId);
-        myMap.get().put("contentId", content.orElse(null));
-
-        myMap.get().put("lang", lang.toString());
+        accrue("lang", lang.toString());
     }
 
     public BaseCharacter(final HttpServletRequest request, final HttpServletResponse response) {
-        this(request, response, APILocator.getVisitorAPI().getVisitor(request).get());
+        this(request, response, resolveVisitor(request));
     }
 
 
+    private static Visitor resolveVisitor(HttpServletRequest request) {
+        
+        if( APILocator.getVisitorAPI().getVisitor(request, false).isPresent()) {
+            return APILocator.getVisitorAPI().getVisitor(request).get();
+        }
+        else {
+            Visitor visitor = Visitor.newInstance(request);
+            visitor.setIpAddress( Try.of(()-> HttpRequestDataUtil.getIpAddress(request)).getOrNull());
+            return visitor;
+        }
+                      
+       
+    }
 
     private Host getHostNoThrow(HttpServletRequest req) {
         try {

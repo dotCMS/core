@@ -26,8 +26,13 @@ public class VisitorLogger {
 
     public static final String VISITOR_LOG_BASE_NAME = "visitor-v3.log";
 
-    private static List<Class> charactersToApply = ImmutableList.of(VisitorCharacter.class, GeoCharacter.class, HeaderCharacter.class,
-            ParamsCharacter.class, RulesEngineCharacter.class, GDPRCharacter.class);
+    private static List<Class> charactersToApply = ImmutableList.of(
+            VisitorCharacter.class,
+            GeoCharacter.class,
+            HeaderCharacter.class,
+            ParamsCharacter.class,
+            RulesEngineCharacter.class,
+            GDPRCharacter.class);
 
     private static List<Constructor<AbstractCharacter>> constructors;
 

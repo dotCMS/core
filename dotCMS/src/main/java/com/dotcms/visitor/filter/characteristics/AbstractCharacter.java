@@ -1,11 +1,9 @@
 package com.dotcms.visitor.filter.characteristics;
 
 import com.dotcms.visitor.domain.Visitor;
-
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -14,7 +12,7 @@ public abstract class AbstractCharacter implements Character {
     protected final HttpServletRequest request;
     protected final HttpServletResponse response;
     protected final Visitor visitor;
-    protected static ThreadLocal<Map<String, Serializable>> myMap = ThreadLocal.withInitial(LinkedHashMap::new);
+    private static ThreadLocal<Map<String, Serializable>> myMap = ThreadLocal.withInitial(LinkedHashMap::new);
 
     public AbstractCharacter(HttpServletRequest request, HttpServletResponse response, Visitor visitor) {
         this.request=request;
@@ -29,6 +27,7 @@ public abstract class AbstractCharacter implements Character {
         this.response=incomingCharacter.response;;
         this.visitor=incomingCharacter.visitor;
     }
+    
     public final void clearMap() {
         myMap.get().clear();
     }
@@ -36,4 +35,13 @@ public abstract class AbstractCharacter implements Character {
     public final Map<String, Serializable> getMap() {
         return myMap.get();
     }
+    
+    public final void accrue(String key,Serializable value) {
+        myMap.get().put(key, value);
+    }
+    
+    public final void accrueAll(Map<String,Serializable> map) {
+        myMap.get().putAll(map);
+    }
+    
 }

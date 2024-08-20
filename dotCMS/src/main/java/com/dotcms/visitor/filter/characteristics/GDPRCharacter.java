@@ -1,16 +1,14 @@
 package com.dotcms.visitor.filter.characteristics;
 
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-
-import com.liferay.portal.model.User;
 
 public class GDPRCharacter extends AbstractCharacter {
 
@@ -33,20 +31,23 @@ public class GDPRCharacter extends AbstractCharacter {
 
 
 
-            getMap().put("ip", visitor.getIpAddress().getHostAddress());
-            final Map<String, String> allCookies =
-                    (request.getCookies() != null)
-                            ? Arrays.asList(request.getCookies()).stream().collect(
-                                    Collectors.toMap(from -> from.getName().toLowerCase(), from -> from.getValue()))
-                            : new HashMap<>();
-
-            for (String oldKey : allCookies.keySet()) {
-                String val = allCookies.get(oldKey);
-                if (WHITELISTED_COOKIES.contains(oldKey)) {
-                    getMap().put("c." + oldKey, val);
+            getMap().put("ip", request.getRemoteAddr());
+            
+            
+            
+            
+            final Map<String, String> allCookies =new HashMap<>();
+            for(Cookie c : request.getCookies()) {
+                if (WHITELISTED_COOKIES.contains(c.getName())) {
+                    String cookieName = (c.getDomain()!=null)?c.getDomain() + ":" : "";
+                    cookieName+= (c.getPath()!=null)?c.getPath() + ":" : "";
+                    cookieName+= c.getName();
+                    allCookies.put(cookieName, c.getValue());
                 }
             }
-            getMap().put("userId", user);
+            
+
+            accrue("userId", user);
         }
     }
 
