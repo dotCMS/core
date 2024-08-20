@@ -1,15 +1,16 @@
 package com.dotcms.rest.config;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import javax.ws.rs.ApplicationPath;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.ws.rs.ApplicationPath;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
 /**
@@ -44,14 +45,17 @@ import org.glassfish.jersey.server.ResourceConfig;
 public class DotRestApplication extends ResourceConfig {
 
 	public DotRestApplication() {
-		register(MultiPartFeature.class);
-		register(JacksonJaxbJsonProvider.class);
-		registerClasses(customClasses.keySet());
-		packages(
+		register(MultiPartFeature.class)
+		.register(JacksonJaxbJsonProvider.class)
+		.register(OpenApiResource.class)
+		.register(AcceptHeaderOpenApiResource.class)
+		.packages(
 				"com.dotcms.rest",
 				"com.dotcms.contenttype.model.field",
 				"com.dotcms.rendering.js",
-				"com.dotcms.ai.rest");
+				"com.dotcms.ai.rest"
+		)
+		.registerClasses(customClasses.keySet());
 	}
 
 
@@ -85,15 +89,5 @@ public class DotRestApplication extends ResourceConfig {
 			ContainerReloader.getInstance().reload();
 		}
 	}
-
-	/*@Override
-	public Set<Class<?>> getClasses() {
-		return ImmutableSet.<Class<?>>builder()
-				.addAll(customClasses.keySet())
-				.addAll(INTERNAL_CLASSES)
-				.addAll(PROVIDER_CLASSES)
-				.build();
-
-	}*/
 
 }
