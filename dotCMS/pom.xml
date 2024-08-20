@@ -1198,12 +1198,11 @@
             <artifactId>jersey-common</artifactId>
         </dependency>
 
-        <!--
         <dependency>
             <groupId>org.glassfish.jersey.inject</groupId>
-            <artifactId>jersey-cdi2-se</artifactId>
+            <artifactId>jersey-hk2</artifactId>
         </dependency>
-        -->
+
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
