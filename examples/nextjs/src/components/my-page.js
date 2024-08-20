@@ -17,6 +17,7 @@ import { withExperiments } from "@dotcms/experiments";
 import { CustomNoComponent } from "./content-types/empty";
 
 import { usePageAsset } from "../hooks/usePageAsset";
+import BlogWithBlockEditor from "./content-types/blog";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -37,7 +38,8 @@ const componentsMap = {
     Image: ImageComponent,
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
-    CustomNoComponent: CustomNoComponent,
+    // CustomNoComponent: CustomNoComponent,
+    BlockEditorPage: BlogWithBlockEditor
 };
 
 export function MyPage({ pageAsset, nav }) {
