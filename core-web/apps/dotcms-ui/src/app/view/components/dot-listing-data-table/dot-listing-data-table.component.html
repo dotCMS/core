@@ -1,10 +1,10 @@
 <dot-action-header [options]="actionHeaderOptions">
     <ng-container [ngTemplateOutlet]="beforeSearchTemplate"></ng-container>
     <input
-        (input)="dataTable.filterGlobal($event.target.value, 'contains')"
         (keydown.arrowdown)="focusFirstRow()"
         [(ngModel)]="filter"
         #gf
+        (input)="dataTable.filterGlobal(gf.value, 'contains')"
         pInputText
         placeholder="{{ 'Type-to-filter' | dm }}"
         type="text" />

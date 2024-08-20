@@ -67,12 +67,12 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     private confirmationService = inject(ConfirmationService);
 
     private readonly customEventsHandler;
+    dotPageStateService = inject(DotPageStateService);
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
         private dotLicenseService: DotLicenseService,
-        private dotPageStateService: DotPageStateService,
         private dotPersonalizeService: DotPersonalizeService,
         private router: Router
     ) {

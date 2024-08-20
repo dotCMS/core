@@ -12,21 +12,16 @@ describe('CategoriesService', () => {
     it('can getChildren with inode', () => {
         const inode = 'inode-identifier';
         spectator.service.getChildren(inode).subscribe();
-        spectator.expectOne(
-            `${API_URL}/children?inode=${inode}&per_page=${ITEMS_PER_PAGE}&direction=ASC&showChildrenCount=true`,
-            HttpMethod.GET
-        );
+        const url = `${API_URL}/children?inode=${inode}&per_page=${ITEMS_PER_PAGE}&direction=ASC&parentList=true&showChildrenCount=true`;
+        spectator.expectOne(url, HttpMethod.GET);
     });
 
     it('can getChildren with inode & filter', () => {
         const inode = 'inode-identifier';
         const filter = 'query';
         spectator.service.getChildren(inode, { filter }).subscribe();
-        spectator.expectOne(
-            `${API_URL}/children?inode=${inode}&per_page=${ITEMS_PER_PAGE}&direction=ASC&filter=${filter}&allLevels=true`,
-
-            HttpMethod.GET
-        );
+        const url = `${API_URL}/children?inode=${inode}&per_page=${ITEMS_PER_PAGE}&direction=ASC&parentList=true&filter=${filter}&allLevels=true`;
+        spectator.expectOne(url, HttpMethod.GET);
     });
 
     it('can getSelectedHierarchy of selected categories', () => {
