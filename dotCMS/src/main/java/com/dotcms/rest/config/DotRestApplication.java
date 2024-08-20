@@ -52,7 +52,6 @@ public class DotRestApplication extends ResourceConfig {
 				"com.dotcms.contenttype.model.field",
 				"com.dotcms.rendering.js",
 				"com.dotcms.ai.rest");
-
 	}
 
 
@@ -66,9 +65,10 @@ public class DotRestApplication extends ResourceConfig {
 	 * @param clazz the class ot add
 	 */
 	public static synchronized void addClass(Class<?> clazz) {
-		if(clazz==null)return;
-		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true)))
-		{
+		if(clazz==null){
+			return;
+		}
+		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {
 			ContainerReloader.getInstance().reload();
 		}
 	}
@@ -78,7 +78,9 @@ public class DotRestApplication extends ResourceConfig {
 	 * @param clazz
 	 */
 	public static synchronized void removeClass(Class<?> clazz) {
-		if(clazz==null)return;
+		if(clazz==null){
+			return;
+		}
 		if(customClasses.remove(clazz) != null){
 			ContainerReloader.getInstance().reload();
 		}
