@@ -3,9 +3,9 @@
         <dot-content-type-selector
             (selected)="changeContentTypeSelector($event)"></dot-content-type-selector>
         <input
-            (input)="handleQueryFilter($event.target.value)"
             (keydown.arrowdown)="focusFirstRow()"
             #gf
+            (input)="handleQueryFilter(gf.value)"
             pInputText
             placeholder="{{ 'Type-to-filter' | dm }}"
             type="text"
