@@ -85,7 +85,11 @@ public class ContentHandlerTest {
         assertFalse(TrustedListMatcher.matches(disallowedClass1));
         assertFalse(TrustedListMatcher.matches(disallowedClass2));
     }
-
+    /**
+     * Method to test: {@link ContentHandler#relateTagsToContent(Contentlet content, Map<String, List<Tag>> tags)}
+     * When: Content is pushed which has tags that live on a host not in the target system.
+     * Should: The tags should save to the system host
+     */
     @Test
     public void TEST_SAVING_TAGS_ON_NON_EXISTING_HOST() throws Exception{
         // Given
