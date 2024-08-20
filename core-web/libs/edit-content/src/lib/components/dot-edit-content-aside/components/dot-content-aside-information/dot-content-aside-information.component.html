@@ -1,16 +1,16 @@
 <div class="content-aside__information">
     <div class="content-aside__status">
-        <p-chip
-            *ngIf="contentlet | contentletStatus as status"
-            [styleClass]="'p-chip-sm ' + status.classes"
-            [label]="status.label" />
-        <dot-copy-button
-            *ngIf="contentlet?.inode as inode"
-            [copy]="inode"
-            [tooltipText]="'ID: ' + inode"
-            [label]="'ID: ' + (inode | slice: -10)"
-            data-testId="inode"
-            aria-label="Copy ID" />
+        @if (contentlet | contentletStatus; as status) {
+            <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
+        }
+        @if (contentlet?.inode; as inode) {
+            <dot-copy-button
+                [copy]="inode"
+                [tooltipText]="'ID: ' + inode"
+                [label]="'ID: ' + (inode | slice: -10)"
+                data-testId="inode"
+                aria-label="Copy ID" />
+        }
     </div>
     <div class="content-aside__metadata">
         <a
@@ -45,9 +45,11 @@
                         data-testId="publish-history"
                         aria-label="Publish History">
                         <span class="content-history__title">{{ 'Published' | dm }}</span>
-                        <span *ngIf="contentlet?.publishUserName" class="content-history__author">
-                            {{ contentlet?.publishUserName }}
-                        </span>
+                        @if (contentlet?.publishUserName) {
+                            <span class="content-history__author">
+                                {{ contentlet?.publishUserName }}
+                            </span>
+                        }
                         <span class="content-history__date">
                             {{ contentlet?.publishDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
                         </span>

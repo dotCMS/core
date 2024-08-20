@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -42,7 +41,6 @@ import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skele
     selector: 'dot-category-field-search-list',
     standalone: true,
     imports: [
-        CommonModule,
         TableModule,
         SkeletonModule,
         DotTableSkeletonComponent,
