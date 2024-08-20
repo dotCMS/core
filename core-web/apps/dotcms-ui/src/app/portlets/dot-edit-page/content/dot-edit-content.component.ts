@@ -2,7 +2,7 @@ import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -194,7 +194,7 @@ browse from the page internal links
                 takeUntil(this.destroy$),
                 filter((event) => event instanceof NavigationEnd)
             )
-            .subscribe((_event: NavigationStart) => {
+            .subscribe(() => {
                 this.getExperimentResolverData();
             });
 

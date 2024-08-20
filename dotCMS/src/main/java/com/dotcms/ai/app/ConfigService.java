@@ -2,9 +2,12 @@ package com.dotcms.ai.app;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import java.util.Map;
@@ -17,7 +20,10 @@ public class ConfigService {
 
     public static final ConfigService INSTANCE = new ConfigService();
 
+    private final LicenseValiditySupplier licenseValiditySupplier;
+
     private ConfigService() {
+        licenseValiditySupplier = new LicenseValiditySupplier() {};
     }
 
     /**
@@ -26,12 +32,27 @@ public class ConfigService {
      */
     public AppConfig config(final Host host) {
         final Host resolved = resolveHost(host);
-        final Optional<AppSecrets> appSecrets = Try.of(() -> APILocator
-                        .getAppsAPI()
-                        .getSecrets(AppKeys.APP_KEY, true, resolved, APILocator.systemUser()))
-                .getOrElse(Optional.empty());
 
-        return new AppConfig(resolved.getHostname(), appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
+        if (!licenseValiditySupplier.hasValidLicense()) {
+            Logger.debug(this, "No valid license found, returning empty configuration");
+            return new AppConfig(resolved.getHostname(), Map.of());
+        }
+
+        final User systemUser = APILocator.systemUser();
+        Optional<AppSecrets> appSecrets = Try
+                .of(() -> APILocator.getAppsAPI().getSecrets(AppKeys.APP_KEY, false, resolved, systemUser))
+                .get();
+        final Host realHost;
+        if (appSecrets.isEmpty()) {
+            realHost = APILocator.systemHost();
+            appSecrets = Try
+                    .of(() -> APILocator.getAppsAPI().getSecrets(AppKeys.APP_KEY, false, realHost, systemUser))
+                    .get();
+        } else {
+            realHost = resolved;
+        }
+
+        return new AppConfig(realHost.getHostname(), appSecrets.map(AppSecrets::getSecrets).orElse(Map.of()));
     }
 
     /**

@@ -907,6 +907,17 @@ export const PageResponseMock = {
     }
 };
 
+export const PageResponseOneRowMock = {
+    ...PageResponseMock,
+    layout: {
+        ...PageResponseMock.layout,
+        body: {
+            ...PageResponseMock.layout.body,
+            rows: [PageResponseMock.layout.body.rows[0]]
+        }
+    }
+};
+
 export const NavMock = {
     children: [
         {

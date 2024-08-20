@@ -1,4 +1,4 @@
-import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { moduleMetadata, StoryObj, Meta } from '@storybook/angular';
 
 import { NgIf, NgStyle } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -14,7 +14,7 @@ import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-background-columns/template-builder-background-columns.component';
 
-export default {
+const meta: Meta<TemplateBuilderRowComponent> = {
     title: 'Library/Template Builder/Components/Row',
     component: TemplateBuilderRowComponent,
     decorators: [
@@ -36,12 +36,9 @@ export default {
             ]
         })
     ]
-} as Meta<TemplateBuilderRowComponent>;
+};
+export default meta;
 
-const Template: Story<TemplateBuilderRowComponent> = (args: TemplateBuilderRowComponent) => ({
-    props: args
-});
+type Story = StoryObj<TemplateBuilderRowComponent>;
 
-export const Primary = Template.bind({});
-
-Primary.args = {};
+export const Primary: Story = {};

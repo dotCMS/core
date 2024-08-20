@@ -1,4 +1,3 @@
-import { NgFor } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { ControlContainer, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -10,7 +9,7 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 @Component({
     selector: 'dot-edit-content-checkbox-field',
     standalone: true,
-    imports: [NgFor, CheckboxModule, ReactiveFormsModule, FormsModule],
+    imports: [CheckboxModule, ReactiveFormsModule, FormsModule],
     templateUrl: './dot-edit-content-checkbox-field.component.html',
     styleUrls: ['./dot-edit-content-checkbox-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

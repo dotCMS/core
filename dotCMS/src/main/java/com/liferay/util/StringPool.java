@@ -89,4 +89,6 @@ public class StringPool {
 
 	public static final String TRUE = Boolean.TRUE.toString();
 
+	public static final String FALSE = Boolean.FALSE.toString();
+
 }

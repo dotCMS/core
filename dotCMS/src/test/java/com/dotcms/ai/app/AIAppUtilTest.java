@@ -6,8 +6,11 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for the \AIAppUtil\ class. This test class verifies the functionality
@@ -84,34 +87,6 @@ public class AIAppUtilTest {
     }
 
     /**
-     * Given a map of secrets containing a key with an environment secret value
-     * When the discoverEnvSecret method is called with the key
-     * Then the environment secret value should be returned.
-     */
-    @Test
-    public void testDiscoverEnvSecret() {
-        when(secrets.get("apiKey")).thenReturn(secret);
-        when(secret.getString()).thenReturn("envSecretValue");
-
-        String result = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
-        assertEquals("envSecretValue", result);
-    }
-
-    /**
-     * Given a map of secrets containing a key with an environment secret value
-     * When the discoverEnvSecret method is called with the key
-     * Then the environment secret value should be returned.
-     */
-    @Test
-    public void testDiscoverNotFoundEnvSecret() {
-        when(secrets.get("something-else")).thenReturn(secret);
-        when(secret.getString()).thenReturn("envSecretValue");
-
-        String result = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY);
-        assertEquals("", result);
-    }
-
-    /**
      * Given a map of secrets containing a key with an integer secret value
      * When the discoverIntSecret method is called with the key
      * Then the integer secret value should be returned.
@@ -185,6 +160,19 @@ public class AIAppUtilTest {
         assertNotNull(model);
         assertEquals(AIModelType.EMBEDDINGS, model.getType());
         assertTrue(model.getNames().contains("embeddingsmodel"));
+    }
+
+    @Test
+    public void testDiscoverEnvSecret() {
+        // Mock the secret value in the secrets map
+        when(secrets.get("apiKey")).thenReturn(secret);
+        when(secret.getString()).thenReturn("secretValue");
+
+        // Call the method with the key and environment variable
+        String result = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_KEY, "ENV_API_KEY");
+
+        // Assert the expected outcome
+        assertEquals("secretValue", result);
     }
 
 }

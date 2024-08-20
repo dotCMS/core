@@ -27,6 +27,9 @@ import com.liferay.util.StringPool;
  */
 public abstract class CategoryQueryBuilder {
 
+    private final String COUNT_CHILDREN_QUERY = "SELECT COUNT(*) " +
+            "FROM category LEFT JOIN tree ON category.inode = tree.child WHERE tree.parent = c.inode";
+
     protected final String rootInode;
     protected final Level level;
     protected final boolean countChildren;
@@ -53,7 +56,7 @@ public abstract class CategoryQueryBuilder {
 
     protected String getChildrenCount() {
         return this.countChildren ?
-                ", (SELECT COUNT(*) FROM tree WHERE parent = inode) as childrenCount" : StringPool.BLANK;
+                String.format(", (%s) as childrenCount", COUNT_CHILDREN_QUERY) : StringPool.BLANK;
     }
 
     public enum Level {

@@ -1,5 +1,4 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -21,7 +20,6 @@ import { DotCategoryFieldSearchListComponent } from '../dot-category-field-searc
     selector: 'dot-category-field-selected',
     standalone: true,
     imports: [
-        CommonModule,
         ButtonModule,
         DotMessagePipe,
         DotCategoryFieldSearchListComponent,
