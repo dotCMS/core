@@ -128,12 +128,12 @@ test-integration-stop:
 # Docker Commands
 
 # Runs a published dotCMS Docker image on a dynamic port
-docker-ext-run tag='24.04.24_lts_SNAPSHOT':
-    ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend -Dcontext.name=ext-{{ tag }} -Ddotcms.image.name=dotcms/dotcms:{{ tag }}
+docker-ext-run tag='latest':
+    ./mvnw -pl :dotcms-core -Pdocker-start -Dcontext.name=ext-{{ tag }} -Ddotcms.image.name=dotcms/dotcms:{{ tag }}
 
 # Runs a Docker image from a specific build for testing
-docker-test-ext-run tag='24.04.24_lts_SNAPSHOT':
-    ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend -Dcontext.name=test-ext-{{ tag }} -Ddotcms.image.name=ghcr.io/dotcms/dotcms_test:{{ tag }}
+docker-test-ext-run tag='master':
+    ./mvnw -pl :dotcms-core -Pdocker-start -Dcontext.name=test-ext-{{ tag }} -Ddotcms.image.name=ghcr.io/dotcms/dotcms_test:{{ tag }}
 
 # Stops a running Docker container based on the specified tag
 docker-ext-stop tag='latest':

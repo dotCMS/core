@@ -4,7 +4,7 @@
     xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee"
     version="2.0" bean-discovery-mode="annotated">
     <scan>
-        <exclude name="org.apache.**">
-        </exclude>
+        <exclude name="org.apache.**"/>
+        <exclude name="com.dotmarketing.util.jasper.DotJasperTask"/>
     </scan>
 </beans>
