@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -18,7 +17,7 @@ const MINIMUM_CHARACTERS = 3;
 @Component({
     selector: 'dot-category-field-search',
     standalone: true,
-    imports: [CommonModule, DotMessagePipe, InputTextModule, ReactiveFormsModule],
+    imports: [DotMessagePipe, InputTextModule, ReactiveFormsModule],
     templateUrl: './dot-category-field-search.component.html',
     styleUrl: './dot-category-field-search.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
