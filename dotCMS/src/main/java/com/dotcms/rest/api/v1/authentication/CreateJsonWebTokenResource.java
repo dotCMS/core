@@ -32,6 +32,16 @@ import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import org.elasticsearch.common.collect.Map;
 import org.glassfish.jersey.server.JSONP;
 
@@ -98,6 +108,19 @@ public class CreateJsonWebTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "postAuthenticateApiToken",
+                summary = "Creates a JSON web token",
+                description = "Takes a user ID and verifies that user is authenticated.\n\n" +
+                                "If user has proper permissions, a JSON web token will be created.\n\n" +
+                                "The system will also notify the user when their token is set to expire.\n\n",
+                tags = {"Authentication"},
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "JSON web token created",
+                        content = @Content(mediaType = "application/JSON",
+                            schema = @Schema(implementation = ResponseEntityView.class)
+                        ))
+                }
+                )
     public final Response getApiToken(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
                                          final CreateTokenForm createTokenForm) {
